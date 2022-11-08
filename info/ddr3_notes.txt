@@ -1,0 +1,23 @@
+MT41K128M16JT-125:K
+
+non-industrial, commercial part
+128M16-> configured as 128 Meg 16
+JT->96 ball 8mmx14mm FBGA package
+125->tCK=1.25ns,CL=11 (DDR3-1600)
+
+• LOW: VIN ≤ VIL(AC)max; HIGH: VIN ≥ VIH(AC)min.
+• Midlevel: Inputs are VREF = VDD/2.
+• RON set to RZQ/7 (34Ω
+• RTT,nom set to RZQ/6 (40Ω
+• RTT(WR) set to RZQ/2 (120Ω
+• QOFF is enabled in MR1.
+• ODT is enabled in MR1 (RTT,nom) and MR2 (RTT(WR)).
+• TDQS is disabled in MR1.
+• External DQ/DQS/DM load resistor is 25Ω to VDDQ/2.
+• Burst lengths are BL8 fixed.
+• AL equals 0 (except in IDD7).
+• IDD specifications are tested after the device is properly initialized.
+• Input slew rate is specified by AC parametric test conditions.
+• ASR is disabled.
+• Read burst type uses nibble sequential (MR0[3] = 0).
+• Loop patterns must be executed at least once before current measurements begi
