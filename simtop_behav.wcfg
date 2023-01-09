@@ -11,15 +11,18 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="0.000000 us"></ZoomStartTime>
-      <ZoomEndTime time="74.800001 us"></ZoomEndTime>
-      <Cursor1Time time="20.000000 us"></Cursor1Time>
+      <ZoomStartTime time="1,190.700000 ns"></ZoomStartTime>
+      <ZoomEndTime time="1,420.700001 ns"></ZoomEndTime>
+      <Cursor1Time time="1,296.600000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="170"></NameColumnWidth>
+      <NameColumnWidth column_width="146"></NameColumnWidth>
       <ValueColumnWidth column_width="90"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="7" />
+   <WVObjectSize size="22" />
+   <wave_markers>
+      <marker time="1961792426" label="" />
+   </wave_markers>
    <wvobject fp_name="/simtop/main/sys_clk" type="logic">
       <obj_property name="ElementShortName">sys_clk</obj_property>
       <obj_property name="ObjectShortName">sys_clk</obj_property>
@@ -40,12 +43,82 @@
       <obj_property name="ElementShortName">count[31:0]</obj_property>
       <obj_property name="ObjectShortName">count[31:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/simtop/main/clk_locked" type="logic">
-      <obj_property name="ElementShortName">clk_locked</obj_property>
-      <obj_property name="ObjectShortName">clk_locked</obj_property>
-   </wvobject>
    <wvobject fp_name="/simtop/main/core_clk" type="logic">
       <obj_property name="ElementShortName">core_clk</obj_property>
       <obj_property name="ObjectShortName">core_clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/intdiv/aclk" type="logic">
+      <obj_property name="ElementShortName">aclk</obj_property>
+      <obj_property name="ObjectShortName">aclk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/intdiv/aresetn" type="logic">
+      <obj_property name="ElementShortName">aresetn</obj_property>
+      <obj_property name="ObjectShortName">aresetn</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/intdiv/start" type="logic">
+      <obj_property name="ElementShortName">start</obj_property>
+      <obj_property name="ObjectShortName">start</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/intdiv/dividend" type="array">
+      <obj_property name="ElementShortName">dividend[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dividend[31:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/intdiv/divisor" type="array">
+      <obj_property name="ElementShortName">divisor[31:0]</obj_property>
+      <obj_property name="ObjectShortName">divisor[31:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/intdiv/done" type="logic">
+      <obj_property name="ElementShortName">done</obj_property>
+      <obj_property name="ObjectShortName">done</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/intdiv/M" type="array">
+      <obj_property name="ElementShortName">M[32:0]</obj_property>
+      <obj_property name="ObjectShortName">M[32:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/intdiv/Mn" type="array">
+      <obj_property name="ElementShortName">Mn[32:0]</obj_property>
+      <obj_property name="ObjectShortName">Mn[32:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/intdiv/quotient" type="array">
+      <obj_property name="ElementShortName">quotient[31:0]</obj_property>
+      <obj_property name="ObjectShortName">quotient[31:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      <obj_property name="CustomSignalColor">#E0FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/intdiv/remainder" type="array">
+      <obj_property name="ElementShortName">remainder[31:0]</obj_property>
+      <obj_property name="ObjectShortName">remainder[31:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      <obj_property name="CustomSignalColor">#E0FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/intdiv/R" type="array">
+      <obj_property name="ElementShortName">R[31:0]</obj_property>
+      <obj_property name="ObjectShortName">R[31:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/intdiv/A" type="array">
+      <obj_property name="ElementShortName">A[32:0]</obj_property>
+      <obj_property name="ObjectShortName">A[32:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/intdiv/Q" type="array">
+      <obj_property name="ElementShortName">Q[31:0]</obj_property>
+      <obj_property name="ObjectShortName">Q[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/intdiv/n" type="array">
+      <obj_property name="ElementShortName">n[5:0]</obj_property>
+      <obj_property name="ObjectShortName">n[5:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/intdiv/state" type="array">
+      <obj_property name="ElementShortName">state[1:0]</obj_property>
+      <obj_property name="ObjectShortName">state[1:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/intdiv/complete" type="logic">
+      <obj_property name="ElementShortName">complete</obj_property>
+      <obj_property name="ObjectShortName">complete</obj_property>
    </wvobject>
 </wave_config>

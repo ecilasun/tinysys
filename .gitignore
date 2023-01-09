@@ -1,0 +1,4 @@
+tinysys.cache/**
+tinysys.gen/**
+tinysys.runs/**
+tinysys.sim/**
