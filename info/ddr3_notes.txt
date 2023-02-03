@@ -20,4 +20,56 @@ JT->96 ball 8mmx14mm FBGA package
 • Input slew rate is specified by AC parametric test conditions.
 • ASR is disabled.
 • Read burst type uses nibble sequential (MR0[3] = 0).
-• Loop patterns must be executed at least once before current measurements begi
+• Loop patterns must be executed at least once before current measurements begin
+
+PINS:
+DDR_RESETN T2
+DDR_CLKP J7
+DDR_CLKN K7
+DDR_CS L2
+DDR_RAS J3
+DDR_CAS K3
+DDR_WE L3
+DDR_D0 E3
+DDR_D1 F7
+DDR_D2 F2
+DDR_D3 F8
+DDR_D4 H3
+DDR_D5 H8
+DDR_D6 G2
+DDR_D7 H7
+DDR_D8 D7
+DDR_D9 C3
+DDR_D10 C8
+DDR_D11 C2
+DDR_D12 A7
+DDR_D13 A2
+DDR_D14 B8
+DDR_D15 A3
+DDR_DQS1P C7
+DDR_DQS1N B7
+DDR_DQS0P F3
+DDR_DQS0N G3
+DDR_DQM1 D3
+DDR_DQM0 E7
+DDR_A0 N3
+DDR_A1 P7
+DDR_A2 P3
+DDR_A3 N2
+DDR_A4 P8
+DDR_A5 P2
+DDR_A6 R8
+DDR_A7 R2
+DDR_A8 T8
+DDR_A9 R3
+DDR_A10 L7
+DDR_A11 R7
+DDR_A12 N7
+DDR_A13 T3
+DDR_BA0 M2
+DDR_BA1 N8
+DDR_BA2 M3
+DDR_ODT K1
+--
+DDR_VREF M8
+DDR_VREF H1

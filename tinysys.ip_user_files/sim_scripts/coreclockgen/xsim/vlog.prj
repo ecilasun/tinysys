@@ -1,7 +1,0 @@
-verilog xil_defaultlib --include "../../../ipstatic" \
-"../../../../tinysys.gen/sources_1/ip/coreclockgen/coreclockgen_clk_wiz.v" \
-"../../../../tinysys.gen/sources_1/ip/coreclockgen/coreclockgen.v" \
-
-verilog xil_defaultlib "glbl.v"
-
-nosort
