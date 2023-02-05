@@ -9,12 +9,12 @@ set_property -dict {PACKAGE_PIN F3 IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
 set_property -dict {PACKAGE_PIN E3 IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
 
 ## UART
-## VCC: pin3/pin4 U4
-## GND: pin1/2/5/6 U4
-## RXD_OUT: pin7 U4
-## TDX_IN: pin8 U4
-set_property -dict {PACKAGE_PIN B1 IOSTANDARD LVCMOS33} [get_ports uart_rxd_out]
-set_property -dict {PACKAGE_PIN A1 IOSTANDARD LVCMOS33} [get_ports uart_txd_in]
+## VCC: pin U4:{3,4}
+## GND: pin U4:{1,2,5,6}
+## RXD_OUT: pin U4:8 [A1]
+## TDX_IN: pin U4:10 [B2]
+set_property -dict {PACKAGE_PIN A1 IOSTANDARD LVCMOS33} [get_ports uart_rxd_out]
+set_property -dict {PACKAGE_PIN B2 IOSTANDARD LVCMOS33} [get_ports uart_txd_in]
 
 ## Timing
 set_false_path -to [get_ports {leds[*]}]

@@ -1,0 +1,100 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2022.1.2 (win64) Build 3605665 Fri Aug  5 22:53:37 MDT 2022
+| Date         : Sun Feb  5 13:40:14 2023
+| Host         : enci-pc running 64-bit major release  (build 9200)
+| Command      : upgrade_ip
+| Device       : xc7a200tfbg484-1
+--------------------------------------------------------------------------------------
+
+Upgrade Log for IP 'uartinfifo'
+
+1. Summary
+----------
+
+SUCCESS in the conversion of uartinfifo (xilinx.com:ip:fifo_generator:13.2 (Rev. 7)) to Vivado generation flows.
+
+
+
+
+
+
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2022.1.2 (win64) Build 3605665 Fri Aug  5 22:53:37 MDT 2022
+| Date         : Sun Feb  5 13:40:13 2023
+| Host         : enci-pc running 64-bit major release  (build 9200)
+| Command      : upgrade_ip
+| Device       : xc7a200tfbg484-1
+--------------------------------------------------------------------------------------
+
+Upgrade Log for IP 'instructinfifo'
+
+1. Summary
+----------
+
+SUCCESS in the conversion of instructinfifo (xilinx.com:ip:fifo_generator:13.2 (Rev. 7)) to Vivado generation flows.
+
+
+
+
+
+
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2022.1.2 (win64) Build 3605665 Fri Aug  5 22:53:37 MDT 2022
+| Date         : Sun Feb  5 13:40:13 2023
+| Host         : enci-pc running 64-bit major release  (build 9200)
+| Command      : upgrade_ip
+| Device       : xc7a200tfbg484-1
+--------------------------------------------------------------------------------------
+
+Upgrade Log for IP 'cachemem'
+
+1. Summary
+----------
+
+SUCCESS in the conversion of cachemem (xilinx.com:ip:blk_mem_gen:8.4 (Rev. 5)) to Vivado generation flows.
+
+
+
+
+
+
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2022.1.2 (win64) Build 3605665 Fri Aug  5 22:53:37 MDT 2022
+| Date         : Sun Feb  5 13:40:13 2023
+| Host         : enci-pc running 64-bit major release  (build 9200)
+| Command      : upgrade_ip
+| Device       : xc7a200tfbg484-1
+--------------------------------------------------------------------------------------
+
+Upgrade Log for IP 'bootmem64k'
+
+1. Summary
+----------
+
+SUCCESS in the conversion of bootmem64k (xilinx.com:ip:blk_mem_gen:8.4 (Rev. 5)) to Vivado generation flows.
+
+
+
+
+
+
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2022.1.2 (win64) Build 3605665 Fri Aug  5 22:53:37 MDT 2022
+| Date         : Sun Feb  5 13:39:56 2023
+| Host         : enci-pc running 64-bit major release  (build 9200)
+| Command      : upgrade_ip
+| Device       : xc7a200tfbg484-1
+--------------------------------------------------------------------------------------
+
+Upgrade Log for IP 'uartoutfifo'
+
+1. Summary
+----------
+
+SUCCESS in the conversion of uartoutfifo (xilinx.com:ip:fifo_generator:13.2 (Rev. 7)) to Vivado generation flows.
+

@@ -7,10 +7,14 @@
   <device name="xc7a200t_0" gui_info=""/>
   <ObjectList object_type="hw_cfgmem" gui_info="">
     <Object name="" gui_info="">
+      <Properties Property="PROGRAM.ADDRESS_RANGE" value="use_file"/>
       <Properties Property="PROGRAM.BLANK_CHECK" value="0"/>
       <Properties Property="PROGRAM.CFG_PROGRAM" value="1"/>
       <Properties Property="PROGRAM.CHECKSUM" value="0"/>
       <Properties Property="PROGRAM.ERASE" value="1"/>
+      <Properties Property="PROGRAM.FILES" value="$_project_name_.runs/impl_1/tophat.bin"/>
+      <Properties Property="PROGRAM.PRM_FILE" value=""/>
+      <Properties Property="PROGRAM.UNUSED_PIN_TERMINATION" value="pull-none"/>
       <Properties Property="PROGRAM.VERIFY" value="1"/>
     </Object>
   </ObjectList>
@@ -18,7 +22,7 @@
     <Object name="xc7a200t_0" gui_info="">
       <Properties Property="FULL_PROBES.FILE" value=""/>
       <Properties Property="PROBES.FILE" value=""/>
-      <Properties Property="PROGRAM.HW_BITSTREAM" value="$_project_name_.runs/impl_1/tophat.bit"/>
+      <Properties Property="PROGRAM.HW_BITSTREAM" value="C:/Xilinx/Vivado/2022.1/data/xicom/cfgmem/bitfile/spi_xc7a200t_pullnone.bit"/>
       <Properties Property="PROGRAM.HW_CFGMEM_PART" value="is25lp128f-spi-x1_x2_x4"/>
       <Properties Property="SLR.COUNT" value="1"/>
     </Object>
