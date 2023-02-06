@@ -22,6 +22,7 @@ wire [16:0] tag = addr[30:14];	// Cache tag
 wire [3:0] offset = addr[5:2];	// Cache word offset
 wire isuncached = addr[31];		// Uncached access
 
+logic [31:0] inputdata;
 logic [31:0] cacheaddress;
 data_t cachedin[0:3];
 data_t cachedout[0:3]; // x4 128 bits
@@ -151,6 +152,7 @@ always_ff @(posedge aclk) begin
 				ctag <= tag;					// Cache tag 00000..1ffff
 				ptag <= cachelinetags[line];	// Previous cache tag
 				chit <= (tag == cachelinetags[line]) && cachelinevalid[line];
+				inputdata <= din;
 
 				casex ({dcacheop[0], isuncached, ren, |wstrb})
 					4'b0001: cachestate <= CWRITE;
@@ -239,7 +241,7 @@ always_ff @(posedge aclk) begin
 
 			UCWRITE: begin
 				ucaddrs <= addr;
-				ucdout <= din;
+				ucdout <= inputdata;
 				ucwstrb <= bsel;
 				cachestate <= UCWRITEDELAY;
 			end
@@ -271,24 +273,27 @@ always_ff @(posedge aclk) begin
 
 			CWRITE: begin
 				if (chit) begin
-					cdin <= {din, din, din, din, din, din, din, din, din, din, din, din, din, din, din, din};	// Incoming data replicated to be masked by cachewe
+					cdin <= {	inputdata, inputdata, inputdata, inputdata,
+								inputdata, inputdata, inputdata, inputdata,
+								inputdata, inputdata, inputdata, inputdata,
+								inputdata, inputdata, inputdata, inputdata};	// Incoming data replicated to 512bits, to be masked by cachewe
 					unique case(coffset)
-						4'b0000:  cachewe <= { 60'd0, bsel        };
-						4'b0001:  cachewe <= { 56'd0, bsel, 4'd0  };
-						4'b0010:  cachewe <= { 52'd0, bsel, 8'd0  };
-						4'b0011:  cachewe <= { 48'd0, bsel, 12'd0 };
-						4'b0100:  cachewe <= { 44'd0, bsel, 16'd0 };
-						4'b0101:  cachewe <= { 40'd0, bsel, 20'd0 };
-						4'b0110:  cachewe <= { 36'd0, bsel, 24'd0 };
-						4'b0111:  cachewe <= { 32'd0, bsel, 28'd0 };
-						4'b1000:  cachewe <= { 28'd0, bsel, 32'd0 };
-						4'b1001:  cachewe <= { 24'd0, bsel, 36'd0 };
-						4'b1010:  cachewe <= { 20'd0, bsel, 40'd0 };
-						4'b1011:  cachewe <= { 16'd0, bsel, 44'd0 };
-						4'b1100:  cachewe <= { 12'd0, bsel, 48'd0 };
-						4'b1101:  cachewe <= { 8'd0,  bsel, 52'd0 };
-						4'b1110:  cachewe <= { 4'd0,  bsel, 56'd0 };
-						4'b1111:  cachewe <= {        bsel, 60'd0 };
+						4'b0000: cachewe <= { 60'd0, bsel        };
+						4'b0001: cachewe <= { 56'd0, bsel, 4'd0  };
+						4'b0010: cachewe <= { 52'd0, bsel, 8'd0  };
+						4'b0011: cachewe <= { 48'd0, bsel, 12'd0 };
+						4'b0100: cachewe <= { 44'd0, bsel, 16'd0 };
+						4'b0101: cachewe <= { 40'd0, bsel, 20'd0 };
+						4'b0110: cachewe <= { 36'd0, bsel, 24'd0 };
+						4'b0111: cachewe <= { 32'd0, bsel, 28'd0 };
+						4'b1000: cachewe <= { 28'd0, bsel, 32'd0 };
+						4'b1001: cachewe <= { 24'd0, bsel, 36'd0 };
+						4'b1010: cachewe <= { 20'd0, bsel, 40'd0 };
+						4'b1011: cachewe <= { 16'd0, bsel, 44'd0 };
+						4'b1100: cachewe <= { 12'd0, bsel, 48'd0 };
+						4'b1101: cachewe <= { 8'd0,  bsel, 52'd0 };
+						4'b1110: cachewe <= { 4'd0,  bsel, 56'd0 };
+						4'b1111: cachewe <= {        bsel, 60'd0 };
 					endcase
 					// This cacbe line needs to be written back to memory on next miss
 					cachelinewb[cline] <= 1'b1;
