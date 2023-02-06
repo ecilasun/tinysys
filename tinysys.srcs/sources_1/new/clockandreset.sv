@@ -5,6 +5,7 @@ module clockandreset(
 	input wire sys_resetn,
 	output wire aclk,
 	output wire clk10,
+	output wire clk166,
 	input wire calib_done,
 	output wire preresetn,
 	output wire aresetn );
@@ -33,7 +34,7 @@ assign preresetn = regaresetn;
 assign aresetn = regaresetn && calibB;
 
 // Gen
-wire centralclocklocked;
+wire centralclocklocked, peripheralclocklocked;
 
 centralclock centralclockinst(
 	.clk_in1(sys_clock_i),
@@ -41,8 +42,13 @@ centralclock centralclockinst(
 	.clk10(clk10),
 	.locked(centralclocklocked) );
 
+peripheralclocks peripheralclockinst(
+	.clk_in1(sys_clock_i),
+	.clk166(clk166),
+	.locked(peripheralclocklocked) );
+
 // Hold reset until both clocks are locked
-wire internalreset = ~(centralclocklocked /* && peripheralclocklocked && ddr3clocklocked*/);
+wire internalreset = ~(centralclocklocked && peripheralclocklocked);
 (* async_reg = "true" *) logic internalresetA = 1'b1;
 (* async_reg = "true" *) logic internalresetB = 1'b1;
 

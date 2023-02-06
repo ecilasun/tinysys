@@ -3,10 +3,12 @@
 module tinysoc(
 	input wire aclk,
 	input wire clk10,
+	input wire clk166,
 	input wire aresetn,
 	output wire [1:0] leds,
 	output wire uart_rxd_out,
-	input wire uart_txd_in );
+	input wire uart_txd_in,
+	ddr3sdramwires.def ddr3wires );
 
 // --------------------------------------------------
 // AXI4 bus
@@ -38,13 +40,39 @@ arbiter arbiter3x1inst(
 	.axi_m(memorybus) );
 
 // --------------------------------------------------
+// Memory region router
+// --------------------------------------------------
+
+axi4if bramif();
+axi4if ddr3sdramif();
+
+// dev   start     end       addrs[30:28]  size
+// DDR3: 00000000  0FFFFFFF  3'b000        256MB
+// BRAM: 10000000  1000FFFF  3'b001        64KB
+
+memoryrouter memoryrouterinst(
+	.aclk(aclk),
+	.aresetn(aresetn),
+    .axi_s(memorybus),
+    .addressmask({3'b001, 3'b000}),
+    .axi_m({bramif, ddr3sdramif}));
+
+// --------------------------------------------------
 // RAM
 // --------------------------------------------------
 
 bootmem bootmeminst(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.axi_s(memorybus) );
+	.axi_s(bramif) );
+
+axi4ddr3sdram axi4ddr3sdraminst(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.clk_sys_i(clk166),
+	.clk_ref_i(aclk),
+	.m_axi(ddr3sdramif),
+	.ddr3wires(ddr3wires) );
 
 // --------------------------------------------------
 // Memory mapped device router
@@ -54,14 +82,14 @@ axi4if uartif();
 axi4if ledif();
 
 // 12bit (4K) address space reserved for each memory mapped device
-// dev   start     end       addrs[30:12]
-// UART: 80000000  80000FFF  19'b000_0000_0000_0000_0000
-// LEDS: 80001000  80001FFF  19'b000_0000_0000_0000_0001
-// ????: 80002000  80002FFF  19'b000_0000_0000_0000_0010
-// ????: 80003000  80003FFF  19'b000_0000_0000_0000_0011
-// ????: 80004000  80005FFF  19'b000_0000_0000_0000_0100
+// dev   start     end       addrs[30:12]                 size
+// UART: 80000000  80000FFF  19'b000_0000_0000_0000_0000  4KB
+// LEDS: 80001000  80001FFF  19'b000_0000_0000_0000_0001  4KB
+// ????: 80002000  80002FFF  19'b000_0000_0000_0000_0010  4KB
+// ????: 80003000  80003FFF  19'b000_0000_0000_0000_0011  4KB
+// ????: 80004000  80005FFF  19'b000_0000_0000_0000_0100  4KB
 
-devicerouter memmappeddevicerouter(
+devicerouter devicerouterinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
     .axi_s(devicebus),
