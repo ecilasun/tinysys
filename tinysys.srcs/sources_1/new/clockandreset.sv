@@ -2,39 +2,33 @@
 
 module clockandreset(
 	input wire sys_clock_i,
-	input wire sys_resetn,
 	output wire aclk,
 	output wire clk10,
 	output wire clk166,
+	output wire clk200,
 	input wire calib_done,
 	output wire preresetn,
 	output wire aresetn );
 
-// calib_done
-(* async_reg = "true" *) logic calibA = 1'b1;
-(* async_reg = "true" *) logic calibB = 1'b1;
+wire centralclocklocked, ddr3clklocked;
 
-always @(posedge aclk) begin
-	calibA <= calib_done;
-	calibB <= calibA;
-end
-
-// sys_resetn
-(* async_reg = "true" *) logic rstnA = 1'b1;
-(* async_reg = "true" *) logic rstnB = 1'b1;
-
-always @(posedge aclk) begin
-	rstnA <= sys_resetn;
-	rstnB <= rstnA;
-end
-
-// Final reset state
+(* async_reg = "true" *) logic calibA = 1'b0;
+(* async_reg = "true" *) logic calibB = 1'b0;
 (* async_reg = "true" *) logic regaresetn = 1'b0;
-assign preresetn = regaresetn;
-assign aresetn = regaresetn && calibB;
 
-// Gen
-wire centralclocklocked, peripheralclocklocked;
+assign aresetn = regaresetn ? calibB : 1'b0;
+assign preresetn = regaresetn;
+
+// CdC from uiclk to aclk
+always @(posedge aclk) begin
+	if (~regaresetn) begin
+		calibA <= 1'b0;
+		calibB <= 1'b0;
+	end else begin
+		calibA <= calib_done;
+		calibB <= calibA;
+	end
+end
 
 centralclock centralclockinst(
 	.clk_in1(sys_clock_i),
@@ -42,21 +36,22 @@ centralclock centralclockinst(
 	.clk10(clk10),
 	.locked(centralclocklocked) );
 
-peripheralclocks peripheralclockinst(
+peripheralclocks ddr3sdramclockinst(
 	.clk_in1(sys_clock_i),
 	.clk166(clk166),
-	.locked(peripheralclocklocked) );
+	.clk200(clk200),
+	.locked(ddr3clklocked) );
 
-// Hold reset until both clocks are locked
-wire internalreset = ~(centralclocklocked && peripheralclocklocked);
-(* async_reg = "true" *) logic internalresetA = 1'b1;
-(* async_reg = "true" *) logic internalresetB = 1'b1;
+// Hold reset until clocks are locked
+wire internalreset = ~(centralclocklocked & ddr3clklocked);
+(* async_reg = "true" *) logic resettrigA = 1'b1;
+(* async_reg = "true" *) logic resettrigB = 1'b1;
 
 // Delayed reset post-clock-lock
 logic [15:0] resetcountdown = 16'h0001;
 
 always @(posedge aclk) begin
-	if (internalresetB || ~rstnB) begin
+	if (resettrigB) begin
 		resetcountdown <= 16'h0001;
 		regaresetn <= 1'b0;
 	end else begin
@@ -64,8 +59,8 @@ always @(posedge aclk) begin
 		regaresetn <= resetcountdown[15];
 	end
 	// DC
-	internalresetA <= internalreset;
-	internalresetB <= internalresetA;
+	resettrigA <= internalreset;
+	resettrigB <= resettrigA;
 end
 
 endmodule

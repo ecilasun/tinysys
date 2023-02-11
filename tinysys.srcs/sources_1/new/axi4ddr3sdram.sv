@@ -3,6 +3,7 @@
 module axi4ddr3sdram(
 	input wire aclk,
 	input wire aresetn,
+	input wire preresetn,
 	input wire clk_sys_i,
 	input wire clk_ref_i,
 	axi4if.slave m_axi,
@@ -11,8 +12,9 @@ module axi4ddr3sdram(
 wire ui_clk;
 wire ui_clk_sync_rst;
 wire mmcm_locked;
+wire init_calib_complete;
 
-//assign calib_done = mmcm_locked & init_calib_complete;
+assign ddr3wires.init_calib_complete = mmcm_locked & init_calib_complete;
 
 axi4if s_axi();
 
@@ -120,9 +122,9 @@ mig_7series_0 ddr3instance (
     .ddr3_odt                       (ddr3wires.ddr3_odt),
 
     // application interface ports
-    .ui_clk                         (ui_clk),          // feeds back into axi4if.aclk to drive the entire bus
+    .ui_clk                         (ui_clk),
     .ui_clk_sync_rst                (ui_clk_sync_rst),
-    .init_calib_complete            (ddr3wires.init_calib_complete),
+    .init_calib_complete            (init_calib_complete),
     .device_temp					(), // unused
 
     .mmcm_locked                    (mmcm_locked), // unused
@@ -182,9 +184,9 @@ mig_7series_0 ddr3instance (
     .s_axi_rvalid                   (s_axi.rvalid),
     .s_axi_rready                   (s_axi.rready),
     // system clock ports
-    .sys_clk_i                      (clk_sys_i), // 100mhz
+    .sys_clk_i                      (clk_sys_i), // 166mhz
     // reference clock ports
     .clk_ref_i                      (clk_ref_i), // 200mhz
-    .sys_rst                        (aresetn) );
+    .sys_rst                        (preresetn) );
 
 endmodule

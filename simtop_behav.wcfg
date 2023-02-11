@@ -13,15 +13,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="0.000000 us"></ZoomStartTime>
-      <ZoomEndTime time="44.700001 us"></ZoomEndTime>
-      <Cursor1Time time="14.000000 us"></Cursor1Time>
+      <ZoomStartTime time="1,414.250 ns"></ZoomStartTime>
+      <ZoomEndTime time="3,661.251 ns"></ZoomEndTime>
+      <Cursor1Time time="1,871.250 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="220"></NameColumnWidth>
-      <ValueColumnWidth column_width="104"></ValueColumnWidth>
+      <ValueColumnWidth column_width="92"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="162" />
+   <WVObjectSize size="168" />
    <wave_markers>
       <marker time="1961792426" label="" />
    </wave_markers>
@@ -32,10 +32,6 @@
    <wvobject fp_name="/simtop/main/sys_clk" type="logic">
       <obj_property name="ElementShortName">sys_clk</obj_property>
       <obj_property name="ObjectShortName">sys_clk</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/sys_rst_n" type="logic">
-      <obj_property name="ElementShortName">sys_rst_n</obj_property>
-      <obj_property name="ObjectShortName">sys_rst_n</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/leds" type="array">
       <obj_property name="ElementShortName">leds[1:0]</obj_property>
@@ -56,10 +52,6 @@
    <wvobject fp_name="/simtop/main/clockandresetinst/sys_clock_i" type="logic">
       <obj_property name="ElementShortName">sys_clock_i</obj_property>
       <obj_property name="ObjectShortName">sys_clock_i</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/clockandresetinst/sys_resetn" type="logic">
-      <obj_property name="ElementShortName">sys_resetn</obj_property>
-      <obj_property name="ObjectShortName">sys_resetn</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/clockandresetinst/aclk" type="logic">
       <obj_property name="ElementShortName">aclk</obj_property>
@@ -89,14 +81,6 @@
       <obj_property name="ElementShortName">calibB</obj_property>
       <obj_property name="ObjectShortName">calibB</obj_property>
    </wvobject>
-   <wvobject fp_name="/simtop/main/clockandresetinst/rstnA" type="logic">
-      <obj_property name="ElementShortName">rstnA</obj_property>
-      <obj_property name="ObjectShortName">rstnA</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/clockandresetinst/rstnB" type="logic">
-      <obj_property name="ElementShortName">rstnB</obj_property>
-      <obj_property name="ObjectShortName">rstnB</obj_property>
-   </wvobject>
    <wvobject fp_name="/simtop/main/clockandresetinst/regaresetn" type="logic">
       <obj_property name="ElementShortName">regaresetn</obj_property>
       <obj_property name="ObjectShortName">regaresetn</obj_property>
@@ -108,14 +92,6 @@
    <wvobject fp_name="/simtop/main/clockandresetinst/internalreset" type="logic">
       <obj_property name="ElementShortName">internalreset</obj_property>
       <obj_property name="ObjectShortName">internalreset</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/clockandresetinst/internalresetA" type="logic">
-      <obj_property name="ElementShortName">internalresetA</obj_property>
-      <obj_property name="ObjectShortName">internalresetA</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/clockandresetinst/internalresetB" type="logic">
-      <obj_property name="ElementShortName">internalresetB</obj_property>
-      <obj_property name="ObjectShortName">internalresetB</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/clockandresetinst/resetcountdown" type="array">
       <obj_property name="ElementShortName">resetcountdown[15:0]</obj_property>
@@ -158,25 +134,6 @@
       <obj_property name="ObjectShortName">rgrant[2:0]</obj_property>
       <obj_property name="CustomSignalColor">#FF00FF</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
-      <obj_property name="isExpanded"></obj_property>
-      <wvobject fp_name="/simtop/main/socinstance/arbiter3x1inst/rgrant[2]" type="logic">
-         <obj_property name="ElementShortName">[2]</obj_property>
-         <obj_property name="ObjectShortName">[2]</obj_property>
-         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-      </wvobject>
-      <wvobject fp_name="/simtop/main/socinstance/arbiter3x1inst/rgrant[1]" type="logic">
-         <obj_property name="ElementShortName">[1]</obj_property>
-         <obj_property name="ObjectShortName">[1]</obj_property>
-         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-      </wvobject>
-      <wvobject fp_name="/simtop/main/socinstance/arbiter3x1inst/rgrant[0]" type="logic">
-         <obj_property name="ElementShortName">[0]</obj_property>
-         <obj_property name="ObjectShortName">[0]</obj_property>
-         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-      </wvobject>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/arbiter3x1inst/wreq" type="array">
       <obj_property name="ElementShortName">wreq[2:0]</obj_property>
@@ -187,25 +144,6 @@
       <obj_property name="ObjectShortName">wgrant[2:0]</obj_property>
       <obj_property name="CustomSignalColor">#FF00FF</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
-      <obj_property name="isExpanded"></obj_property>
-      <wvobject fp_name="/simtop/main/socinstance/arbiter3x1inst/wgrant[2]" type="logic">
-         <obj_property name="ElementShortName">[2]</obj_property>
-         <obj_property name="ObjectShortName">[2]</obj_property>
-         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-      </wvobject>
-      <wvobject fp_name="/simtop/main/socinstance/arbiter3x1inst/wgrant[1]" type="logic">
-         <obj_property name="ElementShortName">[1]</obj_property>
-         <obj_property name="ObjectShortName">[1]</obj_property>
-         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-      </wvobject>
-      <wvobject fp_name="/simtop/main/socinstance/arbiter3x1inst/wgrant[0]" type="logic">
-         <obj_property name="ElementShortName">[0]</obj_property>
-         <obj_property name="ObjectShortName">[0]</obj_property>
-         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-      </wvobject>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/arbiter3x1inst/rreqcomplete" type="logic">
       <obj_property name="ElementShortName">rreqcomplete</obj_property>
@@ -714,5 +652,53 @@
    <wvobject fp_name="/simtop/main/socinstance/leddevice/raddrstate" type="array">
       <obj_property name="ElementShortName">raddrstate[1:0]</obj_property>
       <obj_property name="ObjectShortName">raddrstate[1:0]</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider175">
+      <obj_property name="label">memrouter</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/memoryrouterinst/aclk" type="logic">
+      <obj_property name="ElementShortName">aclk</obj_property>
+      <obj_property name="ObjectShortName">aclk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/memoryrouterinst/aresetn" type="logic">
+      <obj_property name="ElementShortName">aresetn</obj_property>
+      <obj_property name="ObjectShortName">aresetn</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/memoryrouterinst/addressmask" type="array">
+      <obj_property name="ElementShortName">addressmask[1:0][2:0]</obj_property>
+      <obj_property name="ObjectShortName">addressmask[1:0][2:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/memoryrouterinst/validwaddr" type="array">
+      <obj_property name="ElementShortName">validwaddr[1:0]</obj_property>
+      <obj_property name="ObjectShortName">validwaddr[1:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/memoryrouterinst/validraddr" type="array">
+      <obj_property name="ElementShortName">validraddr[1:0]</obj_property>
+      <obj_property name="ObjectShortName">validraddr[1:0]</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider1722">
+      <obj_property name="label">devrouter</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/devicerouterinst/aclk" type="logic">
+      <obj_property name="ElementShortName">aclk</obj_property>
+      <obj_property name="ObjectShortName">aclk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/devicerouterinst/aresetn" type="logic">
+      <obj_property name="ElementShortName">aresetn</obj_property>
+      <obj_property name="ObjectShortName">aresetn</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/devicerouterinst/addressmask" type="array">
+      <obj_property name="ElementShortName">addressmask[1:0][18:0]</obj_property>
+      <obj_property name="ObjectShortName">addressmask[1:0][18:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/devicerouterinst/validwaddr" type="array">
+      <obj_property name="ElementShortName">validwaddr[1:0]</obj_property>
+      <obj_property name="ObjectShortName">validwaddr[1:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/devicerouterinst/validraddr" type="array">
+      <obj_property name="ElementShortName">validraddr[1:0]</obj_property>
+      <obj_property name="ObjectShortName">validraddr[1:0]</obj_property>
    </wvobject>
 </wave_config>
