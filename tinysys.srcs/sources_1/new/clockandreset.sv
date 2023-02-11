@@ -10,25 +10,11 @@ module clockandreset(
 	output wire preresetn,
 	output wire aresetn );
 
+// --------------------------------------------------
+// PLLs / MMCMs
+// --------------------------------------------------
+
 wire centralclocklocked, ddr3clklocked;
-
-(* async_reg = "true" *) logic calibA = 1'b0;
-(* async_reg = "true" *) logic calibB = 1'b0;
-(* async_reg = "true" *) logic regaresetn = 1'b0;
-
-assign aresetn = regaresetn ? calibB : 1'b0;
-assign preresetn = regaresetn;
-
-// CdC from uiclk to aclk
-always @(posedge aclk) begin
-	if (~regaresetn) begin
-		calibA <= 1'b0;
-		calibB <= 1'b0;
-	end else begin
-		calibA <= calib_done;
-		calibB <= calibA;
-	end
-end
 
 centralclock centralclockinst(
 	.clk_in1(sys_clock_i),
@@ -42,25 +28,51 @@ peripheralclocks ddr3sdramclockinst(
 	.clk200(clk200),
 	.locked(ddr3clklocked) );
 
-// Hold reset until clocks are locked
-wire internalreset = ~(centralclocklocked & ddr3clklocked);
-(* async_reg = "true" *) logic resettrigA = 1'b1;
-(* async_reg = "true" *) logic resettrigB = 1'b1;
+wire clocksready = centralclocklocked & ddr3clklocked;
 
-// Delayed reset post-clock-lock
-logic [15:0] resetcountdown = 16'h0001;
+// --------------------------------------------------
+// Clock domain crossing calibration done line
+// --------------------------------------------------
+
+/*(* async_reg = "true" *) logic calibA = 1'b0;
+(* async_reg = "true" *) logic calibB = 1'b0;
+
+// CdC from uiclk to aclk
+always @(posedge aclk) begin
+	calibA <= calib_done;
+	calibB <= calibA;
+end*/ // TODO:
+
+// --------------------------------------------------
+// Clock domain crossing PLL/MMCM ready line
+// --------------------------------------------------
+
+(* async_reg = "true" *) logic clkRdyA = 1'b0;
+(* async_reg = "true" *) logic clkRdyB = 1'b0;
 
 always @(posedge aclk) begin
-	if (resettrigB) begin
+	clkRdyA <= clocksready;
+	clkRdyB <= clkRdyA;
+end
+
+// --------------------------------------------------
+// Outside facing delayed reset
+// --------------------------------------------------
+
+logic [15:0] resetcountdown = 16'h0001;
+logic regaresetn = 1'b0;
+
+always @(posedge aclk) begin
+	if (~clkRdyB) begin
 		resetcountdown <= 16'h0001;
 		regaresetn <= 1'b0;
 	end else begin
 		resetcountdown <= {resetcountdown[14:0], 1'b1};
 		regaresetn <= resetcountdown[15];
 	end
-	// DC
-	resettrigA <= internalreset;
-	resettrigB <= resettrigA;
 end
+
+assign aresetn = regaresetn;
+assign preresetn = 1'b1; // TODO:
 
 endmodule

@@ -13,15 +13,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="1,414.250 ns"></ZoomStartTime>
-      <ZoomEndTime time="3,661.251 ns"></ZoomEndTime>
-      <Cursor1Time time="1,871.250 ns"></Cursor1Time>
+      <ZoomStartTime time="974.679 ns"></ZoomStartTime>
+      <ZoomEndTime time="3,405.065 ns"></ZoomEndTime>
+      <Cursor1Time time="3,000.000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="220"></NameColumnWidth>
-      <ValueColumnWidth column_width="92"></ValueColumnWidth>
+      <NameColumnWidth column_width="216"></NameColumnWidth>
+      <ValueColumnWidth column_width="90"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="168" />
+   <WVObjectSize size="173" />
    <wave_markers>
       <marker time="1961792426" label="" />
    </wave_markers>
@@ -61,6 +61,14 @@
       <obj_property name="ElementShortName">clk10</obj_property>
       <obj_property name="ObjectShortName">clk10</obj_property>
    </wvobject>
+   <wvobject fp_name="/simtop/main/clockandresetinst/clk166" type="logic">
+      <obj_property name="ElementShortName">clk166</obj_property>
+      <obj_property name="ObjectShortName">clk166</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/clockandresetinst/clk200" type="logic">
+      <obj_property name="ElementShortName">clk200</obj_property>
+      <obj_property name="ObjectShortName">clk200</obj_property>
+   </wvobject>
    <wvobject fp_name="/simtop/main/clockandresetinst/calib_done" type="logic">
       <obj_property name="ElementShortName">calib_done</obj_property>
       <obj_property name="ObjectShortName">calib_done</obj_property>
@@ -73,6 +81,18 @@
       <obj_property name="ElementShortName">aresetn</obj_property>
       <obj_property name="ObjectShortName">aresetn</obj_property>
    </wvobject>
+   <wvobject fp_name="/simtop/main/clockandresetinst/centralclocklocked" type="logic">
+      <obj_property name="ElementShortName">centralclocklocked</obj_property>
+      <obj_property name="ObjectShortName">centralclocklocked</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/clockandresetinst/ddr3clklocked" type="logic">
+      <obj_property name="ElementShortName">ddr3clklocked</obj_property>
+      <obj_property name="ObjectShortName">ddr3clklocked</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/clockandresetinst/clocksready" type="logic">
+      <obj_property name="ElementShortName">clocksready</obj_property>
+      <obj_property name="ObjectShortName">clocksready</obj_property>
+   </wvobject>
    <wvobject fp_name="/simtop/main/clockandresetinst/calibA" type="logic">
       <obj_property name="ElementShortName">calibA</obj_property>
       <obj_property name="ObjectShortName">calibA</obj_property>
@@ -81,21 +101,21 @@
       <obj_property name="ElementShortName">calibB</obj_property>
       <obj_property name="ObjectShortName">calibB</obj_property>
    </wvobject>
-   <wvobject fp_name="/simtop/main/clockandresetinst/regaresetn" type="logic">
-      <obj_property name="ElementShortName">regaresetn</obj_property>
-      <obj_property name="ObjectShortName">regaresetn</obj_property>
+   <wvobject fp_name="/simtop/main/clockandresetinst/clkRdyA" type="logic">
+      <obj_property name="ElementShortName">clkRdyA</obj_property>
+      <obj_property name="ObjectShortName">clkRdyA</obj_property>
    </wvobject>
-   <wvobject fp_name="/simtop/main/clockandresetinst/centralclocklocked" type="logic">
-      <obj_property name="ElementShortName">centralclocklocked</obj_property>
-      <obj_property name="ObjectShortName">centralclocklocked</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/clockandresetinst/internalreset" type="logic">
-      <obj_property name="ElementShortName">internalreset</obj_property>
-      <obj_property name="ObjectShortName">internalreset</obj_property>
+   <wvobject fp_name="/simtop/main/clockandresetinst/clkRdyB" type="logic">
+      <obj_property name="ElementShortName">clkRdyB</obj_property>
+      <obj_property name="ObjectShortName">clkRdyB</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/clockandresetinst/resetcountdown" type="array">
       <obj_property name="ElementShortName">resetcountdown[15:0]</obj_property>
       <obj_property name="ObjectShortName">resetcountdown[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/clockandresetinst/regaresetn" type="logic">
+      <obj_property name="ElementShortName">regaresetn</obj_property>
+      <obj_property name="ObjectShortName">regaresetn</obj_property>
    </wvobject>
    <wvobject type="divider" fp_name="divider95">
       <obj_property name="label">arbiter</obj_property>
