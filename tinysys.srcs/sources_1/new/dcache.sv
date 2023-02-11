@@ -50,7 +50,7 @@ logic cachelinevalid[0:255];		// cache line state (invalid / valid)
 logic [16:0] cachelinetags[0:255];	// cache line tags (17 bits)
 
 logic [63:0] cachewe = 64'd0;		// byte select for 64 byte cache line
-logic [511:0] cdin;					// input data to write to cache
+logic [511:0] cdin = 512'd0;		// input data to write to cache
 wire [511:0] cdout;					// output data read from cache
 
 logic flushing = 1'b0;				// high during cache flush operation
@@ -133,6 +133,7 @@ always_ff @(posedge aclk) begin
 		cachestate <= IDLE;
 		memwritestrobe <= 1'b0;
 		memreadstrobe <= 1'b0;
+		cdin <= 512'd0;
 	end else begin
 
 		memwritestrobe <= 1'b0;

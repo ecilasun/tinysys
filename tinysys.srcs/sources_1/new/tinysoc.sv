@@ -9,8 +9,8 @@ module tinysoc(
 	input wire preresetn,
 	output wire [1:0] leds,
 	output wire uart_rxd_out,
-	input wire uart_txd_in/*,
-	ddr3sdramwires.def ddr3wires */);
+	input wire uart_txd_in,
+	ddr3sdramwires.def ddr3wires);
 
 // --------------------------------------------------
 // Bus lines
@@ -131,19 +131,19 @@ bootmem bootmeminst(
 	.aresetn(aresetn),
 	.axi_s(bramif) );
 
-dummydevice ddr3sdramplaceholder(
+/*dummydevice ddr3sdramplaceholder(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.s_axi(ddr3sdramif));
+	.s_axi(ddr3sdramif));*/
 
-/*axi4ddr3sdram axi4ddr3sdraminst(
+axi4ddr3sdram axi4ddr3sdraminst(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.preresetn(preresetn),
 	.clk_sys_i(clk166),
 	.clk_ref_i(clk200),
 	.m_axi(ddr3sdramif),
-	.ddr3wires(ddr3wires) );*/
+	.ddr3wires(ddr3wires) );
 
 // --------------------------------------------------
 // Memory mapped device router

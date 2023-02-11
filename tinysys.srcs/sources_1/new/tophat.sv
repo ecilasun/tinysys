@@ -8,7 +8,7 @@ module tophat(
     output wire [1:0] leds,
     // UART - USB-c module
     output wire uart_rxd_out,
-	input wire uart_txd_in/*,
+	input wire uart_txd_in,
 	// DDR3 SDRAM
 	output ddr3_reset_n,
 	output wire [0:0] ddr3_cke,
@@ -23,7 +23,7 @@ module tophat(
 	output wire [1:0] ddr3_dm,
 	inout wire [1:0] ddr3_dqs_p,
 	inout wire [1:0] ddr3_dqs_n,
-	inout wire [15:0] ddr3_dq*/ );
+	inout wire [15:0] ddr3_dq );
 
 // --------------------------------------------------
 // Clock and reset generator
@@ -44,13 +44,11 @@ clockandreset clockandresetinst(
 	.preresetn(preresetn),	// TODO: Use as reset signal for devices that we need initialized before the CPU/GPU such as SDRAM
 	.aresetn(aresetn));
 
-assign init_calib_complete = 1'b1; // TODO: tie to DDR3 SDRAM calib
-
 // --------------------------------------------------
 // DDR3 SDRAM wires
 // --------------------------------------------------
 
-/*ddr3sdramwires ddr3wires(
+ddr3sdramwires ddr3wires(
 	.ddr3_reset_n(ddr3_reset_n),
 	.ddr3_cke(ddr3_cke),
 	.ddr3_ck_p(ddr3_ck_p), 
@@ -65,7 +63,7 @@ assign init_calib_complete = 1'b1; // TODO: tie to DDR3 SDRAM calib
 	.ddr3_dqs_p(ddr3_dqs_p),
 	.ddr3_dqs_n(ddr3_dqs_n),
 	.ddr3_dq(ddr3_dq),
-	.init_calib_complete(init_calib_complete) );*/
+	.init_calib_complete(init_calib_complete) );
 
 // --------------------------------------------------
 // SoC device
@@ -80,7 +78,7 @@ tinysoc socinstance(
 	.preresetn(preresetn),
 	.uart_rxd_out(uart_rxd_out),
 	.uart_txd_in(uart_txd_in),
-	.leds(leds)/*,
-	.ddr3wires(ddr3wires)*/ );
+	.leds(leds),
+	.ddr3wires(ddr3wires) );
 
 endmodule

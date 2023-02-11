@@ -20,7 +20,7 @@ axi4if s_axi();
 
 wire saresetn, maresetn;
 
-axi_interconnect_0 axi4interconnectinst(
+axi4interconnect axi4interconnectinst(
   .INTERCONNECT_ACLK(aclk),
   .INTERCONNECT_ARESETN(aresetn),
 
