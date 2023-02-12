@@ -119,8 +119,8 @@ memoryrouter memoryrouterinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
     .axi_s(memorybus),
-    .addressmask({3'b001, 3'b000}),
-    .axi_m({bramif, ddr3sdramif}));
+    .addressmask({3'b000, 3'b001}),
+    .axi_m({ddr3sdramif, bramif}));
 
 // --------------------------------------------------
 // RAM
