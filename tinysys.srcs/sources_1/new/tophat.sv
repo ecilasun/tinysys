@@ -3,7 +3,7 @@
 module tophat(
 	// Board clock and reset
     input sys_clk,
-    //input sys_rst_n,
+    input sys_rst_n,
     // Debug LEDs
     output wire [1:0] leds,
     // UART - USB-c module
@@ -36,6 +36,7 @@ wire aclk, clk10, clk166, clk200;
 // Clock and reset generator
 clockandreset clockandresetinst(
 	.sys_clock_i(sys_clk),
+	.sys_rst_n(sys_rst_n),
 	.aclk(aclk),
 	.clk10(clk10),
 	.clk166(clk166),

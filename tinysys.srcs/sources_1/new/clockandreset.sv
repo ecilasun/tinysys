@@ -2,6 +2,7 @@
 
 module clockandreset(
 	input wire sys_clock_i,
+	input wire sys_rst_n,
 	output wire aclk,
 	output wire clk10,
 	output wire clk166,
@@ -29,6 +30,18 @@ peripheralclocks ddr3sdramclockinst(
 	.locked(ddr3clklocked) );
 
 wire clocksready = centralclocklocked & ddr3clklocked;
+
+// --------------------------------------------------
+// Pre-reset
+// --------------------------------------------------
+
+(* async_reg = "true" *) logic preresetA = 1'b0;
+(* async_reg = "true" *) logic preresetB = 1'b0;
+
+always @(posedge aclk) begin
+	preresetA <= sys_rst_n;
+	preresetB <= preresetA;
+end
 
 // --------------------------------------------------
 // Clock domain crossing calibration done line
@@ -73,6 +86,6 @@ always @(posedge aclk) begin
 end
 
 assign aresetn = regaresetn;
-assign preresetn = 1'b1; // TODO:
+assign preresetn = preresetB;
 
 endmodule
