@@ -138,7 +138,7 @@ mig_7series_0 ddr3instance (
     .app_zq_ack                     (), // unused
 
     // slave interface write address ports
-    .s_axi_awid                     (4'h0),
+    .s_axi_awid                     (2'd0),
     .s_axi_awaddr                   (s_axi.awaddr[27:0]),
     .s_axi_awlen                    (s_axi.awlen),
     .s_axi_awsize                   (s_axi.awsize),
@@ -164,7 +164,7 @@ mig_7series_0 ddr3instance (
     .s_axi_bready                   (s_axi.bready),
 
     // slave interface read address ports
-    .s_axi_arid                     (4'h0),
+    .s_axi_arid                     (2'd0),
     .s_axi_araddr                   (s_axi.araddr[27:0]),
     .s_axi_arlen                    (s_axi.arlen),
     .s_axi_arsize                   (s_axi.arsize),
