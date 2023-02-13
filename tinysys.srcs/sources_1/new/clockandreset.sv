@@ -7,54 +7,23 @@ module clockandreset(
 	output wire clk10,
 	output wire clk166,
 	output wire clk200,
-	input wire calib_done,
-	output wire preresetn,
 	output wire aresetn );
 
 // --------------------------------------------------
 // PLLs / MMCMs
 // --------------------------------------------------
 
-wire centralclocklocked, ddr3clklocked;
+wire centralclocklocked;
 
 centralclock centralclockinst(
 	.clk_in1(sys_clock_i),
 	.aclk(aclk),
 	.clk10(clk10),
-	.locked(centralclocklocked) );
-
-peripheralclocks ddr3sdramclockinst(
-	.clk_in1(sys_clock_i),
 	.clk166(clk166),
 	.clk200(clk200),
-	.locked(ddr3clklocked) );
+	.locked(centralclocklocked) );
 
-wire clocksready = centralclocklocked & ddr3clklocked;
-
-// --------------------------------------------------
-// Pre-reset
-// --------------------------------------------------
-
-(* async_reg = "true" *) logic preresetA = 1'b0;
-(* async_reg = "true" *) logic preresetB = 1'b0;
-
-always @(posedge aclk) begin
-	preresetA <= sys_rst_n;
-	preresetB <= preresetA;
-end
-
-// --------------------------------------------------
-// Clock domain crossing calibration done line
-// --------------------------------------------------
-
-/*(* async_reg = "true" *) logic calibA = 1'b0;
-(* async_reg = "true" *) logic calibB = 1'b0;
-
-// CdC from uiclk to aclk
-always @(posedge aclk) begin
-	calibA <= calib_done;
-	calibB <= calibA;
-end*/ // TODO:
+wire clocksready = centralclocklocked; ///& ddr3clklocked;
 
 // --------------------------------------------------
 // Clock domain crossing PLL/MMCM ready line
@@ -75,17 +44,16 @@ end
 logic [15:0] resetcountdown = 16'h0001;
 logic regaresetn = 1'b0;
 
-always @(posedge aclk) begin
-	if (~clkRdyB) begin
+always @(posedge aclk or negedge sys_rst_n) begin
+	if (~sys_rst_n) begin
 		resetcountdown <= 16'h0001;
 		regaresetn <= 1'b0;
 	end else begin
 		resetcountdown <= {resetcountdown[14:0], 1'b1};
-		regaresetn <= resetcountdown[15];
+		regaresetn <= resetcountdown[15] & clkRdyB;
 	end
 end
 
 assign aresetn = regaresetn;
-assign preresetn = preresetB;
 
 endmodule

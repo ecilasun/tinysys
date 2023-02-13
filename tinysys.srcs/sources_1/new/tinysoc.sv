@@ -6,7 +6,6 @@ module tinysoc(
 	input wire clk166,
 	input wire clk200,
 	input wire aresetn,
-	input wire preresetn,
 	output wire [1:0] leds,
 	output wire uart_rxd_out,
 	input wire uart_txd_in,
@@ -139,7 +138,6 @@ bootmem bootmeminst(
 axi4ddr3sdram axi4ddr3sdraminst(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.preresetn(preresetn),
 	.clk_sys_i(clk166),
 	.clk_ref_i(clk200),
 	.m_axi(ddr3sdramif),

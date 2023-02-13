@@ -30,7 +30,7 @@ module tophat(
 // --------------------------------------------------
 
 wire aresetn;
-wire preresetn, init_calib_complete;
+wire init_calib_complete;
 wire aclk, clk10, clk166, clk200;
 
 // Clock and reset generator
@@ -41,8 +41,6 @@ clockandreset clockandresetinst(
 	.clk10(clk10),
 	.clk166(clk166),
 	.clk200(clk200),
-	.calib_done(init_calib_complete),
-	.preresetn(preresetn),	// TODO: Use as reset signal for devices that we need initialized before the CPU/GPU such as SDRAM
 	.aresetn(aresetn));
 
 // --------------------------------------------------
@@ -76,7 +74,6 @@ tinysoc socinstance(
 	.clk166(clk166),
 	.clk200(clk200),
 	.aresetn(aresetn),
-	.preresetn(preresetn),
 	.uart_rxd_out(uart_rxd_out),
 	.uart_txd_in(uart_txd_in),
 	.leds(leds),
