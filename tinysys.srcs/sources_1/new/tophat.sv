@@ -23,7 +23,16 @@ module tophat(
 	output wire [1:0] ddr3_dm,
 	inout wire [1:0] ddr3_dqs_p,
 	inout wire [1:0] ddr3_dqs_n,
-	inout wire [15:0] ddr3_dq );
+	inout wire [15:0] ddr3_dq,
+	// DVI -> HDMI
+	output wire [2:0] hdmi_tx_p,
+	output wire [2:0] hdmi_tx_n,
+	output wire hdmi_tx_clk_p,
+	output wire hdmi_tx_clk_n,
+	// Micro SD Card
+	inout wire DAT[3:0],
+	output wire SCLK,
+	output wire SCMD );
 
 // --------------------------------------------------
 // Clock and reset generator

@@ -11,12 +11,44 @@ set_property -dict {PACKAGE_PIN F3 IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
 set_property -dict {PACKAGE_PIN E3 IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
 
 ## UART
-## VCC: pin U4:{3,4}
-## GND: pin U4:{1,2,5,6}
-## RXD_OUT: pin U4:8 [A1]
-## TDX_IN: pin U4:10 [B2]
+## VCC:     pin U4:{3,4}
+## GND:     pin U4:{1,2,5,6}
+## RXD_OUT: pin U4:8         [A1]
+## TDX_IN:  pin U4:10        [B2]
 set_property -dict {PACKAGE_PIN A1 IOSTANDARD LVCMOS33} [get_ports uart_rxd_out]
 set_property -dict {PACKAGE_PIN B2 IOSTANDARD LVCMOS33} [get_ports uart_txd_in]
+
+## MICRO SD CARD
+## DAT0/MISO:  pin U4:13  [G1]
+## DAT1:  pin U4:11  [E2]
+## DAT2:  pin U4:21  [M1]
+## DAT3/CS:  pin U4:19  [K2]
+## CLK: pin U4:15  [H2]
+## SCMD/MOSI: pin U4:17  [K1]
+set_property -dict {PACKAGE_PIN G1 IOSTANDARD LVCMOS33} [get_ports {DAT[0]}]
+set_property -dict {PACKAGE_PIN E2 IOSTANDARD LVCMOS33} [get_ports {DAT[1]}]
+set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports {DAT[2]}]
+set_property -dict {PACKAGE_PIN K2 IOSTANDARD LVCMOS33} [get_ports {DAT[3]}]
+set_property -dict {PACKAGE_PIN H2 IOSTANDARD LVCMOS33} [get_ports SCLK]
+set_property -dict {PACKAGE_PIN K1 IOSTANDARD LVCMOS33} [get_ports SCMD]
+
+## DVI -> HDMI
+## hdmi_tx_clk_p pin U4:39 [T1]
+## hdmi_tx_clk_n pin U4:37 [T5]
+## hdmi_tx_p[0]  pin U4:43 [AA1]
+## hdmi_tx_p[1]  pin U4:47 [V4]
+## hdmi_tx_p[2]  pin U4:51 [Y4]
+## hdmi_tx_n[0]  pin U4:41 [W1]
+## hdmi_tx_n[1]  pin U4:45 [AB3]
+## hdmi_tx_n[2]  pin U4:49 [Y3]
+set_property -dict {PACKAGE_PIN T1 IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_p]
+set_property -dict {PACKAGE_PIN T5 IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_n]
+set_property -dict {PACKAGE_PIN AA1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[0]}]
+set_property -dict {PACKAGE_PIN V4 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[1]}]
+set_property -dict {PACKAGE_PIN Y4 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[2]}]
+set_property -dict {PACKAGE_PIN W1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[0]}]
+set_property -dict {PACKAGE_PIN AB3 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[1]}]
+set_property -dict {PACKAGE_PIN Y3 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[2]}]
 
 ## DDR3 SDRAM MT41K128M16XX-15E
 ## width: 16, period: 2500, mask: 1
@@ -54,4 +86,4 @@ set_property CFGBVS VCCO [current_design]
 set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
 set_property BITSTREAM.CONFIG.CONFIGRATE 33 [current_design]
 
-set_clock_groups -name async_aclk -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT0]] -group [get_clocks -of_objects [get_pins socinstance/axi4ddr3sdraminst/ddr3instance/u_mig_7series_0_mig/u_ddr3_infrastructure/gen_mmcm.mmcm_i/CLKFBOUT]]
+set_clock_groups -name aclk_to_plli -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT0]] -group [get_clocks -of_objects [get_pins socinstance/axi4ddr3sdraminst/ddr3instance/u_mig_7series_0_mig/u_ddr3_infrastructure/gen_mmcm.mmcm_i/CLKFBOUT]]
