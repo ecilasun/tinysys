@@ -3,11 +3,14 @@
 module tinysoc(
 	input wire aclk,
 	input wire clk10,
+	input wire clk25,
 	input wire clk166,
 	input wire clk200,
+	input wire clk250,
 	input wire aresetn,
 	output wire [1:0] leds,
 	output wire uart_rxd_out,
+	gpuwires.def gpuvideoout,
 	input wire uart_txd_in,
 	ddr3sdramwires.def ddr3wires);
 
@@ -26,6 +29,7 @@ axi4if ddr3sdramif();		// Sub bus: DDR3 SDRAM
 axi4if devicebus();			// Arbitrated, to devices
 axi4if uartif();			// Sub bus: UART device
 axi4if ledif();				// Sub bus: LED contol device
+axi4if gpucmdif();			// Sub bus: GPU command fifo
 
 ibusif ibus();				// Internal bus between units
 
@@ -82,10 +86,23 @@ controlunit #(.CID(32'h00000000)) controlunitinst (
 // Graphics unit
 // --------------------------------------------------
 
-dummymaster #(.MASTERID(32'h00000002)) fakeGPU (
+wire gpufifoempty;
+wire [31:0] gpufifodout;
+wire gpufifore;
+wire gpufifovalid;
+wire [31:0] vblankcount;
+gpucore GPU(
 	.aclk(aclk),
+	.clk25(clk25),
+	.clk250(clk250),
 	.aresetn(aresetn),
-	.m_axi(gpubus) );
+	.m_axi(gpubus),
+	.gpuvideoout(gpuvideoout),
+	.gpufifoempty(gpufifoempty),
+	.gpufifodout(gpufifodout),
+	.gpufifore(gpufifore),
+	.gpufifovalid(gpufifovalid),
+	.vblankcount(vblankcount));
 
 // --------------------------------------------------
 // DMA unit
@@ -151,7 +168,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // dev   start     end       addrs[30:12]                 size
 // UART: 80000000  80000FFF  19'b000_0000_0000_0000_0000  4KB
 // LEDS: 80001000  80001FFF  19'b000_0000_0000_0000_0001  4KB
-// ----: 80002000  80002FFF  19'b000_0000_0000_0000_0010  4KB
+// GPUC: 80002000  80002FFF  19'b000_0000_0000_0000_0010  4KB
 // ----: 80003000  80003FFF  19'b000_0000_0000_0000_0011  4KB
 // ----: 80004000  80005FFF  19'b000_0000_0000_0000_0100  4KB
 
@@ -159,8 +176,8 @@ devicerouter devicerouterinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
     .axi_s(devicebus),
-    .addressmask({19'b000_0000_0000_0000_0001, 19'b000_0000_0000_0000_0000}),
-    .axi_m({ledif, uartif}));
+    .addressmask({19'b000_0000_0000_0000_0010, 19'b000_0000_0000_0000_0001, 19'b000_0000_0000_0000_0000}),
+    .axi_m({gpucmdif, ledif, uartif}));
 
 // --------------------------------------------------
 // Memory mapped devices
@@ -184,4 +201,14 @@ axi4led leddevice(
 	.s_axi(ledif),
 	.led(leds) );
 
+gpucommanddevice gpucmdinst(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.s_axi(gpucmdif),
+	.fifoempty(gpufifoempty),
+	.fifodout(gpufifodout),
+	.fifore(gpufifore),
+	.fifovalid(gpufifovalid),
+	.vblankcount(vblankcount));
+	
 endmodule

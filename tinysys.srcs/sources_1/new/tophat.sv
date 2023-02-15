@@ -28,11 +28,11 @@ module tophat(
 	output wire [2:0] hdmi_tx_p,
 	output wire [2:0] hdmi_tx_n,
 	output wire hdmi_tx_clk_p,
-	output wire hdmi_tx_clk_n,
+	output wire hdmi_tx_clk_n/*,
 	// Micro SD Card
 	inout wire DAT[3:0],
 	output wire SCLK,
-	output wire SCMD );
+	output wire SCMD*/ );
 
 // --------------------------------------------------
 // Clock and reset generator
@@ -40,7 +40,7 @@ module tophat(
 
 wire aresetn;
 wire init_calib_complete;
-wire aclk, clk10, clk166, clk200;
+wire aclk, clk10, clk25, clk166, clk200, clk250;
 
 // Clock and reset generator
 clockandreset clockandresetinst(
@@ -48,8 +48,10 @@ clockandreset clockandresetinst(
 	.sys_rst_n(sys_rst_n),
 	.aclk(aclk),
 	.clk10(clk10),
+	.clk25(clk25),
 	.clk166(clk166),
 	.clk200(clk200),
+	.clk250(clk250),
 	.aresetn(aresetn));
 
 // --------------------------------------------------
@@ -74,6 +76,16 @@ ddr3sdramwires ddr3wires(
 	.init_calib_complete(init_calib_complete) );
 
 // --------------------------------------------------
+// Video wires
+// --------------------------------------------------
+
+gpuwires gpuvideoout(
+	.tmdsp(hdmi_tx_p),
+	.tmdsn(hdmi_tx_n),
+	.tmdsclkp(hdmi_tx_clk_p ),
+	.tmdsclkn(hdmi_tx_clk_n) );
+
+// --------------------------------------------------
 // SoC device
 // --------------------------------------------------
 
@@ -86,6 +98,7 @@ tinysoc socinstance(
 	.uart_rxd_out(uart_rxd_out),
 	.uart_txd_in(uart_txd_in),
 	.leds(leds),
-	.ddr3wires(ddr3wires) );
+	.ddr3wires(ddr3wires),
+	.gpuvideoout(gpuvideoout) );
 
 endmodule
