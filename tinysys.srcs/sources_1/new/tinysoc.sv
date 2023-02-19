@@ -4,6 +4,7 @@ module tinysoc(
 	input wire aclk,
 	input wire clk10,
 	input wire clk25,
+	input wire clk50,
 	input wire clk166,
 	input wire clk200,
 	input wire clk250,
@@ -12,7 +13,8 @@ module tinysoc(
 	output wire uart_rxd_out,
 	gpuwires.def gpuvideoout,
 	input wire uart_txd_in,
-	ddr3sdramwires.def ddr3wires);
+	ddr3sdramwires.def ddr3wires,
+	sdwires.def sdconn);
 
 // --------------------------------------------------
 // Bus lines
@@ -30,6 +32,7 @@ axi4if devicebus();			// Arbitrated, to devices
 axi4if uartif();			// Sub bus: UART device
 axi4if ledif();				// Sub bus: LED contol device
 axi4if gpucmdif();			// Sub bus: GPU command fifo
+axi4if spiif();				// Sub bus: SPI control device
 
 ibusif ibus();				// Internal bus between units
 
@@ -147,11 +150,6 @@ bootmem bootmeminst(
 	.aresetn(aresetn),
 	.axi_s(bramif) );
 
-/*dummydevice ddr3sdramplaceholder(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.s_axi(ddr3sdramif));*/
-
 axi4ddr3sdram axi4ddr3sdraminst(
 	.aclk(aclk),
 	.aresetn(aresetn),
@@ -169,15 +167,18 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // UART: 80000000  80000FFF  19'b000_0000_0000_0000_0000  4KB
 // LEDS: 80001000  80001FFF  19'b000_0000_0000_0000_0001  4KB
 // GPUC: 80002000  80002FFF  19'b000_0000_0000_0000_0010  4KB
-// ----: 80003000  80003FFF  19'b000_0000_0000_0000_0011  4KB
+// SPIC: 80003000  80003FFF  19'b000_0000_0000_0000_0011  4KB
 // ----: 80004000  80005FFF  19'b000_0000_0000_0000_0100  4KB
+// ----: 80005000  80006FFF  19'b000_0000_0000_0000_0101  4KB
+// ----: 80006000  80007FFF  19'b000_0000_0000_0000_0110  4KB
+// ----: 80007000  80008FFF  19'b000_0000_0000_0000_0111  4KB
 
 devicerouter devicerouterinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
     .axi_s(devicebus),
-    .addressmask({19'b000_0000_0000_0000_0010, 19'b000_0000_0000_0000_0001, 19'b000_0000_0000_0000_0000}),
-    .axi_m({gpucmdif, ledif, uartif}));
+    .addressmask({19'b000_0000_0000_0000_0011, 19'b000_0000_0000_0000_0010, 19'b000_0000_0000_0000_0001, 19'b000_0000_0000_0000_0000}),
+    .axi_m({spiif, gpucmdif, ledif, uartif}));
 
 // --------------------------------------------------
 // Memory mapped devices
@@ -201,6 +202,7 @@ axi4led leddevice(
 	.s_axi(ledif),
 	.led(leds) );
 
+// TODO: Could wire a vblankcount!=targetframe to trigger a vblank IRQ
 gpucommanddevice gpucmdinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
@@ -210,5 +212,13 @@ gpucommanddevice gpucmdinst(
 	.fifore(gpufifore),
 	.fifovalid(gpufifovalid),
 	.vblankcount(vblankcount));
+
+// TODO: Could wire SDCard insertion signal to trigger an IRQ
+axi4spi spictlinst(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.spibaseclock(clk50),
+	.sdconn(sdconn),
+	.s_axi(spiif));
 	
 endmodule

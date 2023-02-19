@@ -11,26 +11,32 @@ set_property -dict {PACKAGE_PIN F3 IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
 set_property -dict {PACKAGE_PIN E3 IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
 
 ## UART
-## VCC:     pin U4:{3,4}
-## GND:     pin U4:{1,2,5,6}
+## VCC:     pin U4:3&4
+## GND:     pin U4:1&2&5&6
 ## RXD_OUT: pin U4:8         [A1]
 ## TDX_IN:  pin U4:10        [B2]
 set_property -dict {PACKAGE_PIN A1 IOSTANDARD LVCMOS33} [get_ports uart_rxd_out]
 set_property -dict {PACKAGE_PIN B2 IOSTANDARD LVCMOS33} [get_ports uart_txd_in]
 
 ## MICRO SD CARD
-## DAT0/MISO:  pin U4:13  [G1]
-## DAT1:  pin U4:11  [E2]
-## DAT2:  pin U4:21  [M1]
-## DAT3/CS:  pin U4:19  [K2]
-## CLK: pin U4:15  [H2]
-## SCMD/MOSI: pin U4:17  [K1]
-##set_property -dict {PACKAGE_PIN G1 IOSTANDARD LVCMOS33} [get_ports {DAT[0]}]
-##set_property -dict {PACKAGE_PIN E2 IOSTANDARD LVCMOS33} [get_ports {DAT[1]}]
-##set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports {DAT[2]}]
-##set_property -dict {PACKAGE_PIN K2 IOSTANDARD LVCMOS33} [get_ports {DAT[3]}]
-##set_property -dict {PACKAGE_PIN H2 IOSTANDARD LVCMOS33} [get_ports SCLK]
-##set_property -dict {PACKAGE_PIN K1 IOSTANDARD LVCMOS33} [get_ports SCMD]
+## DAT[1]:	    	pin U4:11  [E2]
+## DAT[0] / MISO:	pin U4:13  [G1]
+## CLK:			    pin U4:15  [H2]
+## SCMD / MOSI: 	pin U4:17  [K1]
+## DAT[3] / CS: 	pin U4:19  [K2]
+## DAT[2]:	    	pin U4:21  [M1]
+## SPI mode
+set_property -dict {PACKAGE_PIN G1 IOSTANDARD LVCMOS33} [get_ports {sd_miso}]
+set_property -dict {PACKAGE_PIN K2 IOSTANDARD LVCMOS33} [get_ports {sd_cs_n}]
+set_property -dict {PACKAGE_PIN H2 IOSTANDARD LVCMOS33} [get_ports sd_clk]
+set_property -dict {PACKAGE_PIN K1 IOSTANDARD LVCMOS33} [get_ports sd_mosi]
+## Regular mode
+## set_property -dict {PACKAGE_PIN G1 IOSTANDARD LVCMOS33} [get_ports {spi_dat[0]}]
+## set_property -dict {PACKAGE_PIN E2 IOSTANDARD LVCMOS33} [get_ports {spi_dat[1]}]
+## set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports {spi_dat[2]}]
+## set_property -dict {PACKAGE_PIN K2 IOSTANDARD LVCMOS33} [get_ports {spi_dat[3]}]
+## set_property -dict {PACKAGE_PIN H2 IOSTANDARD LVCMOS33} [get_ports spi_clk]
+## set_property -dict {PACKAGE_PIN K1 IOSTANDARD LVCMOS33} [get_ports spi_cmd]
 
 ## DVI -> HDMI
 ## hdmi_tx_clk_p pin U4:41 [T1]
@@ -49,6 +55,18 @@ set_property -dict {PACKAGE_PIN AA1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[2]
 set_property -dict {PACKAGE_PIN AB2 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[0]}]
 set_property -dict {PACKAGE_PIN Y1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[1]}]
 set_property -dict {PACKAGE_PIN AB1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[2]}]
+
+## Analog inputs routed to XADC
+## VA[0] pin U2:7 [H22]
+## VA[1] pin U2:9 [H18]
+## VA[2] pin U2:11 [K22]
+## VA[3] pin U2:13 [G20]
+## VA[4] pin U2:15 [H19]
+set_property -dict {PACKAGE_PIN H22 IOSTANDARD TMDS_33} [get_ports VA[0]]
+set_property -dict {PACKAGE_PIN H18 IOSTANDARD TMDS_33} [get_ports VA[1]]
+set_property -dict {PACKAGE_PIN K22 IOSTANDARD TMDS_33} [get_ports VA[2]]
+set_property -dict {PACKAGE_PIN G20 IOSTANDARD TMDS_33} [get_ports VA[3]]
+set_property -dict {PACKAGE_PIN H19 IOSTANDARD TMDS_33} [get_ports VA[4]]
 
 ## DDR3 SDRAM MT41K128M16XX-15E
 ## width: 16, period: 2500, mask: 1
