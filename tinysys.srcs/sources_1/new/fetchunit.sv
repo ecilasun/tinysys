@@ -95,7 +95,8 @@ instructinfifo instructionfifoinst (
   .full(ififofull),
   .empty(ififoempty),
   .valid(ififovalid) );
-// --------------------------------------------------
+
+  // --------------------------------------------------
 // Instruction classification and halt detection
 // --------------------------------------------------
 

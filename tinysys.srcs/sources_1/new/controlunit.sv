@@ -97,9 +97,9 @@ arithmeticlogic arithmeticlogicinst(
 typedef enum logic [2:0] {READINSTR, READREG, DISPATCH, LWAIT, SWAIT, WBACK} controlunitmode;
 controlunitmode ctlmode = READINSTR;
 
-logic [31:0] rwaddress;
-logic [31:0] offsetPC;
-logic [31:0] adjacentPC;
+logic [31:0] rwaddress = 32'd0;
+logic [31:0] offsetPC = 32'd0;
+logic [31:0] adjacentPC = 32'd0;
 
 always @(posedge aclk) begin
 	if (~aresetn) begin

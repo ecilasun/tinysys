@@ -13,6 +13,22 @@ module gpucore(
 	input wire gpufifovalid,
 	output wire [31:0] vblankcount);
 
+// A simple graphics unit with the following features:
+// - Two video output modes (320x240 and 640x480)
+// - Indexed color output (8bpp)
+// - Framebuffer scan-out from any cache aligned memory location
+// - Frame counter support for vsync implementations
+// - Memory mapped command buffer interface
+
+// TODO:
+// - Allow command data to be read from any cache aligned memory location in 16 byte bursts
+// - Add sprite caching support at end of each scanline, and sprite compositing
+// - Add rasterization support
+
+// --------------------------------------------------
+// Common
+// --------------------------------------------------
+
 wire hsync, vsync, blank;
 wire [10:0] video_x;
 wire [10:0] video_y;
@@ -28,16 +44,16 @@ wire out_tmds_clk;
 logic cmdre = 1'b0;
 assign gpufifore = cmdre;
 
-// ------------------------------------------------------------------------------------
+// --------------------------------------------------
 // Setup
-// ------------------------------------------------------------------------------------
+// --------------------------------------------------
 
 logic [7:0] burstlen = 'd20;	// 20 reads for 320*240, 40 reads for 640*480 in paletted mode (each read is 128bits)
 logic scanmode = 1'b0;			// 320 pixel mode (640 when high)
 
-// ------------------------------------------------------------------------------------
+// --------------------------------------------------
 // Scanline cache and output address selection
-// ------------------------------------------------------------------------------------
+// --------------------------------------------------
 
 logic [127:0] scanlinecache [0:63]; // 64 blocks of 16 pixels worth of scanline cache (20 used in index color 320*240 mode)
 
@@ -78,9 +94,9 @@ always_comb begin
 	endcase
 end
 
-// ------------------------------------------------------------------------------------
+// --------------------------------------------------
 // Palette RAM
-// ------------------------------------------------------------------------------------
+// --------------------------------------------------
 
 logic [23:0] paletteentries[0:255];
 
@@ -96,9 +112,9 @@ end
 wire [23:0] paletteout;
 assign paletteout = paletteentries[palettera];
 
-// ------------------------------------------------------------------------------------
+// --------------------------------------------------
 // Video signals
-// ------------------------------------------------------------------------------------
+// --------------------------------------------------
 
 my_vga_clk_generator VGAClkGen(
    .pclk(clk25),
@@ -166,9 +182,9 @@ logic scanenable = 1'b0;
 
 logic [5:0] rdata_cnt = 'd0;
 
-// ------------------------------------------------------------------------------------
+// --------------------------------------------------
 // Command FIFO
-// ------------------------------------------------------------------------------------
+// --------------------------------------------------
 
 typedef enum logic [2:0] {
 	WCMD, DISPATCH,
@@ -263,9 +279,9 @@ always_ff @(posedge aclk) begin
 	end
 end
 
-// ------------------------------------------------------------------------------------
+// --------------------------------------------------
 // Scan-out logic
-// ------------------------------------------------------------------------------------
+// --------------------------------------------------
 
 // domain cross
 (* async_reg = "true" *) logic [8:0] scanlinepre = 'd0;
