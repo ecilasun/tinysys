@@ -33,6 +33,7 @@ axi4if uartif();			// Sub bus: UART device
 axi4if ledif();				// Sub bus: LED contol device
 axi4if gpucmdif();			// Sub bus: GPU command fifo
 axi4if spiif();				// Sub bus: SPI control device
+axi4if csrif();				// Sub bus: CSR file device
 
 ibusif ibus();				// Internal bus between units
 
@@ -44,7 +45,7 @@ wire branchresolved;
 wire [31:0] branchtarget;
 wire ififoempty;
 wire ififovalid;
-wire [107:0] ififodout;
+wire [114:0] ififodout;
 wire ififord_en;
 
 // Reset vector is at top of BRAM
@@ -71,8 +72,34 @@ dataunit dataunitints (
 	.devicebus(devicebus) );
 
 // --------------------------------------------------
+// Wall clock
+// --------------------------------------------------
+
+logic [63:0] wallclockcounter;
+
+always @(posedge clk10) begin
+	if (aresetn) begin
+		// ?
+	end else begin
+		wallclockcounter <= wallclockcounter + 64'd1;
+	end
+end
+
+// CDC for wall clock
+(* async_reg = "true" *) logic [63:0] wallclocktimeA = 1'b0;
+(* async_reg = "true" *) logic [63:0] wallclocktime = 1'b0;
+
+always @(posedge aclk) begin
+	wallclocktimeA <= wallclockcounter;
+	wallclocktime <= wallclocktimeA;
+end
+
+// --------------------------------------------------
 // Control unit
 // --------------------------------------------------
+
+wire [63:0] cpuclocktime;
+wire [63:0] retired;
 
 controlunit #(.CID(32'h00000000)) controlunitinst (
 	.aclk(aclk),
@@ -83,6 +110,8 @@ controlunit #(.CID(32'h00000000)) controlunitinst (
 	.ififovalid(ififovalid),
 	.ififodout(ififodout),
 	.ififord_en(ififord_en), 
+	.cpuclocktime(cpuclocktime),
+	.retired(retired),
 	.m_ibus(ibus));
 
 // --------------------------------------------------
@@ -162,23 +191,32 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // Memory mapped device router
 // --------------------------------------------------
 
+// NOTE: CSR offsets are word offsets therefore the
+// address space is for 4Kbytes of data yet we can
+// access 16KBytes worth of data.
+
 // 12bit (4K) address space reserved for each memory mapped device
 // dev   start     end       addrs[30:12]                 size
 // UART: 80000000  80000FFF  19'b000_0000_0000_0000_0000  4KB
 // LEDS: 80001000  80001FFF  19'b000_0000_0000_0000_0001  4KB
 // GPUC: 80002000  80002FFF  19'b000_0000_0000_0000_0010  4KB
 // SPIC: 80003000  80003FFF  19'b000_0000_0000_0000_0011  4KB
-// ----: 80004000  80005FFF  19'b000_0000_0000_0000_0100  4KB
-// ----: 80005000  80006FFF  19'b000_0000_0000_0000_0101  4KB
-// ----: 80006000  80007FFF  19'b000_0000_0000_0000_0110  4KB
-// ----: 80007000  80008FFF  19'b000_0000_0000_0000_0111  4KB
+// CSRF: 80004000  80004FFF  19'b000_0000_0000_0000_0100  4KB
+// ----: 80005000  80005FFF  19'b000_0000_0000_0000_0101  4KB
+// ----: 80006000  80006FFF  19'b000_0000_0000_0000_0110  4KB
+// ----: 80007000  80007FFF  19'b000_0000_0000_0000_0111  4KB
 
 devicerouter devicerouterinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
     .axi_s(devicebus),
-    .addressmask({19'b000_0000_0000_0000_0011, 19'b000_0000_0000_0000_0010, 19'b000_0000_0000_0000_0001, 19'b000_0000_0000_0000_0000}),
-    .axi_m({spiif, gpucmdif, ledif, uartif}));
+    .addressmask({
+		19'b000_0000_0000_0000_0111,	// CSRF
+		19'b000_0000_0000_0000_0011,	// SPIC
+		19'b000_0000_0000_0000_0010,	// GPUC
+		19'b000_0000_0000_0000_0001,	// LEDS
+		19'b000_0000_0000_0000_0000 }),	// UART
+    .axi_m({csrif, spiif, gpucmdif, ledif, uartif}));
 
 // --------------------------------------------------
 // Memory mapped devices
@@ -220,5 +258,16 @@ axi4spi spictlinst(
 	.spibaseclock(clk50),
 	.sdconn(sdconn),
 	.s_axi(spiif));
+
+// CSR file acts as a region of uncached memory
+// Access to register indices get mapped to LOAD/STORE
+// and addresses get mapped starting at 0x80004000 + csroffset
+axi4CSRFile csrfileinst(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.cpuclocktime(cpuclocktime),
+	.wallclocktime(wallclocktime),
+	.retired(retired),
+	.s_axi(csrif) );
 	
 endmodule

@@ -1,0 +1,33 @@
+--------------------------------------------------------------------------------------
+Notes:
+--------------------------------------------------------------------------------------
+
+[31:8] ? [7:0] field
+
+need full access to:
+GPR and CSR (r/w)
+memory via CPU (r/w)
+memory via AXI4 (r/w)
+ebreak halts the CPU
+single step executes one instruction only (no instruction merge)
+debugger can halt/resume CPU
+instruction buffer to execute short instruction sequences (optional)
+PC, r/w address or instruction opcodes can be set as break condition (optional)
+
+--------------------------------------------------------------------------------------
+Connectivity:
+--------------------------------------------------------------------------------------
+
+Debug host runs gdb+openocd ->
+    connects to debug transport (USB JTAG adapter) ->
+    DTM (debug transport module) on device ->
+    DMI (debug module interface) ->
+    DM (debug module, can be more than one)
+
+--------------------------------------------------------------------------------------
+Implementation details
+--------------------------------------------------------------------------------------
+
+Fetch unit can be used to halt/resume the CPU or put it in debug mode.
+It can also place the generic memory / register read&write requests.
+To achieve this it'll have to read command requests from the DM and talk back via FIFOs.

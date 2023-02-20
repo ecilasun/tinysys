@@ -1,33 +1,34 @@
 `timescale 1ns / 1ps
 
-// 1x2 Device Address Router
+// 1x5 Device Address Router
 
 module devicerouter(
 	input wire aclk,
 	input wire aresetn,
     axi4if.slave axi_s,
-    wire [18:0] addressmask[3:0], // Address bits [30:12]
-    axi4if.master axi_m[3:0]);
+    wire [18:0] addressmask[4:0], // Address bits [30:12]
+    axi4if.master axi_m[4:0]);
 
 // ------------------------------------------------------------------------------------
 // Write router
 // ------------------------------------------------------------------------------------
 
-logic [3:0] validwaddr = 4'b0000;
+logic [4:0] validwaddr = 5'd0;
 
 always_comb begin
 	unique case(axi_s.awaddr[30:12])
-		addressmask[0]: validwaddr = 4'b0001;
-		addressmask[1]: validwaddr = 4'b0010;
-		addressmask[2]: validwaddr = 4'b0100;
-		addressmask[3]: validwaddr = 4'b1000;
-		default:		validwaddr = 4'b0000;
+		addressmask[0]: validwaddr = 5'b00001;
+		addressmask[1]: validwaddr = 5'b00010;
+		addressmask[2]: validwaddr = 5'b00100;
+		addressmask[3]: validwaddr = 5'b01000;
+		addressmask[4]: validwaddr = 5'b10000;
+		default:		validwaddr = 5'b00000;
 	endcase
 end
 
 genvar rgen;
 generate
-for (rgen=0; rgen<4; rgen++) begin
+for (rgen=0; rgen<5; rgen++) begin
 	always_comb begin
 		axi_m[rgen].awaddr  = validwaddr[rgen] ? axi_s.awaddr	: 32'd0;
 		axi_m[rgen].awvalid = validwaddr[rgen] ? axi_s.awvalid	: 1'b0;
@@ -69,6 +70,12 @@ always_comb begin
 			axi_s.bvalid  = axi_m[3].bvalid;
 			axi_s.wready  = axi_m[3].wready;
 		end
+		validwaddr[4]: begin
+			axi_s.awready = axi_m[4].awready;
+			axi_s.bresp   = axi_m[4].bresp;
+			axi_s.bvalid  = axi_m[4].bvalid;
+			axi_s.wready  = axi_m[4].wready;
+		end
 		default: begin
 			// Assume we could write to no-man's land to not stall the bus
 			axi_s.awready = 1'b1;
@@ -83,21 +90,22 @@ end
 // Read router
 // ------------------------------------------------------------------------------------
 
-logic [3:0] validraddr = 4'b0000;
+logic [4:0] validraddr = 5'd0;
 
 always_comb begin
 	unique case(axi_s.araddr[30:12])
-		addressmask[0]: validraddr = 4'b0001;
-		addressmask[1]: validraddr = 4'b0010;
-		addressmask[2]: validraddr = 4'b0100;
-		addressmask[3]: validraddr = 4'b1000;
-		default:		validraddr = 4'b0000;
+		addressmask[0]: validraddr = 5'b00001;
+		addressmask[1]: validraddr = 5'b00010;
+		addressmask[2]: validraddr = 5'b00100;
+		addressmask[3]: validraddr = 5'b01000;
+		addressmask[4]: validraddr = 5'b10000;
+		default:		validraddr = 5'b00000;
 	endcase
 end
 
 genvar wgen;
 generate
-for (wgen=0; wgen<4; wgen++) begin
+for (wgen=0; wgen<5; wgen++) begin
 	always_comb begin
 		axi_m[wgen].araddr   = validraddr[wgen] ? axi_s.araddr	: 32'd0;
 		axi_m[wgen].arlen    = validraddr[wgen] ? axi_s.arlen	: 0;
@@ -138,6 +146,13 @@ always_comb begin
 			axi_s.rresp   = axi_m[3].rresp;
 			axi_s.rvalid  = axi_m[3].rvalid;
 			axi_s.rlast   = axi_m[3].rlast;
+		end
+		validraddr[4]: begin
+			axi_s.arready = axi_m[4].arready;
+			axi_s.rdata   = axi_m[4].rdata;
+			axi_s.rresp   = axi_m[4].rresp;
+			axi_s.rvalid  = axi_m[4].rvalid;
+			axi_s.rlast   = axi_m[4].rlast;
 		end
 		default: begin
 			// Assume we could read from no-man's land to not stall the bus

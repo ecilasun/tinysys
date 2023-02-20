@@ -14,13 +14,21 @@ module controlunit #(
 	// Instruction FIFO control
 	input wire ififoempty,
 	input wire ififovalid,
-	input wire [107:0] ififodout,
+	input wire [114:0] ififodout,
 	output wire ififord_en,
+	// CPU cycle / retired instruction counts
+	output wire [63:0] cpuclocktime,
+	output wire [63:0] retired,
 	// Internal bus to data unit
 	ibusif.master m_ibus);
 
 logic ififore = 1'b0;
 assign ififord_en = ififore;
+
+logic [63:0] cyclecount = 64'd0;
+logic [63:0] retiredcount = 64'd0;
+assign cpuclocktime = cyclecount;
+assign retired = retiredcount;
 
 logic [31:0] PC;
 logic [17:0] instrOneHotOut;
@@ -110,7 +118,10 @@ always @(posedge aclk) begin
 		m_ibus.wstrobe <= 4'h0;
 
 	end else begin
-	
+
+		// TODO: Do we stop this if CPU's halted?
+		cyclecount <= cyclecount + 64'd1;
+
 		btready <= 1'b0;
 		ififore <= 1'b0;
 		rwen <= 1'b0;
@@ -121,6 +132,7 @@ always @(posedge aclk) begin
 
 		unique case(ctlmode)
 			READINSTR: begin
+				// TODO: Fetch unit can halt / resume / debug the CPU via special commands
 				{ PC, instrOneHotOut,
 					aluop, bluop, func3,
 					rs1, rs2, rd,
@@ -142,6 +154,8 @@ always @(posedge aclk) begin
 			end
 
 			DISPATCH: begin
+				retiredcount <= retiredcount + 64'd1;
+
 				unique case(1'b1)
 					instrOneHotOut[`O_H_OP],
 					instrOneHotOut[`O_H_OP_IMM]: begin

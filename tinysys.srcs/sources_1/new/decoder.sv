@@ -14,7 +14,7 @@ module decoder(
 	output bit [4:0] rs2,				// Source register two
 	output bit [4:0] rs3,				// Used by fused multiplyadd/sub
 	output bit [4:0] rd,				// Destination register
-	output bit [4:0] csrindex,			// Index of selected CSR register
+	output bit [11:0] csroffset,		// Index of selected CSR register
 	output bit [31:0] immed,			// Unpacked immediate integer value
 	output bit selectimmedasrval2		// Select rval2 or unpacked integer during EXEC
 );
@@ -39,46 +39,8 @@ wire [17:0] instrOneHot = {
 	instruction[6:0]==`OPCODE_FLOAT_NMSUB ? 1'b1:1'b0,
 	instruction[6:0]==`OPCODE_FLOAT_NMADD ? 1'b1:1'b0 };
 
-//11:10 -> R/W mode
-//9:8 -> lowest privilege level allowed
 always_comb begin
-	unique case({instruction[31:25], instruction[24:20]})	
-		//12'hF15: csrindex = `CSR_UNUSED;	// mconfigptr, defaults to zero, no exception
-
-		12'h300: csrindex = `CSR_MSTATUS;	// r/w
-		12'h304: csrindex = `CSR_MIE;		// r/w
-		12'h305: csrindex = `CSR_MTVEC;		// r/w [1:0]==2'b00->direct, ==2'b01->vectored
-		12'h341: csrindex = `CSR_MEPC;		// r/w [1:0] always 2'b00 (or [0] always 1'b0)
-		12'h342: csrindex = `CSR_MCAUSE;	// r/w
-		12'h343: csrindex = `CSR_MTVAL;		// r/w excpt specific info such as faulty instruction
-		12'h344: csrindex = `CSR_MIP;		// r/w
-		
-		//12'h340: scratch register for machine trap mscratch
-		//12'h301: isa / extension type misa
-		12'hF14: csrindex = `CSR_MHARTID;	// r
-
-		12'h800: csrindex = `CSR_TIMECMPLO;	// r/w
-		12'h801: csrindex = `CSR_TIMECMPHI;	// r/w
-
-		12'hC00,
-		12'hB00: csrindex = `CSR_CYCLELO;	// r/w
-		12'hC80,
-		12'hB80: csrindex = `CSR_CYCLEHI;	// r/w
-		12'hC02,
-		12'hB02: csrindex = `CSR_RETILO;	// r
-		12'hC82,
-		12'hB82: csrindex = `CSR_RETIHI;	// r
-
-		12'hC01: csrindex = `CSR_TIMELO;	// r
-		12'hC81: csrindex = `CSR_TIMEHI;	// r
-
-		//12'h7B0: debug control and status register dcsr
-		//12'h7B1: debug pc dpc
-		//12'h7B2: debug scratch register dscratch0
-		//12'h7B3: debug scratch register dscratch1
-
-		default: csrindex = `CSR_MCAUSE;	// Illegal instruction exception
-	endcase
+	csroffset = {instruction[31:25], instruction[24:20]};
 end
 
 // Immed vs rval2 selector

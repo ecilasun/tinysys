@@ -17,7 +17,7 @@ module fetchunit #(
 	// Output FIFO control
 	output wire ififoempty,
 	output wire ififovalid,
-	output wire [107:0] ififodout,
+	output wire [114:0] ififodout,
 	input wire ififord_en, 
 	// To system bus
 	axi4if.master m_axi );
@@ -57,7 +57,8 @@ wire [2:0] bluop;
 wire [2:0] func3;
 wire [6:0] func7;
 wire [11:0] func12;
-wire [4:0] rs1, rs2, rs3, rd, csrindex;
+wire [4:0] rs1, rs2, rs3, rd;
+wire [11:0] csroffset;
 wire [31:0] immed;
 wire selectimmedasrval2;
 
@@ -73,15 +74,15 @@ decoder decoderinst(
 	.rs2(rs2),									// 5	+
 	.rs3(rs3),									// 5	
 	.rd(rd),									// 5	+
-	.csrindex(csrindex),						// 5	
+	.csroffset(csroffset),						// 12	
 	.immed(immed),								// 32	+
-	.selectimmedasrval2(selectimmedasrval2) );	// 1	+ -> 18+4+3+3+5+5+5+32+1+PC[31:0] = 108 bits, a multiple of 18!
+	.selectimmedasrval2(selectimmedasrval2) );	// 1	+ -> 18+4+3+3+5+5+12+32+1+PC[31:0] = 115 bits
 
 // --------------------------------------------------
 // Instruction output FIFO
 // --------------------------------------------------
 
-logic [107:0] ififodin;
+logic [114:0] ififodin;
 logic ififowr_en = 1'b0;
 wire ififofull;
 

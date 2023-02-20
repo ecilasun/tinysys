@@ -176,24 +176,32 @@
 `define BLU_GEU			3'd6
 
 // ------------------------------------------
-// CSR
+// CSR - Offsets from 0x80004000
 // ------------------------------------------
 
-`define CSR_REGISTER_COUNT 16
+// CSR offsets ()
 
-`define CSR_MCAUSE		5'd0
-`define CSR_MSTATUS		5'd1
-`define CSR_MIE			5'd2
-`define CSR_MTVEC		5'd3
-`define CSR_MEPC		5'd4
-`define CSR_MHARTID		5'd5
-`define CSR_MTVAL		5'd6
-`define CSR_MIP			5'd7
-`define CSR_TIMECMPLO	5'd8
-`define CSR_TIMECMPHI	5'd9
-`define CSR_CYCLELO		5'd10
-`define CSR_CYCLEHI		5'd11
-`define CSR_TIMELO		5'd12
-`define CSR_RETILO		5'd13
-`define CSR_TIMEHI		5'd14
-`define CSR_RETIHI		5'd15
+`define CSR_MSTATUS		12'h300
+`define CSR_MIE		    12'h304
+`define CSR_MTVEC		12'h305
+`define CSR_MEPC		12'h341
+`define CSR_MCAUSE		12'h342
+`define CSR_MTVAL		12'h343
+`define CSR_MIP			12'h344
+`define CSR_TIMECMPLO	12'h800
+`define CSR_TIMECMPHI	12'h801
+`define CSR_CYCLELO		12'hB00 // 12'hC00
+`define CSR_RETILO		12'hB02 // 12'hC02
+`define CSR_CYCLEHI		12'hB80 // 12'hC80
+`define CSR_RETIHI		12'hB82 // 12'hC82
+`define CSR_TIMELO		12'hC01
+`define CSR_TIMEHI		12'hC81
+`define CSR_MHARTID		12'hF14 // immutable
+
+//`define CSR_MCONFIGPTR  12'hF15
+// `define CSR_DSCRATCH    12'h340
+// `define CSR_ISAEXMISA   12'h301
+// `define CSR_DCONTROL    12'h7B0
+// `define CSR_DPC         12'h7B1
+// `define CSR_DSCRATCH0   12'h7B2
+// `define CSR_DSCRATCH1   12'h7B3
