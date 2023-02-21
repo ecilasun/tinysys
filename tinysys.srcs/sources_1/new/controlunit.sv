@@ -269,10 +269,6 @@ always @(posedge aclk) begin
 			end
 
 			SYSWBACK: begin
-				// Store old CSR value in wbdest
-				wbdin <= csrprevval;
-				wback <= 1'b1;
-
 				// Update CSR register with read value
 				m_ibus.waddr <= {20'h80004, csroffset};
 				m_ibus.wstrobe <= 4'b1111;
@@ -306,6 +302,10 @@ always @(posedge aclk) begin
 
 			SYSWAIT: begin
 				ctlmode <= m_ibus.wdone ? WBACK : SYSWAIT;
+
+				// Store old CSR value in wbdest
+				wbdin <= csrprevval;
+				wback <= m_ibus.wdone;
 			end
 
 			SYSCACHE: begin
