@@ -213,7 +213,7 @@ devicerouter devicerouterinst(
 	.aresetn(aresetn),
     .axi_s(devicebus),
     .addressmask({
-		19'b000_0000_0000_0000_0111,	// CSRF
+		19'b000_0000_0000_0000_0100,	// CSRF
 		19'b000_0000_0000_0000_0011,	// SPIC
 		19'b000_0000_0000_0000_0010,	// GPUC
 		19'b000_0000_0000_0000_0001,	// LEDS

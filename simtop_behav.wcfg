@@ -13,17 +13,18 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="116.942151156 us"></ZoomStartTime>
-      <ZoomEndTime time="140.012151157 us"></ZoomEndTime>
-      <Cursor1Time time="120.100000000 us"></Cursor1Time>
+      <ZoomStartTime time="0.000000000 us"></ZoomStartTime>
+      <ZoomEndTime time="462.600000001 us"></ZoomEndTime>
+      <Cursor1Time time="0.000000000 us"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="162"></NameColumnWidth>
+      <NameColumnWidth column_width="156"></NameColumnWidth>
       <ValueColumnWidth column_width="90"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="267" />
+   <WVObjectSize size="225" />
    <wave_markers>
       <marker time="124244000000" label="" />
+      <marker time="160830000000" label="" />
    </wave_markers>
    <wvobject type="divider" fp_name="divider23">
       <obj_property name="label">board</obj_property>
@@ -391,6 +392,42 @@
       <obj_property name="CustomSignalColor">#FFFF00</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
+   <wvobject type="divider" fp_name="divider3787">
+      <obj_property name="label">imbus</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/m_ibus/raddr" type="array">
+      <obj_property name="ElementShortName">raddr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">raddr[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/m_ibus/rstrobe" type="logic">
+      <obj_property name="ElementShortName">rstrobe</obj_property>
+      <obj_property name="ObjectShortName">rstrobe</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/m_ibus/rdata" type="array">
+      <obj_property name="ElementShortName">rdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">rdata[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/m_ibus/rdone" type="logic">
+      <obj_property name="ElementShortName">rdone</obj_property>
+      <obj_property name="ObjectShortName">rdone</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/m_ibus/waddr" type="array">
+      <obj_property name="ElementShortName">waddr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">waddr[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/m_ibus/wdata" type="array">
+      <obj_property name="ElementShortName">wdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">wdata[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/m_ibus/wstrobe" type="array">
+      <obj_property name="ElementShortName">wstrobe[3:0]</obj_property>
+      <obj_property name="ObjectShortName">wstrobe[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/m_ibus/wdone" type="logic">
+      <obj_property name="ElementShortName">wdone</obj_property>
+      <obj_property name="ObjectShortName">wdone</obj_property>
+   </wvobject>
    <wvobject type="divider" fp_name="divider157">
       <obj_property name="label">exec</obj_property>
       <obj_property name="DisplayName">label</obj_property>
@@ -467,6 +504,10 @@
       <obj_property name="CustomSignalColor">#FFFF00</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/csrprevval" type="array">
+      <obj_property name="ElementShortName">csrprevval[31:0]</obj_property>
+      <obj_property name="ObjectShortName">csrprevval[31:0]</obj_property>
+   </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/controlunitinst/aclk" type="logic">
       <obj_property name="ElementShortName">aclk</obj_property>
       <obj_property name="ObjectShortName">aclk</obj_property>
@@ -508,10 +549,6 @@
       <obj_property name="ObjectShortName">rwaddress[31:0]</obj_property>
       <obj_property name="CustomSignalColor">#FF00FF</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/csrprevval" type="array">
-      <obj_property name="ElementShortName">csrprevval[31:0]</obj_property>
-      <obj_property name="ObjectShortName">csrprevval[31:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/controlunitinst/btready" type="logic">
       <obj_property name="ElementShortName">btready</obj_property>
@@ -728,6 +765,7 @@
    <wvobject fp_name="/simtop/main/socinstance/uartdevice/din" type="array">
       <obj_property name="ElementShortName">din[7:0]</obj_property>
       <obj_property name="ObjectShortName">din[7:0]</obj_property>
+      <obj_property name="Radix">ASCIIRADIX</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/uartdevice/we" type="array">
       <obj_property name="ElementShortName">we[3:0]</obj_property>
@@ -940,209 +978,5 @@
    <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/ddr3_odt" type="array">
       <obj_property name="ElementShortName">ddr3_odt[0:0]</obj_property>
       <obj_property name="ObjectShortName">ddr3_odt[0:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/sys_clk_i" type="logic">
-      <obj_property name="ElementShortName">sys_clk_i</obj_property>
-      <obj_property name="ObjectShortName">sys_clk_i</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/clk_ref_i" type="logic">
-      <obj_property name="ElementShortName">clk_ref_i</obj_property>
-      <obj_property name="ObjectShortName">clk_ref_i</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/ui_clk" type="logic">
-      <obj_property name="ElementShortName">ui_clk</obj_property>
-      <obj_property name="ObjectShortName">ui_clk</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/ui_clk_sync_rst" type="logic">
-      <obj_property name="ElementShortName">ui_clk_sync_rst</obj_property>
-      <obj_property name="ObjectShortName">ui_clk_sync_rst</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/mmcm_locked" type="logic">
-      <obj_property name="ElementShortName">mmcm_locked</obj_property>
-      <obj_property name="ObjectShortName">mmcm_locked</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/aresetn" type="logic">
-      <obj_property name="ElementShortName">aresetn</obj_property>
-      <obj_property name="ObjectShortName">aresetn</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/app_sr_req" type="logic">
-      <obj_property name="ElementShortName">app_sr_req</obj_property>
-      <obj_property name="ObjectShortName">app_sr_req</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/app_ref_req" type="logic">
-      <obj_property name="ElementShortName">app_ref_req</obj_property>
-      <obj_property name="ObjectShortName">app_ref_req</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/app_zq_req" type="logic">
-      <obj_property name="ElementShortName">app_zq_req</obj_property>
-      <obj_property name="ObjectShortName">app_zq_req</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/app_sr_active" type="logic">
-      <obj_property name="ElementShortName">app_sr_active</obj_property>
-      <obj_property name="ObjectShortName">app_sr_active</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/app_ref_ack" type="logic">
-      <obj_property name="ElementShortName">app_ref_ack</obj_property>
-      <obj_property name="ObjectShortName">app_ref_ack</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/app_zq_ack" type="logic">
-      <obj_property name="ElementShortName">app_zq_ack</obj_property>
-      <obj_property name="ObjectShortName">app_zq_ack</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_awid" type="array">
-      <obj_property name="ElementShortName">s_axi_awid[1:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_awid[1:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_awaddr" type="array">
-      <obj_property name="ElementShortName">s_axi_awaddr[27:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_awaddr[27:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_awlen" type="array">
-      <obj_property name="ElementShortName">s_axi_awlen[7:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_awlen[7:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_awsize" type="array">
-      <obj_property name="ElementShortName">s_axi_awsize[2:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_awsize[2:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_awburst" type="array">
-      <obj_property name="ElementShortName">s_axi_awburst[1:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_awburst[1:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_awlock" type="array">
-      <obj_property name="ElementShortName">s_axi_awlock[0:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_awlock[0:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_awcache" type="array">
-      <obj_property name="ElementShortName">s_axi_awcache[3:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_awcache[3:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_awprot" type="array">
-      <obj_property name="ElementShortName">s_axi_awprot[2:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_awprot[2:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_awqos" type="array">
-      <obj_property name="ElementShortName">s_axi_awqos[3:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_awqos[3:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_awvalid" type="logic">
-      <obj_property name="ElementShortName">s_axi_awvalid</obj_property>
-      <obj_property name="ObjectShortName">s_axi_awvalid</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_awready" type="logic">
-      <obj_property name="ElementShortName">s_axi_awready</obj_property>
-      <obj_property name="ObjectShortName">s_axi_awready</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_wdata" type="array">
-      <obj_property name="ElementShortName">s_axi_wdata[127:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_wdata[127:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_wstrb" type="array">
-      <obj_property name="ElementShortName">s_axi_wstrb[15:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_wstrb[15:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_wlast" type="logic">
-      <obj_property name="ElementShortName">s_axi_wlast</obj_property>
-      <obj_property name="ObjectShortName">s_axi_wlast</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_wvalid" type="logic">
-      <obj_property name="ElementShortName">s_axi_wvalid</obj_property>
-      <obj_property name="ObjectShortName">s_axi_wvalid</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_wready" type="logic">
-      <obj_property name="ElementShortName">s_axi_wready</obj_property>
-      <obj_property name="ObjectShortName">s_axi_wready</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_bready" type="logic">
-      <obj_property name="ElementShortName">s_axi_bready</obj_property>
-      <obj_property name="ObjectShortName">s_axi_bready</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_bid" type="array">
-      <obj_property name="ElementShortName">s_axi_bid[1:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_bid[1:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_bresp" type="array">
-      <obj_property name="ElementShortName">s_axi_bresp[1:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_bresp[1:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_bvalid" type="logic">
-      <obj_property name="ElementShortName">s_axi_bvalid</obj_property>
-      <obj_property name="ObjectShortName">s_axi_bvalid</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_arid" type="array">
-      <obj_property name="ElementShortName">s_axi_arid[1:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_arid[1:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_araddr" type="array">
-      <obj_property name="ElementShortName">s_axi_araddr[27:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_araddr[27:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_arlen" type="array">
-      <obj_property name="ElementShortName">s_axi_arlen[7:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_arlen[7:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_arsize" type="array">
-      <obj_property name="ElementShortName">s_axi_arsize[2:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_arsize[2:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_arburst" type="array">
-      <obj_property name="ElementShortName">s_axi_arburst[1:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_arburst[1:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_arlock" type="array">
-      <obj_property name="ElementShortName">s_axi_arlock[0:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_arlock[0:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_arcache" type="array">
-      <obj_property name="ElementShortName">s_axi_arcache[3:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_arcache[3:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_arprot" type="array">
-      <obj_property name="ElementShortName">s_axi_arprot[2:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_arprot[2:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_arqos" type="array">
-      <obj_property name="ElementShortName">s_axi_arqos[3:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_arqos[3:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_arvalid" type="logic">
-      <obj_property name="ElementShortName">s_axi_arvalid</obj_property>
-      <obj_property name="ObjectShortName">s_axi_arvalid</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_arready" type="logic">
-      <obj_property name="ElementShortName">s_axi_arready</obj_property>
-      <obj_property name="ObjectShortName">s_axi_arready</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_rready" type="logic">
-      <obj_property name="ElementShortName">s_axi_rready</obj_property>
-      <obj_property name="ObjectShortName">s_axi_rready</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_rid" type="array">
-      <obj_property name="ElementShortName">s_axi_rid[1:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_rid[1:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_rdata" type="array">
-      <obj_property name="ElementShortName">s_axi_rdata[127:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_rdata[127:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_rresp" type="array">
-      <obj_property name="ElementShortName">s_axi_rresp[1:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_rresp[1:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_rlast" type="logic">
-      <obj_property name="ElementShortName">s_axi_rlast</obj_property>
-      <obj_property name="ObjectShortName">s_axi_rlast</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/s_axi_rvalid" type="logic">
-      <obj_property name="ElementShortName">s_axi_rvalid</obj_property>
-      <obj_property name="ObjectShortName">s_axi_rvalid</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/device_temp" type="array">
-      <obj_property name="ElementShortName">device_temp[11:0]</obj_property>
-      <obj_property name="ObjectShortName">device_temp[11:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/axi4ddr3sdraminst/ddr3instance/sys_rst" type="logic">
-      <obj_property name="ElementShortName">sys_rst</obj_property>
-      <obj_property name="ObjectShortName">sys_rst</obj_property>
    </wvobject>
 </wave_config>
