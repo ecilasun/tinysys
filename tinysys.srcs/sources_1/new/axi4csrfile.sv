@@ -32,13 +32,13 @@ always @(posedge aclk) begin
 	if (csrre) begin
 		unique case (csrraddr)
 			`CSR_MHARTID:	csrdout <= 0;//HARTID; // Immutable
-			`CSR_CYCLELO:	csrdout <= cpuclocktime[31:0];
-			`CSR_CYCLEHI:	csrdout <= cpuclocktime[63:32];
-			`CSR_TIMELO:	csrdout <= wallclocktime[31:0];
-			`CSR_TIMEHI:	csrdout <= wallclocktime[63:32];
-			`CSR_RETILO:	csrdout <= retired[31:0];
 			`CSR_RETIHI:	csrdout <= retired[63:32];
-			`CSR_MISA:		csrdout <= 32'b00000000_00000000_00010001_00000000; // rv32i, Zmmul, machine level
+			`CSR_TIMEHI:	csrdout <= wallclocktime[63:32];
+			`CSR_CYCLEHI:	csrdout <= cpuclocktime[63:32];
+			`CSR_RETILO:	csrdout <= retired[31:0];
+			`CSR_TIMELO:	csrdout <= wallclocktime[31:0];
+			`CSR_CYCLELO:	csrdout <= cpuclocktime[31:0];
+			`CSR_MISA:		csrdout <= 32'h00001100; // rv32i(bit8), Zmmul(bit12), machine level
 			default:		csrdout <= csrmemory[csrraddr];
 		endcase
 	end
@@ -88,8 +88,7 @@ always @(posedge aclk) begin
 		unique case(writestate)
 			2'b00: begin
 				if (s_axi.wvalid) begin
-					// Only the lower byte contains valid data
-					csrdin <= s_axi.wdata[1:0];
+					csrdin <= s_axi.wdata[31:0];
 					cswraddr <= s_axi.awaddr[11:0];
 					csrwe <= 1'b1;
 					writestate <= 2'b01;
@@ -126,7 +125,6 @@ always @(posedge aclk) begin
 				end
 			end
 			default/*2'b01*/: begin
-				// Only the lower byte contains valid data
 				if (s_axi.rready) begin
 					s_axi.rdata[31:0] <= csrdout;
 					s_axi.rvalid <= 1'b1;

@@ -341,7 +341,7 @@ always_ff @(posedge aclk) begin
 			DATABURST: begin
 				if (m_axi.rvalid  /*&& m_axi.rready*/) begin
 					// Load data into scanline cache in 128bit chunks (16 pixels at 8bpp, 20 of them)
-					// TODO: video mode control should set up burst length
+					// NOTE: video mode control sets up burst length to either 40 or 80
 					scanlinecache[rdata_cnt] <= m_axi.rdata;
 					rdata_cnt <= rdata_cnt + 'd1;
 					m_axi.rready <= ~m_axi.rlast;
