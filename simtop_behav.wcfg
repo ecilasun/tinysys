@@ -13,15 +13,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="0.000000000 us"></ZoomStartTime>
-      <ZoomEndTime time="230.100000001 us"></ZoomEndTime>
-      <Cursor1Time time="128.965266125 us"></Cursor1Time>
+      <ZoomStartTime time="116.942151156 us"></ZoomStartTime>
+      <ZoomEndTime time="140.012151157 us"></ZoomEndTime>
+      <Cursor1Time time="120.100000000 us"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="168"></NameColumnWidth>
+      <NameColumnWidth column_width="162"></NameColumnWidth>
       <ValueColumnWidth column_width="90"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="239" />
+   <WVObjectSize size="267" />
    <wave_markers>
       <marker time="124244000000" label="" />
    </wave_markers>
@@ -48,6 +48,18 @@
    <wvobject type="divider" fp_name="divider29">
       <obj_property name="label">clock and reset</obj_property>
       <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/cpuclocktime" type="array">
+      <obj_property name="ElementShortName">cpuclocktime[63:0]</obj_property>
+      <obj_property name="ObjectShortName">cpuclocktime[63:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/wallclocktime" type="array">
+      <obj_property name="ElementShortName">wallclocktime[63:0]</obj_property>
+      <obj_property name="ObjectShortName">wallclocktime[63:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/retired" type="array">
+      <obj_property name="ElementShortName">retired[63:0]</obj_property>
+      <obj_property name="ObjectShortName">retired[63:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/clockandresetinst/sys_clock_i" type="logic">
       <obj_property name="ElementShortName">sys_clock_i</obj_property>
@@ -90,8 +102,8 @@
       <obj_property name="ObjectShortName">clkRdyB</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/clockandresetinst/resetcountdown" type="array">
-      <obj_property name="ElementShortName">resetcountdown[15:0]</obj_property>
-      <obj_property name="ObjectShortName">resetcountdown[15:0]</obj_property>
+      <obj_property name="ElementShortName">resetcountdown[31:0]</obj_property>
+      <obj_property name="ObjectShortName">resetcountdown[31:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/clockandresetinst/preresetn" type="logic">
       <obj_property name="ElementShortName">preresetn</obj_property>
@@ -389,6 +401,12 @@
       <obj_property name="CustomSignalColor">#FFFF00</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/ctlmode" type="array">
+      <obj_property name="ElementShortName">ctlmode[3:0]</obj_property>
+      <obj_property name="ObjectShortName">ctlmode[3:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/controlunitinst/csroffset" type="array">
       <obj_property name="ElementShortName">csroffset[11:0]</obj_property>
       <obj_property name="ObjectShortName">csroffset[11:0]</obj_property>
@@ -555,10 +573,6 @@
       <obj_property name="ElementShortName">aluout[31:0]</obj_property>
       <obj_property name="ObjectShortName">aluout[31:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/ctlmode" type="array">
-      <obj_property name="ElementShortName">ctlmode[3:0]</obj_property>
-      <obj_property name="ObjectShortName">ctlmode[3:0]</obj_property>
-   </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/controlunitinst/offsetPC" type="array">
       <obj_property name="ElementShortName">offsetPC[31:0]</obj_property>
       <obj_property name="ObjectShortName">offsetPC[31:0]</obj_property>
@@ -570,6 +584,106 @@
    <wvobject fp_name="/simtop/main/socinstance/controlunitinst/CID" type="array">
       <obj_property name="ElementShortName">CID[31:0]</obj_property>
       <obj_property name="ObjectShortName">CID[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider3142">
+      <obj_property name="label">GPR</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/registerfileinst/clock" type="logic">
+      <obj_property name="ElementShortName">clock</obj_property>
+      <obj_property name="ObjectShortName">clock</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/registerfileinst/rs1" type="array">
+      <obj_property name="ElementShortName">rs1[4:0]</obj_property>
+      <obj_property name="ObjectShortName">rs1[4:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/registerfileinst/rs2" type="array">
+      <obj_property name="ElementShortName">rs2[4:0]</obj_property>
+      <obj_property name="ObjectShortName">rs2[4:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/registerfileinst/rd" type="array">
+      <obj_property name="ElementShortName">rd[4:0]</obj_property>
+      <obj_property name="ObjectShortName">rd[4:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/registerfileinst/wren" type="logic">
+      <obj_property name="ElementShortName">wren</obj_property>
+      <obj_property name="ObjectShortName">wren</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/registerfileinst/din" type="array">
+      <obj_property name="ElementShortName">din[31:0]</obj_property>
+      <obj_property name="ObjectShortName">din[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/registerfileinst/rval1" type="array">
+      <obj_property name="ElementShortName">rval1[31:0]</obj_property>
+      <obj_property name="ObjectShortName">rval1[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/registerfileinst/rval2" type="array">
+      <obj_property name="ElementShortName">rval2[31:0]</obj_property>
+      <obj_property name="ObjectShortName">rval2[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/controlunitinst/registerfileinst/registers" type="array">
+      <obj_property name="ElementShortName">registers[0:31][31:0]</obj_property>
+      <obj_property name="ObjectShortName">registers[0:31][31:0]</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider3123">
+      <obj_property name="label">CSR</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/aclk" type="logic">
+      <obj_property name="ElementShortName">aclk</obj_property>
+      <obj_property name="ObjectShortName">aclk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/aresetn" type="logic">
+      <obj_property name="ElementShortName">aresetn</obj_property>
+      <obj_property name="ObjectShortName">aresetn</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/cpuclocktime" type="array">
+      <obj_property name="ElementShortName">cpuclocktime[63:0]</obj_property>
+      <obj_property name="ObjectShortName">cpuclocktime[63:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/wallclocktime" type="array">
+      <obj_property name="ElementShortName">wallclocktime[63:0]</obj_property>
+      <obj_property name="ObjectShortName">wallclocktime[63:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/retired" type="array">
+      <obj_property name="ElementShortName">retired[63:0]</obj_property>
+      <obj_property name="ObjectShortName">retired[63:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/csrwe" type="logic">
+      <obj_property name="ElementShortName">csrwe</obj_property>
+      <obj_property name="ObjectShortName">csrwe</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/csrre" type="logic">
+      <obj_property name="ElementShortName">csrre</obj_property>
+      <obj_property name="ObjectShortName">csrre</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/cswraddr" type="array">
+      <obj_property name="ElementShortName">cswraddr[11:0]</obj_property>
+      <obj_property name="ObjectShortName">cswraddr[11:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/csrraddr" type="array">
+      <obj_property name="ElementShortName">csrraddr[11:0]</obj_property>
+      <obj_property name="ObjectShortName">csrraddr[11:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/csrdin" type="array">
+      <obj_property name="ElementShortName">csrdin[31:0]</obj_property>
+      <obj_property name="ObjectShortName">csrdin[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/csrdout" type="array">
+      <obj_property name="ElementShortName">csrdout[31:0]</obj_property>
+      <obj_property name="ObjectShortName">csrdout[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/waddrstate" type="array">
+      <obj_property name="ElementShortName">waddrstate[1:0]</obj_property>
+      <obj_property name="ObjectShortName">waddrstate[1:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/writestate" type="array">
+      <obj_property name="ElementShortName">writestate[1:0]</obj_property>
+      <obj_property name="ObjectShortName">writestate[1:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/raddrstate" type="array">
+      <obj_property name="ElementShortName">raddrstate[1:0]</obj_property>
+      <obj_property name="ObjectShortName">raddrstate[1:0]</obj_property>
    </wvobject>
    <wvobject type="divider" fp_name="divider197">
       <obj_property name="label">uart</obj_property>

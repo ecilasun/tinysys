@@ -76,11 +76,11 @@ dataunit dataunitints (
 // Wall clock
 // --------------------------------------------------
 
-logic [63:0] wallclockcounter;
+logic [63:0] wallclockcounter = 64'd0;
 
 always @(posedge clk10) begin
-	if (aresetn) begin
-		// ?
+	if (~aresetn) begin
+		//
 	end else begin
 		wallclockcounter <= wallclockcounter + 64'd1;
 	end

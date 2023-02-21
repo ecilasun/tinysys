@@ -58,7 +58,6 @@ initial begin
 end
 
 always @(posedge aclk) begin
-
 	if (csrre) begin
 		unique case (csrraddr)
 			`CSR_MHARTID:	csrdout <= 0;//HARTID; // Immutable
