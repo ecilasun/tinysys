@@ -180,6 +180,7 @@
 // ------------------------------------------
 
 `define CSR_MSTATUS		12'h300
+`define CSR_MISA		12'h301
 `define CSR_MIE		    12'h304
 `define CSR_MTVEC		12'h305
 `define CSR_MEPC		12'h341
@@ -188,12 +189,14 @@
 `define CSR_MIP			12'h344
 `define CSR_TIMECMPLO	12'h800
 `define CSR_TIMECMPHI	12'h801
-`define CSR_CYCLELO		12'hB00 // 12'hC00
-`define CSR_RETILO		12'hB02 // 12'hC02
-`define CSR_CYCLEHI		12'hB80 // 12'hC80
-`define CSR_RETIHI		12'hB82 // 12'hC82
+`define CSR_CYCLELO		12'hC00	// 12'hB00
 `define CSR_TIMELO		12'hC01
+`define CSR_RETILO		12'hC02 // 12'hB02 
+`define CSR_CYCLEHI		12'hC80	// 12'hB80
 `define CSR_TIMEHI		12'hC81
+`define CSR_RETIHI		12'hC82 // 12'hB82
+`define CSR_MARCHID		12'hF12
+`define CSR_MIMPID		12'hF13
 `define CSR_MHARTID		12'hF14 // immutable
 
 //`define CSR_MCONFIGPTR  12'hF15
