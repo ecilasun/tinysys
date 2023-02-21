@@ -35,7 +35,7 @@ always_comb begin
 		aluonehot[3]:	branchout = sless;
 		aluonehot[4]:	branchout = ~eq;
 		aluonehot[5]:	branchout = eq;
-		//default:		branchout = 1'b0;
+		default:		branchout = 1'b0;
 	endcase
 end
 

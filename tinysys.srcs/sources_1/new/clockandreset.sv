@@ -3,6 +3,7 @@
 module clockandreset(
 	input wire sys_clock_i,
 	input wire sys_rst_n,
+	input wire init_calib_complete,
 	output wire aclk,
 	output wire clk10,
 	output wire clk25,
@@ -10,7 +11,8 @@ module clockandreset(
 	output wire clk166,
 	output wire clk200,
 	output wire clk250,
-	output wire aresetn );
+	output wire aresetn,
+	output wire preresetn);
 
 // --------------------------------------------------
 // PLLs / MMCMs
@@ -32,6 +34,15 @@ centralclock centralclockinst(
 wire clocksready = centralclocklocked; ///& ddr3clklocked;
 
 // --------------------------------------------------
+// DDR3 SDRAM cabilration complete
+// --------------------------------------------------
+
+logic [1:0] ddr3ready = 2'b00;
+always @(posedge aclk) begin
+	ddr3ready <= {ddr3ready[0], init_calib_complete};
+end
+
+// --------------------------------------------------
 // Clock domain crossing PLL/MMCM ready line
 // --------------------------------------------------
 
@@ -47,19 +58,23 @@ end
 // Outside facing delayed reset
 // --------------------------------------------------
 
-logic [15:0] resetcountdown = 16'h0001;
+logic [31:0] resetcountdown = 32'd0;
 logic regaresetn = 1'b0;
+logic regpreresetn = 1'b0;
 
 always @(posedge aclk or negedge sys_rst_n) begin
 	if (~sys_rst_n) begin
-		resetcountdown <= 16'h0001;
+		resetcountdown <= 32'd0;
 		regaresetn <= 1'b0;
+		regpreresetn <= 1'b0;
 	end else begin
-		resetcountdown <= {resetcountdown[14:0], 1'b1};
-		regaresetn <= resetcountdown[15] & clkRdyB;
+		resetcountdown <= {resetcountdown[30:0], clkRdyB};
+		regaresetn <= resetcountdown[31] && ddr3ready[1];
+		regpreresetn <= clkRdyB;
 	end
 end
 
 assign aresetn = regaresetn;
+assign preresetn = regpreresetn;
 
 endmodule

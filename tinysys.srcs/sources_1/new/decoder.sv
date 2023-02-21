@@ -175,6 +175,10 @@ always_comb begin
 		instrOneHot[`O_H_OP_IMM], instrOneHot[`O_H_FLOAT_LDW], instrOneHot[`O_H_LOAD], instrOneHot[`O_H_JALR]: begin
 			immed = {{21{instruction[31]}}, instruction[30:20]};
 		end
+
+		default: begin
+			immed = 32'd0;
+		end
 	endcase
 end
 

@@ -17,7 +17,7 @@ module fetchunit #(
 	// Output FIFO control
 	output wire ififoempty,
 	output wire ififovalid,
-	output wire [114:0] ififodout,
+	output wire [119:0] ififodout,
 	input wire ififord_en, 
 	// To system bus
 	axi4if.master m_axi );
@@ -74,15 +74,15 @@ decoder decoderinst(
 	.rs2(rs2),									// 5	+
 	.rs3(rs3),									// 5	
 	.rd(rd),									// 5	+
-	.csroffset(csroffset),						// 12	
+	.csroffset(csroffset),						// 12	+
 	.immed(immed),								// 32	+
-	.selectimmedasrval2(selectimmedasrval2) );	// 1	+ -> 18+4+3+3+5+5+12+32+1+PC[31:0] = 115 bits
+	.selectimmedasrval2(selectimmedasrval2) );	// 1	+ -> 18+4+3+3+5+5+5+12+32+1+PC[31:0] = 120 bits
 
 // --------------------------------------------------
 // Instruction output FIFO
 // --------------------------------------------------
 
-logic [114:0] ififodin;
+logic [119:0] ififodin;
 logic ififowr_en = 1'b0;
 wire ififofull;
 
@@ -115,6 +115,8 @@ fetchstate fetchmode = INIT;
 always @(posedge aclk) begin
 	if (~aresetn) begin
 		fetchmode <= INIT;
+		fetchena <= 1'b0;
+		ififowr_en <= 1'b0;
 	end else begin
 
 		fetchena <= 1'b0;
@@ -134,7 +136,7 @@ always @(posedge aclk) begin
 			STREAMOUT: begin
 				// Emit decoded instruction
 				ififowr_en <= 1'b1;
-				ififodin <= {PC, instrOneHotOut,
+				ififodin <= {PC, csroffset, instrOneHotOut,
 					aluop, bluop, func3,
 					rs1, rs2, rd,
 					selectimmedasrval2, immed};

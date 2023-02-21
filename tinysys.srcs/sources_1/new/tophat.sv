@@ -41,7 +41,7 @@ module tophat(
 // Clock and reset generator
 // --------------------------------------------------
 
-wire aresetn;
+wire aresetn, preresetn;
 wire init_calib_complete;
 wire aclk, clk10, clk25, clk50, clk166, clk200, clk250;
 
@@ -49,6 +49,7 @@ wire aclk, clk10, clk25, clk50, clk166, clk200, clk250;
 clockandreset clockandresetinst(
 	.sys_clock_i(sys_clk),
 	.sys_rst_n(sys_rst_n),
+	.init_calib_complete(init_calib_complete),
 	.aclk(aclk),
 	.clk10(clk10),
 	.clk25(clk25),
@@ -56,7 +57,8 @@ clockandreset clockandresetinst(
 	.clk166(clk166),
 	.clk200(clk200),
 	.clk250(clk250),
-	.aresetn(aresetn));
+	.aresetn(aresetn),
+	.preresetn(preresetn));
 
 // --------------------------------------------------
 // DDR3 SDRAM wires
@@ -112,6 +114,7 @@ tinysoc socinstance(
 	.clk200(clk200),
 	.clk250(clk250),
 	.aresetn(aresetn),
+	.preresetn(preresetn),
 	.uart_rxd_out(uart_rxd_out),
 	.uart_txd_in(uart_txd_in),
 	.leds(leds),

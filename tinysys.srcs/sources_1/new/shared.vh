@@ -176,10 +176,8 @@
 `define BLU_GEU			3'd6
 
 // ------------------------------------------
-// CSR - Offsets from 0x80004000
+// CSR base address: 0x80004000
 // ------------------------------------------
-
-// CSR offsets ()
 
 `define CSR_MSTATUS		12'h300
 `define CSR_MIE		    12'h304

@@ -9,6 +9,7 @@ module tinysoc(
 	input wire clk200,
 	input wire clk250,
 	input wire aresetn,
+	input wire preresetn,
 	output wire [1:0] leds,
 	output wire uart_rxd_out,
 	gpuwires.def gpuvideoout,
@@ -45,7 +46,7 @@ wire branchresolved;
 wire [31:0] branchtarget;
 wire ififoempty;
 wire ififovalid;
-wire [114:0] ififodout;
+wire [119:0] ififodout;
 wire ififord_en;
 
 // Reset vector is at top of BRAM
@@ -182,6 +183,7 @@ bootmem bootmeminst(
 axi4ddr3sdram axi4ddr3sdraminst(
 	.aclk(aclk),
 	.aresetn(aresetn),
+	.preresetn(preresetn),
 	.clk_sys_i(clk166),
 	.clk_ref_i(clk200),
 	.m_axi(ddr3sdramif),

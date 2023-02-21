@@ -14,7 +14,7 @@ module controlunit #(
 	// Instruction FIFO control
 	input wire ififoempty,
 	input wire ififovalid,
-	input wire [114:0] ififodout,
+	input wire [119:0] ififodout,
 	output wire ififord_en,
 	// CPU cycle / retired instruction counts
 	output wire [63:0] cpuclocktime,
@@ -38,8 +38,10 @@ logic [2:0] func3;
 logic [4:0] rs1;
 logic [4:0] rs2;
 logic [4:0] rd;
+logic [11:0] csroffset;
 logic [31:0] immed;
 logic selectimmedasrval2;
+logic [31:0] csrprevval = 32'd0;
 
 logic btready = 1'b0;
 logic [31:0] btarget = 32'd0;
@@ -102,7 +104,7 @@ arithmeticlogic arithmeticlogicinst(
 // Core logic
 // --------------------------------------------------
 
-typedef enum logic [2:0] {READINSTR, READREG, DISPATCH, LWAIT, SWAIT, WBACK} controlunitmode;
+typedef enum logic [3:0] {READINSTR, READREG, DISPATCH, LWAIT, SWAIT, SYSOP, SYSWBACK, SYSWAIT, SYSCACHE, WBACK} controlunitmode;
 controlunitmode ctlmode = READINSTR;
 
 logic [31:0] rwaddress = 32'd0;
@@ -111,16 +113,26 @@ logic [31:0] adjacentPC = 32'd0;
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
+		// cyclecount <= 64'd0; ?
+	end else begin
+		// TODO: Stop this if CPU's halted for debug
+		cyclecount <= cyclecount + 64'd1;
+	end
+end
+
+always @(posedge aclk) begin
+	if (~aresetn) begin
 
 		m_ibus.raddr <= 32'd0;
 		m_ibus.waddr <= 32'd0;
 		m_ibus.rstrobe <= 1'b0;
 		m_ibus.wstrobe <= 4'h0;
+		
+		ififore <= 1'b0;
+		rwen <= 1'b0;
+		wback <= 1'b0;
 
 	end else begin
-
-		// TODO: Do we stop this if CPU's halted?
-		cyclecount <= cyclecount + 64'd1;
 
 		btready <= 1'b0;
 		ififore <= 1'b0;
@@ -133,7 +145,7 @@ always @(posedge aclk) begin
 		unique case(ctlmode)
 			READINSTR: begin
 				// TODO: Fetch unit can halt / resume / debug the CPU via special commands
-				{ PC, instrOneHotOut,
+				{ PC, csroffset, instrOneHotOut,
 					aluop, bluop, func3,
 					rs1, rs2, rd,
 					selectimmedasrval2, immed} <= ififodout;
@@ -195,8 +207,13 @@ always @(posedge aclk) begin
 						btarget <= branchout ? offsetPC : adjacentPC;
 						btready <= 1'b1;
 					end
+					instrOneHotOut[`O_H_SYSTEM]: begin
+						// Set to CSR address range at 0x80004000 and trigger a read regardless of the op
+						m_ibus.raddr <= {20'h80004, csroffset};
+						m_ibus.rstrobe <= 1'b1;
+					end
 				endcase
-				ctlmode <= instrOneHotOut[`O_H_STORE] ? SWAIT : ( instrOneHotOut[`O_H_LOAD] ? LWAIT : WBACK);
+				ctlmode <= instrOneHotOut[`O_H_SYSTEM] ? SYSOP : (instrOneHotOut[`O_H_STORE] ? SWAIT : ( instrOneHotOut[`O_H_LOAD] ? LWAIT : WBACK));
 			end
 
 			LWAIT: begin
@@ -239,6 +256,61 @@ always @(posedge aclk) begin
 
 			SWAIT: begin
 				ctlmode <= m_ibus.wdone ? READINSTR : SWAIT;
+			end
+
+			SYSOP: begin
+				// Wait for CSR load
+				if (m_ibus.rdone) begin
+					csrprevval <= m_ibus.rdata;
+				end
+				// When done, either jump to cache op or csr wback
+				// We waste a load here for simplicity during cache ops
+				ctlmode <= m_ibus.rdone ? (func3 == 3'b000 ? SYSCACHE : SYSWBACK) : SYSOP;
+			end
+
+			SYSWBACK: begin
+				// Store old CSR value in wbdest
+				wbdin <= csrprevval;
+				wback <= 1'b1;
+
+				// Update CSR register with read value
+				m_ibus.waddr <= {20'h80004, csroffset};
+				m_ibus.wstrobe <= 4'b1111;
+				unique case (func3)
+					3'b001: begin
+						m_ibus.wdata <= A;
+					end
+					3'b101: begin
+						m_ibus.wdata <= D;
+					end
+					3'b010: begin
+						m_ibus.wdata <= csrprevval | A;
+					end
+					3'b110: begin
+						m_ibus.wdata <= csrprevval | D;
+					end
+					3'b011: begin
+						m_ibus.wdata <= csrprevval & (~A);
+					end
+					3'b111: begin
+						m_ibus.wdata <= csrprevval & (~D);
+					end
+					default: begin // Unknown
+						m_ibus.wdata <= csrprevval;
+					end
+				endcase
+
+				// Wait for CSR writeback
+				ctlmode <= SYSWAIT;
+			end
+
+			SYSWAIT: begin
+				ctlmode <= m_ibus.wdone ? WBACK : SYSWAIT;
+			end
+
+			SYSCACHE: begin
+				// TODO: Cache op ignored for now
+				ctlmode <= WBACK;
 			end
 
 			WBACK: begin

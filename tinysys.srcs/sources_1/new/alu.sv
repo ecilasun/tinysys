@@ -84,7 +84,7 @@ always_comb begin
 		aluonehot[7]:	aluout = vshl;
 		aluonehot[8]:	aluout = vdiff;
 		aluonehot[9]:	aluout = vsum;
-		//default:		aluout = 32'd0;
+		default:		aluout = 32'd0;
 	endcase
 end
 

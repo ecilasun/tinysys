@@ -2,15 +2,15 @@
 
 module simtop();
 
-//logic boardresetn;
+logic boardresetn;
 logic boardclock;
 
 initial begin
-	//boardresetn = 1'bz;
+	boardresetn = 1'bz;
 	boardclock = 1'bz;
 	#80;
 	boardclock = 1'b0;
-	//boardresetn = 1'b1;
+	boardresetn = 1'b1;
 end
 
 wire [1:0] ledout;
@@ -18,7 +18,7 @@ wire uart_rxd_out;
 wire uart_txd_in = 1'b1;
 
 // DDR3 simulation model
-/*wire ddr3_reset_n;
+wire ddr3_reset_n;
 wire [0:0]   ddr3_cke;
 wire [0:0]   ddr3_ck_p; 
 wire [0:0]   ddr3_ck_n;
@@ -49,16 +49,16 @@ ddr3_model ddr3simmod(
     .dqs(ddr3_dqs_p),
     .dqs_n(ddr3_dqs_n),
     .tdqs_n(), // out
-    .odt(ddr3_odt) );*/
+    .odt(ddr3_odt) );
 
 tophat main(
     .sys_clk(boardclock),
-    //.sys_rst_n(boardresetn),
+    .sys_rst_n(boardresetn),
     // LEDs
     .leds(ledout),
     // UART
     .uart_rxd_out(uart_rxd_out),
-    .uart_txd_in(uart_txd_in)/*,
+    .uart_txd_in(uart_txd_in),
     // DDR3 SDRAM
 	.ddr3_reset_n(ddr3_reset_n),
 	.ddr3_cke(ddr3_cke),
@@ -73,7 +73,7 @@ tophat main(
 	.ddr3_dm(ddr3_dm),
 	.ddr3_dqs_p(ddr3_dqs_p),
 	.ddr3_dqs_n(ddr3_dqs_n),
-	.ddr3_dq(ddr3_dq)*/);
+	.ddr3_dq(ddr3_dq));
 
 always begin
 	#10
