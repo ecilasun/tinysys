@@ -133,7 +133,7 @@ always_ff @(posedge aclk) begin
 		cachestate <= IDLE;
 		memwritestrobe <= 1'b0;
 		memreadstrobe <= 1'b0;
-		cdin <= 512'd0;
+		//cdin <= 512'd0;
 	end else begin
 
 		memwritestrobe <= 1'b0;

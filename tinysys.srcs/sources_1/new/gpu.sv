@@ -73,25 +73,29 @@ end
 
 // Generate palette read address from current pixel's color index
 logic [7:0] palettera;
-always_comb begin
-	case (localindex)
-		4'b0000: palettera = scanlinecache[cacheindex][7 : 0];
-		4'b0001: palettera = scanlinecache[cacheindex][15 : 8];
-		4'b0010: palettera = scanlinecache[cacheindex][23 : 16];
-		4'b0011: palettera = scanlinecache[cacheindex][31 : 24];
-		4'b0100: palettera = scanlinecache[cacheindex][39 : 32];
-		4'b0101: palettera = scanlinecache[cacheindex][47 : 40];
-		4'b0110: palettera = scanlinecache[cacheindex][55 : 48];
-		4'b0111: palettera = scanlinecache[cacheindex][63 : 56];
-		4'b1000: palettera = scanlinecache[cacheindex][71 : 64];
-		4'b1001: palettera = scanlinecache[cacheindex][79 : 72];
-		4'b1010: palettera = scanlinecache[cacheindex][87 : 80];
-		4'b1011: palettera = scanlinecache[cacheindex][95 : 88];
-		4'b1100: palettera = scanlinecache[cacheindex][103 : 96];
-		4'b1101: palettera = scanlinecache[cacheindex][111 : 104];
-		4'b1110: palettera = scanlinecache[cacheindex][119 : 112];
-		4'b1111: palettera = scanlinecache[cacheindex][127 : 120];
-	endcase
+always_ff @(posedge clk25) begin
+	if (~aresetn) begin
+		// 
+	end else begin
+		unique case (localindex)
+			4'b0000: palettera <= scanlinecache[cacheindex][7 : 0];
+			4'b0001: palettera <= scanlinecache[cacheindex][15 : 8];
+			4'b0010: palettera <= scanlinecache[cacheindex][23 : 16];
+			4'b0011: palettera <= scanlinecache[cacheindex][31 : 24];
+			4'b0100: palettera <= scanlinecache[cacheindex][39 : 32];
+			4'b0101: palettera <= scanlinecache[cacheindex][47 : 40];
+			4'b0110: palettera <= scanlinecache[cacheindex][55 : 48];
+			4'b0111: palettera <= scanlinecache[cacheindex][63 : 56];
+			4'b1000: palettera <= scanlinecache[cacheindex][71 : 64];
+			4'b1001: palettera <= scanlinecache[cacheindex][79 : 72];
+			4'b1010: palettera <= scanlinecache[cacheindex][87 : 80];
+			4'b1011: palettera <= scanlinecache[cacheindex][95 : 88];
+			4'b1100: palettera <= scanlinecache[cacheindex][103 : 96];
+			4'b1101: palettera <= scanlinecache[cacheindex][111 : 104];
+			4'b1110: palettera <= scanlinecache[cacheindex][119 : 112];
+			4'b1111: palettera <= scanlinecache[cacheindex][127 : 120];
+		endcase
+	end
 end
 
 // --------------------------------------------------
