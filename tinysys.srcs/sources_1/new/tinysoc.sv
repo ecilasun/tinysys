@@ -80,7 +80,7 @@ logic [63:0] wallclockcounter = 64'd0;
 
 always @(posedge clk10) begin
 	if (~aresetn) begin
-		//
+		wallclockcounter <= 64'd0;
 	end else begin
 		wallclockcounter <= wallclockcounter + 64'd1;
 	end
@@ -91,8 +91,12 @@ end
 (* async_reg = "true" *) logic [63:0] wallclocktime = 1'b0;
 
 always @(posedge aclk) begin
-	wallclocktimeA <= wallclockcounter;
-	wallclocktime <= wallclocktimeA;
+	if (~aresetn) begin
+		//
+	end else begin
+		wallclocktimeA <= wallclockcounter;
+		wallclocktime <= wallclocktimeA;
+	end
 end
 
 // --------------------------------------------------

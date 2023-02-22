@@ -29,22 +29,27 @@ initial begin
 end
 
 always @(posedge aclk) begin
-	if (csrre) begin
-		unique case (csrraddr)
-			`CSR_MHARTID:	csrdout <= 0;//HARTID; // Immutable
-			`CSR_RETIHI:	csrdout <= retired[63:32];
-			`CSR_TIMEHI:	csrdout <= wallclocktime[63:32];
-			`CSR_CYCLEHI:	csrdout <= cpuclocktime[63:32];
-			`CSR_RETILO:	csrdout <= retired[31:0];
-			`CSR_TIMELO:	csrdout <= wallclocktime[31:0];
-			`CSR_CYCLELO:	csrdout <= cpuclocktime[31:0];
-			`CSR_MISA:		csrdout <= 32'h00001100; // rv32i(bit8), Zmmul(bit12), machine level
-			default:		csrdout <= csrmemory[csrraddr];
-		endcase
+	if (~aresetn) begin
+		// 
+	end else begin
+		if (csrre) begin
+			unique case (csrraddr)
+				`CSR_MHARTID:	csrdout <= 0;//HARTID; // Immutable
+				`CSR_RETIHI:	csrdout <= retired[63:32];
+				`CSR_TIMEHI:	csrdout <= wallclocktime[63:32];
+				`CSR_CYCLEHI:	csrdout <= cpuclocktime[63:32];
+				`CSR_RETILO:	csrdout <= retired[31:0];
+				`CSR_TIMELO:	csrdout <= wallclocktime[31:0];
+				`CSR_CYCLELO:	csrdout <= cpuclocktime[31:0];
+				`CSR_MISA:		csrdout <= 32'h00001100; // rv32i(bit8), Zmmul(bit12), machine level
+				default:		csrdout <= csrmemory[csrraddr];
+			endcase
+		end
+	
+		if (csrwe) begin
+			csrmemory[cswraddr] <= csrdin;
+		end
 	end
-
-	if (csrwe)
-		csrmemory[cswraddr] <= csrdin;
 end
 
 // --------------------------------------------------
