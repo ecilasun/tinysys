@@ -15,7 +15,8 @@ module tinysoc(
 	gpuwires.def gpuvideoout,
 	input wire uart_txd_in,
 	ddr3sdramwires.def ddr3wires,
-	sdwires.def sdconn);
+	sdwires.def sdconn,
+	adcwires.def adcconn);
 
 // --------------------------------------------------
 // Bus lines
@@ -35,6 +36,7 @@ axi4if ledif();				// Sub bus: LED contol device
 axi4if gpucmdif();			// Sub bus: GPU command fifo
 axi4if spiif();				// Sub bus: SPI control device
 axi4if csrif();				// Sub bus: CSR file device
+axi4if xadcif();			// Sub bus: ADC controller
 
 ibusif ibus();				// Internal bus between units
 
@@ -184,6 +186,8 @@ bootmem bootmeminst(
 	.aresetn(aresetn),
 	.axi_s(bramif) );
 
+wire [11:0] device_temp;
+
 axi4ddr3sdram axi4ddr3sdraminst(
 	.aclk(aclk),
 	.aresetn(aresetn),
@@ -191,7 +195,8 @@ axi4ddr3sdram axi4ddr3sdraminst(
 	.clk_sys_i(clk166),
 	.clk_ref_i(clk200),
 	.m_axi(ddr3sdramif),
-	.ddr3wires(ddr3wires) );
+	.ddr3wires(ddr3wires),
+	.device_temp(device_temp) );
 
 // --------------------------------------------------
 // Memory mapped device router
@@ -208,7 +213,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // GPUC: 80002000  80002FFF  19'b000_0000_0000_0000_0010  4KB
 // SPIC: 80003000  80003FFF  19'b000_0000_0000_0000_0011  4KB
 // CSRF: 80004000  80004FFF  19'b000_0000_0000_0000_0100  4KB
-// ----: 80005000  80005FFF  19'b000_0000_0000_0000_0101  4KB
+// XADC: 80005000  80005FFF  19'b000_0000_0000_0000_0101  4KB
 // ----: 80006000  80006FFF  19'b000_0000_0000_0000_0110  4KB
 // ----: 80007000  80007FFF  19'b000_0000_0000_0000_0111  4KB
 
@@ -217,12 +222,13 @@ devicerouter devicerouterinst(
 	.aresetn(aresetn),
     .axi_s(devicebus),
     .addressmask({
+    	19'b000_0000_0000_0000_0101,	// XADC
 		19'b000_0000_0000_0000_0100,	// CSRF
 		19'b000_0000_0000_0000_0011,	// SPIC
 		19'b000_0000_0000_0000_0010,	// GPUC
 		19'b000_0000_0000_0000_0001,	// LEDS
 		19'b000_0000_0000_0000_0000 }),	// UART
-    .axi_m({csrif, spiif, gpucmdif, ledif, uartif}));
+    .axi_m({xadcif, csrif, spiif, gpucmdif, ledif, uartif}));
 
 // --------------------------------------------------
 // Memory mapped devices
@@ -275,5 +281,13 @@ axi4CSRFile csrfileinst(
 	.wallclocktime(wallclocktime),
 	.retired(retired),
 	.s_axi(csrif) );
-	
+
+// XADC
+axi4xadc xadcinst(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.s_axi(xadcif),
+	.device_temp(device_temp),
+	.adcconn(adcconn));
+
 endmodule

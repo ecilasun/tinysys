@@ -65,15 +65,22 @@ endmodule
 module async_receiver(
 	input wire clk,
 	input wire rxd,
-	output reg rxd_data_ready = 0,
-	output reg [7:0] rxd_data = 0,  // data received, valid only (for one clock cycle) when rxd_data_ready is asserted
+	output wire rxd_data_ready,
+	output wire [7:0] rxd_data,  // data received, valid only (for one clock cycle) when rxd_data_ready is asserted
 
 	// we also detect if a gap occurs in the received stream of characters
 	// that can be useful if multiple characters are sent in burst
 	//  so that multiple characters can be treated as a "packet"
 	output wire rxd_idle,  // asserted when no data has been received for a while
-	output reg rxd_endofpacket = 0  // asserted for one clock cycle when a packet has been detected (i.e. rxd_idle is going high)
+	output wire rxd_endofpacket  // asserted for one clock cycle when a packet has been detected (i.e. rxd_idle is going high)
 );
+
+reg rxd_data_readyreg = 0;
+reg [7:0] rxd_datareg = 0;
+reg rxd_endofpacketreg = 0;
+assign rxd_data_ready = rxd_data_readyreg;
+assign rxd_data = rxd_datareg;
+assign rxd_endofpacket = rxd_endofpacketreg;
 
 parameter clkfrequency = 10000000;	// 10mhz
 parameter baud = 115200;
@@ -133,19 +140,19 @@ case(rxd_state)
 endcase
 
 always @(posedge clk)
-if(samplenow && rxd_state[3]) rxd_data <= {rxd_bit, rxd_data[7:1]};
+if(samplenow && rxd_state[3]) rxd_datareg <= {rxd_bit, rxd_datareg[7:1]};
 
 //reg rxd_data_error = 0;
 always @(posedge clk)
 begin
-	rxd_data_ready <= (samplenow && rxd_state==4'b0010 && rxd_bit);  // make sure a stop bit is received
+	rxd_data_readyreg <= (samplenow && rxd_state==4'b0010 && rxd_bit);  // make sure a stop bit is received
 	//rxd_data_error <= (samplenow && rxd_state==4'b0010 && ~rxd_bit);  // error if a stop bit is not received
 end
 
 reg [l2o+1:0] gapcnt = 0;
 always @(posedge clk) if (rxd_state!=0) gapcnt<=0; else if(oversamplingtick & ~gapcnt[log2(oversampling)+1]) gapcnt <= gapcnt + 1'h1;
 assign rxd_idle = gapcnt[l2o+1];
-always @(posedge clk) rxd_endofpacket <= oversamplingtick & ~gapcnt[l2o+1] & &gapcnt[l2o:0];
+always @(posedge clk) rxd_endofpacketreg <= oversamplingtick & ~gapcnt[l2o+1] & &gapcnt[l2o:0];
 
 endmodule
 

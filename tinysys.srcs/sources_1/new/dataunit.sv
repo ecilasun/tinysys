@@ -21,6 +21,8 @@ logic [4:0] dreg = 5'd0;
 logic [4:0] wbtype = 5'd0;
 logic [1:0] dcacheop = 2'b00;
 
+wire rready, wready;
+
 datacache datacacheinst(
 	.aclk(aclk),
 	.aresetn(aresetn),

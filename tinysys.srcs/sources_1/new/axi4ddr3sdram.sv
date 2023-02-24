@@ -7,13 +7,15 @@ module axi4ddr3sdram(
 	input wire clk_sys_i,
 	input wire clk_ref_i,
 	axi4if.slave m_axi,
-	ddr3sdramwires.def ddr3wires );
+	ddr3sdramwires.def ddr3wires,
+    input wire [11:0] device_temp);
 
 // --------------------------------------------------
 // AXI4 re-timer from 100MHz to DDR3 ui_clk
 // --------------------------------------------------
 
 wire aresetm;
+wire ui_clk;
 axi4if s_axi();
 
 axi4retimer axi4retimerinst(
@@ -22,7 +24,7 @@ axi4retimer axi4retimerinst(
 	.srcbus(m_axi),
 	.destclk(ui_clk),
 	.destbus(s_axi),
-    .destrst(aresetm) );
+	.destrst(aresetm) );
 
 // --------------------------------------------------
 // MIG7 - AXI4
@@ -55,7 +57,8 @@ mig_7series_0 ddr3instance (
     // application interface ports
     .ui_clk                         (ui_clk),
     .ui_clk_sync_rst                (ui_clk_sync_rst),
-    .device_temp					(), // unused
+    .device_temp					(),
+    .device_temp_i					(device_temp),
 
     .mmcm_locked                    (mmcm_locked),
     .aresetn                        (aresetm),
