@@ -89,7 +89,7 @@ end
 // ----------------------------------------------------------------------------
 
 wire rdone, wdone;
-cachedmemorycontroller cachedmemorycontrollerinst(
+cachedmemorycontroller datacachectlinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	// From cache

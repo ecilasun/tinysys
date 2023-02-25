@@ -125,9 +125,9 @@ always_comb begin
 			endcase
 		end
 
-		default: begin
+		/*default: begin
 			aluop = `ALU_NONE;
-		end
+		end*/
 	endcase
 end
 
@@ -147,9 +147,9 @@ always_comb begin
 			endcase
 		end
 
-		default: begin
+		/*default: begin
 			bluop = `BLU_NONE;
-		end
+		end*/
 	endcase
 end
 
@@ -176,9 +176,9 @@ always_comb begin
 			immed = {{21{instruction[31]}}, instruction[30:20]};
 		end
 
-		default: begin
+		/*default: begin
 			immed = 32'd0;
-		end
+		end*/
 	endcase
 end
 

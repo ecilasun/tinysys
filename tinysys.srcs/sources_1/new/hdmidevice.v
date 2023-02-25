@@ -30,6 +30,8 @@ module hdmi_device(
            output out_tmds_clk
        );
 
+// NOTE: switch to x5 clock (25x5==126MHz) if DDR_ENABLED is set
+// Otherwise use x10 clock (25x10==250MHz)
 parameter DDR_ENABLED = 0;
 localparam OUT_TMDS_MSB = DDR_ENABLED ? 1 : 0;
 

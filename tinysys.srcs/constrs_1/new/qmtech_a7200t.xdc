@@ -65,14 +65,6 @@ set_property -dict {PACKAGE_PIN AB1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[2]
 ## xa_n[1] pin U2:10 [H17]
 ## xa_n[2] pin U2:12 [K21]
 ## xa_n[3] pin U2:14 [H20]
-set_property -dict {PACKAGE_PIN H22 IOSTANDARD TMDS_33} [get_ports {xa_p[0]}]
-set_property -dict {PACKAGE_PIN H18 IOSTANDARD TMDS_33} [get_ports {xa_p[1]}]
-set_property -dict {PACKAGE_PIN K22 IOSTANDARD TMDS_33} [get_ports {xa_p[2]}]
-set_property -dict {PACKAGE_PIN G20 IOSTANDARD TMDS_33} [get_ports {xa_p[3]}]
-set_property -dict {PACKAGE_PIN J22 IOSTANDARD TMDS_33} [get_ports {xa_n[0]}]
-set_property -dict {PACKAGE_PIN H17 IOSTANDARD TMDS_33} [get_ports {xa_n[1]}]
-set_property -dict {PACKAGE_PIN K21 IOSTANDARD TMDS_33} [get_ports {xa_n[2]}]
-set_property -dict {PACKAGE_PIN H20 IOSTANDARD TMDS_33} [get_ports {xa_n[3]}]
 
 ## DDR3 SDRAM MT41K128M16XX-15E
 ## width: 16, period: 2500, mask: 1
