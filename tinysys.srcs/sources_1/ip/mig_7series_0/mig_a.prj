@@ -17,7 +17,7 @@
 
   <LowPower_En>ON</LowPower_En>
 
-  <XADC_En>Enabled</XADC_En>
+  <XADC_En>Disabled</XADC_En>
 
   <TargetFPGA>xc7a200t-fbg484/-1</TargetFPGA>
 
@@ -59,14 +59,14 @@
     <DataMask>1</DataMask>
     <ECC>Disabled</ECC>
     <Ordering>Normal</Ordering>
-    <BankMachineCnt>4</BankMachineCnt>
+    <BankMachineCnt>5</BankMachineCnt>
     <CustomPart>FALSE</CustomPart>
     <NewPartName/>
     <RowAddress>14</RowAddress>
     <ColAddress>10</ColAddress>
     <BankAddress>3</BankAddress>
     <MemoryVoltage>1.35V</MemoryVoltage>
-    <UserMemoryAddressMap>BANK_ROW_COLUMN</UserMemoryAddressMap>
+    <UserMemoryAddressMap>ROW_BANK_COLUMN</UserMemoryAddressMap>
     <PinSelection>
       <Pin IN_TERM="" IOSTANDARD="" PADName="A15" SLEW="" VCCAUX_IO="" name="ddr3_addr[0]"/>
       <Pin IN_TERM="" IOSTANDARD="" PADName="C17" SLEW="" VCCAUX_IO="" name="ddr3_addr[10]"/>
