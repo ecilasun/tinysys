@@ -141,7 +141,13 @@ always @(posedge aclk) begin
 					rs1, rs2, rd,
 					selectimmedasrval2, immed};
 
+				// No compressed instruction support:
 				PC <= PC + 32'd4;
+
+				// Compressed instruction support:
+				// Step 2 bytes for compressed instruction
+				//PC <= PC + IR[1:0]==2'b11 ? 32'd4 : 32'd2;
+
 				fetchena <= ~needstohalt;
 				fetchmode <= ~needstohalt ? FETCH : WAITNEWBRANCHTARGET;
 			end

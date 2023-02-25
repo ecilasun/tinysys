@@ -101,10 +101,58 @@ arithmeticlogic arithmeticlogicinst(
 	.aluop(aluop) );
 
 // --------------------------------------------------
+// IMUL/IDIV
+// --------------------------------------------------
+
+logic mulstrobe = 1'b0;
+logic divstrobe = 1'b0;
+
+wire mulready;
+wire [31:0] product;
+integermultiplier IMULSU(
+    .aclk(aclk),
+    .aresetn(aresetn),
+    .start(mulstrobe),
+    .ready(mulready),
+    .func3(func3),
+    .multiplicand(A),
+    .multiplier(B),
+    .product(product) );
+
+wire divuready;
+wire [31:0] quotientu, remainderu;
+integerdividerunsigned IDIVU (
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.start(divstrobe),
+	.ready(divuready),
+	.dividend(A),
+	.divisor(B),
+	.quotient(quotientu),
+	.remainder(remainderu) );
+
+wire divready;
+wire [31:0] quotient, remainder;
+integerdividersigned IDIVS (
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.start(divstrobe),
+	.ready(divready),
+	.dividend(A),
+	.divisor(B),
+	.quotient(quotient),
+	.remainder(remainder) );
+
+// --------------------------------------------------
 // Core logic
 // --------------------------------------------------
 
-typedef enum logic [3:0] {READINSTR, READREG, DISPATCH, LWAIT, SWAIT, SYSOP, SYSWBACK, SYSWAIT, SYSCACHE, WBACK} controlunitmode;
+typedef enum logic [3:0] {
+	READINSTR, READREG,
+	DISPATCH,
+	MATHWAIT, LWAIT, SWAIT,
+	SYSOP, SYSWBACK, SYSWAIT, SYSCACHE,
+	WBACK } controlunitmode;
 controlunitmode ctlmode = READINSTR;
 
 logic [31:0] rwaddress = 32'd0;
@@ -144,6 +192,9 @@ always @(posedge aclk) begin
 		m_ibus.rstrobe <= 1'b0;
 		m_ibus.wstrobe <= 4'h0;
 
+		mulstrobe <= 1'b0;
+		divstrobe <= 1'b0;
+
 		unique case(ctlmode)
 			READINSTR: begin
 				// TODO: Fetch unit can halt / resume / debug the CPU via special commands
@@ -164,6 +215,8 @@ always @(posedge aclk) begin
 				rwaddress <= rval1 + immed;
 				offsetPC <= PC + immed;
 				adjacentPC <= PC + 32'd4;
+				mulstrobe <= (aluop==`ALU_MUL);
+				divstrobe <= (aluop==`ALU_DIV || aluop==`ALU_REM);
 				ctlmode <= DISPATCH;
 			end
 
@@ -215,7 +268,28 @@ always @(posedge aclk) begin
 						m_ibus.rstrobe <= 1'b1;
 					end
 				endcase
-				ctlmode <= instrOneHotOut[`O_H_SYSTEM] ? SYSOP : (instrOneHotOut[`O_H_STORE] ? SWAIT : ( instrOneHotOut[`O_H_LOAD] ? LWAIT : WBACK));
+
+				ctlmode <= (mulstrobe || divstrobe) ? MATHWAIT : (instrOneHotOut[`O_H_SYSTEM] ? SYSOP : (instrOneHotOut[`O_H_STORE] ? SWAIT : ( instrOneHotOut[`O_H_LOAD] ? LWAIT : WBACK)));
+			end
+
+			MATHWAIT: begin
+				if (mulready || divready) begin
+					unique case (aluop)
+						`ALU_MUL: begin
+							wbdin <= product;
+						end
+						`ALU_DIV: begin
+							wbdin <= (func3 == `F3_DIV) ? quotient : quotientu;
+						end
+						`ALU_REM: begin
+							wbdin <= (func3 == `F3_REM) ? remainder : remainderu;
+						end
+					endcase
+					wback <= 1'b1;
+					ctlmode <= WBACK;
+				end else begin
+					ctlmode <= MATHWAIT;
+				end
 			end
 
 			LWAIT: begin
