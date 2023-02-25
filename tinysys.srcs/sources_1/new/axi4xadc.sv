@@ -65,8 +65,8 @@ always @(posedge aclk) begin
 		if (ready) begin
 			// Swap addresses once current value is ready
 			case (evenodd)
-				default:	tmp0 <= xadc_data[15:4]; // 1'b0 - TEMPERATURE
-				1'b1:		acq0 <= xadc_data[15:4]; // AUX0
+				1'b0:	tmp0 <= xadc_data[15:4];			// 1'b0 - TEMPERATURE
+				default:		acq0 <= xadc_data[15:4];	// 1'b1 - AUX0
 			endcase
 			// Flip for next time
 			evenodd <= ~evenodd;
@@ -93,11 +93,11 @@ always @(posedge aclk) begin
 		s_axi.rvalid <= 1'b0;
 		s_axi.arready <= 1'b0;
 		case (raddrstate)
-			default: begin // 2'b00
+			2'b00: begin
 				if (s_axi.arvalid) begin
 					case (s_axi.araddr[3:0])
-						default: raddrstate <= 2'b01; // 4'h0
-						4'h4: raddrstate <= 2'b10;
+						4'h0: raddrstate <= 2'b01;
+						default: raddrstate <= 2'b10; // 4'h4
 					endcase
 					s_axi.arready <= 1'b1;
 				end
@@ -109,7 +109,7 @@ always @(posedge aclk) begin
 					raddrstate <= 2'b00;
 				end
 			end
-			2'b10: begin
+			default: begin //2'b10
 				if (s_axi.rready) begin
 					s_axi.rdata <= {116'd0, devicetemperature}; // TEMP
 					s_axi.rvalid <= 1'b1;

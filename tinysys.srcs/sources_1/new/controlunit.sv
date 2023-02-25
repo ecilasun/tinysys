@@ -132,6 +132,8 @@ always @(posedge aclk) begin
 		rwen <= 1'b0;
 		wback <= 1'b0;
 
+		retiredcount <= 64'd0;
+
 	end else begin
 
 		btready <= 1'b0;
