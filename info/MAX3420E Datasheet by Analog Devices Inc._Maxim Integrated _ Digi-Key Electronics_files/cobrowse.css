@@ -1,0 +1,158 @@
+.dk_modal:before {
+	content: "";
+	display: block;
+	position: fixed;
+	height: 100%;
+	width: 100%;
+	background-color: #000;
+	top: 0px;
+	z-index: 200;
+	opacity: 0.7;
+}
+
+.dk_modal--wrapper {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background-color: white;
+	z-index: 201;
+	padding: 15px;
+	border-radius: 4px;
+	border: solid 1px #c5c5c5;
+	height: auto;
+	max-width: 285px;
+	width: 100%;
+}
+
+.dk_modal--titlebar {
+	border-bottom: solid 1px #ccc;
+	padding-bottom: 5px;
+}
+
+.dk_modal--title {
+	font-weight: bold;
+	font-size: 16px;
+}
+
+.dk_modal--close {
+	float: right;
+	color: #333;
+	font-size: 14px;
+}
+
+.dk_modal--close:hover {
+	color: #000;
+	cursor: pointer;
+}
+
+.dk_modal--content p {
+	margin: 20px 0;
+}
+
+.dk_modal--buttons .button.primary {
+	text-align: right;
+	display: block;
+	/*! margin: 10px auto; */
+	padding: 7px 8px;
+	font-size: 14px;
+	font-weight: bold;
+	color: white;
+	background: #c00;
+	border: 2px solid #c00;
+	border-radius: 50em;
+	cursor: pointer;
+	text-decoration: none;
+	text-align: center;
+	width: 70px;
+	float: right;
+}
+
+
+.dk_modal--buttons .button.primary:hover {
+    background-color: #a30000;
+    color: white;
+    border-color: #a30000;
+}
+
+#cobrowse-footer-modal .dk-btn__primary {
+    margin-bottom:20px;
+}
+
+
+@media screen and (max-width:768px) {
+
+.dk_modal--wrapper {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background-color: white;
+	z-index: 201;
+	padding: 15px;
+	border-radius: 4px;
+	border: solid 1px #c5c5c5;
+	height: auto;
+/* 	max-width: 285px; */
+	width: 100%;
+}
+	
+}
+
+@media screen and (max-width:450px) {
+
+.dk_modal--wrapper {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background-color: white;
+	z-index: 201;
+	padding: 15px;
+	border-radius: 4px;
+	border: solid 1px #c5c5c5;
+	height: auto;
+max-width: 80%;
+	width: 100%;
+}
+	
+}
+
+body[egid] .cookie-notice,
+body[egid] .cookie-mask {
+	display:none;
+}
+
+@media (min-width: 1025px) {
+	html body[egid] {
+		margin-top:45px;
+		background-position: 0 45px;
+	}    
+	html body[egid] .menu-backdrop {
+	top: 238px;
+	}
+		html body[egid] #header__storage {
+		top:45px;
+	}
+	
+}
+
+@media (max-width: 1024px) {
+	body[egid] {
+		padding-top:165px !important
+	}
+	
+	body[egid] .header,
+	body[egid] .flymenu .header__bottom {
+		top:45px;
+	}
+}
+
+#egcb_toolbar {
+	position: fixed !important;
+}
+
+#eGain_allowcobrowse_toolbar_container {
+	display: none;
+}
+

@@ -1,0 +1,123 @@
+window.addEventListener('load', function () {
+    // Establishes the vars to build the GA collect request
+    var imgUrl = "https://www.google-analytics.com/collect?v=1"
+    var dkDom = window.location.hostname.toLowerCase()
+    var dkDomCtry = dkDom.substring(dkDom.length - 3).replace(/\.|\//g,'')
+
+    var ctryObj = {at : '9', au : '10', be : '11', bg : '12', ca : '13', ch : '14', cz : '16', cn : '17', dk : '18', de : '19', ee : '20', es : '21', fr : '22', fi : '23', hk : '24', gr : '25', hu : '26', ie : '27', it : '28', il : '29', jp : '30', kr : '31', lt : '32', lu : '33', mx : '34', lv : '35', nl : '36', no : '37', pl : '38', nz : '39', se : '40', pt : '41', sg : '42', si : '43', tw : '44', sk : '45', com : '46', uk : '47', my : '48', in : '49', za : '50', ro : '51', ph : '59', th : '60', br : '66'}
+
+    if ( dkDom.includes('digikeytest') || dkDom.includes('digikeydev') ) {
+        PropID = 'UA-88355857-1'
+    } else {
+        var ctryID = ctryObj[dkDomCtry]
+        ctryID == null ? PropID = 'UA-88355857-1' : PropID = 'UA-88355857-' + ctryID
+    }
+
+    var trackType = "event";
+    var clientID = getcid(document); // If the GA cookie value exists, we use it otherwise we make one up.
+    var eventCat = "Private Browsing";
+    var eaNoGA = "GA Disabled";
+    var eaNoCookie = "Cookies Disabled";
+    var nonInteraction = 1
+    var documentLocation = document.location.origin + document.location.pathname + document.location.search;
+    var imgSrc = imgUrl + "&t=" + trackType + "&tid=" + PropID + "&cid=" + clientID + "&ni=" + nonInteraction + "&dl=" + documentLocation;
+    var cookieSupport = checkCookie();
+    var pixelHit;
+
+    // If Cookies are disabled, we send an event...
+    if (!cookieSupport) {
+        console.log('Cookies are Disabled');
+        pixelHit = makeImg(imgSrc, eventCat, eaNoCookie);
+    } else if (window.ga && ga.create === undefined) {     // ...Else If GA is disabled, we send an event
+        console.log('Google Analytics is not loaded');
+        pixelHit = makeImg(imgSrc, eventCat, eaNoGA);
+        document.body.appendChild(pixelHit);
+    }
+
+    function makeImg(source, category, action) {
+        // This function builds the img tag to send a GA hit
+        var gaImg = document.createElement("img");
+        gaImg.setAttribute('src', source + "&ec=" + category + "&ea=" + action);
+        gaImg.setAttribute('alt', 'trk');
+        gaImg.setAttribute('height', '1px');
+        gaImg.setAttribute('width', '1px');
+        return gaImg;
+    }
+
+    function checkOTCookie(cookieName,cookieVal) {
+        let cookie = {};
+        document.cookie.split(';').forEach(function(el) {
+            if ( el.split('=')[0].trim() === cookieName) {
+                let tmpCookie = el.split('&')
+                tmpCookie[0].replace(cookieName + '=', '')
+                tmpCookie.every( e => {
+                    if (e.split('=')[0] === cookieVal) {
+                        let [key,value] = e.split('=')
+                        cookie[key.trim()] = decodeURIComponent(value)
+                        return false
+                    } else {
+                        return true
+                    }
+                })
+            }
+        })
+        return cookie[cookieVal];
+    }
+
+    function getcid(document, undefined) {
+        // Client ID fetcher/setter funciton
+        var twoYearsFromToday = new Date(+new Date + 1000 * 60 * 60 * 24 * 365 * 2);
+        var val = document.cookie.match(/_ga=GA\d\.\d\.(.*?)(;|$)/);
+        var cookieDomain = highestDomain();
+        if (val && val[1]) {
+            return val[1];
+        } else {
+            val = randomUint32() + '.' + Math.round(+new Date / 1000.0)
+            var otConsent = checkOTCookie('OptanonConsent','groups')
+            if(otConsent != null && otConsent.includes('C0002:1')) {
+                document.cookie = '_ga=GA1.2.' + val + '; path=/; domain=' + cookieDomain + '; expires=' + twoYearsFromToday;
+            }
+            return val;
+        }
+
+        function randomUint32() {
+            try {
+                var uu32 = new Uint32Array(1);
+                return crypto.getRandomValues(uu32)[0];
+            } catch (err) {
+                return Math.round(Math.random() * 2147483647);
+            }
+        }
+
+        function highestDomain() {
+            // checks cookie writing ability to determine the highest domain.
+            var i = 0,
+                domain = document.domain,
+                p = domain.split('.'),
+                s = '_gd' + (new Date()).getTime();
+            while (i < (p.length - 1) && document.cookie.indexOf(s + '=' + s) == -1) {
+                domain = p.slice(-1 - (++i)).join('.');
+                var otConsent = checkOTCookie('OptanonConsent','groups')
+                if(otConsent != null && otConsent.includes('C0002:1')) {
+                    document.cookie = s + "=" + s + ";domain=" + domain + ";";
+                }
+            }
+            var otConsent = checkOTCookie('OptanonConsent','groups')
+            if(otConsent != null && otConsent.includes('C0002:1')) {
+                document.cookie = s + "=;expires=Thu, 01 Jan 1970 00:00:01 GMT;domain=" + domain + ";";
+            }
+            return domain;
+        }
+    }
+
+    function checkCookie() {
+        // check for browser capabilities and then tests to make sure
+        var cookieEnabled = navigator.cookieEnabled;
+        if (!cookieEnabled) {
+            document.cookie = "__cookiecheck";
+            cookieEnabled = document.cookie.indexOf("__cookiecheck") != -1;
+        }
+        return cookieEnabled || false;
+    }
+
+}, false);

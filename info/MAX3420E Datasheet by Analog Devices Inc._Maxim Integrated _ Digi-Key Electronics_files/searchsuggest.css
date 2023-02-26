@@ -1,0 +1,79 @@
+#suggested-search {
+  display: none;
+  background: white;
+  position: absolute;
+  width: calc(100% + 35px);
+  padding: 10px 0;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  -webkit-box-shadow: 0px 2px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: 0px 2px 16px rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  text-align: left;
+  z-index: -1;
+}
+#suggested-search.active {
+  display: flex;
+  flex-direction:column-reverse;
+  z-index: 99;
+}
+
+#suggested-search .search__highlight {
+  position: relative;
+  font-size: inherit;
+  font-weight: bold;
+  right: unset;
+  top: unset;
+  color: inherit;
+  padding: unset;
+  border: unset;
+}
+#suggested-search .search__highlight:after {
+  content: unset;
+}
+#suggested-search ul.search__suggestions,
+#suggested-search ul.search__suggestions--part-number {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+#suggested-search ul.search__suggestions li,
+#suggested-search ul.search__suggestions--part-number li {
+  font-size: 12px;
+  color: #444444;
+  padding: 6px 16px;
+  cursor: pointer;
+}
+#suggested-search ul.search__suggestions li:hover,
+#suggested-search
+  ul.search__suggestions--part-number
+  li:hover {
+  background: #eaeaea;
+}
+
+#suggested-search ul.search__suggestions li a,
+#suggested-search ul.search__suggestions--part-number li a {
+  color: #444444;
+  text-decoration: none;
+}
+#suggested-search .search__suggestions--part-number li > a {
+  display: block;
+  border-bottom: 1px solid #ccc;
+}
+
+#suggested-search .search__suggestions--part-number li a div:first-child:before {
+content:"MFR#\00a0\00a0"
+}
+
+#suggested-search .search__suggestions--part-number li a div:last-child:before {
+content:"DK#\00a0\00a0\00a0\00a0\00a0"
+}
+
+
+#suggested-search .search__suggestions--part-number li > a:last-child {
+  border-bottom: unset;
+}
+
+.search__group-title {
+  display:none;
+}

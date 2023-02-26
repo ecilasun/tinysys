@@ -1,0 +1,152 @@
+/*eGain Chat server */
+var egainDockChat = egainDockChat  || {};
+egainDockChat.serverURL = "https://digikey.egain.cloud/system";
+configureEgainForLanguage();
+
+/*Set to true to enable posting attributes to templates*/
+egainDockChat.PostChatAttributes = true;
+/*eGain video chat parameters */
+egainDockChat.VChatParams = '';
+/*Set to true if custom button is used to launch docked chat */
+egainDockChat.UseCustomButton=true;
+/*Method to set customer Parameters. To be called by client website. All the parameters specified in application-chat-defaults must be set here.*/
+egainDockChat.SetCustomerParameters = function (egainAttributeName, attributeValue) {
+    if (!egainDockChat.SetParameter) {
+    egainDockChat.CallQueue = egainDockChat.CallQueue || [];
+    egainDockChat.CallQueue.push({name:'SetParameter', args:[egainAttributeName,attributeValue]});
+    } else {
+        egainDockChat.SetParameter(egainAttributeName,attributeValue);
+    }
+};
+
+/* Method to be called on click of custom button to launch chat in docked mode */
+egainDockChat.openHelp = function() {
+    egainDockChat.IsChatLaunched = true;
+    startChat();
+};
+
+function startChat(){
+    populateForm();
+
+    if (!egainDockChat.launchChat) {
+        egainDockChat.CallQueue = egainDockChat.CallQueue || [];
+        egainDockChat.CallQueue.push({name:'launchChat', args:[]});
+        setTimeout(function () {
+            if (egainDockChat.CallQueue.some(function (e) { return e.name === 'launchChat' })) {
+                alert(window.__egainFailure);
+            }
+        }, 1000);
+    } else {
+        egainDockChat.launchChat();
+    }
+}
+
+function populateForm() {
+    var data = __headerLayout.registrationStatus;
+    if (!data || !data.IsLoggedIn) {
+        egainDockChat.SetCustomerParameters('is_auth', 'false');
+        return;
+    }
+
+    egainDockChat.SetCustomerParameters('full_name', data.DisplayName || 'N/A');
+    egainDockChat.SetCustomerParameters('email_address', data.Email || 'N/A');
+    egainDockChat.SetCustomerParameters('company', data.CompanyName || 'N/A');
+    egainDockChat.SetCustomerParameters('customer_number', '' + (data.CustomerId || 'N/A'));
+    egainDockChat.SetCustomerParameters('is_auth', 'true');
+}
+
+function configureEgainForLanguage() {
+    /*Apply Lang to Var based on availabilty of __headerData or utag_data*/
+    var currentLang;
+    var currentSite;
+    if (typeof window.__headerData !== "undefined") {
+        currentLang = window.__headerData.lang;
+        currentSite = window.__headerData.site;
+    } else if (typeof window.utag_data !== "undefined") {
+        currentLang = window.utag_data.page_language;
+        currentSite = window.utag_data.page_site;
+    }
+    currentLang = (currentLang || '').toLowerCase();
+    currentSite = (currentSite || '').toLowerCase();
+    
+    switch (currentLang) {
+        case 'en':
+            egainDockChat.Locale =  "en-US";
+
+            if (currentSite === 'in') {
+                egainDockChat.Template = "digikey_nasp_ind";
+                egainDockChat.EntryPointId = "1023";
+            } else {
+                egainDockChat.Template = "digikey_nasp_va";
+                egainDockChat.EntryPointId = "1008";
+                egainDockChat.VAName = 'DigiKey%20VA';
+                egainDockChat.VATenantToken = 'EG86992109';
+            }
+            
+            egainDockChat.UseCustomButton = true;
+            egainDockChat.ShowPreChatOnEscalation = true;
+            break;
+        case 'es':
+            egainDockChat.Locale = "es-ES";
+            egainDockChat.EntryPointId = "1007";
+            egainDockChat.Template = "digikey_nasp";
+            break;
+        case 'de':
+            egainDockChat.Locale = "de-DE";
+            egainDockChat.EntryPointId = "1014";
+            egainDockChat.Template = "digikey_ol";
+            break;
+        case 'it':
+            egainDockChat.Locale = "it-IT";
+            egainDockChat.EntryPointId = "1015";
+            egainDockChat.Template = "digikey_ol";
+            break;			
+        case 'he':
+            egainDockChat.Locale = "iw-IL";
+            egainDockChat.EntryPointId = "1020";
+            egainDockChat.Template = "digikey_iwIL";
+            break;				
+        case 'fr':
+            egainDockChat.Locale = "fr-FR";
+            egainDockChat.EntryPointId = "1016";
+            egainDockChat.Template = "digikey_ol";
+            break;
+        case 'ja':
+            egainDockChat.Locale = "ja-JP";
+            egainDockChat.EntryPointId = "1002";
+            egainDockChat.Template = "digikey_ol";
+            break;
+        case 'ko':
+            egainDockChat.Locale = "ko-KR";
+            egainDockChat.EntryPointId = "1002";
+            egainDockChat.Template = "digikey_ol";
+            break;
+        case 'zh':
+            egainDockChat.Locale = "zh-HK";
+            egainDockChat.EntryPointId = "1013";
+            egainDockChat.Template = "digikey_ol";
+            break;
+        case 'pl':
+            egainDockChat.Locale = "pl-PL";
+            egainDockChat.EntryPointId = "1017";
+            egainDockChat.Template = "digikey_ol";
+            break;
+        default:
+            egainDockChat.Locale = "en-US";
+            egainDockChat.EntryPointId = "1002";
+            egainDockChat.Template = "digikey_ol";
+            break;
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    var customEgainButton = document.getElementById("custom-egain-button");
+    if (customEgainButton !== null) {
+        customEgainButton.addEventListener("click", egainDockChat.openHelp);
+    }
+    var extraLivechatButtons = document.querySelectorAll(".rte-livechat");
+    var realExtraLivechatButtons = Array.prototype.slice.call(extraLivechatButtons);
+    realExtraLivechatButtons.forEach(function (btn) {
+        btn.addEventListener("click", egainDockChat.openHelp);
+    });
+});

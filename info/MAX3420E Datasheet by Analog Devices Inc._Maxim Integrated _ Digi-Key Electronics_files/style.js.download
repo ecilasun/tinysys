@@ -1,0 +1,95 @@
+// Lan 1
+// $(document).ready(function(){
+
+    // var sizeWindow0 = $(window).width();
+
+    // var sizePageContainer0 = parseInt($(".sub-page-container").css("width").replace("px", ""));
+    // var sizePage0 = parseInt($(".pf1").css("width").replace("px", ""));
+
+    // $(window).resize(function(){
+        // var sizeWindow1 = $(window).width();
+        // var sizePage1 = parseInt($(".pf1").css("width").replace("px", ""));
+        
+        // // Resize pageContainer
+        // var sizePageContainer1 = parseInt($(".sub-page-container").css("width").replace("px", ""));
+        // var per = sizePageContainer0 / sizePageContainer1;
+        // if(per < 1)
+        // {
+            // $(".sub-page-container").css("transform", "scale(" + per + ")");
+        // }
+        // else
+        // {
+            // $(".sub-page-container").css("transform", "none");
+        // }
+    // });
+// });
+
+// Lan 2
+// $(document).ready(function()
+// {   
+    // var sizePageContainer = $(".sub-page-container").width();
+    // var sizePage0 = $("#pf1").width();
+    
+    // if(sizePageContainer < sizePage0)
+    // {
+        // $(".w0").css("width", "100%");
+    // }
+
+    // $(window).resize(function()
+    // {
+        // var sizePage1 = $("#pf1").width();
+        // sizePageContainer = $(".sub-page-container").width();
+    
+        // if(sizePageContainer < sizePage1)
+        // {
+            // $(".w0").css("width", "100%");
+        // }
+        // else
+        // {
+            // $(".w0").css("width", sizePage0);
+        // }
+    // });
+// });
+
+// Lan 3
+$(document).ready(function()
+{   
+    // get sizeBase:
+    var heightDsContainer0 = $("#datasheet-page-container").height();
+    var sizePageContainer0 = $(".sub-page-container").width();
+    var sizePage0 = $("#pf1").width();
+    
+    // get scale
+    var scalePage = sizePageContainer0 / sizePage0;
+    if(scalePage < 1)
+    {
+        $(".sub-page-container").css("transform", "scale(" + scalePage + ")");
+        
+        // Fix height
+        $("#datasheet-page-container").height(heightDsContainer0 * scalePage);
+        //$("#datasheet-page-container").height(10748.229604);
+        //$("#datasheet-page-container").css("height", "10748px");
+    }
+    
+    $(window).resize(function()
+    {
+        var sizePageContainer1 = $(".sub-page-container").width();
+    
+        scalePage = sizePageContainer1 / sizePage0;
+        if(scalePage < 1)
+        {
+            $(".sub-page-container").css("transform", "scale(" + scalePage + ")");
+        
+            // Fix height
+            $("#datasheet-page-container").height(heightDsContainer0 * scalePage);
+        }
+        else
+        {
+            $(".sub-page-container").css("transform", "scale(1)");
+        
+            // Fix height
+            $("#datasheet-page-container").height(heightDsContainer0);
+        }
+        
+    });
+});

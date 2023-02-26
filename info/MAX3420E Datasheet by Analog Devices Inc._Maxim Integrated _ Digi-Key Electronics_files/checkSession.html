@@ -1,0 +1,42 @@
+
+<!-- saved from url=(0089)https://digikey.egain.cloud/system/cb/cs/checkSession.html?wsname=https://www.digikey.com -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252"><script>
+    var wsOrigin = null;
+    function getQueryParameter(name){
+        if(name=(new RegExp('[?&]'+encodeURIComponent(name)+'=([^&]*)')).exec(location.search))
+            return decodeURIComponent(name[1]);
+    }
+
+    function receiveMessage(e) {
+        if(e.origin == wsOrigin && e.data == "getSessionState"){
+			try{
+		        var sessionState = sessionStorage.getItem('SESSION_INITIALIZED') || localStorage.getItem('SESSION_INITIALIZED') || "";
+		        var sessionId = sessionStorage.getItem('cbAutoSessionId') || localStorage.getItem('cbAutoSessionId') || "";
+		        var egActId = sessionStorage.getItem('egActId') || localStorage.getItem('egActId') || "";
+		        var locale = sessionStorage.getItem('cbLocale') || localStorage.getItem('cbLocale') || "en_US";
+	            e.source.postMessage(sessionState+"$egcb$"+sessionId+"$egcb$"+egActId+"$egcb$"+locale, wsOrigin );
+			}
+			catch(e){
+				if(console && console.log){
+					console.log("Cobrowse: Failed to access sessionStorage");
+				}
+			}
+    	}
+    }
+    (function (){
+        wsOrigin = getQueryParameter('wsname');
+        //set up the listener
+        var isIE = window.attachEvent != null;
+        if (window.addEventListener) {
+            window.addEventListener("message", receiveMessage, false);
+        } else if (isIE) {
+            window.attachEvent("onmessage", receiveMessage);
+        } else if (console && console.log) {
+            console.log("Failed to send messages using event listener");
+        }
+	})();
+
+</script>
+</head><body egcb_nopub="true"> 
+
+</body></html>

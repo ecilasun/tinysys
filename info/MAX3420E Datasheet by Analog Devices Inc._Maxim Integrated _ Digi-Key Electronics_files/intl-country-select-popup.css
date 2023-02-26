@@ -1,0 +1,6 @@
+/* INTERNATIONAL COUNTRY SELECT */
+.domain-suggest .domain-suggest__flags {display: -webkit-box; display: -ms-flexbox; display: -webkit-flex; display: flex; flex-flow: row wrap; width: auto; margin: 10px -10px; padding: 0; box-sizing: border-box;}
+.domain-suggest .domain-suggest__flags .domain-suggest__flag {-webkit-box-flex: 1; width: calc(50% - 20px); -webkit-flex: 1 1 auto; -ms-flex: 1 1 auto; flex: 1 1 auto; margin: 5px 10px; box-sizing: border-box; cursor: pointer;}
+.domain-suggest .domain-suggest__flags .domain-suggest__flag > img {width: 100%; height: auto;}
+.domain-suggest .domain-suggest__flags .domain-suggest__flag .domain-suggest__domain {display: block; margin: 5px auto; font-weight: bold; text-align: center; cursor: pointer;}
+.domain-suggest .domain-suggest__info {display: block; margin: 10px 0;}

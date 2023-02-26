@@ -1,0 +1,15 @@
+/*
+body.roboto *,
+body.roboto .banner__navigation a {
+  font-family: "Roboto", "Noto Sans", Arial, Helvetica, sans-serif, "dk" !important; 
+}
+
+body.noto *,
+body.noto .banner__navigation a{
+    font-family: "Noto Sans", Arial, Helvetica, sans-serif, "dk" !important;
+  }
+
+body.arial *,
+body.arial .banner__navigation a{
+font-family: Arial, Helvetica, sans-serif, "dk" !important;
+}*/
