@@ -1,11 +1,11 @@
 interface sdwires (
-	input wire sd_miso,
-	output wire sd_cs_n,
-	output wire sd_clk,
-	output wire sd_mosi );
+	input wire spi_miso,
+	output wire spi_cs_n,
+	output wire spi_clk,
+	output wire spi_mosi );
 
 	modport def (
-		input sd_miso,
-		output sd_cs_n, sd_clk, sd_mosi );
+		input spi_miso,
+		output spi_cs_n, spi_clk, spi_mosi );
 
 endinterface

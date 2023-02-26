@@ -9,7 +9,7 @@ module axi4spi(
     sdwires.def sdconn,
 	axi4if.slave s_axi);
 
-assign sdconn.sd_cs_n = 1'b0; // Keep attached spi device selected (TODO: Drive via control register)
+assign sdconn.spi_cs_n = 1'b0; // Keep attached spi device selected (TODO: Drive via control register)
 
 logic [1:0] writestate = 2'b00;
 logic [1:0] raddrstate = 2'b00;
@@ -45,9 +45,9 @@ spi_master #(.spi_mode(0), .clks_per_half_bit(2)) spi(
    .o_rx_byte(spiincomingdata),
 
    // spi interface
-   .o_spi_clk(sdconn.sd_clk),
-   .i_spi_miso(sdconn.sd_miso),
-   .o_spi_mosi(sdconn.sd_mosi) );
+   .o_spi_clk(sdconn.spi_clk),
+   .i_spi_miso(sdconn.spi_miso),
+   .o_spi_mosi(sdconn.spi_mosi) );
 
 wire infifofull, infifoempty, infifovalid;
 logic infifowe = 1'b0, infifore = 1'b0;

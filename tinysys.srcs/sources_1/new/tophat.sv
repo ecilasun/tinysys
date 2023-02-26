@@ -30,10 +30,10 @@ module tophat(
 	,output wire hdmi_tx_clk_p
 	,output wire hdmi_tx_clk_n
 	// Micro SD Card
-	,input wire sd_miso
-	,output wire sd_cs_n
-	,output wire sd_clk
-	,output wire sd_mosi
+	,input wire spi_miso
+	,output wire spi_cs_n
+	,output wire spi_clk
+	,output wire spi_mosi
 	// Analog inputs
 	,input wire [3:0] xa_p
 	,input wire [3:0] xa_n);
@@ -97,10 +97,10 @@ gpuwires gpuvideoout(
 // --------------------------------------------------
 
 sdwires sdconn(
-	.sd_miso(sd_miso),
-	.sd_cs_n(sd_cs_n),
-	.sd_clk(sd_clk),
-	.sd_mosi(sd_mosi) );
+	.spi_miso(spi_miso),
+	.spi_cs_n(spi_cs_n),
+	.spi_clk(spi_clk),
+	.spi_mosi(spi_mosi) );
 
 // --------------------------------------------------
 // ADC wires
