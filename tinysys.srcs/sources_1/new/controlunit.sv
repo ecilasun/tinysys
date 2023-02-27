@@ -154,7 +154,7 @@ typedef enum logic [4:0] {
 	MATHWAIT, LWAIT, SWAIT,
 	SYSOP, SYSWBACK, SYSWAIT,
 	CSROPS, WCSROP,
-	SYSCDISCARD, SYSCFLUSH, WCACHE,
+	SYSIFENCE, SYSCDISCARD, SYSCFLUSH, WCACHE,
 	SYSMRET, SYSWFI,
 	WBACK } controlunitmode;
 controlunitmode ctlmode = READINSTR;
@@ -171,6 +171,29 @@ always @(posedge aclk) begin
 		cyclecount <= cyclecount + 64'd1;
 	end
 end
+
+/*m_ibus.waddr <= {20'h80004, `CSR_MIP};
+m_ibus.wstrobe <= 4'b1111;
+//m_ibus.wop <= `WOP_NOTAND;
+// Clear interrupt pending bit based on what we just handled
+case (mcause)
+32'h8000000b:	csrext <= 32'h00000800; // IRQ
+32'h80000007:	csrext <= 32'h00000080; // TRQ
+default:		csrext <= 32'h00000008; // SWI
+endcase*/
+
+// Entering ISR:
+// 1- Fetch unit detects interrupts, passes IRQ bits as part of instruction output, halts for branch resolution
+// 2- Control unit ORs in incoming IRQ bits and updates MIP (wstrobe, wop=OR)
+// 3- Control unit saves adjacentPC into MEPC (wstrobe, wop=REPLACE)
+// 4- Control unit saves interrupt cause value into MCAUSE (wstrobe, wop=REPLACE)
+// 5- Control unit saves relevant data into MTVAL (wstrobe, wop=REPLACE)
+// 6- Control unit sets branch target to MTVEC and flags branch resolved (wstrobe, wop=REPLACE)
+// Returning from ISR:
+// 1- Fetch unit detects MRET, halts for branch resolution
+// 2- Control unit clears bits for current interrupt and updates MIP (wstrobe, wop=AND)
+// 3- Control unit reads MEPC (rstrobe)
+// 4- Control unit sets branch target to MEPC and flags branch resolved
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
@@ -271,7 +294,7 @@ always @(posedge aclk) begin
 					end
 				endcase
 
-				ctlmode <= (mulstrobe || divstrobe) ? MATHWAIT : (instrOneHotOut[`O_H_SYSTEM] ? SYSOP : (instrOneHotOut[`O_H_STORE] ? SWAIT : ( instrOneHotOut[`O_H_LOAD] ? LWAIT : WBACK)));
+				ctlmode <=	(mulstrobe || divstrobe) ? MATHWAIT : (instrOneHotOut[`O_H_FENCE] ? SYSIFENCE : (instrOneHotOut[`O_H_SYSTEM] ? SYSOP : (instrOneHotOut[`O_H_STORE] ? SWAIT : ( instrOneHotOut[`O_H_LOAD] ? LWAIT : WBACK))));
 			end
 
 			MATHWAIT: begin
@@ -349,6 +372,11 @@ always @(posedge aclk) begin
 				endcase
 			end
 
+			SYSIFENCE: begin
+				// TODO:
+				ctlmode <= READINSTR;
+			end
+
 			SYSCDISCARD: begin
 				m_ibus.dcacheop <= 2'b01; // {nowb,iscachecmd}
 				m_ibus.cstrobe <= 1'b1;
@@ -369,12 +397,22 @@ always @(posedge aclk) begin
 			end
 
 			SYSMRET: begin
-				// TODO:
+
+				// 1- read MEPC
+				// 2- set branch target
+
+				// Jump to saved PC
+				// NOTE: Return address must be set up to be +2/+4 of the interrupt site's PC beforehand
+				//btarget <= mepc;
+				//btready <= 1'b1;
+
 				ctlmode <= READINSTR;
 			end
 
 			SYSWFI: begin
-				// TODO:
+				// TODO: Wait for any incoming IRQ bit set and signal branch ready on next address
+				//btarget <= adjacentPC;
+				//btready <= 1'b1;
 				ctlmode <= READINSTR;
 			end
 

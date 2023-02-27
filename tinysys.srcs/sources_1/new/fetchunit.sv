@@ -106,9 +106,10 @@ wire isbranch = instrOneHotOut[`O_H_JAL] || instrOneHotOut[`O_H_JALR] || instrOn
 wire isfence = instrOneHotOut[`O_H_FENCE];
 wire isdiscard = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CDISCARD);
 wire isflush = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CFLUSH);
+wire ismret = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_MRET);
 
 // TODO: Also consider interrupts, mret and wfi
-wire needstohalt = isbranch || isfence || isdiscard || isflush;
+wire needstohalt = isbranch || isfence || isdiscard || isflush || ismret;
 
 // --------------------------------------------------
 // Fetch logic

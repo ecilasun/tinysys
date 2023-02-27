@@ -214,10 +214,6 @@
       <obj_property name="ElementShortName">dcacheop[1:0]</obj_property>
       <obj_property name="ObjectShortName">dcacheop[1:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/dataunitints/s_ibus/icacheop" type="array">
-      <obj_property name="ElementShortName">icacheop[1:0]</obj_property>
-      <obj_property name="ObjectShortName">icacheop[1:0]</obj_property>
-   </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/dataunitints/s_ibus/cstrobe" type="logic">
       <obj_property name="ElementShortName">cstrobe</obj_property>
       <obj_property name="ObjectShortName">cstrobe</obj_property>
