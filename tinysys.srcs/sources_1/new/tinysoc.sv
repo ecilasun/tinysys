@@ -48,7 +48,7 @@ wire branchresolved;
 wire [31:0] branchtarget;
 wire ififoempty;
 wire ififovalid;
-wire [119:0] ififodout;
+wire [131:0] ififodout;
 wire ififord_en;
 
 // Reset vector is at top of BRAM

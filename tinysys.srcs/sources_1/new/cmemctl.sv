@@ -33,7 +33,7 @@ module cachedmemorycontroller (
 			m_axi.wstrb <= 16'h0000;
 			m_axi.wlast <= 0;
 			m_axi.bready <= 0;
-			m_axi.wdata <= 0;
+			//m_axi.wdata <= 0;
 			writestate <= WIDLE;
 		end else begin
 

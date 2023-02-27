@@ -14,7 +14,7 @@ module controlunit #(
 	// Instruction FIFO control
 	input wire ififoempty,
 	input wire ififovalid,
-	input wire [119:0] ififodout,
+	input wire [131:0] ififodout,
 	output wire ififord_en,
 	// CPU cycle / retired instruction counts
 	output wire [63:0] cpuclocktime,
@@ -35,6 +35,7 @@ logic [17:0] instrOneHotOut;
 logic [3:0] aluop;
 logic [2:0] bluop;
 logic [2:0] func3;
+logic [11:0] func12;
 logic [4:0] rs1;
 logic [4:0] rs2;
 logic [4:0] rd;
@@ -151,7 +152,10 @@ typedef enum logic [3:0] {
 	READINSTR, READREG,
 	DISPATCH,
 	MATHWAIT, LWAIT, SWAIT,
-	SYSOP, SYSWBACK, SYSWAIT, SYSCACHE,
+	SYSOP, SYSWBACK, SYSWAIT,
+	CSROPS, WCSROP,
+	SYSCDISCARD, SYSCFLUSH,
+	SYSMRET, SYSWFI,
 	WBACK } controlunitmode;
 controlunitmode ctlmode = READINSTR;
 
@@ -199,7 +203,7 @@ always @(posedge aclk) begin
 			READINSTR: begin
 				// TODO: Fetch unit can halt / resume / debug the CPU via special commands
 				{ PC, csroffset, instrOneHotOut,
-					aluop, bluop, func3,
+					aluop, bluop, func3, func12,
 					rs1, rs2, rd,
 					selectimmedasrval2, immed} <= ififodout;
 				ififore <= (ififovalid && ~ififoempty);
@@ -261,11 +265,6 @@ always @(posedge aclk) begin
 					instrOneHotOut[`O_H_BRANCH]: begin
 						btarget <= branchout ? offsetPC : adjacentPC;
 						btready <= 1'b1;
-					end
-					instrOneHotOut[`O_H_SYSTEM]: begin
-						// Set to CSR address range at 0x80004000 and trigger a read regardless of the op
-						m_ibus.raddr <= {20'h80004, csroffset};
-						m_ibus.rstrobe <= 1'b1;
 					end
 				endcase
 
@@ -331,17 +330,53 @@ always @(posedge aclk) begin
 			end
 
 			SWAIT: begin
+				// This one does not visit WBACK mode
 				ctlmode <= m_ibus.wdone ? READINSTR : SWAIT;
 			end
 
 			SYSOP: begin
-				// Wait for CSR load
+				case ({func3, func12})
+					{3'b000, `F12_CDISCARD}:	ctlmode <= SYSCDISCARD;
+					{3'b000, `F12_CFLUSH}:		ctlmode <= SYSCFLUSH;
+					{3'b000, `F12_MRET}:		ctlmode <= SYSMRET;
+					{3'b000, `F12_WFI}:			ctlmode <= SYSWFI;
+					{3'b000, `F12_EBREAK}:		ctlmode <= READINSTR;
+					{3'b000, `F12_ECALL}:		ctlmode <= READINSTR;
+					default:					ctlmode <= CSROPS;
+				endcase
+			end
+
+			SYSCDISCARD: begin
+				// TODO:
+				ctlmode <= READINSTR;
+			end
+
+			SYSCFLUSH: begin
+				// TODO:
+				ctlmode <= READINSTR;
+			end
+
+			SYSMRET: begin
+				// TODO:
+				ctlmode <= READINSTR;
+			end
+
+			SYSWFI: begin
+				// TODO:
+				ctlmode <= READINSTR;
+			end
+
+			CSROPS: begin
+				m_ibus.raddr <= {20'h80004, csroffset};
+				m_ibus.rstrobe <= 1'b1;
+				ctlmode <= WCSROP;
+			end
+
+			WCSROP: begin
 				if (m_ibus.rdone) begin
 					csrprevval <= m_ibus.rdata;
 				end
-				// When done, either jump to cache op or csr wback
-				// We waste a load here for simplicity during cache ops
-				ctlmode <= m_ibus.rdone ? (func3 == 3'b000 ? SYSCACHE : SYSWBACK) : SYSOP;
+				ctlmode <= m_ibus.rdone ? SYSWBACK : WCSROP;
 			end
 
 			SYSWBACK: begin
@@ -382,11 +417,6 @@ always @(posedge aclk) begin
 				// Store old CSR value in wbdest
 				wbdin <= csrprevval;
 				wback <= m_ibus.wdone;
-			end
-
-			SYSCACHE: begin
-				// TODO: Cache op ignored for now
-				ctlmode <= WBACK;
 			end
 
 			WBACK: begin
