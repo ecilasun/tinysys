@@ -101,9 +101,14 @@ instructinfifo instructionfifoinst (
 // Instruction classification and halt detection
 // --------------------------------------------------
 
+// Reasons to stall fetch activity until control unit executes current instruction and flags branchresolved
 wire isbranch = instrOneHotOut[`O_H_JAL] || instrOneHotOut[`O_H_JALR] || instrOneHotOut[`O_H_BRANCH];
+wire isfence = instrOneHotOut[`O_H_FENCE];
+wire isdiscard = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CDISCARD);
+wire isflush = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CFLUSH);
 
-wire needstohalt = isbranch; // TODO: Or is interrupt or is illegal instruction
+// TODO: Also consider interrupts, mret and wfi
+wire needstohalt = isbranch || isfence || isdiscard || isflush;
 
 // --------------------------------------------------
 // Fetch logic
@@ -153,6 +158,7 @@ always @(posedge aclk) begin
 			end
 
 			WAITNEWBRANCHTARGET: begin
+				// Branch resolve and cache operation completion will signal branch address resolved
 				fetchena <= branchresolved;
 				PC <= branchresolved ? branchtarget : PC;
 				fetchmode <= branchresolved ? FETCH : WAITNEWBRANCHTARGET;

@@ -37,18 +37,17 @@ datacache datacacheinst(
 	.a4buscached(databus),
 	.a4busuncached(devicebus) );
 
-typedef enum logic [1:0] {FETCH, READ, WRITE} dataunitmode;
+typedef enum logic [1:0] {FETCH, READ, CACHEOP, WRITE} dataunitmode;
 dataunitmode datamode = FETCH;
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
-
 		datamode <= FETCH;
-
 	end else begin
 	
 		s_ibus.rdone <= 1'b0;
 		s_ibus.wdone <= 1'b0;
+
 		datare <= 1'b0;
 		datawe <= 1'b0;
 
@@ -58,7 +57,9 @@ always @(posedge aclk) begin
 				datain <= s_ibus.wdata;
 				datare <= s_ibus.rstrobe;
 				datawe <= s_ibus.wstrobe;
-				datamode <= s_ibus.rstrobe ? READ : (s_ibus.wstrobe ? WRITE : FETCH);
+				s_ibus.cdone <= ~s_ibus.cstrobe;
+				dcacheop <= s_ibus.cstrobe ? s_ibus.dcacheop : 2'b00;
+				datamode <= s_ibus.cstrobe ? CACHEOP : (s_ibus.rstrobe ? READ : (s_ibus.wstrobe ? WRITE : FETCH));
 			end
 			READ: begin
 				s_ibus.rdone <= rready;
@@ -67,6 +68,10 @@ always @(posedge aclk) begin
 			end
 			WRITE: begin
 				s_ibus.wdone <= wready;
+				datamode <= wready ? FETCH : WRITE;
+			end
+			CACHEOP: begin
+				s_ibus.cdone <= wready;
 				datamode <= wready ? FETCH : WRITE;
 			end
 		endcase

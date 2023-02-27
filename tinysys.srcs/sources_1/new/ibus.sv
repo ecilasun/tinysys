@@ -14,14 +14,22 @@ interface ibusif;
 	logic [3:0] wstrobe;
 	logic wdone;
 
+	// Cache op
+	logic [1:0] dcacheop;
+	logic [1:0] icacheop;
+	logic cstrobe;
+	logic cdone;
+
 	modport master (
 		output raddr, rstrobe, input rdata, rdone,
-		output waddr, wdata, wstrobe, input wdone
+		output waddr, wdata, wstrobe, input wdone,
+		output dcacheop, icacheop, cstrobe, input cdone
 	);
 
 	modport slave (
 		input raddr, rstrobe, output rdata, rdone,
-		input waddr, wdata, wstrobe, output wdone
+		input waddr, wdata, wstrobe, output wdone,
+		input dcacheop, icacheop, cstrobe, output cdone
 	);
 
 endinterface

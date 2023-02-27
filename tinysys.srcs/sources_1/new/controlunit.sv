@@ -148,13 +148,13 @@ integerdividersigned IDIVS (
 // Core logic
 // --------------------------------------------------
 
-typedef enum logic [3:0] {
+typedef enum logic [4:0] {
 	READINSTR, READREG,
 	DISPATCH,
 	MATHWAIT, LWAIT, SWAIT,
 	SYSOP, SYSWBACK, SYSWAIT,
 	CSROPS, WCSROP,
-	SYSCDISCARD, SYSCFLUSH,
+	SYSCDISCARD, SYSCFLUSH, WCACHE,
 	SYSMRET, SYSWFI,
 	WBACK } controlunitmode;
 controlunitmode ctlmode = READINSTR;
@@ -195,6 +195,7 @@ always @(posedge aclk) begin
 
 		m_ibus.rstrobe <= 1'b0;
 		m_ibus.wstrobe <= 4'h0;
+		m_ibus.cstrobe <= 1'b0;
 
 		mulstrobe <= 1'b0;
 		divstrobe <= 1'b0;
@@ -347,13 +348,22 @@ always @(posedge aclk) begin
 			end
 
 			SYSCDISCARD: begin
-				// TODO:
-				ctlmode <= READINSTR;
+				m_ibus.dcacheop <= 2'b01; // {nowb,iscachecmd}
+				m_ibus.cstrobe <= 1'b1;
+				ctlmode <= WCACHE;
 			end
 
 			SYSCFLUSH: begin
-				// TODO:
-				ctlmode <= READINSTR;
+				m_ibus.dcacheop <= 2'b11; // {wb,iscachecmd}
+				m_ibus.cstrobe <= 1'b1;
+				ctlmode <= WCACHE;
+			end
+
+			WCACHE: begin
+				// Wait for pending cache operation to complete and unblock fetch unit
+				btarget <= adjacentPC;
+				btready <= m_ibus.cdone;
+				ctlmode <= m_ibus.cdone ? READINSTR : WCACHE;
 			end
 
 			SYSMRET: begin
