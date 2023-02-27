@@ -179,6 +179,8 @@ always @(posedge aclk) begin
 		m_ibus.waddr <= 32'd0;
 		m_ibus.rstrobe <= 1'b0;
 		m_ibus.wstrobe <= 4'h0;
+		m_ibus.cstrobe <= 1'b0;
+		m_ibus.dcacheop <= 2'b0;
 		
 		ififore <= 1'b0;
 		rwen <= 1'b0;

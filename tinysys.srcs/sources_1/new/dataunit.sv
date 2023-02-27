@@ -50,6 +50,7 @@ always @(posedge aclk) begin
 
 		datare <= 1'b0;
 		datawe <= 1'b0;
+		dcacheop <= 2'b00;
 
 		unique case(datamode)
 			FETCH: begin
@@ -57,7 +58,7 @@ always @(posedge aclk) begin
 				datain <= s_ibus.wdata;
 				datare <= s_ibus.rstrobe;
 				datawe <= s_ibus.wstrobe;
-				s_ibus.cdone <= ~s_ibus.cstrobe;
+				s_ibus.cdone <= 1'b0;
 				dcacheop <= s_ibus.cstrobe ? s_ibus.dcacheop : 2'b00;
 				datamode <= s_ibus.cstrobe ? CACHEOP : (s_ibus.rstrobe ? READ : (s_ibus.wstrobe ? WRITE : FETCH));
 			end
@@ -72,7 +73,7 @@ always @(posedge aclk) begin
 			end
 			CACHEOP: begin
 				s_ibus.cdone <= wready;
-				datamode <= wready ? FETCH : WRITE;
+				datamode <= wready ? FETCH : CACHEOP;
 			end
 		endcase
 
