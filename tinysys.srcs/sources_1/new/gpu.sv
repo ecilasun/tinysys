@@ -206,6 +206,8 @@ logic [31:0] gpucmd = 'd0;
 always_ff @(posedge aclk) begin
 	if (~aresetn) begin
 		cmdmode <= WCMD;
+		cmdre <= 1'b0;
+		palettewe <= 1'b0;
 	end else begin
 
 		cmdre <= 1'b0;

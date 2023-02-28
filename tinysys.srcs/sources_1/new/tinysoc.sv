@@ -94,7 +94,8 @@ end
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
-		//
+		wallclocktimeA <= 1'b0;
+		wallclocktime <= 1'b0;
 	end else begin
 		wallclocktimeA <= wallclockcounter;
 		wallclocktime <= wallclocktimeA;

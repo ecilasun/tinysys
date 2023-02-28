@@ -165,7 +165,7 @@ logic [31:0] adjacentPC = 32'd0;
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
-		// cyclecount <= 64'd0; ?
+		cyclecount <= 64'd0;
 	end else begin
 		// TODO: Stop this if CPU's halted for debug
 		cyclecount <= cyclecount + 64'd1;

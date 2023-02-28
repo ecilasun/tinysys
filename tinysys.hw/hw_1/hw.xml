@@ -22,13 +22,13 @@
     <Object name="xc7a200t_0" gui_info="">
       <Properties Property="FULL_PROBES.FILE" value=""/>
       <Properties Property="PROBES.FILE" value=""/>
-      <Properties Property="PROGRAM.HW_BITSTREAM" value="C:/Xilinx/Vivado/2022.2/data/xicom/cfgmem/bitfile/spi_xc7a200t_pullnone.bit"/>
+      <Properties Property="PROGRAM.HW_BITSTREAM" value="$_project_name_.runs/impl_1/tophat.bit"/>
       <Properties Property="PROGRAM.HW_CFGMEM_PART" value="is25lp128f-spi-x1_x2_x4"/>
       <Properties Property="SLR.COUNT" value="1"/>
     </Object>
   </ObjectList>
   <ObjectList object_type="hw_sysmon" gui_info="">
-    <Object name="XADC" gui_info="dashboard_1=[TEMPERATURE=-65281;SCAN_RATE=1000;TRACK_TIME=1;]"/>
+    <Object name="XADC" gui_info="dashboard_1=[TEMPERATURE=-65281;SCAN_RATE=1000;TRACK_TIME=5;]"/>
   </ObjectList>
   <probeset name="hw project" active="false"/>
 </hwsession>
