@@ -1,10 +1,6 @@
 `timescale 1ns / 1ps
 
-// Dummy master generating dummy bus traffic
-
 `include "shared.vh"
-
-import axi4pkg::*;
 
 module fetchunit #(
 	parameter int RESETVECTOR = 32'h20000000
@@ -17,7 +13,7 @@ module fetchunit #(
 	// Output FIFO control
 	output wire ififoempty,
 	output wire ififovalid,
-	output wire [131:0] ififodout,
+	output wire [143:0] ififodout,
 	input wire ififord_en, 
 	// To system bus
 	axi4if.master m_axi );
@@ -68,21 +64,21 @@ decoder decoderinst(
 	.aluop(aluop),								// 4	+
 	.bluop(bluop),								// 3	+
 	.func3(func3),								// 3	+
-	.func7(func7),								// 7	
+	.func7(func7),								// 7	+
 	.func12(func12),							// 12	+
 	.rs1(rs1),									// 5	+
 	.rs2(rs2),									// 5	+
-	.rs3(rs3),									// 5	
+	.rs3(rs3),									// 5	+
 	.rd(rd),									// 5	+
 	.csroffset(csroffset),						// 12	+
 	.immed(immed),								// 32	+
-	.selectimmedasrval2(selectimmedasrval2) );	// 1	+ -> 18+4+3+3+5+5+5+12+32+1+PC[31:0] = 132 bits
+	.selectimmedasrval2(selectimmedasrval2) );	// 1	+ -> 18+4+3+3+7+12+5+5+5+5+12+32+1+PC[31:0] = 144 bits (Exact *8 of 18)
 
 // --------------------------------------------------
 // Instruction output FIFO
 // --------------------------------------------------
 
-logic [131:0] ififodin;
+logic [143:0] ififodin;
 logic ififowr_en = 1'b0;
 wire ififofull;
 
@@ -108,7 +104,6 @@ wire isdiscard = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CDISCARD);
 wire isflush = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CFLUSH);
 wire ismret = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_MRET);
 
-// TODO: Also consider interrupts, mret and wfi
 wire needstohalt = isbranch || isfence || isdiscard || isflush || ismret;
 
 // --------------------------------------------------
@@ -142,10 +137,13 @@ always @(posedge aclk) begin
 			STREAMOUT: begin
 				// Emit decoded instruction
 				ififowr_en <= 1'b1;
-				ififodin <= {PC, csroffset, instrOneHotOut,
-					aluop, bluop, func3, func12,
+				ififodin <= {
+					rs3, func7, csroffset,
+					func12, func3,
+					instrOneHotOut, selectimmedasrval2,
+					bluop, aluop,
 					rs1, rs2, rd,
-					selectimmedasrval2, immed};
+					PC, immed};
 
 				// No compressed instruction support:
 				PC <= PC + 32'd4;

@@ -14,7 +14,7 @@ module controlunit #(
 	// Instruction FIFO control
 	input wire ififoempty,
 	input wire ififovalid,
-	input wire [131:0] ififodout,
+	input wire [143:0] ififodout,
 	output wire ififord_en,
 	// CPU cycle / retired instruction counts
 	output wire [63:0] cpuclocktime,
@@ -35,9 +35,11 @@ logic [17:0] instrOneHotOut;
 logic [3:0] aluop;
 logic [2:0] bluop;
 logic [2:0] func3;
+logic [6:0] func7;
 logic [11:0] func12;
 logic [4:0] rs1;
 logic [4:0] rs2;
+logic [4:0] rs3;
 logic [4:0] rd;
 logic [11:0] csroffset;
 logic [31:0] immed;
@@ -227,11 +229,12 @@ always @(posedge aclk) begin
 
 		unique case(ctlmode)
 			READINSTR: begin
-				// TODO: Fetch unit can halt / resume / debug the CPU via special commands
-				{ PC, csroffset, instrOneHotOut,
-					aluop, bluop, func3, func12,
+				{	rs3, func7, csroffset,
+					func12, func3,
+					instrOneHotOut, selectimmedasrval2,
+					bluop, aluop,
 					rs1, rs2, rd,
-					selectimmedasrval2, immed} <= ififodout;
+					PC, immed} <= ififodout;
 				ififore <= (ififovalid && ~ififoempty);
 				ctlmode <= (ififovalid && ~ififoempty) ? READREG : READINSTR;
 			end
