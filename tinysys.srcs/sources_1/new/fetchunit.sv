@@ -28,6 +28,7 @@ logic [31:0] IR;
 wire rready;
 wire [31:0] instruction;
 logic icacheflush = 1'b0;
+logic icacheflushpending = 1'b0;
 
 // --------------------------------------------------
 // Instruction cache
@@ -101,16 +102,16 @@ instructinfifo instructionfifoinst (
 wire isbranch = instrOneHotOut[`O_H_JAL] || instrOneHotOut[`O_H_JALR] || instrOneHotOut[`O_H_BRANCH];
 wire isfence = instrOneHotOut[`O_H_FENCE];
 wire isdiscard = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CDISCARD);
-wire isflush = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CFLUSH);
 wire ismret = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_MRET);
 
-wire needstohalt = isbranch || isfence || isdiscard || isflush || ismret;
+wire isflush = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CFLUSH);
+wire needstohalt = isbranch || isfence || isdiscard || ismret;
 
 // --------------------------------------------------
 // Fetch logic
 // --------------------------------------------------
 
-typedef enum logic [1:0] { INIT, FETCH, STREAMOUT, WAITNEWBRANCHTARGET } fetchstate;
+typedef enum logic [2:0] { INIT, FETCH, STREAMOUT, WAITNEWBRANCHTARGET, WAITIFENCE } fetchstate;
 fetchstate fetchmode = INIT;
 
 always @(posedge aclk) begin
@@ -122,6 +123,7 @@ always @(posedge aclk) begin
 
 		fetchena <= 1'b0;
 		ififowr_en <= 1'b0;
+		icacheflush <= 1'b0;
 
 		unique case(fetchmode)
 			INIT: begin
@@ -132,6 +134,7 @@ always @(posedge aclk) begin
 			FETCH: begin
 				fetchmode <= rready ? STREAMOUT : FETCH;
 				IR <= instruction;
+				icacheflushpending <= isfence;
 			end
 
 			STREAMOUT: begin
@@ -152,8 +155,14 @@ always @(posedge aclk) begin
 				// Step 2 bytes for compressed instruction
 				//PC <= PC + IR[1:0]==2'b11 ? 32'd4 : 32'd2;
 
-				fetchena <= ~needstohalt;
-				fetchmode <= ~needstohalt ? FETCH : WAITNEWBRANCHTARGET;
+				// Flush I$ if we have an IFENCE instruction and go to wait
+				icacheflush <= icacheflushpending;
+
+				// Stop fetching if we need to halt or have IFENCE
+				fetchena <= ~(needstohalt || icacheflushpending);
+
+				// Go to appropriate wait mode or resume FETCH
+				fetchmode <= icacheflushpending ? WAITIFENCE : (needstohalt ? WAITNEWBRANCHTARGET : FETCH);
 			end
 
 			WAITNEWBRANCHTARGET: begin
@@ -161,6 +170,12 @@ always @(posedge aclk) begin
 				fetchena <= branchresolved;
 				PC <= branchresolved ? branchtarget : PC;
 				fetchmode <= branchresolved ? FETCH : WAITNEWBRANCHTARGET;
+			end
+
+			WAITIFENCE: begin
+				// Resume fetch when I$ signals ready for pending flush
+				fetchena <= rready;
+				fetchmode <= rready ? FETCH : WAITIFENCE;
 			end
 
 		endcase

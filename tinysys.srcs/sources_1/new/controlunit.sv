@@ -156,7 +156,7 @@ typedef enum logic [4:0] {
 	MATHWAIT, LWAIT, SWAIT,
 	SYSOP, SYSWBACK, SYSWAIT,
 	CSROPS, WCSROP,
-	SYSIFENCE, SYSCDISCARD, SYSCFLUSH, WCACHE,
+	SYSCDISCARD, SYSCFLUSH, WCACHE,
 	SYSMRET, SYSWFI,
 	WBACK } controlunitmode;
 controlunitmode ctlmode = READINSTR;
@@ -297,7 +297,7 @@ always @(posedge aclk) begin
 					end
 				endcase
 
-				ctlmode <=	(mulstrobe || divstrobe) ? MATHWAIT : (instrOneHotOut[`O_H_FENCE] ? SYSIFENCE : (instrOneHotOut[`O_H_SYSTEM] ? SYSOP : (instrOneHotOut[`O_H_STORE] ? SWAIT : ( instrOneHotOut[`O_H_LOAD] ? LWAIT : WBACK))));
+				ctlmode <=	(mulstrobe || divstrobe) ? MATHWAIT : (instrOneHotOut[`O_H_SYSTEM] ? SYSOP : (instrOneHotOut[`O_H_STORE] ? SWAIT : ( instrOneHotOut[`O_H_LOAD] ? LWAIT : WBACK)));
 			end
 
 			MATHWAIT: begin
@@ -373,13 +373,6 @@ always @(posedge aclk) begin
 					{3'b000, `F12_ECALL}:		ctlmode <= READINSTR;
 					default:					ctlmode <= CSROPS;
 				endcase
-			end
-
-			SYSIFENCE: begin
-				// TODO: will kick icache flush here
-				btarget <= adjacentPC;
-				btready <= 1'b1;//m_ibus.cdone;
-				ctlmode <= READINSTR;
 			end
 
 			SYSCDISCARD: begin
