@@ -376,7 +376,9 @@ always @(posedge aclk) begin
 			end
 
 			SYSIFENCE: begin
-				// TODO:
+				// TODO: will kick icache flush here
+				btarget <= adjacentPC;
+				btready <= 1'b1;//m_ibus.cdone;
 				ctlmode <= READINSTR;
 			end
 
