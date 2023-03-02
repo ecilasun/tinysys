@@ -18,6 +18,7 @@ module fetchunit #(
 	// IRQ lines from CSR unit
 	output wire irqHold,
 	input wire irqReq,
+	input wire [31:0] mepc,
 	input wire [31:0] mtvec,
 	// To system bus
 	axi4if.master m_axi );
@@ -28,7 +29,6 @@ module fetchunit #(
 
 logic fetchena = 1'b0;
 logic [31:0] PC = RESETVECTOR;
-logic [31:0] MEPC = 32'd0;
 logic [31:0] IR;
 wire rready;
 wire [31:0] instruction;
@@ -85,6 +85,39 @@ decoder decoderinst(
 	.selectimmedasrval2(selectimmedasrval2) );	// 1	+ -> 18+4+3+3+7+12+5+5+5+5+12+32+1+PC[31:0] = 144 bits (Exact *8 of 18)
 
 // --------------------------------------------------
+// Instruction injection ROM
+// --------------------------------------------------
+
+logic [3:0] injectAddr = 0;
+logic [3:0] injectCount = 0;
+
+logic [31:0] injectionROM [0:15];
+
+initial begin
+	// enterTimerISR
+	injectionROM[0] = 32'hffc10113;
+	injectionROM[1] = 32'h00f12023;
+	injectionROM[2] = 32'h00000797;
+	injectionROM[3] = 32'h341797f3;
+	injectionROM[4] = 32'h08000793;
+	injectionROM[5] = 32'h3047b7f3;
+	injectionROM[6] = 32'h3007a7f3;
+	injectionROM[7] = 32'h00800793;
+	injectionROM[8] = 32'h3047b7f3;
+
+	// leaveTimerISR
+	injectionROM[9]  = 32'h08000793;
+	injectionROM[10] = 32'h3007b7f3;
+	injectionROM[11] = 32'h3007a7f3;
+	injectionROM[12] = 32'h00800793;
+	injectionROM[13] = 32'h3047a7f3;
+	injectionROM[14] = 32'h00012783;
+	injectionROM[15] = 32'h00410113;
+end
+
+wire [31:0] injectInstruction = injectionROM[injectAddr];
+
+// --------------------------------------------------
 // Instruction output FIFO
 // --------------------------------------------------
 
@@ -119,12 +152,15 @@ wire needsToStall = isbranch || isfence || isdiscard;
 // Fetch logic
 // --------------------------------------------------
 
-typedef enum logic [2:0] {
+typedef enum logic [3:0] {
 	INIT,
 	FETCH, STREAMOUT,
 	WAITNEWBRANCHTARGET, WAITIFENCE,
-	ENTERISR, EXITISR } fetchstate;
+	ENTERISR, EXITISR,
+	STARTINJECT, INJECT, POSTENTER, POSTEXIT } fetchstate;
+
 fetchstate fetchmode = INIT;
+fetchstate injectEnd = FETCH;	// Where to go after injection ends
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
@@ -199,23 +235,56 @@ always @(posedge aclk) begin
 			ENTERISR: begin
 				// Hold further IRQ requests on this line until we encounter an mret
 				processingIRQ <= 1'b1;
-				// TODO: Set up CSRs
-				//
-				// Set new PC
-				MEPC <= PC; // This is adjacentPC
-				PC <= mtvec;
-				// Resume
-				fetchena <= 1'b1;
-				fetchmode <= FETCH;
+
+				// Inject entry instruction sequence
+				injectAddr <= 0;
+				injectCount <= 9;
+				fetchmode <= STARTINJECT;
+				injectEnd <= POSTENTER;
 			end
 
 			EXITISR: begin
-				// TODO: Set up CSRs
-				//
-				// Restore PC
-				PC <= MEPC;
+				// Inject exit instruction sequence
+				injectAddr <= 9;
+				injectCount <= 7;
+				fetchmode <= STARTINJECT;
+				injectEnd <= POSTEXIT;
+
 				// Release our hold so we can receive further interrupts
 				processingIRQ <= 1'b0;
+			end
+
+			STARTINJECT: begin
+				IR <= injectInstruction;
+				injectAddr <= injectAddr + 1;
+				injectCount <= injectCount - 1;
+				fetchmode <= INJECT;
+			end
+
+			INJECT: begin
+				ififowr_en <= 1'b1;
+				ififodin <= {
+					rs3, func7, csroffset,
+					func12, func3,
+					instrOneHotOut, selectimmedasrval2,
+					bluop, aluop,
+					rs1, rs2, rd,
+					PC, immed}; // Using the same PC+32'd4 from the time of IRQ
+
+				fetchmode <= injectCount == 0 ? injectEnd : STARTINJECT;
+			end
+
+			POSTENTER: begin
+				// Set up a jump to ISR
+				PC <= mtvec;
+				// Wait for fifo to flush completely
+				fetchena <= ififoempty;
+				fetchmode <= ififoempty ? FETCH : POSTENTER;
+			end
+
+			POSTEXIT: begin
+				// Restore PC to MEPC via CSR
+				PC <= mepc;
 				// Resume
 				fetchena <= 1'b1;
 				fetchmode <= FETCH;

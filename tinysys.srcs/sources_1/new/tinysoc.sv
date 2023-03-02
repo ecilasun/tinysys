@@ -52,6 +52,7 @@ wire [143:0] ififodout;
 wire ififord_en;
 wire irqHold;
 wire irqReq;
+wire [31:0] mepc;
 wire [31:0] mtvec;
 
 // Reset vector is at top of BRAM
@@ -66,6 +67,7 @@ fetchunit #(.RESETVECTOR(32'h10000000)) instructionfetch (
 	.ififord_en(ififord_en),
 	.irqHold(irqHold),
 	.irqReq(irqReq),
+	.mepc(mepc),
 	.mtvec(mtvec),
 	.m_axi(instructionbus) );
 
@@ -289,6 +291,7 @@ axi4CSRFile csrfileinst(
 	.retired(retired),
 	.irqHold(irqHold),
 	.irqReq(irqReq),
+	.mepc(mepc),
 	.mtvec(mtvec),
 	.s_axi(csrif) );
 

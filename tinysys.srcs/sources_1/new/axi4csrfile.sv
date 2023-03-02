@@ -10,6 +10,7 @@ module axi4CSRFile(
 	input wire irqHold,
 	output wire irqReq,
 	// Expose certain registers to fetch unit
+	output wire [31:0] mepc,
 	output wire [31:0] mtvec,
 	// Bus
 	axi4if.slave s_axi );
@@ -29,6 +30,7 @@ logic [31:0] csrmemory[0:4095];
 
 // Shadows
 logic [63:0] timecmpshadow = 64'hFFFFFFFFFFFFFFFF;
+logic [31:0] mepcshadow = 32'd0;
 logic [31:0] mtvecshadow = 32'd0;
 logic [31:0] dummyshadow = 32'd0;
 
@@ -65,6 +67,7 @@ always @(posedge aclk) begin
 			unique case (cswraddr)
 				`CSR_TIMECMPLO:	timecmpshadow[31:0] <= csrdin;
 				`CSR_TIMECMPHI:	timecmpshadow[63:32] <= csrdin;
+				`CSR_MEPC:		mepcshadow <= csrdin;
 				`CSR_MTVEC:		mtvecshadow <= csrdin;
 				default:		dummyshadow <= csrdin;
 			endcase
@@ -72,6 +75,7 @@ always @(posedge aclk) begin
 	end
 end
 
+assign mepc = mepcshadow;
 assign mtvec = mtvecshadow;
 
 // --------------------------------------------------
