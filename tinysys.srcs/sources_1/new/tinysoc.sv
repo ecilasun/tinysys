@@ -50,6 +50,9 @@ wire ififoempty;
 wire ififovalid;
 wire [143:0] ififodout;
 wire ififord_en;
+wire irqHold;
+wire irqReq;
+wire [31:0] mtvec;
 
 // Reset vector is at top of BRAM
 fetchunit #(.RESETVECTOR(32'h10000000)) instructionfetch (
@@ -61,6 +64,9 @@ fetchunit #(.RESETVECTOR(32'h10000000)) instructionfetch (
 	.ififovalid(ififovalid),
 	.ififodout(ififodout),
 	.ififord_en(ififord_en),
+	.irqHold(irqHold),
+	.irqReq(irqReq),
+	.mtvec(mtvec),
 	.m_axi(instructionbus) );
 
 // --------------------------------------------------
@@ -89,13 +95,13 @@ always @(posedge clk10) begin
 end
 
 // CDC for wall clock
-(* async_reg = "true" *) logic [63:0] wallclocktimeA = 1'b0;
-(* async_reg = "true" *) logic [63:0] wallclocktime = 1'b0;
+(* async_reg = "true" *) logic [63:0] wallclocktimeA = 64'd0;
+(* async_reg = "true" *) logic [63:0] wallclocktime = 64'd0;
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
-		wallclocktimeA <= 1'b0;
-		wallclocktime <= 1'b0;
+		wallclocktimeA <= 64'd0;
+		wallclocktime <= 64'd0;
 	end else begin
 		wallclocktimeA <= wallclockcounter;
 		wallclocktime <= wallclocktimeA;
@@ -281,6 +287,9 @@ axi4CSRFile csrfileinst(
 	.cpuclocktime(cpuclocktime),
 	.wallclocktime(wallclocktime),
 	.retired(retired),
+	.irqHold(irqHold),
+	.irqReq(irqReq),
+	.mtvec(mtvec),
 	.s_axi(csrif) );
 
 // XADC

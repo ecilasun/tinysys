@@ -14,7 +14,11 @@ module fetchunit #(
 	output wire ififoempty,
 	output wire ififovalid,
 	output wire [143:0] ififodout,
-	input wire ififord_en, 
+	input wire ififord_en,
+	// IRQ lines from CSR unit
+	output wire irqHold,
+	input wire irqReq,
+	input wire [31:0] mtvec,
 	// To system bus
 	axi4if.master m_axi );
 
@@ -24,11 +28,16 @@ module fetchunit #(
 
 logic fetchena = 1'b0;
 logic [31:0] PC = RESETVECTOR;
+logic [31:0] MEPC = 32'd0;
 logic [31:0] IR;
 wire rready;
 wire [31:0] instruction;
 logic icacheflush = 1'b0;
 logic icacheflushpending = 1'b0;
+logic irqpending = 1'b0;
+logic processingIRQ = 1'b0;
+
+assign irqHold = processingIRQ;
 
 // --------------------------------------------------
 // Instruction cache
@@ -103,15 +112,18 @@ wire isbranch = instrOneHotOut[`O_H_JAL] || instrOneHotOut[`O_H_JALR] || instrOn
 wire isfence = instrOneHotOut[`O_H_FENCE];
 wire isdiscard = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CDISCARD);
 wire ismret = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_MRET);
-
 wire isflush = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CFLUSH);
-wire needstohalt = isbranch || isfence || isdiscard || ismret;
+wire needsToStall = isbranch || isfence || isdiscard;
 
 // --------------------------------------------------
 // Fetch logic
 // --------------------------------------------------
 
-typedef enum logic [2:0] { INIT, FETCH, STREAMOUT, WAITNEWBRANCHTARGET, WAITIFENCE } fetchstate;
+typedef enum logic [2:0] {
+	INIT,
+	FETCH, STREAMOUT,
+	WAITNEWBRANCHTARGET, WAITIFENCE,
+	ENTERISR, EXITISR } fetchstate;
 fetchstate fetchmode = INIT;
 
 always @(posedge aclk) begin
@@ -119,6 +131,7 @@ always @(posedge aclk) begin
 		fetchmode <= INIT;
 		fetchena <= 1'b0;
 		ififowr_en <= 1'b0;
+		processingIRQ <= 1'b0;
 	end else begin
 
 		fetchena <= 1'b0;
@@ -135,6 +148,7 @@ always @(posedge aclk) begin
 				fetchmode <= rready ? STREAMOUT : FETCH;
 				IR <= instruction;
 				icacheflushpending <= isfence;
+				irqpending <= irqReq;
 			end
 
 			STREAMOUT: begin
@@ -159,10 +173,16 @@ always @(posedge aclk) begin
 				icacheflush <= icacheflushpending;
 
 				// Stop fetching if we need to halt or have IFENCE
-				fetchena <= ~(needstohalt || icacheflushpending);
+				fetchena <= ~(needsToStall || icacheflushpending);
 
 				// Go to appropriate wait mode or resume FETCH
-				fetchmode <= icacheflushpending ? WAITIFENCE : (needstohalt ? WAITNEWBRANCHTARGET : FETCH);
+				priority case (1'b1)
+					icacheflushpending:	fetchmode <= WAITIFENCE;
+					needsToStall:		fetchmode <= WAITNEWBRANCHTARGET;
+					ismret:				fetchmode <= EXITISR;
+					irqpending:			fetchmode <= ENTERISR;
+					default:			fetchmode <= FETCH;
+				endcase
 			end
 
 			WAITNEWBRANCHTARGET: begin
@@ -176,6 +196,29 @@ always @(posedge aclk) begin
 				// Resume fetch when I$ signals ready for pending flush
 				fetchena <= rready;
 				fetchmode <= rready ? FETCH : WAITIFENCE;
+			end
+
+			ENTERISR: begin
+				// Hold further IRQ requests on this line until we encounter an mret
+				processingIRQ <= 1'b1;
+				// TODO: Set up CSRs
+				//
+				// Set new PC
+				MEPC <= PC; // This is adjacentPC
+				PC <= mtvec;
+				// Resume
+				fetchmode <= FETCH;
+			end
+
+			EXITISR: begin
+				// TODO: Set up CSRs
+				//
+				// Restore PC
+				PC <= MEPC;
+				// Release our hold so we can receive further interrupts
+				processingIRQ <= 1'b0;
+				// Resume
+				fetchmode <= FETCH;
 			end
 
 		endcase

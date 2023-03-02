@@ -6,6 +6,12 @@ module axi4CSRFile(
 	input wire [63:0] cpuclocktime,
 	input wire [63:0] wallclocktime,
 	input wire [63:0] retired,
+	// IRQ lines to fetch unit
+	input wire irqHold,
+	output wire irqReq,
+	// Expose certain registers to fetch unit
+	output wire [31:0] mtvec,
+	// Bus
 	axi4if.slave s_axi );
 
 // --------------------------------------------------
@@ -21,16 +27,24 @@ logic [31:0] csrdout = 32'd0;
 
 logic [31:0] csrmemory[0:4095];
 
+// Shadows
+logic [63:0] timecmpshadow = 64'hFFFFFFFFFFFFFFFF;
+logic [31:0] mtvecshadow = 32'd0;
+logic [31:0] dummyshadow = 32'd0;
+
 initial begin
 	int ri;
 	for (ri=0; ri<4096; ri=ri+1) begin
-		csrmemory[ri]  = 32'h00000000;
+		csrmemory[ri] = 32'h00000000;
 	end
+	// Start same as timecmpshadow
+	csrmemory[`CSR_TIMECMPLO] = 32'hFFFFFFFF;
+	csrmemory[`CSR_TIMECMPLO] = 32'hFFFFFFFF;
 end
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
-		// 
+		timecmpshadow <= 64'hFFFFFFFFFFFFFFFF;
 	end else begin
 		if (csrre) begin
 			unique case (csrraddr)
@@ -45,12 +59,37 @@ always @(posedge aclk) begin
 				default:		csrdout <= csrmemory[csrraddr];
 			endcase
 		end
-	
+
 		if (csrwe) begin
 			csrmemory[cswraddr] <= csrdin;
+			unique case (cswraddr)
+				`CSR_TIMECMPLO:	timecmpshadow[31:0] <= csrdin;
+				`CSR_TIMECMPHI:	timecmpshadow[63:32] <= csrdin;
+				`CSR_MTVEC:		mtvecshadow <= csrdin;
+				default:		dummyshadow <= csrdin;
+			endcase
 		end
 	end
 end
+
+assign mtvec = mtvecshadow;
+
+// --------------------------------------------------
+// Timer interrupt generator
+// --------------------------------------------------
+
+logic timerInterrupt = 1'b0;
+
+always @(posedge aclk) begin
+	if (~aresetn) begin
+		timerInterrupt <= 1'b0;
+	end else begin
+		// If we've got a timer interrupt and fetch isn't holding an IRQ, respond with 1
+		timerInterrupt <= (wallclocktime >= timecmpshadow) ? ~irqHold : 1'b0;
+	end
+end
+
+assign irqReq = timerInterrupt;
 
 // --------------------------------------------------
 // AXI4 interface
