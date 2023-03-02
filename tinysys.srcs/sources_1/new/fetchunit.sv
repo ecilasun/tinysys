@@ -172,16 +172,14 @@ always @(posedge aclk) begin
 				// Flush I$ if we have an IFENCE instruction and go to wait
 				icacheflush <= icacheflushpending;
 
-				// Stop fetching if we need to halt or have IFENCE
-				fetchena <= ~(needsToStall || icacheflushpending);
-
 				// Go to appropriate wait mode or resume FETCH
+				// Stop fetching if we need to halt, running IFENCE, or entering/exiting an ISR
 				priority case (1'b1)
-					icacheflushpending:	fetchmode <= WAITIFENCE;
-					needsToStall:		fetchmode <= WAITNEWBRANCHTARGET;
-					ismret:				fetchmode <= EXITISR;
-					irqpending:			fetchmode <= ENTERISR;
-					default:			fetchmode <= FETCH;
+					icacheflushpending:	begin fetchmode <= WAITIFENCE;			fetchena <= 1'b0; end
+					needsToStall:		begin fetchmode <= WAITNEWBRANCHTARGET;	fetchena <= 1'b0; end
+					ismret:				begin fetchmode <= EXITISR;				fetchena <= 1'b0; end
+					irqpending:			begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
+					default:			begin fetchmode <= FETCH;				fetchena <= 1'b1; end
 				endcase
 			end
 
@@ -207,6 +205,7 @@ always @(posedge aclk) begin
 				MEPC <= PC; // This is adjacentPC
 				PC <= mtvec;
 				// Resume
+				fetchena <= 1'b1;
 				fetchmode <= FETCH;
 			end
 
@@ -218,6 +217,7 @@ always @(posedge aclk) begin
 				// Release our hold so we can receive further interrupts
 				processingIRQ <= 1'b0;
 				// Resume
+				fetchena <= 1'b1;
 				fetchmode <= FETCH;
 			end
 
