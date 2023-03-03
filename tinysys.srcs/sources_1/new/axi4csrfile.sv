@@ -31,6 +31,8 @@ logic [31:0] csrmemory[0:4095];
 // Shadows
 logic [63:0] timecmpshadow = 64'hFFFFFFFFFFFFFFFF;
 logic [31:0] mepcshadow = 32'd0;
+logic mieTEshadow = 1'b0; // Machine timer interrupt enable
+logic mstatusIEshadow = 1'b0; // Global interrupt enable
 logic [31:0] mtvecshadow = 32'd0;
 logic [31:0] dummyshadow = 32'd0;
 
@@ -41,7 +43,7 @@ initial begin
 	end
 	// Start same as timecmpshadow
 	csrmemory[`CSR_TIMECMPLO] = 32'hFFFFFFFF;
-	csrmemory[`CSR_TIMECMPLO] = 32'hFFFFFFFF;
+	csrmemory[`CSR_TIMECMPHI] = 32'hFFFFFFFF;
 end
 
 always @(posedge aclk) begin
@@ -68,6 +70,8 @@ always @(posedge aclk) begin
 				`CSR_TIMECMPLO:	timecmpshadow[31:0] <= csrdin;
 				`CSR_TIMECMPHI:	timecmpshadow[63:32] <= csrdin;
 				`CSR_MEPC:		mepcshadow <= csrdin;
+				`CSR_MIE:		mieTEshadow <= csrdin[7];
+				`CSR_MSTATUS:	mstatusIEshadow <= csrdin[3];
 				`CSR_MTVEC:		mtvecshadow <= csrdin;
 				default:		dummyshadow <= csrdin;
 			endcase
@@ -88,8 +92,8 @@ always @(posedge aclk) begin
 	if (~aresetn) begin
 		timerInterrupt <= 1'b0;
 	end else begin
-		// If we've got a timer interrupt and fetch isn't holding an IRQ, respond with 1
-		timerInterrupt <= (wallclocktime >= timecmpshadow) ? ~irqHold : 1'b0;
+		// High if we have a timer interrupt, fetch isn't holding an IRQ, timer interrups are enabled, and global machine interrupts are enabled
+		timerInterrupt <= mieTEshadow && mstatusIEshadow && (~irqHold) && (wallclocktime >= timecmpshadow);
 	end
 end
 

@@ -401,6 +401,7 @@ always @(posedge aclk) begin
 			SYSWFI: begin
 				ctlmode <= READINSTR;
 			end
+
 			CSROPS: begin
 				m_ibus.raddr <= {20'h80004, csroffset};
 				m_ibus.rstrobe <= 1'b1;
@@ -419,22 +420,22 @@ always @(posedge aclk) begin
 				m_ibus.waddr <= {20'h80004, csroffset};
 				m_ibus.wstrobe <= 4'b1111;
 				unique case (func3)
-					3'b001: begin
+					3'b001: begin // CSRRW
 						m_ibus.wdata <= A;
 					end
-					3'b101: begin
+					3'b101: begin // CSRRWI
 						m_ibus.wdata <= D;
 					end
-					3'b010: begin
+					3'b010: begin // CSRRS
 						m_ibus.wdata <= csrprevval | A;
 					end
-					3'b110: begin
+					3'b110: begin // CSRRSI
 						m_ibus.wdata <= csrprevval | D;
 					end
-					3'b011: begin
+					3'b011: begin // CSRRC
 						m_ibus.wdata <= csrprevval & (~A);
 					end
-					3'b111: begin
+					3'b111: begin // CSRRCI
 						m_ibus.wdata <= csrprevval & (~D);
 					end
 					default: begin // Unknown

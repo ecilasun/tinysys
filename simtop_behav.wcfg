@@ -13,18 +13,18 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="144.351100000 us"></ZoomStartTime>
-      <ZoomEndTime time="186.171100001 us"></ZoomEndTime>
-      <Cursor1Time time="169.753917166 us"></Cursor1Time>
+      <ZoomStartTime time="139.715651156 us"></ZoomStartTime>
+      <ZoomEndTime time="181.895651157 us"></ZoomEndTime>
+      <Cursor1Time time="172.875651156 us"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="328"></NameColumnWidth>
-      <ValueColumnWidth column_width="140"></ValueColumnWidth>
+      <ValueColumnWidth column_width="122"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="131" />
+   <WVObjectSize size="134" />
    <wave_markers>
       <marker time="124244000000" label="" />
-      <marker time="151900100000" label="" />
+      <marker time="155745151156" label="" />
    </wave_markers>
    <wvobject type="divider" fp_name="divider23">
       <obj_property name="label">board</obj_property>
@@ -527,10 +527,14 @@
    <wvobject fp_name="/simtop/main/socinstance/csrfileinst/irqHold" type="logic">
       <obj_property name="ElementShortName">irqHold</obj_property>
       <obj_property name="ObjectShortName">irqHold</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/csrfileinst/irqReq" type="logic">
       <obj_property name="ElementShortName">irqReq</obj_property>
       <obj_property name="ObjectShortName">irqReq</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/csrfileinst/csrwe" type="logic">
       <obj_property name="ElementShortName">csrwe</obj_property>
@@ -559,16 +563,36 @@
    <wvobject fp_name="/simtop/main/socinstance/csrfileinst/timecmpshadow" type="array">
       <obj_property name="ElementShortName">timecmpshadow[63:0]</obj_property>
       <obj_property name="ObjectShortName">timecmpshadow[63:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/mepcshadow" type="array">
+      <obj_property name="ElementShortName">mepcshadow[31:0]</obj_property>
+      <obj_property name="ObjectShortName">mepcshadow[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/mieshadow" type="array">
+      <obj_property name="ElementShortName">mieshadow[31:0]</obj_property>
+      <obj_property name="ObjectShortName">mieshadow[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/mstatusshadow" type="array">
+      <obj_property name="ElementShortName">mstatusshadow[31:0]</obj_property>
+      <obj_property name="ObjectShortName">mstatusshadow[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/mtvecshadow" type="array">
+      <obj_property name="ElementShortName">mtvecshadow[31:0]</obj_property>
+      <obj_property name="ObjectShortName">mtvecshadow[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/csrfileinst/timerInterrupt" type="logic">
       <obj_property name="ElementShortName">timerInterrupt</obj_property>
       <obj_property name="ObjectShortName">timerInterrupt</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/mepcshadow" type="array">
-      <obj_property name="ElementShortName">mepcshadow[31:0]</obj_property>
-      <obj_property name="ObjectShortName">mepcshadow[31:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/csrfileinst/waddrstate" type="array">
       <obj_property name="ElementShortName">waddrstate[1:0]</obj_property>

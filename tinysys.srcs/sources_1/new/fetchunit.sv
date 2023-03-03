@@ -94,25 +94,9 @@ logic [3:0] injectCount = 0;
 logic [31:0] injectionROM [0:15];
 
 initial begin
-	// enterTimerISR
-	injectionROM[0] = 32'hffc10113;
-	injectionROM[1] = 32'h00f12023;
-	injectionROM[2] = 32'h00000797;
-	injectionROM[3] = 32'h341797f3;
-	injectionROM[4] = 32'h08000793;
-	injectionROM[5] = 32'h3047b7f3;
-	injectionROM[6] = 32'h3007a7f3;
-	injectionROM[7] = 32'h00800793;
-	injectionROM[8] = 32'h3047b7f3;
-
-	// leaveTimerISR
-	injectionROM[9]  = 32'h08000793;
-	injectionROM[10] = 32'h3007b7f3;
-	injectionROM[11] = 32'h3007a7f3;
-	injectionROM[12] = 32'h00800793;
-	injectionROM[13] = 32'h3047a7f3;
-	injectionROM[14] = 32'h00012783;
-	injectionROM[15] = 32'h00410113;
+	// enterTimerISR: offset:0 length:9
+	// leaveTimerISR: offset:9 length:7
+	$readmemh("microcoderom.mem", injectionROM);
 end
 
 wire [31:0] injectInstruction = injectionROM[injectAddr];

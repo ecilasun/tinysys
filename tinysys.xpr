@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Product Version: Vivado v2022.2 (64-bit)              -->
+<!-- Product Version: Vivado v2022.2.2 (64-bit)              -->
 <!--                                                         -->
-<!-- Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.   -->
+<!-- Copyright 1986-2023 Xilinx, Inc. All Rights Reserved.   -->
 
 <Project Version="7" Minor="61" Path="G:/tinysys/tinysys.xpr">
   <DefaultLaunch Dir="$PRUNDIR"/>
@@ -58,20 +58,20 @@
     <Option Name="IPUserFilesDir" Val="$PIPUSERFILESDIR"/>
     <Option Name="IPStaticSourceDir" Val="$PIPUSERFILESDIR/ipstatic"/>
     <Option Name="EnableBDX" Val="FALSE"/>
-    <Option Name="WTXSimLaunchSim" Val="131"/>
+    <Option Name="WTXSimLaunchSim" Val="135"/>
     <Option Name="WTModelSimLaunchSim" Val="0"/>
     <Option Name="WTQuestaLaunchSim" Val="0"/>
     <Option Name="WTIesLaunchSim" Val="0"/>
     <Option Name="WTVcsLaunchSim" Val="0"/>
     <Option Name="WTRivieraLaunchSim" Val="0"/>
     <Option Name="WTActivehdlLaunchSim" Val="0"/>
-    <Option Name="WTXSimExportSim" Val="109"/>
-    <Option Name="WTModelSimExportSim" Val="109"/>
-    <Option Name="WTQuestaExportSim" Val="109"/>
+    <Option Name="WTXSimExportSim" Val="112"/>
+    <Option Name="WTModelSimExportSim" Val="112"/>
+    <Option Name="WTQuestaExportSim" Val="112"/>
     <Option Name="WTIesExportSim" Val="0"/>
-    <Option Name="WTVcsExportSim" Val="109"/>
-    <Option Name="WTRivieraExportSim" Val="109"/>
-    <Option Name="WTActivehdlExportSim" Val="109"/>
+    <Option Name="WTVcsExportSim" Val="112"/>
+    <Option Name="WTRivieraExportSim" Val="112"/>
+    <Option Name="WTActivehdlExportSim" Val="112"/>
     <Option Name="GenerateIPUpgradeLog" Val="TRUE"/>
     <Option Name="XSimRadix" Val="hex"/>
     <Option Name="XSimTimeUnit" Val="ns"/>
@@ -491,6 +491,12 @@
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="ScopedToCell" Val="mig_7series_0"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/new/microcoderom.mem">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
       <Config>

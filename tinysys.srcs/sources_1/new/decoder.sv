@@ -176,6 +176,10 @@ always_comb begin
 			immed = {{21{instruction[31]}}, instruction[30:20]};
 		end
 
+		instrOneHot[`O_H_SYSTEM]: begin
+			immed = {27'd0, instruction[19:15]};
+		end
+
 		/*default: begin
 			immed = 32'd0;
 		end*/
