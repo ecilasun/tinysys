@@ -145,6 +145,7 @@ wire isbranch = instrOneHotOut[`O_H_JAL] || instrOneHotOut[`O_H_JALR] || instrOn
 wire isfence = instrOneHotOut[`O_H_FENCE];
 wire isdiscard = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CDISCARD);
 wire ismret = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_MRET);
+wire iswfi = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_WFI);
 wire isflush = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CFLUSH);
 wire needsToStall = isbranch || isfence || isdiscard;
 
@@ -153,11 +154,13 @@ wire needsToStall = isbranch || isfence || isdiscard;
 // --------------------------------------------------
 
 typedef enum logic [3:0] {
-	INIT,
-	FETCH, STREAMOUT,
-	WAITNEWBRANCHTARGET, WAITIFENCE,
-	ENTERISR, EXITISR,
-	STARTINJECT, INJECT, POSTENTER, POSTEXIT } fetchstate;
+	INIT,										// Startup
+	FETCH, STREAMOUT,							// Regular instuction fetch + stream loop
+	WAITNEWBRANCHTARGET, WAITIFENCE,			// Branch and fence handling
+	ENTERISR, EXITISR,							// IRQ handling
+	STARTINJECT, INJECT, POSTENTER, POSTEXIT,	// IRQ and post-IRQ maintenance
+	WFI											// Wait state for IRQ
+} fetchstate;
 
 fetchstate fetchmode = INIT;
 fetchstate injectEnd = FETCH;	// Where to go after injection ends
@@ -198,6 +201,10 @@ always @(posedge aclk) begin
 					rs1, rs2, rd,
 					PC, immed};
 
+				// TODO: PC should not increment if the current instruction is a jump-to-self.
+				// Before that is fixed, we have an architectural limitation where we can't
+				// generate interrupts that coincide with blank infinite loops, as it will step outside the loop (due to PC+4 being used).
+
 				// No compressed instruction support:
 				PC <= PC + 32'd4;
 
@@ -215,6 +222,7 @@ always @(posedge aclk) begin
 					needsToStall:		begin fetchmode <= WAITNEWBRANCHTARGET;	fetchena <= 1'b0; end
 					ismret:				begin fetchmode <= EXITISR;				fetchena <= 1'b0; end
 					irqpending:			begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
+					iswfi:				begin fetchmode <= WFI;					fetchena <= 1'b0; end
 					default:			begin fetchmode <= FETCH;				fetchena <= 1'b1; end
 				endcase
 			end
@@ -288,6 +296,11 @@ always @(posedge aclk) begin
 				// Resume
 				fetchena <= 1'b1;
 				fetchmode <= FETCH;
+			end
+
+			WFI: begin
+				fetchena <= irqReq;
+				fetchmode <= irqReq ? FETCH : WFI;
 			end
 
 		endcase

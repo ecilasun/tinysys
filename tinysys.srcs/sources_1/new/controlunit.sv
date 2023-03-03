@@ -367,10 +367,10 @@ always @(posedge aclk) begin
 				case ({func3, func12})
 					{3'b000, `F12_CDISCARD}:	ctlmode <= SYSCDISCARD;
 					{3'b000, `F12_CFLUSH}:		ctlmode <= SYSCFLUSH;
-					{3'b000, `F12_MRET}:		ctlmode <= SYSMRET;
-					{3'b000, `F12_WFI}:			ctlmode <= SYSWFI;
-					{3'b000, `F12_EBREAK}:		ctlmode <= READINSTR;
-					{3'b000, `F12_ECALL}:		ctlmode <= READINSTR;
+					{3'b000, `F12_MRET}:		ctlmode <= SYSMRET;		// Handled by Fetch unit
+					{3'b000, `F12_WFI}:			ctlmode <= SYSWFI;		// Handled by Fetch unit
+					{3'b000, `F12_EBREAK}:		ctlmode <= READINSTR;	// noop for now
+					{3'b000, `F12_ECALL}:		ctlmode <= READINSTR;	// noop for now
 					default:					ctlmode <= CSROPS;
 				endcase
 			end
@@ -395,25 +395,12 @@ always @(posedge aclk) begin
 			end
 
 			SYSMRET: begin
-
-				// 1- read MEPC
-				// 2- set branch target
-
-				// Jump to saved PC
-				// NOTE: Return address must be set up to be +2/+4 of the interrupt site's PC beforehand
-				//btarget <= mepc;
-				//btready <= 1'b1;
-
 				ctlmode <= READINSTR;
 			end
 
 			SYSWFI: begin
-				// TODO: Wait for any incoming IRQ bit set and signal branch ready on next address
-				//btarget <= adjacentPC;
-				//btready <= 1'b1;
 				ctlmode <= READINSTR;
 			end
-
 			CSROPS: begin
 				m_ibus.raddr <= {20'h80004, csroffset};
 				m_ibus.rstrobe <= 1'b1;
