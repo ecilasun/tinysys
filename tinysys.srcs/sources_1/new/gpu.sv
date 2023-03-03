@@ -1,5 +1,7 @@
 `timescale 1ns / 1ps
 
+import axi4pkg::*;
+
 module gpucore(
 	input wire aclk,
 	input wire clk25,

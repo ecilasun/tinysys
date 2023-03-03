@@ -25,6 +25,7 @@ module tinysoc(
 axi4if instructionbus();	// Fetch unit bus
 axi4if databus();			// Data unit bus
 axi4if gpubus();			// Graphics unit bus
+axi4if dmabus();			// Direct memory access bus
 
 axi4if memorybus();			// Arbitrated, to memory
 axi4if bramif();			// Sub bus: BRAM
@@ -37,6 +38,7 @@ axi4if gpucmdif();			// Sub bus: GPU command fifo
 axi4if spiif();				// Sub bus: SPI control device
 axi4if csrif();				// Sub bus: CSR file device
 axi4if xadcif();			// Sub bus: ADC controller
+axi4if dmaif();				// Sub bus: DMA controller
 
 ibusif ibus();				// Internal bus between units
 
@@ -156,19 +158,30 @@ gpucore GPU(
 // DMA unit
 // --------------------------------------------------
 
-/*dummymaster #(.MASTERID(32'h00000003)) fakeDMA (
+wire dmafifoempty;
+wire dmafifore;
+wire dmafifovalid;
+wire dmabusy;
+wire [31:0] dmafifodout;
+
+axi4dma DMA(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.m_axi(dmabus) );*/
+	.m_axi(dmabus),
+	.dmafifoempty(dmafifoempty),
+	.dmafifodout(dmafifodout),
+	.dmafifore(dmafifore),
+	.dmafifovalid(dmafifovalid),
+	.dmabusy(dmabusy) );
 
 // --------------------------------------------------
 // Traffic arbiter between master units and memory
 // --------------------------------------------------
 
-arbiter arbiter3x1inst(
+arbiter arbiter4x1inst(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.axi_s({gpubus, databus, instructionbus}),
+	.axi_s({dmabus, gpubus, databus, instructionbus}),
 	.axi_m(memorybus) );
 
 // --------------------------------------------------
@@ -223,7 +236,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // SPIC: 80003000  80003FFF  19'b000_0000_0000_0000_0011  4KB
 // CSRF: 80004000  80004FFF  19'b000_0000_0000_0000_0100  4KB
 // XADC: 80005000  80005FFF  19'b000_0000_0000_0000_0101  4KB
-// ----: 80006000  80006FFF  19'b000_0000_0000_0000_0110  4KB
+// DMAC: 80006000  80006FFF  19'b000_0000_0000_0000_0110  4KB
 // ----: 80007000  80007FFF  19'b000_0000_0000_0000_0111  4KB
 
 devicerouter devicerouterinst(
@@ -231,13 +244,14 @@ devicerouter devicerouterinst(
 	.aresetn(aresetn),
     .axi_s(devicebus),
     .addressmask({
+    	19'b000_0000_0000_0000_0110,	// DMAC
     	19'b000_0000_0000_0000_0101,	// XADC
 		19'b000_0000_0000_0000_0100,	// CSRF
 		19'b000_0000_0000_0000_0011,	// SPIC
 		19'b000_0000_0000_0000_0010,	// GPUC
 		19'b000_0000_0000_0000_0001,	// LEDS
 		19'b000_0000_0000_0000_0000 }),	// UART
-    .axi_m({xadcif, csrif, spiif, gpucmdif, ledif, uartif}));
+    .axi_m({dmaif, xadcif, csrif, spiif, gpucmdif, ledif, uartif}));
 
 // --------------------------------------------------
 // Memory mapped devices
@@ -302,5 +316,17 @@ axi4xadc xadcinst(
 	.s_axi(xadcif),
 	.device_temp(device_temp),
 	.adcconn(adcconn));
+
+// DMA
+dmacommanddevice dmacmdinst(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.s_axi(dmaif),
+	// Internal comms channel for DMA
+	.fifoempty(dmafifoempty),
+	.fifodout(dmafifodout),
+	.fifore(dmafifore),
+	.fifovalid(dmafifovalid),
+    .dmabusy(dmabusy));
 
 endmodule

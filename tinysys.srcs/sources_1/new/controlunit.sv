@@ -1,7 +1,5 @@
 `timescale 1ns / 1ps
 
-import axi4pkg::*;
-
 `include "shared.vh"
 
 module controlunit #(
