@@ -53,7 +53,7 @@ wire ififovalid;
 wire [143:0] ififodout;
 wire ififord_en;
 wire irqHold;
-wire irqReq;
+wire [1:0] irqReq;
 wire [31:0] mepc;
 wire [31:0] mtvec;
 
@@ -257,7 +257,6 @@ devicerouter devicerouterinst(
 // Memory mapped devices
 // --------------------------------------------------
 
-// TODO: Use ~uartrcvempty as UART IRQ
 wire uartrcvempty;
 
 axi4uart uartdevice(
@@ -297,6 +296,7 @@ axi4spi spictlinst(
 // CSR file acts as a region of uncached memory
 // Access to register indices get mapped to LOAD/STORE
 // and addresses get mapped starting at 0x80004000 + csroffset
+// CSR module also acts as the interrupt generator
 axi4CSRFile csrfileinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
@@ -305,6 +305,7 @@ axi4CSRFile csrfileinst(
 	.retired(retired),
 	.irqHold(irqHold),
 	.irqReq(irqReq),
+	.uartrcvempty(uartrcvempty), // External interrupt wires
 	.mepc(mepc),
 	.mtvec(mtvec),
 	.s_axi(csrif) );

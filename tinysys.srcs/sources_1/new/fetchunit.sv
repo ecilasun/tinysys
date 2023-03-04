@@ -17,7 +17,7 @@ module fetchunit #(
 	input wire ififord_en,
 	// IRQ lines from CSR unit
 	output wire irqHold,
-	input wire irqReq,
+	input wire [1:0] irqReq,
 	input wire [31:0] mepc,
 	input wire [31:0] mtvec,
 	// To system bus
@@ -36,6 +36,7 @@ logic icacheflush = 1'b0;
 logic icacheflushpending = 1'b0;
 logic irqpending = 1'b0;
 logic processingIRQ = 1'b0;
+logic isHWIRQ = 1'b0;
 
 assign irqHold = processingIRQ;
 
@@ -85,17 +86,25 @@ decoder decoderinst(
 	.selectimmedasrval2(selectimmedasrval2) );	// 1	+ -> 18+4+3+3+7+12+5+5+5+5+12+32+1+PC[31:0] = 144 bits (Exact *8 of 18)
 
 // --------------------------------------------------
-// Instruction injection ROM
+// Microcode ROM
+// NOTE: Not yet 'microcode' but eventually will be
 // --------------------------------------------------
 
-logic [3:0] injectAddr = 0;
-logic [3:0] injectCount = 0;
+/*
+	Table of injected function offsets and lengths
+	Name			Offset		Length
+	enterTimerISR   0           12
+	leaveTimerISR   12          7
+	enterHWISR      19          14
+	leaveHWISR      33          8
+*/
 
-logic [31:0] injectionROM [0:15];
+logic [5:0] injectAddr = 0;
+logic [5:0] injectCount = 0;
+
+logic [31:0] injectionROM [0:63];
 
 initial begin
-	// enterTimerISR: offset:0 length:9
-	// leaveTimerISR: offset:9 length:7
 	$readmemh("microcoderom.mem", injectionROM);
 end
 
@@ -171,7 +180,8 @@ always @(posedge aclk) begin
 				fetchmode <= rready ? STREAMOUT : FETCH;
 				IR <= instruction;
 				icacheflushpending <= isfence;
-				irqpending <= irqReq;
+				irqpending <= (|irqReq);
+				isHWIRQ <= irqReq[1]; // isTimer <= irqReq[0]
 			end
 
 			STREAMOUT: begin
@@ -228,17 +238,17 @@ always @(posedge aclk) begin
 				// Hold further IRQ requests on this line until we encounter an mret
 				processingIRQ <= 1'b1;
 
-				// Inject entry instruction sequence
-				injectAddr <= 0;
-				injectCount <= 9;
+				// Inject entry instruction sequence (see table at microcode ROM section)
+				injectAddr <= isHWIRQ ? 19 : 0;
+				injectCount <= isHWIRQ ? 14 : 12;
 				fetchmode <= STARTINJECT;
 				injectEnd <= POSTENTER;
 			end
 
 			EXITISR: begin
-				// Inject exit instruction sequence
-				injectAddr <= 9;
-				injectCount <= 7;
+				// Inject exit instruction sequence (see table at microcode ROM section)
+				injectAddr <= isHWIRQ ? 33 : 12;
+				injectCount <= isHWIRQ ? 8 : 7;
 				fetchmode <= STARTINJECT;
 				injectEnd <= POSTEXIT;
 
@@ -283,8 +293,8 @@ always @(posedge aclk) begin
 			end
 
 			WFI: begin
-				fetchena <= irqReq;
-				fetchmode <= irqReq ? FETCH : WFI;
+				fetchena <= (|irqReq);
+				fetchmode <= (|irqReq) ? FETCH : WFI;
 			end
 
 		endcase

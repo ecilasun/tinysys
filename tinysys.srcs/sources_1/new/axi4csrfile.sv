@@ -8,7 +8,9 @@ module axi4CSRFile(
 	input wire [63:0] retired,
 	// IRQ lines to fetch unit
 	input wire irqHold,
-	output wire irqReq,
+	output wire [1:0] irqReq,
+	// Incoming hardware interrupt requests
+	input wire uartrcvempty,
 	// Expose certain registers to fetch unit
 	output wire [31:0] mepc,
 	output wire [31:0] mtvec,
@@ -31,7 +33,7 @@ logic [31:0] csrmemory[0:4095];
 // Shadows
 logic [63:0] timecmpshadow = 64'hFFFFFFFFFFFFFFFF;
 logic [31:0] mepcshadow = 32'd0;
-logic mieTEshadow = 1'b0; // Machine timer interrupt enable
+logic [1:0] mieshadow = 2'b00; // Machine interrupt enable states
 logic mstatusIEshadow = 1'b0; // Global interrupt enable
 logic [31:0] mtvecshadow = 32'd0;
 logic [31:0] dummyshadow = 32'd0;
@@ -70,7 +72,7 @@ always @(posedge aclk) begin
 				`CSR_TIMECMPLO:	timecmpshadow[31:0] <= csrdin;
 				`CSR_TIMECMPHI:	timecmpshadow[63:32] <= csrdin;
 				`CSR_MEPC:		mepcshadow <= csrdin;
-				`CSR_MIE:		mieTEshadow <= csrdin[7];
+				`CSR_MIE:		mieshadow <= {csrdin[11], csrdin[7]}; // Hardware, Timer
 				`CSR_MSTATUS:	mstatusIEshadow <= csrdin[3];
 				`CSR_MTVEC:		mtvecshadow <= csrdin;
 				default:		dummyshadow <= csrdin;
@@ -83,21 +85,26 @@ assign mepc = mepcshadow;
 assign mtvec = mtvecshadow;
 
 // --------------------------------------------------
-// Timer interrupt generator
+// Interrupt generator
 // --------------------------------------------------
 
 logic timerInterrupt = 1'b0;
+logic uartInterrupt = 1'b0;
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
 		timerInterrupt <= 1'b0;
+		uartInterrupt <= 1'b0;
 	end else begin
-		// High if we have a timer interrupt, fetch isn't holding an IRQ, timer interrups are enabled, and global machine interrupts are enabled
-		timerInterrupt <= mieTEshadow && mstatusIEshadow && (~irqHold) && (wallclocktime >= timecmpshadow);
+		// Common condition to fire an IRQ: Fetch isn't holding an IRQ, specific interrups are enabled, and global machine interrupts are enabled
+		// Timer interrupt
+		timerInterrupt <= mieshadow[0] && mstatusIEshadow && (~irqHold) && (wallclocktime >= timecmpshadow);
+		// Machine external interrupt (UART)
+		uartInterrupt <= mieshadow[1] && mstatusIEshadow && (~irqHold) && (~uartrcvempty);
 	end
 end
 
-assign irqReq = timerInterrupt;
+assign irqReq = {uartInterrupt, timerInterrupt};
 
 // --------------------------------------------------
 // AXI4 interface
