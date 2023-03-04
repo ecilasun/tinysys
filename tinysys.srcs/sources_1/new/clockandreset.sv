@@ -8,9 +8,9 @@ module clockandreset(
 	output wire clk10,
 	output wire clk25,
 	output wire clk50,
+	output wire clk125,
 	output wire clk166,
 	output wire clk200,
-	output wire clk250,
 	output wire aresetn,
 	output wire preresetn);
 
@@ -26,9 +26,9 @@ centralclock centralclockinst(
 	.clk10(clk10),
 	.clk25(clk25),
 	.clk50(clk50),
+	.clk125(clk125),
 	.clk166(clk166),
 	.clk200(clk200),
-	.clk250(clk250),
 	.locked(centralclocklocked) );
 
 wire clocksready = centralclocklocked; ///& ddr3clklocked;

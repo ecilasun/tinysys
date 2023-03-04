@@ -14,7 +14,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 module hdmi_device(
            input pclk,
-           input tmds_clk, // x10 or x5 pclk
+           input tmds_clk, // x5 pclk for DDR
 
            input [7:0] in_vga_red,
            input [7:0] in_vga_green,
@@ -24,16 +24,11 @@ module hdmi_device(
            input in_vga_vsync,
            input in_vga_hsync,
 
-           output out_tmds_red,
-           output out_tmds_green,
-           output out_tmds_blue,
-           output out_tmds_clk
+           output [1:0] out_tmds_red,
+           output [1:0] out_tmds_green,
+           output [1:0] out_tmds_blue,
+           output [1:0] out_tmds_clk
        );
-
-// NOTE: switch to x5 clock (25x5==126MHz) if DDR_ENABLED is set
-// Otherwise use x10 clock (25x10==250MHz)
-parameter DDR_ENABLED = 0;
-localparam OUT_TMDS_MSB = DDR_ENABLED ? 1 : 0;
 
 /* */
 wire [9:0] tmds_red;
@@ -54,20 +49,20 @@ reg [9:0] tmds_shift_clk    = 0;
 wire [9:0] tmds_pixel_clk = 10'b00000_11111;
 /* ddr 5 shifts a 2 bits, sdr 10 shifts a 1 bit */
 
-wire max_shifts_reached = tmds_modulo == (DDR_ENABLED ? 4 : 9);
-always @(posedge tmds_clk) tmds_modulo      <= max_shifts_reached ? 0 : tmds_modulo + 1;
-always @(posedge tmds_clk) tmds_shift_load  <= max_shifts_reached;
+wire max_shifts_reached = tmds_modulo == 4;
+always @(posedge tmds_clk) tmds_modulo <= max_shifts_reached ? 0 : tmds_modulo + 1;
+always @(posedge tmds_clk) tmds_shift_load <= max_shifts_reached;
 
 always @(posedge tmds_clk) begin
-    tmds_shift_red    <= tmds_shift_load ? tmds_red       : {DDR_ENABLED ? 2'b00 : 1'b0, tmds_shift_red   [9: DDR_ENABLED ? 2 : 1]};
-    tmds_shift_green  <= tmds_shift_load ? tmds_green     : {DDR_ENABLED ? 2'b00 : 1'b0, tmds_shift_green [9: DDR_ENABLED ? 2 : 1]};
-    tmds_shift_blue   <= tmds_shift_load ? tmds_blue      : {DDR_ENABLED ? 2'b00 : 1'b0, tmds_shift_blue  [9: DDR_ENABLED ? 2 : 1]};
-    tmds_shift_clk    <= tmds_shift_load ? tmds_pixel_clk : {DDR_ENABLED ? 2'b00 : 1'b0, tmds_shift_clk   [9: DDR_ENABLED ? 2 : 1]};
+    tmds_shift_red    <= tmds_shift_load ? tmds_red       : {2'b00, tmds_shift_red[9:2]};
+    tmds_shift_green  <= tmds_shift_load ? tmds_green     : {2'b00, tmds_shift_green[9:2]};
+    tmds_shift_blue   <= tmds_shift_load ? tmds_blue      : {2'b00, tmds_shift_blue[9:2]};
+    tmds_shift_clk    <= tmds_shift_load ? tmds_pixel_clk : {2'b00, tmds_shift_clk[9:2]};
 end
 
-assign out_tmds_clk   = tmds_shift_clk    [0];
-assign out_tmds_red   = tmds_shift_red    [0];
-assign out_tmds_green = tmds_shift_green  [0];
-assign out_tmds_blue  = tmds_shift_blue   [0];
+assign out_tmds_clk   = tmds_shift_clk    [1:0];
+assign out_tmds_red   = tmds_shift_red    [1:0];
+assign out_tmds_green = tmds_shift_green  [1:0];
+assign out_tmds_blue  = tmds_shift_blue   [1:0];
 
 endmodule

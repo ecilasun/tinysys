@@ -5,7 +5,7 @@ import axi4pkg::*;
 module gpucore(
 	input wire aclk,
 	input wire clk25,
-	input wire clk250,
+	input wire clk125,
 	input wire aresetn,
 	axi4if.master m_axi,
 	gpuwires.def gpuvideoout,
@@ -38,10 +38,10 @@ wire [10:0] video_y;
 logic hsync_d, vsync_d, blank_d;
 logic [23:0] paletteout_d;
 
-wire out_tmds_red;
-wire out_tmds_green;
-wire out_tmds_blue;
-wire out_tmds_clk;
+wire [1:0] out_tmds_red;
+wire [1:0] out_tmds_green;
+wire [1:0] out_tmds_blue;
+wire [1:0] out_tmds_clk;
 
 logic cmdre = 1'b0;
 assign gpufifore = cmdre;
@@ -140,7 +140,7 @@ end
 
 hdmi_device HDMI(
    .pclk(clk25),
-   .tmds_clk(clk250), // pixelclockx10
+   .tmds_clk(clk125), // pixel clock x5
 
    .in_vga_red(paletteout_d[15:8]),
    .in_vga_green(paletteout_d[23:16]),
@@ -155,11 +155,20 @@ hdmi_device HDMI(
    .out_tmds_blue(out_tmds_blue),
    .out_tmds_clk(out_tmds_clk) );
 
-// Output buffers for differential signals
-OBUFDS OBUFDS_clock  (.I(out_tmds_clk),    .O(gpuvideoout.tmdsclkp), .OB(gpuvideoout.tmdsclkn));
-OBUFDS OBUFDS_red    (.I(out_tmds_red),    .O(gpuvideoout.tmdsp[2]), .OB(gpuvideoout.tmdsn[2]));
-OBUFDS OBUFDS_green  (.I(out_tmds_green),  .O(gpuvideoout.tmdsp[1]), .OB(gpuvideoout.tmdsn[1]));
-OBUFDS OBUFDS_blue   (.I(out_tmds_blue),   .O(gpuvideoout.tmdsp[0]), .OB(gpuvideoout.tmdsn[0]));
+// DDR DVI output
+wire out_ddr_tmds_clk, out_ddr_tmds_red, out_ddr_tmds_green, out_ddr_tmds_blue;
+
+ODDR #(.DDR_CLK_EDGE("SAME_EDGE"), .INIT(1'b0), .SRTYPE ("ASYNC")) oddr_clk (.D1(out_tmds_clk[0]), .D2(out_tmds_clk[1]), .C(clk125), .CE(1'b1), .Q(out_ddr_tmds_clk), .R(1'b0), .S(1'b0) );
+OBUFDS OBUFDS_clk(.I(out_ddr_tmds_clk), .O(gpuvideoout.tmdsclkp), .OB(gpuvideoout.tmdsclkn));
+
+ODDR #(.DDR_CLK_EDGE("SAME_EDGE"), .INIT(1'b0), .SRTYPE ("ASYNC")) oddr_red (.D1(out_tmds_red[0]), .D2(out_tmds_red[1]), .C(clk125), .CE(1'b1), .Q(out_ddr_tmds_red), .R(1'b0), .S(1'b0) );
+OBUFDS OBUFDS_red(.I(out_ddr_tmds_red), .O(gpuvideoout.tmdsp[2]), .OB(gpuvideoout.tmdsn[2]));
+
+ODDR #(.DDR_CLK_EDGE("SAME_EDGE"), .INIT(1'b0), .SRTYPE ("ASYNC")) oddr_green (.D1(out_tmds_green[0]), .D2(out_tmds_green[1]), .C(clk125), .CE(1'b1), .Q(out_ddr_tmds_green), .R(1'b0), .S(1'b0) );
+OBUFDS OBUFDS_green(.I(out_ddr_tmds_green), .O(gpuvideoout.tmdsp[1]), .OB(gpuvideoout.tmdsn[1]));
+
+ODDR #(.DDR_CLK_EDGE("SAME_EDGE"), .INIT(1'b0), .SRTYPE ("ASYNC")) oddr_blue (.D1(out_tmds_blue[0]), .D2(out_tmds_blue[1]), .C(clk125), .CE(1'b1), .Q(out_ddr_tmds_blue), .R(1'b0), .S(1'b0) );
+OBUFDS OBUFDS_blue(.I(out_ddr_tmds_blue), .O(gpuvideoout.tmdsp[0]), .OB(gpuvideoout.tmdsn[0]));
 
 assign m_axi.arsize = SIZE_16_BYTE; // 128bit read bus
 assign m_axi.arburst = BURST_INCR;
