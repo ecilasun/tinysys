@@ -3,3 +3,4 @@ tinysys.gen/**
 tinysys.runs/**
 tinysys.sim/**
 tinysys.ip_user_files/**
+tmp/simtop.*

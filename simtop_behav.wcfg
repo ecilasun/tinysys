@@ -13,18 +13,18 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="139.715651156 us"></ZoomStartTime>
-      <ZoomEndTime time="181.895651157 us"></ZoomEndTime>
-      <Cursor1Time time="172.875651156 us"></Cursor1Time>
+      <ZoomStartTime time="286,886.500000 ns"></ZoomStartTime>
+      <ZoomEndTime time="287,953.000001 ns"></ZoomEndTime>
+      <Cursor1Time time="287,085.000000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="328"></NameColumnWidth>
-      <ValueColumnWidth column_width="122"></ValueColumnWidth>
+      <ValueColumnWidth column_width="98"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="134" />
+   <WVObjectSize size="174" />
    <wave_markers>
       <marker time="124244000000" label="" />
-      <marker time="155745151156" label="" />
+      <marker time="695030000000" label="" />
    </wave_markers>
    <wvobject type="divider" fp_name="divider23">
       <obj_property name="label">board</obj_property>
@@ -74,6 +74,194 @@
       <obj_property name="ElementShortName">preresetn</obj_property>
       <obj_property name="ObjectShortName">preresetn</obj_property>
    </wvobject>
+   <wvobject type="divider" fp_name="divider137">
+      <obj_property name="label">DMA</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/aclk" type="logic">
+      <obj_property name="ElementShortName">aclk</obj_property>
+      <obj_property name="ObjectShortName">aclk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/aresetn" type="logic">
+      <obj_property name="ElementShortName">aresetn</obj_property>
+      <obj_property name="ObjectShortName">aresetn</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmafifoempty" type="logic">
+      <obj_property name="ElementShortName">dmafifoempty</obj_property>
+      <obj_property name="ObjectShortName">dmafifoempty</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmafifodout" type="array">
+      <obj_property name="ElementShortName">dmafifodout[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dmafifodout[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmafifore" type="logic">
+      <obj_property name="ElementShortName">dmafifore</obj_property>
+      <obj_property name="ObjectShortName">dmafifore</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmafifovalid" type="logic">
+      <obj_property name="ElementShortName">dmafifovalid</obj_property>
+      <obj_property name="ObjectShortName">dmafifovalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/romShadowReady" type="logic">
+      <obj_property name="ElementShortName">romShadowReady</obj_property>
+      <obj_property name="ObjectShortName">romShadowReady</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmabusy" type="logic">
+      <obj_property name="ElementShortName">dmabusy</obj_property>
+      <obj_property name="ObjectShortName">dmabusy</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/cmdre" type="logic">
+      <obj_property name="ElementShortName">cmdre</obj_property>
+      <obj_property name="ObjectShortName">cmdre</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmainprogress" type="logic">
+      <obj_property name="ElementShortName">dmainprogress</obj_property>
+      <obj_property name="ObjectShortName">dmainprogress</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/romcopied" type="logic">
+      <obj_property name="ElementShortName">romcopied</obj_property>
+      <obj_property name="ObjectShortName">romcopied</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/cmdmode" type="array">
+      <obj_property name="ElementShortName">cmdmode[3:0]</obj_property>
+      <obj_property name="ObjectShortName">cmdmode[3:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmacmd" type="array">
+      <obj_property name="ElementShortName">dmacmd[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dmacmd[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmaqueuefull" type="logic">
+      <obj_property name="ElementShortName">dmaqueuefull</obj_property>
+      <obj_property name="ObjectShortName">dmaqueuefull</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmaqueuevalid" type="logic">
+      <obj_property name="ElementShortName">dmaqueuevalid</obj_property>
+      <obj_property name="ObjectShortName">dmaqueuevalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmaqueueempty" type="logic">
+      <obj_property name="ElementShortName">dmaqueueempty</obj_property>
+      <obj_property name="ObjectShortName">dmaqueueempty</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmaqueuewe" type="logic">
+      <obj_property name="ElementShortName">dmaqueuewe</obj_property>
+      <obj_property name="ObjectShortName">dmaqueuewe</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmaqueuedin" type="array">
+      <obj_property name="ElementShortName">dmaqueuedin[95:0]</obj_property>
+      <obj_property name="ObjectShortName">dmaqueuedin[95:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmaqueuere" type="logic">
+      <obj_property name="ElementShortName">dmaqueuere</obj_property>
+      <obj_property name="ObjectShortName">dmaqueuere</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmaqueuedout" type="array">
+      <obj_property name="ElementShortName">dmaqueuedout[95:0]</obj_property>
+      <obj_property name="ObjectShortName">dmaqueuedout[95:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmasourceaddr" type="array">
+      <obj_property name="ElementShortName">dmasourceaddr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dmasourceaddr[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmablockcount" type="array">
+      <obj_property name="ElementShortName">dmablockcount[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dmablockcount[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmatargetaddr" type="array">
+      <obj_property name="ElementShortName">dmatargetaddr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dmatargetaddr[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmacopyfull" type="logic">
+      <obj_property name="ElementShortName">dmacopyfull</obj_property>
+      <obj_property name="ObjectShortName">dmacopyfull</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmacopyempty" type="logic">
+      <obj_property name="ElementShortName">dmacopyempty</obj_property>
+      <obj_property name="ObjectShortName">dmacopyempty</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmacopyvalid" type="logic">
+      <obj_property name="ElementShortName">dmacopyvalid</obj_property>
+      <obj_property name="ObjectShortName">dmacopyvalid</obj_property>
+      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmacopydin" type="array">
+      <obj_property name="ElementShortName">dmacopydin[127:0]</obj_property>
+      <obj_property name="ObjectShortName">dmacopydin[127:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmacopydout" type="array">
+      <obj_property name="ElementShortName">dmacopydout[127:0]</obj_property>
+      <obj_property name="ObjectShortName">dmacopydout[127:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmacopyre" type="logic">
+      <obj_property name="ElementShortName">dmacopyre</obj_property>
+      <obj_property name="ObjectShortName">dmacopyre</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmacopywe" type="logic">
+      <obj_property name="ElementShortName">dmacopywe</obj_property>
+      <obj_property name="ObjectShortName">dmacopywe</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmareadstate" type="array">
+      <obj_property name="ElementShortName">dmareadstate[2:0]</obj_property>
+      <obj_property name="ObjectShortName">dmareadstate[2:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmaop_source" type="array">
+      <obj_property name="ElementShortName">dmaop_source[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dmaop_source[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmaop_target" type="array">
+      <obj_property name="ElementShortName">dmaop_target[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dmaop_target[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmaop_count" type="array">
+      <obj_property name="ElementShortName">dmaop_count[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dmaop_count[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/writestrobe" type="logic">
+      <obj_property name="ElementShortName">writestrobe</obj_property>
+      <obj_property name="ObjectShortName">writestrobe</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmawritestate" type="array">
+      <obj_property name="ElementShortName">dmawritestate[2:0]</obj_property>
+      <obj_property name="ObjectShortName">dmawritestate[2:0]</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/copydata" type="array">
+      <obj_property name="ElementShortName">copydata[127:0]</obj_property>
+      <obj_property name="ObjectShortName">copydata[127:0]</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmaop_target_copy" type="array">
+      <obj_property name="ElementShortName">dmaop_target_copy[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dmaop_target_copy[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/dmaop_count_copy" type="array">
+      <obj_property name="ElementShortName">dmaop_count_copy[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dmaop_count_copy[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/burstcount" type="array">
+      <obj_property name="ElementShortName">burstcount[7:0]</obj_property>
+      <obj_property name="ObjectShortName">burstcount[7:0]</obj_property>
+   </wvobject>
    <wvobject type="divider" fp_name="divider122">
       <obj_property name="label">fetch</obj_property>
       <obj_property name="DisplayName">label</obj_property>
@@ -114,11 +302,9 @@
       <obj_property name="CustomSignalColor">#FF00FF</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/instructionfetch/irqReq" type="logic">
-      <obj_property name="ElementShortName">irqReq</obj_property>
-      <obj_property name="ObjectShortName">irqReq</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
+   <wvobject fp_name="/simtop/main/socinstance/instructionfetch/irqReq" type="array">
+      <obj_property name="ElementShortName">irqReq[1:0]</obj_property>
+      <obj_property name="ObjectShortName">irqReq[1:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/instructionfetch/mepc" type="array">
       <obj_property name="ElementShortName">mepc[31:0]</obj_property>
@@ -163,14 +349,14 @@
       <obj_property name="ObjectShortName">processingIRQ</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/instructionfetch/injectAddr" type="array">
-      <obj_property name="ElementShortName">injectAddr[3:0]</obj_property>
-      <obj_property name="ObjectShortName">injectAddr[3:0]</obj_property>
+      <obj_property name="ElementShortName">injectAddr[5:0]</obj_property>
+      <obj_property name="ObjectShortName">injectAddr[5:0]</obj_property>
       <obj_property name="CustomSignalColor">#FFFF00</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/instructionfetch/injectCount" type="array">
-      <obj_property name="ElementShortName">injectCount[3:0]</obj_property>
-      <obj_property name="ObjectShortName">injectCount[3:0]</obj_property>
+      <obj_property name="ElementShortName">injectCount[5:0]</obj_property>
+      <obj_property name="ObjectShortName">injectCount[5:0]</obj_property>
       <obj_property name="CustomSignalColor">#FFFF00</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
@@ -530,11 +716,9 @@
       <obj_property name="CustomSignalColor">#FFFF00</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/irqReq" type="logic">
-      <obj_property name="ElementShortName">irqReq</obj_property>
-      <obj_property name="ObjectShortName">irqReq</obj_property>
-      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
+   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/irqReq" type="array">
+      <obj_property name="ElementShortName">irqReq[1:0]</obj_property>
+      <obj_property name="ObjectShortName">irqReq[1:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/csrfileinst/csrwe" type="logic">
       <obj_property name="ElementShortName">csrwe</obj_property>
@@ -573,14 +757,8 @@
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/csrfileinst/mieshadow" type="array">
-      <obj_property name="ElementShortName">mieshadow[31:0]</obj_property>
-      <obj_property name="ObjectShortName">mieshadow[31:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FFA500</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/csrfileinst/mstatusshadow" type="array">
-      <obj_property name="ElementShortName">mstatusshadow[31:0]</obj_property>
-      <obj_property name="ObjectShortName">mstatusshadow[31:0]</obj_property>
+      <obj_property name="ElementShortName">mieshadow[1:0]</obj_property>
+      <obj_property name="ObjectShortName">mieshadow[1:0]</obj_property>
       <obj_property name="CustomSignalColor">#FFA500</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
