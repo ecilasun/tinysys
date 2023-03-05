@@ -20,6 +20,8 @@ module fetchunit #(
 	input wire [1:0] irqReq,
 	input wire [31:0] mepc,
 	input wire [31:0] mtvec,
+	// ROM copy done
+	input wire romReady,
 	// To system bus
 	axi4if.master m_axi );
 
@@ -172,8 +174,8 @@ always @(posedge aclk) begin
 
 		unique case(fetchmode)
 			INIT: begin
-				fetchena <= 1'b1;
-				fetchmode <= FETCH;
+				fetchena <= romReady;
+				fetchmode <= romReady ? FETCH : INIT;
 			end
 
 			FETCH: begin

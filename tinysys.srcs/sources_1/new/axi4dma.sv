@@ -10,12 +10,31 @@ module axi4dma(
 	input wire [31:0] dmafifodout,
 	output wire dmafifore,
 	input wire dmafifovalid,
+	output wire romReady,
 	output wire dmabusy);
 
 logic cmdre = 1'b0;
 logic dmainprogress = 1'b0;
+logic ROMavailable = 1'b0;
 assign dmafifore = cmdre;
 assign dmabusy = dmainprogress;
+
+assign romReady = ROMavailable;
+
+// --------------------------------------------------
+// Boot ROM
+// Grouped as 128bit (16 byte) cache line entries
+// --------------------------------------------------
+
+logic [11:0] bootROMaddr;
+logic [127:0] bootROM[0:4095];
+
+initial begin
+	$readmemh("romimage.mem", bootROM);
+end
+
+wire [127:0] bootROMdout;
+assign bootROMdout = bootROM[bootROMaddr];
 
 // ------------------------------------------------------------------------------------
 // Setup
@@ -262,8 +281,12 @@ end
 // DMA logic - Write
 // ------------------------------------------------------------------------------------
 
-typedef enum logic [2:0] {WRITEIDLE, DETECTFIFO, STARTWRITE, DMAWRITEDEST, DMAWRITELOOP, DMAWRITETRAIL} dmawritestatetype;
-dmawritestatetype dmawritestate = WRITEIDLE;
+typedef enum logic [3:0] {
+	INIT, STARTCOPYROM, ROMWRITEWORD, ROMWAITWREADY, ROMWAITBREADY,
+	WRITEIDLE,
+	DETECTFIFO, STARTWRITE, DMAWRITEDEST, DMAWRITELOOP, DMAWRITETRAIL
+} dmawritestatetype;
+dmawritestatetype dmawritestate = INIT;
 
 logic [127:0] copydata;
 logic [31:0] dmaop_target_copy;
@@ -276,12 +299,63 @@ always_ff @(posedge aclk) begin
 		m_axi.wstrb <= 16'h0000;
 		m_axi.wlast <= 0;
 		m_axi.bready <= 0;
-		dmawritestate <= WRITEIDLE;
+		ROMavailable <= 1'b0;
+		dmawritestate <= INIT;
 	end else begin
 
 		dmacopyre <= 1'b0;
 
 		case (dmawritestate)
+			INIT: begin
+				// Set up for ROM copy
+				dmaop_target_copy <= 32'h0FFF0000;
+				dmaop_count_copy <= 32'd4096;
+				bootROMaddr <= 12'd0;
+				dmawritestate <= STARTCOPYROM;
+			end
+
+			STARTCOPYROM: begin
+				m_axi.awvalid <= 1'b1;
+				m_axi.awaddr <= dmaop_target_copy;
+				dmaop_target_copy <= dmaop_target_copy + 32'd16; // Next batch
+				dmawritestate <= ROMWRITEWORD;
+			end
+
+			ROMWRITEWORD: begin
+				if (/*m_axi.awvalid &&*/ m_axi.awready) begin
+					m_axi.awvalid <= 1'b0;
+
+					m_axi.wvalid <= 1'b1;
+					m_axi.wstrb <= 16'hFFFF;
+					m_axi.wdata <= bootROMdout;
+					m_axi.wlast <= 1'b1;
+
+					bootROMaddr <= bootROMaddr + 12'd1;
+					dmaop_count_copy <= dmaop_count_copy - 'd1;
+
+					dmawritestate <= ROMWAITWREADY;
+				end
+			end
+
+			ROMWAITWREADY: begin
+				if (/*m_axi.wvalid &&*/ m_axi.wready) begin
+					m_axi.wvalid <= 0;
+					m_axi.wstrb <= 16'h0000;
+					m_axi.wlast <= 0;
+					m_axi.bready <= 1;
+					dmawritestate <= ROMWAITBREADY;
+				end
+			end
+
+			ROMWAITBREADY: begin
+				if (m_axi.bvalid /*&& m_axi.bready*/) begin
+					m_axi.bready <= 0;
+					ROMavailable <= (dmaop_count_copy == 0) ? 1'b1 : 1'b0;
+					// Drop into idle state if copy is done, otherwise loop
+					dmawritestate <= (dmaop_count_copy == 0) ? WRITEIDLE : STARTCOPYROM;
+				end
+			end
+
 			WRITEIDLE: begin
 				if (writestrobe) begin
 					dmaop_target_copy <= dmaop_target;

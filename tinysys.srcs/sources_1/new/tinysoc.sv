@@ -27,9 +27,7 @@ axi4if databus();			// Data unit bus
 axi4if gpubus();			// Graphics unit bus
 axi4if dmabus();			// Direct memory access bus
 
-axi4if memorybus();			// Arbitrated, to memory
-axi4if bramif();			// Sub bus: BRAM
-axi4if ddr3sdramif();		// Sub bus: DDR3 SDRAM
+axi4if memorybus();			// Main memory
 
 axi4if devicebus();			// Arbitrated, to devices
 axi4if uartif();			// Sub bus: UART device
@@ -56,9 +54,10 @@ wire irqHold;
 wire [1:0] irqReq;
 wire [31:0] mepc;
 wire [31:0] mtvec;
+wire romReady;
 
-// Reset vector is at top of BRAM
-fetchunit #(.RESETVECTOR(32'h10000000)) instructionfetch (
+// Reset vector at last 64K of DDR3 SDRAM
+fetchunit #(.RESETVECTOR(32'h0FFF0000)) instructionfetch (
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.branchresolved(branchresolved),
@@ -71,6 +70,7 @@ fetchunit #(.RESETVECTOR(32'h10000000)) instructionfetch (
 	.irqReq(irqReq),
 	.mepc(mepc),
 	.mtvec(mtvec),
+	.romReady(romReady),
 	.m_axi(instructionbus) );
 
 // --------------------------------------------------
@@ -172,6 +172,7 @@ axi4dma DMA(
 	.dmafifodout(dmafifodout),
 	.dmafifore(dmafifore),
 	.dmafifovalid(dmafifovalid),
+	.romReady(romReady),
 	.dmabusy(dmabusy) );
 
 // --------------------------------------------------
@@ -185,30 +186,13 @@ arbiter arbiter4x1inst(
 	.axi_m(memorybus) );
 
 // --------------------------------------------------
-// Memory region router
-// --------------------------------------------------
-
-// dev   start     end       addrs[30:28]  size
-// DDR3: 00000000  0FFFFFFF  3'b000        256MB
-// BRAM: 10000000  1000FFFF  3'b001        64KB
-
-memoryrouter memoryrouterinst(
-	.aclk(aclk),
-	.aresetn(aresetn),
-    .axi_s(memorybus),
-    .addressmask({3'b000, 3'b001}),
-    .axi_m({ddr3sdramif, bramif}));
-
-// --------------------------------------------------
 // RAM
 // --------------------------------------------------
 
-bootmem bootmeminst(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.axi_s(bramif) );
-
 wire [11:0] device_temp;
+
+// dev   start     end
+// DDR3: 00000000  0FFFFFFF
 
 axi4ddr3sdram axi4ddr3sdraminst(
 	.aclk(aclk),
@@ -216,7 +200,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 	.preresetn(preresetn),
 	.clk_sys_i(clk166),
 	.clk_ref_i(clk200),
-	.m_axi(ddr3sdramif),
+	.m_axi(memorybus),
 	.ddr3wires(ddr3wires),
 	.device_temp(device_temp) );
 

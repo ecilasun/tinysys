@@ -13,18 +13,18 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="286,886.500000 ns"></ZoomStartTime>
-      <ZoomEndTime time="287,953.000001 ns"></ZoomEndTime>
-      <Cursor1Time time="287,085.000000 ns"></Cursor1Time>
+      <ZoomStartTime time="593,720.000000 ns"></ZoomStartTime>
+      <ZoomEndTime time="597,580.000001 ns"></ZoomEndTime>
+      <Cursor1Time time="596,552.000000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="328"></NameColumnWidth>
-      <ValueColumnWidth column_width="98"></ValueColumnWidth>
+      <ValueColumnWidth column_width="92"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="174" />
+   <WVObjectSize size="175" />
    <wave_markers>
       <marker time="124244000000" label="" />
-      <marker time="695030000000" label="" />
+      <marker time="1118421741125" label="" />
    </wave_markers>
    <wvobject type="divider" fp_name="divider23">
       <obj_property name="label">board</obj_property>
@@ -102,10 +102,6 @@
       <obj_property name="ElementShortName">dmafifovalid</obj_property>
       <obj_property name="ObjectShortName">dmafifovalid</obj_property>
    </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/DMA/romShadowReady" type="logic">
-      <obj_property name="ElementShortName">romShadowReady</obj_property>
-      <obj_property name="ObjectShortName">romShadowReady</obj_property>
-   </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/DMA/dmabusy" type="logic">
       <obj_property name="ElementShortName">dmabusy</obj_property>
       <obj_property name="ObjectShortName">dmabusy</obj_property>
@@ -118,15 +114,9 @@
       <obj_property name="ElementShortName">dmainprogress</obj_property>
       <obj_property name="ObjectShortName">dmainprogress</obj_property>
    </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/DMA/romcopied" type="logic">
-      <obj_property name="ElementShortName">romcopied</obj_property>
-      <obj_property name="ObjectShortName">romcopied</obj_property>
-      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/DMA/cmdmode" type="array">
-      <obj_property name="ElementShortName">cmdmode[3:0]</obj_property>
-      <obj_property name="ObjectShortName">cmdmode[3:0]</obj_property>
+      <obj_property name="ElementShortName">cmdmode[2:0]</obj_property>
+      <obj_property name="ObjectShortName">cmdmode[2:0]</obj_property>
       <obj_property name="CustomSignalColor">#FF00FF</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
@@ -235,10 +225,19 @@
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/DMA/dmawritestate" type="array">
-      <obj_property name="ElementShortName">dmawritestate[2:0]</obj_property>
-      <obj_property name="ObjectShortName">dmawritestate[2:0]</obj_property>
+      <obj_property name="ElementShortName">dmawritestate[3:0]</obj_property>
+      <obj_property name="ObjectShortName">dmawritestate[3:0]</obj_property>
       <obj_property name="CustomSignalColor">#00FFFF</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/bootROMaddr" type="array">
+      <obj_property name="ElementShortName">bootROMaddr[11:0]</obj_property>
+      <obj_property name="ObjectShortName">bootROMaddr[11:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/bootROMdout" type="array">
+      <obj_property name="ElementShortName">bootROMdout[127:0]</obj_property>
+      <obj_property name="ObjectShortName">bootROMdout[127:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/DMA/copydata" type="array">
       <obj_property name="ElementShortName">copydata[127:0]</obj_property>
@@ -261,6 +260,10 @@
    <wvobject fp_name="/simtop/main/socinstance/DMA/burstcount" type="array">
       <obj_property name="ElementShortName">burstcount[7:0]</obj_property>
       <obj_property name="ObjectShortName">burstcount[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/simtop/main/socinstance/DMA/romReady" type="logic">
+      <obj_property name="ElementShortName">romReady</obj_property>
+      <obj_property name="ObjectShortName">romReady</obj_property>
    </wvobject>
    <wvobject type="divider" fp_name="divider122">
       <obj_property name="label">fetch</obj_property>
