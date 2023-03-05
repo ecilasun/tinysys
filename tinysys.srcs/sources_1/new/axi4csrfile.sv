@@ -21,15 +21,6 @@ module axi4CSRFile(
 // CSR RAM
 // --------------------------------------------------
 
-logic csrwe = 1'b0;
-logic csrre = 1'b0;
-logic [11:0] cswraddr = 12'h000;
-logic [11:0] csrraddr = 12'h000;
-logic [31:0] csrdin = 32'd0;
-logic [31:0] csrdout = 32'd0;
-
-logic [31:0] csrmemory[0:4095];
-
 // Shadows
 logic [63:0] timecmpshadow = 64'hFFFFFFFFFFFFFFFF;
 logic [31:0] mepcshadow = 32'd0;
@@ -37,6 +28,14 @@ logic [1:0] mieshadow = 2'b00; // Machine interrupt enable states
 logic mstatusIEshadow = 1'b0; // Global interrupt enable
 logic [31:0] mtvecshadow = 32'd0;
 logic [31:0] dummyshadow = 32'd0;
+
+logic csrwe = 1'b0;
+logic [11:0] cswraddr; // NOTE: Vivado seems to have trouble synthesizing BRAM when this is initialized
+logic [11:0] csrraddr;
+logic [31:0] csrdin = 32'd0;
+logic [31:0] csrdout = 32'd0;
+
+logic [31:0] csrmemory[0:4095];
 
 initial begin
 	int ri;
@@ -52,19 +51,17 @@ always @(posedge aclk) begin
 	if (~aresetn) begin
 		timecmpshadow <= 64'hFFFFFFFFFFFFFFFF;
 	end else begin
-		if (csrre) begin
-			unique case (csrraddr)
-				`CSR_MHARTID:	csrdout <= 0;//HARTID; // Immutable
-				`CSR_RETIHI:	csrdout <= retired[63:32];
-				`CSR_TIMEHI:	csrdout <= wallclocktime[63:32];
-				`CSR_CYCLEHI:	csrdout <= cpuclocktime[63:32];
-				`CSR_RETILO:	csrdout <= retired[31:0];
-				`CSR_TIMELO:	csrdout <= wallclocktime[31:0];
-				`CSR_CYCLELO:	csrdout <= cpuclocktime[31:0];
-				`CSR_MISA:		csrdout <= 32'h00001100; // rv32i(bit8), Zmmul(bit12), machine level
-				default:		csrdout <= csrmemory[csrraddr];
-			endcase
-		end
+		unique case (csrraddr)
+			`CSR_MHARTID:	csrdout <= 0;//HARTID; // Immutable
+			`CSR_RETIHI:	csrdout <= retired[63:32];
+			`CSR_TIMEHI:	csrdout <= wallclocktime[63:32];
+			`CSR_CYCLEHI:	csrdout <= cpuclocktime[63:32];
+			`CSR_RETILO:	csrdout <= retired[31:0];
+			`CSR_TIMELO:	csrdout <= wallclocktime[31:0];
+			`CSR_CYCLELO:	csrdout <= cpuclocktime[31:0];
+			`CSR_MISA:		csrdout <= 32'h00001100; // rv32i(bit8), Zmmul(bit12), machine level
+			default:		csrdout <= csrmemory[csrraddr];
+		endcase
 
 		if (csrwe) begin
 			csrmemory[cswraddr] <= csrdin;
@@ -173,13 +170,11 @@ always @(posedge aclk) begin
 	end else begin
 		s_axi.rvalid <= 1'b0;
 		s_axi.arready <= 1'b0;
-		csrre <= 1'b0;
 		unique case(raddrstate)
 			2'b00: begin
 				if (s_axi.arvalid) begin
 					s_axi.arready <= 1'b1;
 					csrraddr <= s_axi.araddr[11:0];
-					csrre <= 1'b1;
 					raddrstate <= 2'b01;
 				end
 			end
