@@ -27,7 +27,7 @@ logic [31:0] mepcshadow = 32'd0;
 logic [1:0] mieshadow = 2'b00; // Machine interrupt enable states
 logic mstatusIEshadow = 1'b0; // Global interrupt enable
 logic [31:0] mtvecshadow = 32'd0;
-logic [31:0] dummyshadow = 32'd0;
+logic dummyshadow = 1'b0;
 
 logic csrwe = 1'b0;
 logic [11:0] cswraddr; // NOTE: Vivado seems to have trouble synthesizing BRAM when this is initialized
@@ -47,34 +47,13 @@ initial begin
 	csrmemory[`CSR_TIMECMPHI] = 32'hFFFFFFFF;
 end
 
+// Write
 always @(posedge aclk) begin
 	if (~aresetn) begin
-		timecmpshadow <= 64'hFFFFFFFFFFFFFFFF;
+		//
 	end else begin
-		unique case (csrraddr)
-			`CSR_MHARTID:	csrdout <= 0;//HARTID; // Immutable
-			`CSR_RETIHI:	csrdout <= retired[63:32];
-			`CSR_TIMEHI:	csrdout <= wallclocktime[63:32];
-			`CSR_CYCLEHI:	csrdout <= cpuclocktime[63:32];
-			`CSR_RETILO:	csrdout <= retired[31:0];
-			`CSR_TIMELO:	csrdout <= wallclocktime[31:0];
-			`CSR_CYCLELO:	csrdout <= cpuclocktime[31:0];
-			`CSR_MISA:		csrdout <= 32'h00001100; // rv32i(bit8), Zmmul(bit12), machine level
-			default:		csrdout <= csrmemory[csrraddr];
-		endcase
-
-		if (csrwe) begin
-			csrmemory[cswraddr] <= csrdin;
-			unique case (cswraddr)
-				`CSR_TIMECMPLO:	timecmpshadow[31:0] <= csrdin;
-				`CSR_TIMECMPHI:	timecmpshadow[63:32] <= csrdin;
-				`CSR_MEPC:		mepcshadow <= csrdin;
-				`CSR_MIE:		mieshadow <= {csrdin[11], csrdin[7]}; // Hardware, Timer
-				`CSR_MSTATUS:	mstatusIEshadow <= csrdin[3];
-				`CSR_MTVEC:		mtvecshadow <= csrdin;
-				default:		dummyshadow <= csrdin;
-			endcase
-		end
+		csrdout <= csrmemory[csrraddr];
+		if (csrwe) csrmemory[cswraddr] <= csrdin;
 	end
 end
 
@@ -107,25 +86,24 @@ assign irqReq = {uartInterrupt, timerInterrupt};
 // AXI4 interface
 // --------------------------------------------------
 
-logic [1:0] waddrstate = 2'b00;
+logic waddrstate = 1'b0;
+logic raddrstate = 1'b0;
 logic [1:0] writestate = 2'b00;
-logic [1:0] raddrstate = 2'b00;
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
 		s_axi.awready <= 1'b0;
 	end else begin
-		// write address
 		unique case(waddrstate)
-			2'b00: begin
+			1'b0: begin
 				if (s_axi.awvalid) begin
 					s_axi.awready <= 1'b1;
-					waddrstate <= 2'b01;
+					waddrstate <= 1'b1;
 				end
 			end
-			default/*2'b01*/: begin
+			1'b1: begin
 				s_axi.awready <= 1'b0;
-				waddrstate <= 2'b00;
+				waddrstate <= 1'b0;
 			end
 		endcase
 	end
@@ -136,6 +114,7 @@ always @(posedge aclk) begin
 		s_axi.bresp <= 2'b00; // okay
 		s_axi.bvalid <= 1'b0;
 		s_axi.wready <= 1'b0;
+		timecmpshadow <= 64'hFFFFFFFFFFFFFFFF;
 	end else begin
 		// write data
 		s_axi.wready <= 1'b0;
@@ -151,11 +130,23 @@ always @(posedge aclk) begin
 					s_axi.wready <= 1'b1;
 				end
 			end
-			default/*2'b01*/: begin
+			2'b01: begin
 				if (s_axi.bready) begin
 					s_axi.bvalid <= 1'b1;
-					writestate <= 2'b00;
+					writestate <= 2'b10;
 				end
+			end
+			2'b10: begin // Generate a shadow copy of some registers
+				unique case (cswraddr)
+					`CSR_TIMECMPLO:	timecmpshadow[31:0] <= csrdin;
+					`CSR_TIMECMPHI:	timecmpshadow[63:32] <= csrdin;
+					`CSR_MEPC:		mepcshadow <= csrdin;
+					`CSR_MIE:		mieshadow <= {csrdin[11], csrdin[7]};	// Hardware and Timer enable bits
+					`CSR_MSTATUS:	mstatusIEshadow <= csrdin[3];			// MIE bit
+					`CSR_MTVEC:		mtvecshadow <= csrdin;
+					default:		dummyshadow <= csrdin[0];				// Unused
+				endcase
+				writestate <= 2'b00;
 			end
 		endcase
 	end
@@ -171,18 +162,28 @@ always @(posedge aclk) begin
 		s_axi.rvalid <= 1'b0;
 		s_axi.arready <= 1'b0;
 		unique case(raddrstate)
-			2'b00: begin
+			1'b0: begin
 				if (s_axi.arvalid) begin
 					s_axi.arready <= 1'b1;
 					csrraddr <= s_axi.araddr[11:0];
-					raddrstate <= 2'b01;
+					raddrstate <= 1'b1;
 				end
 			end
-			default/*2'b01*/: begin
+			1'b1: begin
 				if (s_axi.rready) begin
-					s_axi.rdata[31:0] <= csrdout;
+					unique case (csrraddr)
+						`CSR_MHARTID:	s_axi.rdata[31:0] <= 0;//HARTID; // Immutable
+						`CSR_RETIHI:	s_axi.rdata[31:0] <= retired[63:32];
+						`CSR_TIMEHI:	s_axi.rdata[31:0] <= wallclocktime[63:32];
+						`CSR_CYCLEHI:	s_axi.rdata[31:0] <= cpuclocktime[63:32];
+						`CSR_RETILO:	s_axi.rdata[31:0] <= retired[31:0];
+						`CSR_TIMELO:	s_axi.rdata[31:0] <= wallclocktime[31:0];
+						`CSR_CYCLELO:	s_axi.rdata[31:0] <= cpuclocktime[31:0];
+						`CSR_MISA:		s_axi.rdata[31:0] <= 32'h00001100; // rv32i(bit8), Zmmul(bit12), machine level
+						default:		s_axi.rdata[31:0] <= csrdout;
+					endcase
 					s_axi.rvalid <= 1'b1;
-					raddrstate <= 2'b00;
+					raddrstate <= 1'b0;
 				end
 			end
 		endcase

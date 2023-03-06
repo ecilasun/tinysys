@@ -77,7 +77,7 @@ fetchunit #(.RESETVECTOR(32'h0FFF0000)) instructionfetch (
 // Data unit
 // --------------------------------------------------
 
-dataunit dataunitints (
+dataunit dataunitinst (
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.s_ibus(ibus),
