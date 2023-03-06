@@ -208,6 +208,8 @@ always @(posedge aclk) begin
 		ififore <= 1'b0;
 		rwen <= 1'b0;
 		wback <= 1'b0;
+		
+		B <= 32'd0;
 
 		wbdin <= 32'd0;
 
