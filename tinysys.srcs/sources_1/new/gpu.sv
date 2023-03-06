@@ -59,10 +59,6 @@ logic scanmode = 1'b0;			// 320 pixel mode (640 when high)
 
 logic [127:0] scanlinecache [0:63]; // 64 blocks of 16 pixels worth of scanline cache (20 used in index color 320*240 mode)
 
-logic palettewe = 1'b0;
-logic [7:0] palettewa = 8'h00;
-logic [23:0] palettedin = 24'h000000;
-
 // localindex is the 16 pixel pixel index counter, which can move either at 1:2 (pixel doubling) or 1:1 the scan rate (no doubling)
 logic [3:0] localindex;
 // cacheindex is the 16 pixel wide block index across a scanline
@@ -73,8 +69,12 @@ always_comb begin
 	cacheindex = scanmode ? video_x[9:4] : video_x[10:5];
 end
 
-// Generate palette read address from current pixel's color index
+logic [7:0] palettewa;
+logic palettewe = 1'b0;
 logic [7:0] palettera;
+logic [23:0] palettedin = 24'h000000;
+
+// Generate palette read address from current pixel's color index
 always_ff @(posedge clk25) begin
 	if (~aresetn) begin
 		// 

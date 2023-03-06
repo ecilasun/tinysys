@@ -33,8 +33,14 @@ initial begin
 	$readmemh("romimage.mem", bootROM);
 end
 
-wire [127:0] bootROMdout;
-assign bootROMdout = bootROM[bootROMaddr];
+logic [127:0] bootROMdout;
+always @(posedge aclk) begin
+	if (~aresetn) begin
+		//
+	end else begin
+		bootROMdout <= bootROM[bootROMaddr];
+	end
+end
 
 // ------------------------------------------------------------------------------------
 // Setup
@@ -299,6 +305,7 @@ always_ff @(posedge aclk) begin
 		m_axi.wstrb <= 16'h0000;
 		m_axi.wlast <= 0;
 		m_axi.bready <= 0;
+		bootROMaddr <= 12'd0;
 		ROMavailable <= 1'b0;
 		dmawritestate <= INIT;
 	end else begin
@@ -310,7 +317,6 @@ always_ff @(posedge aclk) begin
 				// Set up for ROM copy
 				dmaop_target_copy <= 32'h0FFF0000;
 				dmaop_count_copy <= 32'd4096;
-				bootROMaddr <= 12'd0;
 				dmawritestate <= STARTCOPYROM;
 			end
 
