@@ -34,12 +34,9 @@ initial begin
 end
 
 logic [127:0] bootROMdout;
+logic romre = 1'b0;
 always @(posedge aclk) begin
-	if (~aresetn) begin
-		//
-	end else begin
-		bootROMdout <= bootROM[bootROMaddr];
-	end
+	if (romre) bootROMdout <= bootROM[bootROMaddr];
 end
 
 // ------------------------------------------------------------------------------------
@@ -305,24 +302,26 @@ always_ff @(posedge aclk) begin
 		m_axi.wstrb <= 16'h0000;
 		m_axi.wlast <= 0;
 		m_axi.bready <= 0;
-		bootROMaddr <= 12'd0;
 		ROMavailable <= 1'b0;
 		dmawritestate <= INIT;
 	end else begin
-
 		dmacopyre <= 1'b0;
+		romre <= 1'b0;
 
 		case (dmawritestate)
 			INIT: begin
 				// Set up for ROM copy
 				dmaop_target_copy <= 32'h0FFF0000;
 				dmaop_count_copy <= 32'd4096;
+				romre <= 1'b0;
+				bootROMaddr <= 12'd0;
 				dmawritestate <= STARTCOPYROM;
 			end
 
 			STARTCOPYROM: begin
 				m_axi.awvalid <= 1'b1;
 				m_axi.awaddr <= dmaop_target_copy;
+				romre <= 1'b1;
 				dmaop_target_copy <= dmaop_target_copy + 32'd16; // Next batch
 				dmawritestate <= ROMWRITEWORD;
 			end

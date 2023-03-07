@@ -141,6 +141,7 @@ always @(posedge aclk) begin
 		s_axi.bresp <= 2'b00; // okay
 		s_axi.bvalid <= 1'b0;
 		s_axi.wready <= 1'b0;
+		writestate <= 2'b00;
 		din <= 8'd0;
 	end else begin
 		// write data

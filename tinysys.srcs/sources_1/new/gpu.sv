@@ -305,10 +305,11 @@ end
 (* async_reg = "true" *) logic [8:0] scanline = 'd0;
 (* async_reg = "true" *) logic [9:0] scanpixelpre = 'd0;
 (* async_reg = "true" *) logic [9:0] scanpixel = 'd0;
-logic [31:0] blankcounter = 'd0;
+logic [31:0] blankcounter = 32'd0;
+
 always_ff @(posedge aclk) begin
 	if (~aresetn) begin
-		//
+		blankcounter <= 32'd0;
 	end else begin
 		scanlinepre <= video_y[8:0];
 		scanline <= scanlinepre;

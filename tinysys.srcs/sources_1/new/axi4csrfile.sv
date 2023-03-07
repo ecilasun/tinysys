@@ -49,12 +49,9 @@ end
 
 // Write
 always @(posedge aclk) begin
-	if (~aresetn) begin
-		//
-	end else begin
-		csrdout <= csrmemory[csrraddr];
-		if (csrwe) csrmemory[cswraddr] <= csrdin;
-	end
+	csrdout <= csrmemory[csrraddr];
+	if (csrwe)
+		csrmemory[cswraddr] <= csrdin;
 end
 
 assign mepc = mepcshadow;
