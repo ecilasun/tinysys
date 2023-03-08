@@ -26,6 +26,7 @@
 `define OPCODE_BRANCH	    7'b1100011
 `define OPCODE_FENCE	    7'b0001111
 `define OPCODE_SYSTEM	    7'b1110011
+
 `define OPCODE_FLOAT_OP     7'b1010011
 `define OPCODE_FLOAT_LDW    7'b0000111
 `define OPCODE_FLOAT_STW    7'b0100111
@@ -33,6 +34,10 @@
 `define OPCODE_FLOAT_MSUB   7'b1000111
 `define OPCODE_FLOAT_NMSUB  7'b1001011
 `define OPCODE_FLOAT_NMADD  7'b1001111
+
+//`define OPCODE_CUSTOM_REDGE 7'b0001011
+//`define OPCODE_CUSTOM_RMASK 7'b0101011
+//`define OPCODE_CUSTOM_RWAIT 7'b1001011
 
 // ------------------------------------------
 // Sub-instructions
