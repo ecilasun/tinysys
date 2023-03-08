@@ -95,10 +95,10 @@ decoder decoderinst(
 /*
 	Table of injected function offsets and lengths
 	Name			Offset		Length
-	enterTimerISR   0           12
-	leaveTimerISR   12          7
-	enterHWISR      19          14
-	leaveHWISR      33          8
+	enterTimerISR   0           11
+	leaveTimerISR   11          6
+	enterHWISR      17          13
+	leaveHWISR      30          7
 */
 
 logic [5:0] injectAddr = 0;
@@ -241,16 +241,16 @@ always @(posedge aclk) begin
 				processingIRQ <= 1'b1;
 
 				// Inject entry instruction sequence (see table at microcode ROM section)
-				injectAddr <= isHWIRQ ? 19 : 0;
-				injectCount <= isHWIRQ ? 14 : 12;
+				injectAddr <= isHWIRQ ? 17 : 0;
+				injectCount <= isHWIRQ ? 13 : 11;
 				fetchmode <= STARTINJECT;
 				injectEnd <= POSTENTER;
 			end
 
 			EXITISR: begin
 				// Inject exit instruction sequence (see table at microcode ROM section)
-				injectAddr <= isHWIRQ ? 33 : 12;
-				injectCount <= isHWIRQ ? 8 : 7;
+				injectAddr <= isHWIRQ ? 30 : 11;
+				injectCount <= isHWIRQ ? 7 : 6;
 				fetchmode <= STARTINJECT;
 				injectEnd <= POSTEXIT;
 
