@@ -95,10 +95,10 @@ decoder decoderinst(
 /*
 	Table of injected function offsets and lengths
 	Name			Offset		Length
-	enterTimerISR   0           11
-	leaveTimerISR   11          6
-	enterHWISR      17          13
-	leaveHWISR      30          7
+	enterTimerISR   0           12
+	leaveTimerISR   12          7
+	enterHWISR      19          14
+	leaveHWISR      33          8
 */
 
 logic [5:0] injectAddr = 0;
@@ -241,16 +241,16 @@ always @(posedge aclk) begin
 				processingIRQ <= 1'b1;
 
 				// Inject entry instruction sequence (see table at microcode ROM section)
-				injectAddr <= isHWIRQ ? 17 : 0;
-				injectCount <= isHWIRQ ? 13 : 11;
+				injectAddr <= isHWIRQ ? 19 : 0;
+				injectCount <= isHWIRQ ? 14 : 12;
 				fetchmode <= STARTINJECT;
 				injectEnd <= POSTENTER;
 			end
 
 			EXITISR: begin
 				// Inject exit instruction sequence (see table at microcode ROM section)
-				injectAddr <= isHWIRQ ? 30 : 11;
-				injectCount <= isHWIRQ ? 7 : 6;
+				injectAddr <= isHWIRQ ? 33 : 12;
+				injectCount <= isHWIRQ ? 8 : 7;
 				fetchmode <= STARTINJECT;
 				injectEnd <= POSTEXIT;
 
@@ -281,7 +281,8 @@ always @(posedge aclk) begin
 			POSTENTER: begin
 				// Set up a jump to ISR
 				PC <= mtvec;
-				// Wait for fifo to flush completely
+				// Wait for control unit to consume all pending instructions first
+				// as we have just inserted many to be executed
 				fetchena <= ififoempty;
 				fetchmode <= ififoempty ? FETCH : POSTENTER;
 			end
@@ -289,9 +290,10 @@ always @(posedge aclk) begin
 			POSTEXIT: begin
 				// Restore PC to MEPC via CSR
 				PC <= mepc;
-				// Resume
-				fetchena <= 1'b1;
-				fetchmode <= FETCH;
+				// Wait for control unit to consume all pending instructions first
+				// as we have just inserted many to be executed
+				fetchena <= ififoempty;
+				fetchmode <= ififoempty ? FETCH : POSTEXIT;
 			end
 
 			WFI: begin
