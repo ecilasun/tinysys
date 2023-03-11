@@ -35,7 +35,6 @@ logic [31:0] IR;
 wire rready;
 wire [31:0] instruction;
 logic icacheflush = 1'b0;
-logic icacheflushpending = 1'b0;
 logic irqpending = 1'b0;
 logic processingIRQ = 1'b0;
 logic isHWIRQ = 1'b0;
@@ -142,7 +141,7 @@ wire isdiscard = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CDISCARD);
 wire ismret = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_MRET);
 wire iswfi = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_WFI);
 wire isflush = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CFLUSH);
-wire needsToStall = isbranch || isfence || isdiscard;
+wire needsToStall = isbranch || isdiscard;
 
 // --------------------------------------------------
 // Fetch logic
@@ -182,7 +181,6 @@ always @(posedge aclk) begin
 			FETCH: begin
 				fetchmode <= rready ? STREAMOUT : FETCH;
 				IR <= instruction;
-				icacheflushpending <= isfence;
 				irqpending <= (|irqReq);
 				isHWIRQ <= irqReq[1]; // isTimer <= irqReq[0]
 			end
@@ -210,17 +208,17 @@ always @(posedge aclk) begin
 				//PC <= PC + IR[1:0]==2'b11 ? 32'd4 : 32'd2;
 
 				// Flush I$ if we have an IFENCE instruction and go to wait
-				icacheflush <= icacheflushpending;
+				icacheflush <= isfence;
 
 				// Go to appropriate wait mode or resume FETCH
 				// Stop fetching if we need to halt, running IFENCE, or entering/exiting an ISR
 				priority case (1'b1)
-					icacheflushpending:	begin fetchmode <= WAITIFENCE;			fetchena <= 1'b0; end
-					needsToStall:		begin fetchmode <= WAITNEWBRANCHTARGET;	fetchena <= 1'b0; end
-					ismret:				begin fetchmode <= EXITISR;				fetchena <= 1'b0; end
-					irqpending:			begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
-					iswfi:				begin fetchmode <= WFI;					fetchena <= 1'b0; end
-					default:			begin fetchmode <= FETCH;				fetchena <= 1'b1; end
+					isfence:		begin fetchmode <= WAITIFENCE;			fetchena <= 1'b0; end
+					needsToStall:	begin fetchmode <= WAITNEWBRANCHTARGET;	fetchena <= 1'b0; end
+					ismret:			begin fetchmode <= EXITISR;				fetchena <= 1'b0; end
+					irqpending:		begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
+					iswfi:			begin fetchmode <= WFI;					fetchena <= 1'b0; end
+					default:		begin fetchmode <= FETCH;				fetchena <= 1'b1; end
 				endcase
 			end
 
