@@ -141,6 +141,7 @@ wire isdiscard = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CDISCARD);
 wire ismret = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_MRET);
 wire iswfi = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_WFI);
 wire isflush = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CFLUSH);
+//wire isecall = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_ECALL);
 wire needsToStall = isbranch || isdiscard;
 
 // --------------------------------------------------
@@ -213,12 +214,12 @@ always @(posedge aclk) begin
 				// Go to appropriate wait mode or resume FETCH
 				// Stop fetching if we need to halt, running IFENCE, or entering/exiting an ISR
 				priority case (1'b1)
-					isfence:		begin fetchmode <= WAITIFENCE;			fetchena <= 1'b0; end
-					needsToStall:	begin fetchmode <= WAITNEWBRANCHTARGET;	fetchena <= 1'b0; end
-					ismret:			begin fetchmode <= EXITISR;				fetchena <= 1'b0; end
-					irqpending:		begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
-					iswfi:			begin fetchmode <= WFI;					fetchena <= 1'b0; end
-					default:		begin fetchmode <= FETCH;				fetchena <= 1'b1; end
+					isfence:				begin fetchmode <= WAITIFENCE;			fetchena <= 1'b0; end
+					needsToStall:			begin fetchmode <= WAITNEWBRANCHTARGET;	fetchena <= 1'b0; end
+					ismret:					begin fetchmode <= EXITISR;				fetchena <= 1'b0; end
+					irqpending:				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
+					iswfi:					begin fetchmode <= WFI;					fetchena <= 1'b0; end
+					default:				begin fetchmode <= FETCH;				fetchena <= 1'b1; end
 				endcase
 			end
 
@@ -240,21 +241,27 @@ always @(posedge aclk) begin
 				processingIRQ <= 1'b1;
 
 				// Inject entry instruction sequence (see table at microcode ROM section)
-				injectAddr <= isHWIRQ ? 19 : 0;
-				injectCount <= isHWIRQ ? 14 : 12;
+				priority case (1'b1)
+					isHWIRQ:	begin injectAddr <= 19; injectCount <= 14; end
+					default:	begin injectAddr <= 0; injectCount <= 12;end
+				endcase
+
 				fetchmode <= STARTINJECT;
 				injectEnd <= POSTENTER;
 			end
 
 			EXITISR: begin
-				// Inject exit instruction sequence (see table at microcode ROM section)
-				injectAddr <= isHWIRQ ? 33 : 12;
-				injectCount <= isHWIRQ ? 8 : 7;
-				fetchmode <= STARTINJECT;
-				injectEnd <= POSTEXIT;
-
 				// Release our hold so we can receive further interrupts
 				processingIRQ <= 1'b0;
+
+				// Inject exit instruction sequence (see table at microcode ROM section)
+				priority case (1'b1)
+					isHWIRQ:	begin injectAddr <= 33; injectCount <= 8; end
+					default:	begin injectAddr <= 12; injectCount <= 7;end
+				endcase
+
+				fetchmode <= STARTINJECT;
+				injectEnd <= POSTEXIT;
 			end
 
 			STARTINJECT: begin
