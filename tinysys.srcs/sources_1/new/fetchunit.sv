@@ -166,6 +166,7 @@ always @(posedge aclk) begin
 		fetchena <= 1'b0;
 		ififowr_en <= 1'b0;
 		processingIRQ <= 1'b0;
+		IR <= 32'd0;
 	end else begin
 
 		fetchena <= 1'b0;

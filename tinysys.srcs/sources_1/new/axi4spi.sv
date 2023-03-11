@@ -133,7 +133,7 @@ always @(posedge aclk) begin
 		outfifowe <= 1'b0;
 		s_axi.wready <= 1'b0;
 		s_axi.bvalid <= 1'b0;
-		outfifodin = 8'h00;
+		outfifodin <= 8'h00;
 		case (writestate)
 			2'b00: begin
 				if (s_axi.wvalid & (~outfifofull)) begin
