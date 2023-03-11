@@ -20,6 +20,7 @@ module fetchunit #(
 	input wire [1:0] irqReq,
 	input wire [31:0] mepc,
 	input wire [31:0] mtvec,
+	input wire sie,
 	// ROM copy done
 	input wire romReady,
 	// To system bus
@@ -38,6 +39,7 @@ logic icacheflush = 1'b0;
 logic irqpending = 1'b0;
 logic processingIRQ = 1'b0;
 logic isHWIRQ = 1'b0;
+logic isSWIRQ = 1'b0;
 
 assign irqHold = processingIRQ;
 
@@ -98,6 +100,8 @@ decoder decoderinst(
 	leaveTimerISR   12          7
 	enterHWISR      19          14
 	leaveHWISR      33          8
+	enterSWISR      41          12
+	leaveHWISR      53          8
 */
 
 logic [5:0] injectAddr = 0;
@@ -141,7 +145,8 @@ wire isdiscard = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CDISCARD);
 wire ismret = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_MRET);
 wire iswfi = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_WFI);
 wire isflush = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CFLUSH);
-//wire isecall = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_ECALL);
+wire isebreak = sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_EBREAK);
+wire isecall = sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_ECALL);
 wire needsToStall = isbranch || isdiscard;
 
 // --------------------------------------------------
@@ -211,14 +216,19 @@ always @(posedge aclk) begin
 				// Flush I$ if we have an IFENCE instruction and go to wait
 				icacheflush <= isfence;
 
+				// Store so that instruction injection does not destroy our state
+				isSWIRQ <= isebreak || isecall;
+
 				// Go to appropriate wait mode or resume FETCH
 				// Stop fetching if we need to halt, running IFENCE, or entering/exiting an ISR
 				priority case (1'b1)
 					isfence:				begin fetchmode <= WAITIFENCE;			fetchena <= 1'b0; end
 					needsToStall:			begin fetchmode <= WAITNEWBRANCHTARGET;	fetchena <= 1'b0; end
 					ismret:					begin fetchmode <= EXITISR;				fetchena <= 1'b0; end
-					irqpending:				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
 					iswfi:					begin fetchmode <= WFI;					fetchena <= 1'b0; end
+					isebreak,
+					isecall,
+					irqpending:				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
 					default:				begin fetchmode <= FETCH;				fetchena <= 1'b1; end
 				endcase
 			end
@@ -241,8 +251,9 @@ always @(posedge aclk) begin
 				processingIRQ <= 1'b1;
 
 				// Inject entry instruction sequence (see table at microcode ROM section)
-				priority case (1'b1)
+				unique case (1'b1)
 					isHWIRQ:	begin injectAddr <= 19; injectCount <= 14; end
+					isSWIRQ:	begin injectAddr <= 41; injectCount <= 12; end
 					default:	begin injectAddr <= 0; injectCount <= 12;end
 				endcase
 
@@ -251,12 +262,10 @@ always @(posedge aclk) begin
 			end
 
 			EXITISR: begin
-				// Release our hold so we can receive further interrupts
-				processingIRQ <= 1'b0;
-
 				// Inject exit instruction sequence (see table at microcode ROM section)
-				priority case (1'b1)
+				unique case (1'b1)
 					isHWIRQ:	begin injectAddr <= 33; injectCount <= 8; end
+					isSWIRQ:	begin injectAddr <= 53; injectCount <= 8; end
 					default:	begin injectAddr <= 12; injectCount <= 7;end
 				endcase
 
@@ -300,6 +309,9 @@ always @(posedge aclk) begin
 				// as we have just inserted many to be executed
 				fetchena <= ififoempty;
 				fetchmode <= ififoempty ? FETCH : POSTEXIT;
+
+				// Release our hold so we can receive further interrupts
+				processingIRQ <= ~ififoempty;
 			end
 
 			WFI: begin

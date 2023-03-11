@@ -14,6 +14,7 @@ module axi4CSRFile(
 	// Expose certain registers to fetch unit
 	output wire [31:0] mepc,
 	output wire [31:0] mtvec,
+	output wire sie,
 	// Bus
 	axi4if.slave s_axi );
 
@@ -24,7 +25,7 @@ module axi4CSRFile(
 // Shadows
 logic [63:0] timecmpshadow = 64'hFFFFFFFFFFFFFFFF;
 logic [31:0] mepcshadow = 32'd0;
-logic [1:0] mieshadow = 2'b00; // Machine interrupt enable states
+logic [2:0] mieshadow = 3'b000; // Machine interrupt enable states
 logic mstatusIEshadow = 1'b0; // Global interrupt enable
 logic [31:0] mtvecshadow = 32'd0;
 logic dummyshadow = 1'b0;
@@ -56,6 +57,7 @@ end
 
 assign mepc = mepcshadow;
 assign mtvec = mtvecshadow;
+assign sie = mieshadow[0] && mstatusIEshadow && (~irqHold);
 
 // --------------------------------------------------
 // Interrupt generator
@@ -71,9 +73,9 @@ always @(posedge aclk) begin
 	end else begin
 		// Common condition to fire an IRQ: Fetch isn't holding an IRQ, specific interrups are enabled, and global machine interrupts are enabled
 		// Timer interrupt
-		timerInterrupt <= mieshadow[0] && mstatusIEshadow && (~irqHold) && (wallclocktime >= timecmpshadow);
+		timerInterrupt <= mieshadow[1] && mstatusIEshadow && (~irqHold) && (wallclocktime >= timecmpshadow);
 		// Machine external interrupt (UART)
-		uartInterrupt <= mieshadow[1] && mstatusIEshadow && (~irqHold) && (~uartrcvempty);
+		uartInterrupt <= mieshadow[2] && mstatusIEshadow && (~irqHold) && (~uartrcvempty);
 	end
 end
 
@@ -138,8 +140,8 @@ always @(posedge aclk) begin
 					`CSR_TIMECMPLO:	timecmpshadow[31:0] <= csrdin;
 					`CSR_TIMECMPHI:	timecmpshadow[63:32] <= csrdin;
 					`CSR_MEPC:		mepcshadow <= csrdin;
-					`CSR_MIE:		mieshadow <= {csrdin[11], csrdin[7]};	// Hardware and Timer enable bits
-					`CSR_MSTATUS:	mstatusIEshadow <= csrdin[3];			// MIE bit
+					`CSR_MIE:		mieshadow <= {csrdin[11], csrdin[7], csrdin[3]};	// Only store MEIE, MTIE and MSIE bits
+					`CSR_MSTATUS:	mstatusIEshadow <= csrdin[3];			// Global MIE bit
 					`CSR_MTVEC:		mtvecshadow <= csrdin;
 					default:		dummyshadow <= csrdin[0];				// Unused
 				endcase

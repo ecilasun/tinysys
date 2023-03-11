@@ -155,7 +155,7 @@ typedef enum logic [4:0] {
 	SYSOP, SYSWBACK, SYSWAIT,
 	CSROPS, WCSROP,
 	SYSCDISCARD, SYSCFLUSH, WCACHE,
-	SYSMRET, SYSWFI,
+	SYSMRET, SYSWFI, SYSEBREAK, SYSECALL,
 	WBACK } controlunitmode;
 controlunitmode ctlmode = READINSTR;
 
@@ -371,8 +371,8 @@ always @(posedge aclk) begin
 					{3'b000, `F12_CFLUSH}:		ctlmode <= SYSCFLUSH;
 					{3'b000, `F12_MRET}:		ctlmode <= SYSMRET;		// Handled by Fetch unit
 					{3'b000, `F12_WFI}:			ctlmode <= SYSWFI;		// Handled by Fetch unit
-					{3'b000, `F12_EBREAK}:		ctlmode <= READINSTR;	// noop for now
-					{3'b000, `F12_ECALL}:		ctlmode <= READINSTR;	// noop for now
+					{3'b000, `F12_EBREAK}:		ctlmode <= SYSEBREAK;	// Handled by Fetch unit
+					{3'b000, `F12_ECALL}:		ctlmode <= SYSECALL;	// Handled by Fetch unit
 					default:					ctlmode <= CSROPS;
 				endcase
 			end
@@ -401,6 +401,14 @@ always @(posedge aclk) begin
 			end
 
 			SYSWFI: begin
+				ctlmode <= READINSTR;
+			end
+
+			SYSEBREAK: begin
+				ctlmode <= READINSTR;
+			end
+
+			SYSECALL: begin
 				ctlmode <= READINSTR;
 			end
 

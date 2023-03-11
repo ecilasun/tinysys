@@ -54,6 +54,7 @@ wire irqHold;
 wire [1:0] irqReq;
 wire [31:0] mepc;
 wire [31:0] mtvec;
+wire sie;
 wire romReady;
 
 // Reset vector at last 64K of DDR3 SDRAM
@@ -70,6 +71,7 @@ fetchunit #(.RESETVECTOR(32'h0FFF0000)) instructionfetch (
 	.irqReq(irqReq),
 	.mepc(mepc),
 	.mtvec(mtvec),
+	.sie(sie),
 	.romReady(romReady),
 	.m_axi(instructionbus) );
 
@@ -292,6 +294,7 @@ axi4CSRFile csrfileinst(
 	.uartrcvempty(uartrcvempty), // External interrupt wires
 	.mepc(mepc),
 	.mtvec(mtvec),
+	.sie(sie),
 	.s_axi(csrif) );
 
 // XADC
