@@ -220,8 +220,8 @@ always @(posedge aclk) begin
 					needsToStall:			begin fetchmode <= WAITNEWBRANCHTARGET;	fetchena <= 1'b0; end
 					ismret:					begin fetchmode <= EXITISR;				fetchena <= 1'b0; end
 					iswfi:					begin fetchmode <= WFI;					fetchena <= 1'b0; end
-					//isebreak,
-					isecall,
+					//isebreak:				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
+					isecall:				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
 					(|irqReq):				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
 					default:				begin fetchmode <= FETCH;				fetchena <= 1'b1; end
 				endcase
@@ -246,7 +246,8 @@ always @(posedge aclk) begin
 
 				// Inject entry instruction sequence (see table at microcode ROM section)
 				unique case (1'b1)
-					isecall:	begin injectAddr <= 41; injectCount <= 12; exitAddr <= 53; exitCount <= 8; end	// Software
+					//isebreak:	begin injectAddr <= ??; injectCount <= ??; exitAddr <= ??; exitCount <= 8; end	// Software: debug breakpoint
+					isecall:	begin injectAddr <= 41; injectCount <= 12; exitAddr <= 53; exitCount <= 8; end	// Software: environment call
 					irqReq[1]:	begin injectAddr <= 19; injectCount <= 14; exitAddr <= 33; exitCount <= 8; end	// Ext
 					irqReq[0]:	begin injectAddr <= 0;  injectCount <= 12; exitAddr <= 12; exitCount <= 7; end	// Timer
 				endcase
