@@ -36,10 +36,7 @@ logic [31:0] IR;
 wire rready;
 wire [31:0] instruction;
 logic icacheflush = 1'b0;
-logic irqpending = 1'b0;
 logic processingIRQ = 1'b0;
-logic isHWIRQ = 1'b0;
-logic isSWIRQ = 1'b0;
 
 assign irqHold = processingIRQ;
 
@@ -106,6 +103,8 @@ decoder decoderinst(
 
 logic [5:0] injectAddr = 0;
 logic [5:0] injectCount = 0;
+logic [5:0] exitAddr = 0;
+logic [5:0] exitCount = 0;
 
 logic [31:0] injectionROM [0:63];
 
@@ -145,7 +144,7 @@ wire isdiscard = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CDISCARD);
 wire ismret = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_MRET);
 wire iswfi = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_WFI);
 wire isflush = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CFLUSH);
-wire isebreak = sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_EBREAK);
+//wire isebreak = sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_EBREAK);
 wire isecall = sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_ECALL);
 wire needsToStall = isbranch || isdiscard;
 
@@ -185,10 +184,8 @@ always @(posedge aclk) begin
 			end
 
 			FETCH: begin
-				fetchmode <= rready ? STREAMOUT : FETCH;
 				IR <= instruction;
-				irqpending <= (|irqReq);
-				isHWIRQ <= irqReq[1]; // isTimer <= irqReq[0]
+				fetchmode <= rready ? STREAMOUT : FETCH;
 			end
 
 			STREAMOUT: begin
@@ -216,9 +213,6 @@ always @(posedge aclk) begin
 				// Flush I$ if we have an IFENCE instruction and go to wait
 				icacheflush <= isfence;
 
-				// Store so that instruction injection does not destroy our state
-				isSWIRQ <= isebreak || isecall;
-
 				// Go to appropriate wait mode or resume FETCH
 				// Stop fetching if we need to halt, running IFENCE, or entering/exiting an ISR
 				priority case (1'b1)
@@ -226,9 +220,9 @@ always @(posedge aclk) begin
 					needsToStall:			begin fetchmode <= WAITNEWBRANCHTARGET;	fetchena <= 1'b0; end
 					ismret:					begin fetchmode <= EXITISR;				fetchena <= 1'b0; end
 					iswfi:					begin fetchmode <= WFI;					fetchena <= 1'b0; end
-					isebreak,
+					//isebreak,
 					isecall,
-					irqpending:				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
+					(|irqReq):				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
 					default:				begin fetchmode <= FETCH;				fetchena <= 1'b1; end
 				endcase
 			end
@@ -252,9 +246,9 @@ always @(posedge aclk) begin
 
 				// Inject entry instruction sequence (see table at microcode ROM section)
 				unique case (1'b1)
-					isHWIRQ:	begin injectAddr <= 19; injectCount <= 14; end
-					isSWIRQ:	begin injectAddr <= 41; injectCount <= 12; end
-					default:	begin injectAddr <= 0; injectCount <= 12;end
+					isecall:	begin injectAddr <= 41; injectCount <= 12; exitAddr <= 53; exitCount <= 8; end	// Software
+					irqReq[1]:	begin injectAddr <= 19; injectCount <= 14; exitAddr <= 33; exitCount <= 8; end	// Ext
+					irqReq[0]:	begin injectAddr <= 0;  injectCount <= 12; exitAddr <= 12; exitCount <= 7; end	// Timer
 				endcase
 
 				fetchmode <= STARTINJECT;
@@ -263,17 +257,15 @@ always @(posedge aclk) begin
 
 			EXITISR: begin
 				// Inject exit instruction sequence (see table at microcode ROM section)
-				unique case (1'b1)
-					isHWIRQ:	begin injectAddr <= 33; injectCount <= 8; end
-					isSWIRQ:	begin injectAddr <= 53; injectCount <= 8; end
-					default:	begin injectAddr <= 12; injectCount <= 7;end
-				endcase
+				injectAddr <= exitAddr;
+				injectCount <= exitCount;
 
 				fetchmode <= STARTINJECT;
 				injectEnd <= POSTEXIT;
 			end
 
 			STARTINJECT: begin
+				// NOTE: This destroys decoded values from the actual instruction
 				IR <= injectInstruction;
 				injectAddr <= injectAddr + 1;
 				injectCount <= injectCount - 1;
@@ -295,23 +287,29 @@ always @(posedge aclk) begin
 
 			POSTENTER: begin
 				// Set up a jump to ISR
+				// TODO: Support for vectored jump using address encoding:
+				// BASE[31:2] MODE[1:0] (modes-> 00:direct, 01:vectored, 10/11:reserved)
+				// where exceptions jump to BASE, interrupts jump to BASE+exceptioncode*4
+				// NOTE: OS has to hold a vectored interrupt table at the BASE address
 				PC <= mtvec;
-				// Wait for control unit to consume all pending instructions first
-				// as we have just inserted many to be executed
+
+				// We need to see the correct MTVEC so we wait for all pending
+				// instructions to get executed first
 				fetchena <= ififoempty;
 				fetchmode <= ififoempty ? FETCH : POSTENTER;
 			end
 
 			POSTEXIT: begin
-				// Restore PC to MEPC via CSR
-				PC <= mepc;
-				// Wait for control unit to consume all pending instructions first
-				// as we have just inserted many to be executed
-				fetchena <= ififoempty;
-				fetchmode <= ififoempty ? FETCH : POSTEXIT;
-
 				// Release our hold so we can receive further interrupts
 				processingIRQ <= ~ififoempty;
+
+				// Restore PC to MEPC via CSR
+				PC <= mepc;
+
+				// A task manager may have shuffled the mepc register
+				// so we need to wait for instructions to fall through
+				fetchena <= ififoempty;
+				fetchmode <= ififoempty ? FETCH : POSTEXIT;
 			end
 
 			WFI: begin
