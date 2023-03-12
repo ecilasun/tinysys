@@ -98,7 +98,7 @@ decoder decoderinst(
 	enterHWISR      19          14
 	leaveHWISR      33          8
 	enterSWISR      41          12
-	leaveHWISR      53          8
+	leaveSWISR      53          8
 */
 
 logic [5:0] injectAddr = 0;
@@ -141,12 +141,12 @@ instructinfifo instructionfifoinst (
 wire isbranch = instrOneHotOut[`O_H_JAL] || instrOneHotOut[`O_H_JALR] || instrOneHotOut[`O_H_BRANCH];
 wire isfence = instrOneHotOut[`O_H_FENCE];
 wire isdiscard = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CDISCARD);
+wire isflush = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CFLUSH);
 wire ismret = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_MRET);
 wire iswfi = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_WFI);
-wire isflush = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CFLUSH);
 //wire isebreak = sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_EBREAK);
 wire isecall = sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_ECALL);
-wire needsToStall = isbranch || isdiscard;
+wire needsToStall = isbranch || isdiscard || isflush;
 
 // --------------------------------------------------
 // Fetch logic
@@ -190,7 +190,7 @@ always @(posedge aclk) begin
 
 			STREAMOUT: begin
 				// Emit decoded instruction
-				ififowr_en <= 1'b1;
+				ififowr_en <= ~isfence;	// FENCE.I does not need to go to execute unit
 				ififodin <= {
 					rs3, func7, csroffset,
 					func12, func3,

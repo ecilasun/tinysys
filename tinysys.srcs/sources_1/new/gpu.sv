@@ -110,13 +110,16 @@ initial begin
 	$readmemh("colorpalette.mem", paletteentries);
 end
 
+logic [23:0] paletteout;
 always @(posedge aclk) begin // Tied to GPU clock
-	if (palettewe)
-		paletteentries[palettewa] <= palettedin;
+	if (~aresetn) begin
+		paletteout <= 24'd0;
+	end else begin
+		if (palettewe)
+			paletteentries[palettewa] <= palettedin;
+		paletteout <= paletteentries[palettera];
+	end
 end
-
-wire [23:0] paletteout;
-assign paletteout = paletteentries[palettera];
 
 // --------------------------------------------------
 // Video signals
