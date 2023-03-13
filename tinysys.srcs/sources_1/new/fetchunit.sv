@@ -199,10 +199,6 @@ always @(posedge aclk) begin
 					rs1, rs2, rd,
 					PC, immed};
 
-				// TODO: PC should not increment if the current instruction is a jump-to-self.
-				// Before that is fixed, we have an architectural limitation where we can't
-				// generate interrupts that coincide with blank infinite loops, as it will step outside the loop (due to PC+4 being used).
-
 				// No compressed instruction support:
 				PC <= PC + 32'd4;
 
@@ -228,10 +224,15 @@ always @(posedge aclk) begin
 			end
 
 			WAITNEWBRANCHTARGET: begin
-				// Branch resolve and cache operation completion will signal branch address resolved
-				fetchena <= branchresolved;
+				// Only allow reads from PC when branch address is resolved and we don't have an interrupt
+				fetchena <= branchresolved && (~(|irqReq));
+				// Target PC
+				// We save this as MEPC if there's an adjacent interrupt to be handled
 				PC <= branchresolved ? branchtarget : PC;
-				fetchmode <= branchresolved ? FETCH : WAITNEWBRANCHTARGET;
+				// After we resolve the branch target we can process a pending interrupt
+				// This way, PC points at the branch target, and before we branch we 
+				// end up processing the IRQ, then resume the branch.
+				fetchmode <= branchresolved ? ((|irqReq) ? ENTERISR : FETCH) : WAITNEWBRANCHTARGET;
 			end
 
 			WAITIFENCE: begin

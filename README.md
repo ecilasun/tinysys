@@ -1,6 +1,18 @@
 # tinysys
 
-# Rasterization instuctions
+# General flow
+
+Fetch unit reads an instruction at PC, decodes it and outputs it (together with its PC) to instruction output FIFO (IFIFO).
+
+The execute unit will fetch an instruction from the FIFO if available, read register values, execute (ALU/BLU/CSR/SYS) and decide on new branch target if there's a branch involved.
+
+Fetch handles instruction fence internally without passing it to the execute unit.
+
+If there is a fence, branch, mret or wfi, it's handled before an interrupt request.
+
+If there is a pending interrupt and the current instruction is a branch, first the fetch unit stalls until branch target is known, then deviates to ISR routine, then on MRET resumes from the branch target. This way even the branch-to-self instructions can be interrupted with a timer interrupt, for instance.
+
+# Addendum: Rasterization extension
 
 **redge rs1, offset(rs2)**
 
