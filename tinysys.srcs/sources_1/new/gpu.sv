@@ -36,7 +36,6 @@ wire [10:0] video_x;
 wire [10:0] video_y;
 
 logic hsync_d, vsync_d, blank_d;
-logic [23:0] paletteout_d;
 
 wire [1:0] out_tmds_red;
 wire [1:0] out_tmds_green;
@@ -110,13 +109,22 @@ initial begin
 	$readmemh("colorpalette.mem", paletteentries);
 end
 
-logic [23:0] paletteout;
+// Write port
 always @(posedge aclk) begin // Tied to GPU clock
 	if (~aresetn) begin
-		paletteout <= 24'd0;
+		//
 	end else begin
 		if (palettewe)
 			paletteentries[palettewa] <= palettedin;
+	end
+end
+
+// Read port
+logic [23:0] paletteout;
+always @(posedge clk25) begin // Tied to GPU clock
+	if (~aresetn) begin
+		paletteout <= 24'd0;
+	end else begin
 		paletteout <= paletteentries[palettera];
 	end
 end
@@ -138,16 +146,15 @@ always @(posedge clk25) begin
 	hsync_d <= hsync;
 	vsync_d <= vsync;
 	blank_d <= blank;
-	paletteout_d <= paletteout;
 end
 
 hdmi_device HDMI(
    .pclk(clk25),
    .tmds_clk(clk125), // pixel clock x5
 
-   .in_vga_red(paletteout_d[15:8]),
-   .in_vga_green(paletteout_d[23:16]),
-   .in_vga_blue(paletteout_d[7:0]),
+   .in_vga_red(paletteout[15:8]),
+   .in_vga_green(paletteout[23:16]),
+   .in_vga_blue(paletteout[7:0]),
 
    .in_vga_blank(blank_d),
    .in_vga_vsync(vsync_d),

@@ -17,8 +17,7 @@ logic [31:00] reg_b;
 logic busy = 1'b0, busy2 = 1'b0;
 logic r_sign;
 assign ready = ~busy&busy2;
-wire [32:0] sub_add=r_sign?({reg_r,quotient[31]}+{1'b0,reg_b}) :
-							({reg_r,quotient[31]}-{1'b0,reg_b});
+wire [32:0] sub_add = r_sign ? ({reg_r,reg_q[31]}+{1'b0,reg_b}) : ({reg_r,reg_q[31]}-{1'b0,reg_b});
 assign remainder = r_sign ? reg_r + reg_b : reg_r;
 assign quotient = reg_q;
 
@@ -67,8 +66,7 @@ wire [31:00] reg_r2;
 logic busy = 1'b0, busy2 = 1'b0;
 logic r_sign;
 assign ready = ~busy&busy2;
-wire [32:0] sub_add=r_sign?({reg_r,reg_q[31]}+{1'b0,reg_b}) :
-							({reg_r,reg_q[31]}-{1'b0,reg_b});
+wire [32:0] sub_add = r_sign ? ({reg_r,reg_q[31]}+{1'b0,reg_b}) : ({reg_r,reg_q[31]}-{1'b0,reg_b});
 assign reg_r2 = r_sign ? reg_r + reg_b : reg_r;
 assign remainder = dividend[31] ? (~reg_r2+1) : reg_r2;
 assign quotient = (divisor[31]^dividend[31]) ? (~reg_q+1) : reg_q;
