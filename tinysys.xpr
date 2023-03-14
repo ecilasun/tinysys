@@ -3,7 +3,7 @@
 <!--                                                         -->
 <!-- Copyright 1986-2023 Xilinx, Inc. All Rights Reserved.   -->
 
-<Project Version="7" Minor="61" Path="G:/tinysys/tinysys.xpr">
+<Project Version="7" Minor="61" Path="/home/engin/tinysys/tinysys.xpr">
   <DefaultLaunch Dir="$PRUNDIR"/>
   <Configuration>
     <Option Name="Id" Val="d12fb96cba4644f29e40fdae57b84f89"/>
@@ -31,7 +31,7 @@
     <Option Name="SimulatorVersionXsim" Val="2022.2"/>
     <Option Name="SimulatorVersionModelSim" Val="2022.2"/>
     <Option Name="SimulatorVersionQuesta" Val="2022.2"/>
-    <Option Name="SimulatorVersionXcelium" Val="21.09.002"/>
+    <Option Name="SimulatorVersionXcelium" Val="21.09.009"/>
     <Option Name="SimulatorVersionVCS" Val="S-2021.09"/>
     <Option Name="SimulatorVersionRiviera" Val="2022.04"/>
     <Option Name="SimulatorVersionActiveHdl" Val="13.0"/>
@@ -43,7 +43,6 @@
     <Option Name="SimulatorGccVersionRiviera" Val="9.3.0"/>
     <Option Name="SimulatorGccVersionActiveHdl" Val="9.3.0"/>
     <Option Name="BoardPart" Val=""/>
-    <Option Name="BoardPartRepoPaths" Val="C:/Users/ecila/AppData/Roaming/Xilinx/Vivado/2022.1/xhub/board_store/xilinx_board_store"/>
     <Option Name="ActiveSimSet" Val="sim_1"/>
     <Option Name="DefaultLib" Val="xil_defaultlib"/>
     <Option Name="ProjectType" Val="Default"/>
@@ -131,13 +130,6 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/ip/uartinfifo/uartinfifo.xci">
-        <FileInfo>
-          <Attr Name="UsedIn" Val="synthesis"/>
-          <Attr Name="UsedIn" Val="implementation"/>
-          <Attr Name="UsedIn" Val="simulation"/>
-        </FileInfo>
-      </File>
       <File Path="$PSRCDIR/sources_1/ip/uartoutfifo.xcix">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -190,13 +182,6 @@
         </FileInfo>
       </File>
       <File Path="$PSRCDIR/sources_1/ip/instructinfifo/instructinfifo.xci">
-        <FileInfo>
-          <Attr Name="UsedIn" Val="synthesis"/>
-          <Attr Name="UsedIn" Val="implementation"/>
-          <Attr Name="UsedIn" Val="simulation"/>
-        </FileInfo>
-      </File>
-      <File Path="$PSRCDIR/sources_1/ip/centralclock/centralclock.xci">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -716,6 +701,32 @@
         <Option Name="UseBlackboxStub" Val="1"/>
       </Config>
     </FileSet>
+    <FileSet Name="centralclock" Type="BlockSrcs" RelSrcDir="$PSRCDIR/centralclock" RelGenDir="$PGENDIR/centralclock">
+      <File Path="$PSRCDIR/sources_1/ip/centralclock/centralclock.xci">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <Config>
+        <Option Name="TopModule" Val="centralclock"/>
+        <Option Name="UseBlackboxStub" Val="1"/>
+      </Config>
+    </FileSet>
+    <FileSet Name="uartinfifo" Type="BlockSrcs" RelSrcDir="$PSRCDIR/uartinfifo" RelGenDir="$PGENDIR/uartinfifo">
+      <File Path="$PSRCDIR/sources_1/ip/uartinfifo/uartinfifo.xci">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <Config>
+        <Option Name="TopModule" Val="uartinfifo"/>
+        <Option Name="UseBlackboxStub" Val="1"/>
+      </Config>
+    </FileSet>
   </FileSets>
   <Simulators>
     <Simulator Name="XSim">
@@ -728,11 +739,14 @@
     <Simulator Name="Questa">
       <Option Name="Description" Val="Questa Advanced Simulator"/>
     </Simulator>
+    <Simulator Name="Xcelium">
+      <Option Name="Description" Val="Xcelium Parallel Simulator"/>
+    </Simulator>
+    <Simulator Name="VCS">
+      <Option Name="Description" Val="Verilog Compiler Simulator (VCS)"/>
+    </Simulator>
     <Simulator Name="Riviera">
       <Option Name="Description" Val="Riviera-PRO Simulator"/>
-    </Simulator>
-    <Simulator Name="ActiveHDL">
-      <Option Name="Description" Val="Active-HDL Simulator"/>
     </Simulator>
   </Simulators>
   <Runs Version="1" Minor="19">
@@ -777,6 +791,26 @@
       <RQSFiles/>
     </Run>
     <Run Id="dmadatafifo_synth_1" Type="Ft3:Synth" SrcSet="dmadatafifo" Part="xc7a200tfbg484-1" ConstrsSet="dmadatafifo" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/dmadatafifo_synth_1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/dmadatafifo_synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/dmadatafifo_synth_1">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2022"/>
+        <Step Id="synth_design"/>
+      </Strategy>
+      <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
+      <ReportStrategy Name="Vivado Synthesis Default Reports" Flow="Vivado Synthesis 2022"/>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+      <RQSFiles/>
+    </Run>
+    <Run Id="centralclock_synth_1" Type="Ft3:Synth" SrcSet="centralclock" Part="xc7a200tfbg484-1" ConstrsSet="centralclock" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/centralclock_synth_1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/centralclock_synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/centralclock_synth_1">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2022"/>
+        <Step Id="synth_design"/>
+      </Strategy>
+      <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
+      <ReportStrategy Name="Vivado Synthesis Default Reports" Flow="Vivado Synthesis 2022"/>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+      <RQSFiles/>
+    </Run>
+    <Run Id="uartinfifo_synth_1" Type="Ft3:Synth" SrcSet="uartinfifo" Part="xc7a200tfbg484-1" ConstrsSet="uartinfifo" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/uartinfifo_synth_1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/uartinfifo_synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/uartinfifo_synth_1">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2022"/>
         <Step Id="synth_design"/>
@@ -858,6 +892,40 @@
       <RQSFiles/>
     </Run>
     <Run Id="dmadatafifo_impl_1" Type="Ft2:EntireDesign" Part="xc7a200tfbg484-1" ConstrsSet="dmadatafifo" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="dmadatafifo_synth_1" IncludeInArchive="false" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/dmadatafifo_impl_1" AutoRQSDir="$PSRCDIR/utils_1/imports/dmadatafifo_impl_1">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2022"/>
+        <Step Id="init_design"/>
+        <Step Id="opt_design"/>
+        <Step Id="power_opt_design"/>
+        <Step Id="place_design"/>
+        <Step Id="post_place_power_opt_design"/>
+        <Step Id="phys_opt_design"/>
+        <Step Id="route_design"/>
+        <Step Id="post_route_phys_opt_design"/>
+        <Step Id="write_bitstream"/>
+      </Strategy>
+      <ReportStrategy Name="Vivado Implementation Default Reports" Flow="Vivado Implementation 2022"/>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+      <RQSFiles/>
+    </Run>
+    <Run Id="centralclock_impl_1" Type="Ft2:EntireDesign" Part="xc7a200tfbg484-1" ConstrsSet="centralclock" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="centralclock_synth_1" IncludeInArchive="false" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/centralclock_impl_1" AutoRQSDir="$PSRCDIR/utils_1/imports/centralclock_impl_1">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2022"/>
+        <Step Id="init_design"/>
+        <Step Id="opt_design"/>
+        <Step Id="power_opt_design"/>
+        <Step Id="place_design"/>
+        <Step Id="post_place_power_opt_design"/>
+        <Step Id="phys_opt_design"/>
+        <Step Id="route_design"/>
+        <Step Id="post_route_phys_opt_design"/>
+        <Step Id="write_bitstream"/>
+      </Strategy>
+      <ReportStrategy Name="Vivado Implementation Default Reports" Flow="Vivado Implementation 2022"/>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+      <RQSFiles/>
+    </Run>
+    <Run Id="uartinfifo_impl_1" Type="Ft2:EntireDesign" Part="xc7a200tfbg484-1" ConstrsSet="uartinfifo" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="uartinfifo_synth_1" IncludeInArchive="false" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/uartinfifo_impl_1" AutoRQSDir="$PSRCDIR/utils_1/imports/uartinfifo_impl_1">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2022"/>
         <Step Id="init_design"/>
