@@ -101,12 +101,12 @@ decoder decoderinst(
 	leaveSWISR      53          8
 */
 
-logic [5:0] injectAddr = 0;
-logic [5:0] injectCount = 0;
-logic [5:0] exitAddr = 0;
-logic [5:0] exitCount = 0;
+logic [6:0] injectAddr = 0;
+logic [6:0] injectCount = 0;
+logic [6:0] exitAddr = 0;
+logic [6:0] exitCount = 0;
 
-logic [31:0] injectionROM [0:63];
+logic [31:0] injectionROM [0:83];
 
 initial begin
 	$readmemh("microcoderom.mem", injectionROM);
@@ -144,7 +144,7 @@ wire isdiscard = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CDISCARD);
 wire isflush = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CFLUSH);
 wire ismret = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_MRET);
 wire iswfi = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_WFI);
-//wire isebreak = sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_EBREAK);
+wire isebreak = sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_EBREAK);
 wire isecall = sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_ECALL);
 wire needsToStall = isbranch || isdiscard || isflush;
 
@@ -190,7 +190,9 @@ always @(posedge aclk) begin
 
 			STREAMOUT: begin
 				// Emit decoded instruction
-				ififowr_en <= ~isfence;	// FENCE.I does not need to go to execute unit
+				// - FENCE.I does not need to go to execute unit
+				// - IRQ will ignore the current instruction and keep PC the same to process it after ISR
+				ififowr_en <= ~isfence && ~(|irqReq);
 				ififodin <= {
 					rs3, func7, csroffset,
 					func12, func3,
@@ -200,7 +202,7 @@ always @(posedge aclk) begin
 					PC, immed};
 
 				// No compressed instruction support:
-				PC <= PC + 32'd4;
+				PC <= PC + ((|irqReq || isebreak) ? 32'd0 : 32'd4);
 
 				// Compressed instruction support:
 				// Step 2 bytes for compressed instruction
@@ -212,27 +214,23 @@ always @(posedge aclk) begin
 				// Go to appropriate wait mode or resume FETCH
 				// Stop fetching if we need to halt, running IFENCE, or entering/exiting an ISR
 				priority case (1'b1)
+					(|irqReq):				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
+					isecall:				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
+					isebreak:				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
 					isfence:				begin fetchmode <= WAITIFENCE;			fetchena <= 1'b0; end
 					needsToStall:			begin fetchmode <= WAITNEWBRANCHTARGET;	fetchena <= 1'b0; end
 					ismret:					begin fetchmode <= EXITISR;				fetchena <= 1'b0; end
 					iswfi:					begin fetchmode <= WFI;					fetchena <= 1'b0; end
-					//isebreak:				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
-					isecall:				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
-					(|irqReq):				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
 					default:				begin fetchmode <= FETCH;				fetchena <= 1'b1; end
 				endcase
 			end
 
 			WAITNEWBRANCHTARGET: begin
-				// Only allow reads from PC when branch address is resolved and we don't have an interrupt
-				fetchena <= branchresolved && (~(|irqReq));
-				// Target PC
-				// We save this as MEPC if there's an adjacent interrupt to be handled
+				// Resume fetch when branch address is resolved
+				fetchena <= branchresolved;
+				// New PC to resume fetch at
 				PC <= branchresolved ? branchtarget : PC;
-				// After we resolve the branch target we can process a pending interrupt
-				// This way, PC points at the branch target, and before we branch we 
-				// end up processing the IRQ, then resume the branch.
-				fetchmode <= branchresolved ? ((|irqReq) ? ENTERISR : FETCH) : WAITNEWBRANCHTARGET;
+				fetchmode <= branchresolved ? FETCH : WAITNEWBRANCHTARGET;
 			end
 
 			WAITIFENCE: begin
@@ -247,10 +245,10 @@ always @(posedge aclk) begin
 
 				// Inject entry instruction sequence (see table at microcode ROM section)
 				unique case (1'b1)
-					//isebreak:	begin injectAddr <= ??; injectCount <= ??; exitAddr <= ??; exitCount <= 8; end	// Software: debug breakpoint
-					isecall:	begin injectAddr <= 41; injectCount <= 12; exitAddr <= 53; exitCount <= 8; end	// Software: environment call
-					irqReq[1]:	begin injectAddr <= 19; injectCount <= 14; exitAddr <= 33; exitCount <= 8; end	// Ext
-					irqReq[0]:	begin injectAddr <= 0;  injectCount <= 12; exitAddr <= 12; exitCount <= 7; end	// Timer
+					isebreak:	begin injectAddr <= 7'd64; injectCount <= 7'd12; exitAddr <= 7'd76; exitCount <= 7'd8; end	// Software: debug breakpoint
+					isecall:	begin injectAddr <= 7'd41; injectCount <= 7'd12; exitAddr <= 7'd53; exitCount <= 7'd8; end	// Software: environment call
+					irqReq[1]:	begin injectAddr <= 7'd19; injectCount <= 7'd14; exitAddr <= 7'd33; exitCount <= 7'd8; end	// Ext
+					irqReq[0]:	begin injectAddr <= 7'd0;  injectCount <= 7'd12; exitAddr <= 7'd12; exitCount <= 7'd7; end	// Timer
 				endcase
 
 				fetchmode <= STARTINJECT;
