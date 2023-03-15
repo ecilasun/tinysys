@@ -13,10 +13,10 @@ set_property -dict {PACKAGE_PIN E3 IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
 ## UART
 ## VCC:     pin U4:3&4
 ## GND:     pin U4:1&2&5&6
-## RXD_OUT: pin U4:8         [A1]
-## TDX_IN:  pin U4:10        [B2]
-set_property -dict {PACKAGE_PIN A1 IOSTANDARD LVCMOS33} [get_ports uart_rxd_out]
-set_property -dict {PACKAGE_PIN B2 IOSTANDARD LVCMOS33} [get_ports uart_txd_in]
+## RXD_OUT: pin U4:7         [B1]
+## TDX_IN:  pin U4:9         [C2]
+set_property -dict {PACKAGE_PIN B1 IOSTANDARD LVCMOS33} [get_ports uart_rxd_out]
+set_property -dict {PACKAGE_PIN C2 IOSTANDARD LVCMOS33} [get_ports uart_txd_in]
 
 ## MICRO SD CARD - sorted by sdcard pin order
 ## SD     SPI
