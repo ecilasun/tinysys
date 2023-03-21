@@ -58,7 +58,7 @@ wire sie;
 wire romReady;
 
 // Reset vector at last 64K of DDR3 SDRAM
-fetchunit #(.RESETVECTOR(32'h0FFF0000)) instructionfetch (
+fetchunit #(.RESETVECTOR(32'h0FFE0000)) instructionfetch (
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.branchresolved(branchresolved),

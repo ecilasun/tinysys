@@ -26,8 +26,8 @@ assign romReady = ROMavailable;
 // Grouped as 128bit (16 byte) cache line entries
 // --------------------------------------------------
 
-logic [11:0] bootROMaddr;
-logic [127:0] bootROM[0:4095];
+logic [12:0] bootROMaddr;
+logic [127:0] bootROM[0:8191];
 
 initial begin
 	$readmemh("romimage.mem", bootROM);
@@ -310,11 +310,11 @@ always_ff @(posedge aclk) begin
 
 		case (dmawritestate)
 			INIT: begin
-				// Set up for ROM copy
-				dmaop_target_copy <= 32'h0FFF0000;
-				dmaop_count_copy <= 32'd4096;
+				// Set up for 128Kbytes of ROM copy starting at 0x0FFE0000
+				dmaop_target_copy <= 32'h0FFE0000;
+				dmaop_count_copy <= 32'd8192;
 				romre <= 1'b0;
-				bootROMaddr <= 12'd0;
+				bootROMaddr <= 13'd0;
 				dmawritestate <= STARTCOPYROM;
 			end
 
@@ -335,7 +335,7 @@ always_ff @(posedge aclk) begin
 					m_axi.wdata <= bootROMdout;
 					m_axi.wlast <= 1'b1;
 
-					bootROMaddr <= bootROMaddr + 12'd1;
+					bootROMaddr <= bootROMaddr + 13'd1;
 					dmaop_count_copy <= dmaop_count_copy - 'd1;
 
 					dmawritestate <= ROMWAITWREADY;
