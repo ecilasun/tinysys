@@ -34,6 +34,7 @@ module tophat(
 	,output wire spi_cs_n
 	,output wire spi_clk
 	,output wire spi_mosi
+	//,input wire spi_swtch,
 	// Analog inputs
 	,input wire [3:0] xa_p
 	,input wire [3:0] xa_n);
