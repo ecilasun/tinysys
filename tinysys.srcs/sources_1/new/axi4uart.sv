@@ -209,7 +209,7 @@ always @(posedge aclk) begin
 						4'h4: raddrstate <= 3'b010; // TX
 						4'h8: raddrstate <= 3'b011; // Status
 						4'hC: raddrstate <= 3'b100; // Control
-						default: raddrstate <= 3'b101; // Misc
+						//default: raddrstate <= 3'b101; // Misc
 					endcase
 				end
 			end
@@ -248,12 +248,12 @@ always @(posedge aclk) begin
 				raddrstate <= 3'b000;
 			end
 
-			3'b101: begin
+			/*3'b101: begin
 				// All others
 				s_axi.rdata[31:0] <= 32'd0;
 				s_axi.rvalid <= 1'b1;
 				raddrstate <= 3'b000;
-			end
+			end*/
 		endcase
 	end
 end

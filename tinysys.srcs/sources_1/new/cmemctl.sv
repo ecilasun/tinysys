@@ -18,7 +18,7 @@ module cachedmemorycontroller (
 	localparam burstlen = 4; // x4 128 bit reads or writes
 
 	// Write
-	logic [1:0] wdata_cnt;
+	logic [2:0] wdata_cnt;
 	assign m_axi.awlen = burstlen - 1;
 	assign m_axi.awsize = SIZE_16_BYTE; // 128bit write bus
 	assign m_axi.awburst = BURST_INCR;
@@ -42,7 +42,6 @@ module cachedmemorycontroller (
 			unique case(writestate)
 				WIDLE: begin
 					if (start_write) begin
-						wdata_cnt <= 0;
 						m_axi.awaddr <= addr; // NOTE: MUST be 64 byte aligned! {[31:7], 6'd0}
 						m_axi.awvalid <= 1;
 					end
@@ -52,11 +51,11 @@ module cachedmemorycontroller (
 				WADDR: begin
 					if (/*m_axi.awvalid &&*/ m_axi.awready) begin
 						m_axi.awvalid <= 0;
-						m_axi.wdata <= din[wdata_cnt];
+						m_axi.wdata <= din[0];
 						m_axi.wstrb <= 16'hFFFF;
 						m_axi.wvalid <= 1;
-						m_axi.wlast <= (wdata_cnt == (burstlen-1)) ? 1 : 0;
-						wdata_cnt <= wdata_cnt + 1;
+						m_axi.wlast <= 1'b0;
+						wdata_cnt <= 3'b001;
 						writestate <= WDATA;
 					end else begin
 						writestate <= WADDR;
@@ -65,12 +64,16 @@ module cachedmemorycontroller (
 
 				WDATA: begin
 					if (/*m_axi.wvalid &&*/ m_axi.wready) begin
-						m_axi.wdata <= din[wdata_cnt];
-						m_axi.wlast <= (wdata_cnt == (burstlen-1)) ? 1 : 0;
-						wdata_cnt <= wdata_cnt + 1;
-						m_axi.bready <= (wdata_cnt == (burstlen-1));
+						unique case (wdata_cnt)
+							3'b001: m_axi.wdata <= din[1];
+							3'b010: m_axi.wdata <= din[2];
+							3'b100: m_axi.wdata <= din[3];
+						endcase
+						wdata_cnt <= {wdata_cnt[1:0], 1'b0};
+						m_axi.wlast <= (wdata_cnt == 3'b100) ? 1'b1 : 1'b0;
+						m_axi.bready <= (wdata_cnt == 3'b100) ? 1'b1 : 1'b0;
 					end
-					writestate <= (wdata_cnt == (burstlen-1)) ? WRESP : WDATA;
+					writestate <= (wdata_cnt == 3'b100) ? WRESP : WDATA;
 				end
 
 				WRESP: begin
