@@ -3,7 +3,7 @@
 ## ------------------------------------------------------------------------------------------------------
 
 ## (C) 2023 Engin Cilasun
-## Applies to expansion board version v0.9 / v0.9A
+## Applies to expansion board version v0.9 / v0.9A / v0.9B
 ## Please do not change/remove the Clock Groups or False Paths regardless of the warnings during synth
 ## Also note that changing any of the pin positions will change the timing closure of the device
 ## due to changes in placing and routing
@@ -109,7 +109,7 @@ set_property -dict {PACKAGE_PIN AB2 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[0]
 ## set_property -dict {PACKAGE_PIN D1 IOSTANDARD TMDS_33} [get_ports adcs]
 
 ## ------------------------------------------------------------------------------------------------------
-## I2C bus
+## I2C bus - v0.9B only
 ## ------------------------------------------------------------------------------------------------------
 
 ## i2c_scl pin U2:42 [Y21]
