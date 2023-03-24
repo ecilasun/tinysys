@@ -64,13 +64,13 @@
     <Option Name="WTVcsLaunchSim" Val="0"/>
     <Option Name="WTRivieraLaunchSim" Val="0"/>
     <Option Name="WTActivehdlLaunchSim" Val="0"/>
-    <Option Name="WTXSimExportSim" Val="165"/>
-    <Option Name="WTModelSimExportSim" Val="165"/>
-    <Option Name="WTQuestaExportSim" Val="165"/>
+    <Option Name="WTXSimExportSim" Val="166"/>
+    <Option Name="WTModelSimExportSim" Val="166"/>
+    <Option Name="WTQuestaExportSim" Val="166"/>
     <Option Name="WTIesExportSim" Val="0"/>
-    <Option Name="WTVcsExportSim" Val="165"/>
-    <Option Name="WTRivieraExportSim" Val="165"/>
-    <Option Name="WTActivehdlExportSim" Val="165"/>
+    <Option Name="WTVcsExportSim" Val="166"/>
+    <Option Name="WTRivieraExportSim" Val="166"/>
+    <Option Name="WTActivehdlExportSim" Val="166"/>
     <Option Name="GenerateIPUpgradeLog" Val="TRUE"/>
     <Option Name="XSimRadix" Val="hex"/>
     <Option Name="XSimTimeUnit" Val="ns"/>
@@ -152,13 +152,6 @@
         </FileInfo>
       </File>
       <File Path="$PSRCDIR/sources_1/new/vgaclkgen.v">
-        <FileInfo>
-          <Attr Name="UsedIn" Val="synthesis"/>
-          <Attr Name="UsedIn" Val="implementation"/>
-          <Attr Name="UsedIn" Val="simulation"/>
-        </FileInfo>
-      </File>
-      <File Path="$PSRCDIR/sources_1/new/adcwires.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -426,6 +419,14 @@
       </File>
       <File Path="$PSRCDIR/sources_1/new/tophat.sv">
         <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/new/adcwires.sv">
+        <FileInfo>
+          <Attr Name="AutoDisabled" Val="1"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>

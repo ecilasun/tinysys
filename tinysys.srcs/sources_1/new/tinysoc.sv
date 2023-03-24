@@ -15,8 +15,7 @@ module tinysoc(
 	gpuwires.def gpuvideoout,
 	input wire uart_txd_in,
 	ddr3sdramwires.def ddr3wires,
-	sdwires.def sdconn,
-	adcwires.def adcconn);
+	sdwires.def sdconn);
 
 // --------------------------------------------------
 // Bus lines
@@ -302,8 +301,7 @@ axi4xadc xadcinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.s_axi(xadcif),
-	.device_temp(device_temp),
-	.adcconn(adcconn));
+	.device_temp(device_temp) );
 
 // DMA
 dmacommanddevice dmacmdinst(

@@ -3,7 +3,7 @@
 ## ------------------------------------------------------------------------------------------------------
 
 ## (C) 2023 Engin Cilasun
-## Applies to expansion board version v0.9 / v0.9A / v0.9B
+## Applies to expansion board version v0.9 through v0.9B
 ## Please do not change/remove the Clock Groups or False Paths regardless of the warnings during synth
 ## Also note that changing any of the pin positions will change the timing closure of the device
 ## due to changes in placing and routing
@@ -42,7 +42,7 @@ set_property -dict {PACKAGE_PIN B1 IOSTANDARD LVCMOS33} [get_ports uart_rxd_out]
 set_property -dict {PACKAGE_PIN C2 IOSTANDARD LVCMOS33} [get_ports uart_txd_in]
 
 ## ------------------------------------------------------------------------------------------------------
-## MICRO SD CARD
+## Micro SD card
 ## ------------------------------------------------------------------------------------------------------
 
 ## Sorted by sdcard pin order
@@ -109,14 +109,14 @@ set_property -dict {PACKAGE_PIN AB2 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[0]
 ## set_property -dict {PACKAGE_PIN D1 IOSTANDARD TMDS_33} [get_ports adcs]
 
 ## ------------------------------------------------------------------------------------------------------
-## I2C bus - v0.9B only
+## I2C bus
 ## ------------------------------------------------------------------------------------------------------
 
-## i2c_scl pin U2:42 [Y21]
-## i2c_sda pin U2:41 [Y22]
+## i2c_scl pin U2:26 [K13]
+## i2c_sda pin U2:24 [J14]
 
-## set_property -dict {PACKAGE_PIN Y21 IOSTANDARD LVCMOS33} [get_ports i2c_scl]
-## set_property -dict {PACKAGE_PIN Y22 IOSTANDARD LVCMOS33} [get_ports i2c_sda]
+## set_property -dict {PACKAGE_PIN K13 IOSTANDARD LVCMOS33} [get_ports i2c_scl]
+## set_property -dict {PACKAGE_PIN J14 IOSTANDARD LVCMOS33} [get_ports i2c_sda]
 ## set_property PULLUP TRUE [get_ports i2c_scl]
 ## set_property PULLUP TRUE [get_ports i2c_sda]
 
