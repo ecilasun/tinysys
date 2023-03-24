@@ -234,8 +234,8 @@ always @(posedge aclk) begin
 			end
 
 			3'b011: begin
-				// Status register
-				s_axi.rdata[31:0] <= {29'd0, uarttxbusy, uartrcvfull, ~uartrcvempty};
+				// Rx status register
+				s_axi.rdata[31:0] <= {30'd0, uartrcvfull, ~uartrcvempty};
 				s_axi.rvalid <= 1'b1;
 				raddrstate <= 3'b000;
 			end
