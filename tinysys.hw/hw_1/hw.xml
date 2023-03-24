@@ -4,7 +4,7 @@
 <!-- Copyright 1986-2023 Xilinx, Inc. All Rights Reserved.        -->
 
 <hwsession version="1" minor="2">
-  <device name="xc7a200t_0" gui_info=""/>
+  <device name="xc7a200t_0" gui_info="dashboard1=dashboard_1[xc7a200t_0/XADC=XADC_PLOT_1;]"/>
   <ObjectList object_type="hw_cfgmem" gui_info="">
     <Object name="" gui_info="">
       <Properties Property="PROGRAM.ADDRESS_RANGE" value="use_file"/>

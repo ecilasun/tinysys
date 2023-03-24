@@ -57,7 +57,6 @@ end
 
 assign mepc = mepcshadow;
 assign mtvec = mtvecshadow;
-assign sie = mieshadow[0] && mstatusIEshadow && (~irqHold);
 
 // --------------------------------------------------
 // Interrupt generator
@@ -65,13 +64,17 @@ assign sie = mieshadow[0] && mstatusIEshadow && (~irqHold);
 
 logic timerInterrupt = 1'b0;
 logic uartInterrupt = 1'b0;
+logic softInterruptEna = 1'b0;
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
 		timerInterrupt <= 1'b0;
 		uartInterrupt <= 1'b0;
+		softInterruptEna <= 1'b0;
 	end else begin
 		// Common condition to fire an IRQ: Fetch isn't holding an IRQ, specific interrups are enabled, and global machine interrupts are enabled
+		// Software interrupt
+		softInterruptEna <= mieshadow[0] && mstatusIEshadow && (~irqHold); // The rest of this condition is in fetch unit (based on instruction)
 		// Timer interrupt
 		timerInterrupt <= mieshadow[1] && mstatusIEshadow && (~irqHold) && (wallclocktime >= timecmpshadow);
 		// Machine external interrupt (UART)
@@ -79,6 +82,7 @@ always @(posedge aclk) begin
 	end
 end
 
+assign sie = softInterruptEna;
 assign irqReq = {uartInterrupt, timerInterrupt};
 
 // --------------------------------------------------

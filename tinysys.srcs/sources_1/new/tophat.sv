@@ -1,16 +1,17 @@
 `timescale 1ns / 1ps
+`default_nettype none
 
 module tophat(
 	// Board clock and reset
-    input sys_clk
-    ,input sys_rst_n
+    input wire sys_clk
+    ,input wire sys_rst_n
     // Debug LEDs
     ,output wire [1:0] leds
     // UART - USB-c module
     ,output wire uart_rxd_out
 	,input wire uart_txd_in
 	// DDR3 SDRAM
-	,output ddr3_reset_n
+	,output wire ddr3_reset_n
 	,output wire [0:0] ddr3_cke
 	,output wire [0:0] ddr3_ck_p 
 	,output wire [0:0] ddr3_ck_n

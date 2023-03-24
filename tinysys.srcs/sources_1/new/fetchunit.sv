@@ -92,13 +92,17 @@ decoder decoderinst(
 
 /*
 	Table of injected function offsets and lengths
-	Name			Offset		Length
-	enterTimerISR   0           12
-	leaveTimerISR   12          7
-	enterHWISR      19          14
-	leaveHWISR      33          8
-	enterSWISR      41          12
-	leaveSWISR      53          8
+	Name			   Offset      Length
+	enterTimerISR      0           12
+	leaveTimerISR      12          7
+	enterHWISR         19          14
+	leaveHWISR         33          8
+	enterEcallISR      41          12
+	leaveEcallISR      53          8
+	enterEbreakISR     61          12
+	leaveEbreakISR     73          8
+	enterIllegalISR    81          12
+	leaveIllegalISR    93          8
 */
 
 logic [6:0] injectAddr = 0;
@@ -106,7 +110,7 @@ logic [6:0] injectCount = 0;
 logic [6:0] exitAddr = 0;
 logic [6:0] exitCount = 0;
 
-logic [31:0] injectionROM [0:83];
+logic [31:0] injectionROM [0:100];
 
 initial begin
 	$readmemh("microcoderom.mem", injectionROM);
@@ -146,6 +150,7 @@ wire ismret = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_MRET);
 wire iswfi = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_WFI);
 wire isebreak = sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_EBREAK);
 wire isecall = sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_ECALL);
+wire isillegalinstruction = sie && ~(|instrOneHotOut);
 wire needsToStall = isbranch || isdiscard || isflush;
 
 // --------------------------------------------------
@@ -192,6 +197,7 @@ always @(posedge aclk) begin
 				// Emit decoded instruction
 				// - FENCE.I does not need to go to execute unit
 				// - IRQ will ignore the current instruction and keep PC the same to process it after ISR
+				// - EBREAK will repeatedly jump back to the same instruction site until the EBREAK is replaced
 				ififowr_en <= ~isfence && ~(|irqReq);
 				ififodin <= {
 					rs3, func7, csroffset,
@@ -202,7 +208,7 @@ always @(posedge aclk) begin
 					PC, immed};
 
 				// No compressed instruction support:
-				PC <= PC + ((|irqReq || isebreak) ? 32'd0 : 32'd4);
+				PC <= PC + ((|irqReq || isebreak || isillegalinstruction) ? 32'd0 : 32'd4);
 
 				// Compressed instruction support:
 				// Step 2 bytes for compressed instruction
@@ -215,6 +221,7 @@ always @(posedge aclk) begin
 				// Stop fetching if we need to halt, running IFENCE, or entering/exiting an ISR
 				priority case (1'b1)
 					(|irqReq):				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
+					isillegalinstruction:	begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
 					isecall:				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
 					isebreak:				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
 					isfence:				begin fetchmode <= WAITIFENCE;			fetchena <= 1'b0; end
@@ -245,10 +252,11 @@ always @(posedge aclk) begin
 
 				// Inject entry instruction sequence (see table at microcode ROM section)
 				unique case (1'b1)
-					isebreak:	begin injectAddr <= 7'd64; injectCount <= 7'd12; exitAddr <= 7'd76; exitCount <= 7'd8; end	// Software: debug breakpoint
-					isecall:	begin injectAddr <= 7'd41; injectCount <= 7'd12; exitAddr <= 7'd53; exitCount <= 7'd8; end	// Software: environment call
-					irqReq[1]:	begin injectAddr <= 7'd19; injectCount <= 7'd14; exitAddr <= 7'd33; exitCount <= 7'd8; end	// Ext
-					irqReq[0]:	begin injectAddr <= 7'd0;  injectCount <= 7'd12; exitAddr <= 7'd12; exitCount <= 7'd7; end	// Timer
+				    isillegalinstruction:	begin injectAddr <= 7'd81; injectCount <= 7'd12; exitAddr <= 7'd93; exitCount <= 7'd8; end	// Software: illegal instruction
+					isebreak:				begin injectAddr <= 7'd61; injectCount <= 7'd12; exitAddr <= 7'd73; exitCount <= 7'd8; end	// Software: debug breakpoint
+					isecall:				begin injectAddr <= 7'd41; injectCount <= 7'd12; exitAddr <= 7'd53; exitCount <= 7'd8; end	// Software: environment call
+					irqReq[1]:				begin injectAddr <= 7'd19; injectCount <= 7'd14; exitAddr <= 7'd33; exitCount <= 7'd8; end	// Ext
+					irqReq[0]:				begin injectAddr <= 7'd0;  injectCount <= 7'd12; exitAddr <= 7'd12; exitCount <= 7'd7; end	// Timer
 				endcase
 
 				fetchmode <= STARTINJECT;
@@ -273,6 +281,7 @@ always @(posedge aclk) begin
 			end
 
 			INJECT: begin
+				// Ignore ifence, interrupts and never advance the PC
 				ififowr_en <= 1'b1;
 				ififodin <= {
 					rs3, func7, csroffset,
@@ -280,7 +289,7 @@ always @(posedge aclk) begin
 					instrOneHotOut, selectimmedasrval2,
 					bluop, aluop,
 					rs1, rs2, rd,
-					PC, immed}; // Using the same PC+32'd4 from the time of IRQ
+					PC, immed};
 
 				fetchmode <= injectCount == 0 ? injectEnd : STARTINJECT;
 			end

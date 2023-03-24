@@ -1,13 +1,13 @@
 `timescale 1ns / 1ps
 
 module integerdividerunsigned(
-    input aclk,
-    input aresetn,
-    input start,
-    input [31:00] dividend,
-    input [31:00] divisor,
-    output [31:00] quotient,
-    output [31:00] remainder,
+    input wire aclk,
+    input wire aresetn,
+    input wire start,
+    input wire [31:00] dividend,
+    input wire [31:00] divisor,
+    output wire [31:00] quotient,
+    output wire [31:00] remainder,
     output wire ready);
 
 logic [5:0] count;
@@ -49,13 +49,13 @@ end
 endmodule
 
 module integerdividersigned(
-    input aclk,
-    input aresetn,
-    input start,
-    input [31:0] dividend,
-    input [31:0] divisor,
-    output [31:0] quotient,
-    output [31:0] remainder,
+    input wire aclk,
+    input wire aresetn,
+    input wire start,
+    input wire [31:0] dividend,
+    input wire [31:0] divisor,
+    output wire [31:0] quotient,
+    output wire [31:0] remainder,
     output wire ready);
 
 logic [5:0] count;

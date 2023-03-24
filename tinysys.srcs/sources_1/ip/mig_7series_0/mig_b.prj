@@ -59,7 +59,7 @@
     <DataMask>1</DataMask>
     <ECC>Disabled</ECC>
     <Ordering>Normal</Ordering>
-    <BankMachineCnt>4</BankMachineCnt>
+    <BankMachineCnt>3</BankMachineCnt>
     <CustomPart>FALSE</CustomPart>
     <NewPartName/>
     <RowAddress>14</RowAddress>
