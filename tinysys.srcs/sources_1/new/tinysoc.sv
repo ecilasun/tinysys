@@ -259,7 +259,7 @@ axi4led leddevice(
 	.s_axi(ledif),
 	.led(leds) );
 
-// TODO: Could wire a vblankcount!=targetframe to trigger a vblank IRQ
+// TODO: Wire a vblankcount!=targetframe to trigger a vblank IRQ
 gpucommanddevice gpucmdinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
@@ -270,7 +270,7 @@ gpucommanddevice gpucmdinst(
 	.fifovalid(gpufifovalid),
 	.vblankcount(vblankcount));
 
-// TODO: Could wire SDCard insertion signal to trigger an IRQ
+// TODO: Use sdconn switch state to trigger a card detect IRQ
 axi4spi spictlinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
@@ -288,12 +288,16 @@ axi4CSRFile csrfileinst(
 	.cpuclocktime(cpuclocktime),
 	.wallclocktime(wallclocktime),
 	.retired(retired),
+	// IRQ tracking
 	.irqHold(irqHold),
 	.irqReq(irqReq),
-	.uartrcvempty(uartrcvempty), // External interrupt wires
+	// External interrupt wires
+	.uartrcvempty(uartrcvempty),
+	// Shadow registers
 	.mepc(mepc),
 	.mtvec(mtvec),
 	.sie(sie),
+	// Bus
 	.s_axi(csrif) );
 
 // XADC

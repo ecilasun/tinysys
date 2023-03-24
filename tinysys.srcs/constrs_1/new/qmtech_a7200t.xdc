@@ -62,7 +62,7 @@ set_property -dict {PACKAGE_PIN K2 IOSTANDARD LVCMOS33} [get_ports spi_cs_n]
 set_property -dict {PACKAGE_PIN K1 IOSTANDARD LVCMOS33} [get_ports spi_mosi]
 set_property -dict {PACKAGE_PIN H2 IOSTANDARD LVCMOS33} [get_ports spi_clk]
 set_property -dict {PACKAGE_PIN G1 IOSTANDARD LVCMOS33} [get_ports spi_miso]
-## set_property -dict {PACKAGE_PIN E1 IOSTANDARD LVCMOS33} [get_ports spi_swtch]
+set_property -dict {PACKAGE_PIN E1 IOSTANDARD LVCMOS33} [get_ports spi_swtch]
 
 ## SD mode - sorted by sdcard pin order
 ## set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports {sd_dat[2]}]

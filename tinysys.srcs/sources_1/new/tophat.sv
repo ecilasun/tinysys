@@ -34,8 +34,7 @@ module tophat(
 	,output wire spi_cs_n
 	,output wire spi_clk
 	,output wire spi_mosi
-	//,input wire spi_swtch
-);
+	,input wire spi_swtch );
 
 // --------------------------------------------------
 // Clock and reset generator
@@ -99,7 +98,8 @@ sdwires sdconn(
 	.spi_miso(spi_miso),
 	.spi_cs_n(spi_cs_n),
 	.spi_clk(spi_clk),
-	.spi_mosi(spi_mosi) );
+	.spi_mosi(spi_mosi),
+	.spi_swtch(spi_swtch) );
 
 // --------------------------------------------------
 // SoC device

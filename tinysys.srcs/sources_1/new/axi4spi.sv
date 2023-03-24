@@ -11,8 +11,8 @@ module axi4spi(
 
 assign sdconn.spi_cs_n = 1'b0; // Keep attached spi device selected (TODO: Drive via control register)
 
-logic [1:0] writestate = 2'b00;
-logic [1:0] raddrstate = 2'b00;
+logic writestate = 1'b0;
+logic raddrstate = 1'b0;
 
 logic [7:0] writedata = 7'd0;
 wire [7:0] readdata;
@@ -99,14 +99,11 @@ spimasteroutfifo spioutputfifo(
 always @(posedge spibaseclock) begin
 	outfifore <= 1'b0;
 	we <= 1'b0;
-
-	if ((~outfifoempty) & cansend) begin
-		outfifore <= 1'b1;
-	end
-
-	if (outfifovalid) begin
+	if ((~outfifoempty) && outfifovalid && cansend) begin
 		writedata <= outfifodout;
 		we <= 1'b1;
+		// Advance FIFO
+		outfifore <= 1'b1;
 	end
 end
 
@@ -129,24 +126,25 @@ always @(posedge aclk) begin
 	if (~aresetn) begin
 		s_axi.bresp = 2'b00;
 	end else begin
-		// write data
+
 		outfifowe <= 1'b0;
 		s_axi.wready <= 1'b0;
 		s_axi.bvalid <= 1'b0;
 		outfifodin <= 8'h00;
-		case (writestate)
-			2'b00: begin
-				if (s_axi.wvalid & (~outfifofull)) begin
+
+		unique case (writestate)
+			1'b0: begin
+				if (s_axi.wvalid && (~outfifofull)) begin
 					outfifodin <= s_axi.wdata[7:0];
 					outfifowe <= 1'b1; // (|s_axi.wstrb)
 					s_axi.wready <= 1'b1;
-					writestate <= 2'b01;
+					writestate <= 1'b1;
 				end
 			end
-			default/*2'b01*/: begin
+			1'b1: begin
 				if(s_axi.bready) begin
 					s_axi.bvalid <= 1'b1;
-					writestate <= 2'b00;
+					writestate <= 1'b0;
 				end
 			end
 		endcase
@@ -167,25 +165,21 @@ always @(posedge aclk) begin
 		s_axi.rvalid <= 1'b0;
 
 		// read address
-		case (raddrstate)
-			2'b00: begin
+		unique case (raddrstate)
+			1'b0: begin
 				if (s_axi.arvalid) begin
 					s_axi.arready <= 1'b1;
-					raddrstate <= 2'b01;
+					raddrstate <= 1'b1;
 				end
 			end
-			2'b01: begin
+			1'b1: begin
 				// master ready to accept and fifo has incoming data
-				if (s_axi.rready & (~infifoempty)) begin
-					infifore <= 1'b1;
-					raddrstate <= 2'b10;
-				end
-			end
-			default/*2'b10*/: begin
-				if (infifovalid) begin
+				if (s_axi.rready && (~infifoempty) && infifovalid) begin
 					s_axi.rdata <= {infifodout, infifodout, infifodout, infifodout};
 					s_axi.rvalid <= 1'b1;
-					raddrstate <= 2'b00;
+					// Advance FIFO
+					infifore <= 1'b1;
+					raddrstate <= 1'b0;
 				end
 			end
 		endcase
