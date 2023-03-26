@@ -85,7 +85,7 @@ assign rxd_endofpacket = rxd_endofpacketreg;
 parameter clkfrequency = 10000000;	// 10mhz
 parameter baud = 115200;
 
-parameter oversampling = 8;  // needs to be a power of 2
+parameter oversampling = 16;  // needs to be a power of 2
 // we oversample the rxd line at a fixed rate to capture each rxd data bit at the "right" time
 // 8 times oversampling by default, use 16 for higher quality reception
 

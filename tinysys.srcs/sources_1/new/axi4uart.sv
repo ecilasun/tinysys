@@ -1,13 +1,18 @@
 `timescale 1ns / 1ps
 
-module axi4uart(
+module axi4uart (
 	input wire aclk,
-	input wire clk10,
+	input wire uartclk,
 	input wire aresetn,
 	axi4if.slave s_axi,
 	output wire uart_rxd_out,
 	input wire uart_txd_in,
 	output wire uartrcvempty );
+
+// 115200 / 10MHz for serial terminal
+// 400000 / 25MHz for USB serial interface
+parameter BAUDRATE = 115200;
+parameter FREQ = 10000000;
 
 logic [1:0] waddrstate = 2'b00;
 logic [1:0] writestate = 2'b00;
@@ -28,7 +33,7 @@ wire uarttxbusy;
 wire [7:0] uartsenddout;
 wire uartsendfull, uartsendempty, uartsendvalid;
 
-always @(posedge clk10) begin
+always @(posedge uartclk) begin
 	transmitbyte <= 1'b0;
 	unique case(uartwritemode)
 		1'b0: begin // idle
@@ -48,8 +53,8 @@ always @(posedge clk10) begin
 	endcase
 end
 
-async_transmitter uart_transmit(
-	.clk(clk10),
+async_transmitter #(.clkfrequency(FREQ), .baud(BAUDRATE)) uart_transmit(
+	.clk(uartclk),
 	.txd_start(transmitbyte),
 	.txd_data(datatotransmit),
 	.txd(uart_rxd_out),
@@ -64,7 +69,7 @@ uartoutfifo UARTOut(
 	.rd_en(transmitbyte),
 	.valid(uartsendvalid),
 	.wr_clk(aclk),
-	.rd_clk(clk10),
+	.rd_clk(uartclk),
 	.rst(~aresetn) );
 
 // ----------------------------------------------------------------------------
@@ -74,8 +79,8 @@ uartoutfifo UARTOut(
 wire uartbyteavailable;
 wire [7:0] uartbytein;
 
-async_receiver uart_receive(
-	.clk(clk10),
+async_receiver #(.clkfrequency(FREQ), .baud(BAUDRATE)) uart_receive(
+	.clk(uartclk),
 	.rxd(uart_txd_in),
 	.rxd_data_ready(uartbyteavailable),
 	.rxd_data(uartbytein),
@@ -91,7 +96,7 @@ uartinfifo UARTIn(
 	.full(uartrcvfull),
 	.din(uartrcvdin),
 	.wr_en(uartrcvwe),
-	.wr_clk(clk10),
+	.wr_clk(uartclk),
 	.rd_clk(aclk),
 	.empty(uartrcvempty),
 	.dout(uartrcvdout),
@@ -99,7 +104,7 @@ uartinfifo UARTIn(
 	.valid(uartrcvvalid),
 	.rst(~aresetn) );
 
-always @(posedge clk10) begin
+always @(posedge uartclk) begin
 	uartrcvwe <= 1'b0;
 	// NOTE: Any byte that won't fit into the fifo will be dropped
 	// make sure to consume them quickly on arrival!

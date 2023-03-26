@@ -12,8 +12,10 @@ module tinysoc(
 	input wire preresetn,
 	output wire [1:0] leds,
 	output wire uart_rxd_out,
-	gpuwires.def gpuvideoout,
 	input wire uart_txd_in,
+	output wire usb_rxd_out,
+	input wire usb_txd_in,
+	gpuwires.def gpuvideoout,
 	ddr3sdramwires.def ddr3wires,
 	sdwires.def sdconn);
 
@@ -36,6 +38,7 @@ axi4if spiif();				// Sub bus: SPI control device
 axi4if csrif();				// Sub bus: CSR file device
 axi4if xadcif();			// Sub bus: ADC controller
 axi4if dmaif();				// Sub bus: DMA controller
+axi4if usbif();				// Sub bus: USB serial i/o
 
 ibusif ibus();				// Internal bus between units
 
@@ -222,13 +225,15 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // CSRF: 80004000  80004FFF  19'b000_0000_0000_0000_0100  4KB
 // XADC: 80005000  80005FFF  19'b000_0000_0000_0000_0101  4KB
 // DMAC: 80006000  80006FFF  19'b000_0000_0000_0000_0110  4KB
-// ----: 80007000  80007FFF  19'b000_0000_0000_0000_0111  4KB
+// USBH: 80007000  80007FFF  19'b000_0000_0000_0000_0111  4KB
+// ----: 80008000  80008FFF  19'b000_0000_0000_0000_1000  4KB
 
 devicerouter devicerouterinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
     .axi_s(devicebus),
     .addressmask({
+        19'b000_0000_0000_0000_0111,	// USBH
     	19'b000_0000_0000_0000_0110,	// DMAC
     	19'b000_0000_0000_0000_0101,	// XADC
 		19'b000_0000_0000_0000_0100,	// CSRF
@@ -236,17 +241,18 @@ devicerouter devicerouterinst(
 		19'b000_0000_0000_0000_0010,	// GPUC
 		19'b000_0000_0000_0000_0001,	// LEDS
 		19'b000_0000_0000_0000_0000 }),	// UART
-    .axi_m({dmaif, xadcif, csrif, spiif, gpucmdif, ledif, uartif}));
+    .axi_m({usbif, dmaif, xadcif, csrif, spiif, gpucmdif, ledif, uartif}));
 
 // --------------------------------------------------
 // Memory mapped devices
 // --------------------------------------------------
 
 wire uartrcvempty;
+wire usbrcvempty;
 
-axi4uart uartdevice(
+axi4uart #(.BAUDRATE(115200), .FREQ(10000000)) uartinst(
 	.aclk(aclk),
-	.clk10(clk10),
+	.uartclk(clk10),
 	.aresetn(aresetn),
 	.s_axi(uartif),
 	.uart_rxd_out(uart_rxd_out),
@@ -293,6 +299,7 @@ axi4CSRFile csrfileinst(
 	.irqReq(irqReq),
 	// External interrupt wires
 	.uartrcvempty(uartrcvempty),
+	//.usbrcvempty(usbrcvempty),	// TODO: interrupt from USB serial
 	// Shadow registers
 	.mepc(mepc),
 	.mtvec(mtvec),
@@ -318,5 +325,14 @@ dmacommanddevice dmacmdinst(
 	.fifore(dmafifore),
 	.fifovalid(dmafifovalid),
     .dmabusy(dmabusy));
+
+axi4uart #(.BAUDRATE(400000), .FREQ(10000000)) usbhostdevice(
+	.aclk(aclk),
+	.uartclk(clk10),
+	.aresetn(aresetn),
+	.s_axi(usbif),
+	.uart_rxd_out(usb_rxd_out),
+	.uart_txd_in(usb_txd_in),
+	.uartrcvempty(usbrcvempty));
 
 endmodule
