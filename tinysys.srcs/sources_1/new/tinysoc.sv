@@ -52,7 +52,6 @@ wire ififoempty;
 wire ififovalid;
 wire [143:0] ififodout;
 wire ififord_en;
-wire irqHold;
 wire [1:0] irqReq;
 wire [31:0] mepc;
 wire [31:0] mtvec;
@@ -60,7 +59,7 @@ wire sie;
 wire romReady;
 
 // Reset vector at last 64K of DDR3 SDRAM
-fetchunit #(.RESETVECTOR(32'h0FFE0000)) instructionfetch (
+fetchunit #(.RESETVECTOR(32'h0FFE0000)) fetchdecodeinst (
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.branchresolved(branchresolved),
@@ -69,7 +68,6 @@ fetchunit #(.RESETVECTOR(32'h0FFE0000)) instructionfetch (
 	.ififovalid(ififovalid),
 	.ififodout(ififodout),
 	.ififord_en(ififord_en),
-	.irqHold(irqHold),
 	.irqReq(irqReq),
 	.mepc(mepc),
 	.mtvec(mtvec),
@@ -295,7 +293,6 @@ axi4CSRFile csrfileinst(
 	.wallclocktime(wallclocktime),
 	.retired(retired),
 	// IRQ tracking
-	.irqHold(irqHold),
 	.irqReq(irqReq),
 	// External interrupt wires
 	.uartrcvempty(uartrcvempty),

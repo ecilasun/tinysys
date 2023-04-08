@@ -16,7 +16,6 @@ module fetchunit #(
 	output wire [143:0] ififodout,
 	input wire ififord_en,
 	// IRQ lines from CSR unit
-	output wire irqHold,
 	input wire [1:0] irqReq,
 	input wire [31:0] mepc,
 	input wire [31:0] mtvec,
@@ -36,9 +35,6 @@ logic [31:0] IR;
 wire rready;
 wire [31:0] instruction;
 logic icacheflush = 1'b0;
-logic processingIRQ = 1'b0;
-
-assign irqHold = processingIRQ;
 
 // --------------------------------------------------
 // Instruction cache
@@ -171,7 +167,6 @@ always @(posedge aclk) begin
 		fetchmode <= INIT;
 		fetchena <= 1'b0;
 		ififowr_en <= 1'b0;
-		processingIRQ <= 1'b0;
 		IR <= 32'd0;
 	end else begin
 
@@ -248,9 +243,6 @@ always @(posedge aclk) begin
 			end
 
 			ENTERISR: begin
-				// Hold further IRQ requests on this line until we encounter an mret
-				processingIRQ <= 1'b1;
-
 				// Inject entry instruction sequence (see table at microcode ROM section)
 				unique case (1'b1)
 				    isillegalinstruction:	begin injectAddr <= 7'd81; injectEnd <= 7'd92; end	// Software: illegal instruction
@@ -300,33 +292,34 @@ always @(posedge aclk) begin
 			end
 
 			POSTENTER: begin
-				// Set up a jump to ISR
 				// TODO: Support for vectored jump using address encoding:
 				// BASE[31:2] MODE[1:0] (modes-> 00:direct, 01:vectored, 10/11:reserved)
 				// where exceptions jump to BASE, interrupts jump to BASE+exceptioncode*4
 				// NOTE: OS has to hold a vectored interrupt table at the BASE address
+
+				// Set up a jump to ISR
 				PC <= mtvec;
 
-				// We need to see the correct MTVEC so we wait for all pending
-				// instructions to get executed first
+				// This ensures that the entry routine turns off global interrupts
+				// so that the next time around we don't get irqReq, and also any
+				// change to mtvec to be reflected properly
 				fetchena <= ififoempty;
 				fetchmode <= ififoempty ? FETCH : POSTENTER;
 			end
 
 			POSTEXIT: begin
-				// Release our hold so we can receive further interrupts
-				processingIRQ <= ~ififoempty;
-
 				// Restore PC to MEPC via CSR
 				PC <= mepc;
 
-				// A task manager may have shuffled the mepc register
-				// so we need to wait for instructions to fall through
+				// This ensures that the entry routine turns on global interrupts
+				// so that the next time around we get irqReq, and also that a
+				// change to mepc by a task manager is reflected properly
 				fetchena <= ififoempty;
 				fetchmode <= ififoempty ? FETCH : POSTEXIT;
 			end
 
 			WFI: begin
+				// TODO: NOOP when interrupts are disabled?
 				fetchena <= (|irqReq);
 				fetchmode <= (|irqReq) ? FETCH : WFI;
 			end

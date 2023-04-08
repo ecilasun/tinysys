@@ -7,7 +7,6 @@ module axi4CSRFile(
 	input wire [63:0] wallclocktime,
 	input wire [63:0] retired,
 	// IRQ lines to fetch unit
-	input wire irqHold,
 	output wire [1:0] irqReq,
 	// Incoming hardware interrupt requests
 	input wire uartrcvempty,
@@ -26,7 +25,7 @@ module axi4CSRFile(
 logic [63:0] timecmpshadow = 64'hFFFFFFFFFFFFFFFF;
 logic [31:0] mepcshadow = 32'd0;
 logic [2:0] mieshadow = 3'b000; // Machine interrupt enable states
-logic mstatusIEshadow = 1'b0; // Global interrupt enable
+logic mstatusIEshadow = 1'b0;   // Global interrupts disabled on by default
 logic [31:0] mtvecshadow = 32'd0;
 logic dummyshadow = 1'b0;
 
@@ -74,11 +73,11 @@ always @(posedge aclk) begin
 	end else begin
 		// Common condition to fire an IRQ: Fetch isn't holding an IRQ, specific interrups are enabled, and global machine interrupts are enabled
 		// Software interrupt
-		softInterruptEna <= mieshadow[0] && mstatusIEshadow && (~irqHold); // The rest of this condition is in fetch unit (based on instruction)
+		softInterruptEna <= mieshadow[0] && mstatusIEshadow; // The rest of this condition is in fetch unit (based on instruction)
 		// Timer interrupt
-		timerInterrupt <= mieshadow[1] && mstatusIEshadow && (~irqHold) && (wallclocktime >= timecmpshadow);
+		timerInterrupt <= mieshadow[1] && mstatusIEshadow && (wallclocktime >= timecmpshadow);
 		// Machine external interrupt (UART)
-		uartInterrupt <= mieshadow[2] && mstatusIEshadow && (~irqHold) && (~uartrcvempty);
+		uartInterrupt <= mieshadow[2] && mstatusIEshadow && (~uartrcvempty);
 	end
 end
 
@@ -145,9 +144,9 @@ always @(posedge aclk) begin
 					`CSR_TIMECMPHI:	timecmpshadow[63:32] <= csrdin;
 					`CSR_MEPC:		mepcshadow <= csrdin;
 					`CSR_MIE:		mieshadow <= {csrdin[11], csrdin[7], csrdin[3]};	// Only store MEIE, MTIE and MSIE bits
-					`CSR_MSTATUS:	mstatusIEshadow <= csrdin[3];			// Global MIE bit
+					`CSR_MSTATUS:	mstatusIEshadow <= csrdin[3];						// Global interrupt enable (MIE) bit
 					`CSR_MTVEC:		mtvecshadow <= csrdin;
-					default:		dummyshadow <= csrdin[0];				// Unused
+					default:		dummyshadow <= csrdin[0];							// Unused - sink
 				endcase
 				writestate <= 2'b00;
 			end

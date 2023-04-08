@@ -200,20 +200,21 @@ always @(posedge aclk) begin
 
 	end else begin
 
-		btready <= 1'b0;
-		ififore <= 1'b0;
-		rwen <= 1'b0;
-		wback <= 1'b0;
+		btready <= 1'b0;	// Stop branch target ready strobe
+		ififore <= 1'b0;	// Stop instruction fifo read enable strobe
+		rwen <= 1'b0;		// Stop register writeback strobe
+		wback <= 1'b0;		// Stop register writeback shadow strobe 
 
-		m_ibus.rstrobe <= 1'b0;
-		m_ibus.wstrobe <= 4'h0;
-		m_ibus.cstrobe <= 1'b0;
+		m_ibus.rstrobe <= 1'b0;	// Stop data read strobe
+		m_ibus.wstrobe <= 4'h0;	// Stop data write strobe
+		m_ibus.cstrobe <= 1'b0;	// Stop data cache strobe
 
-		mulstrobe <= 1'b0;
-		divstrobe <= 1'b0;
+		mulstrobe <= 1'b0;	// Stop integer mul strobe 
+		divstrobe <= 1'b0;	// Stop integer div/rem strobe
 
 		unique case(ctlmode)
 			READINSTR: begin
+				// Grab next decoded instruction if there's something in the FIFO
 				{	rs3, func7, csroffset,
 					func12, func3,
 					instrOneHotOut, selectimmedasrval2,
@@ -225,6 +226,7 @@ always @(posedge aclk) begin
 			end
 
 			READREG: begin
+				// Set up inputs to math/branch units, addresses, and any math strobes required
 				A <= rval1;
 				B <= rval2;
 				C <= selectimmedasrval2 ? immed : rval2;
@@ -239,6 +241,7 @@ always @(posedge aclk) begin
 			end
 
 			DISPATCH: begin
+				// Most instructions are done here and go directly to writeback
 				unique case(1'b1)
 					instrOneHotOut[`O_H_OP],
 					instrOneHotOut[`O_H_OP_IMM]: begin
@@ -280,6 +283,7 @@ always @(posedge aclk) begin
 					end
 				endcase
 
+				// sys, math, store and load require wait states
 				ctlmode <=	(mulstrobe || divstrobe) ? MATHWAIT : (instrOneHotOut[`O_H_SYSTEM] ? SYSOP : (instrOneHotOut[`O_H_STORE] ? SWAIT : ( instrOneHotOut[`O_H_LOAD] ? LWAIT : WBACK)));
 			end
 
