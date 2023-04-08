@@ -17,6 +17,11 @@ wire [1:0] ledout;
 wire uart_rxd_out;
 wire uart_txd_in = 1'b1;
 
+wire spi_mosi;
+wire spi_miso = spi_mosi; // nul device
+wire usb_txd_in;
+wire usb_rxd_out = 1'b1;
+
 // DDR3 simulation model
 wire ddr3_reset_n;
 wire [0:0]   ddr3_cke;
@@ -51,8 +56,6 @@ ddr3_model ddr3simmod(
     .tdqs_n(), // out
     .odt(ddr3_odt) );
 
-wire spi_mosi;
-wire spi_miso = spi_mosi; // nul device
 tophat main(
     .sys_clk(boardclock),
     .sys_rst_n(boardresetn),
@@ -61,7 +64,10 @@ tophat main(
     // UART
     .uart_rxd_out(uart_rxd_out),
     .uart_txd_in(uart_txd_in),
-    // DDR3 SDRAM
+    // USB
+	.usb_rxd_out(usb_rxd_out),
+	.usb_txd_in(usb_txd_in),
+	// DDR3 SDRAM
 	.ddr3_reset_n(ddr3_reset_n),
 	.ddr3_cke(ddr3_cke),
 	.ddr3_ck_p(ddr3_ck_p), 

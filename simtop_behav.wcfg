@@ -13,20 +13,20 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="2,227.552000000 us"></ZoomStartTime>
-      <ZoomEndTime time="2,794.952000001 us"></ZoomEndTime>
-      <Cursor1Time time="2,518.907053562 us"></Cursor1Time>
+      <ZoomStartTime time="2,361.026666667 us"></ZoomStartTime>
+      <ZoomEndTime time="2,907.226666668 us"></ZoomEndTime>
+      <Cursor1Time time="2,586.858501000 us"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="264"></NameColumnWidth>
+      <NameColumnWidth column_width="248"></NameColumnWidth>
       <ValueColumnWidth column_width="128"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="403" />
+   <WVObjectSize size="371" />
    <wave_markers>
       <marker label="" time="124244000000" />
-      <marker label="" time="1233030000000" />
-      <marker label="" time="2227400000000" />
-      <marker label="" time="2357070000000" />
+      <marker label="" time="1229920000000" />
+      <marker label="" time="2221901819438" />
+      <marker label="" time="2452059983334" />
    </wave_markers>
    <wvobject fp_name="divider23" type="divider">
       <obj_property name="label">board</obj_property>
@@ -80,205 +80,207 @@
       <obj_property name="label">fetch</obj_property>
       <obj_property name="DisplayName">label</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/aclk">
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/aclk">
       <obj_property name="ElementShortName">aclk</obj_property>
       <obj_property name="ObjectShortName">aclk</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/aresetn">
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/aresetn">
       <obj_property name="ElementShortName">aresetn</obj_property>
       <obj_property name="ObjectShortName">aresetn</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/branchresolved">
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/branchresolved">
       <obj_property name="ElementShortName">branchresolved</obj_property>
       <obj_property name="ObjectShortName">branchresolved</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/branchtarget">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/branchtarget">
       <obj_property name="ElementShortName">branchtarget[31:0]</obj_property>
       <obj_property name="ObjectShortName">branchtarget[31:0]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/ififoempty">
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/ififoempty">
       <obj_property name="ElementShortName">ififoempty</obj_property>
       <obj_property name="ObjectShortName">ififoempty</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/ififovalid">
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/ififovalid">
       <obj_property name="ElementShortName">ififovalid</obj_property>
       <obj_property name="ObjectShortName">ififovalid</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/ififodout">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/ififodout">
       <obj_property name="ElementShortName">ififodout[143:0]</obj_property>
       <obj_property name="ObjectShortName">ififodout[143:0]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/ififord_en">
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/ififord_en">
       <obj_property name="ElementShortName">ififord_en</obj_property>
       <obj_property name="ObjectShortName">ififord_en</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/irqHold">
-      <obj_property name="ElementShortName">irqHold</obj_property>
-      <obj_property name="ObjectShortName">irqHold</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/irqReq">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/irqReq">
       <obj_property name="ElementShortName">irqReq[1:0]</obj_property>
       <obj_property name="ObjectShortName">irqReq[1:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/mepc">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/mepc">
       <obj_property name="ElementShortName">mepc[31:0]</obj_property>
       <obj_property name="ObjectShortName">mepc[31:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/mtvec">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/mtvec">
       <obj_property name="ElementShortName">mtvec[31:0]</obj_property>
       <obj_property name="ObjectShortName">mtvec[31:0]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/sie">
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/sie">
       <obj_property name="ElementShortName">sie</obj_property>
       <obj_property name="ObjectShortName">sie</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/romReady">
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/romReady">
       <obj_property name="ElementShortName">romReady</obj_property>
       <obj_property name="ObjectShortName">romReady</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/fetchena">
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/fetchena">
       <obj_property name="ElementShortName">fetchena</obj_property>
       <obj_property name="ObjectShortName">fetchena</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/PC">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/PC">
       <obj_property name="ElementShortName">PC[31:0]</obj_property>
       <obj_property name="ObjectShortName">PC[31:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/IR">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/IR">
       <obj_property name="ElementShortName">IR[31:0]</obj_property>
       <obj_property name="ObjectShortName">IR[31:0]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/rready">
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/rready">
       <obj_property name="ElementShortName">rready</obj_property>
       <obj_property name="ObjectShortName">rready</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instruction">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/instruction">
       <obj_property name="ElementShortName">instruction[31:0]</obj_property>
       <obj_property name="ObjectShortName">instruction[31:0]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/icacheflush">
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/icacheflush">
       <obj_property name="ElementShortName">icacheflush</obj_property>
       <obj_property name="ObjectShortName">icacheflush</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/processingIRQ">
-      <obj_property name="ElementShortName">processingIRQ</obj_property>
-      <obj_property name="ObjectShortName">processingIRQ</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instrOneHotOut">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/instrOneHotOut">
       <obj_property name="ElementShortName">instrOneHotOut[17:0]</obj_property>
       <obj_property name="ObjectShortName">instrOneHotOut[17:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/aluop">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/aluop">
       <obj_property name="ElementShortName">aluop[3:0]</obj_property>
       <obj_property name="ObjectShortName">aluop[3:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/bluop">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/bluop">
       <obj_property name="ElementShortName">bluop[2:0]</obj_property>
       <obj_property name="ObjectShortName">bluop[2:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/func3">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/func3">
       <obj_property name="ElementShortName">func3[2:0]</obj_property>
       <obj_property name="ObjectShortName">func3[2:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/func7">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/func7">
       <obj_property name="ElementShortName">func7[6:0]</obj_property>
       <obj_property name="ObjectShortName">func7[6:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/func12">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/func12">
       <obj_property name="ElementShortName">func12[11:0]</obj_property>
       <obj_property name="ObjectShortName">func12[11:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/rs1">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/rs1">
       <obj_property name="ElementShortName">rs1[4:0]</obj_property>
       <obj_property name="ObjectShortName">rs1[4:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/rs2">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/rs2">
       <obj_property name="ElementShortName">rs2[4:0]</obj_property>
       <obj_property name="ObjectShortName">rs2[4:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/rs3">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/rs3">
       <obj_property name="ElementShortName">rs3[4:0]</obj_property>
       <obj_property name="ObjectShortName">rs3[4:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/rd">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/rd">
       <obj_property name="ElementShortName">rd[4:0]</obj_property>
       <obj_property name="ObjectShortName">rd[4:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/csroffset">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/csroffset">
       <obj_property name="ElementShortName">csroffset[11:0]</obj_property>
       <obj_property name="ObjectShortName">csroffset[11:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/immed">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/immed">
       <obj_property name="ElementShortName">immed[31:0]</obj_property>
       <obj_property name="ObjectShortName">immed[31:0]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/selectimmedasrval2">
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/selectimmedasrval2">
       <obj_property name="ElementShortName">selectimmedasrval2</obj_property>
       <obj_property name="ObjectShortName">selectimmedasrval2</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/injectAddr">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/injectAddr">
       <obj_property name="ElementShortName">injectAddr[6:0]</obj_property>
       <obj_property name="ObjectShortName">injectAddr[6:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/injectionROM">
-      <obj_property name="ElementShortName">injectionROM[0:100][31:0]</obj_property>
-      <obj_property name="ObjectShortName">injectionROM[0:100][31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/injectInstruction">
-      <obj_property name="ElementShortName">injectInstruction[31:0]</obj_property>
-      <obj_property name="ObjectShortName">injectInstruction[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/ififodin">
-      <obj_property name="ElementShortName">ififodin[143:0]</obj_property>
-      <obj_property name="ObjectShortName">ififodin[143:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/ififowr_en">
-      <obj_property name="ElementShortName">ififowr_en</obj_property>
-      <obj_property name="ObjectShortName">ififowr_en</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/ififofull">
-      <obj_property name="ElementShortName">ififofull</obj_property>
-      <obj_property name="ObjectShortName">ififofull</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/isbranch">
-      <obj_property name="ElementShortName">isbranch</obj_property>
-      <obj_property name="ObjectShortName">isbranch</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/isfence">
-      <obj_property name="ElementShortName">isfence</obj_property>
-      <obj_property name="ObjectShortName">isfence</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/isdiscard">
-      <obj_property name="ElementShortName">isdiscard</obj_property>
-      <obj_property name="ObjectShortName">isdiscard</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/isflush">
-      <obj_property name="ElementShortName">isflush</obj_property>
-      <obj_property name="ObjectShortName">isflush</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/ismret">
-      <obj_property name="ElementShortName">ismret</obj_property>
-      <obj_property name="ObjectShortName">ismret</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/iswfi">
-      <obj_property name="ElementShortName">iswfi</obj_property>
-      <obj_property name="ObjectShortName">iswfi</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/isecall">
-      <obj_property name="ElementShortName">isecall</obj_property>
-      <obj_property name="ObjectShortName">isecall</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/fetchmode">
-      <obj_property name="ElementShortName">fetchmode[3:0]</obj_property>
-      <obj_property name="ObjectShortName">fetchmode[3:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/injectEnd">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/injectEnd">
       <obj_property name="ElementShortName">injectEnd[6:0]</obj_property>
       <obj_property name="ObjectShortName">injectEnd[6:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/RESETVECTOR">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/injectionROM">
+      <obj_property name="ElementShortName">injectionROM[0:100][31:0]</obj_property>
+      <obj_property name="ObjectShortName">injectionROM[0:100][31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/injectInstruction">
+      <obj_property name="ElementShortName">injectInstruction[31:0]</obj_property>
+      <obj_property name="ObjectShortName">injectInstruction[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/ififodin">
+      <obj_property name="ElementShortName">ififodin[143:0]</obj_property>
+      <obj_property name="ObjectShortName">ififodin[143:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/ififowr_en">
+      <obj_property name="ElementShortName">ififowr_en</obj_property>
+      <obj_property name="ObjectShortName">ififowr_en</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/ififofull">
+      <obj_property name="ElementShortName">ififofull</obj_property>
+      <obj_property name="ObjectShortName">ififofull</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/isbranch">
+      <obj_property name="ElementShortName">isbranch</obj_property>
+      <obj_property name="ObjectShortName">isbranch</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/isfence">
+      <obj_property name="ElementShortName">isfence</obj_property>
+      <obj_property name="ObjectShortName">isfence</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/isdiscard">
+      <obj_property name="ElementShortName">isdiscard</obj_property>
+      <obj_property name="ObjectShortName">isdiscard</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/isflush">
+      <obj_property name="ElementShortName">isflush</obj_property>
+      <obj_property name="ObjectShortName">isflush</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/ismret">
+      <obj_property name="ElementShortName">ismret</obj_property>
+      <obj_property name="ObjectShortName">ismret</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/iswfi">
+      <obj_property name="ElementShortName">iswfi</obj_property>
+      <obj_property name="ObjectShortName">iswfi</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/isebreak">
+      <obj_property name="ElementShortName">isebreak</obj_property>
+      <obj_property name="ObjectShortName">isebreak</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/isecall">
+      <obj_property name="ElementShortName">isecall</obj_property>
+      <obj_property name="ObjectShortName">isecall</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/isillegalinstruction">
+      <obj_property name="ElementShortName">isillegalinstruction</obj_property>
+      <obj_property name="ObjectShortName">isillegalinstruction</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/fetchmode">
+      <obj_property name="ElementShortName">fetchmode[3:0]</obj_property>
+      <obj_property name="ObjectShortName">fetchmode[3:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/postInject">
+      <obj_property name="ElementShortName">postInject[3:0]</obj_property>
+      <obj_property name="ObjectShortName">postInject[3:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/RESETVECTOR">
       <obj_property name="ElementShortName">RESETVECTOR[31:0]</obj_property>
       <obj_property name="ObjectShortName">RESETVECTOR[31:0]</obj_property>
    </wvobject>
@@ -583,10 +585,6 @@
    <wvobject type="array" fp_name="/simtop/main/socinstance/csrfileinst/retired">
       <obj_property name="ElementShortName">retired[63:0]</obj_property>
       <obj_property name="ObjectShortName">retired[63:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/csrfileinst/irqHold">
-      <obj_property name="ElementShortName">irqHold</obj_property>
-      <obj_property name="ObjectShortName">irqHold</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/csrfileinst/irqReq">
       <obj_property name="ElementShortName">irqReq[1:0]</obj_property>
@@ -901,134 +899,6 @@
    <wvobject fp_name="divider264" type="divider">
       <obj_property name="label">I$</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/aclk">
-      <obj_property name="ElementShortName">aclk</obj_property>
-      <obj_property name="ObjectShortName">aclk</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/aresetn">
-      <obj_property name="ElementShortName">aresetn</obj_property>
-      <obj_property name="ObjectShortName">aresetn</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/icacheflush">
-      <obj_property name="ElementShortName">icacheflush</obj_property>
-      <obj_property name="ObjectShortName">icacheflush</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/addr">
-      <obj_property name="ElementShortName">addr[31:0]</obj_property>
-      <obj_property name="ObjectShortName">addr[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/dout">
-      <obj_property name="ElementShortName">dout[31:0]</obj_property>
-      <obj_property name="ObjectShortName">dout[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/ren">
-      <obj_property name="ElementShortName">ren</obj_property>
-      <obj_property name="ObjectShortName">ren</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/rready">
-      <obj_property name="ElementShortName">rready</obj_property>
-      <obj_property name="ObjectShortName">rready</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/line">
-      <obj_property name="ElementShortName">line[7:0]</obj_property>
-      <obj_property name="ObjectShortName">line[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/tag">
-      <obj_property name="ElementShortName">tag[16:0]</obj_property>
-      <obj_property name="ObjectShortName">tag[16:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/offset">
-      <obj_property name="ElementShortName">offset[3:0]</obj_property>
-      <obj_property name="ObjectShortName">offset[3:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/readdone">
-      <obj_property name="ElementShortName">readdone</obj_property>
-      <obj_property name="ObjectShortName">readdone</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/dataout">
-      <obj_property name="ElementShortName">dataout[31:0]</obj_property>
-      <obj_property name="ObjectShortName">dataout[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/cacheaddress">
-      <obj_property name="ElementShortName">cacheaddress[31:0]</obj_property>
-      <obj_property name="ObjectShortName">cacheaddress[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/cachedin">
-      <obj_property name="ElementShortName">cachedin[0:3][127:0]</obj_property>
-      <obj_property name="ObjectShortName">cachedin[0:3][127:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/memwritestrobe">
-      <obj_property name="ElementShortName">memwritestrobe</obj_property>
-      <obj_property name="ObjectShortName">memwritestrobe</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/memreadstrobe">
-      <obj_property name="ElementShortName">memreadstrobe</obj_property>
-      <obj_property name="ObjectShortName">memreadstrobe</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/ctag">
-      <obj_property name="ElementShortName">ctag[16:0]</obj_property>
-      <obj_property name="ObjectShortName">ctag[16:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/coffset">
-      <obj_property name="ElementShortName">coffset[3:0]</obj_property>
-      <obj_property name="ObjectShortName">coffset[3:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/cline">
-      <obj_property name="ElementShortName">cline[7:0]</obj_property>
-      <obj_property name="ObjectShortName">cline[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/chit">
-      <obj_property name="ElementShortName">chit</obj_property>
-      <obj_property name="ObjectShortName">chit</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/cachelinevalid">
-      <obj_property name="ElementShortName">cachelinevalid[0:255]</obj_property>
-      <obj_property name="ObjectShortName">cachelinevalid[0:255]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/cachelinetags">
-      <obj_property name="ElementShortName">cachelinetags[0:255][16:0]</obj_property>
-      <obj_property name="ObjectShortName">cachelinetags[0:255][16:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/cachewe">
-      <obj_property name="ElementShortName">cachewe[63:0]</obj_property>
-      <obj_property name="ObjectShortName">cachewe[63:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/cdin">
-      <obj_property name="ElementShortName">cdin[511:0]</obj_property>
-      <obj_property name="ObjectShortName">cdin[511:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/cdout">
-      <obj_property name="ElementShortName">cdout[511:0]</obj_property>
-      <obj_property name="ObjectShortName">cdout[511:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/flushing">
-      <obj_property name="ElementShortName">flushing</obj_property>
-      <obj_property name="ObjectShortName">flushing</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/dccount">
-      <obj_property name="ElementShortName">dccount[7:0]</obj_property>
-      <obj_property name="ObjectShortName">dccount[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/flushline">
-      <obj_property name="ElementShortName">flushline[16:0]</obj_property>
-      <obj_property name="ObjectShortName">flushline[16:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/cacheaccess">
-      <obj_property name="ElementShortName">cacheaccess[7:0]</obj_property>
-      <obj_property name="ObjectShortName">cacheaccess[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/rsta_busy">
-      <obj_property name="ElementShortName">rsta_busy</obj_property>
-      <obj_property name="ObjectShortName">rsta_busy</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/rdone">
-      <obj_property name="ElementShortName">rdone</obj_property>
-      <obj_property name="ObjectShortName">rdone</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/instructionfetch/instructioncacheinst/cachestate">
-      <obj_property name="ElementShortName">cachestate[4:0]</obj_property>
-      <obj_property name="ObjectShortName">cachestate[4:0]</obj_property>
    </wvobject>
    <wvobject fp_name="divider405" type="divider">
       <obj_property name="label">dataunit</obj_property>

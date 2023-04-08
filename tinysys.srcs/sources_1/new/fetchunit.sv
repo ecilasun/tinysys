@@ -245,11 +245,11 @@ always @(posedge aclk) begin
 			ENTERISR: begin
 				// Inject entry instruction sequence (see table at microcode ROM section)
 				unique case (1'b1)
-				    isillegalinstruction:	begin injectAddr <= 7'd81; injectEnd <= 7'd92; end	// Software: illegal instruction
-					isebreak:				begin injectAddr <= 7'd61; injectEnd <= 7'd72; end	// Software: debug breakpoint
-					isecall:				begin injectAddr <= 7'd41; injectEnd <= 7'd52; end	// Software: environment call
-					irqReq[1]:				begin injectAddr <= 7'd19; injectEnd <= 7'd32; end	// Ext
 					irqReq[0]:				begin injectAddr <= 7'd0;  injectEnd <= 7'd11; end	// Timer
+					irqReq[1]:				begin injectAddr <= 7'd19; injectEnd <= 7'd32; end	// Ext
+					isecall:				begin injectAddr <= 7'd41; injectEnd <= 7'd52; end	// Software: environment call
+					isebreak:				begin injectAddr <= 7'd61; injectEnd <= 7'd72; end	// Software: debug breakpoint
+				    isillegalinstruction:	begin injectAddr <= 7'd81; injectEnd <= 7'd92; end	// Software: illegal instruction
 				endcase
 
 				fetchmode <= STARTINJECT;
@@ -259,11 +259,11 @@ always @(posedge aclk) begin
 			EXITISR: begin
 				// Inject exit instruction sequence (see table at microcode ROM section)
 				unique case (1'b1)
-				    isillegalinstruction:	begin injectAddr <= 7'd93; injectEnd <= 7'd100; end	// Software: illegal instruction
-					isebreak:				begin injectAddr <= 7'd73; injectEnd <= 7'd80; end	// Software: debug breakpoint
-					isecall:				begin injectAddr <= 7'd53; injectEnd <= 7'd60; end	// Software: environment call
-					irqReq[1]:				begin injectAddr <= 7'd33; injectEnd <= 7'd40; end	// Ext
 					irqReq[0]:				begin injectAddr <= 7'd12; injectEnd <= 7'd18; end	// Timer
+					irqReq[1]:				begin injectAddr <= 7'd33; injectEnd <= 7'd40; end	// Ext
+					isecall:				begin injectAddr <= 7'd53; injectEnd <= 7'd60; end	// Software: environment call
+					isebreak:				begin injectAddr <= 7'd73; injectEnd <= 7'd80; end	// Software: debug breakpoint
+				    isillegalinstruction:	begin injectAddr <= 7'd93; injectEnd <= 7'd100; end	// Software: illegal instruction
 				endcase
 
 				fetchmode <= STARTINJECT;

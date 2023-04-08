@@ -25,14 +25,19 @@ assign romReady = ROMavailable;
 // Boot ROM (grouped as 128bit (16 byte) cache line entries)
 // ------------------------------------------------------------------------------------
 
-localparam ROMSTART = 32'h0FFE0000;
-localparam ROMSIZE = 4621; // Make sure to match this to mem entry count
-localparam ROMEND = ROMSTART + (ROMSIZE-1)*16;
+localparam ROMSTART = 32'h0FFE0000;						// This is also the reset vector
+localparam ROMIMAGESIZE = 4608;							// Make sure to match this to mem entry count
+localparam ROMSIZE = 8192;								// Full size of the actual ROM including blank space
+localparam ROMIMAGEEND = ROMSTART + (ROMSIZE-1)*16;		// We assume a full ROM image of 8192 entries
 logic [12:0] bootROMaddr;
 logic [127:0] bootROM[0:ROMSIZE-1];
 
 initial begin
+	// Replace start with actual ROM contents
 	$readmemh("romimage.mem", bootROM);
+	// Zero-init the rest
+	for (int i=ROMIMAGESIZE; i<ROMSIZE; ++i)
+		bootROM[i] = 128'd0;
 end
 
 logic [127:0] bootROMdout;
@@ -315,7 +320,7 @@ always_ff @(posedge aclk) begin
 			INIT: begin
 				// Set up for 128Kbytes of ROM copy starting at 0x0FFE0000
 				dmaop_target_copy <= ROMSTART;
-				dmaop_target_end <= ROMEND;
+				dmaop_target_end <= ROMIMAGEEND;
 
 				romre <= 1'b0;
 				dmawritestate <= STARTCOPYROM;

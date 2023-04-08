@@ -208,4 +208,4 @@ set_clock_groups -name asyncG -asynchronous -group [get_clocks -of_objects [get_
 ## ------------------------------------------------------------------------------------------------------
 
 ## There is no path from GPU to I$, only appears so because we're connected to the same bus
-set_false_path -from [get_pins {socinstance/GPU/m_axi\\.araddr_reg/CLK}] -to [get_pins socinstance/instructionfetch/instructioncacheinst/instructioncachectlinst/dout_reg*/CE]
+## set_false_path -from [get_pins {socinstance/GPU/m_axi\\.araddr_reg/CLK}] -to [get_pins socinstance/fetchdecodeinst/instructioncacheinst/instructioncachectlinst/dout_reg*/CE]
