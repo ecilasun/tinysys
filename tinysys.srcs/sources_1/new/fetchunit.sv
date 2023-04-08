@@ -101,8 +101,9 @@ decoder decoderinst(
 	leaveIllegalISR    93          100
 */
 
-logic [6:0] injectAddr = 7'd0;
-logic [6:0] injectStop = 7'd0;
+logic [6:0] injectAddr = 7'd0;	// Instruction injection start and read address
+logic [6:0] injectStop = 7'd0;	// Instruction injection stop address
+logic [3:0] entryState = 4'd0;	// State at entry time
 
 logic [31:0] injectionROM [0:100];
 
@@ -267,6 +268,9 @@ always @(posedge aclk) begin
 					end
 				endcase
 
+				// Save states for exit time
+				entryState <= {isillegalinstruction, isebreak, isecall, irqReq[1], irqReq[0]};
+
 				fetchmode <= STARTINJECT;
 				postInject <= POSTENTER;
 			end
@@ -274,23 +278,23 @@ always @(posedge aclk) begin
 			EXITISR: begin
 				// Inject exit instruction sequence (see table at microcode ROM section)
 				unique case (1'b1)
-					irqReq[0]: begin // Interrupt:Timer
+					entryState[0]: begin // Interrupt:Timer
 						injectAddr <= 7'd12;
 						injectStop <= 7'd19;
 					end
-					irqReq[1]: begin // Interrupt:Ext
+					entryState[1]: begin // Interrupt:Ext
 						injectAddr <= 7'd33;
 						injectStop <= 7'd41;
 					end
-					isecall: begin // Exception: Environment call
+					entryState[2]: begin // Exception: Environment call
 						injectAddr <= 7'd53;
 						injectStop <= 7'd61;
 					end
-					isebreak: begin // Exception: Debug breakpoint
+					entryState[3]: begin // Exception: Debug breakpoint
 						injectAddr <= 7'd73;
 						injectStop <= 7'd81;
 					end
-				    isillegalinstruction: begin // Exception: Illegal instruction
+				    entryState[4]: begin // Exception: Illegal instruction
 						injectAddr <= 7'd93;
 						injectStop <= 7'd101;
 					end
