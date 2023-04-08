@@ -103,7 +103,7 @@ decoder decoderinst(
 
 logic [6:0] injectAddr = 7'd0;	// Instruction injection start and read address
 logic [6:0] injectStop = 7'd0;	// Instruction injection stop address
-logic [3:0] entryState = 4'd0;	// State at entry time
+logic [4:0] entryState = 5'd0;	// State at entry time
 
 logic [31:0] injectionROM [0:100];
 

@@ -26,18 +26,17 @@ assign romReady = ROMavailable;
 // ------------------------------------------------------------------------------------
 
 localparam ROMSTART = 32'h0FFE0000;						// This is also the reset vector
-localparam ROMIMAGESIZE = 4686;							// Make sure to match this to mem entry count
 localparam ROMSIZE = 8192;								// Full size of the actual ROM including blank space
 localparam ROMIMAGEEND = ROMSTART + (ROMSIZE-1)*16;		// We assume a full ROM image of 8192 entries
 logic [12:0] bootROMaddr;
 logic [127:0] bootROM[0:ROMSIZE-1];
 
 initial begin
-	// Replace start with actual ROM contents
-	$readmemh("romimage.mem", bootROM);
-	// Zero-init the rest
-	for (int i=ROMIMAGESIZE; i<ROMSIZE; ++i)
+	// Zero-init the entire ROM
+	for (int i=0; i<ROMSIZE; ++i)
 		bootROM[i] = 128'd0;
+	// Replace start section with actual ROM contents
+	$readmemh("romimage.mem", bootROM);
 end
 
 logic [127:0] bootROMdout;
