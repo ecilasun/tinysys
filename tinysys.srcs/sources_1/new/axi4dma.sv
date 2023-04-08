@@ -26,7 +26,7 @@ assign romReady = ROMavailable;
 // ------------------------------------------------------------------------------------
 
 localparam ROMSTART = 32'h0FFE0000;						// This is also the reset vector
-localparam ROMIMAGESIZE = 4608;							// Make sure to match this to mem entry count
+localparam ROMIMAGESIZE = 4688;							// Make sure to match this to mem entry count
 localparam ROMSIZE = 8192;								// Full size of the actual ROM including blank space
 localparam ROMIMAGEEND = ROMSTART + (ROMSIZE-1)*16;		// We assume a full ROM image of 8192 entries
 logic [12:0] bootROMaddr;

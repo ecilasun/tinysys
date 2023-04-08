@@ -102,7 +102,7 @@ decoder decoderinst(
 */
 
 logic [6:0] injectAddr = 7'd0;
-logic [6:0] injectEnd = 7'd0;
+logic [6:0] injectStop = 7'd0;
 
 logic [31:0] injectionROM [0:100];
 
@@ -245,11 +245,26 @@ always @(posedge aclk) begin
 			ENTERISR: begin
 				// Inject entry instruction sequence (see table at microcode ROM section)
 				unique case (1'b1)
-					irqReq[0]:				begin injectAddr <= 7'd0;  injectEnd <= 7'd11; end	// Timer
-					irqReq[1]:				begin injectAddr <= 7'd19; injectEnd <= 7'd32; end	// Ext
-					isecall:				begin injectAddr <= 7'd41; injectEnd <= 7'd52; end	// Software: environment call
-					isebreak:				begin injectAddr <= 7'd61; injectEnd <= 7'd72; end	// Software: debug breakpoint
-				    isillegalinstruction:	begin injectAddr <= 7'd81; injectEnd <= 7'd92; end	// Software: illegal instruction
+					irqReq[0]: begin // Interrupt:Timer
+						injectAddr <= 7'd0;
+						injectStop <= 7'd11;
+					end
+					irqReq[1]: begin // Interrupt:Ext
+						injectAddr <= 7'd19;
+						injectStop <= 7'd32;
+					end
+					isecall: begin // Exception: Environment call
+						injectAddr <= 7'd41;
+						injectStop <= 7'd52;
+					end
+					isebreak: begin // Exception: Debug breakpoint
+						injectAddr <= 7'd61;
+						injectStop <= 7'd72;
+					end
+				    isillegalinstruction: begin // Exception: Illegal instruction
+						injectAddr <= 7'd81;
+						injectStop <= 7'd92;
+					end
 				endcase
 
 				fetchmode <= STARTINJECT;
@@ -259,11 +274,26 @@ always @(posedge aclk) begin
 			EXITISR: begin
 				// Inject exit instruction sequence (see table at microcode ROM section)
 				unique case (1'b1)
-					irqReq[0]:				begin injectAddr <= 7'd12; injectEnd <= 7'd18; end	// Timer
-					irqReq[1]:				begin injectAddr <= 7'd33; injectEnd <= 7'd40; end	// Ext
-					isecall:				begin injectAddr <= 7'd53; injectEnd <= 7'd60; end	// Software: environment call
-					isebreak:				begin injectAddr <= 7'd73; injectEnd <= 7'd80; end	// Software: debug breakpoint
-				    isillegalinstruction:	begin injectAddr <= 7'd93; injectEnd <= 7'd100; end	// Software: illegal instruction
+					irqReq[0]: begin // Interrupt:Timer
+						injectAddr <= 7'd12;
+						injectStop <= 7'd18;
+					end
+					irqReq[1]: begin // Interrupt:Ext
+						injectAddr <= 7'd33;
+						injectStop <= 7'd40;
+					end
+					isecall: begin // Exception: Environment call
+						injectAddr <= 7'd53;
+						injectStop <= 7'd60;
+					end
+					isebreak: begin // Exception: Debug breakpoint
+						injectAddr <= 7'd73;
+						injectStop <= 7'd80;
+					end
+				    isillegalinstruction: begin // Exception: Illegal instruction
+						injectAddr <= 7'd93;
+						injectStop <= 7'd100;
+					end
 				endcase
 
 				fetchmode <= STARTINJECT;
@@ -288,7 +318,11 @@ always @(posedge aclk) begin
 					rs1, rs2, rd,
 					PC, immed};
 
-				fetchmode <= (injectAddr == injectEnd) ? postInject : STARTINJECT;
+				if (injectAddr == injectStop) begin
+					fetchmode <= postInject;
+				end else begin
+					fetchmode <= STARTINJECT;
+				end
 			end
 
 			POSTENTER: begin
@@ -319,7 +353,8 @@ always @(posedge aclk) begin
 			end
 
 			WFI: begin
-				// TODO: NOOP when interrupts are disabled?
+				// NOTE: When global interrupts or machine external interrupts are disabled,
+				// this will end up holding the core in a suspended state.
 				fetchena <= (|irqReq);
 				fetchmode <= (|irqReq) ? FETCH : WFI;
 			end
