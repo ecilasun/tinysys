@@ -304,11 +304,10 @@ always @(posedge aclk) begin
 				// NOTE: This destroys decoded values from the actual instruction
 				IR <= injectInstruction;
 				injectAddr <= injectAddr + 1;
-				fetchmode <= INJECT;
+				fetchmode <= injectAddr == injectStop ? postInject : INJECT;
 			end
 
 			INJECT: begin
-				// Ignore ifence, interrupts and never advance the PC
 				ififowr_en <= 1'b1;
 				ififodin <= {
 					rs3, func7, csroffset,
@@ -318,11 +317,8 @@ always @(posedge aclk) begin
 					rs1, rs2, rd,
 					PC, immed};
 
-				if (injectAddr == injectStop) begin
-					fetchmode <= postInject;
-				end else begin
-					fetchmode <= STARTINJECT;
-				end
+				// WARNING: Injection ignores all instruction handling and never advances the PC
+				fetchmode <= STARTINJECT;
 			end
 
 			POSTENTER: begin
