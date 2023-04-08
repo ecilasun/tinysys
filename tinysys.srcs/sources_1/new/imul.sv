@@ -29,6 +29,7 @@ mult_gen_0 signextendedmultiplier(
 
 always_ff @(posedge aclk) begin
 	if (~aresetn) begin
+		product <= 32'd0;
 //		busy <= 1'b0;
 //		busy2 <= 1'b0;
 	end else begin

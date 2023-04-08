@@ -125,9 +125,9 @@ always_comb begin
 			endcase
 		end
 
-		/*default: begin
+		default: begin
 			aluop = `ALU_NONE;
-		end*/
+		end
 	endcase
 end
 
@@ -147,9 +147,9 @@ always_comb begin
 			endcase
 		end
 
-		/*default: begin
+		default: begin
 			bluop = `BLU_NONE;
-		end*/
+		end
 	endcase
 end
 
@@ -172,17 +172,13 @@ always_comb begin
 			immed = {{20{instruction[31]}}, instruction[7], instruction[30:25], instruction[11:8], 1'b0};
 		end
 
-		instrOneHot[`O_H_OP_IMM], instrOneHot[`O_H_FLOAT_LDW], instrOneHot[`O_H_LOAD], instrOneHot[`O_H_JALR]: begin
-			immed = {{21{instruction[31]}}, instruction[30:20]};
-		end
-
 		instrOneHot[`O_H_SYSTEM]: begin
 			immed = {27'd0, instruction[19:15]};
 		end
 
-		/*default: begin
-			immed = 32'd0;
-		end*/
+		default/*instrOneHot[`O_H_OP_IMM], instrOneHot[`O_H_FLOAT_LDW], instrOneHot[`O_H_LOAD], instrOneHot[`O_H_JALR]*/: begin
+			immed = {{21{instruction[31]}}, instruction[30:20]};
+		end
 	endcase
 end
 

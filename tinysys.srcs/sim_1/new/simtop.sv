@@ -51,6 +51,8 @@ ddr3_model ddr3simmod(
     .tdqs_n(), // out
     .odt(ddr3_odt) );
 
+wire spi_mosi;
+wire spi_miso = spi_mosi; // nul device
 tophat main(
     .sys_clk(boardclock),
     .sys_rst_n(boardresetn),
@@ -73,7 +75,18 @@ tophat main(
 	.ddr3_dm(ddr3_dm),
 	.ddr3_dqs_p(ddr3_dqs_p),
 	.ddr3_dqs_n(ddr3_dqs_n),
-	.ddr3_dq(ddr3_dq));
+	.ddr3_dq(ddr3_dq),
+	// DVI -> HDMI
+	.hdmi_tx_p(),
+	.hdmi_tx_n(),
+	.hdmi_tx_clk_p(),
+	.hdmi_tx_clk_n(),
+	// Micro SD Card
+	.spi_miso(spi_miso),
+	.spi_cs_n(),
+	.spi_clk(),
+	.spi_mosi(spi_mosi),
+	.spi_swtch(1'b0) );
 
 always begin
 	#10

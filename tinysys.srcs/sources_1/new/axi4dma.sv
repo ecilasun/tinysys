@@ -21,13 +21,15 @@ assign dmabusy = dmainprogress;
 
 assign romReady = ROMavailable;
 
-// --------------------------------------------------
-// Boot ROM
-// Grouped as 128bit (16 byte) cache line entries
-// --------------------------------------------------
+// ------------------------------------------------------------------------------------
+// Boot ROM (grouped as 128bit (16 byte) cache line entries)
+// ------------------------------------------------------------------------------------
 
+localparam ROMSTART = 32'h0FFE0000;
+localparam ROMSIZE = 4621; // Make sure to match this to mem entry count
+localparam ROMEND = ROMSTART + (ROMSIZE-1)*16;
 logic [12:0] bootROMaddr;
-logic [127:0] bootROM[0:8191];
+logic [127:0] bootROM[0:ROMSIZE-1];
 
 initial begin
 	$readmemh("romimage.mem", bootROM);
@@ -293,7 +295,7 @@ dmawritestatetype dmawritestate = INIT;
 
 logic [127:0] copydata;
 logic [31:0] dmaop_target_copy;
-logic [31:0] dmaop_count_copy;
+logic [31:0] dmaop_target_end;
 
 always_ff @(posedge aclk) begin
 	if (~aresetn) begin
@@ -303,6 +305,7 @@ always_ff @(posedge aclk) begin
 		m_axi.wlast <= 0;
 		m_axi.bready <= 0;
 		ROMavailable <= 1'b0;
+		bootROMaddr <= 13'd0;
 		dmawritestate <= INIT;
 	end else begin
 		dmacopyre <= 1'b0;
@@ -311,10 +314,10 @@ always_ff @(posedge aclk) begin
 		case (dmawritestate)
 			INIT: begin
 				// Set up for 128Kbytes of ROM copy starting at 0x0FFE0000
-				dmaop_target_copy <= 32'h0FFE0000;
-				dmaop_count_copy <= 32'd8192;
+				dmaop_target_copy <= ROMSTART;
+				dmaop_target_end <= ROMEND;
+
 				romre <= 1'b0;
-				bootROMaddr <= 13'd0;
 				dmawritestate <= STARTCOPYROM;
 			end
 
@@ -336,7 +339,6 @@ always_ff @(posedge aclk) begin
 					m_axi.wlast <= 1'b1;
 
 					bootROMaddr <= bootROMaddr + 13'd1;
-					dmaop_count_copy <= dmaop_count_copy - 'd1;
 
 					dmawritestate <= ROMWAITWREADY;
 				end
@@ -355,16 +357,16 @@ always_ff @(posedge aclk) begin
 			ROMWAITBREADY: begin
 				if (m_axi.bvalid /*&& m_axi.bready*/) begin
 					m_axi.bready <= 0;
-					ROMavailable <= (dmaop_count_copy == 0) ? 1'b1 : 1'b0;
+					ROMavailable <= (dmaop_target_copy == dmaop_target_end) ? 1'b1 : 1'b0;
 					// Drop into idle state if copy is done, otherwise loop
-					dmawritestate <= (dmaop_count_copy == 0) ? WRITEIDLE : STARTCOPYROM;
+					dmawritestate <= (dmaop_target_copy == dmaop_target_end) ? WRITEIDLE : STARTCOPYROM;
 				end
 			end
 
 			WRITEIDLE: begin
 				if (writestrobe) begin
 					dmaop_target_copy <= dmaop_target;
-					dmaop_count_copy <= dmaop_count;
+					dmaop_target_end <= dmaop_target+(dmaop_count*16-32'd1);
 					dmawritestate <= DETECTFIFO;
 				end
 			end
@@ -394,8 +396,6 @@ always_ff @(posedge aclk) begin
 					m_axi.wdata <= copydata;
 					m_axi.wlast <= 1'b1;
 
-					dmaop_count_copy <= dmaop_count_copy - 'd1;
-
 					dmawritestate <= DMAWRITELOOP;
 				end
 			end
@@ -416,7 +416,7 @@ always_ff @(posedge aclk) begin
 				if (m_axi.bvalid /*&& m_axi.bready*/) begin
 					m_axi.bready <= 0;
 					// Done with one write, go fetch the next, if any
-					dmawritestate <= (dmaop_count_copy == 0) ? WRITEIDLE : DETECTFIFO;
+					dmawritestate <= (dmaop_target_copy == dmaop_target_end) ? WRITEIDLE : DETECTFIFO;
 				end
 			end
 		endcase

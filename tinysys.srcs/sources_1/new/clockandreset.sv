@@ -60,18 +60,30 @@ end
 
 logic [31:0] resetcountdown = 32'd0;
 logic regaresetn = 1'b0;
-logic regpreresetn = 1'b0;
 
 always @(posedge aclk or negedge sys_rst_n) begin
 	if (~sys_rst_n) begin
 		resetcountdown <= 32'd0;
 		regaresetn <= 1'b0;
-		regpreresetn <= 1'b0;
 	end else begin
 		resetcountdown <= {resetcountdown[30:0], clkRdyB};
 		regaresetn <= resetcountdown[31] && ddr3ready[1];
-		regpreresetn <= clkRdyB;
 	end
+end
+
+// --------------------------------------------------
+// Pre-reset for DDR3 SDRAM & CdC
+// --------------------------------------------------
+
+logic regpreresetn = 1'b0;
+
+(* async_reg = "true" *) logic sysRdyA = 1'b0;
+(* async_reg = "true" *) logic sysRdyB = 1'b0;
+
+always @(posedge clk166) begin
+	sysRdyA <= clocksready;
+	sysRdyB <= sysRdyA;
+	regpreresetn <= sysRdyB;
 end
 
 assign aresetn = regaresetn;

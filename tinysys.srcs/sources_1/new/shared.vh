@@ -204,6 +204,8 @@
 `define CSR_MIMPID		12'hF13
 `define CSR_MHARTID		12'hF14 // immutable
 
+`define CSR_REGISTERSHADOW	12'h8A0 // These are used to store shadow copies of registers from ISRs
+
 //`define CSR_MCONFIGPTR  12'hF15
 // `define CSR_DSCRATCH    12'h340
 // `define CSR_ISAEXMISA   12'h301

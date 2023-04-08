@@ -111,12 +111,8 @@ end
 
 // Write port
 always @(posedge aclk) begin // Tied to GPU clock
-	if (~aresetn) begin
-		//
-	end else begin
-		if (palettewe)
-			paletteentries[palettewa] <= palettedin;
-	end
+	if (palettewe)
+		paletteentries[palettewa] <= palettedin;
 end
 
 // Read port

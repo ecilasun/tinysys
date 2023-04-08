@@ -3,7 +3,7 @@
 <!--                                                         -->
 <!-- Copyright 1986-2023 Xilinx, Inc. All Rights Reserved.   -->
 
-<Project Version="7" Minor="61" Path="/mnt/FCE2D133E2D0F2BE/tinysys/tinysys.xpr">
+<Project Version="7" Minor="61" Path="/mnt/560d989f-3b06-4708-85b1-fa599a0bdd0c/tinysys/tinysys.xpr">
   <DefaultLaunch Dir="$PRUNDIR"/>
   <Configuration>
     <Option Name="Id" Val="d12fb96cba4644f29e40fdae57b84f89"/>
@@ -57,20 +57,20 @@
     <Option Name="IPUserFilesDir" Val="$PIPUSERFILESDIR"/>
     <Option Name="IPStaticSourceDir" Val="$PIPUSERFILESDIR/ipstatic"/>
     <Option Name="EnableBDX" Val="FALSE"/>
-    <Option Name="WTXSimLaunchSim" Val="160"/>
+    <Option Name="WTXSimLaunchSim" Val="173"/>
     <Option Name="WTModelSimLaunchSim" Val="0"/>
     <Option Name="WTQuestaLaunchSim" Val="0"/>
     <Option Name="WTIesLaunchSim" Val="0"/>
     <Option Name="WTVcsLaunchSim" Val="0"/>
     <Option Name="WTRivieraLaunchSim" Val="0"/>
     <Option Name="WTActivehdlLaunchSim" Val="0"/>
-    <Option Name="WTXSimExportSim" Val="192"/>
-    <Option Name="WTModelSimExportSim" Val="192"/>
-    <Option Name="WTQuestaExportSim" Val="192"/>
+    <Option Name="WTXSimExportSim" Val="194"/>
+    <Option Name="WTModelSimExportSim" Val="194"/>
+    <Option Name="WTQuestaExportSim" Val="194"/>
     <Option Name="WTIesExportSim" Val="0"/>
-    <Option Name="WTVcsExportSim" Val="192"/>
-    <Option Name="WTRivieraExportSim" Val="192"/>
-    <Option Name="WTActivehdlExportSim" Val="192"/>
+    <Option Name="WTVcsExportSim" Val="194"/>
+    <Option Name="WTRivieraExportSim" Val="194"/>
+    <Option Name="WTActivehdlExportSim" Val="194"/>
     <Option Name="GenerateIPUpgradeLog" Val="TRUE"/>
     <Option Name="XSimRadix" Val="hex"/>
     <Option Name="XSimTimeUnit" Val="ns"/>
