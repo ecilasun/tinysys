@@ -13,20 +13,20 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="2,361.026666667 us"></ZoomStartTime>
-      <ZoomEndTime time="2,907.226666668 us"></ZoomEndTime>
-      <Cursor1Time time="2,586.858501000 us"></Cursor1Time>
+      <ZoomStartTime time="3,345,034.600000 ns"></ZoomStartTime>
+      <ZoomEndTime time="3,350,376.600001 ns"></ZoomEndTime>
+      <Cursor1Time time="3,346,304.600000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="248"></NameColumnWidth>
-      <ValueColumnWidth column_width="128"></ValueColumnWidth>
+      <NameColumnWidth column_width="366"></NameColumnWidth>
+      <ValueColumnWidth column_width="192"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="371" />
+   <WVObjectSize size="216" />
    <wave_markers>
-      <marker label="" time="124244000000" />
-      <marker label="" time="1229920000000" />
-      <marker label="" time="2221901819438" />
-      <marker label="" time="2452059983334" />
+      <marker label="" time="124274100000" />
+      <marker label="" time="2090070000000" />
+      <marker label="" time="3083299200000" />
+      <marker label="" time="3279660000000" />
    </wave_markers>
    <wvobject fp_name="divider23" type="divider">
       <obj_property name="label">board</obj_property>
@@ -112,10 +112,6 @@
       <obj_property name="ElementShortName">ififord_en</obj_property>
       <obj_property name="ObjectShortName">ififord_en</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/irqReq">
-      <obj_property name="ElementShortName">irqReq[1:0]</obj_property>
-      <obj_property name="ObjectShortName">irqReq[1:0]</obj_property>
-   </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/mepc">
       <obj_property name="ElementShortName">mepc[31:0]</obj_property>
       <obj_property name="ObjectShortName">mepc[31:0]</obj_property>
@@ -139,10 +135,6 @@
    <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/PC">
       <obj_property name="ElementShortName">PC[31:0]</obj_property>
       <obj_property name="ObjectShortName">PC[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/IR">
-      <obj_property name="ElementShortName">IR[31:0]</obj_property>
-      <obj_property name="ObjectShortName">IR[31:0]</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/rready">
       <obj_property name="ElementShortName">rready</obj_property>
@@ -208,21 +200,33 @@
       <obj_property name="ElementShortName">selectimmedasrval2</obj_property>
       <obj_property name="ObjectShortName">selectimmedasrval2</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/injectAddr">
-      <obj_property name="ElementShortName">injectAddr[6:0]</obj_property>
-      <obj_property name="ObjectShortName">injectAddr[6:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/injectEnd">
-      <obj_property name="ElementShortName">injectEnd[6:0]</obj_property>
-      <obj_property name="ObjectShortName">injectEnd[6:0]</obj_property>
-   </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/injectionROM">
       <obj_property name="ElementShortName">injectionROM[0:100][31:0]</obj_property>
       <obj_property name="ObjectShortName">injectionROM[0:100][31:0]</obj_property>
    </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/injectAddr">
+      <obj_property name="ElementShortName">injectAddr[6:0]</obj_property>
+      <obj_property name="ObjectShortName">injectAddr[6:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/injectStop">
+      <obj_property name="ElementShortName">injectStop[6:0]</obj_property>
+      <obj_property name="ObjectShortName">injectStop[6:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/injectInstruction">
       <obj_property name="ElementShortName">injectInstruction[31:0]</obj_property>
       <obj_property name="ObjectShortName">injectInstruction[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/IR">
+      <obj_property name="ElementShortName">IR[31:0]</obj_property>
+      <obj_property name="ObjectShortName">IR[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/ififodin">
       <obj_property name="ElementShortName">ififodin[143:0]</obj_property>
@@ -236,45 +240,71 @@
       <obj_property name="ElementShortName">ififofull</obj_property>
       <obj_property name="ObjectShortName">ififofull</obj_property>
    </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/irqReq">
+      <obj_property name="ElementShortName">irqReq[1:0]</obj_property>
+      <obj_property name="ObjectShortName">irqReq[1:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
    <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/isbranch">
       <obj_property name="ElementShortName">isbranch</obj_property>
       <obj_property name="ObjectShortName">isbranch</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/isfence">
       <obj_property name="ElementShortName">isfence</obj_property>
       <obj_property name="ObjectShortName">isfence</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/isdiscard">
       <obj_property name="ElementShortName">isdiscard</obj_property>
       <obj_property name="ObjectShortName">isdiscard</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/isflush">
       <obj_property name="ElementShortName">isflush</obj_property>
       <obj_property name="ObjectShortName">isflush</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/ismret">
       <obj_property name="ElementShortName">ismret</obj_property>
       <obj_property name="ObjectShortName">ismret</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/iswfi">
       <obj_property name="ElementShortName">iswfi</obj_property>
       <obj_property name="ObjectShortName">iswfi</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/isebreak">
       <obj_property name="ElementShortName">isebreak</obj_property>
       <obj_property name="ObjectShortName">isebreak</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/isecall">
       <obj_property name="ElementShortName">isecall</obj_property>
       <obj_property name="ObjectShortName">isecall</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/simtop/main/socinstance/fetchdecodeinst/isillegalinstruction">
       <obj_property name="ElementShortName">isillegalinstruction</obj_property>
       <obj_property name="ObjectShortName">isillegalinstruction</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/fetchmode">
       <obj_property name="ElementShortName">fetchmode[3:0]</obj_property>
       <obj_property name="ObjectShortName">fetchmode[3:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/fetchdecodeinst/postInject">
       <obj_property name="ElementShortName">postInject[3:0]</obj_property>
@@ -589,6 +619,8 @@
    <wvobject type="array" fp_name="/simtop/main/socinstance/csrfileinst/irqReq">
       <obj_property name="ElementShortName">irqReq[1:0]</obj_property>
       <obj_property name="ObjectShortName">irqReq[1:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/simtop/main/socinstance/csrfileinst/uartrcvempty">
       <obj_property name="ElementShortName">uartrcvempty</obj_property>
@@ -639,10 +671,14 @@
    <wvobject type="array" fp_name="/simtop/main/socinstance/csrfileinst/cswraddr">
       <obj_property name="ElementShortName">cswraddr[11:0]</obj_property>
       <obj_property name="ObjectShortName">cswraddr[11:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/csrfileinst/csrraddr">
       <obj_property name="ElementShortName">csrraddr[11:0]</obj_property>
       <obj_property name="ObjectShortName">csrraddr[11:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/csrfileinst/csrdin">
       <obj_property name="ElementShortName">csrdin[31:0]</obj_property>
@@ -675,30 +711,6 @@
    <wvobject fp_name="divider197" type="divider">
       <obj_property name="label">uart</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/uartinst/aclk">
-      <obj_property name="ElementShortName">aclk</obj_property>
-      <obj_property name="ObjectShortName">aclk</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/uartinst/uartclk">
-      <obj_property name="ElementShortName">uartclk</obj_property>
-      <obj_property name="ObjectShortName">uartclk</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/uartinst/aresetn">
-      <obj_property name="ElementShortName">aresetn</obj_property>
-      <obj_property name="ObjectShortName">aresetn</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/uartinst/uart_rxd_out">
-      <obj_property name="ElementShortName">uart_rxd_out</obj_property>
-      <obj_property name="ObjectShortName">uart_rxd_out</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/uartinst/uart_txd_in">
-      <obj_property name="ElementShortName">uart_txd_in</obj_property>
-      <obj_property name="ObjectShortName">uart_txd_in</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/uartinst/uartrcvempty">
-      <obj_property name="ElementShortName">uartrcvempty</obj_property>
-      <obj_property name="ObjectShortName">uartrcvempty</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/uartinst/waddrstate">
       <obj_property name="ElementShortName">waddrstate[1:0]</obj_property>
@@ -739,6 +751,8 @@
    <wvobject type="array" fp_name="/simtop/main/socinstance/uartinst/uartsenddout">
       <obj_property name="ElementShortName">uartsenddout[7:0]</obj_property>
       <obj_property name="ObjectShortName">uartsenddout[7:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/simtop/main/socinstance/uartinst/uartsendfull">
       <obj_property name="ElementShortName">uartsendfull</obj_property>
@@ -759,398 +773,6 @@
    <wvobject type="array" fp_name="/simtop/main/socinstance/uartinst/uartbytein">
       <obj_property name="ElementShortName">uartbytein[7:0]</obj_property>
       <obj_property name="ObjectShortName">uartbytein[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/uartinst/uartrcvfull">
-      <obj_property name="ElementShortName">uartrcvfull</obj_property>
-      <obj_property name="ObjectShortName">uartrcvfull</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/uartinst/uartrcvvalid">
-      <obj_property name="ElementShortName">uartrcvvalid</obj_property>
-      <obj_property name="ObjectShortName">uartrcvvalid</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/uartinst/uartrcvdin">
-      <obj_property name="ElementShortName">uartrcvdin[7:0]</obj_property>
-      <obj_property name="ObjectShortName">uartrcvdin[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/uartinst/uartrcvdout">
-      <obj_property name="ElementShortName">uartrcvdout[7:0]</obj_property>
-      <obj_property name="ObjectShortName">uartrcvdout[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/uartinst/uartrcvre">
-      <obj_property name="ElementShortName">uartrcvre</obj_property>
-      <obj_property name="ObjectShortName">uartrcvre</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/uartinst/uartrcvwe">
-      <obj_property name="ElementShortName">uartrcvwe</obj_property>
-      <obj_property name="ObjectShortName">uartrcvwe</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/uartinst/BAUDRATE">
-      <obj_property name="ElementShortName">BAUDRATE[31:0]</obj_property>
-      <obj_property name="ObjectShortName">BAUDRATE[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/uartinst/FREQ">
-      <obj_property name="ElementShortName">FREQ[31:0]</obj_property>
-      <obj_property name="ObjectShortName">FREQ[31:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="divider763" type="divider">
-      <obj_property name="label">SPI</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/spictlinst/aclk">
-      <obj_property name="ElementShortName">aclk</obj_property>
-      <obj_property name="ObjectShortName">aclk</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/spictlinst/aresetn">
-      <obj_property name="ElementShortName">aresetn</obj_property>
-      <obj_property name="ObjectShortName">aresetn</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/spictlinst/spibaseclock">
-      <obj_property name="ElementShortName">spibaseclock</obj_property>
-      <obj_property name="ObjectShortName">spibaseclock</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/spictlinst/writestate">
-      <obj_property name="ElementShortName">writestate</obj_property>
-      <obj_property name="ObjectShortName">writestate</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/spictlinst/raddrstate">
-      <obj_property name="ElementShortName">raddrstate</obj_property>
-      <obj_property name="ObjectShortName">raddrstate</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/spictlinst/writedata">
-      <obj_property name="ElementShortName">writedata[7:0]</obj_property>
-      <obj_property name="ObjectShortName">writedata[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/spictlinst/readdata">
-      <obj_property name="ElementShortName">readdata[7:0]</obj_property>
-      <obj_property name="ObjectShortName">readdata[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/spictlinst/we">
-      <obj_property name="ElementShortName">we</obj_property>
-      <obj_property name="ObjectShortName">we</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/spictlinst/cansend">
-      <obj_property name="ElementShortName">cansend</obj_property>
-      <obj_property name="ObjectShortName">cansend</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/spictlinst/hasvaliddata">
-      <obj_property name="ElementShortName">hasvaliddata</obj_property>
-      <obj_property name="ObjectShortName">hasvaliddata</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/spictlinst/spiincomingdata">
-      <obj_property name="ElementShortName">spiincomingdata[7:0]</obj_property>
-      <obj_property name="ObjectShortName">spiincomingdata[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/spictlinst/infifofull">
-      <obj_property name="ElementShortName">infifofull</obj_property>
-      <obj_property name="ObjectShortName">infifofull</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/spictlinst/infifoempty">
-      <obj_property name="ElementShortName">infifoempty</obj_property>
-      <obj_property name="ObjectShortName">infifoempty</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/spictlinst/infifovalid">
-      <obj_property name="ElementShortName">infifovalid</obj_property>
-      <obj_property name="ObjectShortName">infifovalid</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/spictlinst/infifowe">
-      <obj_property name="ElementShortName">infifowe</obj_property>
-      <obj_property name="ObjectShortName">infifowe</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/spictlinst/infifore">
-      <obj_property name="ElementShortName">infifore</obj_property>
-      <obj_property name="ObjectShortName">infifore</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/spictlinst/infifodin">
-      <obj_property name="ElementShortName">infifodin[7:0]</obj_property>
-      <obj_property name="ObjectShortName">infifodin[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/spictlinst/infifodout">
-      <obj_property name="ElementShortName">infifodout[7:0]</obj_property>
-      <obj_property name="ObjectShortName">infifodout[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/spictlinst/outfifofull">
-      <obj_property name="ElementShortName">outfifofull</obj_property>
-      <obj_property name="ObjectShortName">outfifofull</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/spictlinst/outfifoempty">
-      <obj_property name="ElementShortName">outfifoempty</obj_property>
-      <obj_property name="ObjectShortName">outfifoempty</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/spictlinst/outfifovalid">
-      <obj_property name="ElementShortName">outfifovalid</obj_property>
-      <obj_property name="ObjectShortName">outfifovalid</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/spictlinst/outfifowe">
-      <obj_property name="ElementShortName">outfifowe</obj_property>
-      <obj_property name="ObjectShortName">outfifowe</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/spictlinst/outfifore">
-      <obj_property name="ElementShortName">outfifore</obj_property>
-      <obj_property name="ObjectShortName">outfifore</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/spictlinst/outfifodin">
-      <obj_property name="ElementShortName">outfifodin[7:0]</obj_property>
-      <obj_property name="ObjectShortName">outfifodin[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/spictlinst/outfifodout">
-      <obj_property name="ElementShortName">outfifodout[7:0]</obj_property>
-      <obj_property name="ObjectShortName">outfifodout[7:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="divider264" type="divider">
-      <obj_property name="label">I$</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-   </wvobject>
-   <wvobject fp_name="divider405" type="divider">
-      <obj_property name="label">dataunit</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/aclk">
-      <obj_property name="ElementShortName">aclk</obj_property>
-      <obj_property name="ObjectShortName">aclk</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/aresetn">
-      <obj_property name="ElementShortName">aresetn</obj_property>
-      <obj_property name="ObjectShortName">aresetn</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/datare">
-      <obj_property name="ElementShortName">datare</obj_property>
-      <obj_property name="ObjectShortName">datare</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datawe">
-      <obj_property name="ElementShortName">datawe[3:0]</obj_property>
-      <obj_property name="ObjectShortName">datawe[3:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/dataout">
-      <obj_property name="ElementShortName">dataout[31:0]</obj_property>
-      <obj_property name="ObjectShortName">dataout[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/addrs">
-      <obj_property name="ElementShortName">addrs[31:0]</obj_property>
-      <obj_property name="ObjectShortName">addrs[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datain">
-      <obj_property name="ElementShortName">datain[31:0]</obj_property>
-      <obj_property name="ObjectShortName">datain[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/dreg">
-      <obj_property name="ElementShortName">dreg[4:0]</obj_property>
-      <obj_property name="ObjectShortName">dreg[4:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/wbtype">
-      <obj_property name="ElementShortName">wbtype[4:0]</obj_property>
-      <obj_property name="ObjectShortName">wbtype[4:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/dcacheop">
-      <obj_property name="ElementShortName">dcacheop[1:0]</obj_property>
-      <obj_property name="ObjectShortName">dcacheop[1:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/rready">
-      <obj_property name="ElementShortName">rready</obj_property>
-      <obj_property name="ObjectShortName">rready</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/wready">
-      <obj_property name="ElementShortName">wready</obj_property>
-      <obj_property name="ObjectShortName">wready</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datamode">
-      <obj_property name="ElementShortName">datamode[1:0]</obj_property>
-      <obj_property name="ObjectShortName">datamode[1:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="divider419" type="divider">
-      <obj_property name="label">D$</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/aclk">
-      <obj_property name="ElementShortName">aclk</obj_property>
-      <obj_property name="ObjectShortName">aclk</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/aresetn">
-      <obj_property name="ElementShortName">aresetn</obj_property>
-      <obj_property name="ObjectShortName">aresetn</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/dcacheop">
-      <obj_property name="ElementShortName">dcacheop[1:0]</obj_property>
-      <obj_property name="ObjectShortName">dcacheop[1:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/addr">
-      <obj_property name="ElementShortName">addr[31:0]</obj_property>
-      <obj_property name="ObjectShortName">addr[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/din">
-      <obj_property name="ElementShortName">din[31:0]</obj_property>
-      <obj_property name="ObjectShortName">din[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/dout">
-      <obj_property name="ElementShortName">dout[31:0]</obj_property>
-      <obj_property name="ObjectShortName">dout[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/wstrb">
-      <obj_property name="ElementShortName">wstrb[3:0]</obj_property>
-      <obj_property name="ObjectShortName">wstrb[3:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/ren">
-      <obj_property name="ElementShortName">ren</obj_property>
-      <obj_property name="ObjectShortName">ren</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/rready">
-      <obj_property name="ElementShortName">rready</obj_property>
-      <obj_property name="ObjectShortName">rready</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/wready">
-      <obj_property name="ElementShortName">wready</obj_property>
-      <obj_property name="ObjectShortName">wready</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/line">
-      <obj_property name="ElementShortName">line[7:0]</obj_property>
-      <obj_property name="ObjectShortName">line[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/tag">
-      <obj_property name="ElementShortName">tag[16:0]</obj_property>
-      <obj_property name="ObjectShortName">tag[16:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/offset">
-      <obj_property name="ElementShortName">offset[3:0]</obj_property>
-      <obj_property name="ObjectShortName">offset[3:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/isuncached">
-      <obj_property name="ElementShortName">isuncached</obj_property>
-      <obj_property name="ObjectShortName">isuncached</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/inputdata">
-      <obj_property name="ElementShortName">inputdata[31:0]</obj_property>
-      <obj_property name="ObjectShortName">inputdata[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/cacheaddress">
-      <obj_property name="ElementShortName">cacheaddress[31:0]</obj_property>
-      <obj_property name="ObjectShortName">cacheaddress[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/cachedin">
-      <obj_property name="ElementShortName">cachedin[0:3][127:0]</obj_property>
-      <obj_property name="ObjectShortName">cachedin[0:3][127:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/cachedout">
-      <obj_property name="ElementShortName">cachedout[0:3][127:0]</obj_property>
-      <obj_property name="ObjectShortName">cachedout[0:3][127:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/memwritestrobe">
-      <obj_property name="ElementShortName">memwritestrobe</obj_property>
-      <obj_property name="ObjectShortName">memwritestrobe</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/memreadstrobe">
-      <obj_property name="ElementShortName">memreadstrobe</obj_property>
-      <obj_property name="ObjectShortName">memreadstrobe</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/ucaddrs">
-      <obj_property name="ElementShortName">ucaddrs[31:0]</obj_property>
-      <obj_property name="ObjectShortName">ucaddrs[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/ucdout">
-      <obj_property name="ElementShortName">ucdout[31:0]</obj_property>
-      <obj_property name="ObjectShortName">ucdout[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/ucdin">
-      <obj_property name="ElementShortName">ucdin[31:0]</obj_property>
-      <obj_property name="ObjectShortName">ucdin[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/ucwstrb">
-      <obj_property name="ElementShortName">ucwstrb[3:0]</obj_property>
-      <obj_property name="ObjectShortName">ucwstrb[3:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/ucre">
-      <obj_property name="ElementShortName">ucre</obj_property>
-      <obj_property name="ObjectShortName">ucre</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/ucwritedone">
-      <obj_property name="ElementShortName">ucwritedone</obj_property>
-      <obj_property name="ObjectShortName">ucwritedone</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/ucreaddone">
-      <obj_property name="ElementShortName">ucreaddone</obj_property>
-      <obj_property name="ObjectShortName">ucreaddone</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/bsel">
-      <obj_property name="ElementShortName">bsel[3:0]</obj_property>
-      <obj_property name="ObjectShortName">bsel[3:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/rwmode">
-      <obj_property name="ElementShortName">rwmode[1:0]</obj_property>
-      <obj_property name="ObjectShortName">rwmode[1:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/ptag">
-      <obj_property name="ElementShortName">ptag[16:0]</obj_property>
-      <obj_property name="ObjectShortName">ptag[16:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/ctag">
-      <obj_property name="ElementShortName">ctag[16:0]</obj_property>
-      <obj_property name="ObjectShortName">ctag[16:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/coffset">
-      <obj_property name="ElementShortName">coffset[3:0]</obj_property>
-      <obj_property name="ObjectShortName">coffset[3:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/cline">
-      <obj_property name="ElementShortName">cline[7:0]</obj_property>
-      <obj_property name="ObjectShortName">cline[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/chit">
-      <obj_property name="ElementShortName">chit</obj_property>
-      <obj_property name="ObjectShortName">chit</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/cachelinewb">
-      <obj_property name="ElementShortName">cachelinewb[0:255]</obj_property>
-      <obj_property name="ObjectShortName">cachelinewb[0:255]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/cachelinevalid">
-      <obj_property name="ElementShortName">cachelinevalid[0:255]</obj_property>
-      <obj_property name="ObjectShortName">cachelinevalid[0:255]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/cachelinetags">
-      <obj_property name="ElementShortName">cachelinetags[0:255][16:0]</obj_property>
-      <obj_property name="ObjectShortName">cachelinetags[0:255][16:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/cachewe">
-      <obj_property name="ElementShortName">cachewe[63:0]</obj_property>
-      <obj_property name="ObjectShortName">cachewe[63:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/cdin">
-      <obj_property name="ElementShortName">cdin[511:0]</obj_property>
-      <obj_property name="ObjectShortName">cdin[511:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/cdout">
-      <obj_property name="ElementShortName">cdout[511:0]</obj_property>
-      <obj_property name="ObjectShortName">cdout[511:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/flushing">
-      <obj_property name="ElementShortName">flushing</obj_property>
-      <obj_property name="ObjectShortName">flushing</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/dccount">
-      <obj_property name="ElementShortName">dccount[7:0]</obj_property>
-      <obj_property name="ObjectShortName">dccount[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/flushline">
-      <obj_property name="ElementShortName">flushline[16:0]</obj_property>
-      <obj_property name="ObjectShortName">flushline[16:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/cacheaccess">
-      <obj_property name="ElementShortName">cacheaccess[7:0]</obj_property>
-      <obj_property name="ObjectShortName">cacheaccess[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/rsta_busy">
-      <obj_property name="ElementShortName">rsta_busy</obj_property>
-      <obj_property name="ObjectShortName">rsta_busy</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/rdone">
-      <obj_property name="ElementShortName">rdone</obj_property>
-      <obj_property name="ObjectShortName">rdone</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/wdone">
-      <obj_property name="ElementShortName">wdone</obj_property>
-      <obj_property name="ObjectShortName">wdone</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/dataunitinst/datacacheinst/cachestate">
-      <obj_property name="ElementShortName">cachestate[4:0]</obj_property>
-      <obj_property name="ObjectShortName">cachestate[4:0]</obj_property>
    </wvobject>
    <wvobject fp_name="divider137" type="divider">
       <obj_property name="label">DMA</obj_property>
@@ -1183,10 +805,6 @@
    <wvobject type="logic" fp_name="/simtop/main/socinstance/DMA/dmabusy">
       <obj_property name="ElementShortName">dmabusy</obj_property>
       <obj_property name="ObjectShortName">dmabusy</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/DMA/cmdre">
-      <obj_property name="ElementShortName">cmdre</obj_property>
-      <obj_property name="ObjectShortName">cmdre</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/simtop/main/socinstance/DMA/dmainprogress">
       <obj_property name="ElementShortName">dmainprogress</obj_property>
@@ -1336,205 +954,5 @@
    <wvobject type="logic" fp_name="/simtop/main/socinstance/DMA/romReady">
       <obj_property name="ElementShortName">romReady</obj_property>
       <obj_property name="ObjectShortName">romReady</obj_property>
-   </wvobject>
-   <wvobject fp_name="divider322" type="divider">
-      <obj_property name="label">GPU</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/aclk">
-      <obj_property name="ElementShortName">aclk</obj_property>
-      <obj_property name="ObjectShortName">aclk</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/clk25">
-      <obj_property name="ElementShortName">clk25</obj_property>
-      <obj_property name="ObjectShortName">clk25</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/clk125">
-      <obj_property name="ElementShortName">clk125</obj_property>
-      <obj_property name="ObjectShortName">clk125</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/aresetn">
-      <obj_property name="ElementShortName">aresetn</obj_property>
-      <obj_property name="ObjectShortName">aresetn</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/gpufifoempty">
-      <obj_property name="ElementShortName">gpufifoempty</obj_property>
-      <obj_property name="ObjectShortName">gpufifoempty</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/gpufifodout">
-      <obj_property name="ElementShortName">gpufifodout[31:0]</obj_property>
-      <obj_property name="ObjectShortName">gpufifodout[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/gpufifore">
-      <obj_property name="ElementShortName">gpufifore</obj_property>
-      <obj_property name="ObjectShortName">gpufifore</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/gpufifovalid">
-      <obj_property name="ElementShortName">gpufifovalid</obj_property>
-      <obj_property name="ObjectShortName">gpufifovalid</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/vblankcount">
-      <obj_property name="ElementShortName">vblankcount[31:0]</obj_property>
-      <obj_property name="ObjectShortName">vblankcount[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/hsync">
-      <obj_property name="ElementShortName">hsync</obj_property>
-      <obj_property name="ObjectShortName">hsync</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/vsync">
-      <obj_property name="ElementShortName">vsync</obj_property>
-      <obj_property name="ObjectShortName">vsync</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/blank">
-      <obj_property name="ElementShortName">blank</obj_property>
-      <obj_property name="ObjectShortName">blank</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/video_x">
-      <obj_property name="ElementShortName">video_x[10:0]</obj_property>
-      <obj_property name="ObjectShortName">video_x[10:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/video_y">
-      <obj_property name="ElementShortName">video_y[10:0]</obj_property>
-      <obj_property name="ObjectShortName">video_y[10:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/hsync_d">
-      <obj_property name="ElementShortName">hsync_d</obj_property>
-      <obj_property name="ObjectShortName">hsync_d</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/vsync_d">
-      <obj_property name="ElementShortName">vsync_d</obj_property>
-      <obj_property name="ObjectShortName">vsync_d</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/blank_d">
-      <obj_property name="ElementShortName">blank_d</obj_property>
-      <obj_property name="ObjectShortName">blank_d</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/out_tmds_red">
-      <obj_property name="ElementShortName">out_tmds_red[1:0]</obj_property>
-      <obj_property name="ObjectShortName">out_tmds_red[1:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/out_tmds_green">
-      <obj_property name="ElementShortName">out_tmds_green[1:0]</obj_property>
-      <obj_property name="ObjectShortName">out_tmds_green[1:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/out_tmds_blue">
-      <obj_property name="ElementShortName">out_tmds_blue[1:0]</obj_property>
-      <obj_property name="ObjectShortName">out_tmds_blue[1:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/out_tmds_clk">
-      <obj_property name="ElementShortName">out_tmds_clk[1:0]</obj_property>
-      <obj_property name="ObjectShortName">out_tmds_clk[1:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/cmdre">
-      <obj_property name="ElementShortName">cmdre</obj_property>
-      <obj_property name="ObjectShortName">cmdre</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/burstlen">
-      <obj_property name="ElementShortName">burstlen[7:0]</obj_property>
-      <obj_property name="ObjectShortName">burstlen[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/scanmode">
-      <obj_property name="ElementShortName">scanmode</obj_property>
-      <obj_property name="ObjectShortName">scanmode</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/scanlinecache">
-      <obj_property name="ElementShortName">scanlinecache[0:63][127:0]</obj_property>
-      <obj_property name="ObjectShortName">scanlinecache[0:63][127:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/localindex">
-      <obj_property name="ElementShortName">localindex[3:0]</obj_property>
-      <obj_property name="ObjectShortName">localindex[3:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/cacheindex">
-      <obj_property name="ElementShortName">cacheindex[5:0]</obj_property>
-      <obj_property name="ObjectShortName">cacheindex[5:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/palettewa">
-      <obj_property name="ElementShortName">palettewa[7:0]</obj_property>
-      <obj_property name="ObjectShortName">palettewa[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/palettewe">
-      <obj_property name="ElementShortName">palettewe</obj_property>
-      <obj_property name="ObjectShortName">palettewe</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/palettera">
-      <obj_property name="ElementShortName">palettera[7:0]</obj_property>
-      <obj_property name="ObjectShortName">palettera[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/palettedin">
-      <obj_property name="ElementShortName">palettedin[23:0]</obj_property>
-      <obj_property name="ObjectShortName">palettedin[23:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/paletteentries">
-      <obj_property name="ElementShortName">paletteentries[0:255][23:0]</obj_property>
-      <obj_property name="ObjectShortName">paletteentries[0:255][23:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/paletteout">
-      <obj_property name="ElementShortName">paletteout[23:0]</obj_property>
-      <obj_property name="ObjectShortName">paletteout[23:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/out_ddr_tmds_clk">
-      <obj_property name="ElementShortName">out_ddr_tmds_clk</obj_property>
-      <obj_property name="ObjectShortName">out_ddr_tmds_clk</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/out_ddr_tmds_red">
-      <obj_property name="ElementShortName">out_ddr_tmds_red</obj_property>
-      <obj_property name="ObjectShortName">out_ddr_tmds_red</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/out_ddr_tmds_green">
-      <obj_property name="ElementShortName">out_ddr_tmds_green</obj_property>
-      <obj_property name="ObjectShortName">out_ddr_tmds_green</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/out_ddr_tmds_blue">
-      <obj_property name="ElementShortName">out_ddr_tmds_blue</obj_property>
-      <obj_property name="ObjectShortName">out_ddr_tmds_blue</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/scanstate">
-      <obj_property name="ElementShortName">scanstate[2:0]</obj_property>
-      <obj_property name="ObjectShortName">scanstate[2:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/scanaddr">
-      <obj_property name="ElementShortName">scanaddr[31:0]</obj_property>
-      <obj_property name="ObjectShortName">scanaddr[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/scanoffset">
-      <obj_property name="ElementShortName">scanoffset[31:0]</obj_property>
-      <obj_property name="ObjectShortName">scanoffset[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/GPU/scanenable">
-      <obj_property name="ElementShortName">scanenable</obj_property>
-      <obj_property name="ObjectShortName">scanenable</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/rdata_cnt">
-      <obj_property name="ElementShortName">rdata_cnt[5:0]</obj_property>
-      <obj_property name="ObjectShortName">rdata_cnt[5:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/cmdmode">
-      <obj_property name="ElementShortName">cmdmode[2:0]</obj_property>
-      <obj_property name="ObjectShortName">cmdmode[2:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/gpucmd">
-      <obj_property name="ElementShortName">gpucmd[31:0]</obj_property>
-      <obj_property name="ObjectShortName">gpucmd[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/scanlinepre">
-      <obj_property name="ElementShortName">scanlinepre[8:0]</obj_property>
-      <obj_property name="ObjectShortName">scanlinepre[8:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/scanline">
-      <obj_property name="ElementShortName">scanline[8:0]</obj_property>
-      <obj_property name="ObjectShortName">scanline[8:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/scanpixelpre">
-      <obj_property name="ElementShortName">scanpixelpre[9:0]</obj_property>
-      <obj_property name="ObjectShortName">scanpixelpre[9:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/scanpixel">
-      <obj_property name="ElementShortName">scanpixel[9:0]</obj_property>
-      <obj_property name="ObjectShortName">scanpixel[9:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/GPU/blankcounter">
-      <obj_property name="ElementShortName">blankcounter[31:0]</obj_property>
-      <obj_property name="ObjectShortName">blankcounter[31:0]</obj_property>
    </wvobject>
 </wave_config>

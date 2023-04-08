@@ -247,23 +247,23 @@ always @(posedge aclk) begin
 				unique case (1'b1)
 					irqReq[0]: begin // Interrupt:Timer
 						injectAddr <= 7'd0;
-						injectStop <= 7'd11;
+						injectStop <= 7'd12;
 					end
 					irqReq[1]: begin // Interrupt:Ext
 						injectAddr <= 7'd19;
-						injectStop <= 7'd32;
+						injectStop <= 7'd33;
 					end
 					isecall: begin // Exception: Environment call
 						injectAddr <= 7'd41;
-						injectStop <= 7'd52;
+						injectStop <= 7'd53;
 					end
 					isebreak: begin // Exception: Debug breakpoint
 						injectAddr <= 7'd61;
-						injectStop <= 7'd72;
+						injectStop <= 7'd73;
 					end
 				    isillegalinstruction: begin // Exception: Illegal instruction
 						injectAddr <= 7'd81;
-						injectStop <= 7'd92;
+						injectStop <= 7'd93;
 					end
 				endcase
 
@@ -276,23 +276,23 @@ always @(posedge aclk) begin
 				unique case (1'b1)
 					irqReq[0]: begin // Interrupt:Timer
 						injectAddr <= 7'd12;
-						injectStop <= 7'd18;
+						injectStop <= 7'd19;
 					end
 					irqReq[1]: begin // Interrupt:Ext
 						injectAddr <= 7'd33;
-						injectStop <= 7'd40;
+						injectStop <= 7'd41;
 					end
 					isecall: begin // Exception: Environment call
 						injectAddr <= 7'd53;
-						injectStop <= 7'd60;
+						injectStop <= 7'd61;
 					end
 					isebreak: begin // Exception: Debug breakpoint
 						injectAddr <= 7'd73;
-						injectStop <= 7'd80;
+						injectStop <= 7'd81;
 					end
 				    isillegalinstruction: begin // Exception: Illegal instruction
 						injectAddr <= 7'd93;
-						injectStop <= 7'd100;
+						injectStop <= 7'd101;
 					end
 				endcase
 
