@@ -3,7 +3,7 @@
 ## ------------------------------------------------------------------------------------------------------
 
 ## (C) 2023 Engin Cilasun
-## Applies to expansion board version v0.9 through v0.9B
+## Applies to expansion board ISSUE-1A
 ## Please do not change/remove the Clock Groups or False Paths regardless of the warnings during synth
 ## Also note that changing any of the pin positions will change the timing closure of the device
 ## due to changes in placing and routing
@@ -22,11 +22,21 @@ create_clock -period 20.000 -name sys_clk_pin -waveform {0.000 10.000} -add [get
 set_property -dict {PACKAGE_PIN Y6 IOSTANDARD LVCMOS33} [get_ports sys_rst_n]
 
 ## ------------------------------------------------------------------------------------------------------
-## LEDs on the FPGA board
+## LEDs
 ## ------------------------------------------------------------------------------------------------------
 
-set_property -dict {PACKAGE_PIN F3 IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
-set_property -dict {PACKAGE_PIN E3 IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
+## LED[0]: pin U2:45    [V20]
+## LED[1]: pin U2:47    [U18]
+## LED[2]: pin U2:49    [V19]
+## LED[3]: pin U2:51    [AB22]
+## LED[4]: pin U2:53    [AA21]
+
+set_property -dict {PACKAGE_PIN V20  IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
+set_property -dict {PACKAGE_PIN U18  IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
+set_property -dict {PACKAGE_PIN V19  IOSTANDARD LVCMOS33} [get_ports {leds[2]}]
+set_property -dict {PACKAGE_PIN AB22 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
+set_property -dict {PACKAGE_PIN AA21 IOSTANDARD LVCMOS33} [get_ports {leds[4]}]
+
 
 ## ------------------------------------------------------------------------------------------------------
 ## UART Tx/Rx
@@ -42,7 +52,7 @@ set_property -dict {PACKAGE_PIN B1 IOSTANDARD LVCMOS33} [get_ports uart_rxd_out]
 set_property -dict {PACKAGE_PIN C2 IOSTANDARD LVCMOS33} [get_ports uart_txd_in]
 
 ## ------------------------------------------------------------------------------------------------------
-## PMOD-A1
+## USB-HOST
 ## ------------------------------------------------------------------------------------------------------
 
 ## PA7/usb_rxd_out:   pin U2:57    [Y19]
@@ -57,46 +67,37 @@ set_property -dict {PACKAGE_PIN C2 IOSTANDARD LVCMOS33} [get_ports uart_txd_in]
 set_property -dict {PACKAGE_PIN Y19 IOSTANDARD LVCMOS33} [get_ports usb_rxd_out]
 set_property -dict {PACKAGE_PIN AB20 IOSTANDARD LVCMOS33} [get_ports usb_txd_in]
 
-## set_property -dict {PACKAGE_PIN Y19 IOSTANDARD LVCMOS33} [get_ports PA7]
-## set_property -dict {PACKAGE_PIN Y18 IOSTANDARD LVCMOS33} [get_ports PA3]
-## set_property -dict {PACKAGE_PIN AB20 IOSTANDARD LVCMOS33} [get_ports PA6]
-## set_property -dict {PACKAGE_PIN AA19 IOSTANDARD LVCMOS33} [get_ports PA2]
-## set_property -dict {PACKAGE_PIN AA21 IOSTANDARD LVCMOS33} [get_ports PA5]
-## set_property -dict {PACKAGE_PIN AA20 IOSTANDARD LVCMOS33} [get_ports PA1]
-## set_property -dict {PACKAGE_PIN AB22 IOSTANDARD LVCMOS33} [get_ports PA4]
-## set_property -dict {PACKAGE_PIN AB21 IOSTANDARD LVCMOS33} [get_ports PA0]
-
 ## ------------------------------------------------------------------------------------------------------
 ## Micro SD card
 ## ------------------------------------------------------------------------------------------------------
 
 ## Sorted by sdcard pin order
 ## SD     SPI
-## DAT[2] -         pin U4:23  [M1] sdpin#1
-## DAT[3] CSn       pin U4:21  [K2] sdpin#2
-## CMD    MOSI 	    pin U4:19  [K1] sdpin#3
-## VDD    VDD       VCC             sdpin#4
-## CLK    SCLK      pin U4:17  [H2] sdpin#5
-## VSS    VSS       GND             sdpin#6
-## DAT[0] MISO      pin U4:15  [G1] sdpin#7
-## DAT[1] -         pin U4:13  [E2] sdpin#8
-## SWTCH            pin U4:11  [E1] sdpin#switch
+## DAT[2] -         pin U2:46  [U20]  sdpin#1
+## DAT[3] CSn       pin U2:48  [U17]  sdpin#2
+## CMD    MOSI 	    pin U2:50  [V18]  sdpin#3
+## VDD    VDD       VCC               sdpin#4
+## CLK    SCLK      pin U2:52  [AB21] sdpin#5
+## VSS    VSS       GND               sdpin#6
+## DAT[0] MISO      pin U2:54  [AA20] sdpin#7
+## DAT[1] -         pin U2:56  [AA19] sdpin#8
+## SWTCH            pin U2:58  [Y18]  sdpin#switch
 
 ## SPI mode - sorted by sdcard pin order
-set_property -dict {PACKAGE_PIN K2 IOSTANDARD LVCMOS33} [get_ports spi_cs_n]
-set_property -dict {PACKAGE_PIN K1 IOSTANDARD LVCMOS33} [get_ports spi_mosi]
-set_property -dict {PACKAGE_PIN H2 IOSTANDARD LVCMOS33} [get_ports spi_clk]
-set_property -dict {PACKAGE_PIN G1 IOSTANDARD LVCMOS33} [get_ports spi_miso]
-set_property -dict {PACKAGE_PIN E1 IOSTANDARD LVCMOS33} [get_ports spi_swtch]
+set_property -dict {PACKAGE_PIN U17  IOSTANDARD LVCMOS33} [get_ports spi_cs_n]
+set_property -dict {PACKAGE_PIN V18  IOSTANDARD LVCMOS33} [get_ports spi_mosi]
+set_property -dict {PACKAGE_PIN AB21 IOSTANDARD LVCMOS33} [get_ports spi_clk]
+set_property -dict {PACKAGE_PIN AA20 IOSTANDARD LVCMOS33} [get_ports spi_miso]
+set_property -dict {PACKAGE_PIN Y18  IOSTANDARD LVCMOS33} [get_ports spi_swtch]
 
 ## SD mode - sorted by sdcard pin order
-## set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports {sd_dat[2]}]
-## set_property -dict {PACKAGE_PIN K2 IOSTANDARD LVCMOS33} [get_ports {sd_dat[3]}]
-## set_property -dict {PACKAGE_PIN K1 IOSTANDARD LVCMOS33} [get_ports sd_cmd]
-## set_property -dict {PACKAGE_PIN H2 IOSTANDARD LVCMOS33} [get_ports sd_clk]
-## set_property -dict {PACKAGE_PIN G1 IOSTANDARD LVCMOS33} [get_ports {sd_dat[0]}]
-## set_property -dict {PACKAGE_PIN E2 IOSTANDARD LVCMOS33} [get_ports {sd_dat[1]}]
-## set_property -dict {PACKAGE_PIN E1 IOSTANDARD LVCMOS33} [get_ports spi_swtch]
+## set_property -dict {PACKAGE_PIN U20 IOSTANDARD LVCMOS33} [get_ports {sd_dat[2]}]
+## set_property -dict {PACKAGE_PIN U17 IOSTANDARD LVCMOS33} [get_ports {sd_dat[3]}]
+## set_property -dict {PACKAGE_PIN V18 IOSTANDARD LVCMOS33} [get_ports sd_cmd]
+## set_property -dict {PACKAGE_PIN AB21 IOSTANDARD LVCMOS33} [get_ports sd_clk]
+## set_property -dict {PACKAGE_PIN AA20 IOSTANDARD LVCMOS33} [get_ports {sd_dat[0]}]
+## set_property -dict {PACKAGE_PIN AA19 IOSTANDARD LVCMOS33} [get_ports {sd_dat[1]}]
+## set_property -dict {PACKAGE_PIN Y18 IOSTANDARD LVCMOS33} [get_ports spi_swtch]
 
 ## ------------------------------------------------------------------------------------------------------
 ## DVI output over HDMI
@@ -110,6 +111,7 @@ set_property -dict {PACKAGE_PIN E1 IOSTANDARD LVCMOS33} [get_ports spi_swtch]
 ## hdmi_tx_n[2]  pin U4:46 [AB1]
 ## hdmi_tx_p[0]  pin U4:47 [AB3]
 ## hdmi_tx_n[0]  pin U4:48 [AB2]
+
 set_property -dict {PACKAGE_PIN T1 IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_p]
 set_property -dict {PACKAGE_PIN U1 IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_n]
 set_property -dict {PACKAGE_PIN W1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[1]}]

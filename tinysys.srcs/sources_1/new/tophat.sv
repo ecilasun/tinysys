@@ -6,7 +6,7 @@ module tophat(
     input wire sys_clk
     ,input wire sys_rst_n
     // Debug LEDs
-    ,output wire [1:0] leds
+    ,output wire [4:0] leds
     // UART - USB-c module
     ,output wire uart_rxd_out
 	,input wire uart_txd_in

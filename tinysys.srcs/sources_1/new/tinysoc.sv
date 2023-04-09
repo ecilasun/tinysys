@@ -10,7 +10,7 @@ module tinysoc(
 	input wire clk200,
 	input wire aresetn,
 	input wire preresetn,
-	output wire [1:0] leds,
+	output wire [4:0] leds,
 	output wire uart_rxd_out,
 	input wire uart_txd_in,
 	output wire usb_rxd_out,

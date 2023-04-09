@@ -13,7 +13,7 @@ initial begin
 	boardresetn = 1'b1;
 end
 
-wire [1:0] ledout;
+wire [4:0] ledout;
 wire uart_rxd_out;
 wire uart_txd_in = 1'b1;
 
