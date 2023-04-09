@@ -246,11 +246,11 @@ always @(posedge aclk) begin
 			ENTERISR: begin
 				// Inject entry instruction sequence (see table at microcode ROM section)
 				unique case (1'b1)
-					irqReq[0]: begin // Interrupt:Timer
+					irqReq[0]: begin // Interrupt: Timer
 						injectAddr <= 7'd0;
 						injectStop <= 7'd12;
 					end
-					irqReq[1]: begin // Interrupt:Ext
+					irqReq[1]: begin // Interrupt: Ext (UART)
 						injectAddr <= 7'd19;
 						injectStop <= 7'd33;
 					end
@@ -278,11 +278,11 @@ always @(posedge aclk) begin
 			EXITISR: begin
 				// Inject exit instruction sequence (see table at microcode ROM section)
 				unique case (1'b1)
-					entryState[0]: begin // Interrupt:Timer
+					entryState[0]: begin // Interrupt: Timer
 						injectAddr <= 7'd12;
 						injectStop <= 7'd19;
 					end
-					entryState[1]: begin // Interrupt:Ext
+					entryState[1]: begin // Interrupt: Ext(UART)
 						injectAddr <= 7'd33;
 						injectStop <= 7'd41;
 					end
