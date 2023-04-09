@@ -352,10 +352,10 @@ always @(posedge aclk) begin
 				case ({func3, func12})
 					{3'b000, `F12_CDISCARD}:	ctlmode <= SYSCDISCARD;
 					{3'b000, `F12_CFLUSH}:		ctlmode <= SYSCFLUSH;
-					{3'b000, `F12_MRET}:		ctlmode <= SYSMRET;		// Handled by Fetch unit
-					{3'b000, `F12_WFI}:			ctlmode <= SYSWFI;		// Handled by Fetch unit
-					{3'b000, `F12_EBREAK}:		ctlmode <= SYSEBREAK;	// Handled by Fetch unit
-					{3'b000, `F12_ECALL}:		ctlmode <= SYSECALL;	// Handled by Fetch unit
+					{3'b000, `F12_MRET}:		ctlmode <= SYSMRET;
+					{3'b000, `F12_WFI}:			ctlmode <= SYSWFI;
+					//{3'b000, `F12_EBREAK}:	ctlmode <= SYSEBREAK;	// Handled by Fetch unit
+					{3'b000, `F12_ECALL}:		ctlmode <= SYSECALL;
 					default:					ctlmode <= CSROPS;
 				endcase
 			end

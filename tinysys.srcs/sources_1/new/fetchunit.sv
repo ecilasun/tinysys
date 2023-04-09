@@ -187,11 +187,12 @@ always @(posedge aclk) begin
 			end
 
 			STREAMOUT: begin
-				// Emit decoded instruction
+				// Emit decoded instruction except:
 				// - FENCE.I does not need to go to execute unit
-				// - IRQ will ignore the current instruction and keep PC the same to process it after ISR
+				// - HWIRQs will ignore the current instruction and branch to ISR here after injection of a prologue
 				// - EBREAK will repeatedly jump back to the same instruction site until the EBREAK is replaced
-				ififowr_en <= (~isfence) && ~(|irqReq);
+
+				ififowr_en <= (~isfence) && (~irqReq[0]) && (~irqReq[1]) && (~isillegalinstruction) && (~isebreak);
 				ififodin <= {
 					rs3, func7, csroffset,
 					func12, func3,
@@ -201,12 +202,15 @@ always @(posedge aclk) begin
 					PC, immed};
 
 				unique case (1'b1)
-				    // IRQ/EBREAK/ILLEGAL don't step the PC
-					((|irqReq) || isebreak || isillegalinstruction):	PC <= PC + 32'd0;
+				    // IRQ/EBREAK/ILLEGAL don't step the PC and do not submit the current instruction
+					irqReq[0],
+					irqReq[1],
+					isebreak,
+					isillegalinstruction:					PC <= PC + 32'd0;
 					// No compressed instruction support:
-					default:											PC <= PC + 32'd4;
+					default:								PC <= PC + 32'd4;
 					// Compressed instruction support:
-					//default:											PC <= PC + IR[1:0]==2'b11 ? 32'd4 : 32'd2;
+					//default:								PC <= PC + IR[1:0]==2'b11 ? 32'd4 : 32'd2;
 				endcase
 
 				// Flush I$ if we have an IFENCE instruction and go to wait
@@ -215,15 +219,16 @@ always @(posedge aclk) begin
 				// Go to appropriate wait mode or resume FETCH
 				// Stop fetching if we need to halt, running IFENCE, or entering/exiting an ISR
 				priority case (1'b1)
-					(|irqReq):				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
+					irqReq[0],
+					irqReq[1],
+					isecall,
+					isebreak,
 					isillegalinstruction:	begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
-					isecall:				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
-					isebreak:				begin fetchmode <= ENTERISR;			fetchena <= 1'b0; end
 					isfence:				begin fetchmode <= WAITIFENCE;			fetchena <= 1'b0; end
 					ismret:					begin fetchmode <= EXITISR;				fetchena <= 1'b0; end
 					iswfi:					begin fetchmode <= WFI;					fetchena <= 1'b0; end
-					isbranch:				begin fetchmode <= WAITNEWBRANCHTARGET;	fetchena <= 1'b0; end
-					isdiscard:				begin fetchmode <= WAITNEWBRANCHTARGET;	fetchena <= 1'b0; end
+					isbranch,
+					isdiscard,
 					isflush:				begin fetchmode <= WAITNEWBRANCHTARGET;	fetchena <= 1'b0; end
 					default:				begin fetchmode <= FETCH;				fetchena <= 1'b1; end
 				endcase
@@ -245,31 +250,35 @@ always @(posedge aclk) begin
 
 			ENTERISR: begin
 				// Inject entry instruction sequence (see table at microcode ROM section)
-				unique case (1'b1)
-					irqReq[0]: begin // Interrupt: Timer
+				priority case (1'b1)
+					irqReq[0]: begin			// Interrupt: Timer
 						injectAddr <= 7'd0;
 						injectStop <= 7'd12;
 					end
-					irqReq[1]: begin // Interrupt: Ext (UART)
+					irqReq[1]: begin			// Interrupt: Ext (UART)
 						injectAddr <= 7'd19;
 						injectStop <= 7'd33;
 					end
-					isecall: begin // Exception: Environment call
+					isecall: begin				// Exception: Environment call
 						injectAddr <= 7'd41;
 						injectStop <= 7'd53;
 					end
-					isebreak: begin // Exception: Debug breakpoint
+					isebreak: begin				// Exception: Debug breakpoint
 						injectAddr <= 7'd61;
 						injectStop <= 7'd73;
 					end
-				    isillegalinstruction: begin // Exception: Illegal instruction
+				    isillegalinstruction: begin	// Exception: Illegal instruction
 						injectAddr <= 7'd81;
 						injectStop <= 7'd93;
+					end
+					default: begin
+						injectAddr <= 7'd0;		// Do nothing
+						injectStop <= 7'd0;
 					end
 				endcase
 
 				// Save states for exit time
-				entryState <= {isillegalinstruction, isebreak, isecall, irqReq[1], irqReq[0]};
+				entryState <= {irqReq[0], irqReq[1], isecall, isebreak, isillegalinstruction};
 
 				fetchmode <= STARTINJECT;
 				postInject <= POSTENTER;
@@ -277,26 +286,30 @@ always @(posedge aclk) begin
 
 			EXITISR: begin
 				// Inject exit instruction sequence (see table at microcode ROM section)
-				unique case (1'b1)
-					entryState[0]: begin // Interrupt: Timer
+				priority case (1'b1)
+					entryState[4]: begin		// Interrupt: Timer
 						injectAddr <= 7'd12;
 						injectStop <= 7'd19;
 					end
-					entryState[1]: begin // Interrupt: Ext(UART)
+					entryState[3]: begin		// Interrupt: Ext(UART)
 						injectAddr <= 7'd33;
 						injectStop <= 7'd41;
 					end
-					entryState[2]: begin // Exception: Environment call
+					entryState[2]: begin		// Exception: Environment call
 						injectAddr <= 7'd53;
 						injectStop <= 7'd61;
 					end
-					entryState[3]: begin // Exception: Debug breakpoint
+					entryState[1]: begin		// Exception: Debug breakpoint
 						injectAddr <= 7'd73;
 						injectStop <= 7'd81;
 					end
-				    entryState[4]: begin // Exception: Illegal instruction
+				    entryState[0]: begin		// Exception: Illegal instruction
 						injectAddr <= 7'd93;
 						injectStop <= 7'd101;
+					end
+					default: begin
+						injectAddr <= 7'd0;		// Do nothing
+						injectStop <= 7'd0;
 					end
 				endcase
 
