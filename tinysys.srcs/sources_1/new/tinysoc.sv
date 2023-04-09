@@ -13,8 +13,8 @@ module tinysoc(
 	output wire [4:0] leds,
 	output wire uart_rxd_out,
 	input wire uart_txd_in,
-	output wire usb_rxd_out,
-	input wire usb_txd_in,
+	inout wire usb_d_p,
+	inout wire usb_d_n,
 	gpuwires.def gpuvideoout,
 	ddr3sdramwires.def ddr3wires,
 	sdwires.def sdconn);
@@ -38,7 +38,7 @@ axi4if spiif();				// Sub bus: SPI control device
 axi4if csrif();				// Sub bus: CSR file device
 axi4if xadcif();			// Sub bus: ADC controller
 axi4if dmaif();				// Sub bus: DMA controller
-axi4if usbif();				// Sub bus: USB serial i/o
+axi4if usbif();				// Sub bus: USB host i/o
 
 ibusif ibus();				// Internal bus between units
 
@@ -246,7 +246,6 @@ devicerouter devicerouterinst(
 // --------------------------------------------------
 
 wire uartrcvempty;
-wire usbrcvempty;
 
 axi4uart #(.BAUDRATE(115200), .FREQ(10000000)) uartinst(
 	.aclk(aclk),
@@ -296,7 +295,7 @@ axi4CSRFile csrfileinst(
 	.irqReq(irqReq),
 	// External interrupt wires
 	.uartrcvempty(uartrcvempty),
-	//.usbrcvempty(usbrcvempty),	// TODO: interrupt from USB serial
+	//.usbint(usbint),	// TODO: interrupt from USB host
 	// Shadow registers
 	.mepc(mepc),
 	.mtvec(mtvec),
@@ -323,13 +322,11 @@ dmacommanddevice dmacmdinst(
 	.fifovalid(dmafifovalid),
     .dmabusy(dmabusy));
 
-axi4uart #(.BAUDRATE(400000), .FREQ(10000000)) usbhostdevice(
-	.aclk(aclk),
-	.uartclk(clk10),
+// USB Host
+// TODO: Wire usb_d_p & usb_d_n pair and usbint here
+dummydevice usbhostcontroller(
+	.aclk(alck),
 	.aresetn(aresetn),
-	.s_axi(usbif),
-	.uart_rxd_out(usb_rxd_out),
-	.uart_txd_in(usb_txd_in),
-	.uartrcvempty(usbrcvempty));
+	.s_axi(usbif));
 
 endmodule

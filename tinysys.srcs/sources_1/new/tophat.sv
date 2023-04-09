@@ -11,8 +11,8 @@ module tophat(
     ,output wire uart_rxd_out
 	,input wire uart_txd_in
 	// USB RX/TX
-	,output wire usb_rxd_out
-	,input wire usb_txd_in
+	,inout wire usb_d_p
+	,inout wire usb_d_n
 	// DDR3 SDRAM
 	,output wire ddr3_reset_n
 	,output wire [0:0] ddr3_cke
@@ -121,8 +121,8 @@ tinysoc socinstance(
 	.preresetn(preresetn),
 	.uart_rxd_out(uart_rxd_out),
 	.uart_txd_in(uart_txd_in),
-	.usb_rxd_out(usb_rxd_out),
-	.usb_txd_in(usb_txd_in),
+	.usb_d_p(usb_d_p),
+	.usb_d_n(usb_d_n),
 	.leds(leds),
 	.ddr3wires(ddr3wires),
 	.gpuvideoout(gpuvideoout),

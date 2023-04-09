@@ -55,17 +55,11 @@ set_property -dict {PACKAGE_PIN C2 IOSTANDARD LVCMOS33} [get_ports uart_txd_in]
 ## USB-HOST
 ## ------------------------------------------------------------------------------------------------------
 
-## PA7/usb_rxd_out:   pin U2:57    [Y19]
-## PA3:               pin U2:58    [Y18]
-## PA6/usb_txd_in:    pin U2:55    [AB20]
-## PA2:               pin U2:56    [AA19]
-## PA5:               pin U2:53    [AA21]
-## PA1:               pin U2:54    [AA20]
-## PA4:               pin U2:51    [AB22]
-## PA0:               pin U2:52    [AB21]
+## usb_d_p:   pin U2:60    [AA18]
+## usb_d_n:   pin U2:59    [AB18]
 
-set_property -dict {PACKAGE_PIN Y19 IOSTANDARD LVCMOS33} [get_ports usb_rxd_out]
-set_property -dict {PACKAGE_PIN AB20 IOSTANDARD LVCMOS33} [get_ports usb_txd_in]
+set_property -dict {PACKAGE_PIN AA18 IOSTANDARD LVCMOS33} [get_ports usb_d_p]
+set_property -dict {PACKAGE_PIN AB18 IOSTANDARD LVCMOS33} [get_ports usb_d_n]
 
 ## ------------------------------------------------------------------------------------------------------
 ## Micro SD card
