@@ -38,7 +38,12 @@ module tophat(
 	,output wire spi_cs_n
 	,output wire spi_clk
 	,output wire spi_mosi
-	,input wire spi_swtch );
+	,input wire spi_swtch
+	// ADC
+	,output wire adclk
+	,input wire addout
+	,output wire addin
+	,output wire adcs);
 
 // --------------------------------------------------
 // Clock and reset generator
@@ -106,6 +111,16 @@ sdwires sdconn(
 	.spi_swtch(spi_swtch) );
 
 // --------------------------------------------------
+// ADC wires
+// --------------------------------------------------
+
+adcwires adcconn(
+	.adclk(adclk),
+	.addout(addout),
+	.addin(addin),
+	.adcs(adcs));
+
+// --------------------------------------------------
 // SoC device
 // --------------------------------------------------
 
@@ -126,6 +141,7 @@ tinysoc socinstance(
 	.leds(leds),
 	.ddr3wires(ddr3wires),
 	.gpuvideoout(gpuvideoout),
-	.sdconn(sdconn));
+	.sdconn(sdconn),
+	.adcconn(adcconn));
 
 endmodule

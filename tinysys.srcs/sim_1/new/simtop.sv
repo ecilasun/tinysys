@@ -22,6 +22,11 @@ wire spi_miso = spi_mosi; // nul device
 wire usb_txd_in;
 wire usb_rxd_out = 1'b1;
 
+wire adclk = 1'b0;
+wire addout = 1'b0;
+wire addin;
+wire adcs = 1'b0;
+
 // DDR3 simulation model
 wire ddr3_reset_n;
 wire [0:0]   ddr3_cke;
@@ -92,7 +97,12 @@ tophat main(
 	.spi_cs_n(),
 	.spi_clk(),
 	.spi_mosi(spi_mosi),
-	.spi_swtch(1'b0) );
+	.spi_swtch(1'b0),
+	// ADC
+	.adclk(adclk),
+	.addout(addout),
+	.addin(addin),
+	.adcs(adcs));
 
 always begin
 	#10
