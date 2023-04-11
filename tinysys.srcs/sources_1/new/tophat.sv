@@ -43,7 +43,14 @@ module tophat(
 	,output wire adclk
 	,input wire addout
 	,output wire addin
-	,output wire adcs);
+	,output wire adcs
+	// Audio
+	/*,output wire au_cs		// 
+	,output wire au_mode	// serial interface mode (1:SPI, 0:2-wire)
+	,output wire au_sdin	// i2s serial input for sigma-delta DAC
+	,output wire au_sclk	// serial data clock
+	,output wire au_din		// i2s data in
+	,output wire au_bclk*/);	// i2s serial bit clock
 
 // --------------------------------------------------
 // Clock and reset generator

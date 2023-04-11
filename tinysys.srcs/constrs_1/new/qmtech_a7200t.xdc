@@ -142,6 +142,24 @@ set_property -dict {PACKAGE_PIN N17 IOSTANDARD LVCMOS33} [get_ports adcs]
 ## set_property PULLUP TRUE [get_ports i2c_sda]
 
 ## ------------------------------------------------------------------------------------------------------
+## Audio bus (TLV320AIC23B)
+## ------------------------------------------------------------------------------------------------------
+
+## au_cs    pin U2:39 [T18]
+## au_mode  pin U2:37 [P17]
+## au_sdin  pin U2:35 [N19]
+## au_sclk  pin U2:33 [L15]
+## au_din   pin U2:31 [M22]
+## au_clk   pin U2:29 [M20]
+
+## set_property -dict {PACKAGE_PIN T18 IOSTANDARD LVCMOS33} [get_ports au_cs]
+## set_property -dict {PACKAGE_PIN P17 IOSTANDARD LVCMOS33} [get_ports au_mode]
+## set_property -dict {PACKAGE_PIN N19 IOSTANDARD LVCMOS33} [get_ports au_sdin]
+## set_property -dict {PACKAGE_PIN L15 IOSTANDARD LVCMOS33} [get_ports au_sclk]
+## set_property -dict {PACKAGE_PIN M22 IOSTANDARD LVCMOS33} [get_ports au_din]
+## set_property -dict {PACKAGE_PIN M20 IOSTANDARD LVCMOS33} [get_ports au_clk]
+
+## ------------------------------------------------------------------------------------------------------
 ## DDR3 SDRAM (MT41K128M16XX-15E)
 ## ------------------------------------------------------------------------------------------------------
 
