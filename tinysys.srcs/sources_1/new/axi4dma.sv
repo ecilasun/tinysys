@@ -35,12 +35,12 @@ assign m_axi.awburst = BURST_INCR;	// auto address increment for burst
 // Command FIFO
 // ------------------------------------------------------------------------------------
 
-typedef enum logic [2:0] {
+typedef enum logic [3:0] {
 	WCMD, DISPATCH,
 	DMASOURCE,
 	DMATARGET,
 	DMALENGTH,
-	DMAKICK,
+	STARTDMA, DMAREADSOURCE, COPYLOOP, DMAWRITETARGET, DMAWAITWRITE, DMAWAITBREADY,
 	FINALIZE } dmacmdmodetype;
 dmacmdmodetype cmdmode = WCMD;
 
@@ -51,10 +51,7 @@ logic [31:0] dmatargetaddr;
 logic [31:0] dmatargetend;
 logic [31:0] dmablockcount;
 
-// This module won't read just yet (TBD)
-assign m_axi.arvalid = 0;
-assign m_axi.rready = 0;
-
+logic [127:0] datalatch;
 
 always_ff @(posedge aclk) begin
 	if (~aresetn) begin
@@ -85,7 +82,7 @@ always_ff @(posedge aclk) begin
 					32'h00000000:	cmdmode <= DMASOURCE;	// Source address, byte aligned
 					32'h00000001:	cmdmode <= DMATARGET;	// Target address, byte aligned
 					32'h00000002:	cmdmode <= DMALENGTH;	// Set length in bytes (divided into 128 bit blocks, r/w masks handle leading and trailing ledges)
-					32'h00000003:	cmdmode <= DMAKICK;		// Start transfer with current setup
+					32'h00000003:	cmdmode <= STARTDMA;	// Start transfer with current setup
 					default:		cmdmode <= FINALIZE;	// Invalid command, wait one clock and try next
 				endcase
 			end
@@ -118,60 +115,76 @@ always_ff @(posedge aclk) begin
 					cmdmode <= FINALIZE;
 				end
 			end
-
-			DMAKICK: begin
-				//dmaqueuedin <= {dmasourceaddr, dmatargetaddr, dmablockcount};
-				//dmaqueuewe <= 1'b1;
-
-				// Advance FIFO
-				cmdre <= 1'b1;
-				cmdmode <= FINALIZE; // TODO: start dma instead, this will completely ignore the kick
-			end
 			
 			// ----------------------- DMA OP
 
-			/*STARTDMA: begin
+			STARTDMA: begin
 				// Set up read
 				m_axi.arvalid <= 1;
-				m_axi.araddr <= dmaop_source;
-				dmaop_source <= dmaop_source + 32'd16; // Next batch
+				m_axi.araddr <= dmasourceaddr;
 
 				// Dummy state, go back to where we were
-				dmareadstate <= DMAREADSOURCE;
+				cmdmode <= DMAREADSOURCE;
 			end
 
 			DMAREADSOURCE: begin
 				if (m_axi.arready) begin // && m_axi.arvalid
 					m_axi.arvalid <= 0;
 					m_axi.rready <= 1;
-					dmaop_count <= dmaop_count - 'd1;
-					dmareadstate <= COPYBLOCK;
-				end
-			end
-
-			COPYBLOCK: begin
-				if (m_axi.rvalid) begin // && m_axi.rready
-					m_axi.rready <= 1'b0;
-
-					// Let write module take care of it
-					dmacopywe <= 1'b1;
-					dmacopydin <= m_axi.rdata;
-
-					dmareadstate <= COPYLOOP;
+					cmdmode <= COPYLOOP;
 				end
 			end
 
 			COPYLOOP: begin
-				// Set up next read, if there's one
-				m_axi.arvalid <= (dmaop_count == 'd0) ? 1'b0 : 1'b1;
-				m_axi.araddr <= dmaop_source;
-				dmaop_source <= dmaop_source + 32'd16; // Next batch
+				if (m_axi.rvalid ) begin // && m_axi.rready
+					m_axi.rready <= 1'b0;
+					// Set up write
+					m_axi.awvalid <= 1'b1;
+					m_axi.awaddr <= dmatargetaddr;
+					datalatch <= m_axi.rdata;
+					cmdmode <= DMAWRITETARGET;
+				end
+			end
 
-				// If we're done reading, wait for the writes trailing behind
-				dmareadstate <= (dmaop_count == 'd0) ? WAITFORPENDINGWRITES : DMAREADSOURCE;
-			end*/
-			
-			// ----------------------- RESTART
+			DMAWRITETARGET: begin
+				// Ready to write?
+				if (m_axi.awready) begin
+					m_axi.awvalid <= 1'b0;
+					m_axi.wvalid <= 1'b1;
+					m_axi.wstrb <= 16'hFFFF;
+					m_axi.wdata <= datalatch;
+					m_axi.wlast <= 1'b1;
+					cmdmode <= DMAWAITWRITE;
+				end
+			end
+
+			DMAWAITWRITE: begin
+				if (m_axi.wready) begin
+					m_axi.wvalid <= 0;
+					m_axi.wstrb <= 16'h0000;
+					m_axi.wlast <= 0;
+					m_axi.bready <= 1;
+					dmablockcount <= dmablockcount - 'd1;
+					cmdmode <= DMAWAITBREADY;
+				end
+			end
+
+			DMAWAITBREADY: begin
+				if (m_axi.bvalid) begin // && m_axi.bready
+					m_axi.bready <= 0;
+
+					// Set up next read, if there's one
+					m_axi.arvalid <= (dmablockcount == 'd0) ? 1'b0 : 1'b1;
+					m_axi.araddr <= dmasourceaddr;
+
+					// Next batch
+					dmasourceaddr <= dmasourceaddr + 32'd16;
+					dmatargetaddr <= dmatargetaddr + 32'd16;
+
+					// Stop when done
+					cmdmode <= (dmablockcount == 'd0) ? FINALIZE : DMAREADSOURCE;
+				end
+			end
 
 			FINALIZE: begin
 				cmdmode <= WCMD;
