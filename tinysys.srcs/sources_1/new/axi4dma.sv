@@ -123,6 +123,9 @@ always_ff @(posedge aclk) begin
 				m_axi.arvalid <= 1;
 				m_axi.araddr <= dmasourceaddr;
 
+				// Make sure to offset the batch once in this header section
+				dmasourceaddr <= dmasourceaddr + 32'd16;
+
 				// Dummy state, go back to where we were
 				cmdmode <= DMAREADSOURCE;
 			end
