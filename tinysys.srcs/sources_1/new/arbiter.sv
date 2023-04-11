@@ -10,8 +10,7 @@ module arbiter(
 // Common
 // --------------------------------------------------
 
-// Round-robin arbiter for 3 master devices
-// with independent read and write arbitration
+// Round-robin arbiter with independent read and write arbitration
 
 // NOTE: Expand the enum and state machine for more devices
 typedef enum logic [2:0] {INIT, ARBITRATE0, ARBITRATE1, ARBITRATE2, ARBITRATE3, ARBITRATE4, GRANTED} arbiterstatetype;

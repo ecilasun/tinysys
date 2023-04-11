@@ -136,7 +136,7 @@ always_ff @(posedge aclk) begin
 			end
 
 			COPYLOOP: begin
-				if (m_axi.rvalid ) begin // && m_axi.rready
+				if (m_axi.rvalid) begin // && m_axi.rready
 					m_axi.rready <= 1'b0;
 					// Set up write
 					m_axi.awvalid <= 1'b1;
