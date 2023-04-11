@@ -3,7 +3,7 @@
 `include "shared.vh"
 
 module fetchunit #(
-	parameter int RESETVECTOR = 32'h20000000
+	parameter int RESETVECTOR = 32'd0
 ) (
 	input wire aclk,
 	input wire aresetn,

@@ -1,6 +1,8 @@
 `timescale 1ns / 1ps
 
-module tinysoc(
+module tinysoc #(
+	parameter int RESETVECTOR = 32'd0
+) (
 	input wire aclk,
 	input wire clk10,
 	input wire clk25,
@@ -28,6 +30,7 @@ axi4if instructionbus();	// Fetch unit bus
 axi4if databus();			// Data unit bus
 axi4if gpubus();			// Graphics unit bus
 axi4if dmabus();			// Direct memory access bus
+axi4if romcopybus();		// Bus for boot ROM copy (TODO: switch between ROM types?)
 
 axi4if memorybus();			// Main memory
 
@@ -60,7 +63,7 @@ wire sie;
 wire romReady;
 
 // Reset vector at last 64K of DDR3 SDRAM
-fetchunit #(.RESETVECTOR(32'h0FFE0000)) fetchdecodeinst (
+fetchunit #(.RESETVECTOR(RESETVECTOR)) fetchdecodeinst (
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.branchresolved(branchresolved),
@@ -175,17 +178,26 @@ axi4dma DMA(
 	.dmafifodout(dmafifodout),
 	.dmafifore(dmafifore),
 	.dmafifovalid(dmafifovalid),
-	.romReady(romReady),
 	.dmabusy(dmabusy) );
+
+// --------------------------------------------------
+// Boot ROM copy unit
+// --------------------------------------------------
+
+axi4romcopy #(.RESETVECTOR(RESETVECTOR)) ROMCopy(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.m_axi(romcopybus),
+	.romReady(romReady));
 
 // --------------------------------------------------
 // Traffic arbiter between master units and memory
 // --------------------------------------------------
 
-arbiter arbiter4x1inst(
+arbiter arbiter5x1inst(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.axi_s({dmabus, gpubus, databus, instructionbus}),
+	.axi_s({romcopybus, dmabus, gpubus, databus, instructionbus}),
 	.axi_m(memorybus) );
 
 // --------------------------------------------------

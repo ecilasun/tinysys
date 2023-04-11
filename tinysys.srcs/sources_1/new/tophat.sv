@@ -124,7 +124,7 @@ adcwires adcconn(
 // SoC device
 // --------------------------------------------------
 
-tinysoc socinstance(
+tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.aclk(aclk),
 	.clk10(clk10),
 	.clk25(clk25),

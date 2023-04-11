@@ -19,8 +19,6 @@ wire uart_txd_in = 1'b1;
 
 wire spi_mosi;
 wire spi_miso = spi_mosi; // nul device
-wire usb_txd_in;
-wire usb_rxd_out = 1'b1;
 
 wire adclk = 1'b0;
 wire addout = 1'b0;
@@ -42,6 +40,9 @@ wire [1:0]   ddr3_dm;
 wire [1:0]   ddr3_dqs_p;
 wire [1:0]   ddr3_dqs_n;
 wire [15:0]  ddr3_dq;
+
+wire usb_d_p;
+wire usb_d_n;
 
 ddr3_model ddr3simmod(
     .rst_n(ddr3_reset_n),
@@ -70,8 +71,8 @@ tophat main(
     .uart_rxd_out(uart_rxd_out),
     .uart_txd_in(uart_txd_in),
     // USB
-	.usb_rxd_out(usb_rxd_out),
-	.usb_txd_in(usb_txd_in),
+	.usb_d_p(usb_d_p),
+	.usb_d_n(usb_d_n),
 	// DDR3 SDRAM
 	.ddr3_reset_n(ddr3_reset_n),
 	.ddr3_cke(ddr3_cke),

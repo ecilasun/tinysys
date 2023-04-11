@@ -13,20 +13,20 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="3,345,034.600000 ns"></ZoomStartTime>
-      <ZoomEndTime time="3,350,376.600001 ns"></ZoomEndTime>
-      <Cursor1Time time="3,346,304.600000 ns"></Cursor1Time>
+      <ZoomStartTime time="124,243.666667 ns"></ZoomStartTime>
+      <ZoomEndTime time="124,513.166668 ns"></ZoomEndTime>
+      <Cursor1Time time="124,326.666667 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="366"></NameColumnWidth>
-      <ValueColumnWidth column_width="192"></ValueColumnWidth>
+      <ValueColumnWidth column_width="168"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="216" />
+   <WVObjectSize size="245" />
    <wave_markers>
-      <marker label="" time="124274100000" />
       <marker label="" time="2090070000000" />
       <marker label="" time="3083299200000" />
       <marker label="" time="3279660000000" />
+      <marker label="" time="124269966667" />
    </wave_markers>
    <wvobject fp_name="divider23" type="divider">
       <obj_property name="label">board</obj_property>
@@ -37,8 +37,8 @@
       <obj_property name="ObjectShortName">sys_clk</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/simtop/main/leds">
-      <obj_property name="ElementShortName">leds[1:0]</obj_property>
-      <obj_property name="ObjectShortName">leds[1:0]</obj_property>
+      <obj_property name="ElementShortName">leds[4:0]</obj_property>
+      <obj_property name="ObjectShortName">leds[4:0]</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/simtop/main/uart_rxd_out">
       <obj_property name="ElementShortName">uart_rxd_out</obj_property>
@@ -820,34 +820,6 @@
       <obj_property name="ElementShortName">dmacmd[31:0]</obj_property>
       <obj_property name="ObjectShortName">dmacmd[31:0]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/DMA/dmaqueuefull">
-      <obj_property name="ElementShortName">dmaqueuefull</obj_property>
-      <obj_property name="ObjectShortName">dmaqueuefull</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/DMA/dmaqueuevalid">
-      <obj_property name="ElementShortName">dmaqueuevalid</obj_property>
-      <obj_property name="ObjectShortName">dmaqueuevalid</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/DMA/dmaqueueempty">
-      <obj_property name="ElementShortName">dmaqueueempty</obj_property>
-      <obj_property name="ObjectShortName">dmaqueueempty</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/DMA/dmaqueuewe">
-      <obj_property name="ElementShortName">dmaqueuewe</obj_property>
-      <obj_property name="ObjectShortName">dmaqueuewe</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/DMA/dmaqueuedin">
-      <obj_property name="ElementShortName">dmaqueuedin[95:0]</obj_property>
-      <obj_property name="ObjectShortName">dmaqueuedin[95:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/DMA/dmaqueuere">
-      <obj_property name="ElementShortName">dmaqueuere</obj_property>
-      <obj_property name="ObjectShortName">dmaqueuere</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/DMA/dmaqueuedout">
-      <obj_property name="ElementShortName">dmaqueuedout[95:0]</obj_property>
-      <obj_property name="ObjectShortName">dmaqueuedout[95:0]</obj_property>
-   </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/DMA/dmasourceaddr">
       <obj_property name="ElementShortName">dmasourceaddr[31:0]</obj_property>
       <obj_property name="ObjectShortName">dmasourceaddr[31:0]</obj_property>
@@ -860,99 +832,224 @@
       <obj_property name="ElementShortName">dmatargetaddr[31:0]</obj_property>
       <obj_property name="ObjectShortName">dmatargetaddr[31:0]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/DMA/dmacopyfull">
-      <obj_property name="ElementShortName">dmacopyfull</obj_property>
-      <obj_property name="ObjectShortName">dmacopyfull</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/DMA/dmacopyempty">
-      <obj_property name="ElementShortName">dmacopyempty</obj_property>
-      <obj_property name="ObjectShortName">dmacopyempty</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/DMA/dmacopyvalid">
-      <obj_property name="ElementShortName">dmacopyvalid</obj_property>
-      <obj_property name="ObjectShortName">dmacopyvalid</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/DMA/dmacopydin">
-      <obj_property name="ElementShortName">dmacopydin[127:0]</obj_property>
-      <obj_property name="ObjectShortName">dmacopydin[127:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/DMA/dmacopydout">
-      <obj_property name="ElementShortName">dmacopydout[127:0]</obj_property>
-      <obj_property name="ObjectShortName">dmacopydout[127:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/DMA/dmacopyre">
-      <obj_property name="ElementShortName">dmacopyre</obj_property>
-      <obj_property name="ObjectShortName">dmacopyre</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/DMA/dmacopywe">
-      <obj_property name="ElementShortName">dmacopywe</obj_property>
-      <obj_property name="ObjectShortName">dmacopywe</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/DMA/dmareadstate">
-      <obj_property name="ElementShortName">dmareadstate[2:0]</obj_property>
-      <obj_property name="ObjectShortName">dmareadstate[2:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/DMA/dmaop_source">
-      <obj_property name="ElementShortName">dmaop_source[31:0]</obj_property>
-      <obj_property name="ObjectShortName">dmaop_source[31:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/DMA/dmaop_target">
-      <obj_property name="ElementShortName">dmaop_target[31:0]</obj_property>
-      <obj_property name="ObjectShortName">dmaop_target[31:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/DMA/dmaop_count">
-      <obj_property name="ElementShortName">dmaop_count[31:0]</obj_property>
-      <obj_property name="ObjectShortName">dmaop_count[31:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/DMA/writestrobe">
-      <obj_property name="ElementShortName">writestrobe</obj_property>
-      <obj_property name="ObjectShortName">writestrobe</obj_property>
-      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/DMA/dmawritestate">
-      <obj_property name="ElementShortName">dmawritestate[3:0]</obj_property>
-      <obj_property name="ObjectShortName">dmawritestate[3:0]</obj_property>
-      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/DMA/bootROMaddr">
-      <obj_property name="ElementShortName">bootROMaddr[12:0]</obj_property>
-      <obj_property name="ObjectShortName">bootROMaddr[12:0]</obj_property>
-      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/DMA/bootROMdout">
-      <obj_property name="ElementShortName">bootROMdout[127:0]</obj_property>
-      <obj_property name="ObjectShortName">bootROMdout[127:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/DMA/copydata">
-      <obj_property name="ElementShortName">copydata[127:0]</obj_property>
-      <obj_property name="ObjectShortName">copydata[127:0]</obj_property>
-      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/DMA/dmaop_target_copy">
-      <obj_property name="ElementShortName">dmaop_target_copy[31:0]</obj_property>
-      <obj_property name="ObjectShortName">dmaop_target_copy[31:0]</obj_property>
-      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/DMA/burstcount">
       <obj_property name="ElementShortName">burstcount[7:0]</obj_property>
       <obj_property name="ObjectShortName">burstcount[7:0]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/DMA/romReady">
+   <wvobject fp_name="divider217" type="divider">
+      <obj_property name="label">ROMCOPY</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/ROMCopy/aclk">
+      <obj_property name="ElementShortName">aclk</obj_property>
+      <obj_property name="ObjectShortName">aclk</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/ROMCopy/aresetn">
+      <obj_property name="ElementShortName">aresetn</obj_property>
+      <obj_property name="ObjectShortName">aresetn</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/ROMCopy/romReady">
       <obj_property name="ElementShortName">romReady</obj_property>
       <obj_property name="ObjectShortName">romReady</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/ROMCopy/ROMavailable">
+      <obj_property name="ElementShortName">ROMavailable</obj_property>
+      <obj_property name="ObjectShortName">ROMavailable</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/bootROMaddr">
+      <obj_property name="ElementShortName">bootROMaddr[12:0]</obj_property>
+      <obj_property name="ObjectShortName">bootROMaddr[12:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/bootROMdout">
+      <obj_property name="ElementShortName">bootROMdout[127:0]</obj_property>
+      <obj_property name="ObjectShortName">bootROMdout[127:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/ROMCopy/romre">
+      <obj_property name="ElementShortName">romre</obj_property>
+      <obj_property name="ObjectShortName">romre</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/araddr">
+      <obj_property name="ElementShortName">araddr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">araddr[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/arvalid">
+      <obj_property name="ElementShortName">arvalid</obj_property>
+      <obj_property name="ObjectShortName">arvalid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/arready">
+      <obj_property name="ElementShortName">arready</obj_property>
+      <obj_property name="ObjectShortName">arready</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/arlen">
+      <obj_property name="ElementShortName">arlen[7:0]</obj_property>
+      <obj_property name="ObjectShortName">arlen[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/arsize">
+      <obj_property name="ElementShortName">arsize[2:0]</obj_property>
+      <obj_property name="ObjectShortName">arsize[2:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/arburst">
+      <obj_property name="ElementShortName">arburst[1:0]</obj_property>
+      <obj_property name="ObjectShortName">arburst[1:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/rdata">
+      <obj_property name="ElementShortName">rdata[127:0]</obj_property>
+      <obj_property name="ObjectShortName">rdata[127:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/rresp">
+      <obj_property name="ElementShortName">rresp[1:0]</obj_property>
+      <obj_property name="ObjectShortName">rresp[1:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/rvalid">
+      <obj_property name="ElementShortName">rvalid</obj_property>
+      <obj_property name="ObjectShortName">rvalid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/rready">
+      <obj_property name="ElementShortName">rready</obj_property>
+      <obj_property name="ObjectShortName">rready</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/rlast">
+      <obj_property name="ElementShortName">rlast</obj_property>
+      <obj_property name="ObjectShortName">rlast</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/awaddr">
+      <obj_property name="ElementShortName">awaddr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">awaddr[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/awvalid">
+      <obj_property name="ElementShortName">awvalid</obj_property>
+      <obj_property name="ObjectShortName">awvalid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/awready">
+      <obj_property name="ElementShortName">awready</obj_property>
+      <obj_property name="ObjectShortName">awready</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/awlen">
+      <obj_property name="ElementShortName">awlen[7:0]</obj_property>
+      <obj_property name="ObjectShortName">awlen[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/awsize">
+      <obj_property name="ElementShortName">awsize[2:0]</obj_property>
+      <obj_property name="ObjectShortName">awsize[2:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/awburst">
+      <obj_property name="ElementShortName">awburst[1:0]</obj_property>
+      <obj_property name="ObjectShortName">awburst[1:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/wdata">
+      <obj_property name="ElementShortName">wdata[127:0]</obj_property>
+      <obj_property name="ObjectShortName">wdata[127:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/wstrb">
+      <obj_property name="ElementShortName">wstrb[15:0]</obj_property>
+      <obj_property name="ObjectShortName">wstrb[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/wvalid">
+      <obj_property name="ElementShortName">wvalid</obj_property>
+      <obj_property name="ObjectShortName">wvalid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/wready">
+      <obj_property name="ElementShortName">wready</obj_property>
+      <obj_property name="ObjectShortName">wready</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/wlast">
+      <obj_property name="ElementShortName">wlast</obj_property>
+      <obj_property name="ObjectShortName">wlast</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/bresp">
+      <obj_property name="ElementShortName">bresp[1:0]</obj_property>
+      <obj_property name="ObjectShortName">bresp[1:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/bvalid">
+      <obj_property name="ElementShortName">bvalid</obj_property>
+      <obj_property name="ObjectShortName">bvalid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/ROMCopy/m_axi/bready">
+      <obj_property name="ElementShortName">bready</obj_property>
+      <obj_property name="ObjectShortName">bready</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/cmdmode">
+      <obj_property name="ElementShortName">cmdmode[3:0]</obj_property>
+      <obj_property name="ObjectShortName">cmdmode[3:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/dmatargetaddr">
+      <obj_property name="ElementShortName">dmatargetaddr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dmatargetaddr[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/dmatargetend">
+      <obj_property name="ElementShortName">dmatargetend[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dmatargetend[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/RESETVECTOR">
+      <obj_property name="ElementShortName">RESETVECTOR[31:0]</obj_property>
+      <obj_property name="ObjectShortName">RESETVECTOR[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/ROMSTART">
+      <obj_property name="ElementShortName">ROMSTART[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ROMSTART[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/ROMSIZE">
+      <obj_property name="ElementShortName">ROMSIZE[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ROMSIZE[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/ROMIMAGEEND">
+      <obj_property name="ElementShortName">ROMIMAGEEND[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ROMIMAGEEND[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/ROMCopy/burstcount">
+      <obj_property name="ElementShortName">burstcount[7:0]</obj_property>
+      <obj_property name="ObjectShortName">burstcount[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="divider490" type="divider">
+      <obj_property name="label">ARBITER</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/arbiter4x1inst/aclk">
+      <obj_property name="ElementShortName">aclk</obj_property>
+      <obj_property name="ObjectShortName">aclk</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/arbiter4x1inst/aresetn">
+      <obj_property name="ElementShortName">aresetn</obj_property>
+      <obj_property name="ObjectShortName">aresetn</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/arbiter4x1inst/readstate">
+      <obj_property name="ElementShortName">readstate[2:0]</obj_property>
+      <obj_property name="ObjectShortName">readstate[2:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/arbiter4x1inst/rarbstate">
+      <obj_property name="ElementShortName">rarbstate[2:0]</obj_property>
+      <obj_property name="ObjectShortName">rarbstate[2:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/arbiter4x1inst/rreq">
+      <obj_property name="ElementShortName">rreq[4:0]</obj_property>
+      <obj_property name="ObjectShortName">rreq[4:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/arbiter4x1inst/rgrant">
+      <obj_property name="ElementShortName">rgrant[4:0]</obj_property>
+      <obj_property name="ObjectShortName">rgrant[4:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/arbiter4x1inst/rreqcomplete">
+      <obj_property name="ElementShortName">rreqcomplete</obj_property>
+      <obj_property name="ObjectShortName">rreqcomplete</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/arbiter4x1inst/writestate">
+      <obj_property name="ElementShortName">writestate[2:0]</obj_property>
+      <obj_property name="ObjectShortName">writestate[2:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/arbiter4x1inst/warbstate">
+      <obj_property name="ElementShortName">warbstate[2:0]</obj_property>
+      <obj_property name="ObjectShortName">warbstate[2:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/arbiter4x1inst/wreq">
+      <obj_property name="ElementShortName">wreq[4:0]</obj_property>
+      <obj_property name="ObjectShortName">wreq[4:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/arbiter4x1inst/wgrant">
+      <obj_property name="ElementShortName">wgrant[4:0]</obj_property>
+      <obj_property name="ObjectShortName">wgrant[4:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/arbiter4x1inst/wreqcomplete">
+      <obj_property name="ElementShortName">wreqcomplete</obj_property>
+      <obj_property name="ObjectShortName">wreqcomplete</obj_property>
    </wvobject>
 </wave_config>
