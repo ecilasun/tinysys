@@ -85,8 +85,9 @@ assign adcconn.addin = adccmdbit;
 assign adcconn.adcs = adccs;
 assign adcbit = adcconn.addout;
 
-logic [9:0] ch0dat = 10'd0;
-logic [9:0] ch0stash = 10'd0;
+logic [9:0] chdat = 10'd0;
+logic [9:0] chstash[0:7];
+logic [2:0] chcurr = 3'b000;
 
 logic [4:0] adcstate = 5'd0;
 always @(negedge clk10) begin	// TODO: 125ns is 'high' and datasheet doesn't show a 'low', so... 10ns?
@@ -97,6 +98,7 @@ always @(negedge clk10) begin	// TODO: 125ns is 'high' and datasheet doesn't sho
 		adccmdbit <= 1'b0;
 		case (adcstate)
 			5'b00000: begin
+				chcurr <= chcurr + 3'd1; // Next channel to read (first run, it's 001)
 				adccmdbit <= 1'b1; // start
 				adcstate <= 5'b00001;
 			end
@@ -106,17 +108,17 @@ always @(negedge clk10) begin	// TODO: 125ns is 'high' and datasheet doesn't sho
 			end
 			5'b00010: begin
 				// D2
-				adccmdbit <= 1'b0;
+				adccmdbit <= chcurr[2];
 				adcstate <= 5'b00011;
 			end
 			5'b00011: begin
 				// D1
-				adccmdbit <= 1'b0;
+				adccmdbit <= chcurr[1];
 				adcstate <= 5'b00100;
 			end
 			5'b00100: begin
 				// D0 : CH0 selected
-				adccmdbit <= 1'b0;
+				adccmdbit <= chcurr[0];
 				adcstate <= 5'b00101;
 			end
 			5'b00101: begin
@@ -129,43 +131,43 @@ always @(negedge clk10) begin	// TODO: 125ns is 'high' and datasheet doesn't sho
 			end
 			5'b00111: begin
 				// TODO: On each pass, sample the next channel and stash
-				ch0dat[9] <= adcbit;
+				chdat[9] <= adcbit;
 				adcstate <= 5'b01000;
 			end
 			5'b01000: begin
-				ch0dat[8] <= adcbit;
+				chdat[8] <= adcbit;
 				adcstate <= 5'b01001;
 			end
 			5'b01001: begin
-				ch0dat[7] <= adcbit;
+				chdat[7] <= adcbit;
 				adcstate <= 5'b01010;
 			end
 			5'b01010: begin
-				ch0dat[6] <= adcbit;
+				chdat[6] <= adcbit;
 				adcstate <= 5'b01011;
 			end
 			5'b01011: begin
-				ch0dat[5] <= adcbit;
+				chdat[5] <= adcbit;
 				adcstate <= 5'b01100;
 			end
 			5'b01100: begin
-				ch0dat[4] <= adcbit;
+				chdat[4] <= adcbit;
 				adcstate <= 5'b01101;
 			end
 			5'b01101: begin
-				ch0dat[3] <= adcbit;
+				chdat[3] <= adcbit;
 				adcstate <= 5'b01110;
 			end
 			5'b01110: begin
-				ch0dat[2] <= adcbit;
+				chdat[2] <= adcbit;
 				adcstate <= 5'b01111;
 			end
 			5'b01111: begin
-				ch0dat[1] <= adcbit;
+				chdat[1] <= adcbit;
 				adcstate <= 5'b10000;
 			end
 			5'b10000: begin
-				ch0dat[0] <= adcbit;
+				chdat[0] <= adcbit;
 				adcstate <= 5'b10001;
 			end
 			5'b10001: begin
@@ -178,7 +180,17 @@ always @(negedge clk10) begin	// TODO: 125ns is 'high' and datasheet doesn't sho
 end
 
 always @(posedge aclk) begin
-	ch0stash <= ch0dat;
+	// When adcstate is at start, copy out the last known value
+	unique case ({(|adcstate), chcurr})
+		6'b0_000: chstash[0] <= chdat;
+		6'b0_001: chstash[1] <= chdat;
+		6'b0_010: chstash[2] <= chdat;
+		6'b0_011: chstash[3] <= chdat;
+		6'b0_100: chstash[4] <= chdat;
+		6'b0_101: chstash[5] <= chdat;
+		6'b0_110: chstash[6] <= chdat;
+		6'b0_111: chstash[7] <= chdat;
+	endcase
 end
 
 // --------------------------------------------------
@@ -192,6 +204,7 @@ assign s_axi.bvalid = 1'b1;
 assign s_axi.bresp = 2'b00;
 
 logic [1:0] raddrstate = 2'b00;
+logic [2:0] chsel = 3'b000;
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
@@ -206,9 +219,24 @@ always @(posedge aclk) begin
 			2'b00: begin
 				if (s_axi.arvalid) begin
 					s_axi.arready <= 1'b1;
-					unique case(s_axi.araddr[5:0])
-						6'b000000: raddrstate <= 2'b01;	// 0x00: Temperature
-						default: raddrstate <= 2'b10;	// 0x04..0x20: CH0..CH7
+
+					// Channel index mapping
+					//5 432 10.0
+					//0_000_00 0x00 CH0
+					//0_001_00 0x04 CH1
+					//0_010_00 0x08 CH2
+					//0_011_00 0x0C CH3
+					//0_100_00 0x10 CH4
+					//0_101_00 0x14 CH5
+					//0_110_00 0x18 CH6
+					//0_111_00 0x1C CH7
+					//1_000_00 0x20 TMP
+
+					chsel <= s_axi.araddr[4:2];
+
+					unique case(s_axi.araddr[5:2])
+						4'b1_000: raddrstate <= 2'b01;	// 0x20 onwards: Temperature
+						default: raddrstate <= 2'b10;	// 0x00..0x18: CH0..CH7 analog samples
 					endcase
 				end
 			end
@@ -221,8 +249,7 @@ always @(posedge aclk) begin
 			end
 			2'b10: begin
 				if (s_axi.rready) begin
-					// TODO: Map each address to an ADC channel
-					s_axi.rdata <= {118'd0, ch0stash};
+					s_axi.rdata <= {118'd0, chstash[chsel]};
 					s_axi.rvalid <= 1'b1;
 					raddrstate <= 2'b00;
 				end
