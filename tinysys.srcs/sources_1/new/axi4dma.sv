@@ -123,9 +123,6 @@ always_ff @(posedge aclk) begin
 				m_axi.arvalid <= 1;
 				m_axi.araddr <= dmasourceaddr;
 
-				// Make sure to offset the batch once in this header section
-				dmasourceaddr <= dmasourceaddr + 32'd16;
-
 				// Dummy state, go back to where we were
 				cmdmode <= DMAREADSOURCE;
 			end
@@ -144,6 +141,7 @@ always_ff @(posedge aclk) begin
 					// Set up write
 					m_axi.awvalid <= 1'b1;
 					m_axi.awaddr <= dmatargetaddr;
+					dmatargetaddr <= dmatargetaddr + 32'd16;
 					datalatch <= m_axi.rdata;
 					cmdmode <= DMAWRITETARGET;
 				end
@@ -167,7 +165,11 @@ always_ff @(posedge aclk) begin
 					m_axi.wstrb <= 16'h0000;
 					m_axi.wlast <= 0;
 					m_axi.bready <= 1;
-					dmablockcount <= dmablockcount - 'd1;
+
+					// Next batch
+					dmasourceaddr <= dmasourceaddr + 32'd16;
+ 					dmablockcount <= dmablockcount - 'd1;
+
 					cmdmode <= DMAWAITBREADY;
 				end
 			end
@@ -179,10 +181,6 @@ always_ff @(posedge aclk) begin
 					// Set up next read, if there's one
 					m_axi.arvalid <= (dmablockcount == 'd0) ? 1'b0 : 1'b1;
 					m_axi.araddr <= dmasourceaddr;
-
-					// Next batch
-					dmasourceaddr <= dmasourceaddr + 32'd16;
-					dmatargetaddr <= dmatargetaddr + 32'd16;
 
 					// Stop when done
 					cmdmode <= (dmablockcount == 'd0) ? FINALIZE : DMAREADSOURCE;
