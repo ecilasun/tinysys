@@ -13,21 +13,20 @@ module axi4dma(
 	output wire dmabusy);
 
 logic cmdre = 1'b0;
-logic dmainprogress = 1'b0;
 assign dmafifore = cmdre;
-assign dmabusy = dmainprogress;
+assign dmabusy = ~dmafifoempty;
 
 // ------------------------------------------------------------------------------------
 // Setup
 // ------------------------------------------------------------------------------------
 
-localparam burstcount = 8'd1;		// Single burst
+//localparam burstcount = 8'd1;		// Single burst
 
-assign m_axi.arlen = burstcount - 8'd1;
+//assign m_axi.arlen = burstcount - 8'd1;
 assign m_axi.arsize = SIZE_16_BYTE; // 128bit read bus
 assign m_axi.arburst = BURST_INCR;	// auto address increment for burst
 
-assign m_axi.awlen = burstcount - 8'd1;
+//assign m_axi.awlen = burstcount - 8'd1;
 assign m_axi.awsize = SIZE_16_BYTE; // 128bit write bus
 assign m_axi.awburst = BURST_INCR;	// auto address increment for burst
 
@@ -39,19 +38,27 @@ typedef enum logic [3:0] {
 	WCMD, DISPATCH,
 	DMASOURCE,
 	DMATARGET,
-	DMALENGTH,
-	STARTDMA, DMAREADSOURCE, COPYLOOP, DMAWRITETARGET, DMAWAITWRITE, DMAWAITBREADY,
+	DMABURST,
+	DMASTART,
+	DMATAG,
+	WAITREADADDR, READLOOP, SETUPWRITE, WAITWRITEADDR, WRITEBEGIN, WRITELOOP, WRITETRAIL,
 	FINALIZE } dmacmdmodetype;
 dmacmdmodetype cmdmode = WCMD;
 
-logic [31:0] dmacmd = 'd0;
-
+logic [31:0] dmacmd;
 logic [31:0] dmasourceaddr;
 logic [31:0] dmatargetaddr;
 logic [31:0] dmatargetend;
-logic [31:0] dmablockcount;
+logic [7:0] dmasingleburstcount = 8'd0;
+logic [7:0] burstcursor = 8'd0;
+logic [127:0] burstcache[0:255];
 
-logic [127:0] datalatch;
+initial begin
+	for(int i=0;i<256;i++)
+		burstcache[i] = 128'd0;
+end
+
+wire reachedend = (burstcursor==dmasingleburstcount) ? 1'b1 : 1'b0;
 
 always_ff @(posedge aclk) begin
 	if (~aresetn) begin
@@ -60,6 +67,8 @@ always_ff @(posedge aclk) begin
 		m_axi.wstrb <= 16'h0000;
 		m_axi.wlast <= 0;
 		m_axi.bready <= 0;
+		m_axi.arvalid <= 0;
+		m_axi.rready <= 0;
 		cmdmode <= WCMD;
 	end else begin
 
@@ -79,11 +88,12 @@ always_ff @(posedge aclk) begin
 
 			DISPATCH: begin
 				case (dmacmd)
-					32'h00000000:	cmdmode <= DMASOURCE;	// Source address, byte aligned
-					32'h00000001:	cmdmode <= DMATARGET;	// Target address, byte aligned
-					32'h00000002:	cmdmode <= DMALENGTH;	// Set length in bytes (divided into 128 bit blocks, r/w masks handle leading and trailing ledges)
-					32'h00000003:	cmdmode <= STARTDMA;	// Start transfer with current setup
-					default:		cmdmode <= FINALIZE;	// Invalid command, wait one clock and try next
+					32'h00000000:	cmdmode <= DMASOURCE;		// Source address, byte aligned
+					32'h00000001:	cmdmode <= DMATARGET;		// Target address, byte aligned
+					32'h00000002:	cmdmode <= DMABURST;		// Number of 16 byte blocks to copy, minus one, up to a maximum of 256
+					32'h00000003:	cmdmode <= DMASTART;		// Start transfer with current setup
+					32'h00000004:	cmdmode <= DMATAG;			// Dummy command, used to ensure FIFO has something after the copy completes we can wait on
+					default:		cmdmode <= FINALIZE;		// Invalid command, wait one clock and try next
 				endcase
 			end
 
@@ -105,85 +115,90 @@ always_ff @(posedge aclk) begin
 				end
 			end
 
-			DMALENGTH: begin
+			DMABURST: begin
 				if (dmafifovalid && ~dmafifoempty) begin
-					// NOTE: Need to generate leadmask and trailmask for misaligned
-					// start/end bits and manage the middle section count
-					dmablockcount <= dmafifodout;
+					// Single burst, size < 256
+					dmasingleburstcount <= dmafifodout[7:0];
+					burstcursor <= 8'd0;
 					// Advance FIFO
 					cmdre <= 1'b1;
 					cmdmode <= FINALIZE;
 				end
 			end
-			
+
+			DMASTART: begin
+				// NOTE: Not to complicate hardware, we make sure to set this to burstcount-8'd1 in software
+				m_axi.arlen <= dmasingleburstcount;
+				m_axi.arvalid <= 1;
+				m_axi.araddr <= dmasourceaddr; 
+				cmdmode <= WAITREADADDR;
+			end
+
+			DMATAG: begin
+				if (dmafifovalid && ~dmafifoempty) begin
+					//dmatag <= dmafifodout; // Unused - TAG
+					// Advance FIFO
+					cmdre <= 1'b1;
+					cmdmode <= FINALIZE;
+				end
+			end
+
 			// ----------------------- DMA OP
 
-			STARTDMA: begin
-				// Set up read
-				m_axi.arvalid <= 1;
-				m_axi.araddr <= dmasourceaddr;
-
-				// Dummy state, go back to where we were
-				cmdmode <= DMAREADSOURCE;
-			end
-
-			DMAREADSOURCE: begin
-				if (m_axi.arready) begin // && m_axi.arvalid
+			WAITREADADDR: begin
+				if (m_axi.arready) begin
 					m_axi.arvalid <= 0;
 					m_axi.rready <= 1;
-					cmdmode <= COPYLOOP;
+					cmdmode <= READLOOP;
 				end
 			end
 
-			COPYLOOP: begin
-				if (m_axi.rvalid) begin // && m_axi.rready
-					m_axi.rready <= 1'b0;
-					// Set up write
-					m_axi.awvalid <= 1'b1;
-					m_axi.awaddr <= dmatargetaddr;
-					dmatargetaddr <= dmatargetaddr + 32'd16;
-					datalatch <= m_axi.rdata;
-					cmdmode <= DMAWRITETARGET;
+			READLOOP: begin
+				if (m_axi.rvalid) begin
+					m_axi.rready <= ~m_axi.rlast;
+					burstcache[burstcursor] <= m_axi.rdata;
+					burstcursor <= burstcursor + 8'd1;
+					cmdmode <= ~m_axi.rlast ? READLOOP : SETUPWRITE;
 				end
 			end
 
-			DMAWRITETARGET: begin
-				// Ready to write?
+			SETUPWRITE: begin
+				burstcursor <= 8'd0;
+				m_axi.awlen <= dmasingleburstcount;
+				m_axi.awvalid <= 1;
+				m_axi.awaddr <= dmatargetaddr;
+				cmdmode <= WAITWRITEADDR;
+			end
+			
+			WAITWRITEADDR: begin
 				if (m_axi.awready) begin
 					m_axi.awvalid <= 1'b0;
-					m_axi.wvalid <= 1'b1;
-					m_axi.wstrb <= 16'hFFFF;
-					m_axi.wdata <= datalatch;
-					m_axi.wlast <= 1'b1;
-					cmdmode <= DMAWAITWRITE;
+					m_axi.bready <= 1'b1;
+					cmdmode <= WRITEBEGIN;
 				end
 			end
+			
+			WRITEBEGIN: begin
+				m_axi.wdata <= burstcache[burstcursor];
+				burstcursor <= burstcursor + 8'd1;
+				m_axi.wstrb <= 16'hFFFF;
+				m_axi.wvalid <= 1'b1;
+				m_axi.wlast <= reachedend;
+				cmdmode <= WRITELOOP;
+			end
 
-			DMAWAITWRITE: begin
+			WRITELOOP: begin
 				if (m_axi.wready) begin
-					m_axi.wvalid <= 0;
+					m_axi.wvalid <= 1'b0;
 					m_axi.wstrb <= 16'h0000;
-					m_axi.wlast <= 0;
-					m_axi.bready <= 1;
-
-					// Next batch
-					dmasourceaddr <= dmasourceaddr + 32'd16;
- 					dmablockcount <= dmablockcount - 'd1;
-
-					cmdmode <= DMAWAITBREADY;
+					cmdmode <= m_axi.wlast ? WRITETRAIL : WRITEBEGIN;
 				end
 			end
 
-			DMAWAITBREADY: begin
-				if (m_axi.bvalid) begin // && m_axi.bready
-					m_axi.bready <= 0;
-
-					// Set up next read, if there's one
-					m_axi.arvalid <= (dmablockcount == 'd0) ? 1'b0 : 1'b1;
-					m_axi.araddr <= dmasourceaddr;
-
-					// Stop when done
-					cmdmode <= (dmablockcount == 'd0) ? FINALIZE : DMAREADSOURCE;
+			WRITETRAIL: begin
+				if (m_axi.bvalid) begin
+					m_axi.bready <= 1'b0;
+					cmdmode <= FINALIZE;
 				end
 			end
 

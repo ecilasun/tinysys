@@ -41,13 +41,13 @@ end
 // Setup
 // ------------------------------------------------------------------------------------
 
-localparam burstcount = 8'd1;		// Single burst
-
-assign m_axi.arlen = burstcount - 8'd1;
+assign m_axi.arlen = 0;				// Single burst
 assign m_axi.arsize = SIZE_16_BYTE; // 128bit read bus
 assign m_axi.arburst = BURST_INCR;	// auto address increment for burst
+assign m_axi.arvalid = 0;			// This module does not read from memory
+assign m_axi.rready = 0;
 
-assign m_axi.awlen = burstcount - 8'd1;
+assign m_axi.awlen = 0;				// Single burst
 assign m_axi.awsize = SIZE_16_BYTE; // 128bit write bus
 assign m_axi.awburst = BURST_INCR;	// auto address increment for burst
 
@@ -63,10 +63,6 @@ romcopymodetype cmdmode = INIT;
 
 logic [31:0] dmatargetaddr;
 logic [31:0] dmatargetend;
-
-// This module does not read from memory
-assign m_axi.arvalid = 0;
-assign m_axi.rready = 0;
 
 always_ff @(posedge aclk) begin
 	if (~aresetn) begin
