@@ -45,11 +45,11 @@ module tophat(
 	,output wire addin
 	,output wire adcs
 	// Audio
-	/*,output wire au_cs		// 
+	,output wire au_cs		// serial comm start/stop
 	,output wire au_mode	// serial interface mode (1:SPI, 0:2-wire)
 	,output wire au_sdin	// i2s serial input for sigma-delta DAC
 	,output wire au_sclk	// serial data clock
-	,output wire au_din		// i2s data in
+	/*,output wire au_din		// i2s data in
 	,output wire au_bclk*/);	// i2s serial bit clock
 
 // --------------------------------------------------
@@ -110,12 +110,21 @@ gpuwires gpuvideoout(
 // SPI wires
 // --------------------------------------------------
 
-sdwires sdconn(
+spiwires sdconn(
 	.spi_miso(spi_miso),
 	.spi_cs_n(spi_cs_n),
 	.spi_clk(spi_clk),
 	.spi_mosi(spi_mosi),
 	.spi_swtch(spi_swtch) );
+
+// --------------------------------------------------
+// Audio wires
+// --------------------------------------------------
+
+audiowires audioconn(
+	.cs_n(au_cs),
+	.sclk(au_sclk),
+	.sdin(au_sdin) );
 
 // --------------------------------------------------
 // ADC wires
@@ -149,6 +158,7 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.ddr3wires(ddr3wires),
 	.gpuvideoout(gpuvideoout),
 	.sdconn(sdconn),
+	.audioconn(audioconn),
 	.adcconn(adcconn));
 
 endmodule

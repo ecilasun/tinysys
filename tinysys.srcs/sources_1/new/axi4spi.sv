@@ -6,7 +6,7 @@ module axi4spi(
 	input wire aclk,
 	input wire aresetn,
 	input wire spibaseclock,
-    sdwires.def sdconn,
+    spiwires.def sdconn,
 	axi4if.slave s_axi);
 
 assign sdconn.spi_cs_n = 1'b0; // Keep attached spi device selected (TODO: Drive via control register)

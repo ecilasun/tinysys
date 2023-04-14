@@ -19,7 +19,8 @@ module tinysoc #(
 	inout wire usb_d_n,
 	gpuwires.def gpuvideoout,
 	ddr3sdramwires.def ddr3wires,
-	sdwires.def sdconn,
+	spiwires.def sdconn,
+	audiowires.def audioconn,
 	adcwires.def adcconn);
 
 // --------------------------------------------------
@@ -43,6 +44,7 @@ axi4if csrif();				// Sub bus: CSR file device
 axi4if xadcif();			// Sub bus: ADC controller
 axi4if dmaif();				// Sub bus: DMA controller
 axi4if usbif();				// Sub bus: USB host i/o
+axi4if audioif();			// Sub bus: AUDIO SPI out
 
 ibusif ibus();				// Internal bus between units
 
@@ -237,13 +239,16 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // XADC: 80005000  80005FFF  19'b000_0000_0000_0000_0101  4KB
 // DMAC: 80006000  80006FFF  19'b000_0000_0000_0000_0110  4KB
 // USBH: 80007000  80007FFF  19'b000_0000_0000_0000_0111  4KB
-// ----: 80008000  80008FFF  19'b000_0000_0000_0000_1000  4KB
+// AUDI: 80008000  80008FFF  19'b000_0000_0000_0000_1000  4KB
+// ----: 80009000  80009FFF  19'b000_0000_0000_0000_1000  4KB
+// ----: 8000A000  8000AFFF  19'b000_0000_0000_0000_1000  4KB
 
 devicerouter devicerouterinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
     .axi_s(devicebus),
     .addressmask({
+    	19'b000_0000_0000_0000_1000,	// AUDI
         19'b000_0000_0000_0000_0111,	// USBH
     	19'b000_0000_0000_0000_0110,	// DMAC
     	19'b000_0000_0000_0000_0101,	// XADC
@@ -252,7 +257,7 @@ devicerouter devicerouterinst(
 		19'b000_0000_0000_0000_0010,	// GPUC
 		19'b000_0000_0000_0000_0001,	// LEDS
 		19'b000_0000_0000_0000_0000 }),	// UART
-    .axi_m({usbif, dmaif, xadcif, csrif, spiif, gpucmdif, ledif, uartif}));
+    .axi_m({audioif, usbif, dmaif, xadcif, csrif, spiif, gpucmdif, ledif, uartif}));
 
 // --------------------------------------------------
 // Memory mapped devices
@@ -293,6 +298,13 @@ axi4spi spictlinst(
 	.spibaseclock(clk50),
 	.sdconn(sdconn),
 	.s_axi(spiif));
+
+axi4audio audioctlinst(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.audiobaseclock(clk50),
+	.audioconn(audioconn),
+	.s_axi(audioif));
 
 // CSR file acts as a region of uncached memory
 // Access to register indices get mapped to LOAD/STORE
