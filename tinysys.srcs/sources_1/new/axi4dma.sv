@@ -180,7 +180,6 @@ always_ff @(posedge aclk) begin
 			
 			WRITEBEGIN: begin
 				m_axi.wdata <= burstcache[burstcursor];
-				burstcursor <= burstcursor + 8'd1;
 				m_axi.wstrb <= 16'hFFFF;
 				m_axi.wvalid <= 1'b1;
 				m_axi.wlast <= reachedend;
@@ -189,6 +188,7 @@ always_ff @(posedge aclk) begin
 
 			WRITELOOP: begin
 				if (m_axi.wready) begin
+					burstcursor <= burstcursor + 8'd1;
 					m_axi.wvalid <= 1'b0;
 					m_axi.wstrb <= 16'h0000;
 					cmdmode <= m_axi.wlast ? WRITETRAIL : WRITEBEGIN;
