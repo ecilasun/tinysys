@@ -192,7 +192,7 @@ always @(posedge aclk) begin
 				// - HWIRQs will ignore the current instruction and branch to ISR here after injection of a prologue
 				// - EBREAK will repeatedly jump back to the same instruction site until the EBREAK is replaced
 
-				ififowr_en <= (~isfence) && (~irqReq[0]) && (~irqReq[1]) && (~isillegalinstruction) && (~isebreak);
+				ififowr_en <= (~isfence) && (~irqReq[0]) && (~irqReq[1]) && (~isillegalinstruction) && (~isecall) && (~isebreak) && (~ismret) && (~iswfi);
 				ififodin <= {
 					rs3, func7, csroffset,
 					func12, func3,
@@ -228,7 +228,7 @@ always @(posedge aclk) begin
 					ismret:					begin fetchmode <= EXITISR;				fetchena <= 1'b0; end
 					iswfi:					begin fetchmode <= WFI;					fetchena <= 1'b0; end
 					isbranch,
-					isdiscard,
+					isdiscard, 
 					isflush:				begin fetchmode <= WAITNEWBRANCHTARGET;	fetchena <= 1'b0; end
 					default:				begin fetchmode <= FETCH;				fetchena <= 1'b1; end
 				endcase

@@ -148,14 +148,13 @@ integerdividersigned IDIVS (
 // Core logic
 // --------------------------------------------------
 
-typedef enum logic [4:0] {
+typedef enum logic [3:0] {
 	READINSTR, READREG,
 	DISPATCH,
 	MATHWAIT, LWAIT, SWAIT,
 	SYSOP, SYSWBACK, SYSWAIT,
 	CSROPS, WCSROP,
 	SYSCDISCARD, SYSCFLUSH, WCACHE,
-	SYSMRET, SYSWFI, SYSEBREAK, SYSECALL,
 	WBACK } controlunitmode;
 controlunitmode ctlmode = READINSTR;
 
@@ -352,10 +351,10 @@ always @(posedge aclk) begin
 				case ({func3, func12})
 					{3'b000, `F12_CDISCARD}:	ctlmode <= SYSCDISCARD;
 					{3'b000, `F12_CFLUSH}:		ctlmode <= SYSCFLUSH;
-					{3'b000, `F12_MRET}:		ctlmode <= SYSMRET;
-					{3'b000, `F12_WFI}:			ctlmode <= SYSWFI;
+					//{3'b000, `F12_MRET}:		ctlmode <= SYSMRET;		// Handled by Fetch unit
+					//{3'b000, `F12_WFI}:		ctlmode <= SYSWFI;		// Handled by Fetch unit
 					//{3'b000, `F12_EBREAK}:	ctlmode <= SYSEBREAK;	// Handled by Fetch unit
-					{3'b000, `F12_ECALL}:		ctlmode <= SYSECALL;
+					//{3'b000, `F12_ECALL}:		ctlmode <= SYSECALL;	// Handled by Fetch unit
 					default:					ctlmode <= CSROPS;
 				endcase
 			end
@@ -377,22 +376,6 @@ always @(posedge aclk) begin
 				btarget <= adjacentPC;
 				btready <= m_ibus.cdone;
 				ctlmode <= m_ibus.cdone ? READINSTR : WCACHE;
-			end
-
-			SYSMRET: begin
-				ctlmode <= READINSTR;
-			end
-
-			SYSWFI: begin
-				ctlmode <= READINSTR;
-			end
-
-			SYSEBREAK: begin
-				ctlmode <= READINSTR;
-			end
-
-			SYSECALL: begin
-				ctlmode <= READINSTR;
 			end
 
 			CSROPS: begin
