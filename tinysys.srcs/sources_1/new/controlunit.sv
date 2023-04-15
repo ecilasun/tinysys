@@ -107,6 +107,7 @@ arithmeticlogic arithmeticlogicinst(
 
 logic mulstrobe = 1'b0;
 logic divstrobe = 1'b0;
+logic [2:0] mathop = 3'b000;
 
 wire mulready;
 wire [31:0] product;
@@ -236,6 +237,7 @@ always @(posedge aclk) begin
 				adjacentPC <= PC + 32'd4;
 				mulstrobe <= (aluop==`ALU_MUL);
 				divstrobe <= (aluop==`ALU_DIV || aluop==`ALU_REM);
+				mathop <= {aluop==`ALU_MUL, aluop==`ALU_DIV, aluop==`ALU_REM};
 				ctlmode <= DISPATCH;
 			end
 
@@ -287,19 +289,12 @@ always @(posedge aclk) begin
 			end
 
 			MATHWAIT: begin
-				if (mulready || divready) begin
-					unique case (aluop)
-						`ALU_MUL: begin
-							wbdin <= product;
-						end
-						`ALU_DIV: begin
-							wbdin <= (func3 == `F3_DIV) ? quotient : quotientu;
-						end
-						`ALU_REM: begin
-							wbdin <= (func3 == `F3_REM) ? remainder : remainderu;
-						end
-					endcase
-				end
+				unique case(1'b1)
+					mathop[0]:	wbdin <= (func3 == `F3_REM) ? remainder : remainderu;
+					mathop[1]:	wbdin <= (func3 == `F3_DIV) ? quotient : quotientu;
+					mathop[2]:	wbdin <= product;
+				endcase
+
 				wback <= (mulready || divready);
 				ctlmode <= (mulready || divready) ? WBACK : MATHWAIT;
 			end
