@@ -61,21 +61,15 @@ always @(posedge audiobaseclock) begin
 				end
 			end
 			2'b01: begin
-				// Wait for low clock and pull CS down
-				if (sclk == 1'b0) begin
-					cs_n <= 1'b0;
-					// Start sending
-					sendbitcount <= 4'b1111;
-					sendstate <= 2'b10;
-				end
+				// Start sending
+				sendbitcount <= 4'b1111;
+				sendstate <= 2'b10;
 			end
 			2'b10: begin
-				// Send command bits when clock is low
-				if (sclk == 1'b0) begin
-					if (sendbitcount == 4'b0000) begin
-						cs_n <= 1'b1;					
-						sendstate <= 2'b00;
-					end
+				// Command bits are set when clock is low, so we need to set them up beforehand 
+				if (sclk == 1'b1) begin
+					cs_n <= sendbitcount == 4'b0000 ? 1'b1 : 1'b0;
+					sendstate <= sendbitcount == 4'b0000 ? 2'b00 : 2'b10;
 					sdin <= senddata[15];
 					senddata <= {senddata[14:0], 1'b0};
 					sendbitcount <= sendbitcount - 4'd1;

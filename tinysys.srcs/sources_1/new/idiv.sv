@@ -11,9 +11,9 @@ module integerdividerunsigned(
     output wire ready);
 
 logic [5:0] count;
-logic [31:00] reg_q;
-logic [31:00] reg_r;
-logic [31:00] reg_b;
+logic [31:0] reg_q;
+logic [31:0] reg_r;
+logic [31:0] reg_b;
 logic busy = 1'b0, busy2 = 1'b0;
 logic r_sign;
 assign ready = ~busy&busy2;
@@ -27,6 +27,8 @@ always @(posedge aclk)begin
         // busy2 <= 0;
     end else begin
         busy2 <= busy;
+		count <= count+1;
+
         if (start) begin
             reg_r <= 32'b0;
             r_sign <= 0;
@@ -35,11 +37,11 @@ always @(posedge aclk)begin
             count <= 0;
             busy <= 1;
         end
-        else if (busy) begin
+
+        if (busy) begin
             reg_r <= sub_add[31:0];
             r_sign <= sub_add[32];
             reg_q <= {reg_q[30:0], ~sub_add[32]};
-            count <= count+1;
             if (count==31)
             	busy <= 0;
         end
@@ -59,10 +61,10 @@ module integerdividersigned(
     output wire ready);
 
 logic [5:0] count;
-logic [31:00] reg_q;
-logic [31:00] reg_r;
-logic [31:00] reg_b;
-wire [31:00] reg_r2;
+logic [31:0] reg_q;
+logic [31:0] reg_r;
+logic [31:0] reg_b;
+wire [31:0] reg_r2;
 logic busy = 1'b0, busy2 = 1'b0;
 logic r_sign;
 assign ready = ~busy&busy2;
@@ -78,6 +80,8 @@ always @(posedge aclk) begin
     end
     else begin
         busy2 <= busy;
+		count <= count+1;
+
         if (start) begin
             reg_r <= 32'b0;
             r_sign <= 0;
@@ -86,11 +90,11 @@ always @(posedge aclk) begin
             count <= 0;
             busy <= 1;
         end
-        else if (busy) begin
+
+		if (busy) begin
             reg_r <= sub_add[31:0];
             r_sign <= sub_add[32];
             reg_q <= {reg_q[30:0], ~sub_add[32]};
-            count <= count+1;
             if (count==31)
             	busy <= 0;
         end
