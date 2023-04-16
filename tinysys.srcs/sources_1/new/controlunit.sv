@@ -236,7 +236,7 @@ always @(posedge aclk) begin
 				offsetPC <= PC + immed;
 				adjacentPC <= PC + 32'd4;
 				mulstrobe <= (aluop==`ALU_MUL);
-				divstrobe <= (aluop==`ALU_DIV || aluop==`ALU_REM);
+				divstrobe <= (aluop==`ALU_DIV || aluop==`ALU_REM);				
 				mathop <= {aluop==`ALU_MUL, aluop==`ALU_DIV, aluop==`ALU_REM};
 				ctlmode <= DISPATCH;
 			end
@@ -290,13 +290,13 @@ always @(posedge aclk) begin
 
 			MATHWAIT: begin
 				unique case(1'b1)
-					mathop[0]:	wbdin <= (func3 == `F3_REM) ? remainder : remainderu;
-					mathop[1]:	wbdin <= (func3 == `F3_DIV) ? quotient : quotientu;
-					mathop[2]:	wbdin <= product;
+					mathop[0]:	rdin <= (func3 == `F3_REM) ? remainder : remainderu;
+					mathop[1]:	rdin <= (func3 == `F3_DIV) ? quotient : quotientu;
+					mathop[2]:	rdin <= product;
 				endcase
 
-				wback <= (mulready || divready);
-				ctlmode <= (mulready || divready) ? WBACK : MATHWAIT;
+				rwen <= (mulready || divready || divuready);
+				ctlmode <= (mulready || divready || divuready) ? READINSTR : MATHWAIT;
 			end
 
 			LWAIT: begin
