@@ -12,7 +12,9 @@ module tinysoc #(
 	input wire clk200,
 	input wire aresetn,
 	input wire preresetn,
-	output wire [4:0] leds,
+	output wire [3:0] leds,
+	output wire au_dsoutleft,
+	output wire au_dsoutright,
 	output wire uart_rxd_out,
 	input wire uart_txd_in,
 	inout wire usb_d_p,
@@ -20,7 +22,6 @@ module tinysoc #(
 	gpuwires.def gpuvideoout,
 	ddr3sdramwires.def ddr3wires,
 	spiwires.def sdconn,
-	audiowires.def audioconn,
 	adcwires.def adcconn);
 
 // --------------------------------------------------
@@ -44,7 +45,7 @@ axi4if csrif();				// Sub bus: CSR file device
 axi4if xadcif();			// Sub bus: ADC controller
 axi4if dmaif();				// Sub bus: DMA controller
 axi4if usbif();				// Sub bus: USB host i/o
-axi4if audioif();			// Sub bus: AUDIO SPI out
+axi4if audioif();			// Sub bus: AUDIO delta-sigma output unit
 
 ibusif ibus();				// Internal bus between units
 
@@ -302,8 +303,9 @@ axi4spi spictlinst(
 axi4audio audioctlinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.audiobaseclock(clk50),
-	.audioconn(audioconn),
+	.audiobaseclock(clk10),
+	.dsleft(au_dsoutleft),
+	.dsright(au_dsoutright),
 	.s_axi(audioif));
 
 // CSR file acts as a region of uncached memory

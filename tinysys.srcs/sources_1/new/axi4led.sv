@@ -4,12 +4,12 @@ module axi4led(
 	input wire aclk,
 	input wire aresetn,
 	axi4if.slave s_axi,
-	output wire [4:0] led );
+	output wire [3:0] led );
 
 logic ledwe = 1'b0;
-logic [4:0] ledstate = 5'd0;
+logic [3:0] ledstate = 4'd0;
 
-logic [4:0] ledbits = 5'd0;
+logic [3:0] ledbits = 4'd0;
 always @(posedge aclk) begin
 	if (ledwe) ledbits <= ledstate;
 end
@@ -56,7 +56,7 @@ always @(posedge aclk) begin
 				if (s_axi.wvalid) begin
 					// Only the lower byte contains valid data
 					ledwe <= 1'b1;
-					ledstate <= s_axi.wdata[4:0];
+					ledstate <= s_axi.wdata[3:0];
 					writestate <= 2'b01;
 					s_axi.wready <= 1'b1;
 				end
@@ -91,7 +91,7 @@ always @(posedge aclk) begin
 			default/*2'b01*/: begin
 				// Only the lower byte contains valid data
 				if (s_axi.rready) begin
-					s_axi.rdata[31:0] <= {30'd0, ledstate};
+					s_axi.rdata[31:0] <= {28'd0, ledstate};
 					s_axi.rvalid <= 1'b1;
 					raddrstate <= 2'b00;
 				end

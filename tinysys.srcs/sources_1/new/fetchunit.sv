@@ -137,15 +137,15 @@ instructinfifo instructionfifoinst (
 // --------------------------------------------------
 
 // Reasons to stall fetch activity until control unit executes current instruction and flags branchresolved
-logic isbranch;
-logic isfence;
-logic isdiscard;
-logic isflush;
-logic ismret;
-logic iswfi;
-logic isebreak;
-logic isecall;
-logic isillegalinstruction;
+wire isbranch = instrOneHotOut[`O_H_JAL] || instrOneHotOut[`O_H_JALR] || instrOneHotOut[`O_H_BRANCH];
+wire isfence = instrOneHotOut[`O_H_FENCE];
+wire isdiscard = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CDISCARD);
+wire isflush = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CFLUSH);
+wire ismret = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_MRET);
+wire iswfi = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_WFI);
+wire isebreak = sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_EBREAK);
+wire isecall = sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_ECALL);
+wire isillegalinstruction = sie && ~(|instrOneHotOut);
 
 // --------------------------------------------------
 // Fetch logic
@@ -153,10 +153,10 @@ logic isillegalinstruction;
 
 typedef enum logic [3:0] {
 	INIT,										// Startup
-	FETCH, DECODE, STREAMOUT,					// Regular instuction fetch + decode + stream loop
+	FETCH, STREAMOUT,							// Instuction fetch + stream loop
 	WAITNEWBRANCHTARGET, WAITIFENCE,			// Branch and fence handling
-	ENTERISR, EXITISR,							// IRQ handling
-	STARTINJECT, INJECT, POSTENTER, POSTEXIT,	// IRQ and post-IRQ maintenance
+	ENTERISR, EXITISR,							// ISR handling
+	STARTINJECT, INJECT, POSTENTER, POSTEXIT,	// ISR entry/exit instruction injection
 	WFI											// Wait state for IRQ
 } fetchstate;
 
@@ -183,20 +183,7 @@ always @(posedge aclk) begin
 
 			FETCH: begin
 				IR <= instruction;
-				fetchmode <= rready ? DECODE : FETCH;
-			end
-
-			DECODE: begin
-				isbranch <= instrOneHotOut[`O_H_JAL] || instrOneHotOut[`O_H_JALR] || instrOneHotOut[`O_H_BRANCH];
-				isfence <= instrOneHotOut[`O_H_FENCE];
-				isdiscard <= instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CDISCARD);
-				isflush <= instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CFLUSH);
-				ismret <= instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_MRET);
-				iswfi <= instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_WFI);
-				isebreak <= sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_EBREAK);
-				isecall <= sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_ECALL);
-				isillegalinstruction <= sie && ~(|instrOneHotOut);
-				fetchmode <= STREAMOUT;
+				fetchmode <= rready ? STREAMOUT : FETCH;
 			end
 
 			STREAMOUT: begin

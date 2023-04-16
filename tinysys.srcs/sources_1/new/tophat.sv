@@ -6,7 +6,7 @@ module tophat(
     input wire sys_clk
     ,input wire sys_rst_n
     // Debug LEDs
-    ,output wire [4:0] leds
+    ,output wire [3:0] leds
     // UART - USB-c module
     ,output wire uart_rxd_out
 	,input wire uart_txd_in
@@ -44,13 +44,10 @@ module tophat(
 	,input wire addout
 	,output wire addin
 	,output wire adcs
-	// Audio
-	,output wire au_cs		// serial comm start/stop
-	,output wire au_mode	// serial interface mode (1:SPI, 0:2-wire)
-	,output wire au_sdin	// i2s serial input for sigma-delta DAC
-	,output wire au_sclk	// serial data clock
-	/*,output wire au_din		// i2s data in
-	,output wire au_bclk*/);	// i2s serial bit clock
+	// Audio out
+	,output wire au_dsoutleft	// delta-sigma output left channel
+	//,output wire au_dsoutright	// delta-sigma output right channel
+);
 
 // --------------------------------------------------
 // Clock and reset generator
@@ -118,15 +115,6 @@ spiwires sdconn(
 	.spi_swtch(spi_swtch) );
 
 // --------------------------------------------------
-// Audio wires
-// --------------------------------------------------
-
-audiowires audioconn(
-	.cs_n(au_cs),
-	.sclk(au_sclk),
-	.sdin(au_sdin) );
-
-// --------------------------------------------------
 // ADC wires
 // --------------------------------------------------
 
@@ -155,10 +143,11 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.usb_d_p(usb_d_p),
 	.usb_d_n(usb_d_n),
 	.leds(leds),
+	.au_dsoutleft(au_dsoutleft),
+	.au_dsoutright(/*au_dsoutright*/),
 	.ddr3wires(ddr3wires),
 	.gpuvideoout(gpuvideoout),
 	.sdconn(sdconn),
-	.audioconn(audioconn),
 	.adcconn(adcconn));
 
 endmodule
