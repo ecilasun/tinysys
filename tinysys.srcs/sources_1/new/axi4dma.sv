@@ -58,8 +58,6 @@ initial begin
 		burstcache[i] = 128'd0;
 end
 
-wire reachedend = (burstcursor==dmasingleburstcount) ? 1'b1 : 1'b0;
-
 always_ff @(posedge aclk) begin
 	if (~aresetn) begin
 		m_axi.awvalid <= 0;
@@ -182,7 +180,7 @@ always_ff @(posedge aclk) begin
 				m_axi.wdata <= burstcache[burstcursor];
 				m_axi.wstrb <= 16'hFFFF;
 				m_axi.wvalid <= 1'b1;
-				m_axi.wlast <= reachedend;
+				m_axi.wlast <= (burstcursor==dmasingleburstcount) ? 1'b1 : 1'b0;
 				cmdmode <= WRITELOOP;
 			end
 
