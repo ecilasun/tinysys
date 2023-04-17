@@ -64,13 +64,13 @@
     <Option Name="WTVcsLaunchSim" Val="0"/>
     <Option Name="WTRivieraLaunchSim" Val="0"/>
     <Option Name="WTActivehdlLaunchSim" Val="0"/>
-    <Option Name="WTXSimExportSim" Val="220"/>
-    <Option Name="WTModelSimExportSim" Val="220"/>
-    <Option Name="WTQuestaExportSim" Val="220"/>
+    <Option Name="WTXSimExportSim" Val="225"/>
+    <Option Name="WTModelSimExportSim" Val="225"/>
+    <Option Name="WTQuestaExportSim" Val="225"/>
     <Option Name="WTIesExportSim" Val="0"/>
-    <Option Name="WTVcsExportSim" Val="220"/>
-    <Option Name="WTRivieraExportSim" Val="220"/>
-    <Option Name="WTActivehdlExportSim" Val="220"/>
+    <Option Name="WTVcsExportSim" Val="225"/>
+    <Option Name="WTRivieraExportSim" Val="225"/>
+    <Option Name="WTActivehdlExportSim" Val="225"/>
     <Option Name="GenerateIPUpgradeLog" Val="TRUE"/>
     <Option Name="XSimRadix" Val="hex"/>
     <Option Name="XSimTimeUnit" Val="ns"/>
@@ -186,7 +186,7 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/axi4pkg.sv">
+      <File Path="$PSRCDIR/sources_1/new/audiowires.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -208,6 +208,13 @@
         </FileInfo>
       </File>
       <File Path="$PSRCDIR/sources_1/new/axi4ddr3sdram.sv">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/new/axi4pkg.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -445,16 +452,14 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/tophat.sv">
+      <File Path="$PSRCDIR/sources_1/new/i2s_ctl.vhd">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
-          <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/audiowires.sv">
+      <File Path="$PSRCDIR/sources_1/new/tophat.sv">
         <FileInfo>
-          <Attr Name="AutoDisabled" Val="1"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>

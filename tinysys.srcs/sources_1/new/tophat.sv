@@ -45,9 +45,10 @@ module tophat(
 	,output wire addin
 	,output wire adcs
 	// Audio out
-	,output wire au_dsoutleft	// delta-sigma output left channel
-	//,output wire au_dsoutright	// delta-sigma output right channel
-);
+	,output wire au_sdin
+	,output wire au_sclk
+	,output wire au_lrclk
+	,output wire au_mclk);
 
 // --------------------------------------------------
 // Clock and reset generator
@@ -55,7 +56,7 @@ module tophat(
 
 wire aresetn, preresetn;
 wire init_calib_complete;
-wire aclk, clk10, clk25, clk50, clk125, clk166, clk200;
+wire aclk, clk10, clk25, clk100, clk125, clk166, clk200;
 
 // Clock and reset generator
 clockandreset clockandresetinst(
@@ -65,7 +66,7 @@ clockandreset clockandresetinst(
 	.aclk(aclk),
 	.clk10(clk10),
 	.clk25(clk25),
-	.clk50(clk50),
+	.clk100(clk100),
 	.clk125(clk125),
 	.clk166(clk166),
 	.clk200(clk200),
@@ -76,7 +77,7 @@ clockandreset clockandresetinst(
 // DDR3 SDRAM wires
 // --------------------------------------------------
 
-ddr3sdramwires ddr3wires(
+ddr3sdramwires ddr3conn(
 	.ddr3_reset_n(ddr3_reset_n),
 	.ddr3_cke(ddr3_cke),
 	.ddr3_ck_p(ddr3_ck_p), 
@@ -125,6 +126,16 @@ adcwires adcconn(
 	.adcs(adcs));
 
 // --------------------------------------------------
+// Audio wires
+// --------------------------------------------------
+
+audiowires i2sconn(
+	.sdin(au_sdin),
+	.sclk(au_sclk),
+	.lrclk(au_lrclk),
+	.mclk(au_mclk));
+
+// --------------------------------------------------
 // SoC device
 // --------------------------------------------------
 
@@ -132,7 +143,7 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.aclk(aclk),
 	.clk10(clk10),
 	.clk25(clk25),
-	.clk50(clk50),
+	.clk100(clk100),
 	.clk125(clk125),
 	.clk166(clk166),
 	.clk200(clk200),
@@ -143,9 +154,8 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.usb_d_p(usb_d_p),
 	.usb_d_n(usb_d_n),
 	.leds(leds),
-	.au_dsoutleft(au_dsoutleft),
-	.au_dsoutright(/*au_dsoutright*/),
-	.ddr3wires(ddr3wires),
+	.ddr3conn(ddr3conn),
+	.i2sconn(i2sconn),
 	.gpuvideoout(gpuvideoout),
 	.sdconn(sdconn),
 	.adcconn(adcconn));

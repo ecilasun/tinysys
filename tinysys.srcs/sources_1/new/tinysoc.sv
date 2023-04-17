@@ -6,21 +6,20 @@ module tinysoc #(
 	input wire aclk,
 	input wire clk10,
 	input wire clk25,
-	input wire clk50,
+	input wire clk100,
 	input wire clk125,
 	input wire clk166,
 	input wire clk200,
 	input wire aresetn,
 	input wire preresetn,
 	output wire [3:0] leds,
-	output wire au_dsoutleft,
-	output wire au_dsoutright,
 	output wire uart_rxd_out,
 	input wire uart_txd_in,
 	inout wire usb_d_p,
 	inout wire usb_d_n,
 	gpuwires.def gpuvideoout,
-	ddr3sdramwires.def ddr3wires,
+	ddr3sdramwires.def ddr3conn,
+	audiowires.def i2sconn,
 	spiwires.def sdconn,
 	adcwires.def adcconn);
 
@@ -219,7 +218,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 	.clk_sys_i(clk166),
 	.clk_ref_i(clk200),
 	.m_axi(memorybus),
-	.ddr3wires(ddr3wires),
+	.ddr3conn(ddr3conn),
 	.device_temp(device_temp) );
 
 // --------------------------------------------------
@@ -296,16 +295,15 @@ gpucommanddevice gpucmdinst(
 axi4spi spictlinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.spibaseclock(clk50),
+	.spibaseclock(clk100),
 	.sdconn(sdconn),
 	.s_axi(spiif));
 
 axi4audio audioctlinst(
 	.aclk(aclk),
+	.clk100(clk100),
 	.aresetn(aresetn),
-	.audiobaseclock(clk10),
-	.dsleft(au_dsoutleft),
-	.dsright(au_dsoutright),
+	.i2sconn(i2sconn),
 	.s_axi(audioif));
 
 // CSR file acts as a region of uncached memory

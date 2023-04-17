@@ -7,7 +7,7 @@ module axi4ddr3sdram(
 	input wire clk_sys_i,
 	input wire clk_ref_i,
 	axi4if.slave m_axi,
-	ddr3sdramwires.def ddr3wires,
+	ddr3sdramwires.def ddr3conn,
     input wire [11:0] device_temp);
 
 // --------------------------------------------------
@@ -32,26 +32,26 @@ axi4retimer axi4retimerinst(
 
 wire init_calib_complete;
 wire mmcm_locked;
-assign ddr3wires.init_calib_complete = init_calib_complete & mmcm_locked;
+assign ddr3conn.init_calib_complete = init_calib_complete & mmcm_locked;
 
 wire ui_clk_sync_rst;
 
 mig_7series_0 ddr3instance (
     // memory interface ports
-    .ddr3_addr                      (ddr3wires.ddr3_addr),
-    .ddr3_ba                        (ddr3wires.ddr3_ba),
-    .ddr3_cas_n                     (ddr3wires.ddr3_cas_n),
-    .ddr3_ck_n                      (ddr3wires.ddr3_ck_n),
-    .ddr3_ck_p                      (ddr3wires.ddr3_ck_p),
-    .ddr3_cke                       (ddr3wires.ddr3_cke),
-    .ddr3_ras_n                     (ddr3wires.ddr3_ras_n),
-    .ddr3_reset_n                   (ddr3wires.ddr3_reset_n),
-    .ddr3_we_n                      (ddr3wires.ddr3_we_n),
-    .ddr3_dq                        (ddr3wires.ddr3_dq),
-    .ddr3_dqs_n                     (ddr3wires.ddr3_dqs_n),
-    .ddr3_dqs_p                     (ddr3wires.ddr3_dqs_p),
-    .ddr3_dm                        (ddr3wires.ddr3_dm),
-    .ddr3_odt                       (ddr3wires.ddr3_odt),
+    .ddr3_addr                      (ddr3conn.ddr3_addr),
+    .ddr3_ba                        (ddr3conn.ddr3_ba),
+    .ddr3_cas_n                     (ddr3conn.ddr3_cas_n),
+    .ddr3_ck_n                      (ddr3conn.ddr3_ck_n),
+    .ddr3_ck_p                      (ddr3conn.ddr3_ck_p),
+    .ddr3_cke                       (ddr3conn.ddr3_cke),
+    .ddr3_ras_n                     (ddr3conn.ddr3_ras_n),
+    .ddr3_reset_n                   (ddr3conn.ddr3_reset_n),
+    .ddr3_we_n                      (ddr3conn.ddr3_we_n),
+    .ddr3_dq                        (ddr3conn.ddr3_dq),
+    .ddr3_dqs_n                     (ddr3conn.ddr3_dqs_n),
+    .ddr3_dqs_p                     (ddr3conn.ddr3_dqs_p),
+    .ddr3_dm                        (ddr3conn.ddr3_dm),
+    .ddr3_odt                       (ddr3conn.ddr3_odt),
     .init_calib_complete            (init_calib_complete),
 
     // application interface ports

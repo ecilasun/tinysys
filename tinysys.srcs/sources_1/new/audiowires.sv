@@ -1,9 +1,10 @@
 interface audiowires (
-	output cs_n,
+	output sdin,
 	output sclk,
-	output sdin);
+	output lrclk,
+	output mclk);
 
 	modport def (
-		output cs_n, sclk, sdin );
+		output sdin, sclk, lrclk, mclk );
 
 endinterface

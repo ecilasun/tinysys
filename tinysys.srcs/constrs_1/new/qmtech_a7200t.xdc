@@ -140,14 +140,18 @@ set_property -dict {PACKAGE_PIN N17 IOSTANDARD LVCMOS33} [get_ports adcs]
 ## set_property PULLUP TRUE [get_ports i2c_sda]
 
 ## ------------------------------------------------------------------------------------------------------
-## Sigma-delta stereo output
+## Audio output - CS4344-CZZR
 ## ------------------------------------------------------------------------------------------------------
 
-## au_dsoutleft  pin U2:53  [AA21]
-## au_dsoutright pin U2:??  [??]
+## au_sdin  pin U2:29  [M20]
+## au_sclk  pin U2:31  [M22]
+## au_lrclk pin U2:33  [L15]
+## au_mclk  pin U2:35  [N19]
 
-set_property -dict {PACKAGE_PIN AA21 IOSTANDARD LVCMOS33} [get_ports au_dsoutleft]
-## set_property -dict {PACKAGE_PIN ?? IOSTANDARD LVCMOS33} [get_ports au_dsoutright]
+set_property -dict {PACKAGE_PIN M20 IOSTANDARD LVCMOS33} [get_ports au_sdin]
+set_property -dict {PACKAGE_PIN M22 IOSTANDARD LVCMOS33} [get_ports au_sclk]
+set_property -dict {PACKAGE_PIN L15 IOSTANDARD LVCMOS33} [get_ports au_lrclk]
+set_property -dict {PACKAGE_PIN N19 IOSTANDARD LVCMOS33} [get_ports au_mclk]
 
 ## ------------------------------------------------------------------------------------------------------
 ## DDR3 SDRAM (MT41K128M16XX-15E)
