@@ -5,6 +5,7 @@ module tinysoc #(
 ) (
 	input wire aclk,
 	input wire clk10,
+	input wire clk12,
 	input wire clk25,
 	input wire clk100,
 	input wire clk125,
@@ -301,7 +302,7 @@ axi4spi spictlinst(
 
 axi4audio audioctlinst(
 	.aclk(aclk),
-	.clk100(clk100),
+	.clk12(clk12),
 	.aresetn(aresetn),
 	.i2sconn(i2sconn),
 	.s_axi(audioif));

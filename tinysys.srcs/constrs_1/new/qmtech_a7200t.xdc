@@ -1,5 +1,5 @@
 ## ------------------------------------------------------------------------------------------------------
-## Constraints for the QMTECH A7200T board and the custom addon board 
+## Constraints for the QMTECH A7200T board and the custom addon board
 ## ------------------------------------------------------------------------------------------------------
 
 ## (C) 2023 Engin Cilasun
@@ -30,9 +30,9 @@ set_property -dict {PACKAGE_PIN Y6 IOSTANDARD LVCMOS33} [get_ports sys_rst_n]
 ## LED[2]: pin U2:49    [V19]
 ## LED[3]: pin U2:51    [AB22]
 
-set_property -dict {PACKAGE_PIN V20  IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
-set_property -dict {PACKAGE_PIN U18  IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
-set_property -dict {PACKAGE_PIN V19  IOSTANDARD LVCMOS33} [get_ports {leds[2]}]
+set_property -dict {PACKAGE_PIN V20 IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
+set_property -dict {PACKAGE_PIN U18 IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
+set_property -dict {PACKAGE_PIN V19 IOSTANDARD LVCMOS33} [get_ports {leds[2]}]
 set_property -dict {PACKAGE_PIN AB22 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
 
 
@@ -76,11 +76,11 @@ set_property -dict {PACKAGE_PIN AB18 IOSTANDARD LVCMOS33} [get_ports usb_d_n]
 ## SWTCH            pin U2:58  [Y18]  sdpin#switch
 
 ## SPI mode - sorted by sdcard pin order
-set_property -dict {PACKAGE_PIN U17  IOSTANDARD LVCMOS33} [get_ports spi_cs_n]
-set_property -dict {PACKAGE_PIN V18  IOSTANDARD LVCMOS33} [get_ports spi_mosi]
+set_property -dict {PACKAGE_PIN U17 IOSTANDARD LVCMOS33} [get_ports spi_cs_n]
+set_property -dict {PACKAGE_PIN V18 IOSTANDARD LVCMOS33} [get_ports spi_mosi]
 set_property -dict {PACKAGE_PIN AB21 IOSTANDARD LVCMOS33} [get_ports spi_clk]
 set_property -dict {PACKAGE_PIN AA20 IOSTANDARD LVCMOS33} [get_ports spi_miso]
-set_property -dict {PACKAGE_PIN Y18  IOSTANDARD LVCMOS33} [get_ports spi_swtch]
+set_property -dict {PACKAGE_PIN Y18 IOSTANDARD LVCMOS33} [get_ports spi_swtch]
 
 ## SD mode - sorted by sdcard pin order
 ## set_property -dict {PACKAGE_PIN U20 IOSTANDARD LVCMOS33} [get_ports {sd_dat[2]}]
@@ -217,3 +217,5 @@ set_clock_groups -name asyncG -asynchronous -group [get_clocks -of_objects [get_
 
 ## There is no path from GPU to I$, only appears so because we're connected to the same bus
 ## set_false_path -from [get_pins {socinstance/GPU/m_axi\\.araddr_reg/CLK}] -to [get_pins socinstance/fetchdecodeinst/instructioncacheinst/instructioncachectlinst/dout_reg*/CE]
+
+set_clock_groups -name hoba -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT0]] -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/plle2_adv_inst/CLKOUT0]]

@@ -6,6 +6,7 @@ module clockandreset(
 	input wire init_calib_complete,
 	output wire aclk,
 	output wire clk10,
+	output wire clk12,
 	output wire clk25,
 	output wire clk100,
 	output wire clk125,
@@ -18,7 +19,7 @@ module clockandreset(
 // PLLs / MMCMs
 // --------------------------------------------------
 
-wire centralclocklocked;
+wire centralclocklocked, peripheralclocklocked;
 
 centralclock centralclockinst(
 	.clk_in1(sys_clock_i),
@@ -31,7 +32,13 @@ centralclock centralclockinst(
 	.clk200(clk200),
 	.locked(centralclocklocked) );
 
-wire clocksready = centralclocklocked; ///& ddr3clklocked;
+peripheralclocks peripheralclkinst(
+	.clk_in1(sys_clock_i),
+	.clk12(clk12),
+	.locked(peripheralclocklocked) );
+
+
+wire clocksready = centralclocklocked && peripheralclocklocked;
 
 // --------------------------------------------------
 // DDR3 SDRAM cabilration complete
