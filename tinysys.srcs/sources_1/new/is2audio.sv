@@ -35,8 +35,8 @@ always@(posedge audioclock) begin
 	re <= 1'b0;
 	// Trigger new sample copy just before we select L channel again out of the LR pair
 	if ((~abempty) && abvalid && (count==9'h0ff)) begin
-		tx_data_r <= {8'd0, leftrightchannels[31:16], 8'd0};
-		tx_data_l <= {8'd0, leftrightchannels[15:0], 8'd0};
+		tx_data_r <= {{8{leftrightchannels[31]}}, leftrightchannels[31:16], 8'd0};
+		tx_data_l <= {{8{leftrightchannels[15]}}, leftrightchannels[15:0], 8'd0}; 
 		// Advance FIFO 
 		re <= 1'b1;
 	end
