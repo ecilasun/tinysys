@@ -47,16 +47,14 @@ typedef enum logic [3:0] {
 	APUSTOP,
 	APUSWAP,
 	APUSETRATE,
-	WAITSYNC, WAITACK,
+	WAITSYNC,
+	STARTDMA, WAITREADADDR, READLOOP,
 	FINALIZE } apucmdmodetype;
 apucmdmodetype cmdmode = WCMD;
 
-logic [31:0] apucmd;				// Command code
-logic [31:0] apusourceaddr;			// Memory address to DMA the audio samples from
-logic [10:0] apuwordcount;			// Number of words to DMA and range to loop over
-logic [9:0] apusyncpoint = 10'd0;	// Sync point to wait for
-
-logic [9:0] readcursor = 10'd0;		// Current sample read positionl
+logic [31:0] apucmd;					// Command code
+logic [31:0] apusourceaddr;				// Memory address to DMA the audio samples from
+logic [10:0] apuwordcount = 11'd255;	// Number of words to DMA and range to loop over
 
 // Internal sample buffers with up to 1K 32 bit(L/R) samples each (2x4096 bytes)
 logic [127:0] samplebuffer[0:511];
@@ -64,7 +62,9 @@ logic [127:0] samplebuffer[0:511];
 logic currentBuffer = 1'b0;
 // Number of buffer swaps so far
 logic [31:0] bufferSwapCount = 32'd0;
-assign swapcount = bufferSwapCount;
+logic [31:0] bufferSwapCountCDC1 = 32'd0;
+logic [31:0] bufferSwapCountCDC2 = 32'd0;
+assign swapcount = bufferSwapCountCDC2;
 
 initial begin
 	for(int i=0;i<512;i++) begin
@@ -72,15 +72,15 @@ initial begin
 	end
 end
 
-// Burst synchronization
-logic burstStrobe = 1'b0;
-logic dmaack = 1'b0;
+logic [7:0] burstcursor = 8'd0;
 
-logic [9:0] readcursorcdc1;
-logic [9:0] readcursorcdc2;
-always @(posedge aclk) begin
-	readcursorcdc1 <= readcursor;
-	readcursorcdc2 <= readcursorcdc1;
+always_ff @(posedge aclk) begin
+	if (~aresetn) begin
+		//
+	end else begin
+		bufferSwapCountCDC1 <= bufferSwapCount;
+		bufferSwapCountCDC2 <= bufferSwapCountCDC1;
+	end
 end
 
 always_ff @(posedge aclk) begin
@@ -94,7 +94,6 @@ always_ff @(posedge aclk) begin
 	end else begin
 
 		re <= 1'b0;
-		burstStrobe <= 1'b0;
 
 		case (cmdmode)
 			WCMD: begin
@@ -109,11 +108,11 @@ always_ff @(posedge aclk) begin
 
 			DISPATCH: begin
 				case (apucmd)
-					32'h00000000:	cmdmode <= APUSTART;		// Start DMA into write page
-					32'h00000001:	cmdmode <= APUBUFFERSIZE;	// Set up size of DMA copies and playback range, in words
+					32'h00000000:	cmdmode <= APUBUFFERSIZE;	// Set up size of DMA copies and playback range, in words
+					32'h00000001:	cmdmode <= APUSTART;		// Start DMA into write page
 					32'h00000002:	cmdmode <= APUSTOP;			// TODO: Stop all sound output
-					32'h00000003:	cmdmode <= APUSWAP;			// Wait for read cursor to reach given value, then swap r/w pages, also increment swap count
-					32'h00000004:	cmdmode <= APUSETRATE;		// TODO: Set sample duplication count, x1 (44.1KHz) default, can use x2(22KHz) or x4(11KHz)
+					32'h00000003:	cmdmode <= APUSWAP;			// Swap r/w pages
+					32'h00000004:	cmdmode <= APUSETRATE;		// TODO: Set sample duplication count to x1 (44.1KHz), x2(22.05KHz) or x4(11.025KHz)
 					default:		cmdmode <= FINALIZE;		// Invalid command, wait one clock and try next
 				endcase
 			end
@@ -121,11 +120,9 @@ always_ff @(posedge aclk) begin
 			APUSTART: begin
 				if (abvalid && ~abempty) begin
 					apusourceaddr <= audiodin;
-					// This will kick DMA async to the command queue
-					burstStrobe <= 1'b1;
 					// Advance FIFO
 					re <= 1'b1;
-					cmdmode <= WAITACK;
+					cmdmode <= STARTDMA;
 				end
 			end
 
@@ -142,14 +139,11 @@ always_ff @(posedge aclk) begin
 				// TODO: zero out the current playback buffer or stop output altogether
 				cmdmode <= FINALIZE;
 			end
-
+			
 			APUSWAP: begin
-				if (abvalid && ~abempty) begin
-					apusyncpoint <= audiodin[9:0];
-					// Advance FIFO
-					re <= 1'b1;
-					cmdmode <= WAITSYNC;
-				end
+				// Swap read/write buffers if we're at the end of a playback buffer
+				currentBuffer <= ~currentBuffer;
+				cmdmode <= FINALIZE;
 			end
 
 			APUSETRATE: begin
@@ -162,19 +156,29 @@ always_ff @(posedge aclk) begin
 				end
 			end
 
-			WAITSYNC: begin
-				// Wait for playback buffer's read cursor to reach desired sync point
-				if (readcursorcdc2 == apusyncpoint) begin
-					// Increment swap count
-					bufferSwapCount <= bufferSwapCount + 32'd1;
-					// Swap read/write buffers
-					currentBuffer <= ~currentBuffer;
-					cmdmode <= FINALIZE;
+			STARTDMA: begin
+				burstcursor <= 8'd0;
+				m_axi.arlen <= apuwordcount[10:3] - 8'd1;	// burstcount = (wordcount/4)-1
+				m_axi.arvalid <= 1;
+				m_axi.araddr <= apusourceaddr; 
+				cmdmode <= WAITREADADDR;
+			end
+
+			WAITREADADDR: begin
+				if (m_axi.arready) begin
+					m_axi.arvalid <= 0;
+					m_axi.rready <= 1;
+					cmdmode <= READLOOP;
 				end
 			end
 
-			WAITACK: begin
-				cmdmode <= dmaack ? FINALIZE : WAITACK;
+			READLOOP: begin
+				if (m_axi.rvalid) begin
+					m_axi.rready <= ~m_axi.rlast;
+					samplebuffer[{currentBuffer, burstcursor}] <= m_axi.rdata;
+					burstcursor <= burstcursor + 8'd1;
+					cmdmode <= ~m_axi.rlast ? READLOOP : FINALIZE;
+				end
 			end
 
 			FINALIZE: begin
@@ -187,73 +191,26 @@ always_ff @(posedge aclk) begin
 end
 
 // ------------------------------------------------------------------------------------
-// Async burst read
-// ------------------------------------------------------------------------------------
-
-typedef enum logic [1:0] {
-	DMAIDLE,
-	STARTDMA, WAITREADADDR, READLOOP
-} apudmamodetype;
-apudmamodetype dmamode = DMAIDLE;
-
-logic [7:0] burstcursor = 8'd0;
-
-always_ff @(posedge aclk) begin
-	if (~aresetn) begin
-		m_axi.arvalid <= 0;
-		m_axi.rready <= 0;
-		dmamode <= DMAIDLE;
-	end else begin
-		dmaack <= 1'b0;
-
-		case (dmamode)
-			DMAIDLE: begin
-				dmaack <= 1'b1;
-				dmamode <= burstStrobe == 1'b1 ? STARTDMA : DMAIDLE;
-			end
-
-			STARTDMA: begin
-				burstcursor <= 8'd0;
-				m_axi.arlen <= apuwordcount[10:3] - 8'd1;	// burstcount = (wordcount/4)-1
-				m_axi.arvalid <= 1;
-				m_axi.araddr <= apusourceaddr; 
-				dmamode <= WAITREADADDR;
-			end
-
-			WAITREADADDR: begin
-				if (m_axi.arready) begin
-					m_axi.arvalid <= 0;
-					m_axi.rready <= 1;
-					dmamode <= READLOOP;
-				end
-			end
-
-			READLOOP: begin
-				if (m_axi.rvalid) begin
-					m_axi.rready <= ~m_axi.rlast;
-					samplebuffer[{currentBuffer,burstcursor}] <= m_axi.rdata;
-					burstcursor <= burstcursor + 8'd1;
-					dmamode <= ~m_axi.rlast ? READLOOP : DMAIDLE;
-				end
-			end
-		endcase
-	end
-end
-
-// ------------------------------------------------------------------------------------
 // I2S output
 // ------------------------------------------------------------------------------------
+
+logic [9:0] readcursor = 10'd0;			// Current sample read position
 
 always@(posedge audioclock) begin
 	// Trigger new sample copy just before we select L channel again out of the LR pair
 	if (count==9'h0ff) begin
 		unique case (readcursor[1:0])
-			2'b00: tx_data_lr <= samplebuffer[{~currentBuffer,readcursor}[9:2]][31 : 0];
-			2'b01: tx_data_lr <= samplebuffer[{~currentBuffer,readcursor}[9:2]][63 : 31];
-			2'b10: tx_data_lr <= samplebuffer[{~currentBuffer,readcursor}[9:2]][95 : 63];
-			2'b11: tx_data_lr <= samplebuffer[{~currentBuffer,readcursor}[9:2]][127: 96];
+			2'b00: tx_data_lr <= samplebuffer[{~currentBuffer, readcursor[9:2]}][31 : 0];
+			2'b01: tx_data_lr <= samplebuffer[{~currentBuffer, readcursor[9:2]}][63 : 32];
+			2'b10: tx_data_lr <= samplebuffer[{~currentBuffer, readcursor[9:2]}][95 : 64];
+			2'b11: tx_data_lr <= samplebuffer[{~currentBuffer, readcursor[9:2]}][127: 96];
 		endcase
+
+		// TODO: Step read cursor x1(always), x2(stepcount[0]==1) or x4(stepcount[1]==1) for 44/22/11 KHz output support
 		readcursor <= (readcursor + 10'd1) % apuwordcount;
+
+		// Increment when we reach the end of a buffer, much like the vsync counter
+		bufferSwapCount <= (readcursor + 10'd1) == apuwordcount ? 32'd1 : 32'd0;
 	end
 end
 
