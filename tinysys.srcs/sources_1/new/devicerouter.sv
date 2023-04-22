@@ -50,47 +50,11 @@ endgenerate
 
 always_comb begin
 	unique case(1'b1)
-		validwaddr[0]: begin
-			axi_s.awready = axi_m[0].awready;
-			axi_s.bresp   = axi_m[0].bresp;
-			axi_s.bvalid  = axi_m[0].bvalid;
-			axi_s.wready  = axi_m[0].wready;
-		end
-		validwaddr[1]: begin
-			axi_s.awready = axi_m[1].awready;
-			axi_s.bresp   = axi_m[1].bresp;
-			axi_s.bvalid  = axi_m[1].bvalid;
-			axi_s.wready  = axi_m[1].wready;
-		end
-		validwaddr[2]: begin
-			axi_s.awready = axi_m[2].awready;
-			axi_s.bresp   = axi_m[2].bresp;
-			axi_s.bvalid  = axi_m[2].bvalid;
-			axi_s.wready  = axi_m[2].wready;
-		end
-		validwaddr[3]: begin
-			axi_s.awready = axi_m[3].awready;
-			axi_s.bresp   = axi_m[3].bresp;
-			axi_s.bvalid  = axi_m[3].bvalid;
-			axi_s.wready  = axi_m[3].wready;
-		end
-		validwaddr[4]: begin
-			axi_s.awready = axi_m[4].awready;
-			axi_s.bresp   = axi_m[4].bresp;
-			axi_s.bvalid  = axi_m[4].bvalid;
-			axi_s.wready  = axi_m[4].wready;
-		end
-		validwaddr[5]: begin
-			axi_s.awready = axi_m[5].awready;
-			axi_s.bresp   = axi_m[5].bresp;
-			axi_s.bvalid  = axi_m[5].bvalid;
-			axi_s.wready  = axi_m[5].wready;
-		end
-		validwaddr[6]: begin
-			axi_s.awready = axi_m[6].awready;
-			axi_s.bresp   = axi_m[6].bresp;
-			axi_s.bvalid  = axi_m[6].bvalid;
-			axi_s.wready  = axi_m[6].wready;
+		validwaddr[8]: begin
+			axi_s.awready = axi_m[8].awready;
+			axi_s.bresp   = axi_m[8].bresp;
+			axi_s.bvalid  = axi_m[8].bvalid;
+			axi_s.wready  = axi_m[8].wready;
 		end
 		validwaddr[7]: begin
 			axi_s.awready = axi_m[7].awready;
@@ -98,11 +62,47 @@ always_comb begin
 			axi_s.bvalid  = axi_m[7].bvalid;
 			axi_s.wready  = axi_m[7].wready;
 		end
-		validwaddr[8]: begin
-			axi_s.awready = axi_m[8].awready;
-			axi_s.bresp   = axi_m[8].bresp;
-			axi_s.bvalid  = axi_m[8].bvalid;
-			axi_s.wready  = axi_m[8].wready;
+		validwaddr[6]: begin
+			axi_s.awready = axi_m[6].awready;
+			axi_s.bresp   = axi_m[6].bresp;
+			axi_s.bvalid  = axi_m[6].bvalid;
+			axi_s.wready  = axi_m[6].wready;
+		end
+		validwaddr[5]: begin
+			axi_s.awready = axi_m[5].awready;
+			axi_s.bresp   = axi_m[5].bresp;
+			axi_s.bvalid  = axi_m[5].bvalid;
+			axi_s.wready  = axi_m[5].wready;
+		end
+		validwaddr[4]: begin
+			axi_s.awready = axi_m[4].awready;
+			axi_s.bresp   = axi_m[4].bresp;
+			axi_s.bvalid  = axi_m[4].bvalid;
+			axi_s.wready  = axi_m[4].wready;
+		end
+		validwaddr[3]: begin
+			axi_s.awready = axi_m[3].awready;
+			axi_s.bresp   = axi_m[3].bresp;
+			axi_s.bvalid  = axi_m[3].bvalid;
+			axi_s.wready  = axi_m[3].wready;
+		end
+		validwaddr[2]: begin
+			axi_s.awready = axi_m[2].awready;
+			axi_s.bresp   = axi_m[2].bresp;
+			axi_s.bvalid  = axi_m[2].bvalid;
+			axi_s.wready  = axi_m[2].wready;
+		end
+		validwaddr[1]: begin
+			axi_s.awready = axi_m[1].awready;
+			axi_s.bresp   = axi_m[1].bresp;
+			axi_s.bvalid  = axi_m[1].bvalid;
+			axi_s.wready  = axi_m[1].wready;
+		end
+		validwaddr[0]: begin
+			axi_s.awready = axi_m[0].awready;
+			axi_s.bresp   = axi_m[0].bresp;
+			axi_s.bvalid  = axi_m[0].bvalid;
+			axi_s.wready  = axi_m[0].wready;
 		end
 		default: begin
 			// Assume we could write to no-man's land to not stall the bus
@@ -151,54 +151,12 @@ endgenerate
 
 always_comb begin
 	unique case(1'b1)
-		validraddr[0]: begin
-			axi_s.arready = axi_m[0].arready;
-			axi_s.rdata   = axi_m[0].rdata;
-			axi_s.rresp   = axi_m[0].rresp;
-			axi_s.rvalid  = axi_m[0].rvalid;
-			axi_s.rlast   = axi_m[0].rlast;
-		end
-		validraddr[1]: begin
-			axi_s.arready = axi_m[1].arready;
-			axi_s.rdata   = axi_m[1].rdata;
-			axi_s.rresp   = axi_m[1].rresp;
-			axi_s.rvalid  = axi_m[1].rvalid;
-			axi_s.rlast   = axi_m[1].rlast;
-		end
-		validraddr[2]: begin
-			axi_s.arready = axi_m[2].arready;
-			axi_s.rdata   = axi_m[2].rdata;
-			axi_s.rresp   = axi_m[2].rresp;
-			axi_s.rvalid  = axi_m[2].rvalid;
-			axi_s.rlast   = axi_m[2].rlast;
-		end
-		validraddr[3]: begin
-			axi_s.arready = axi_m[3].arready;
-			axi_s.rdata   = axi_m[3].rdata;
-			axi_s.rresp   = axi_m[3].rresp;
-			axi_s.rvalid  = axi_m[3].rvalid;
-			axi_s.rlast   = axi_m[3].rlast;
-		end
-		validraddr[4]: begin
-			axi_s.arready = axi_m[4].arready;
-			axi_s.rdata   = axi_m[4].rdata;
-			axi_s.rresp   = axi_m[4].rresp;
-			axi_s.rvalid  = axi_m[4].rvalid;
-			axi_s.rlast   = axi_m[4].rlast;
-		end
-		validraddr[5]: begin
-			axi_s.arready = axi_m[5].arready;
-			axi_s.rdata   = axi_m[5].rdata;
-			axi_s.rresp   = axi_m[5].rresp;
-			axi_s.rvalid  = axi_m[5].rvalid;
-			axi_s.rlast   = axi_m[5].rlast;
-		end
-		validraddr[6]: begin
-			axi_s.arready = axi_m[6].arready;
-			axi_s.rdata   = axi_m[6].rdata;
-			axi_s.rresp   = axi_m[6].rresp;
-			axi_s.rvalid  = axi_m[6].rvalid;
-			axi_s.rlast   = axi_m[6].rlast;
+		validraddr[8]: begin
+			axi_s.arready = axi_m[8].arready;
+			axi_s.rdata   = axi_m[8].rdata;
+			axi_s.rresp   = axi_m[8].rresp;
+			axi_s.rvalid  = axi_m[8].rvalid;
+			axi_s.rlast   = axi_m[8].rlast;
 		end
 		validraddr[7]: begin
 			axi_s.arready = axi_m[7].arready;
@@ -207,12 +165,54 @@ always_comb begin
 			axi_s.rvalid  = axi_m[7].rvalid;
 			axi_s.rlast   = axi_m[7].rlast;
 		end
-		validraddr[8]: begin
-			axi_s.arready = axi_m[8].arready;
-			axi_s.rdata   = axi_m[8].rdata;
-			axi_s.rresp   = axi_m[8].rresp;
-			axi_s.rvalid  = axi_m[8].rvalid;
-			axi_s.rlast   = axi_m[8].rlast;
+		validraddr[6]: begin
+			axi_s.arready = axi_m[6].arready;
+			axi_s.rdata   = axi_m[6].rdata;
+			axi_s.rresp   = axi_m[6].rresp;
+			axi_s.rvalid  = axi_m[6].rvalid;
+			axi_s.rlast   = axi_m[6].rlast;
+		end
+		validraddr[5]: begin
+			axi_s.arready = axi_m[5].arready;
+			axi_s.rdata   = axi_m[5].rdata;
+			axi_s.rresp   = axi_m[5].rresp;
+			axi_s.rvalid  = axi_m[5].rvalid;
+			axi_s.rlast   = axi_m[5].rlast;
+		end
+		validraddr[4]: begin
+			axi_s.arready = axi_m[4].arready;
+			axi_s.rdata   = axi_m[4].rdata;
+			axi_s.rresp   = axi_m[4].rresp;
+			axi_s.rvalid  = axi_m[4].rvalid;
+			axi_s.rlast   = axi_m[4].rlast;
+		end
+		validraddr[3]: begin
+			axi_s.arready = axi_m[3].arready;
+			axi_s.rdata   = axi_m[3].rdata;
+			axi_s.rresp   = axi_m[3].rresp;
+			axi_s.rvalid  = axi_m[3].rvalid;
+			axi_s.rlast   = axi_m[3].rlast;
+		end
+		validraddr[2]: begin
+			axi_s.arready = axi_m[2].arready;
+			axi_s.rdata   = axi_m[2].rdata;
+			axi_s.rresp   = axi_m[2].rresp;
+			axi_s.rvalid  = axi_m[2].rvalid;
+			axi_s.rlast   = axi_m[2].rlast;
+		end
+		validraddr[1]: begin
+			axi_s.arready = axi_m[1].arready;
+			axi_s.rdata   = axi_m[1].rdata;
+			axi_s.rresp   = axi_m[1].rresp;
+			axi_s.rvalid  = axi_m[1].rvalid;
+			axi_s.rlast   = axi_m[1].rlast;
+		end
+		validraddr[0]: begin
+			axi_s.arready = axi_m[0].arready;
+			axi_s.rdata   = axi_m[0].rdata;
+			axi_s.rresp   = axi_m[0].rresp;
+			axi_s.rvalid  = axi_m[0].rvalid;
+			axi_s.rlast   = axi_m[0].rlast;
 		end
 		default: begin
 			// Assume we could read from no-man's land to not stall the bus

@@ -33,6 +33,7 @@ axi4if databus();			// Data unit bus
 axi4if gpubus();			// Graphics unit bus
 axi4if dmabus();			// Direct memory access bus
 axi4if romcopybus();		// Bus for boot ROM copy (TODO: switch between ROM types?)
+axi4if audiobus();			// Bus for audio device output
 
 axi4if memorybus();			// Main memory
 
@@ -194,13 +195,41 @@ axi4romcopy #(.RESETVECTOR(RESETVECTOR)) ROMCopy(
 	.romReady(romReady));
 
 // --------------------------------------------------
+// Audio processing unit
+// --------------------------------------------------
+
+wire audiofifoempty;
+wire [31:0] audiofifodout;
+wire audiofifore;
+wire audiofifovalid;
+wire [31:0] audiobufferswapcount;
+
+axi4i2saudio APU(
+	.aclk(aclk),		// Bus clock
+	.aresetn(aresetn),
+    .audioclock(clk12),	// 22.591MHz master clock
+
+	.m_axi(audiobus),	// Memory access
+
+	.abempty(audiofifoempty),	// APU command FIFO
+	.abvalid(audiofifovalid),
+	.audiore(audiofifore),
+    .audiodin(audiofifodout),
+    .swapcount(audiobufferswapcount),
+
+    .tx_mclk(i2sconn.mclk),
+    .tx_lrck(i2sconn.lrclk),
+    .tx_sclk(i2sconn.sclk),
+    .tx_sdout(i2sconn.sdin) );
+
+// --------------------------------------------------
 // Traffic arbiter between master units and memory
 // --------------------------------------------------
 
-arbiter arbiter5x1inst(
+arbiter arbiter6x1inst(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.axi_s({romcopybus, dmabus, gpubus, databus, instructionbus}),
+	.axi_s({romcopybus, audiobus, dmabus, gpubus, databus, instructionbus}),
 	.axi_m(memorybus) );
 
 // --------------------------------------------------
@@ -231,18 +260,23 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // access 16KBytes worth of data.
 
 // 12bit (4K) address space reserved for each memory mapped device
-// dev   start     end       addrs[30:12]                 size
+// dev   start     end       addrs[30:12]                 size  notes
 // UART: 80000000  80000FFF  19'b000_0000_0000_0000_0000  4KB
 // LEDS: 80001000  80001FFF  19'b000_0000_0000_0000_0001  4KB
 // GPUC: 80002000  80002FFF  19'b000_0000_0000_0000_0010  4KB
 // SPIC: 80003000  80003FFF  19'b000_0000_0000_0000_0011  4KB
-// CSRF: 80004000  80004FFF  19'b000_0000_0000_0000_0100  4KB
+// CSRF: 80004000  80004FFF  19'b000_0000_0000_0000_0100  4KB	HART#0
 // XADC: 80005000  80005FFF  19'b000_0000_0000_0000_0101  4KB
 // DMAC: 80006000  80006FFF  19'b000_0000_0000_0000_0110  4KB
 // USBH: 80007000  80007FFF  19'b000_0000_0000_0000_0111  4KB
 // AUDI: 80008000  80008FFF  19'b000_0000_0000_0000_1000  4KB
-// ----: 80009000  80009FFF  19'b000_0000_0000_0000_1000  4KB
-// ----: 8000A000  8000AFFF  19'b000_0000_0000_0000_1000  4KB
+// ----: 80009000  80009FFF  19'b000_0000_0000_0000_1001  4KB
+// ----: 8000A000  8000AFFF  19'b000_0000_0000_0000_1010  4KB
+// ----: 8000B000  8000BFFF  19'b000_0000_0000_0000_1011  4KB
+// ----: 8000C000  8000CFFF  19'b000_0000_0000_0000_1100  4KB
+// ----: 8000D000  8000DFFF  19'b000_0000_0000_0000_1101  4KB
+// ----: 8000E000  8000EFFF  19'b000_0000_0000_0000_1110  4KB
+// ----: 8000F000  8000FFFF  19'b000_0000_0000_0000_1111  4KB
 
 devicerouter devicerouterinst(
 	.aclk(aclk),
@@ -281,8 +315,8 @@ axi4led leddevice(
 	.s_axi(ledif),
 	.led(leds) );
 
-// TODO: Wire a vblankcount!=targetframe to trigger a vblank IRQ
-gpucommanddevice gpucmdinst(
+// NOTE: This is different than other command devices for now
+commandqueue gpucmdinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.s_axi(gpucmdif),
@@ -290,7 +324,7 @@ gpucommanddevice gpucmdinst(
 	.fifodout(gpufifodout),
 	.fifore(gpufifore),
 	.fifovalid(gpufifovalid),
-	.vblankcount(vblankcount));
+	.devicestate(vblankcount));
 
 // TODO: Use sdconn switch state to trigger a card detect IRQ
 axi4spi spictlinst(
@@ -299,13 +333,6 @@ axi4spi spictlinst(
 	.spibaseclock(clk100),
 	.sdconn(sdconn),
 	.s_axi(spiif));
-
-axi4audio audioctlinst(
-	.aclk(aclk),
-	.clk12(clk12),
-	.aresetn(aresetn),
-	.i2sconn(i2sconn),
-	.s_axi(audioif));
 
 // CSR file acts as a region of uncached memory
 // Access to register indices get mapped to LOAD/STORE
@@ -338,8 +365,8 @@ axi4xadc xadcinst(
 	.adcconn(adcconn),
 	.device_temp(device_temp) );
 
-// DMA
-dmacommanddevice dmacmdinst(
+// DMA command queue
+commandqueue dmacmdinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.s_axi(dmaif),
@@ -348,7 +375,19 @@ dmacommanddevice dmacmdinst(
 	.fifodout(dmafifodout),
 	.fifore(dmafifore),
 	.fifovalid(dmafifovalid),
-    .dmabusy(dmabusy));
+    .devicestate({31'd0,dmabusy}));
+
+// Audio command queue
+commandqueue audiocmdinst(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.s_axi(audioif),
+	// Internal comms channel for APU
+	.fifoempty(audiofifoempty),
+	.fifodout(audiofifodout),
+	.fifore(audiofifore),
+	.fifovalid(audiofifovalid),
+    .devicestate(audiobufferswapcount));
 
 // USB Host
 // TODO: Wire usb_d_p & usb_d_n pair and usbint here

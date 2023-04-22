@@ -1,5 +1,9 @@
 `timescale 1ns / 1ps
 
+// NOTE: Each HART has a different base address for their CSR
+// This currently houses 1x4K CSR unit for one HART starting
+// at address range 0x80004000-80004FFF 
+
 module axi4CSRFile(
 	input wire aclk,
 	input wire aresetn,
