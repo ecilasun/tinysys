@@ -57,10 +57,15 @@ logic [31:0] apusourceaddr;				// Memory address to DMA the audio samples from
 logic [10:0] apuwordcount = 11'd255;	// Number of words to DMA and range to loop over
 
 // Internal sample buffers with up to 1K 32 bit(L/R) samples each (2x4096 bytes)
+// This means each buffer has: 1024 stereo samples max, 256 bursts to read max
+// e.g. for 512x16bit stereo samples  we have 512 pairs to read, 128 bursts to make
+// Read and Write regions always alternate between offset 0 and offset 256
 logic [127:0] samplebuffer[0:511];
-// Buffer address high bit
-logic currentBuffer = 1'b0;
-// Number of buffer swaps so far
+
+// Buffer address high bit to control DMA write page
+logic writeBufferSelect = 1'b0;
+
+// Number of buffer swaps so far (CDC from audio clock to bus clock)
 logic [31:0] bufferSwapCount = 32'd0;
 logic [31:0] bufferSwapCountCDC1 = 32'd0;
 logic [31:0] bufferSwapCountCDC2 = 32'd0;
@@ -73,6 +78,7 @@ initial begin
 end
 
 logic [7:0] burstcursor = 8'd0;
+logic [2:0] sampleoutputrate = 3'b001; // [2:x4,1:x2,0:x1]
 
 always_ff @(posedge aclk) begin
 	if (~aresetn) begin
@@ -90,6 +96,9 @@ always_ff @(posedge aclk) begin
 		m_axi.wstrb <= 16'h0000;
 		m_axi.wlast <= 0;
 		m_axi.bready <= 0;
+		m_axi.arvalid <= 0;
+		m_axi.rready <= 0;
+		burstcursor <= 8'd0;
 		cmdmode <= WCMD;
 	end else begin
 
@@ -142,14 +151,13 @@ always_ff @(posedge aclk) begin
 			
 			APUSWAP: begin
 				// Swap read/write buffers if we're at the end of a playback buffer
-				currentBuffer <= ~currentBuffer;
+				writeBufferSelect <= ~writeBufferSelect;
 				cmdmode <= FINALIZE;
 			end
 
 			APUSETRATE: begin
-				// TODO:
 				if (abvalid && ~abempty) begin
-					//sampleoutputrate <= audiodin;
+					sampleoutputrate <= audiodin[2:0]; // 1/2/4
 					// Advance FIFO
 					re <= 1'b1;
 					cmdmode <= FINALIZE;
@@ -175,7 +183,7 @@ always_ff @(posedge aclk) begin
 			READLOOP: begin
 				if (m_axi.rvalid) begin
 					m_axi.rready <= ~m_axi.rlast;
-					samplebuffer[{currentBuffer, burstcursor}] <= m_axi.rdata;
+					samplebuffer[{writeBufferSelect, burstcursor}] <= m_axi.rdata;
 					burstcursor <= burstcursor + 8'd1;
 					cmdmode <= ~m_axi.rlast ? READLOOP : FINALIZE;
 				end
@@ -195,22 +203,30 @@ end
 // ------------------------------------------------------------------------------------
 
 logic [9:0] readcursor = 10'd0;			// Current sample read position
+logic [9:0] readLine;					// Cache line select for reads
+
+always_comb begin
+	readLine = {~writeBufferSelect, readcursor[9:2]};
+end
 
 always@(posedge audioclock) begin
 	// Trigger new sample copy just before we select L channel again out of the LR pair
 	if (count==9'h0ff) begin
+
+		// readBufferSelect == ~writeBufferSelect
 		unique case (readcursor[1:0])
-			2'b00: tx_data_lr <= samplebuffer[{~currentBuffer, readcursor[9:2]}][31 : 0];
-			2'b01: tx_data_lr <= samplebuffer[{~currentBuffer, readcursor[9:2]}][63 : 32];
-			2'b10: tx_data_lr <= samplebuffer[{~currentBuffer, readcursor[9:2]}][95 : 64];
-			2'b11: tx_data_lr <= samplebuffer[{~currentBuffer, readcursor[9:2]}][127: 96];
+			2'b00: tx_data_lr <= samplebuffer[readLine][31 : 0];
+			2'b01: tx_data_lr <= samplebuffer[readLine][63 : 32];
+			2'b10: tx_data_lr <= samplebuffer[readLine][95 : 64];
+			2'b11: tx_data_lr <= samplebuffer[readLine][127: 96];
 		endcase
 
-		// TODO: Step read cursor x1(always), x2(stepcount[0]==1) or x4(stepcount[1]==1) for 44/22/11 KHz output support
 		readcursor <= (readcursor + 10'd1) % apuwordcount;
 
 		// Increment when we reach the end of a buffer, much like the vsync counter
-		bufferSwapCount <= (readcursor + 10'd1) == apuwordcount ? 32'd1 : 32'd0;
+		if ((readcursor + 10'd1) == apuwordcount) begin
+			bufferSwapCount <= bufferSwapCount + 32'd1;
+		end
 	end
 end
 
