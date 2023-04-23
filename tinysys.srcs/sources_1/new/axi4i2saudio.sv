@@ -90,6 +90,15 @@ always_ff @(posedge aclk) begin
 	end
 end
 
+logic [9:0] readcursor = 10'd0;			// Current sample read position
+logic [9:0] readLine;					// Cache line select for reads
+logic [9:0] writeLine;					// Cache line select for writes
+always_comb begin
+	readLine = {~writeBufferSelect, readcursor[9:2]};
+	writeLine = {writeBufferSelect, burstcursor};
+end
+
+
 always_ff @(posedge aclk) begin
 	if (~aresetn) begin
 		m_axi.awvalid <= 0;
@@ -99,7 +108,6 @@ always_ff @(posedge aclk) begin
 		m_axi.bready <= 0;
 		m_axi.arvalid <= 0;
 		m_axi.rready <= 0;
-		burstcursor <= 8'd0;
 		cmdmode <= WCMD;
 	end else begin
 
@@ -185,7 +193,7 @@ always_ff @(posedge aclk) begin
 			READLOOP: begin
 				if (m_axi.rvalid) begin
 					m_axi.rready <= ~m_axi.rlast;
-					samplebuffer[{writeBufferSelect, burstcursor}] <= m_axi.rdata;
+					samplebuffer[writeLine] <= m_axi.rdata;
 					burstcursor <= burstcursor + 8'd1;
 					cmdmode <= ~m_axi.rlast ? READLOOP : FINALIZE;
 				end
@@ -204,14 +212,7 @@ end
 // I2S output
 // ------------------------------------------------------------------------------------
 
-logic [9:0] readcursor = 10'd0;			// Current sample read position
-logic [9:0] readLine;					// Cache line select for reads
-
 logic [1:0] sampleRateCounter = 2'b00;	// Sample rate counter
-
-always_comb begin
-	readLine = {~writeBufferSelect, readcursor[9:2]};
-end
 
 always@(posedge audioclock) begin
 
