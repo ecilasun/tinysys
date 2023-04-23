@@ -41,6 +41,7 @@ end
 // Setup
 // ------------------------------------------------------------------------------------
 
+assign m_axi.araddr = 0;			// Nowhere
 assign m_axi.arlen = 0;				// Single burst
 assign m_axi.arsize = SIZE_16_BYTE; // 128bit read bus
 assign m_axi.arburst = BURST_INCR;	// auto address increment for burst
