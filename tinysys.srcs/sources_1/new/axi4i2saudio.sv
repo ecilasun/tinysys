@@ -98,6 +98,15 @@ always_comb begin
 	writeLine = {writeBufferSelect, burstcursor};
 end
 
+assign m_axi.arsize = SIZE_16_BYTE;
+assign m_axi.arburst = BURST_INCR;
+
+assign m_axi.awsize = SIZE_4_BYTE;
+assign m_axi.awburst = BURST_FIXED;
+
+assign m_axi.awaddr = 0;
+assign m_axi.awlen = 0;
+assign m_axi.wdata = 0;
 
 always_ff @(posedge aclk) begin
 	if (~aresetn) begin
