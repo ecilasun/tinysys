@@ -79,7 +79,7 @@ initial begin
 end
 
 logic [7:0] burstcursor = 8'd0;
-logic [2:0] sampleoutputrate = 3'b001; // [2:x4,1:x2,0:x1]
+logic [1:0] sampleoutputrate = 2'b00;
 
 always_ff @(posedge aclk) begin
 	if (~aresetn) begin
@@ -159,7 +159,7 @@ always_ff @(posedge aclk) begin
 
 			APUSETRATE: begin
 				if (abvalid && ~abempty) begin
-					sampleoutputrate <= audiodin[2:0]; // 1/2/4
+					sampleoutputrate <= audiodin[1:0]; // 2'b00:x1, 2'b01:x2, 2'b10:x4, 2'b11:undefined
 					// Advance FIFO
 					re <= 1'b1;
 					cmdmode <= FINALIZE;
@@ -207,12 +207,15 @@ end
 logic [9:0] readcursor = 10'd0;			// Current sample read position
 logic [9:0] readLine;					// Cache line select for reads
 
+logic [1:0] sampleRateCounter = 2'b00;	// Sample rate counter
+
 always_comb begin
 	readLine = {~writeBufferSelect, readcursor[9:2]};
 end
 
 always@(posedge audioclock) begin
-	// Trigger new sample copy just before we select L channel again out of the LR pair
+
+ 	// Trigger new sample copy just before we select L channel again out of the LR pair
 	if (count==9'h0ff) begin
 
 		// readBufferSelect == ~writeBufferSelect
@@ -229,7 +232,16 @@ always@(posedge audioclock) begin
 			readcursor <= 0;
 			bufferSwapCount <= bufferSwapCount + 32'd1;
 		end else begin
-			readcursor <= readcursor + 10'd1;
+
+		// Increment based on sample rate (or sometimes not)
+		unique case (1'b1)
+			sampleoutputrate[0]:	readcursor <= readcursor + (sampleRateCounter[0] ? 10'd1 : 10'd0);
+			sampleoutputrate[1]:	readcursor <= readcursor + (sampleRateCounter[1] ? 10'd1 : 10'd0);
+			default:				readcursor <= readcursor + 10'd1;
+		endcase
+
+		sampleRateCounter <= sampleRateCounter + 2'd1;
+
 		end
 	end
 end
