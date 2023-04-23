@@ -54,7 +54,8 @@ apucmdmodetype cmdmode = WCMD;
 
 logic [31:0] apucmd;					// Command code
 logic [31:0] apusourceaddr;				// Memory address to DMA the audio samples from
-logic [10:0] apuwordcount = 11'd255;	// Number of words to DMA and range to loop over
+logic [9:0] apuwordcount = 10'd1023;	// Number of words to playback, minus one
+logic [7:0] apuburstcount = 8'd255;		// Number of 16byte DMA reads, minus one
 
 // Internal sample buffers with up to 1K 32 bit(L/R) samples each (2x4096 bytes)
 // This means each buffer has: 1024 stereo samples max, 256 bursts to read max
@@ -137,7 +138,8 @@ always_ff @(posedge aclk) begin
 
 			APUBUFFERSIZE: begin
 				if (abvalid && ~abempty) begin
-					apuwordcount <= audiodin[10:0];	// wordcount (0..1024)
+					apuwordcount <= audiodin[9:0];		// wordcount-1 (0..1023), typically 1023
+					apuburstcount <= audiodin[10:2];	// burstcount = wordcount>>2, typically 255
 					// Advance FIFO
 					re <= 1'b1;
 					cmdmode <= FINALIZE;
@@ -148,7 +150,7 @@ always_ff @(posedge aclk) begin
 				// TODO: zero out the current playback buffer or stop output altogether
 				cmdmode <= FINALIZE;
 			end
-			
+
 			APUSWAP: begin
 				// Swap read/write buffers if we're at the end of a playback buffer
 				writeBufferSelect <= ~writeBufferSelect;
@@ -166,7 +168,7 @@ always_ff @(posedge aclk) begin
 
 			STARTDMA: begin
 				burstcursor <= 8'd0;
-				m_axi.arlen <= apuwordcount[10:3] - 8'd1;	// burstcount = (wordcount/4)-1
+				m_axi.arlen <= apuburstcount;
 				m_axi.arvalid <= 1;
 				m_axi.araddr <= apusourceaddr; 
 				cmdmode <= WAITREADADDR;
@@ -221,11 +223,13 @@ always@(posedge audioclock) begin
 			2'b11: tx_data_lr <= samplebuffer[readLine][127: 96];
 		endcase
 
-		readcursor <= (readcursor + 10'd1) % apuwordcount;
-
-		// Increment when we reach the end of a buffer, much like the vsync counter
-		if ((readcursor + 10'd1) == apuwordcount) begin
+		// Next sample rewinds if we're at the end
+		// Also increment buffer swap count to notify CPU
+		if (readcursor == apuwordcount) begin
+			readcursor <= 0;
 			bufferSwapCount <= bufferSwapCount + 32'd1;
+		end else begin
+			readcursor <= readcursor + 10'd1;
 		end
 	end
 end
