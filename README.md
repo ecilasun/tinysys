@@ -2,17 +2,22 @@
 
 # General flow
 
-Fetch unit reads an instruction at PC, decodes it and outputs it (together with its PC) to instruction output FIFO (IFIFO).
+Fetch:
+This unit reads an instruction at PC, decodes it and outputs it (together with its PC) to instruction output FIFO (IFIFO). If it's an interrupt or some other special instruction (for instance I$ flush) then it is handled entirely within the fetch unit. This unit is also responsible for inserting pre/post interrupt code from an internal ROM at interrupt or exception time. If a branch instruction is encountered, fetch unit will drop into an idle state and wait for the execute unit to resolve the target branch address.
 
-The execute unit will fetch an instruction from the FIFO if available, read register values, execute (ALU/BLU/CSR/SYS) and decide on new branch target if there's a branch involved.
+The execute unit will fetch an instruction from the FIFO if available, read register values, execute (ALU/BLU/CSR/SYS) and decide on new branch target if there's a branch involved. On a branch, decision the fetch unit is notified so it can resume instruction fetches.
 
-Fetch handles instruction fence internally without passing it to the execute unit.
+# Addendum: APU
 
-If there is a fence, branch, mret or wfi, it's handled before an interrupt request.
+TBD
 
-If there is a pending interrupt and the current instruction is a branch, first the fetch unit stalls until branch target is known, then deviates to ISR routine, then on MRET resumes from the branch target. This way even the branch-to-self instructions can be interrupted with a timer interrupt, for instance.
+# Addendum: GPU
 
-# Addendum: Rasterization extension
+TBD
+
+# Addendum: CPU side rasterization instructions
+
+Tinysys extends the RISC-V instruction set with some helpers to aid in rasterization. The following lists details the new instructions and their usage.
 
 **redge rs1, offset(rs2)**
 

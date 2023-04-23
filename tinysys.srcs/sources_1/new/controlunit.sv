@@ -242,6 +242,7 @@ always @(posedge aclk) begin
 			end
 
 			DISPATCH: begin
+				wbdin <= 32'd0;
 				// Most instructions are done here and go directly to writeback
 				unique case(1'b1)
 					instrOneHotOut[`O_H_OP],
