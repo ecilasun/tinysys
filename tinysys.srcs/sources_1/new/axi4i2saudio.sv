@@ -40,10 +40,10 @@ assign tx_mclk = audioclock;	// Master clock 22.519MHz
 // OPL2 device
 // ------------------------------------------------------------------------------------
 
-logic [4:0] oplclk = 0;
+logic [9:0] oplclk = 0;
 
 always @(posedge clkopl16) begin
-	oplclk <= oplclk + 5'd1;
+	oplclk <= oplclk + 10'd1;
 end
 
 logic [15:0] oplfifodin;
@@ -78,7 +78,7 @@ wire oplsample;
 
 jtopl2 OPL2inst(
     .rst(~aresetn),		// rst should be at least 6 clk&cen cycles long
-    .clk(oplclk[3]),		// Yamaha document states 3.58MHz clock for OPL2 :/
+    .clk(oplclk[3]),	// Yamaha document states 3.58MHz clock for OPL2 :/
     .cen(1'b1),
     .din(opldin),
     .addr(opladdr),
@@ -87,14 +87,12 @@ jtopl2 OPL2inst(
     .dout(opldout),
     .irq_n(oplirq),
     .snd(oplsnd),
-    .sample(oplsample)
-);
+    .sample(oplsample) );
 
 typedef enum logic [1:0] {
 	WOPLCMD,
 	OPLWREG,
-	OPLWVAL,
-	OPLFINALIZE } oplcmdmodetype;
+	OPLWVAL } oplcmdmodetype;
 oplcmdmodetype oplmode = WOPLCMD;
 
 logic [7:0] oplreg = 8'h00;
@@ -111,7 +109,7 @@ always @(posedge oplclk[3]) begin
 		oplwrn <= 1'b1;
 		opladdr <= 1'b0;
 
-		if (count == 3'b000000111) begin
+		if (count == 3'b000000111) begin // delay 1 sample
 			case (oplmode)
 				WOPLCMD: begin
 					if (~oplfifoempty && oplfifovalid) begin
@@ -141,12 +139,9 @@ always @(posedge oplclk[3]) begin
 					oplwrn <= 1'b0;
 					opladdr <= 1'b1;
 					opldin <= oplval;
-					oplmode <= OPLFINALIZE;
-				end
-				
-				OPLFINALIZE: begin
 					oplmode <= WOPLCMD;
 				end
+	
 			endcase
 		end
 	end

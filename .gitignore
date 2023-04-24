@@ -4,3 +4,4 @@ tinysys.runs/**
 tinysys.sim/**
 tinysys.ip_user_files/**
 tmp/simtop.*
+tinysys.srcs/sources_1/ip/.Xil/**.lock
