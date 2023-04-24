@@ -19,6 +19,10 @@ module axi4i2saudio(
     output wire tx_sclk,		// Stream clock
     output logic tx_sdout );	// Stream out
 
+// ------------------------------------------------------------------------------------
+// Clock divider
+// ------------------------------------------------------------------------------------
+
 // Counter for generating other divided clocks
 logic [8:0] count = 9'd0;
 
@@ -31,7 +35,117 @@ assign tx_lrck = lrck;			// Channel select 44.1KHz (/512)
 assign tx_sclk = sclk;			// Sample clock 2.823MHz (/8)
 assign tx_mclk = audioclock;	// Master clock 22.519MHz
 
-// Inernal L/R copies to stream out
+// ------------------------------------------------------------------------------------
+// OPL2 device
+// ------------------------------------------------------------------------------------
+
+logic [15:0] oplfifodin;
+logic oplfifowe = 1'b0;
+wire oplfifofull;
+wire oplfifoempty;
+wire [15:0] oplfifodout;
+logic oplfiforen = 1'b0;
+wire oplfifovalid;
+oplfifo oplfifoinst(
+	.full(oplfifofull),
+	.din(oplfifodin),
+	.wr_en(oplfifowe),
+	.empty(oplfifoempty),
+	.dout(oplfifodout),
+	.rd_en(oplfiforen),
+	.rst(~aresetn),
+	.wr_clk(aclk),
+	.rd_clk(audioclock),
+	.valid(oplfifovalid) );
+
+logic [7:0] opldin = 8'h00;
+
+logic oplcsn = 1'b1;	// bus inactive
+logic oplwrn = 1'b1;
+logic opladdr = 1'b0;
+
+wire [7:0] opldout;
+wire signed [15:0] oplsnd;
+wire oplirq;
+wire oplsample;
+
+jtopl2 OPL2inst(
+    .rst(~aresetn),		// rst should be at least 6 clk&cen cycles long
+    .clk(audioclock),	// Yamaha document states 3.58MHz clock for OPL2 :/
+    .cen(1'b1),
+    .din(opldin),
+    .addr(opladdr),
+    .cs_n(oplcsn),
+    .wr_n(oplwrn),
+    .dout(opldout),
+    .irq_n(oplirq),
+    .snd(oplsnd),
+    .sample(oplsample)
+);
+
+typedef enum logic [1:0] {
+	WOPLCMD,
+	OPLWREG,
+	OPLWVAL,
+	OPLFINALIZE } oplcmdmodetype;
+oplcmdmodetype oplmode = WOPLCMD;
+
+logic [7:0] oplreg = 8'h00;
+logic [7:0] oplval = 8'h00;
+
+always @(posedge audioclock) begin
+	if (~aresetn) begin
+		//
+	end else begin
+
+		oplfiforen <= 1'b0;
+
+		oplcsn <= 1'b1;	// set bus inactive
+		oplwrn <= 1'b1;
+		opladdr <= 1'b0;
+
+		if (count == 3'b000000111) begin
+			case (oplmode)
+				WOPLCMD: begin
+					if (~oplfifoempty && oplfifovalid) begin
+						oplreg <= oplfifodout[15:8];
+						oplval <= oplfifodout[7:0];
+						// TODO: Go to the reg+val write states 
+						// Advance FIFO
+						oplfiforen <= 1'b1;
+						oplmode <= OPLWREG;
+					end
+				end
+	
+				OPLWREG: begin
+					// csn rdn wrn a0
+					// 0   1   0   0  write address of register
+					oplcsn <= 1'b0;
+					oplwrn <= 1'b0;
+					opladdr <= 1'b0;
+					opldin <= oplreg;
+					oplmode <= OPLWVAL;
+				end
+	
+				OPLWVAL: begin
+					// csn rdn wrn a0
+					// 0   1   0   1  write contents of register
+					oplcsn <= 1'b0;
+					oplwrn <= 1'b0;
+					opladdr <= 1'b1;
+					opldin <= oplval;
+					oplmode <= OPLFINALIZE;
+				end
+				
+				OPLFINALIZE: begin
+					oplmode <= WOPLCMD;
+				end
+			endcase
+		end
+	end
+end
+
+// Internal L/R copies to stream out
 logic [31:0] tx_data_lr = 0;
 logic re = 1'b0;
 assign audiore = re;
@@ -47,7 +161,7 @@ typedef enum logic [3:0] {
 	APUSTOP,
 	APUSWAP,
 	APUSETRATE,
-	WAITSYNC,
+	APUOPL2CMD,
 	STARTDMA, WAITREADADDR, READLOOP,
 	FINALIZE } apucmdmodetype;
 apucmdmodetype cmdmode = WCMD;
@@ -121,6 +235,7 @@ always_ff @(posedge aclk) begin
 	end else begin
 
 		re <= 1'b0;
+		oplfifowe <= 1'b0;
 
 		case (cmdmode)
 			WCMD: begin
@@ -140,6 +255,7 @@ always_ff @(posedge aclk) begin
 					32'h00000002:	cmdmode <= APUSTOP;			// TODO: Stop all sound output
 					32'h00000003:	cmdmode <= APUSWAP;			// Swap r/w pages
 					32'h00000004:	cmdmode <= APUSETRATE;		// TODO: Set sample duplication count to x1 (44.1KHz), x2(22.05KHz) or x4(11.025KHz)
+					32'h00000005:	cmdmode <= APUOPL2CMD;		// OPL2 command
 					default:		cmdmode <= FINALIZE;		// Invalid command, wait one clock and try next
 				endcase
 			end
@@ -177,6 +293,16 @@ always_ff @(posedge aclk) begin
 			APUSETRATE: begin
 				if (abvalid && ~abempty) begin
 					sampleoutputrate <= audiodin[1:0]; // 2'b00:x1, 2'b01:x2, 2'b10:x4, 2'b11:undefined
+					// Advance FIFO
+					re <= 1'b1;
+					cmdmode <= FINALIZE;
+				end
+			end
+
+			APUOPL2CMD: begin
+				if (abvalid && ~abempty && ~oplfifofull) begin
+					oplfifodin <= audiodin[15:0];
+					oplfifowe <= 1'b1;
 					// Advance FIFO
 					re <= 1'b1;
 					cmdmode <= FINALIZE;
@@ -261,8 +387,8 @@ logic [23:0] tx_data_r_shift = 24'b0;
 
 always@(posedge audioclock)
 	if (count == 3'b000000111) begin
-		tx_data_l_shift <= {tx_data_lr[31:16],8'd0};
-		tx_data_r_shift <= {tx_data_lr[15:0],8'd0};
+		tx_data_l_shift <= {tx_data_lr[31:16],8'd0} | {oplsnd, 8'd0};
+		tx_data_r_shift <= {tx_data_lr[15:0],8'd0} | {oplsnd, 8'd0};
 	end else if (count[2:0] == 3'b111 && count[7:3] >= 5'd1 && count[7:3] <= 5'd24) begin
 		if (count[8] == 1'b1)
 			tx_data_r_shift <= {tx_data_r_shift[22:0], 1'b0};
