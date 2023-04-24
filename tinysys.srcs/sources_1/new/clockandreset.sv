@@ -12,6 +12,7 @@ module clockandreset(
 	output wire clk125,
 	output wire clk166,
 	output wire clk200,
+	output wire clkopl16,
 	output wire aresetn,
 	output wire preresetn);
 
@@ -35,6 +36,7 @@ centralclock centralclockinst(
 peripheralclocks peripheralclkinst(
 	.clk_in1(sys_clock_i),
 	.clk12(clk12),
+	.clkopl16(clkopl16),
 	.locked(peripheralclocklocked) );
 
 

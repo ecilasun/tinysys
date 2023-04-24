@@ -4,6 +4,7 @@ module axi4i2saudio(
 	input wire aclk,		// Bus clock
 	input wire aresetn,
     input wire audioclock,	// 22.591MHz master clock
+    input wire clkopl16,	// 3.58MHz x16 for OPL2
 
 	axi4if.master m_axi,	// Direct memory access
 
@@ -39,6 +40,12 @@ assign tx_mclk = audioclock;	// Master clock 22.519MHz
 // OPL2 device
 // ------------------------------------------------------------------------------------
 
+logic [4:0] oplclk = 0;
+
+always @(posedge clkopl16) begin
+	oplclk <= oplclk + 5'd1;
+end
+
 logic [15:0] oplfifodin;
 logic oplfifowe = 1'b0;
 wire oplfifofull;
@@ -55,7 +62,7 @@ oplfifo oplfifoinst(
 	.rd_en(oplfiforen),
 	.rst(~aresetn),
 	.wr_clk(aclk),
-	.rd_clk(audioclock),
+	.rd_clk(oplclk[3]),
 	.valid(oplfifovalid) );
 
 logic [7:0] opldin = 8'h00;
@@ -71,7 +78,7 @@ wire oplsample;
 
 jtopl2 OPL2inst(
     .rst(~aresetn),		// rst should be at least 6 clk&cen cycles long
-    .clk(audioclock),	// Yamaha document states 3.58MHz clock for OPL2 :/
+    .clk(oplclk[3]),		// Yamaha document states 3.58MHz clock for OPL2 :/
     .cen(1'b1),
     .din(opldin),
     .addr(opladdr),
@@ -93,7 +100,7 @@ oplcmdmodetype oplmode = WOPLCMD;
 logic [7:0] oplreg = 8'h00;
 logic [7:0] oplval = 8'h00;
 
-always @(posedge audioclock) begin
+always @(posedge oplclk[3]) begin
 	if (~aresetn) begin
 		//
 	end else begin
