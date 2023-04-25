@@ -11,7 +11,6 @@ module tinysoc #(
 	input wire clk125,
 	input wire clk166,
 	input wire clk200,
-	input wire clkopl16,
 	input wire aresetn,
 	input wire preresetn,
 	output wire [3:0] leds,
@@ -206,12 +205,11 @@ wire audiofifovalid;
 wire [31:0] audiobufferswapcount;
 
 axi4i2saudio APU(
-	.aclk(aclk),			// Bus clock
+	.aclk(aclk),				// Bus clock
 	.aresetn(aresetn),
-    .audioclock(clk12),		// 22.591MHz master clock
-    .clkopl16(clkopl16),	// OPL2 clock x16
+    .audioclock(clk12),			// 22.591MHz master clock
 
-	.m_axi(audiobus),	// Memory access
+	.m_axi(audiobus),			// Memory access
 
 	.abempty(audiofifoempty),	// APU command FIFO
 	.abvalid(audiofifovalid),
