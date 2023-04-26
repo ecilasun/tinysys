@@ -14,14 +14,14 @@
    </db_ref_list>
    <zoom_setting>
       <ZoomStartTime time="0.000000000 us"></ZoomStartTime>
-      <ZoomEndTime time="499.974078299 us"></ZoomEndTime>
+      <ZoomEndTime time="541.460640013 us"></ZoomEndTime>
       <Cursor1Time time="1.000000000 us"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="334"></NameColumnWidth>
+      <NameColumnWidth column_width="326"></NameColumnWidth>
       <ValueColumnWidth column_width="128"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="341" />
+   <WVObjectSize size="327" />
    <wave_markers>
       <marker label="" time="2090070000000" />
       <marker label="" time="3083299200000" />
@@ -1070,6 +1070,10 @@
       <obj_property name="ElementShortName">audioclock</obj_property>
       <obj_property name="ObjectShortName">audioclock</obj_property>
    </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/clk50">
+      <obj_property name="ElementShortName">clk50</obj_property>
+      <obj_property name="ObjectShortName">clk50</obj_property>
+   </wvobject>
    <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/abempty">
       <obj_property name="ElementShortName">abempty</obj_property>
       <obj_property name="ObjectShortName">abempty</obj_property>
@@ -1126,6 +1130,90 @@
       <obj_property name="ElementShortName">re</obj_property>
       <obj_property name="ObjectShortName">re</obj_property>
    </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/opl2csn">
+      <obj_property name="ElementShortName">opl2csn</obj_property>
+      <obj_property name="ObjectShortName">opl2csn</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/opl2addr">
+      <obj_property name="ElementShortName">opl2addr</obj_property>
+      <obj_property name="ObjectShortName">opl2addr</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/opl2wen">
+      <obj_property name="ElementShortName">opl2wen</obj_property>
+      <obj_property name="ObjectShortName">opl2wen</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/opl2dout">
+      <obj_property name="ElementShortName">opl2dout[7:0]</obj_property>
+      <obj_property name="ObjectShortName">opl2dout[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/opl2din">
+      <obj_property name="ElementShortName">opl2din[7:0]</obj_property>
+      <obj_property name="ObjectShortName">opl2din[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/opl2sndout">
+      <obj_property name="ElementShortName">opl2sndout[15:0]</obj_property>
+      <obj_property name="ObjectShortName">opl2sndout[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/opl2fifofull">
+      <obj_property name="ElementShortName">opl2fifofull</obj_property>
+      <obj_property name="ObjectShortName">opl2fifofull</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/opl2fifodin">
+      <obj_property name="ElementShortName">opl2fifodin[17:0]</obj_property>
+      <obj_property name="ObjectShortName">opl2fifodin[17:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/opl2fifowe">
+      <obj_property name="ElementShortName">opl2fifowe</obj_property>
+      <obj_property name="ObjectShortName">opl2fifowe</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/opl2fifoempty">
+      <obj_property name="ElementShortName">opl2fifoempty</obj_property>
+      <obj_property name="ObjectShortName">opl2fifoempty</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/opl2fifodout">
+      <obj_property name="ElementShortName">opl2fifodout[17:0]</obj_property>
+      <obj_property name="ObjectShortName">opl2fifodout[17:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/opl2fifore">
+      <obj_property name="ElementShortName">opl2fifore</obj_property>
+      <obj_property name="ObjectShortName">opl2fifore</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/opl2fifovalid">
+      <obj_property name="ElementShortName">opl2fifovalid</obj_property>
+      <obj_property name="ObjectShortName">opl2fifovalid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/opl2ce">
+      <obj_property name="ElementShortName">opl2ce</obj_property>
+      <obj_property name="ObjectShortName">opl2ce</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/sum">
+      <obj_property name="ElementShortName">sum[27:0]</obj_property>
+      <obj_property name="ObjectShortName">sum[27:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/opl2sndoutcdc1">
+      <obj_property name="ElementShortName">opl2sndoutcdc1[15:0]</obj_property>
+      <obj_property name="ObjectShortName">opl2sndoutcdc1[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/opl2sndoutcdc2">
+      <obj_property name="ElementShortName">opl2sndoutcdc2[15:0]</obj_property>
+      <obj_property name="ObjectShortName">opl2sndoutcdc2[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/opl2cmdmode">
+      <obj_property name="ElementShortName">opl2cmdmode[3:0]</obj_property>
+      <obj_property name="ObjectShortName">opl2cmdmode[3:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/opl2reg">
+      <obj_property name="ElementShortName">opl2reg[7:0]</obj_property>
+      <obj_property name="ObjectShortName">opl2reg[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/opl2val">
+      <obj_property name="ElementShortName">opl2val[7:0]</obj_property>
+      <obj_property name="ObjectShortName">opl2val[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/opl2count">
+      <obj_property name="ElementShortName">opl2count[15:0]</obj_property>
+      <obj_property name="ObjectShortName">opl2count[15:0]</obj_property>
+   </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/APU/cmdmode">
       <obj_property name="ElementShortName">cmdmode[3:0]</obj_property>
       <obj_property name="ObjectShortName">cmdmode[3:0]</obj_property>
@@ -1142,21 +1230,53 @@
       <obj_property name="ElementShortName">apuwordcount[9:0]</obj_property>
       <obj_property name="ObjectShortName">apuwordcount[9:0]</obj_property>
    </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/apuburstcount">
+      <obj_property name="ElementShortName">apuburstcount[7:0]</obj_property>
+      <obj_property name="ObjectShortName">apuburstcount[7:0]</obj_property>
+   </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/APU/samplebuffer">
       <obj_property name="ElementShortName">samplebuffer[0:511][127:0]</obj_property>
       <obj_property name="ObjectShortName">samplebuffer[0:511][127:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/writeBufferSelect">
+      <obj_property name="ElementShortName">writeBufferSelect</obj_property>
+      <obj_property name="ObjectShortName">writeBufferSelect</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/APU/bufferSwapCount">
       <obj_property name="ElementShortName">bufferSwapCount[31:0]</obj_property>
       <obj_property name="ObjectShortName">bufferSwapCount[31:0]</obj_property>
    </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/bufferSwapCountCDC1">
+      <obj_property name="ElementShortName">bufferSwapCountCDC1[31:0]</obj_property>
+      <obj_property name="ObjectShortName">bufferSwapCountCDC1[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/bufferSwapCountCDC2">
+      <obj_property name="ElementShortName">bufferSwapCountCDC2[31:0]</obj_property>
+      <obj_property name="ObjectShortName">bufferSwapCountCDC2[31:0]</obj_property>
+   </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/APU/burstcursor">
       <obj_property name="ElementShortName">burstcursor[7:0]</obj_property>
       <obj_property name="ObjectShortName">burstcursor[7:0]</obj_property>
    </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/sampleoutputrate">
+      <obj_property name="ElementShortName">sampleoutputrate[1:0]</obj_property>
+      <obj_property name="ObjectShortName">sampleoutputrate[1:0]</obj_property>
+   </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/APU/readcursor">
       <obj_property name="ElementShortName">readcursor[9:0]</obj_property>
       <obj_property name="ObjectShortName">readcursor[9:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/readLine">
+      <obj_property name="ElementShortName">readLine[9:0]</obj_property>
+      <obj_property name="ObjectShortName">readLine[9:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/writeLine">
+      <obj_property name="ElementShortName">writeLine[9:0]</obj_property>
+      <obj_property name="ObjectShortName">writeLine[9:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/sampleRateCounter">
+      <obj_property name="ElementShortName">sampleRateCounter[1:0]</obj_property>
+      <obj_property name="ObjectShortName">sampleRateCounter[1:0]</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/APU/tx_data_l_shift">
       <obj_property name="ElementShortName">tx_data_l_shift[23:0]</obj_property>
@@ -1166,272 +1286,96 @@
       <obj_property name="ElementShortName">tx_data_r_shift[23:0]</obj_property>
       <obj_property name="ObjectShortName">tx_data_r_shift[23:0]</obj_property>
    </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/opl2_clk_rate">
+      <obj_property name="ElementShortName">opl2_clk_rate[27:0]</obj_property>
+      <obj_property name="ObjectShortName">opl2_clk_rate[27:0]</obj_property>
+   </wvobject>
    <wvobject fp_name="divider703" type="divider">
       <obj_property name="label">OPL2</obj_property>
       <obj_property name="DisplayName">label</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/rst">
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/oplcmdfifoinst/rst">
       <obj_property name="ElementShortName">rst</obj_property>
       <obj_property name="ObjectShortName">rst</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/clk">
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/oplcmdfifoinst/wr_clk">
+      <obj_property name="ElementShortName">wr_clk</obj_property>
+      <obj_property name="ObjectShortName">wr_clk</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/oplcmdfifoinst/rd_clk">
+      <obj_property name="ElementShortName">rd_clk</obj_property>
+      <obj_property name="ObjectShortName">rd_clk</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/oplcmdfifoinst/din">
+      <obj_property name="ElementShortName">din[17:0]</obj_property>
+      <obj_property name="ObjectShortName">din[17:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/oplcmdfifoinst/wr_en">
+      <obj_property name="ElementShortName">wr_en</obj_property>
+      <obj_property name="ObjectShortName">wr_en</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/oplcmdfifoinst/rd_en">
+      <obj_property name="ElementShortName">rd_en</obj_property>
+      <obj_property name="ObjectShortName">rd_en</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/oplcmdfifoinst/dout">
+      <obj_property name="ElementShortName">dout[17:0]</obj_property>
+      <obj_property name="ObjectShortName">dout[17:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/oplcmdfifoinst/full">
+      <obj_property name="ElementShortName">full</obj_property>
+      <obj_property name="ObjectShortName">full</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/oplcmdfifoinst/empty">
+      <obj_property name="ElementShortName">empty</obj_property>
+      <obj_property name="ObjectShortName">empty</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/oplcmdfifoinst/valid">
+      <obj_property name="ElementShortName">valid</obj_property>
+      <obj_property name="ObjectShortName">valid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/jtopl2_inst/rst">
+      <obj_property name="ElementShortName">rst</obj_property>
+      <obj_property name="ObjectShortName">rst</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/jtopl2_inst/clk">
       <obj_property name="ElementShortName">clk</obj_property>
       <obj_property name="ObjectShortName">clk</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/cen">
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/jtopl2_inst/cen">
       <obj_property name="ElementShortName">cen</obj_property>
       <obj_property name="ObjectShortName">cen</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/cenop">
-      <obj_property name="ElementShortName">cenop</obj_property>
-      <obj_property name="ObjectShortName">cenop</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/din">
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/jtopl2_inst/din">
       <obj_property name="ElementShortName">din[7:0]</obj_property>
       <obj_property name="ObjectShortName">din[7:0]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/write">
-      <obj_property name="ElementShortName">write</obj_property>
-      <obj_property name="ObjectShortName">write</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/addr">
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/jtopl2_inst/addr">
       <obj_property name="ElementShortName">addr</obj_property>
       <obj_property name="ObjectShortName">addr</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/zero">
-      <obj_property name="ElementShortName">zero</obj_property>
-      <obj_property name="ObjectShortName">zero</obj_property>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/jtopl2_inst/cs_n">
+      <obj_property name="ElementShortName">cs_n</obj_property>
+      <obj_property name="ObjectShortName">cs_n</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/group">
-      <obj_property name="ElementShortName">group[1:0]</obj_property>
-      <obj_property name="ObjectShortName">group[1:0]</obj_property>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/jtopl2_inst/wr_n">
+      <obj_property name="ElementShortName">wr_n</obj_property>
+      <obj_property name="ObjectShortName">wr_n</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/op">
-      <obj_property name="ElementShortName">op</obj_property>
-      <obj_property name="ObjectShortName">op</obj_property>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/jtopl2_inst/dout">
+      <obj_property name="ElementShortName">dout[7:0]</obj_property>
+      <obj_property name="ObjectShortName">dout[7:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/slot">
-      <obj_property name="ElementShortName">slot[17:0]</obj_property>
-      <obj_property name="ObjectShortName">slot[17:0]</obj_property>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/jtopl2_inst/irq_n">
+      <obj_property name="ElementShortName">irq_n</obj_property>
+      <obj_property name="ObjectShortName">irq_n</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/rhy_en">
-      <obj_property name="ElementShortName">rhy_en</obj_property>
-      <obj_property name="ObjectShortName">rhy_en</obj_property>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/jtopl2_inst/snd">
+      <obj_property name="ElementShortName">snd[15:0]</obj_property>
+      <obj_property name="ObjectShortName">snd[15:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/value_A">
-      <obj_property name="ElementShortName">value_A[7:0]</obj_property>
-      <obj_property name="ObjectShortName">value_A[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/value_B">
-      <obj_property name="ElementShortName">value_B[7:0]</obj_property>
-      <obj_property name="ObjectShortName">value_B[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/load_A">
-      <obj_property name="ElementShortName">load_A</obj_property>
-      <obj_property name="ObjectShortName">load_A</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/load_B">
-      <obj_property name="ElementShortName">load_B</obj_property>
-      <obj_property name="ObjectShortName">load_B</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/flagen_A">
-      <obj_property name="ElementShortName">flagen_A</obj_property>
-      <obj_property name="ObjectShortName">flagen_A</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/flagen_B">
-      <obj_property name="ElementShortName">flagen_B</obj_property>
-      <obj_property name="ObjectShortName">flagen_B</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/clr_flag_A">
-      <obj_property name="ElementShortName">clr_flag_A</obj_property>
-      <obj_property name="ObjectShortName">clr_flag_A</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/clr_flag_B">
-      <obj_property name="ElementShortName">clr_flag_B</obj_property>
-      <obj_property name="ObjectShortName">clr_flag_B</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/flag_A">
-      <obj_property name="ElementShortName">flag_A</obj_property>
-      <obj_property name="ObjectShortName">flag_A</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/overflow_A">
-      <obj_property name="ElementShortName">overflow_A</obj_property>
-      <obj_property name="ObjectShortName">overflow_A</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/fnum_I">
-      <obj_property name="ElementShortName">fnum_I[9:0]</obj_property>
-      <obj_property name="ObjectShortName">fnum_I[9:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/block_I">
-      <obj_property name="ElementShortName">block_I[2:0]</obj_property>
-      <obj_property name="ObjectShortName">block_I[2:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/mul_II">
-      <obj_property name="ElementShortName">mul_II[3:0]</obj_property>
-      <obj_property name="ObjectShortName">mul_II[3:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/viben_I">
-      <obj_property name="ElementShortName">viben_I</obj_property>
-      <obj_property name="ObjectShortName">viben_I</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/wavsel_I">
-      <obj_property name="ElementShortName">wavsel_I[1:0]</obj_property>
-      <obj_property name="ObjectShortName">wavsel_I[1:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/keyon_I">
-      <obj_property name="ElementShortName">keyon_I</obj_property>
-      <obj_property name="ObjectShortName">keyon_I</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/en_sus_I">
-      <obj_property name="ElementShortName">en_sus_I</obj_property>
-      <obj_property name="ObjectShortName">en_sus_I</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/arate_I">
-      <obj_property name="ElementShortName">arate_I[3:0]</obj_property>
-      <obj_property name="ObjectShortName">arate_I[3:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/drate_I">
-      <obj_property name="ElementShortName">drate_I[3:0]</obj_property>
-      <obj_property name="ObjectShortName">drate_I[3:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/rrate_I">
-      <obj_property name="ElementShortName">rrate_I[3:0]</obj_property>
-      <obj_property name="ObjectShortName">rrate_I[3:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/sl_I">
-      <obj_property name="ElementShortName">sl_I[3:0]</obj_property>
-      <obj_property name="ObjectShortName">sl_I[3:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/ks_II">
-      <obj_property name="ElementShortName">ks_II</obj_property>
-      <obj_property name="ObjectShortName">ks_II</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/tl_IV">
-      <obj_property name="ElementShortName">tl_IV[5:0]</obj_property>
-      <obj_property name="ObjectShortName">tl_IV[5:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/amen_IV">
-      <obj_property name="ElementShortName">amen_IV</obj_property>
-      <obj_property name="ObjectShortName">amen_IV</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/am_dep">
-      <obj_property name="ElementShortName">am_dep</obj_property>
-      <obj_property name="ObjectShortName">am_dep</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/vib_dep">
-      <obj_property name="ElementShortName">vib_dep</obj_property>
-      <obj_property name="ObjectShortName">vib_dep</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/ksl_IV">
-      <obj_property name="ElementShortName">ksl_IV[1:0]</obj_property>
-      <obj_property name="ObjectShortName">ksl_IV[1:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/fb_I">
-      <obj_property name="ElementShortName">fb_I[2:0]</obj_property>
-      <obj_property name="ObjectShortName">fb_I[2:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/con_I">
-      <obj_property name="ElementShortName">con_I</obj_property>
-      <obj_property name="ObjectShortName">con_I</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/selreg">
-      <obj_property name="ElementShortName">selreg[7:0]</obj_property>
-      <obj_property name="ObjectShortName">selreg[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/din_copy">
-      <obj_property name="ElementShortName">din_copy[7:0]</obj_property>
-      <obj_property name="ObjectShortName">din_copy[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/csm">
-      <obj_property name="ElementShortName">csm</obj_property>
-      <obj_property name="ObjectShortName">csm</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/effect">
-      <obj_property name="ElementShortName">effect</obj_property>
-      <obj_property name="ObjectShortName">effect</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/sel_group">
-      <obj_property name="ElementShortName">sel_group[1:0]</obj_property>
-      <obj_property name="ObjectShortName">sel_group[1:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/sel_sub">
-      <obj_property name="ElementShortName">sel_sub[2:0]</obj_property>
-      <obj_property name="ObjectShortName">sel_sub[2:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/up_fnumlo">
-      <obj_property name="ElementShortName">up_fnumlo</obj_property>
-      <obj_property name="ObjectShortName">up_fnumlo</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/up_fnumhi">
-      <obj_property name="ElementShortName">up_fnumhi</obj_property>
-      <obj_property name="ObjectShortName">up_fnumhi</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/up_fbcon">
-      <obj_property name="ElementShortName">up_fbcon</obj_property>
-      <obj_property name="ObjectShortName">up_fbcon</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/up_mult">
-      <obj_property name="ElementShortName">up_mult</obj_property>
-      <obj_property name="ObjectShortName">up_mult</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/up_ksl_tl">
-      <obj_property name="ElementShortName">up_ksl_tl</obj_property>
-      <obj_property name="ObjectShortName">up_ksl_tl</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/up_ar_dr">
-      <obj_property name="ElementShortName">up_ar_dr</obj_property>
-      <obj_property name="ObjectShortName">up_ar_dr</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/up_sl_rr">
-      <obj_property name="ElementShortName">up_sl_rr</obj_property>
-      <obj_property name="ObjectShortName">up_sl_rr</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/up_wav">
-      <obj_property name="ElementShortName">up_wav</obj_property>
-      <obj_property name="ObjectShortName">up_wav</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/wave_mode">
-      <obj_property name="ElementShortName">wave_mode</obj_property>
-      <obj_property name="ObjectShortName">wave_mode</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/csm_en">
-      <obj_property name="ElementShortName">csm_en</obj_property>
-      <obj_property name="ObjectShortName">csm_en</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/note_sel">
-      <obj_property name="ElementShortName">note_sel</obj_property>
-      <obj_property name="ObjectShortName">note_sel</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/rhy_kon">
-      <obj_property name="ElementShortName">rhy_kon[4:0]</obj_property>
-      <obj_property name="ObjectShortName">rhy_kon[4:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/OPL_TYPE">
-      <obj_property name="ElementShortName">OPL_TYPE[31:0]</obj_property>
-      <obj_property name="ObjectShortName">OPL_TYPE[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/REG_TESTYM">
-      <obj_property name="ElementShortName">REG_TESTYM[7:0]</obj_property>
-      <obj_property name="ObjectShortName">REG_TESTYM[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/REG_CLKA">
-      <obj_property name="ElementShortName">REG_CLKA[7:0]</obj_property>
-      <obj_property name="ObjectShortName">REG_CLKA[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/REG_CLKB">
-      <obj_property name="ElementShortName">REG_CLKB[7:0]</obj_property>
-      <obj_property name="ObjectShortName">REG_CLKB[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/REG_TIMER">
-      <obj_property name="ElementShortName">REG_TIMER[7:0]</obj_property>
-      <obj_property name="ObjectShortName">REG_TIMER[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/REG_CSM">
-      <obj_property name="ElementShortName">REG_CSM[7:0]</obj_property>
-      <obj_property name="ObjectShortName">REG_CSM[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/simtop/main/socinstance/APU/OPL2inst/u_base/u_mmr/REG_RYTHM">
-      <obj_property name="ElementShortName">REG_RYTHM[7:0]</obj_property>
-      <obj_property name="ObjectShortName">REG_RYTHM[7:0]</obj_property>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/APU/jtopl2_inst/sample">
+      <obj_property name="ElementShortName">sample</obj_property>
+      <obj_property name="ObjectShortName">sample</obj_property>
    </wvobject>
 </wave_config>

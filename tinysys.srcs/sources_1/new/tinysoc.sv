@@ -208,7 +208,7 @@ axi4i2saudio APU(
 	.aclk(aclk),				// Bus clock
 	.aresetn(aresetn),
     .audioclock(clk12),			// 22.591MHz master clock
-	.clk50(clk50),				// For OPL2
+	.clk50(clk50),				// Master clock for OPL2
 
 	.m_axi(audiobus),			// Memory access
 
