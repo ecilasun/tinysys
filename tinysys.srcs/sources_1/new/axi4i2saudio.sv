@@ -1,23 +1,20 @@
 `timescale 1ns / 1ps
 
 module axi4i2saudio(
-	input wire aclk,		// Bus clock
+	input wire aclk,
 	input wire aresetn,
-    input wire audioclock,	// 22.591MHz master clock
-
-	axi4if.master m_axi,	// Direct memory access
-
-	input wire abempty,
-	input wire abvalid,
-	output wire audiore,
-    input wire [31:0] audiodin,			// Audio input is 16bits in our device (TODO: this is an audio command instead)
-
-	output wire [31:0] swapcount,		// Return the swap count
-
-    output wire tx_mclk,		// Audio bus output
-    output wire tx_lrck,		// L/R select
-    output wire tx_sclk,		// Stream clock
-    output logic tx_sdout );	// Stream out
+    input wire audioclock,			// 22.591MHz master clock
+	input wire clk50,				// 50MHz clock for OPL2
+	axi4if.master m_axi,			// Direct memory access for burst reads
+	input wire abempty,				// Command fifo empty
+	input wire abvalid,				// Command available
+	output wire audiore,			// Command read control
+    input wire [31:0] audiodin,		// APU command input
+	output wire [31:0] swapcount,	// Buffer swap counter for sync
+    output wire tx_mclk,			// Audio bus output
+    output wire tx_lrck,			// L/R select
+    output wire tx_sclk,			// Stream clock
+    output logic tx_sdout );		// Stream out
 
 // ------------------------------------------------------------------------------------
 // Clock divider
@@ -41,8 +38,145 @@ logic re = 1'b0;
 assign audiore = re;
 
 // ------------------------------------------------------------------------------------
-// TODO: OPL2 hardware
+// OPL2 hardware
 // ------------------------------------------------------------------------------------
+
+// Control & output wires
+
+logic opl2csn = 1'b1;
+logic opl2addr = 1'b0;
+logic opl2wen = 1'b1;
+wire [7:0] opl2dout = 8'd0;
+logic [7:0] opl2din;
+wire [15:0] opl2sndout;
+
+// Command fifo
+wire opl2fifofull;
+logic [17:0] opl2fifodin;
+logic opl2fifowe = 1'b0;
+wire opl2fifoempty;
+wire [17:0] opl2fifodout;
+logic opl2fifore = 1'b0;
+wire opl2fifovalid;
+
+opl2inputfifo oplcmdfifoinst(
+	.full(opl2fifofull),
+	.din(opl2fifodin),
+	.wr_en(opl2fifowe),
+	.empty(opl2fifoempty),
+	.dout(opl2fifodout),
+	.rd_en(opl2fifore),
+	.rst(~aresetn),
+	.wr_clk(aclk),
+	.rd_clk(clk50),
+	.valid(opl2fifovalid));
+
+// OPL2 clock generator
+
+// From Amiga hardware Reference Manual:
+//                  NTSC     PAL       units
+// clock constant   3579454  3546895   ticks per second
+// clock interval   0.279365 0.281937  usec per interval
+
+localparam opl2_clk_rate = 28'd50000000;	// Rate of opl2 clock (NTSC)
+
+logic opl2ce = 1'b0;
+logic [27:0] sum = 0;
+always @(posedge clk50) begin
+	opl2ce <= 0;
+	sum = sum + 28'd3579545;
+	if(sum >= opl2_clk_rate) begin
+		sum = sum - opl2_clk_rate;
+		opl2ce <= 1;
+	end
+end
+
+// OPL2 device
+
+jtopl2 jtopl2_inst(
+	.rst(~aresetn),
+	.clk(clk50),
+	.cen(opl2ce),
+	.din(opl2din),
+	.dout(opl2dout),
+	.addr(opl2addr),
+	.cs_n(opl2csn),
+	.wr_n(opl2wen),
+	.irq_n(),
+	.snd(opl2sndout),
+	.sample() );
+	
+// Audio CDC
+(* async_reg = "true" *) logic [15:0] opl2sndoutcdc1;
+(* async_reg = "true" *) logic [15:0] opl2sndoutcdc2;
+always @(posedge audioclock) begin
+	opl2sndoutcdc1 <= opl2sndout;
+	opl2sndoutcdc2 <= opl2sndoutcdc1;
+end
+
+typedef enum logic [3:0] {
+	OPL2WCMD,
+	OPL2WRITEREG,
+	OPL2WRITEVAL,
+	OPL2WAIT } opl2cmdmodetype;
+opl2cmdmodetype opl2cmdmode = OPL2WCMD;
+
+logic [7:0] opl2reg;
+logic [7:0] opl2val;
+
+always @(posedge clk50) begin
+	if (~aresetn) begin
+		//
+	end else begin
+		// Done reading
+		opl2fifore <= 1'b0;
+
+		opl2csn <= 1'b1;	// Release bus
+		opl2din <= 8'dz;	// Set data to high impedance
+
+		case (opl2cmdmode)
+			OPL2WCMD: begin
+				if (~opl2fifoempty && opl2fifovalid) begin
+					opl2reg <= opl2fifodout[15:8];
+					opl2val <= opl2fifodout[7:0];
+					opl2cmdmode <= opl2fifodout[17:16] == 2'b00 ? OPL2WRITEREG : OPL2WAIT;
+					// Advance FIFO
+					opl2fifore <= 1'b1;
+				end
+			end
+
+			OPL2WRITEREG: begin
+				// CSn RDn WRn A0
+				// 0   1   0   0	// write register address
+				opl2addr <= 1'b0;
+				opl2wen <= 1'b0;
+				opl2csn <= 1'b0;
+				opl2din <= opl2reg;
+				opl2cmdmode <= OPL2WRITEVAL;
+			end
+
+			OPL2WRITEVAL: begin
+				// CSn RDn WRn A0
+				// 0   1   0   1	// write register value
+				opl2addr <= 1'b1;
+				opl2wen <= 1'b0;
+				opl2csn <= 1'b0;
+				opl2din <= opl2reg;
+				opl2cmdmode <= OPL2WCMD;
+			end
+
+			/*OPL2READSTATE: begin
+				// CSn RDn WRn A0
+				// 0   0   1   1	// read status (opl2dout)
+			end*/
+
+			OPL2WAIT: begin
+				// TODO: Wait {opl2reg, opl2val} samples (16 bit wait value)
+				opl2cmdmode <= OPL2WCMD;
+			end
+		endcase
+	end
+end
 
 // ------------------------------------------------------------------------------------
 // Command dispatch
@@ -77,8 +211,10 @@ logic writeBufferSelect = 1'b0;
 
 // Number of buffer swaps so far (CDC from audio clock to bus clock)
 logic [31:0] bufferSwapCount = 32'd0;
-logic [31:0] bufferSwapCountCDC1 = 32'd0;
-logic [31:0] bufferSwapCountCDC2 = 32'd0;
+(* async_reg = "true" *) logic [31:0] bufferSwapCountCDC1 = 32'd0;
+(* async_reg = "true" *) logic [31:0] bufferSwapCountCDC2 = 32'd0;
+
+// CPU can access this
 assign swapcount = bufferSwapCountCDC2;
 
 initial begin
@@ -130,6 +266,7 @@ always_ff @(posedge aclk) begin
 	end else begin
 
 		re <= 1'b0;
+		opl2fifowe <= 1'b0;
 
 		case (cmdmode)
 			WCMD: begin
@@ -195,9 +332,9 @@ always_ff @(posedge aclk) begin
 			end
 
 			APUOPL2CMD: begin
-				if (abvalid && ~abempty /*&& ~oplfifofull*/) begin
-					//oplfifodin <= {2'b00, audiodin[15:0]};
-					//oplfifowe <= 1'b1;
+				if (abvalid && ~abempty && ~opl2fifofull) begin
+					opl2fifodin <= {2'b00, audiodin[15:0]};
+					opl2fifowe <= 1'b1;
 					// Advance FIFO
 					re <= 1'b1;
 					cmdmode <= FINALIZE;
@@ -205,9 +342,9 @@ always_ff @(posedge aclk) begin
 			end
 
 			APUOPL2WAIT: begin
-				if (abvalid && ~abempty /*&& ~oplfifofull*/) begin
-					//oplfifodin <= {2'b01, audiodin[15:0]};
-					//oplfifowe <= 1'b1;
+				if (abvalid && ~abempty && ~opl2fifofull) begin
+					opl2fifodin <= {2'b01, audiodin[15:0]};
+					opl2fifowe <= 1'b1;
 					// Advance FIFO
 					re <= 1'b1;
 					cmdmode <= FINALIZE;
@@ -291,9 +428,10 @@ logic [23:0] tx_data_l_shift = 24'b0;
 logic [23:0] tx_data_r_shift = 24'b0;
 
 always@(posedge audioclock)
-	if (count == 3'b000000111) begin
-		tx_data_l_shift <= {tx_data_lr[31:16],8'd0};// | {oplsnd, 8'd0};
-		tx_data_r_shift <= {tx_data_lr[15:0],8'd0};// | {oplsnd, 8'd0};
+	if (count[2:0] == 3'b111) begin
+		// TODO: Implement a proper mixer here
+		tx_data_l_shift <= {tx_data_lr[31:16],8'd0} | {opl2sndoutcdc2, 8'd0};
+		tx_data_r_shift <= {tx_data_lr[15:0],8'd0} | {opl2sndoutcdc2, 8'd0};
 	end else if (count[2:0] == 3'b111 && count[7:3] >= 5'd1 && count[7:3] <= 5'd24) begin
 		if (count[8] == 1'b1)
 			tx_data_r_shift <= {tx_data_r_shift[22:0], 1'b0};

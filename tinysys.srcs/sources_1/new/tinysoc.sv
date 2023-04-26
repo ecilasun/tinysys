@@ -7,7 +7,7 @@ module tinysoc #(
 	input wire clk10,
 	input wire clk12,
 	input wire clk25,
-	input wire clk100,
+	input wire clk50,
 	input wire clk125,
 	input wire clk166,
 	input wire clk200,
@@ -208,6 +208,7 @@ axi4i2saudio APU(
 	.aclk(aclk),				// Bus clock
 	.aresetn(aresetn),
     .audioclock(clk12),			// 22.591MHz master clock
+	.clk50(clk50),				// For OPL2
 
 	.m_axi(audiobus),			// Memory access
 
@@ -330,7 +331,7 @@ commandqueue gpucmdinst(
 axi4spi spictlinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.spibaseclock(clk100),
+	.spibaseclock(clk50),
 	.sdconn(sdconn),
 	.s_axi(spiif));
 
