@@ -46,7 +46,8 @@ axi4if csrif();				// Sub bus: CSR file device
 axi4if xadcif();			// Sub bus: ADC controller
 axi4if dmaif();				// Sub bus: DMA controller
 axi4if usbif();				// Sub bus: USB host i/o
-axi4if audioif();			// Sub bus: AUDIO delta-sigma output unit
+axi4if audioif();			// Sub bus: APU i2s audio output unit
+axi4if opl2if();			// Sub bus: OPL2 interface
 
 ibusif ibus();				// Internal bus between units
 
@@ -203,12 +204,12 @@ wire [31:0] audiofifodout;
 wire audiofifore;
 wire audiofifovalid;
 wire [31:0] audiobufferswapcount;
+wire [15:0] opl2sampleout;
 
 axi4i2saudio APU(
 	.aclk(aclk),				// Bus clock
 	.aresetn(aresetn),
     .audioclock(clk12),			// 22.591MHz master clock
-	.clk50(clk50),				// Master clock for OPL2
 
 	.m_axi(audiobus),			// Memory access
 
@@ -217,6 +218,8 @@ axi4i2saudio APU(
 	.audiore(audiofifore),
     .audiodin(audiofifodout),
     .swapcount(audiobufferswapcount),
+    
+    .mixinput(opl2sampleout),
 
     .tx_mclk(i2sconn.mclk),
     .tx_lrck(i2sconn.lrclk),
@@ -270,8 +273,8 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // XADC: 80005000  80005FFF  19'b000_0000_0000_0000_0101  4KB
 // DMAC: 80006000  80006FFF  19'b000_0000_0000_0000_0110  4KB
 // USBH: 80007000  80007FFF  19'b000_0000_0000_0000_0111  4KB
-// AUDI: 80008000  80008FFF  19'b000_0000_0000_0000_1000  4KB
-// ----: 80009000  80009FFF  19'b000_0000_0000_0000_1001  4KB
+// APUC: 80008000  80008FFF  19'b000_0000_0000_0000_1000  4KB
+// OPL2: 80009000  80009FFF  19'b000_0000_0000_0000_1001  4KB
 // ----: 8000A000  8000AFFF  19'b000_0000_0000_0000_1010  4KB
 // ----: 8000B000  8000BFFF  19'b000_0000_0000_0000_1011  4KB
 // ----: 8000C000  8000CFFF  19'b000_0000_0000_0000_1100  4KB
@@ -284,16 +287,17 @@ devicerouter devicerouterinst(
 	.aresetn(aresetn),
     .axi_s(devicebus),
     .addressmask({
-    	19'b000_0000_0000_0000_1000,	// AUDI
-        19'b000_0000_0000_0000_0111,	// USBH
-    	19'b000_0000_0000_0000_0110,	// DMAC
-    	19'b000_0000_0000_0000_0101,	// XADC
-		19'b000_0000_0000_0000_0100,	// CSRF
-		19'b000_0000_0000_0000_0011,	// SPIC
-		19'b000_0000_0000_0000_0010,	// GPUC
-		19'b000_0000_0000_0000_0001,	// LEDS
-		19'b000_0000_0000_0000_0000 }),	// UART
-    .axi_m({audioif, usbif, dmaif, xadcif, csrif, spiif, gpucmdif, ledif, uartif}));
+    	19'b000_0000_0000_0000_1001,	// OPL2	OPL2(YM8312) Command and Register Ports
+    	19'b000_0000_0000_0000_1000,	// APUC	Audio Processing Unit Command Fifo
+        19'b000_0000_0000_0000_0111,	// USBH USB Host Controller
+    	19'b000_0000_0000_0000_0110,	// DMAC DMA Command Fifo
+    	19'b000_0000_0000_0000_0101,	// XADC Analog / Digital Converter Interface
+		19'b000_0000_0000_0000_0100,	// CSRF Control and Status Register File for HART#0
+		19'b000_0000_0000_0000_0011,	// SPIC SPI interface tied to micro SD card
+		19'b000_0000_0000_0000_0010,	// GPUC Graphics Processing Unit Command Fifo
+		19'b000_0000_0000_0000_0001,	// LEDS Debug / Status LED interface
+		19'b000_0000_0000_0000_0000 }),	// UART UART read/write port
+    .axi_m({opl2if, audioif, usbif, dmaif, xadcif, csrif, spiif, gpucmdif, ledif, uartif}));
 
 // --------------------------------------------------
 // Memory mapped devices
@@ -389,6 +393,13 @@ commandqueue audiocmdinst(
 	.fifore(audiofifore),
 	.fifovalid(audiofifovalid),
     .devicestate(audiobufferswapcount));
+
+axi4opl2 opl2inst(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.audioclock(clk50),
+	.sampleout(opl2sampleout),
+	.s_axi(opl2if) );
 
 // USB Host
 // TODO: Wire usb_d_p & usb_d_n pair and usbint here
