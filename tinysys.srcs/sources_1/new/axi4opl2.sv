@@ -55,21 +55,21 @@ end
 
 always @(posedge audioclock) begin
 
-	sum <= sum + 28'd3579545;
+	sum <= sum + 28'd3579545;	// OPL2 uses 3.579545MHz, OPL3 uses 14.318180 MHz
 	opl2ce <= 0;
 
 	if(sum >= opl2_clk_rate) begin
 		sum <= sum - opl2_clk_rate;
 		opl2ce <= 1;
-	end
+ 	end
 end
 
 // OPL2 device
 
 jtopl2 jtopl2_inst(
 	.rst(~aresetn),
-	.clk(audioclock),
-	.cen(opl2ce),
+	.clk(audioclock),	// Master clock at 50MHz 
+	.cen(opl2ce),		// OPL3 clock at 3.579545MHz
 	.din(opl2din),
 	.dout(opl2dout),
 	.addr(opl2addr),
@@ -94,7 +94,7 @@ always @(posedge audioclock) begin
 
 		opl2fifore <= 1'b0;
 
-		if (~opl2fifoempty && opl2fifovalid && opl2ce) begin
+		if (~opl2fifoempty && opl2fifovalid) begin// && opl2ce) begin
 			opl2csn <= 1'b0;
 			opl2wen <= 1'b0;
 			opl2addr <= opl2fifodout[8];
