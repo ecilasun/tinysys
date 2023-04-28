@@ -7,7 +7,27 @@ module axi4opl2(
 	output wire [15:0] sampleout,
 	axi4if.slave s_axi);
 
-// TODO: CDC?
+// ------------------------------------------------------------------------------------
+// OPL2 fifo
+// ------------------------------------------------------------------------------------
+
+logic [8:0] opl2fifodin = 9'd0;
+wire [8:0] opl2fifodout;
+logic opl2fifowe = 1'b0;
+logic opl2fifore = 1'b0;
+wire opl2fifofull, opl2fifoempty, opl2fifovalid;
+
+opl2fifo opl2fifoinst(
+	.full(opl2fifofull),
+	.din(opl2fifodin),
+	.wr_en(opl2fifowe),
+	.empty(opl2fifoempty),
+	.dout(opl2fifodout),
+	.rd_en(opl2fifore),
+	.rst(~aresetn),
+	.wr_clk(aclk),
+	.rd_clk(audioclock),
+	.valid(opl2fifovalid) );
 
 // ------------------------------------------------------------------------------------
 // OPL2 hardware
@@ -27,6 +47,12 @@ localparam [27:0] opl2_clk_rate = 28'd50000000;
 logic opl2ce = 1'b0;
 logic [27:0] sum = 0;
 
+// Output cdc
+(* async_reg = "true" *) logic [7:0] opl2doutcdc = 1'b0;
+always @(posedge aclk) begin
+	opl2doutcdc <= opl2dout;
+end
+
 always @(posedge audioclock) begin
 
 	sum <= sum + 28'd3579545;
@@ -40,37 +66,44 @@ end
 
 // OPL2 device
 
-(* async_reg = "true" *) logic opl2dwencdc = 1'b1;
-(* async_reg = "true" *) logic opl2addrcdc = 1'b0;
-(* async_reg = "true" *) logic opl2dcsncdc = 1'b1;
-(* async_reg = "true" *) logic [7:0] opl2dincdc = 1'b0;
-
-always @(posedge audioclock) begin
-	opl2dincdc <= opl2din;
-	opl2addrcdc <= opl2addr;
-	opl2dcsncdc <= opl2csn;
-	opl2dwencdc <= opl2wen;
-end
-
-(* async_reg = "true" *) logic [7:0] opl2doutcdc = 1'b0;
-always @(posedge aclk) begin
-	opl2doutcdc <= opl2dout;
-end
-
 jtopl2 jtopl2_inst(
 	.rst(~aresetn),
 	.clk(audioclock),
 	.cen(opl2ce),
-	.din(opl2dincdc),
+	.din(opl2din),
 	.dout(opl2dout),
-	.addr(opl2addrcdc),
-	.cs_n(opl2dcsncdc),
-	.wr_n(opl2dwencdc),
+	.addr(opl2addr),
+	.cs_n(opl2csn),
+	.wr_n(opl2wen),
 	.irq_n(),
 	.snd(opl2sndout),
 	.sample() );
 
 assign sampleout = opl2sndout;
+
+// Drive through fifo
+
+always @(posedge audioclock) begin
+	if (~aresetn) begin
+		//
+	end else begin
+
+		opl2csn <= 1'b1;	// Release bus
+		opl2wen <= 1'b1;	// Read
+		opl2din <= 8'dz;	// Manual states we should set data to high impedance
+
+		opl2fifore <= 1'b0;
+
+		if (~opl2fifoempty && opl2fifovalid && opl2ce) begin
+			opl2csn <= 1'b0;
+			opl2wen <= 1'b0;
+			opl2addr <= opl2fifodout[8];
+			opl2din <= opl2fifodout[7:0];
+			// Advance fifo
+			opl2fifore <= 1'b1;
+		end
+	end
+end
 
 // ------------------------------------------------------------------------------------
 // AXI4 interface
@@ -109,9 +142,7 @@ always @(posedge aclk) begin
 		writestate <= 1'b0;
 	end else begin
 
-		opl2csn <= 1'b1;	// Release bus
-		opl2wen <= 1'b1;	// Read
-		opl2din <= 8'dz;	// Manual states we should set data to high impedance 
+		opl2fifowe <= 1'b0;
 
 		s_axi.wready <= 1'b0;
 		s_axi.bvalid <= 1'b0;
@@ -121,20 +152,20 @@ always @(posedge aclk) begin
 				if (s_axi.wvalid) begin // && opl2ce) begin
 					unique case (s_axi.awaddr[3:0])
 						4'h0: begin
+							// Will be latched on next CE
+							// DO NO
 							// CSn RDn WRn A0
 							// 0   1   0   0	// write register address
-							opl2csn <= 1'b0;
-							opl2wen <= 1'b0;
-							opl2addr <= 1'b0;
-							opl2din <= s_axi.wdata[7:0];
+							// Only stores A0 since the other two are zeroes
+							opl2fifodin <= {1'b0,s_axi.wdata[7:0]};
+							opl2fifowe <= 1'b1; 
 						end
 						4'h4: begin
 							// CSn RDn WRn A0
 							// 0   1   0   1	// write register value
-							opl2csn <= 1'b0;
-							opl2wen <= 1'b0;
-							opl2addr <= 1'b1;
-							opl2din <= s_axi.wdata[7:0];
+							// Only stores A0 since the other two are zeroes
+							opl2fifodin <= {1'b1,s_axi.wdata[7:0]};
+							opl2fifowe <= 1'b1;
 						end
 					endcase
 					writestate <= 1'b1;
