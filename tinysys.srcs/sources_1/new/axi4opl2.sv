@@ -149,7 +149,7 @@ always @(posedge aclk) begin
 
 		unique case (writestate)
 			1'b0: begin
-				if (s_axi.wvalid) begin // && opl2ce) begin
+				if (s_axi.wvalid && ~opl2fifofull) begin // && opl2ce) begin
 					unique case (s_axi.awaddr[3:0])
 						4'h0: begin
 							// Will be latched on next CE
