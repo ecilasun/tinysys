@@ -264,7 +264,7 @@ logic [23:0] tx_data_r_shift = 24'b0;
 
 always@(posedge audioclock)
 	if (count == 3'b00000111) begin
-		// TODO: Implement a proper mixer here
+		// TODO: Move the mixer to an external device
 		tx_data_l_shift <= {tx_data_lr[31:16] + mixinput, 8'd0};
 		tx_data_r_shift <= {tx_data_lr[15:0] + mixinput, 8'd0};
 		//tx_data_l_shift <= {tx_data_lr[31:16], 8'd0};

@@ -69,7 +69,7 @@ end
 jtopl2 jtopl2_inst(
 	.rst(~aresetn),
 	.clk(audioclock),	// Master clock at 50MHz 
-	.cen(opl2ce),		// OPL3 clock at 3.579545MHz
+	.cen(opl2ce),		// OPL2 clock at 3.579545MHz
 	.din(opl2din),
 	.dout(opl2dout),
 	.addr(opl2addr),

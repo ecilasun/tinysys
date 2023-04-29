@@ -203,6 +203,7 @@
 `define CSR_MARCHID		12'hF12
 `define CSR_MIMPID		12'hF13
 `define CSR_MHARTID		12'hF14 // immutable
+`define CSR_HWSTATE		12'hFFF // immutable, custom hardware state bits
 
 `define CSR_REGISTERSHADOW	12'h8A0 // These are used to store shadow copies of registers from ISRs
 
