@@ -14,6 +14,7 @@ module axi4CSRFile(
 	output wire [1:0] irqReq,
 	// Incoming hardware interrupt requests
 	input wire uartrcvempty,
+	input wire keyfifoempty,
 	// Expose certain registers to fetch unit
 	output wire [31:0] mepc,
 	output wire [31:0] mtvec,
@@ -66,13 +67,13 @@ assign mtvec = mtvecshadow;
 // --------------------------------------------------
 
 logic timerInterrupt = 1'b0;
-logic uartInterrupt = 1'b0;
+logic hwInterrupt = 1'b0;
 logic softInterruptEna = 1'b0;
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
 		timerInterrupt <= 1'b0;
-		uartInterrupt <= 1'b0;
+		hwInterrupt <= 1'b0;
 		softInterruptEna <= 1'b0;
 	end else begin
 		// Common condition to fire an IRQ: Fetch isn't holding an IRQ, specific interrups are enabled, and global machine interrupts are enabled
@@ -80,13 +81,13 @@ always @(posedge aclk) begin
 		softInterruptEna <= mieshadow[0] && mstatusIEshadow; // The rest of this condition is in fetch unit (based on instruction)
 		// Timer interrupt
 		timerInterrupt <= mieshadow[1] && mstatusIEshadow && (wallclocktime >= timecmpshadow);
-		// Machine external interrupt (UART)
-		uartInterrupt <= mieshadow[2] && mstatusIEshadow && (~uartrcvempty);
+		// Machine external interrupt (UART, SDCard Switch)
+		hwInterrupt <= mieshadow[2] && mstatusIEshadow && (~uartrcvempty || ~keyfifoempty);
 	end
 end
 
 assign sie = softInterruptEna;
-assign irqReq = {uartInterrupt, timerInterrupt};
+assign irqReq = {hwInterrupt, timerInterrupt};
 
 // --------------------------------------------------
 // AXI4 interface
@@ -185,8 +186,8 @@ always @(posedge aclk) begin
 						`CSR_RETILO:	s_axi.rdata[31:0] <= retired[31:0];
 						`CSR_TIMELO:	s_axi.rdata[31:0] <= wallclocktime[31:0];
 						`CSR_CYCLELO:	s_axi.rdata[31:0] <= cpuclocktime[31:0];
-						`CSR_MISA:		s_axi.rdata[31:0] <= 32'h00001100;				// rv32i(bit8), Zmmul(bit12), machine level
-						`CSR_HWSTATE:	s_axi.rdata[31:0] <= {31'd0, ~uartrcvempty};	// interrupt states of several hardware devices
+						`CSR_MISA:		s_axi.rdata[31:0] <= 32'h00001100;							// rv32i(bit8), Zmmul(bit12), machine level
+						`CSR_HWSTATE:	s_axi.rdata[31:0] <= {30'd0, ~keyfifoempty, ~uartrcvempty};	// interrupt states of all hardware devices
 						default:		s_axi.rdata[31:0] <= csrdout;
 					endcase
 					s_axi.rvalid <= 1'b1;

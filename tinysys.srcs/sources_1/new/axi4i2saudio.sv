@@ -119,6 +119,7 @@ always_ff @(posedge aclk) begin
 		m_axi.bready <= 0;
 		m_axi.arvalid <= 0;
 		m_axi.rready <= 0;
+		burstcursor <= 8'd0;
 		cmdmode <= WCMD;
 	end else begin
 
@@ -226,6 +227,14 @@ end
 
 logic [1:0] sampleRateCounter = 2'b00;	// Sample rate counter
 
+// Cross from aclk to audioclock
+logic [127:0] currentsample;
+logic [127:0] currentsamplecdc;
+always@(posedge audioclock) begin
+	currentsample <= samplebuffer[readLine];
+	currentsamplecdc <= currentsample; 
+end
+
 always@(posedge audioclock) begin
 
  	// Trigger new sample copy just before we select L channel again out of the LR pair
@@ -233,10 +242,10 @@ always@(posedge audioclock) begin
 
 		// readBufferSelect == ~writeBufferSelect
 		unique case (readcursor[1:0])
-			2'b00: tx_data_lr <= samplebuffer[readLine][31 : 0];
-			2'b01: tx_data_lr <= samplebuffer[readLine][63 : 32];
-			2'b10: tx_data_lr <= samplebuffer[readLine][95 : 64];
-			2'b11: tx_data_lr <= samplebuffer[readLine][127: 96];
+			2'b00: tx_data_lr <= currentsamplecdc[31 : 0];
+			2'b01: tx_data_lr <= currentsamplecdc[63 : 32];
+			2'b10: tx_data_lr <= currentsamplecdc[95 : 64];
+			2'b11: tx_data_lr <= currentsamplecdc[127: 96];
 		endcase
 
 		// Next sample rewinds if we're at the end

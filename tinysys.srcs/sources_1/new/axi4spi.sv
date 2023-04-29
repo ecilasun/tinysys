@@ -4,19 +4,63 @@ import axi4pkg::*;
 
 module axi4spi(
 	input wire aclk,
-	input wire aresetn,
+	input wire clk10,
 	input wire spibaseclock,
+	input wire aresetn,
+	output wire keyfifoempty,
     spiwires.def sdconn,
 	axi4if.slave s_axi);
 
 assign sdconn.spi_cs_n = 1'b0; // Keep attached spi device selected (TODO: Drive via control register)
 
 logic writestate = 1'b0;
-logic raddrstate = 1'b0;
+logic [1:0] raddrstate = 2'b00;
 
 logic [7:0] writedata = 7'd0;
 wire [7:0] readdata;
 logic we = 1'b0;
+
+// ----------------------------------------------------------------------------
+// sd card insert/remove switch
+// ----------------------------------------------------------------------------
+
+logic prevswtch = 1'b0;
+wire stableswtch;
+debounce sdswtchdebounce(
+	.clk(clk10),
+	.reset(~aresetn),
+	.bouncy(sdconn.spi_swtch),
+	.stable(stableswtch) );
+
+wire keyfifofull, keyfifovalid;
+wire keyfifodout;
+logic keyfifodin;
+logic keyfifowe = 1'b0;
+logic keyfifore = 1'b0;
+bitfifo keyfifo(
+	.full(keyfifofull),
+	.din(keyfifodin),
+	.wr_en(keyfifowe),
+	.empty(keyfifoempty),
+	.dout(keyfifodout),
+	.rd_en(keyfifore),
+	.rst(~aresetn),
+	.wr_clk(clk10),
+	.rd_clk(aclk),
+	.valid(keyfifovalid));
+
+always @(posedge clk10) begin
+	if (~aresetn) begin
+		//
+	end else begin
+		keyfifowe <= 1'b0;
+		if (stableswtch != prevswtch) begin
+			keyfifodin <= stableswtch;
+			keyfifowe <= 1'b1;
+		end
+		prevswtch <= stableswtch;
+	end
+end
 
 // ----------------------------------------------------------------------------
 // spi master device
@@ -161,25 +205,38 @@ always @(posedge aclk) begin
 	end else begin
 
 		infifore <= 1'b0;
+		keyfifore <= 1'b0;
 		s_axi.arready <= 1'b0;
 		s_axi.rvalid <= 1'b0;
 
 		// read address
 		unique case (raddrstate)
-			1'b0: begin
+			2'b00: begin
 				if (s_axi.arvalid) begin
+					unique case (s_axi.araddr[2])
+						2'b0: raddrstate <= 2'b10;	// SPI i/o at offset 0x0
+						2'b1: raddrstate <= 2'b01;	// Switch state at offset 0x4
+					endcase
 					s_axi.arready <= 1'b1;
-					raddrstate <= 1'b1;
 				end
 			end
-			1'b1: begin
+			2'b01: begin
+				if (s_axi.rready && ~keyfifoempty && keyfifovalid) begin
+					s_axi.rdata <= {31'd0, ~keyfifodout};
+					s_axi.rvalid <= 1'b1;
+					// Advance FIFO
+					keyfifore <= 1'b1;
+					raddrstate <= 2'b00;
+				end
+			end
+			2'b10: begin
 				// master ready to accept and fifo has incoming data
 				if (s_axi.rready && (~infifoempty) && infifovalid) begin
 					s_axi.rdata <= {infifodout, infifodout, infifodout, infifodout};
 					s_axi.rvalid <= 1'b1;
 					// Advance FIFO
 					infifore <= 1'b1;
-					raddrstate <= 1'b0;
+					raddrstate <= 2'b00;
 				end
 			end
 		endcase

@@ -304,6 +304,7 @@ devicerouter devicerouterinst(
 // --------------------------------------------------
 
 wire uartrcvempty;
+wire keyfifoempty;
 
 axi4uart #(.BAUDRATE(115200), .FREQ(10000000)) uartinst(
 	.aclk(aclk),
@@ -320,7 +321,6 @@ axi4led leddevice(
 	.s_axi(ledif),
 	.led(leds) );
 
-// NOTE: This is different than other command devices for now
 commandqueue gpucmdinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
@@ -331,12 +331,13 @@ commandqueue gpucmdinst(
 	.fifovalid(gpufifovalid),
 	.devicestate(vblankcount));
 
-// TODO: Use sdconn switch state to trigger a card detect IRQ
 axi4spi spictlinst(
 	.aclk(aclk),
+	.clk10(clk10),
 	.aresetn(aresetn),
 	.spibaseclock(clk50),
 	.sdconn(sdconn),
+	.keyfifoempty(keyfifoempty),
 	.s_axi(spiif));
 
 // CSR file acts as a region of uncached memory
@@ -353,6 +354,7 @@ axi4CSRFile csrfileinst(
 	.irqReq(irqReq),
 	// External interrupt wires
 	.uartrcvempty(uartrcvempty),
+	.keyfifoempty(keyfifoempty),
 	//.usbint(usbint),	// TODO: interrupt from USB host
 	// Shadow registers
 	.mepc(mepc),
