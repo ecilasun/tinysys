@@ -277,7 +277,7 @@ always_ff @(posedge aclk) begin
 			VMODE: begin
 				if (gpufifovalid && ~gpufifoempty) begin
 					scanenable <= gpufifodout[0]; // [0]: video output enabled when high, otherwise contents of scanline cache repeats across screen
-					burstlen <= gpufifodout[1] ? 'd40 : 'd20;		// [1]: 40 bursts when high, otherwise 20 bursts
+					burstlen <= gpufifodout[1] ? 'd39 : 'd19;		// [1]: 40 bursts for 640px, 20 bursts for 320px
 					scanmode <= gpufifodout[1];
 					// rgb_vs_pal <= gpufifodout[2]; // select 16bit BGR mode (5:6:5) when high vs 8bit paletted mode when low
 					// ? <= gpufifodout[31:3] unused for now
@@ -338,7 +338,7 @@ always_ff @(posedge aclk) begin
 				if (scanpixel == 638 && scanline <= 480 && (~scanline[0] || scanmode)) begin
 					// Starting at pixel 640 (638 due to DC delay), we have 160 pixels worth of time to cache the next scanline
 					// This usually completes within 5 to 10 pixel's worth of time, way before the next scanline starts scanning
-					scanoffset <= scanmode ? scanline[8:0] : {1'b0,scanline[8:1]};
+					scanoffset <= scanline[8:0] * 640;
 					scanstate <= scanenable ? STARTLOAD : DETECTSCANLINEEND;
 				end else
 					// NOTE: Below scanline 480 is a good time for pending raster write work to run
@@ -347,8 +347,8 @@ always_ff @(posedge aclk) begin
 			STARTLOAD: begin
 				// This has to be a 64 byte cache aligned address to match cache burst reads we're running
 				// Each scanline is a multiple of 64 bytes, so no need to further align here unless we have an odd output size (320 and 640 work just fine)
-				m_axi.arlen <= burstlen - 8'd1;
-				m_axi.araddr <= scanaddr + ( scanmode ? scanoffset*640 : scanoffset*320);
+				m_axi.arlen <= burstlen;
+				m_axi.araddr <= scanaddr + ( scanmode ? scanoffset : {1'b0,scanoffset[31:1]});
 				m_axi.arvalid <= 1;
 				scanstate <= TRIGGERBURST;
 			end
