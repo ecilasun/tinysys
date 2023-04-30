@@ -115,6 +115,14 @@ spiwires sdconn(
 	.spi_clk(spi_clk),
 	.spi_mosi(spi_mosi),
 	.spi_swtch(spi_swtch) );
+	
+// --------------------------------------------------
+// USB host wires
+// --------------------------------------------------
+
+usbwires usbconn(
+	.DP(usb_d_p),
+	.DN(usb_d_n) );
 
 // --------------------------------------------------
 // ADC wires
@@ -151,15 +159,15 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.clk200(clk200),
 	.aresetn(aresetn),
 	.preresetn(preresetn),
+	// Device wires
 	.uart_rxd_out(uart_rxd_out),
 	.uart_txd_in(uart_txd_in),
-	.usb_d_p(usb_d_p),
-	.usb_d_n(usb_d_n),
 	.leds(leds),
 	.ddr3conn(ddr3conn),
 	.i2sconn(i2sconn),
 	.gpuvideoout(gpuvideoout),
 	.sdconn(sdconn),
-	.adcconn(adcconn));
+	.adcconn(adcconn),
+	.usbconn(usbconn));
 
 endmodule

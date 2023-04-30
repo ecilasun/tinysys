@@ -16,13 +16,12 @@ module tinysoc #(
 	output wire [3:0] leds,
 	output wire uart_rxd_out,
 	input wire uart_txd_in,
-	inout wire usb_d_p,
-	inout wire usb_d_n,
 	gpuwires.def gpuvideoout,
 	ddr3sdramwires.def ddr3conn,
 	audiowires.def i2sconn,
 	spiwires.def sdconn,
-	adcwires.def adcconn);
+	adcwires.def adcconn,
+	usbwires usbconn);
 
 // --------------------------------------------------
 // Bus lines
@@ -403,11 +402,10 @@ axi4opl2 opl2inst(
 	.sampleout(opl2sampleout),
 	.s_axi(opl2if) );
 
-// USB Host
-// TODO: Wire usb_d_p & usb_d_n pair and usbint here
-dummydevice usbhostcontroller(
-	.aclk(alck),
+axi4usbhost usbhostcontroller(
+	.aclk(aclk),
 	.aresetn(aresetn),
+	.usbconn(usbconn),
 	.s_axi(usbif));
 
 endmodule
