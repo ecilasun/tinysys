@@ -12,7 +12,7 @@
 `define DATACMD_UNUSED2		3'b111
 
 // ------------------------------------------
-// Integer uncompressed instructions (2'b11)
+// Uncompressed instruction groups
 // ------------------------------------------
 
 `define OPCODE_OP		    7'b0110011
@@ -38,6 +38,108 @@
 //`define OPCODE_CUSTOM_REDGE 7'b0001011
 //`define OPCODE_CUSTOM_RMASK 7'b0101011
 //`define OPCODE_CUSTOM_RWAIT 7'b1001011
+
+
+// ------------------------------------------
+// Uncompressed instruction subgroups
+// ------------------------------------------
+
+`define INSTR_LUI			7'b0110111
+`define INSTR_AUIPC			7'b0010111
+`define INSTR_JAL			7'b1101111
+`define INSTR_JALR			7'b1100111
+`define INSTR_BEQ			7'b1100011
+`define INSTR_BNE			7'b1100011
+`define INSTR_BLT			7'b1100011
+`define INSTR_BGE			7'b1100011
+`define INSTR_BLTU			7'b1100011
+`define INSTR_BGEU			7'b1100011
+`define INSTR_LB			7'b0000011
+`define INSTR_LH			7'b0000011
+`define INSTR_LW			7'b0000011
+`define INSTR_LBU			7'b0000011
+`define INSTR_LHU			7'b0000011
+`define INSTR_SB			7'b0100011
+`define INSTR_SH			7'b0100011
+`define INSTR_SW			7'b0100011
+`define INSTR_ADDI			7'b0010011
+`define INSTR_SLTI			7'b0010011
+`define INSTR_SLTIU			7'b0010011
+`define INSTR_XORI			7'b0010011
+`define INSTR_ORI			7'b0010011
+`define INSTR_ANDI			7'b0010011
+`define INSTR_SLLI			7'b0010011
+`define INSTR_SRLI			7'b0010011
+`define INSTR_SRAI			7'b0010011
+`define INSTR_ADD			7'b0110011
+`define INSTR_SUB			7'b0110011
+`define INSTR_SLL			7'b0110011
+`define INSTR_SLT			7'b0110011
+`define INSTR_SLTU			7'b0110011
+`define INSTR_XOR			7'b0110011
+`define INSTR_SRL			7'b0110011
+`define INSTR_SRA			7'b0110011
+`define INSTR_OR			7'b0110011
+`define INSTR_AND			7'b0110011
+`define INSTR_FENCE			7'b0001111
+`define INSTR_ECALL			7'b1110011
+`define INSTR_EBREAK		7'b1110011
+
+// ------------------------------------------
+// Compressed instruction subgroups
+// ------------------------------------------
+
+// Quadrant 0
+`define INSTR_CADDI4SPN		5'b00000 // RES, nzuimm=0 +
+//`define INSTR_CFLD		5'b00100 // 32/64
+//`define INSTR_CLQ			5'b00100 // 128
+`define INSTR_CLW			5'b01000 // 32? +
+//`define INSTR_CFLW		5'b01100 // 32
+//`define INSTR_CLD			5'b01100 // 64/128 
+//`define INSTR_CFSD		5'b10100 // 32/64
+//`define INSTR_CSQ			5'b10100 // 128
+`define INSTR_CSW			5'b11000 // 32? +
+//`define INSTR_CFSW		5'b11100 // 32 
+//`define INSTR_CSD			5'b11100 // 64/128
+
+// Quadrant 1									        [12] [11:10] [6:5]
+`define INSTR_CNOP			5'b00001 // HINT, nzimm!=0 +
+`define INSTR_CADDI			5'b00001 // HINT, nzimm=0 +
+`define INSTR_CJAL			5'b00101 // 32 +
+//`define INSTR_CADDIW		5'b00101 // 64/128
+`define INSTR_OPCODE_CLI	5'b01001
+`define INSTR_CADDI16SP		5'b01101
+`define INSTR_CLUI			5'b01101
+`define INSTR_CSRLI			5'b10001 //                      00      
+`define INSTR_CSRAI			5'b10001 //                      01      
+`define INSTR_CANDI			5'b10001 //                      10      
+`define INSTR_CSUB			5'b10001 //                  0   11      00
+`define INSTR_CXOR			5'b10001 //                  0   11      01
+`define INSTR_COR			5'b10001 //                  0   11      10
+`define INSTR_CAND			5'b10001 //                  0   11      11
+//`define INSTR_CSUBW		5'b10001 //                  1   11      00
+//`define INSTR_CADDW		5'b10001 //                  1   11      01
+`define INSTR_CJ			5'b10101 //
+`define INSTR_CBEQZ			5'b11001 //
+`define INSTR_CBNEZ			5'b11101 //
+
+// Quadrant 2
+`define INSTR_CSLLI			5'b00010
+//`define INSTR_CFLDSP		5'b00110
+//`define INSTR_CLQSP		5'b00110
+`define INSTR_CLWSP			5'b01010
+//`define INSTR_CFLWSP		5'b01110
+//`define INSTR_CLDSP		5'b01110
+`define INSTR_CJR			5'b10010
+`define INSTR_CMV			5'b10010
+`define INSTR_CEBREAK		5'b10010
+`define INSTR_CJALR			5'b10010
+`define INSTR_CADD			5'b10010
+//`define INSTR_CFSDSP		5'b10110
+//`define INSTR_CSQSP		5'b10110
+`define INSTR_CSWSP			5'b11010
+//`define INSTR_CFSWSP		5'b11110
+//`define INSTR_CSDSP		5'b11110
 
 // ------------------------------------------
 // Sub-instructions
