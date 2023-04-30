@@ -212,6 +212,8 @@ always @(posedge aclk) begin
 		mulstrobe <= 1'b0;	// Stop integer mul strobe 
 		divstrobe <= 1'b0;	// Stop integer div/rem strobe
 
+		wbdin <= 32'd0;
+
 		unique case(ctlmode)
 			READINSTR: begin
 				// Grab next decoded instruction if there's something in the FIFO
@@ -242,7 +244,6 @@ always @(posedge aclk) begin
 			end
 
 			DISPATCH: begin
-				wbdin <= 32'd0;
 				// Most instructions are done here and go directly to writeback
 				unique case(1'b1)
 					instrOneHotOut[`O_H_OP],
