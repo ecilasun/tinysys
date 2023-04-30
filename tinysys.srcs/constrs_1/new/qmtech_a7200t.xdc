@@ -50,7 +50,7 @@ set_property -dict {PACKAGE_PIN B1 IOSTANDARD LVCMOS33} [get_ports uart_rxd_out]
 set_property -dict {PACKAGE_PIN C2 IOSTANDARD LVCMOS33} [get_ports uart_txd_in]
 
 ## ------------------------------------------------------------------------------------------------------
-## USB-HOST
+## USB-A - USB host connector - WiP, will replace with a MAX3421
 ## ------------------------------------------------------------------------------------------------------
 
 ## usb_d_p:   pin U2:60    [AA18]
@@ -154,6 +154,27 @@ set_property -dict {PACKAGE_PIN L15 IOSTANDARD LVCMOS33} [get_ports au_lrclk]
 set_property -dict {PACKAGE_PIN N19 IOSTANDARD LVCMOS33} [get_ports au_mclk]
 
 ## ------------------------------------------------------------------------------------------------------
+## USB-C - MAX3420EECJ over SPI interface
+## ------------------------------------------------------------------------------------------------------
+
+## usbclk     pin U2:  [K22] -> up to 26MHz
+## usbmosi    pin U2:  [H17] -> spi mosi
+## usbmiso    pin U2:  [H18] -> spi miso
+## usbres_n   pin U2:  [H20] -> hold low to reset the chip
+## usbbss_n   pin U2:  [K21] -> slave select input, active low (required to send spi commands)
+## usbint     pin U2:  [J22] -> set the IE bit(bit#0) in the CPUCTL(r16) register to enable interrupts
+## usbgpx     pin U2:  [H22] -> operate / vbus_det / busact or start-of-frame indicator depending on gpxa/gpxb register contents
+
+## set_property -dict {PACKAGE_PIN K22 IOSTANDARD LVCMOS33} [get_ports usbclk]
+## set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports usbmosi]
+## set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports usbmiso]
+## set_property -dict {PACKAGE_PIN H20 IOSTANDARD LVCMOS33} [get_ports usbresn]
+## set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports usbbssn]
+## set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports usbint]
+## set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports usbgpx]
+
+
+## ------------------------------------------------------------------------------------------------------
 ## DDR3 SDRAM (MT41K128M16XX-15E)
 ## ------------------------------------------------------------------------------------------------------
 
@@ -202,6 +223,8 @@ set_property BITSTREAM.CONFIG.CONFIGRATE 33 [current_design]
 ## ------------------------------------------------------------------------------------------------------
 ## Clock groups
 ## ------------------------------------------------------------------------------------------------------
+
+## NOTE: aclk (CLKOUT0) is never related to any device clocks and always crosses using a FIFO
 
 set_clock_groups -name asyncA -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT0]] -group [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT1]]
 set_clock_groups -name asyncB -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT0]] -group [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT2]]
