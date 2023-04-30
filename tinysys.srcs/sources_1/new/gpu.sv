@@ -348,7 +348,7 @@ always_ff @(posedge aclk) begin
 				// This has to be a 64 byte cache aligned address to match cache burst reads we're running
 				// Each scanline is a multiple of 64 bytes, so no need to further align here unless we have an odd output size (320 and 640 work just fine)
 				m_axi.arlen <= burstlen;
-				m_axi.araddr <= scanaddr + ( scanmode ? scanoffset : {1'b0,scanoffset[31:1]});
+				m_axi.araddr <= scanaddr + ( scanmode ? scanoffset : {2'b00,scanoffset[31:2]});
 				m_axi.arvalid <= 1;
 				scanstate <= TRIGGERBURST;
 			end
