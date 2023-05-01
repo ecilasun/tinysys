@@ -16,7 +16,7 @@ assign usbcconn.resn = aresetn;	// Low during reset
 assign usbirq = ~usbcconn.irq;
 
 logic writestate = 1'b0;
-logic raddrstate = 1'b0;
+logic [1:0] raddrstate = 2'b00;
 
 logic [7:0] writedata = 7'd0;
 wire [7:0] readdata;
@@ -145,12 +145,12 @@ always @(posedge aclk) begin
 			1'b0: begin
 				if (s_axi.wvalid && (~outfifofull)) begin
 					unique case (s_axi.awaddr[3:0])
-						4'h0: begin
-							outfifodin <= {1'b0,s_axi.wdata[7:0]}; // Control command
+						4'h0: begin // 0x80007000
+							outfifodin <= {1'b0, s_axi.wdata[7:0]}; // Control command
 							outfifowe <= 1'b1;
 						end
-						4'h4: begin
-							outfifodin <= {8'b10000000,s_axi.wdata[0]}; // Control CSn
+						4'h4: begin // 0x80007004
+							outfifodin <= {8'b10000000, s_axi.wdata[0]}; // Control CSn
 							outfifowe <= 1'b1;
 						end
 					endcase
@@ -183,20 +183,30 @@ always @(posedge aclk) begin
 
 		// read address
 		unique case (raddrstate)
-			1'b0: begin
+			2'b00: begin
 				if (s_axi.arvalid) begin
-					raddrstate <= 1'b1;
+					unique case (s_axi.araddr[3:0])
+						4'h0: raddrstate <= 2'b01; // SPI        0x80007000
+						4'h8: raddrstate <= 2'b10; // FIFO state 0x80007008
+					endcase
 					s_axi.arready <= 1'b1;
 				end
 			end
-			1'b1: begin
+			2'b01: begin
 				// master ready to accept and fifo has incoming data
 				if (s_axi.rready && (~infifoempty) && infifovalid) begin
 					s_axi.rdata <= {infifodout, infifodout, infifodout, infifodout};
 					s_axi.rvalid <= 1'b1;
 					// Advance FIFO
 					infifore <= 1'b1;
-					raddrstate <= 1'b0;
+					raddrstate <= 2'b00;
+				end
+			end
+			2'b10: begin
+				if (s_axi.rready) begin
+					s_axi.rdata <= {31'd0, ~infifoempty};
+					s_axi.rvalid <= 1'b1;
+					raddrstate <= 2'b00;
 				end
 			end
 		endcase
