@@ -17,8 +17,10 @@ wire [3:0] ledout;
 wire uart_rxd_out;
 wire uart_txd_in = 1'b1;
 
-wire spi_mosi;
-wire spi_miso = spi_mosi; // nul device
+wire sdcard_mosi;
+wire sdcard_miso = sdcard_mosi; // nul device
+wire usbc_mosi;
+wire usbc_miso = usbc_mosi; // nul device
 
 wire adclk = 1'b0;
 wire addout = 1'b0;
@@ -94,11 +96,19 @@ tophat main(
 	.hdmi_tx_clk_p(),
 	.hdmi_tx_clk_n(),
 	// Micro SD Card
-	.spi_miso(spi_miso),
-	.spi_cs_n(),
-	.spi_clk(),
-	.spi_mosi(spi_mosi),
-	.spi_swtch(1'b0),
+	.sdcard_miso(sdcard_miso),
+	.sdcard_cs_n(),
+	.sdcard_clk(),
+	.sdcard_mosi(sdcard_mosi),
+	.sdcard_swtch(1'b0),
+	// USB-C via MAX4320
+	.usbc_miso(usbc_miso),
+	.usbc_ss_n(),
+	.usbc_clk(),
+	.usbc_mosi(usbc_mosi),
+	.usbc_resn(),
+	.usbc_int(1'b0),
+	.usbc_gpx(1'b0),
 	// ADC
 	.adclk(adclk),
 	.addout(addout),

@@ -19,9 +19,9 @@ module tinysoc #(
 	gpuwires.def gpuvideoout,
 	ddr3sdramwires.def ddr3conn,
 	audiowires.def i2sconn,
-	spiwires.def sdconn,
-	adcwires.def adcconn,
-	usbwires usbconn);
+	sdcardwires.def sdconn,
+	max3420wires.def usbcconn,
+	adcwires.def adcconn);
 
 // --------------------------------------------------
 // Bus lines
@@ -44,7 +44,7 @@ axi4if spiif();				// Sub bus: SPI control device
 axi4if csrif();				// Sub bus: CSR file device
 axi4if xadcif();			// Sub bus: ADC controller
 axi4if dmaif();				// Sub bus: DMA controller
-axi4if usbif();				// Sub bus: USB host i/o
+axi4if uscbif();			// Sub bus: USB-C controller
 axi4if audioif();			// Sub bus: APU i2s audio output unit
 axi4if opl2if();			// Sub bus: OPL2 interface
 
@@ -267,11 +267,11 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // UART: 80000000  80000FFF  19'b000_0000_0000_0000_0000  4KB
 // LEDS: 80001000  80001FFF  19'b000_0000_0000_0000_0001  4KB
 // GPUC: 80002000  80002FFF  19'b000_0000_0000_0000_0010  4KB
-// SPIC: 80003000  80003FFF  19'b000_0000_0000_0000_0011  4KB
+// SDCC: 80003000  80003FFF  19'b000_0000_0000_0000_0011  4KB
 // CSRF: 80004000  80004FFF  19'b000_0000_0000_0000_0100  4KB	HART#0
 // XADC: 80005000  80005FFF  19'b000_0000_0000_0000_0101  4KB
 // DMAC: 80006000  80006FFF  19'b000_0000_0000_0000_0110  4KB
-// USBH: 80007000  80007FFF  19'b000_0000_0000_0000_0111  4KB
+// USBC: 80007000  80007FFF  19'b000_0000_0000_0000_0111  4KB
 // APUC: 80008000  80008FFF  19'b000_0000_0000_0000_1000  4KB
 // OPL2: 80009000  80009FFF  19'b000_0000_0000_0000_1001  4KB
 // ----: 8000A000  8000AFFF  19'b000_0000_0000_0000_1010  4KB
@@ -288,15 +288,15 @@ devicerouter devicerouterinst(
     .addressmask({
     	19'b000_0000_0000_0000_1001,	// OPL2	OPL2(YM8312) Command and Register Ports
     	19'b000_0000_0000_0000_1000,	// APUC	Audio Processing Unit Command Fifo
-        19'b000_0000_0000_0000_0111,	// USBH USB Host Controller
+        19'b000_0000_0000_0000_0111,	// USBC USB-C access via SPI
     	19'b000_0000_0000_0000_0110,	// DMAC DMA Command Fifo
     	19'b000_0000_0000_0000_0101,	// XADC Analog / Digital Converter Interface
 		19'b000_0000_0000_0000_0100,	// CSRF Control and Status Register File for HART#0
-		19'b000_0000_0000_0000_0011,	// SPIC SPI interface tied to micro SD card
+		19'b000_0000_0000_0000_0011,	// SDCC SDCard access via SPI
 		19'b000_0000_0000_0000_0010,	// GPUC Graphics Processing Unit Command Fifo
 		19'b000_0000_0000_0000_0001,	// LEDS Debug / Status LED interface
 		19'b000_0000_0000_0000_0000 }),	// UART UART read/write port
-    .axi_m({opl2if, audioif, usbif, dmaif, xadcif, csrif, spiif, gpucmdif, ledif, uartif}));
+    .axi_m({opl2if, audioif, uscbif, dmaif, xadcif, csrif, spiif, gpucmdif, ledif, uartif}));
 
 // --------------------------------------------------
 // Memory mapped devices
@@ -304,6 +304,7 @@ devicerouter devicerouterinst(
 
 wire uartrcvempty;
 wire keyfifoempty;
+wire usbirq;
 
 axi4uart #(.BAUDRATE(115200), .FREQ(10000000)) uartinst(
 	.aclk(aclk),
@@ -330,7 +331,7 @@ commandqueue gpucmdinst(
 	.fifovalid(gpufifovalid),
 	.devicestate(vblankcount));
 
-axi4spi spictlinst(
+axi4sdcard sdcardinst(
 	.aclk(aclk),
 	.clk10(clk10),
 	.aresetn(aresetn),
@@ -338,6 +339,14 @@ axi4spi spictlinst(
 	.sdconn(sdconn),
 	.keyfifoempty(keyfifoempty),
 	.s_axi(spiif));
+
+axi4usbc usbcinst(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.spibaseclock(clk50),
+	.usbcconn(usbcconn),
+	.usbirq(usbirq),
+	.s_axi(uscbif));
 
 // CSR file acts as a region of uncached memory
 // Access to register indices get mapped to LOAD/STORE
@@ -354,7 +363,7 @@ axi4CSRFile csrfileinst(
 	// External interrupt wires
 	.uartrcvempty(uartrcvempty),
 	.keyfifoempty(keyfifoempty),
-	//.usbint(usbint),	// TODO: interrupt from USB host
+	.usbirq(usbirq),
 	// Shadow registers
 	.mepc(mepc),
 	.mtvec(mtvec),
@@ -401,11 +410,5 @@ axi4opl2 opl2inst(
 	.audioclock(clk50),
 	.sampleout(opl2sampleout),
 	.s_axi(opl2if) );
-
-axi4usbhost usbhostcontroller(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.usbconn(usbconn),
-	.s_axi(usbif));
 
 endmodule

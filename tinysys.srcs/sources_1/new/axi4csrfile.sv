@@ -15,6 +15,7 @@ module axi4CSRFile(
 	// Incoming hardware interrupt requests
 	input wire uartrcvempty,
 	input wire keyfifoempty,
+	input wire usbirq,
 	// Expose certain registers to fetch unit
 	output wire [31:0] mepc,
 	output wire [31:0] mtvec,
@@ -82,7 +83,7 @@ always @(posedge aclk) begin
 		// Timer interrupt
 		timerInterrupt <= mieshadow[1] && mstatusIEshadow && (wallclocktime >= timecmpshadow);
 		// Machine external interrupt (UART, SDCard Switch)
-		hwInterrupt <= mieshadow[2] && mstatusIEshadow && (~uartrcvempty || ~keyfifoempty);
+		hwInterrupt <= mieshadow[2] && mstatusIEshadow && (~uartrcvempty || ~keyfifoempty || usbirq);
 	end
 end
 
@@ -186,8 +187,9 @@ always @(posedge aclk) begin
 						`CSR_RETILO:	s_axi.rdata[31:0] <= retired[31:0];
 						`CSR_TIMELO:	s_axi.rdata[31:0] <= wallclocktime[31:0];
 						`CSR_CYCLELO:	s_axi.rdata[31:0] <= cpuclocktime[31:0];
-						`CSR_MISA:		s_axi.rdata[31:0] <= 32'h00001100;							// rv32i(bit8), Zmmul(bit12), machine level
-						`CSR_HWSTATE:	s_axi.rdata[31:0] <= {30'd0, ~keyfifoempty, ~uartrcvempty};	// interrupt states of all hardware devices
+						`CSR_MISA:		s_axi.rdata[31:0] <= 32'h00001100; // Machine ISA: rv32i(bit8), Zmmul(bit12), machine level
+						// interrupt states of all hardware devices
+						`CSR_HWSTATE:	s_axi.rdata[31:0] <= {29'd0, usbirq, ~keyfifoempty, ~uartrcvempty};
 						default:		s_axi.rdata[31:0] <= csrdout;
 					endcase
 					s_axi.rvalid <= 1'b1;

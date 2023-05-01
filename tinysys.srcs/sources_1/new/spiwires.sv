@@ -1,12 +1,27 @@
-interface spiwires (
-	input wire spi_miso,
-	output wire spi_cs_n,
-	output wire spi_clk,
-	output wire spi_mosi,
-	input wire spi_swtch);
+interface sdcardwires (
+	input wire miso,
+	output wire cs_n,
+	output wire clk,
+	output wire mosi,
+	input wire swtch);
 
 	modport def (
-		input spi_miso, spi_swtch,
-		output spi_cs_n, spi_clk, spi_mosi );
+		input miso, swtch,
+		output cs_n, clk, mosi );
+
+endinterface
+
+interface max3420wires (
+	input wire miso,
+	output wire cs_n,
+	output wire clk,
+	output wire mosi,
+	output wire resn,
+	input wire irq,
+	input wire gpx);
+
+	modport def (
+		input miso, irq, gpx,
+		output cs_n, clk, mosi, resn );
 
 endinterface

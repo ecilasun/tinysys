@@ -76,11 +76,11 @@ set_property -dict {PACKAGE_PIN AB18 IOSTANDARD LVCMOS33} [get_ports usb_d_n]
 ## SWTCH            pin U2:58  [Y18]  sdpin#switch
 
 ## SPI mode - sorted by sdcard pin order
-set_property -dict {PACKAGE_PIN U17 IOSTANDARD LVCMOS33} [get_ports spi_cs_n]
-set_property -dict {PACKAGE_PIN V18 IOSTANDARD LVCMOS33} [get_ports spi_mosi]
-set_property -dict {PACKAGE_PIN AB21 IOSTANDARD LVCMOS33} [get_ports spi_clk]
-set_property -dict {PACKAGE_PIN AA20 IOSTANDARD LVCMOS33} [get_ports spi_miso]
-set_property -dict {PACKAGE_PIN Y18 IOSTANDARD LVCMOS33} [get_ports spi_swtch]
+set_property -dict {PACKAGE_PIN U17 IOSTANDARD LVCMOS33} [get_ports sdcard_cs_n]
+set_property -dict {PACKAGE_PIN V18 IOSTANDARD LVCMOS33} [get_ports sdcard_mosi]
+set_property -dict {PACKAGE_PIN AB21 IOSTANDARD LVCMOS33} [get_ports sdcard_clk]
+set_property -dict {PACKAGE_PIN AA20 IOSTANDARD LVCMOS33} [get_ports sdcard_miso]
+set_property -dict {PACKAGE_PIN Y18 IOSTANDARD LVCMOS33} [get_ports sdcard_swtch]
 
 ## SD mode - sorted by sdcard pin order
 ## set_property -dict {PACKAGE_PIN U20 IOSTANDARD LVCMOS33} [get_ports {sd_dat[2]}]
@@ -165,13 +165,13 @@ set_property -dict {PACKAGE_PIN N19 IOSTANDARD LVCMOS33} [get_ports au_mclk]
 ## usbint     pin U2:  [J22] -> set the IE bit(bit#0) in the CPUCTL(r16) register to enable interrupts
 ## usbgpx     pin U2:  [H22] -> operate / vbus_det / busact or start-of-frame indicator depending on gpxa/gpxb register contents
 
-## set_property -dict {PACKAGE_PIN K22 IOSTANDARD LVCMOS33} [get_ports usbclk]
-## set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports usbmosi]
-## set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports usbmiso]
-## set_property -dict {PACKAGE_PIN H20 IOSTANDARD LVCMOS33} [get_ports usbresn]
-## set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports usbbssn]
-## set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports usbint]
-## set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports usbgpx]
+set_property -dict {PACKAGE_PIN K22 IOSTANDARD LVCMOS33} [get_ports usbc_clk]
+set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports usbc_mosi]
+set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports usbc_miso]
+set_property -dict {PACKAGE_PIN H20 IOSTANDARD LVCMOS33} [get_ports usbc_resn]
+set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports usbc_ss_n]
+set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports usbc_int]
+set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
 
 
 ## ------------------------------------------------------------------------------------------------------

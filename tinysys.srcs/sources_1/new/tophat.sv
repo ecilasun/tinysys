@@ -34,11 +34,19 @@ module tophat(
 	,output wire hdmi_tx_clk_p
 	,output wire hdmi_tx_clk_n
 	// Micro SD Card
-	,input wire spi_miso
-	,output wire spi_cs_n
-	,output wire spi_clk
-	,output wire spi_mosi
-	,input wire spi_swtch
+	,input wire sdcard_miso
+	,output wire sdcard_cs_n
+	,output wire sdcard_clk
+	,output wire sdcard_mosi
+	,input wire sdcard_swtch
+	// USB-C via MAX4320
+	,input wire usbc_miso
+	,output wire usbc_ss_n
+	,output wire usbc_clk
+	,output wire usbc_mosi
+	,output wire usbc_resn
+	,input wire usbc_int
+	,input wire usbc_gpx
 	// ADC
 	,output wire adclk
 	,input wire addout
@@ -109,20 +117,21 @@ gpuwires gpuvideoout(
 // SPI wires
 // --------------------------------------------------
 
-spiwires sdconn(
-	.spi_miso(spi_miso),
-	.spi_cs_n(spi_cs_n),
-	.spi_clk(spi_clk),
-	.spi_mosi(spi_mosi),
-	.spi_swtch(spi_swtch) );
-	
-// --------------------------------------------------
-// USB host wires
-// --------------------------------------------------
+sdcardwires sdconn(
+	.miso(sdcard_miso),
+	.cs_n(sdcard_cs_n),
+	.clk(sdcard_clk),
+	.mosi(sdcard_mosi),
+	.swtch(sdcard_swtch) );
 
-usbwires usbconn(
-	.DP(usb_d_p),
-	.DN(usb_d_n) );
+max3420wires usbcconn(
+	.miso(usbc_miso),
+	.cs_n(usbc_ss_n),
+	.clk(usbc_clk),
+	.mosi(usbc_mosi),
+	.resn(usbc_resn),
+	.irq(usbc_int),
+	.gpx(usbc_gpx));
 
 // --------------------------------------------------
 // ADC wires
@@ -167,7 +176,7 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.i2sconn(i2sconn),
 	.gpuvideoout(gpuvideoout),
 	.sdconn(sdconn),
-	.adcconn(adcconn),
-	.usbconn(usbconn));
+	.usbcconn(usbcconn),
+	.adcconn(adcconn));
 
 endmodule
