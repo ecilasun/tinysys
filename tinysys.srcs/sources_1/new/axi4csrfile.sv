@@ -71,19 +71,30 @@ logic timerInterrupt = 1'b0;
 logic hwInterrupt = 1'b0;
 logic softInterruptEna = 1'b0;
 
+// cdc for usb interrupt line
+(* async_reg = "true" *) logic usbirqcdc = 1'b0;
+
 always @(posedge aclk) begin
 	if (~aresetn) begin
 		timerInterrupt <= 1'b0;
 		hwInterrupt <= 1'b0;
 		softInterruptEna <= 1'b0;
 	end else begin
-		// Common condition to fire an IRQ: Fetch isn't holding an IRQ, specific interrups are enabled, and global machine interrupts are enabled
+
+		// Common condition to fire an IRQ:
+		// Fetch isn't holding an IRQ, specific interrups are enabled, and global machine interrupts are enabled
+
+		// Cross from usb clock to aclk
+		usbirqcdc <= usbirq;
+
 		// Software interrupt
 		softInterruptEna <= mieshadow[0] && mstatusIEshadow; // The rest of this condition is in fetch unit (based on instruction)
+
 		// Timer interrupt
 		timerInterrupt <= mieshadow[1] && mstatusIEshadow && (wallclocktime >= timecmpshadow);
+
 		// Machine external interrupt (UART, SDCard Switch)
-		hwInterrupt <= mieshadow[2] && mstatusIEshadow && (~uartrcvempty || ~keyfifoempty || usbirq);
+		hwInterrupt <= mieshadow[2] && mstatusIEshadow && (~uartrcvempty || ~keyfifoempty || usbirqcdc);
 	end
 end
 
@@ -189,7 +200,7 @@ always @(posedge aclk) begin
 						`CSR_CYCLELO:	s_axi.rdata[31:0] <= cpuclocktime[31:0];
 						`CSR_MISA:		s_axi.rdata[31:0] <= 32'h00001100; // Machine ISA: rv32i(bit8), Zmmul(bit12), machine level
 						// interrupt states of all hardware devices
-						`CSR_HWSTATE:	s_axi.rdata[31:0] <= {29'd0, usbirq, ~keyfifoempty, ~uartrcvempty};
+						`CSR_HWSTATE:	s_axi.rdata[31:0] <= {29'd0, usbirqcdc, ~keyfifoempty, ~uartrcvempty};
 						default:		s_axi.rdata[31:0] <= csrdout;
 					endcase
 					s_axi.rvalid <= 1'b1;
