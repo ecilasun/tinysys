@@ -10,8 +10,6 @@ module axi4usbc(
     max3420wires.def usbcconn,
 	axi4if.slave s_axi);
 
-logic csn = 1'b1;
-assign usbcconn.cs_n = csn;
 assign usbcconn.resn = aresetn;	// Low during reset
 assign usbirq = ~usbcconn.irq;
 
@@ -31,28 +29,27 @@ wire cansend;
 wire hasvaliddata;
 wire [7:0] spiincomingdata;
 
-// If base clock is @100mhz, we're running at 25mhz (2->2x2 due to 'half'->50/4==12.5MHz)
-// If base clock is @50mhz, we're running at 12.5mhz (2->2x2 due to 'half'->50/4==6.25MHz)
-// If base clock is @25mhz, we're running at 6.25mhz (2->2x2 due to 'half'->25/4==3.125MHz)
-
-spi_master #(.spi_mode(0), .clks_per_half_bit(2)) usbcspi(
+SPI_Master_With_Single_CS usbcspi(
    // control/data signals,
-   .i_rst_l(aresetn),
-   .i_clk(spibaseclock),
+   .i_Rst_L(aresetn),
+   .i_Clk(spibaseclock),
 
    // tx (mosi) signals
-   .i_tx_byte(writedata),
-   .i_tx_dv(we),
-   .o_tx_ready(cansend),
+   .i_TX_Count(2'b10),	// Send 2 bytes between a CSn=0 and a CSn=1
+   .i_TX_Byte(writedata),
+   .i_TX_DV(we),
+   .o_TX_Ready(cansend),
 
    // rx (miso) signals
-   .o_rx_dv(hasvaliddata),
-   .o_rx_byte(spiincomingdata),
+   .o_RX_Count(),
+   .o_RX_DV(hasvaliddata),
+   .o_RX_Byte(spiincomingdata),
 
    // spi interface
-   .o_spi_clk(usbcconn.clk),
-   .i_spi_miso(usbcconn.miso),
-   .o_spi_mosi(usbcconn.mosi) );
+   .o_SPI_Clk(usbcconn.clk),
+   .i_SPI_MISO(usbcconn.miso),
+   .o_SPI_MOSI(usbcconn.mosi),
+   .o_SPI_CS_n(usbcconn.cs_n));
 
 wire infifofull, infifoempty, infifovalid;
 logic infifowe = 1'b0, infifore = 1'b0;
@@ -84,8 +81,8 @@ end
 
 wire outfifofull, outfifoempty, outfifovalid;
 logic outfifowe = 1'b0, outfifore = 1'b0;
-logic [8:0] outfifodin = 9'h00;
-wire [8:0] outfifodout;
+logic [7:0] outfifodin = 8'h00;
+wire [7:0] outfifodout;
 
 usbcspififo usbcoutputfifo(
 	.wr_clk(aclk),
@@ -105,12 +102,8 @@ always @(posedge spibaseclock) begin
 	outfifore <= 1'b0;
 	we <= 1'b0;
 	if ((~outfifoempty) && outfifovalid && cansend) begin
-		if (outfifodout[8]) begin // CS control
-			csn <= outfifodout[0]; // Only set when 'cansend' is high i.e. comms ended
-		end else begin
-			writedata <= outfifodout;
-			we <= 1'b1;
-		end
+		writedata <= outfifodout;
+		we <= 1'b1;
 		// Advance FIFO
 		outfifore <= 1'b1;
 	end
@@ -139,21 +132,14 @@ always @(posedge aclk) begin
 		outfifowe <= 1'b0;
 		s_axi.wready <= 1'b0;
 		s_axi.bvalid <= 1'b0;
-		outfifodin <= 9'h00;
+		outfifodin <= 8'h00;
 
 		unique case (writestate)
 			1'b0: begin
 				if (s_axi.wvalid && (~outfifofull)) begin
-					unique case (s_axi.awaddr[3:0])
-						4'h0: begin // 0x80007000
-							outfifodin <= {1'b0, s_axi.wdata[7:0]}; // Control command
-							outfifowe <= 1'b1;
-						end
-						4'h4: begin // 0x80007004
-							outfifodin <= {8'b10000000, s_axi.wdata[0]}; // Control CSn
-							outfifowe <= 1'b1;
-						end
-					endcase
+					// SPI 0x80007000
+					outfifodin <= s_axi.wdata[7:0];
+					outfifowe <= 1'b1;
 					s_axi.wready <= 1'b1;
 					writestate <= 1'b1;
 				end
@@ -187,7 +173,7 @@ always @(posedge aclk) begin
 				if (s_axi.arvalid) begin
 					unique case (s_axi.araddr[3:0])
 						4'h0: raddrstate <= 2'b01; // SPI        0x80007000
-						4'h8: raddrstate <= 2'b10; // FIFO state 0x80007008
+						4'h4: raddrstate <= 2'b10; // FIFO state 0x80007004
 					endcase
 					s_axi.arready <= 1'b1;
 				end

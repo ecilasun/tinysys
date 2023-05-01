@@ -71,27 +71,24 @@ wire cansend;
 wire hasvaliddata;
 wire [7:0] spiincomingdata;
 
-// If base clock is @100mhz, we're running at 25mhz (2->2x2 due to 'half'->50/4==12.5MHz)
-// If base clock is @50mhz, we're running at 12.5mhz (2->2x2 due to 'half'->50/4==6.25MHz)
-
-spi_master #(.spi_mode(0), .clks_per_half_bit(2)) sdcardspi(
+SPI_Master sdcardspi(
    // control/data signals,
-   .i_rst_l(aresetn),
-   .i_clk(spibaseclock),
+   .i_Rst_L(aresetn),
+   .i_Clk(spibaseclock),
 
    // tx (mosi) signals
-   .i_tx_byte(writedata),
-   .i_tx_dv(we),
-   .o_tx_ready(cansend),
+   .i_TX_Byte(writedata),
+   .i_TX_DV(we),
+   .o_TX_Ready(cansend),
 
    // rx (miso) signals
-   .o_rx_dv(hasvaliddata),
-   .o_rx_byte(spiincomingdata),
+   .o_RX_DV(hasvaliddata),
+   .o_RX_Byte(spiincomingdata),
 
    // spi interface
-   .o_spi_clk(sdconn.clk),
-   .i_spi_miso(sdconn.miso),
-   .o_spi_mosi(sdconn.mosi) );
+   .o_SPI_Clk(sdconn.clk),
+   .i_SPI_MISO(sdconn.miso),
+   .o_SPI_MOSI(sdconn.mosi));
 
 wire infifofull, infifoempty, infifovalid;
 logic infifowe = 1'b0, infifore = 1'b0;
