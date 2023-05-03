@@ -292,13 +292,13 @@ always @(posedge aclk) begin
 
 			MATHWAIT: begin
 				unique case(1'b1)
-					mathop[0]:	rdin <= (func3 == `F3_REM) ? remainder : remainderu;
-					mathop[1]:	rdin <= (func3 == `F3_DIV) ? quotient : quotientu;
-					mathop[2]:	rdin <= product;
+					mathop[0]:	wbdin <= (func3 == `F3_REM) ? remainder : remainderu;
+					mathop[1]:	wbdin <= (func3 == `F3_DIV) ? quotient : quotientu;
+					mathop[2]:	wbdin <= product;
 				endcase
 
-				rwen <= (mulready || divready || divuready);
-				ctlmode <= (mulready || divready || divuready) ? READINSTR : MATHWAIT;
+				wback <= (mulready || divready || divuready);
+				ctlmode <= (mulready || divready || divuready) ? WBACK : MATHWAIT;
 			end
 
 			LWAIT: begin

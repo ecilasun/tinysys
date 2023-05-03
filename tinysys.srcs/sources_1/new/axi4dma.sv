@@ -67,6 +67,7 @@ always_ff @(posedge aclk) begin
 		m_axi.bready <= 0;
 		m_axi.arvalid <= 0;
 		m_axi.rready <= 0;
+		dmacmd <= 32'd0;
 		cmdmode <= WCMD;
 	end else begin
 
@@ -83,7 +84,7 @@ always_ff @(posedge aclk) begin
 					cmdmode <= DISPATCH;
 				end
 			end
-
+ 
 			DISPATCH: begin
 				case (dmacmd)
 					32'h00000000:	cmdmode <= DMASOURCE;		// Source address, byte aligned
