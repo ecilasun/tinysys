@@ -2,7 +2,6 @@
 
 module clockandreset(
 	input wire sys_clock_i,
-	input wire sys_rst_n,
 	input wire init_calib_complete,
 	output wire aclk,
 	output wire clk10,
@@ -68,14 +67,9 @@ end
 logic [31:0] resetcountdown = 32'd0;
 logic regaresetn = 1'b0;
 
-always @(posedge aclk or negedge sys_rst_n) begin
-	if (~sys_rst_n) begin
-		resetcountdown <= 32'd0;
-		regaresetn <= 1'b0;
-	end else begin
-		resetcountdown <= {resetcountdown[30:0], clkRdyB};
-		regaresetn <= resetcountdown[31] && ddr3ready[1];
-	end
+always @(posedge aclk) begin
+	resetcountdown <= {resetcountdown[30:0], clkRdyB};
+	regaresetn <= resetcountdown[31] && ddr3ready[1];
 end
 
 // --------------------------------------------------

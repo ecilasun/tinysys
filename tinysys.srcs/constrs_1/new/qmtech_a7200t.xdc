@@ -19,7 +19,7 @@ create_clock -period 20.000 -name sys_clk_pin -waveform {0.000 10.000} -add [get
 ## Buttons on the FPGA board
 ## ------------------------------------------------------------------------------------------------------
 
-set_property -dict {PACKAGE_PIN Y6 IOSTANDARD LVCMOS33} [get_ports sys_rst_n]
+## set_property -dict {PACKAGE_PIN Y6 IOSTANDARD LVCMOS33} [get_ports sys_rst_n]
 
 ## ------------------------------------------------------------------------------------------------------
 ## LEDs
@@ -173,6 +173,13 @@ set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports usbc_ss_n]
 set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports usbc_int]
 set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
 
+## ------------------------------------------------------------------------------------------------------
+## NMI switch
+## ------------------------------------------------------------------------------------------------------
+
+## sysresetn     pin U4:59  [AA8]
+
+set_property -dict {PACKAGE_PIN AA8 IOSTANDARD LVCMOS33} [get_ports sysresetn]
 
 ## ------------------------------------------------------------------------------------------------------
 ## DDR3 SDRAM (MT41K128M16XX-15E)

@@ -4,7 +4,7 @@
 module tophat(
 	// Board clock and reset
     input wire sys_clk
-    ,input wire sys_rst_n
+    ,input wire sysresetn
     // Debug LEDs
     ,output wire [3:0] leds
     // UART - USB-c module
@@ -69,7 +69,6 @@ wire aclk, clk10, clk12, clk25, clk50, clk125, clk166, clk200;
 // Clock and reset generator
 clockandreset clockandresetinst(
 	.sys_clock_i(sys_clk),
-	.sys_rst_n(sys_rst_n),
 	.init_calib_complete(init_calib_complete),
 	.aclk(aclk),
 	.clk10(clk10),
@@ -167,6 +166,7 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.clk166(clk166),
 	.clk200(clk200),
 	.aresetn(aresetn),
+	.sysresetn(sysresetn), // Soft reboot
 	.preresetn(preresetn),
 	// Device wires
 	.uart_rxd_out(uart_rxd_out),

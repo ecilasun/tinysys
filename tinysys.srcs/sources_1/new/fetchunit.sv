@@ -6,7 +6,10 @@ module fetchunit #(
 	parameter int RESETVECTOR = 32'd0
 ) (
 	input wire aclk,
+	input wire clk10,
 	input wire aresetn,
+	// Soft reset
+	input wire sysresetn,
 	// Stall control
 	input wire branchresolved,
 	input wire [31:0] branchtarget,
@@ -24,6 +27,26 @@ module fetchunit #(
 	input wire romReady,
 	// To system bus
 	axi4if.master m_axi );
+
+// --------------------------------------------------
+// Reset CDC and debounce
+// --------------------------------------------------
+
+logic prevresetn = 1'b1;
+wire stableresetn;
+
+debounce resetnswtchdebounce(
+	.clk(clk10),
+	.reset(~aresetn),
+	.bouncy(sysresetn),
+	.stable(stableresetn) );
+
+(* async_reg = "true" *) logic rstnA = 1'b1;
+(* async_reg = "true" *) logic rstnB = 1'b1;
+always @(posedge aclk) begin
+	rstnA <= stableresetn;
+	rstnB <= rstnA;
+end
 
 // --------------------------------------------------
 // Internal states
@@ -164,11 +187,12 @@ fetchstate fetchmode = INIT;
 fetchstate postInject = FETCH;	// Where to go after injection ends
 
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~aresetn || ~rstnB) begin
 		fetchmode <= INIT;
 		fetchena <= 1'b0;
 		ififowr_en <= 1'b0;
 		IR <= 32'd0;
+		PC <= RESETVECTOR;
 	end else begin
 
 		fetchena <= 1'b0;

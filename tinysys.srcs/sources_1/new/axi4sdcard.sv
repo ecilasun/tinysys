@@ -20,9 +20,9 @@ logic [7:0] writedata = 7'd0;
 wire [7:0] readdata;
 logic we = 1'b0;
 
-// ----------------------------------------------------------------------------
-// sd card insert/remove switch
-// ----------------------------------------------------------------------------
+// --------------------------------------------------
+// SDCard insert/remove switch CDC, debounce and FIFO
+// --------------------------------------------------
 
 logic prevswtch = 1'b0;
 wire stableswtch;
@@ -32,6 +32,14 @@ debounce sdswtchdebounce(
 	.bouncy(sdconn.swtch),
 	.stable(stableswtch) );
 
+(* async_reg = "true" *) logic swtchA = 1'b1;
+(* async_reg = "true" *) logic swtchB = 1'b1;
+always @(posedge clk10) begin
+	swtchA <= stableswtch;
+	swtchB <= swtchA;
+end
+
+// Reading this fifo will clear the sd card switch interrupt
 wire keyfifofull, keyfifovalid;
 wire keyfifodout;
 logic keyfifodin;
@@ -49,16 +57,17 @@ bitfifo keyfifo(
 	.rd_clk(aclk),
 	.valid(keyfifovalid));
 
+// Store one enry only when switch state changes 
 always @(posedge clk10) begin
 	if (~aresetn) begin
 		//
 	end else begin
 		keyfifowe <= 1'b0;
-		if (stableswtch != prevswtch) begin
-			keyfifodin <= stableswtch;
+		if (swtchB != prevswtch) begin
+			keyfifodin <= swtchB;
 			keyfifowe <= 1'b1;
 		end
-		prevswtch <= stableswtch;
+		prevswtch <= swtchB;
 	end
 end
 

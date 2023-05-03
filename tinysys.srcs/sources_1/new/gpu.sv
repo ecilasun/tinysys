@@ -28,6 +28,15 @@ module gpucore(
 // - Add rasterization support
 
 // --------------------------------------------------
+// Scan setup
+// --------------------------------------------------
+
+// NOTE: First, set up the scanout address, then enable video scanout
+logic [31:0] scanaddr = 32'h00000000;
+logic [31:0] scanoffset = 0;
+logic scanenable = 1'b0;
+
+// --------------------------------------------------
 // Common
 // --------------------------------------------------
 
@@ -121,7 +130,7 @@ always @(posedge clk25) begin // Tied to GPU clock
 	if (~aresetn) begin
 		paletteout <= 24'd0;
 	end else begin
-		paletteout <= paletteentries[palettera];
+		paletteout <= scanenable ? paletteentries[palettera] : 0;
 	end
 end
 
@@ -195,11 +204,6 @@ assign m_axi.bready = 0;
 
 typedef enum logic [2:0] {DETECTSCANLINEEND, STARTLOAD, TRIGGERBURST, DATABURST} scanstatetype;
 scanstatetype scanstate = DETECTSCANLINEEND;
-
-// NOTE: First, set up the scanout address, then enable video scanout
-logic [31:0] scanaddr = 32'h00000000;
-logic [31:0] scanoffset = 0;
-logic scanenable = 1'b0;
 
 logic [5:0] rdata_cnt = 'd0;
 

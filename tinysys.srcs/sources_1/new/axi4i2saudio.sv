@@ -45,7 +45,7 @@ typedef enum logic [3:0] {
 	WCMD, DISPATCH,
 	APUSTART,
 	APUBUFFERSIZE,
-	APUSTOP,
+	APUSTOP, APUCLEARLOOP,
 	APUSWAP,
 	APUSETRATE,
 	STARTDMA, WAITREADADDR, READLOOP,
@@ -168,8 +168,14 @@ always_ff @(posedge aclk) begin
 			end
 
 			APUSTOP: begin
-				// TODO: zero out the current playback buffer or stop output altogether
-				cmdmode <= FINALIZE;
+				burstcursor <= 0;
+				cmdmode <= APUCLEARLOOP;
+			end
+			
+			APUCLEARLOOP: begin
+				samplebuffer[writeLine] <= 0;
+				burstcursor <= burstcursor + 8'd1;
+				cmdmode <= (burstcursor == 8'hFF) ? FINALIZE : APUCLEARLOOP;
 			end
 
 			APUSWAP: begin
@@ -211,7 +217,7 @@ always_ff @(posedge aclk) begin
 					cmdmode <= ~m_axi.rlast ? READLOOP : FINALIZE;
 				end
 			end
-
+			
 			FINALIZE: begin
 				cmdmode <= WCMD;
 			end

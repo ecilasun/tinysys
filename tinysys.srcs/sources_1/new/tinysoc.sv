@@ -12,6 +12,7 @@ module tinysoc #(
 	input wire clk166,
 	input wire clk200,
 	input wire aresetn,
+	input wire sysresetn,
 	input wire preresetn,
 	output wire [3:0] leds,
 	output wire uart_rxd_out,
@@ -69,7 +70,9 @@ wire romReady;
 // Reset vector at last 64K of DDR3 SDRAM
 fetchunit #(.RESETVECTOR(RESETVECTOR)) fetchdecodeinst (
 	.aclk(aclk),
+	.clk10(clk10),
 	.aresetn(aresetn),
+	.sysresetn(sysresetn),
 	.branchresolved(branchresolved),
 	.branchtarget(branchtarget),
 	.ififoempty(ififoempty),
