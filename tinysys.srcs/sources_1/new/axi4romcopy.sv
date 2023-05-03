@@ -107,14 +107,13 @@ always_ff @(posedge aclk) begin
 					m_axi.wdata <= bootROMdout;
 					m_axi.wlast <= 1'b1;
 
-					bootROMaddr <= bootROMaddr + 13'd1;
-
 					cmdmode <= ROMWAITWREADY;
 				end
 			end
 
 			ROMWAITWREADY: begin
 				if (m_axi.wready) begin // && m_axi.wvalid
+					bootROMaddr <= bootROMaddr + 13'd1;
 					m_axi.wvalid <= 0;
 					m_axi.wstrb <= 16'h0000;
 					m_axi.wlast <= 0;
