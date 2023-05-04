@@ -29,27 +29,27 @@ wire cansend;
 wire hasvaliddata;
 wire [7:0] spiincomingdata;
 
-SPI_Master_With_Single_CS usbcspi(
+logic cs_n = 1'b1;
+assign usbcconn.cs_n = cs_n;
+
+SPI_Master usbcspi(
    // control/data signals,
    .i_Rst_L(aresetn),
    .i_Clk(spibaseclock),
 
    // tx (mosi) signals
-   .i_TX_Count(2'b10),	// Send 2 bytes between a CSn=0 and a CSn=1
    .i_TX_Byte(writedata),
    .i_TX_DV(we),
    .o_TX_Ready(cansend),
 
    // rx (miso) signals
-   .o_RX_Count(),
    .o_RX_DV(hasvaliddata),
    .o_RX_Byte(spiincomingdata),
 
    // spi interface
    .o_SPI_Clk(usbcconn.clk),
    .i_SPI_MISO(usbcconn.miso),
-   .o_SPI_MOSI(usbcconn.mosi),
-   .o_SPI_CS_n(usbcconn.cs_n));
+   .o_SPI_MOSI(usbcconn.mosi) );
 
 wire infifofull, infifoempty, infifovalid;
 logic infifowe = 1'b0, infifore = 1'b0;
@@ -81,8 +81,8 @@ end
 
 wire outfifofull, outfifoempty, outfifovalid;
 logic outfifowe = 1'b0, outfifore = 1'b0;
-logic [7:0] outfifodin = 8'h00;
-wire [7:0] outfifodout;
+logic [8:0] outfifodin = 9'h00;
+wire [8:0] outfifodout;
 
 usbcspififo usbcoutputfifo(
 	.wr_clk(aclk),
@@ -99,13 +99,23 @@ usbcspififo usbcoutputfifo(
 	.rst(~aresetn) );
 
 always @(posedge spibaseclock) begin
-	outfifore <= 1'b0;
-	we <= 1'b0;
-	if ((~outfifoempty) && outfifovalid && cansend) begin
-		writedata <= outfifodout;
-		we <= 1'b1;
-		// Advance FIFO
-		outfifore <= 1'b1;
+	if (~aresetn) begin
+		cs_n <= 1'b1;
+	end else begin
+		outfifore <= 1'b0;
+		we <= 1'b0;
+		if ((~outfifoempty) && outfifovalid && cansend) begin
+			if (outfifodout[8])
+				// Control CSn
+				cs_n <= outfifodout[0];
+			else begin
+				// Control output data
+				writedata <= outfifodout[7:0];
+				we <= 1'b1;
+			end
+			// Advance FIFO
+			outfifore <= 1'b1;
+		end
 	end
 end
 
@@ -132,13 +142,13 @@ always @(posedge aclk) begin
 		outfifowe <= 1'b0;
 		s_axi.wready <= 1'b0;
 		s_axi.bvalid <= 1'b0;
-		outfifodin <= 8'h00;
+		outfifodin <= 9'h00;
 
 		unique case (writestate)
 			1'b0: begin
 				if (s_axi.wvalid && (~outfifofull)) begin
 					// SPI 0x80007000
-					outfifodin <= s_axi.wdata[7:0];
+					outfifodin <= s_axi.wdata[8:0];
 					outfifowe <= 1'b1;
 					s_axi.wready <= 1'b1;
 					writestate <= 1'b1;
