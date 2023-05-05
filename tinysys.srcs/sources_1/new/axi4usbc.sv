@@ -105,14 +105,17 @@ always @(posedge spibaseclock) begin
 		outfifore <= 1'b0;
 		we <= 1'b0;
 		if ((~outfifoempty) && outfifovalid && cansend) begin
-			if (outfifodout[8])
-				// Control CSn
-				cs_n <= outfifodout[0];
-			else begin
-				// Control output data
-				writedata <= outfifodout[7:0];
-				we <= 1'b1;
-			end
+			unique case (outfifodout[8])
+				1'b0: begin
+					// Control output data
+					writedata <= outfifodout[7:0];
+					we <= 1'b1;
+				end
+				1'b1: begin
+					// Control CSn
+					cs_n <= outfifodout[0];
+				end
+			endcase
 			// Advance FIFO
 			outfifore <= 1'b1;
 		end
