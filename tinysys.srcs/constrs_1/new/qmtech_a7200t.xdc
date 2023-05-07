@@ -16,7 +16,7 @@ set_property -dict {PACKAGE_PIN W19 IOSTANDARD LVCMOS33} [get_ports sys_clk]
 create_clock -period 20.000 -name sys_clk_pin -waveform {0.000 10.000} -add [get_ports sys_clk]
 
 ## ------------------------------------------------------------------------------------------------------
-## Buttons on the FPGA board
+## Buttons on the FPGA board - unused
 ## ------------------------------------------------------------------------------------------------------
 
 ## set_property -dict {PACKAGE_PIN Y6 IOSTANDARD LVCMOS33} [get_ports sys_rst_n]
@@ -37,7 +37,7 @@ set_property -dict {PACKAGE_PIN AB22 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
 
 
 ## ------------------------------------------------------------------------------------------------------
-## UART Tx/Rx
+## UART Tx/Rx debug port (tie to an external USB-UART cable or other device)
 ## ------------------------------------------------------------------------------------------------------
 
 ## Sorted by UART module pin order
@@ -114,7 +114,7 @@ set_property -dict {PACKAGE_PIN AB3 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[0]
 set_property -dict {PACKAGE_PIN AB2 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[0]}]
 
 ## ------------------------------------------------------------------------------------------------------
-## ADC bus
+## ADC bus - MCP3008 10 bit 8 channel analog-digital converter
 ## ------------------------------------------------------------------------------------------------------
 
 ## adcs   pin U2:38 [N17]
@@ -172,6 +172,8 @@ set_property -dict {PACKAGE_PIN H20 IOSTANDARD LVCMOS33} [get_ports usbc_resn]
 set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports usbc_ss_n]
 set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports usbc_int]
 set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
+## MAX3420E's INT pin requires an external pullup resistor when in INTLEVEL mode
+set_property PULLUP TRUE [get_ports usbc_int]
 
 ## ------------------------------------------------------------------------------------------------------
 ## NMI switch
