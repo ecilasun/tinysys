@@ -66,7 +66,7 @@ ddr3_model ddr3simmod(
 
 tophat main(
     .sys_clk(boardclock),
-    .sys_rst_n(boardresetn),
+    .sysresetn(boardresetn),
     // LEDs
     .leds(ledout),
     // UART

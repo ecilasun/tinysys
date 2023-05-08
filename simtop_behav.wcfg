@@ -14,14 +14,14 @@
    </db_ref_list>
    <zoom_setting>
       <ZoomStartTime time="0.000000000 us"></ZoomStartTime>
-      <ZoomEndTime time="431.600000001 us"></ZoomEndTime>
-      <Cursor1Time time="188.046417166 us"></Cursor1Time>
+      <ZoomEndTime time="453.708323919 us"></ZoomEndTime>
+      <Cursor1Time time="41.101241125 us"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="318"></NameColumnWidth>
+      <NameColumnWidth column_width="310"></NameColumnWidth>
       <ValueColumnWidth column_width="128"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="307" />
+   <WVObjectSize size="326" />
    <wave_markers>
       <marker label="" time="2090070000000" />
       <marker label="" time="3083299200000" />
@@ -315,7 +315,7 @@
       <obj_property name="ObjectShortName">RESETVECTOR[31:0]</obj_property>
    </wvobject>
    <wvobject fp_name="divider157" type="divider">
-      <obj_property name="label">exec</obj_property>
+      <obj_property name="label">control</obj_property>
       <obj_property name="DisplayName">label</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/simtop/main/socinstance/controlunitinst/aclk">
@@ -373,8 +373,6 @@
    <wvobject type="array" fp_name="/simtop/main/socinstance/controlunitinst/PC">
       <obj_property name="ElementShortName">PC[31:0]</obj_property>
       <obj_property name="ObjectShortName">PC[31:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FFD700</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/controlunitinst/instrOneHotOut">
       <obj_property name="ElementShortName">instrOneHotOut[17:0]</obj_property>
@@ -500,6 +498,10 @@
       <obj_property name="ElementShortName">divstrobe</obj_property>
       <obj_property name="ObjectShortName">divstrobe</obj_property>
    </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/controlunitinst/mathop">
+      <obj_property name="ElementShortName">mathop[2:0]</obj_property>
+      <obj_property name="ObjectShortName">mathop[2:0]</obj_property>
+   </wvobject>
    <wvobject type="logic" fp_name="/simtop/main/socinstance/controlunitinst/mulready">
       <obj_property name="ElementShortName">mulready</obj_property>
       <obj_property name="ObjectShortName">mulready</obj_property>
@@ -536,6 +538,10 @@
       <obj_property name="ElementShortName">ctlmode[3:0]</obj_property>
       <obj_property name="ObjectShortName">ctlmode[3:0]</obj_property>
    </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/controlunitinst/execmode">
+      <obj_property name="ElementShortName">execmode[3:0]</obj_property>
+      <obj_property name="ObjectShortName">execmode[3:0]</obj_property>
+   </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/controlunitinst/rwaddress">
       <obj_property name="ElementShortName">rwaddress[31:0]</obj_property>
       <obj_property name="ObjectShortName">rwaddress[31:0]</obj_property>
@@ -548,9 +554,81 @@
       <obj_property name="ElementShortName">adjacentPC[31:0]</obj_property>
       <obj_property name="ObjectShortName">adjacentPC[31:0]</obj_property>
    </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/controlunitinst/wbusy">
+      <obj_property name="ElementShortName">wbusy[31:0]</obj_property>
+      <obj_property name="ObjectShortName">wbusy[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/controlunitinst/wdone">
+      <obj_property name="ElementShortName">wdone[31:0]</obj_property>
+      <obj_property name="ObjectShortName">wdone[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/controlunitinst/efifodout">
+      <obj_property name="ElementShortName">efifodout[255:0]</obj_property>
+      <obj_property name="ObjectShortName">efifodout[255:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/controlunitinst/efifofull">
+      <obj_property name="ElementShortName">efifofull</obj_property>
+      <obj_property name="ObjectShortName">efifofull</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/controlunitinst/efifoempty">
+      <obj_property name="ElementShortName">efifoempty</obj_property>
+      <obj_property name="ObjectShortName">efifoempty</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/controlunitinst/efifovalid">
+      <obj_property name="ElementShortName">efifovalid</obj_property>
+      <obj_property name="ObjectShortName">efifovalid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/controlunitinst/efifodin">
+      <obj_property name="ElementShortName">efifodin[255:0]</obj_property>
+      <obj_property name="ObjectShortName">efifodin[255:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/controlunitinst/efifowe">
+      <obj_property name="ElementShortName">efifowe</obj_property>
+      <obj_property name="ObjectShortName">efifowe</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/controlunitinst/efifore">
+      <obj_property name="ElementShortName">efifore</obj_property>
+      <obj_property name="ObjectShortName">efifore</obj_property>
+   </wvobject>
    <wvobject type="array" fp_name="/simtop/main/socinstance/controlunitinst/CID">
       <obj_property name="ElementShortName">CID[31:0]</obj_property>
       <obj_property name="ObjectShortName">CID[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/controlunitinst/execfifoinst/clk">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/controlunitinst/execfifoinst/rst">
+      <obj_property name="ElementShortName">rst</obj_property>
+      <obj_property name="ObjectShortName">rst</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/controlunitinst/execfifoinst/din">
+      <obj_property name="ElementShortName">din[255:0]</obj_property>
+      <obj_property name="ObjectShortName">din[255:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/controlunitinst/execfifoinst/wr_en">
+      <obj_property name="ElementShortName">wr_en</obj_property>
+      <obj_property name="ObjectShortName">wr_en</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/controlunitinst/execfifoinst/rd_en">
+      <obj_property name="ElementShortName">rd_en</obj_property>
+      <obj_property name="ObjectShortName">rd_en</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/simtop/main/socinstance/controlunitinst/execfifoinst/dout">
+      <obj_property name="ElementShortName">dout[255:0]</obj_property>
+      <obj_property name="ObjectShortName">dout[255:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/controlunitinst/execfifoinst/full">
+      <obj_property name="ElementShortName">full</obj_property>
+      <obj_property name="ObjectShortName">full</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/controlunitinst/execfifoinst/empty">
+      <obj_property name="ElementShortName">empty</obj_property>
+      <obj_property name="ObjectShortName">empty</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/simtop/main/socinstance/controlunitinst/execfifoinst/valid">
+      <obj_property name="ElementShortName">valid</obj_property>
+      <obj_property name="ObjectShortName">valid</obj_property>
    </wvobject>
    <wvobject fp_name="divider3142" type="divider">
       <obj_property name="label">GPR</obj_property>
@@ -691,10 +769,6 @@
    <wvobject type="logic" fp_name="/simtop/main/socinstance/csrfileinst/timerInterrupt">
       <obj_property name="ElementShortName">timerInterrupt</obj_property>
       <obj_property name="ObjectShortName">timerInterrupt</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/simtop/main/socinstance/csrfileinst/uartInterrupt">
-      <obj_property name="ElementShortName">uartInterrupt</obj_property>
-      <obj_property name="ObjectShortName">uartInterrupt</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/simtop/main/socinstance/csrfileinst/waddrstate">
       <obj_property name="ElementShortName">waddrstate</obj_property>

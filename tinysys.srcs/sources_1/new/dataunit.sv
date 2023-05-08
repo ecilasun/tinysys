@@ -47,6 +47,7 @@ always @(posedge aclk) begin
 	
 		s_ibus.rdone <= 1'b0;
 		s_ibus.wdone <= 1'b0;
+		s_ibus.cdone <= 1'b0;
 
 		datare <= 1'b0;
 		datawe <= 1'b0;
@@ -58,7 +59,6 @@ always @(posedge aclk) begin
 				datain <= s_ibus.wdata;
 				datare <= s_ibus.rstrobe;
 				datawe <= s_ibus.wstrobe;
-				s_ibus.cdone <= 1'b0;
 				dcacheop <= s_ibus.cstrobe ? s_ibus.dcacheop : 2'b00;
 				datamode <= s_ibus.cstrobe ? CACHEOP : (s_ibus.rstrobe ? READ : (s_ibus.wstrobe ? WRITE : FETCH));
 			end
