@@ -180,9 +180,6 @@ always @(posedge aclk) begin
 	end
 end
 
-logic storepending = 1'b0;
-logic [4:0] storesource = 5'd0;
-
 always @(posedge aclk) begin
 	if (~aresetn) begin
 
@@ -217,8 +214,6 @@ always @(posedge aclk) begin
 
 		wbdin <= 32'd0;
 		
-		storepending <= m_ibus.wdone ? 1'b0 : storepending;
-		
 		unique case(ctlmode)
 			READINSTR: begin
 				// Grab next decoded instruction if there's something in the FIFO
@@ -245,14 +240,11 @@ always @(posedge aclk) begin
 				mulstrobe <= (aluop==`ALU_MUL);
 				divstrobe <= (aluop==`ALU_DIV || aluop==`ALU_REM);				
 				mathop <= {aluop==`ALU_MUL, aluop==`ALU_DIV, aluop==`ALU_REM};
-				// If there's a store and it's trying to read from something we'll overwrite, wait.
-				// Otherwise we can just go ahead
-				ctlmode <= (storepending /*&& (rd == storesource)*/) ? READREG : DISPATCH;
+				// Store doesn't wait in-place, but we can ensure there's no data in flight at this late point
+				ctlmode <= m_ibus.busy ? READREG : DISPATCH;
 			end
 
 			DISPATCH: begin
-				storepending <= 1'b0;
-				storesource <= rs2; // rs2 can't be rd until the store is done
 				// Most instructions are done here and go directly to writeback
 				unique case(1'b1)
 					instrOneHotOut[`O_H_OP],
@@ -277,7 +269,6 @@ always @(posedge aclk) begin
 							3'b001:  m_ibus.wstrobe <= {rwaddress[1], rwaddress[1], ~rwaddress[1], ~rwaddress[1]};
 							default: m_ibus.wstrobe <= 4'b1111;
 						endcase
-						storepending <= 1'b1;
 					end
 					instrOneHotOut[`O_H_LOAD]: begin
 						m_ibus.raddr <= rwaddress;

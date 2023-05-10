@@ -40,11 +40,13 @@ datacache datacacheinst(
 typedef enum logic [1:0] {FETCH, READ, CACHEOP, WRITE} dataunitmode;
 dataunitmode datamode = FETCH;
 
+assign s_ibus.busy = ~(datamode==FETCH);
+
 always @(posedge aclk) begin
 	if (~aresetn) begin
 		datamode <= FETCH;
 	end else begin
-	
+
 		s_ibus.rdone <= 1'b0;
 		s_ibus.wdone <= 1'b0;
 		s_ibus.cdone <= 1'b0;

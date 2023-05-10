@@ -19,16 +19,21 @@ interface ibusif;
 	logic cstrobe;
 	logic cdone;
 
+	// Overall bus state
+	logic busy;
+
 	modport master (
 		output raddr, rstrobe, input rdata, rdone,
 		output waddr, wdata, wstrobe, input wdone,
-		output dcacheop, cstrobe, input cdone
+		output dcacheop, cstrobe, input cdone,
+		input busy
 	);
 
 	modport slave (
 		input raddr, rstrobe, output rdata, rdone,
 		input waddr, wdata, wstrobe, output wdone,
-		input dcacheop, cstrobe, output cdone
+		input dcacheop, cstrobe, output cdone,
+		output busy
 	);
 
 endinterface
