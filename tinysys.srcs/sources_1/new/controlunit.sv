@@ -245,7 +245,9 @@ always @(posedge aclk) begin
 				mulstrobe <= (aluop==`ALU_MUL);
 				divstrobe <= (aluop==`ALU_DIV || aluop==`ALU_REM);				
 				mathop <= {aluop==`ALU_MUL, aluop==`ALU_DIV, aluop==`ALU_REM};
-				ctlmode <= storepending ? READREG : DISPATCH;
+				// If there's a store and it's trying to read from something we'll overwrite, wait.
+				// Otherwise we can just go ahead
+				ctlmode <= (storepending /*&& (rd == storesource)*/) ? READREG : DISPATCH;
 			end
 
 			DISPATCH: begin
