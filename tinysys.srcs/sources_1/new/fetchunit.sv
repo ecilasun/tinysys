@@ -231,18 +231,8 @@ always @(posedge aclk) begin
 
 				IR <= isfullinstr ? instruction : decompressedinstr;
 
-				unique case ({misaligned, isfullinstr})
-					2'b11: begin
-						// Misaligned full instruction
-						fetchmode <= rready ? FETCHREST : FETCH;
-					end
-					default: begin
-						// Correctly aligned half instruction
-						// Correctly aligned full instruction
-						// Misaligned half instruction
-						fetchmode <= rready ? STREAMOUT : FETCH;
-					end
-				endcase
+				// Either directly stream out or read the rest of a misaligned instruction
+				fetchmode <= rready ? ((misaligned && isfullinstr) ? FETCHREST : STREAMOUT) : FETCH;
 
 				// Lower half of misaligned instruction
 				lowehalf <= instruction[31:16];
@@ -287,6 +277,8 @@ always @(posedge aclk) begin
 					isillegalinstruction:					PC <= PC + 32'd0;
 					default:								PC <= PC + (stepsize ? 32'd4 : 32'd2);
 				endcase
+
+				stepsize <= 1'b0; // Clear
 
 				// Flush I$ if we have an IFENCE instruction and go to wait
 				icacheflush <= isfence;
