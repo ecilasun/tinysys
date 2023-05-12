@@ -80,11 +80,10 @@ instructioncache instructioncacheinst(
 // Instruction decompressor
 // --------------------------------------------------
 
-wire [31:0] fullinstr;
-logic [15:0] halfinstr = 16'd0;
+wire [31:0] decompressedinstr;
 instructiondecompressor idecinst(
-    .instr_lowword(halfinstr),
-    .fullinstr(fullinstr));
+    .instr_lowword(misaligned ? instruction[31:16] : instruction[15:0]),
+    .fullinstr(decompressedinstr));
 
 // --------------------------------------------------
 // Pre-decoder
@@ -189,7 +188,7 @@ wire isillegalinstruction = sie && ~(|instrOneHotOut);
 
 typedef enum logic [3:0] {
 	INIT,										// Startup
-	FETCH, FETCHREST, DECOMPRESS, STREAMOUT,	// Instuction fetch + stream loop
+	FETCH, FETCHREST, STREAMOUT,				// Instuction fetch + stream loop
 	WAITNEWBRANCHTARGET, WAITIFENCE,			// Branch and fence handling
 	ENTERISR, EXITISR,							// ISR handling
 	STARTINJECT, INJECT, POSTENTER, POSTEXIT,	// ISR entry/exit instruction injection
@@ -202,6 +201,8 @@ fetchstate postInject = FETCH;	// Where to go after injection ends
 wire misaligned = PC[1];
 wire isfullinstr = (misaligned && (instruction[17:16] == 2'b11)) || (~misaligned && (instruction[1:0] == 2'b11));
 logic stepsize = 1'b1; // full step by default
+
+logic [15:0] lowehalf = 16'd0;
 
 always @(posedge aclk) begin
 	if (~aresetn || ~rstnB) begin
@@ -228,31 +229,25 @@ always @(posedge aclk) begin
 				// If we're misaligned and a half instuction, IR <= decompress(instruction[31:16])
 				// If we're misaligned and a full instruction, read next half (keep IR[31:16])
 
-				IR <= instruction;
-
-				// Upper half when misaligned, otherwise lower half
-				halfinstr <= misaligned ? instruction[31:16] : instruction[15:0];
+				IR <= isfullinstr ? instruction : decompressedinstr;
 
 				unique case ({misaligned, isfullinstr})
-					2'b00: begin
-						// Correctly aligned half instruction
-						fetchmode <= rready ? DECOMPRESS : FETCH;
-					end
-					2'b01: begin
-						// Correctly aligned full instruction
-						fetchmode <= rready ? STREAMOUT : FETCH;
-					end
-					2'b10: begin
-						// Misaligned half instruction
-						fetchmode <= rready ? DECOMPRESS : FETCH;
-					end
 					2'b11: begin
 						// Misaligned full instruction
 						fetchmode <= rready ? FETCHREST : FETCH;
 					end
+					default: begin
+						// Correctly aligned half instruction
+						// Correctly aligned full instruction
+						// Misaligned half instruction
+						fetchmode <= rready ? STREAMOUT : FETCH;
+					end
 				endcase
 
-				// Read second half
+				// Lower half of misaligned instruction
+				lowehalf <= instruction[31:16];
+
+				// Read upper half of misaligned instruction
 				secondhalf <= rready && misaligned && isfullinstr;
 				fetchena <= rready && misaligned && isfullinstr;
 				stepsize <= isfullinstr;
@@ -261,14 +256,10 @@ always @(posedge aclk) begin
 				adjacentPC <= PC + 32'd2;
 			end
 
-			DECOMPRESS: begin
-				IR <= fullinstr;
-				fetchmode <= STREAMOUT;
-			end
-
 			FETCHREST: begin
 				// Combine the two halves of the misaligned instruction
-				IR <= {instruction[15:0], halfinstr};
+				IR <= {instruction[15:0], lowehalf};
+				// Not reading upper half anymore
 				secondhalf <= ~rready;
 				fetchmode <= rready ? STREAMOUT : FETCHREST;
 			end
