@@ -200,7 +200,7 @@ always @(posedge aclk) begin
 						`CSR_RETILO:	s_axi.rdata[31:0] <= retired[31:0];
 						`CSR_TIMELO:	s_axi.rdata[31:0] <= wallclocktime[31:0];
 						`CSR_CYCLELO:	s_axi.rdata[31:0] <= cpuclocktime[31:0];
-						`CSR_MISA:		s_axi.rdata[31:0] <= 32'h00001100; // Machine ISA: rv32i(bit8), Zmmul(bit12), machine level
+						`CSR_MISA:		s_axi.rdata[31:0] <= 32'h00001102; // Machine ISA: compressed(bit2) rv32i(bit8), Zmmul(bit12), machine level
 						// interrupt states of all hardware devices
 						`CSR_HWSTATE:	s_axi.rdata[31:0] <= {29'd0, usbirqcdcB, ~keyfifoempty, ~uartrcvempty};
 						default:		s_axi.rdata[31:0] <= csrdout;

@@ -54,6 +54,7 @@ end
 
 logic fetchena = 1'b0;
 logic [31:0] PC = RESETVECTOR;
+logic [31:0] adjacentPC = RESETVECTOR+32'd2;
 logic [31:0] IR;
 wire rready;
 wire [31:0] instruction;
@@ -63,15 +64,27 @@ logic icacheflush = 1'b0;
 // Instruction cache
 // --------------------------------------------------
 
+logic secondhalf = 1'b0;
+
 instructioncache instructioncacheinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.addr(PC),
+	.addr(secondhalf ? adjacentPC : PC),
 	.icacheflush(icacheflush),
 	.dout(instruction),
 	.ren(fetchena),
 	.rready(rready),
 	.m_axi(m_axi) );
+
+// --------------------------------------------------
+// Instruction decompressor
+// --------------------------------------------------
+
+wire [31:0] fullinstr;
+logic [15:0] halfinstr = 16'd0;
+instructiondecompressor idecinst(
+    .instr_lowword(halfinstr),
+    .fullinstr(fullinstr));
 
 // --------------------------------------------------
 // Pre-decoder
@@ -102,7 +115,7 @@ decoder decoderinst(
 	.rd(rd),									// 5	+
 	.csroffset(csroffset),						// 12	+
 	.immed(immed),								// 32	+
-	.selectimmedasrval2(selectimmedasrval2) );	// 1	+ -> 18+4+3+3+7+12+5+5+5+5+12+32+1+PC[31:0] = 144 bits (Exact *8 of 18)
+	.selectimmedasrval2(selectimmedasrval2) );	// 1	+ -> 18+4+3+3+7+12+5+5+5+5+12+32+1+PC[31:1]+1(stepsize) = 144 bits (Exact *8 of 18)
 
 // --------------------------------------------------
 // Microcode ROM
@@ -176,7 +189,7 @@ wire isillegalinstruction = sie && ~(|instrOneHotOut);
 
 typedef enum logic [3:0] {
 	INIT,										// Startup
-	FETCH, /*FETCHREST,*/ STREAMOUT,			// Instuction fetch + stream loop
+	FETCH, FETCHREST, DECOMPRESS, STREAMOUT,	// Instuction fetch + stream loop
 	WAITNEWBRANCHTARGET, WAITIFENCE,			// Branch and fence handling
 	ENTERISR, EXITISR,							// ISR handling
 	STARTINJECT, INJECT, POSTENTER, POSTEXIT,	// ISR entry/exit instruction injection
@@ -185,6 +198,10 @@ typedef enum logic [3:0] {
 
 fetchstate fetchmode = INIT;
 fetchstate postInject = FETCH;	// Where to go after injection ends
+
+wire misaligned = PC[1];
+wire isfullinstr = (misaligned && (instruction[17:16] == 2'b11)) || (~misaligned && (instruction[1:0] == 2'b11));
+logic stepsize = 1'b1; // full step by default
 
 always @(posedge aclk) begin
 	if (~aresetn || ~rstnB) begin
@@ -203,23 +220,58 @@ always @(posedge aclk) begin
 			INIT: begin
 				fetchena <= romReady;
 				fetchmode <= romReady ? FETCH : INIT;
-				// Is this 4 byte aligned or 2 byte aligned?
-				// If we're 1 byte aligned throw a misaligned fetch exception
-				//misaligned <= PC[1:0] == 2'b00 ? 1'b0 : 1'b1;
 			end
 
 			FETCH: begin
+				// If we're correctly aligned and a full instruction, IR <= instruction
+				// If we're correctly and a half instuction, IR <= decompress(instruction[15:0])
+				// If we're misaligned and a half instuction, IR <= decompress(instruction[31:16])
+				// If we're misaligned and a full instruction, read next half (keep IR[31:16])
+
 				IR <= instruction;
-				// NOTE: For compressed mode, as soon as we notice this is
-				// a misaligned read and is not a compressed instruction, head to an extra 'FETCHREST' state
-				//fetchmode <= rready ? ((misaligned && !compressed) ? FETCHREST : STREAMOUT) : FETCH;
-				fetchmode <= rready ? STREAMOUT : FETCH;
+
+				// Upper half when misaligned, otherwise lower half
+				halfinstr <= misaligned ? instruction[31:16] : instruction[15:0];
+
+				unique case ({misaligned, isfullinstr})
+					2'b00: begin
+						// Correctly aligned half instruction
+						fetchmode <= rready ? DECOMPRESS : FETCH;
+					end
+					2'b01: begin
+						// Correctly aligned full instruction
+						fetchmode <= rready ? STREAMOUT : FETCH;
+					end
+					2'b10: begin
+						// Misaligned half instruction
+						fetchmode <= rready ? DECOMPRESS : FETCH;
+					end
+					2'b11: begin
+						// Misaligned full instruction
+						fetchmode <= rready ? FETCHREST : FETCH;
+					end
+				endcase
+
+				// Read second half
+				secondhalf <= rready && misaligned && isfullinstr;
+				fetchena <= rready && misaligned && isfullinstr;
+				stepsize <= isfullinstr;
+
+				// Offset to read from for misaligned shifted instruction
+				adjacentPC <= PC + 32'd2;
 			end
-			
-			/*FETCHREST: begin
-				// TODO: Combine rest of the misaligned instruction with previous IR so that IR <= {IR[15:0], instruction[15:0]}
-				fetchmode <= rready ? STREAMOUT : FETCH;
-			end*/
+
+			DECOMPRESS: begin
+				IR <= fullinstr;
+				fetchmode <= STREAMOUT;
+			end
+
+			FETCHREST: begin
+				// Combine the two halves of the misaligned instruction
+				IR <= {instruction[15:0], halfinstr};
+				secondhalf <= ~rready;
+				fetchmode <= rready ? STREAMOUT : FETCHREST;
+			end
 
 			STREAMOUT: begin
 				// Emit decoded instruction except:
@@ -234,7 +286,7 @@ always @(posedge aclk) begin
 					instrOneHotOut, selectimmedasrval2,
 					bluop, aluop,
 					rs1, rs2, rd,
-					PC, immed};
+					PC[31:1], stepsize, immed};
 
 				unique case (1'b1)
 				    // IRQ/EBREAK/ILLEGAL don't step the PC and do not submit the current instruction
@@ -242,10 +294,7 @@ always @(posedge aclk) begin
 					irqReq[1],
 					isebreak,
 					isillegalinstruction:					PC <= PC + 32'd0;
-					// No compressed instruction support:
-					default:								PC <= PC + 32'd4;
-					// Compressed instruction support:
-					//default:								PC <= PC + IR[1:0]==2'b11 ? 32'd4 : 32'd2;
+					default:								PC <= PC + (stepsize ? 32'd4 : 32'd2);
 				endcase
 
 				// Flush I$ if we have an IFENCE instruction and go to wait
@@ -273,7 +322,7 @@ always @(posedge aclk) begin
 				// Resume fetch when branch address is resolved
 				fetchena <= branchresolved;
 				// New PC to resume fetch at
-				PC <= branchresolved ? branchtarget : PC;
+				PC <= branchtarget;
 				fetchmode <= branchresolved ? FETCH : WAITNEWBRANCHTARGET;
 			end
 

@@ -107,7 +107,7 @@
 `define INSTR_CADDI			5'b00001 // HINT, nzimm=0 +
 `define INSTR_CJAL			5'b00101 // 32 +
 //`define INSTR_CADDIW		5'b00101 // 64/128
-`define INSTR_OPCODE_CLI	5'b01001
+`define INSTR_CLI			5'b01001
 `define INSTR_CADDI16SP		5'b01101
 `define INSTR_CLUI			5'b01101
 `define INSTR_CSRLI			5'b10001 //                      00      

@@ -29,6 +29,7 @@ assign cpuclocktime = cyclecount;
 assign retired = retiredcount;
 
 logic [31:0] PC;
+logic stepsize;
 logic [17:0] instrOneHotOut;
 logic [3:0] aluop;
 logic [2:0] bluop;
@@ -227,7 +228,8 @@ always @(posedge aclk) begin
 					instrOneHotOut, selectimmedasrval2,
 					bluop, aluop,
 					rs1, rs2, rd,
-					PC, immed} <= ififodout;
+					PC[31:1], stepsize, immed} <= ififodout;
+				PC[0] <= 1'b0; // NOTE: Since we don't do byte addressing, lowest bit is always set to zero
 				ififore <= (ififovalid && ~ififoempty);
 				ctlmode <= (ififovalid && ~ififoempty) ? READREG : READINSTR;
 			end
@@ -241,7 +243,7 @@ always @(posedge aclk) begin
 				wbdest <= rd;
 				rwaddress <= rval1 + immed;
 				offsetPC <= PC + immed;
-				adjacentPC <= PC + 32'd4;
+				adjacentPC <= PC + (stepsize ? 32'd4 : 32'd2);
 				mulstrobe <= (aluop==`ALU_MUL);
 				divstrobe <= (aluop==`ALU_DIV || aluop==`ALU_REM);				
 				mathop <= {aluop==`ALU_MUL, aluop==`ALU_DIV, aluop==`ALU_REM};
