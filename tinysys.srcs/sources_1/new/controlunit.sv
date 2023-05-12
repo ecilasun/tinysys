@@ -180,6 +180,8 @@ always @(posedge aclk) begin
 	end
 end
 
+logic pendingwrite = 1'b0;
+
 always @(posedge aclk) begin
 	if (~aresetn) begin
 
@@ -213,6 +215,9 @@ always @(posedge aclk) begin
 		divstrobe <= 1'b0;	// Stop integer div/rem strobe
 
 		wbdin <= 32'd0;
+
+		if (m_ibus.wdone)
+			pendingwrite <= 1'b0;
 		
 		unique case(ctlmode)
 			READINSTR: begin
@@ -241,7 +246,7 @@ always @(posedge aclk) begin
 				divstrobe <= (aluop==`ALU_DIV || aluop==`ALU_REM);				
 				mathop <= {aluop==`ALU_MUL, aluop==`ALU_DIV, aluop==`ALU_REM};
 				// Store doesn't wait in-place, but we can ensure there's no data in flight at this late point
-				ctlmode <= m_ibus.busy ? READREG : DISPATCH;
+				ctlmode <= pendingwrite ? READREG : DISPATCH;
 			end
 
 			DISPATCH: begin
@@ -259,6 +264,7 @@ always @(posedge aclk) begin
 					end
 					instrOneHotOut[`O_H_STORE]: begin
 						m_ibus.waddr <= rwaddress;
+						pendingwrite <= 1'b1;
 						unique case(func3)
 							3'b000:  m_ibus.wdata <= {B[7:0], B[7:0], B[7:0], B[7:0]};
 							3'b001:  m_ibus.wdata <= {B[15:0], B[15:0]};

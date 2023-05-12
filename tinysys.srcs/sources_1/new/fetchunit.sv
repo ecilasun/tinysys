@@ -176,7 +176,7 @@ wire isillegalinstruction = sie && ~(|instrOneHotOut);
 
 typedef enum logic [3:0] {
 	INIT,										// Startup
-	FETCH, STREAMOUT,							// Instuction fetch + stream loop
+	FETCH, /*FETCHREST,*/ STREAMOUT,			// Instuction fetch + stream loop
 	WAITNEWBRANCHTARGET, WAITIFENCE,			// Branch and fence handling
 	ENTERISR, EXITISR,							// ISR handling
 	STARTINJECT, INJECT, POSTENTER, POSTEXIT,	// ISR entry/exit instruction injection
@@ -203,12 +203,23 @@ always @(posedge aclk) begin
 			INIT: begin
 				fetchena <= romReady;
 				fetchmode <= romReady ? FETCH : INIT;
+				// Is this 4 byte aligned or 2 byte aligned?
+				// If we're 1 byte aligned throw a misaligned fetch exception
+				//misaligned <= PC[1:0] == 2'b00 ? 1'b0 : 1'b1;
 			end
 
 			FETCH: begin
 				IR <= instruction;
+				// NOTE: For compressed mode, as soon as we notice this is
+				// a misaligned read and is not a compressed instruction, head to an extra 'FETCHREST' state
+				//fetchmode <= rready ? ((misaligned && !compressed) ? FETCHREST : STREAMOUT) : FETCH;
 				fetchmode <= rready ? STREAMOUT : FETCH;
 			end
+			
+			/*FETCHREST: begin
+				// TODO: Combine rest of the misaligned instruction with previous IR so that IR <= {IR[15:0], instruction[15:0]}
+				fetchmode <= rready ? STREAMOUT : FETCH;
+			end*/
 
 			STREAMOUT: begin
 				// Emit decoded instruction except:
