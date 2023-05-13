@@ -63,6 +63,7 @@ always @(posedge aclk) begin
 		s_axi.wready <= 1'b0;
 		fifodin <= 32'd0;
 		writestate <= 1'b0;
+		fifowe <= 1'b0;
 	end else begin
 		fifowe <= 1'b0;
 		s_axi.wready <= 1'b0;

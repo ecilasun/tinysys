@@ -43,7 +43,6 @@ logic [16:0] ptag;					// previous cache tag (17 bits)
 logic [16:0] ctag;					// current cache tag (17 bits)
 logic [3:0] coffset;				// current word offset 0..15
 logic [7:0] cline;					// current cache line 0..256
-logic chit = 1'b0;
 
 logic cachelinewb[0:255];			// cache line needs write back when high
 logic cachelinevalid[0:255];		// cache line state (invalid / valid)
@@ -152,7 +151,6 @@ always_ff @(posedge aclk) begin
 				cline <= line;					// Cache line
 				ctag <= tag;					// Cache tag 00000..1ffff
 				ptag <= cachelinetags[line];	// Previous cache tag
-				chit <= (tag == cachelinetags[line]) && cachelinevalid[line];
 				inputdata <= din;
 
 				casex ({dcacheop[0], isuncached, ren, |wstrb})
@@ -273,7 +271,7 @@ always_ff @(posedge aclk) begin
 			end
 
 			CWRITE: begin
-				if (chit) begin
+				if ((ctag == ptag) && cachelinevalid[cline]) begin
 					cdin <= {	inputdata, inputdata, inputdata, inputdata,
 								inputdata, inputdata, inputdata, inputdata,
 								inputdata, inputdata, inputdata, inputdata,
@@ -306,7 +304,7 @@ always_ff @(posedge aclk) begin
 			end
 
 			CREAD: begin
-				if (chit) begin
+				if ((ctag == ptag) && cachelinevalid[cline]) begin
 					// Return word directly from cache
 					unique case(coffset)
 						4'b0000:  dout <= cdout[31:0];
@@ -362,7 +360,6 @@ always_ff @(posedge aclk) begin
 			end
 
 			CUPDATE: begin
-				chit <= 1'b1;
 				cachewe <= 64'hFFFFFFFFFFFFFFFF; // All entries
 				cdin <= {cachedin[3], cachedin[2], cachedin[1], cachedin[0]}; // Data from memory
 				cachestate <= CUPDATEDELAY;

@@ -152,7 +152,7 @@ integerdividersigned IDIVS (
 
 typedef enum logic [3:0] {
 	READINSTR, READREG,
-	DISPATCH,
+	WRITE, DISPATCH,
 	MATHWAIT, LWAIT,
 	SYSOP, SYSWBACK, SYSWAIT,
 	CSROPS, WCSROP,
@@ -248,7 +248,23 @@ always @(posedge aclk) begin
 				divstrobe <= (aluop==`ALU_DIV || aluop==`ALU_REM);				
 				mathop <= {aluop==`ALU_MUL, aluop==`ALU_DIV, aluop==`ALU_REM};
 				// Store doesn't wait in-place, but we can ensure there's no data in flight at this late point
-				ctlmode <= pendingwrite ? READREG : DISPATCH;
+				ctlmode <= pendingwrite ? READREG : (instrOneHotOut[`O_H_STORE] ? WRITE : DISPATCH);
+			end
+
+			WRITE: begin
+				m_ibus.waddr <= rwaddress;
+				pendingwrite <= 1'b1;
+				unique case(func3)
+					3'b000:  m_ibus.wdata <= {B[7:0], B[7:0], B[7:0], B[7:0]};
+					3'b001:  m_ibus.wdata <= {B[15:0], B[15:0]};
+					default: m_ibus.wdata <= B;
+				endcase
+				unique case(func3)
+					3'b000:  m_ibus.wstrobe <= {rwaddress[1]&rwaddress[0], rwaddress[1]&(~rwaddress[0]), (~rwaddress[1])&rwaddress[0], (~rwaddress[1])&(~rwaddress[0])};
+					3'b001:  m_ibus.wstrobe <= {rwaddress[1], rwaddress[1], ~rwaddress[1], ~rwaddress[1]};
+					default: m_ibus.wstrobe <= 4'b1111;
+				endcase
+				ctlmode <= READINSTR;
 			end
 
 			DISPATCH: begin
@@ -263,20 +279,6 @@ always @(posedge aclk) begin
 					instrOneHotOut[`O_H_LUI]: begin
 						wbdin <= instrOneHotOut[`O_H_AUIPC] ? offsetPC : D;
 						wback <= 1'b1;
-					end
-					instrOneHotOut[`O_H_STORE]: begin
-						m_ibus.waddr <= rwaddress;
-						pendingwrite <= 1'b1;
-						unique case(func3)
-							3'b000:  m_ibus.wdata <= {B[7:0], B[7:0], B[7:0], B[7:0]};
-							3'b001:  m_ibus.wdata <= {B[15:0], B[15:0]};
-							default: m_ibus.wdata <= B;
-						endcase
-						unique case(func3)
-							3'b000:  m_ibus.wstrobe <= {rwaddress[1]&rwaddress[0], rwaddress[1]&(~rwaddress[0]), (~rwaddress[1])&rwaddress[0], (~rwaddress[1])&(~rwaddress[0])};
-							3'b001:  m_ibus.wstrobe <= {rwaddress[1], rwaddress[1], ~rwaddress[1], ~rwaddress[1]};
-							default: m_ibus.wstrobe <= 4'b1111;
-						endcase
 					end
 					instrOneHotOut[`O_H_LOAD]: begin
 						m_ibus.raddr <= rwaddress;
@@ -296,7 +298,7 @@ always @(posedge aclk) begin
 				endcase
 
 				// sys, math, store and load require wait states
-				ctlmode <=	(mulstrobe || divstrobe) ? MATHWAIT : (instrOneHotOut[`O_H_SYSTEM] ? SYSOP : ( instrOneHotOut[`O_H_LOAD] ? LWAIT : (instrOneHotOut[`O_H_STORE] ? READINSTR : WBACK)));
+				ctlmode <=	(mulstrobe || divstrobe) ? MATHWAIT : (instrOneHotOut[`O_H_SYSTEM] ? SYSOP : ( instrOneHotOut[`O_H_LOAD] ? LWAIT : WBACK));
 			end
 
 			MATHWAIT: begin

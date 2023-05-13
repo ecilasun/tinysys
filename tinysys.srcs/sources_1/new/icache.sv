@@ -31,7 +31,6 @@ logic memreadstrobe = 1'b0;
 logic [16:0] ctag;					// current cache tag (17 bits)
 logic [3:0] coffset;				// current word offset 0..15
 logic [7:0] cline;					// current cache line 0..256
-logic chit = 1'b0;
 
 logic cachelinevalid[0:255];		// cache line state (invalid / valid)
 logic [16:0] cachelinetags[0:255];	// cache line tags (17 bits)
@@ -111,7 +110,6 @@ always_ff @(posedge aclk) begin
 				cline <= line;								// Cache line
 				ctag <= tag;								// Cache tag 00000..1ffff
 				dccount <= 8'h00;
-				chit <= (tag == cachelinetags[line]) && cachelinevalid[line];
 				cachestate <= icacheflush ? INVALIDATEBEGIN : (ren ? CREAD : IDLE);
 			end
 			
@@ -129,7 +127,7 @@ always_ff @(posedge aclk) begin
 			end
 
 			CREAD: begin
-				if (chit) begin // Hit
+				if ((ctag == cachelinetags[cline]) && cachelinevalid[cline]) begin // Hit
 					unique case(coffset)
 						4'b0000:  dataout <= cdout[31:0];
 						4'b0001:  dataout <= cdout[63:32];
@@ -167,7 +165,6 @@ always_ff @(posedge aclk) begin
 			end
 
 			CUPDATE: begin
-				chit <= 1'b1;
 				cachewe <= 64'hFFFFFFFFFFFFFFFF; // All entries
 				cdin <= {cachedin[3], cachedin[2], cachedin[1], cachedin[0]}; // Data from memory
 				cachestate <= CUPDATEDELAY;

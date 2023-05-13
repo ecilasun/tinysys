@@ -85,7 +85,8 @@ logic [1:0] sampleoutputrate = 2'b00;
 
 always_ff @(posedge aclk) begin
 	if (~aresetn) begin
-		//
+		bufferSwapCountCDC1 <= 32'd0;
+		bufferSwapCountCDC2 <= 32'd0;
 	end else begin
 		bufferSwapCountCDC1 <= bufferSwapCount;
 		bufferSwapCountCDC2 <= bufferSwapCountCDC1;

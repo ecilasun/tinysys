@@ -319,6 +319,10 @@ logic [31:0] blankcounter = 32'd0;
 
 always_ff @(posedge aclk) begin
 	if (~aresetn) begin
+		scanline <= 9'd0;
+		scanlinepre <= 9'd0;
+		scanpixelpre <= 9'd0;
+		scanpixel <= 9'd0;
 		blankcounter <= 32'd0;
 	end else begin
 		scanlinepre <= video_y[8:0];
