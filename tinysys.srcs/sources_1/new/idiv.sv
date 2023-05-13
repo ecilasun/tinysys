@@ -29,7 +29,9 @@ logic divstate = 1'b0;
 
 always @(negedge aclk) begin
     if (~aresetn) begin
-        //
+        sub_add <= 33'd0;
+        rem <= 32'd0;
+        quo <= 32'd0;
     end else begin
         sub_add <= r_sign ? ({reg_r,reg_q[31]}+{1'b0,reg_b}) : ({reg_r,reg_q[31]}-{1'b0,reg_b});
         rem <= r_sign ? reg_r + reg_b : reg_r;
@@ -105,7 +107,9 @@ logic divstate = 1'b0;
 
 always @(negedge aclk) begin
     if (~aresetn) begin
-        //
+        sub_add <= 33'd0;
+        rem <= 32'd0;
+        quo <= 32'd0;
     end else begin
         sub_add <= r_sign ? ({reg_r,reg_q[31]}+{1'b0,reg_b}) : ({reg_r,reg_q[31]}-{1'b0,reg_b});
         rem <= r_sign ? reg_r + reg_b : reg_r;
