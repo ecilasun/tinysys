@@ -294,7 +294,7 @@ always_ff @(posedge aclk) begin
 						4'b1110: cachewe <= { 4'd0,  bsel, 56'd0 };
 						4'b1111: cachewe <= {        bsel, 60'd0 };
 					endcase
-					// This cacbe line needs to be written back to memory on next miss
+					// This cache line needs to be written back to memory on next miss
 					cachelinewb[cline] <= 1'b1;
 					wready <= 1'b1;
 					cachestate <= IDLE;

@@ -16,6 +16,8 @@ module axi4ddr3sdram(
 
 wire aresetm;
 wire ui_clk;
+wire ui_clk_sync_rst;
+
 axi4if s_axi();
 
 axi4retimer axi4retimerinst(
@@ -27,14 +29,24 @@ axi4retimer axi4retimerinst(
 	.destrst(aresetm) );
 
 // --------------------------------------------------
+// Device temperature cdc from aclk to uiclk
+// --------------------------------------------------
+
+(* async_reg = "true" *) logic [11:0] device_tempcdcA = 12'd0;
+(* async_reg = "true" *) logic [11:0] device_tempcdcB = 12'd0;
+
+always @(posedge ui_clk) begin
+	device_tempcdcA <= device_temp;
+	device_tempcdcB <= device_tempcdcA;
+end
+
+// --------------------------------------------------
 // MIG7 - AXI4
 // --------------------------------------------------
 
 wire init_calib_complete;
 wire mmcm_locked;
 assign ddr3conn.init_calib_complete = init_calib_complete & mmcm_locked;
-
-wire ui_clk_sync_rst;
 
 mig_7series_0 ddr3instance (
     // memory interface ports
@@ -58,7 +70,7 @@ mig_7series_0 ddr3instance (
     .ui_clk                         (ui_clk),
     .ui_clk_sync_rst                (ui_clk_sync_rst),
     .device_temp					(),
-    .device_temp_i					(device_temp),
+    .device_temp_i					(device_tempcdcB),
 
     .mmcm_locked                    (mmcm_locked),
     .aresetn                        (aresetm),

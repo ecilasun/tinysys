@@ -51,9 +51,12 @@ initial begin
 	// Start same as timecmpshadow
 	csrmemory[`CSR_TIMECMPLO] = 32'hFFFFFFFF;
 	csrmemory[`CSR_TIMECMPHI] = 32'hFFFFFFFF;
+	// Machine ISA: compressed(bit2) rv32i(bit8), Zmmul(bit12), machine level
+	// NOTE: MISA is a r/w register
+	csrmemory[`CSR_MISA] = 32'h00001102;
 end
 
-// Write
+// Read/Write CSR
 always @(posedge aclk) begin
 	csrdout <= csrmemory[csrraddr];
 	if (csrwe)
@@ -157,7 +160,7 @@ always @(posedge aclk) begin
 					writestate <= 2'b10;
 				end
 			end
-			2'b10: begin // Generate a shadow copy of some registers
+			2'b10: begin // Generate a shadow copy of some registers as well as their true version in the CSR file
 				unique case (cswraddr)
 					`CSR_TIMECMPLO:	timecmpshadow[31:0] <= csrdin;
 					`CSR_TIMECMPHI:	timecmpshadow[63:32] <= csrdin;
@@ -192,18 +195,18 @@ always @(posedge aclk) begin
 			end
 			1'b1: begin
 				if (s_axi.rready) begin
+					// Some values such as timers and h/w states are dynamic and never end up in the CSR file, so make up a dynamic version for those
 					unique case (csrraddr)
-						`CSR_MHARTID:	s_axi.rdata[31:0] <= 0;//HARTID; // Immutable
+						`CSR_MHARTID:	s_axi.rdata[31:0] <= 0;//HARTID; // Immutable TODO: Pass HARTID comes from the current CSR address (i.e. hartid = addrs%4096; )
 						`CSR_RETIHI:	s_axi.rdata[31:0] <= retired[63:32];
 						`CSR_TIMEHI:	s_axi.rdata[31:0] <= wallclocktime[63:32];
 						`CSR_CYCLEHI:	s_axi.rdata[31:0] <= cpuclocktime[63:32];
 						`CSR_RETILO:	s_axi.rdata[31:0] <= retired[31:0];
 						`CSR_TIMELO:	s_axi.rdata[31:0] <= wallclocktime[31:0];
 						`CSR_CYCLELO:	s_axi.rdata[31:0] <= cpuclocktime[31:0];
-						`CSR_MISA:		s_axi.rdata[31:0] <= 32'h00001102; // Machine ISA: compressed(bit2) rv32i(bit8), Zmmul(bit12), machine level
 						// interrupt states of all hardware devices
 						`CSR_HWSTATE:	s_axi.rdata[31:0] <= {29'd0, usbirqcdcB, ~keyfifoempty, ~uartrcvempty};
-						default:		s_axi.rdata[31:0] <= csrdout;
+						default:		s_axi.rdata[31:0] <= csrdout;	// Pass through actual data
 					endcase
 					s_axi.rvalid <= 1'b1;
 					raddrstate <= 1'b0;
