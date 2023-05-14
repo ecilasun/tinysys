@@ -382,7 +382,7 @@ always @(posedge aclk) begin
 			end
 
 			CSROPS: begin
-				m_ibus.raddr <= {20'h80004, csroffset};
+				m_ibus.raddr <= {20'h80004, csroffset}; // TODO: 0x8000?+(CID<<12) but make sure CSR address space is at the end
 				m_ibus.rstrobe <= 1'b1;
 				ctlmode <= WCSROP;
 			end
@@ -396,7 +396,7 @@ always @(posedge aclk) begin
 
 			SYSWBACK: begin
 				// Update CSR register with read value
-				m_ibus.waddr <= {20'h80004, csroffset};
+				m_ibus.waddr <= {20'h80004, csroffset}; // TODO: 0x8000?+(CID<<12) but make sure CSR address space is at the end
 				m_ibus.wstrobe <= 4'b1111;
 				unique case (func3)
 					3'b001: begin // CSRRW
