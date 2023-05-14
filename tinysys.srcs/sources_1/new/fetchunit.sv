@@ -272,7 +272,7 @@ always @(posedge aclk) begin
 					instrOneHotOut, selectimmedasrval2,
 					bluop, aluop,
 					rs1, rs2, rd,
-					PC[31:1], stepsize, immed};
+					immed, PC[31:1], stepsize};
 
 				unique case (1'b1)
 				    // IRQ/EBREAK/ILLEGAL don't step the PC and do not submit the current instruction
@@ -404,7 +404,7 @@ always @(posedge aclk) begin
 					instrOneHotOut, selectimmedasrval2,
 					bluop, aluop,
 					rs1, rs2, rd,
-					PC, immed};
+					immed, PC};
 
 				// WARNING: Injection ignores all instruction handling and never advances the PC
 				fetchmode <= STARTINJECT;

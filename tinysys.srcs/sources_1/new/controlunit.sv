@@ -228,7 +228,7 @@ always @(posedge aclk) begin
 					instrOneHotOut, selectimmedasrval2,
 					bluop, aluop,
 					rs1, rs2, rd,
-					PC[31:1], stepsize, immed} <= ififodout;
+					immed, PC[31:1], stepsize} <= ififodout;
 				PC[0] <= 1'b0; // NOTE: Since we don't do byte addressing, lowest bit is always set to zero
 				ififore <= (ififovalid && ~ififoempty);
 				ctlmode <= (ififovalid && ~ififoempty) ? READREG : READINSTR;
