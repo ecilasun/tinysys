@@ -53,8 +53,9 @@ end
 // --------------------------------------------------
 
 logic fetchena = 1'b0;
+logic [31:0] prevPC = RESETVECTOR;
 logic [31:0] PC = RESETVECTOR;
-logic [31:0] adjacentPC = RESETVECTOR+32'd2;
+logic [31:0] adjacentPC = RESETVECTOR;
 logic [31:0] IR;
 wire rready;
 wire [31:0] instruction;
@@ -211,6 +212,8 @@ always @(posedge aclk) begin
 		ififowr_en <= 1'b0;
 		IR <= 32'd0;
 		PC <= RESETVECTOR;
+		prevPC <= RESETVECTOR;
+		adjacentPC <= RESETVECTOR;
 	end else begin
 
 		fetchena <= 1'b0;
@@ -245,6 +248,7 @@ always @(posedge aclk) begin
 
 				// Offset to read from for misaligned shifted instruction
 				adjacentPC <= PC + 32'd2;
+				prevPC <= PC;
 			end
 
 			FETCHREST: begin
@@ -275,8 +279,8 @@ always @(posedge aclk) begin
 					irqReq[0],
 					irqReq[1],
 					isebreak,
-					isillegalinstruction:					PC <= PC + 32'd0;
-					default:								PC <= PC + (stepsize ? 32'd4 : 32'd2);
+					isillegalinstruction:					PC <= prevPC;
+					default:								PC <= prevPC + (stepsize ? 32'd4 : 32'd2);
 				endcase
 
 				stepsize <= 1'b0; // Clear

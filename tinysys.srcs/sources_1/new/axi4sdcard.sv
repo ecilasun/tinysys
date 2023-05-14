@@ -128,8 +128,9 @@ always @(posedge spibaseclock) begin
 end
 
 wire outfifofull, outfifoempty, outfifovalid;
-logic outfifowe = 1'b0, outfifore = 1'b0;
-logic [7:0] outfifodin = 8'h00;
+logic outfifowe;
+logic outfifore = 1'b0;
+logic [7:0] outfifodin;
 wire [7:0] outfifodout;
 
 spimasteroutfifo sdcardoutputfifo(
@@ -175,6 +176,8 @@ end
 always @(posedge aclk) begin
 	if (~aresetn) begin
 		s_axi.bresp = 2'b00;
+		outfifodin <= 8'd0;
+		outfifowe <= 1'b0;
 	end else begin
 
 		outfifowe <= 1'b0;

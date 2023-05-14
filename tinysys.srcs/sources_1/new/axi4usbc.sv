@@ -81,7 +81,7 @@ end
 
 wire outfifofull, outfifoempty, outfifovalid;
 logic outfifowe = 1'b0, outfifore = 1'b0;
-logic [8:0] outfifodin = 9'h00;
+logic [8:0] outfifodin;
 wire [8:0] outfifodout;
 
 usbcspififo usbcoutputfifo(
@@ -139,7 +139,8 @@ end
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
-		s_axi.bresp = 2'b00;
+		s_axi.bresp <= 2'b00;
+		outfifodin <= 9'h00;
 	end else begin
 
 		outfifowe <= 1'b0;

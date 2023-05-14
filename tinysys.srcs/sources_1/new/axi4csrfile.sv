@@ -112,7 +112,7 @@ assign irqReq = {hwInterrupt, timerInterrupt};
 
 logic waddrstate = 1'b0;
 logic raddrstate = 1'b0;
-logic [1:0] writestate = 2'b00;
+logic [1:0] writestate;
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
@@ -139,6 +139,7 @@ always @(posedge aclk) begin
 		s_axi.bvalid <= 1'b0;
 		s_axi.wready <= 1'b0;
 		timecmpshadow <= 64'hFFFFFFFFFFFFFFFF;
+		writestate <= 2'b00;
 	end else begin
 		// write data
 		s_axi.wready <= 1'b0;
