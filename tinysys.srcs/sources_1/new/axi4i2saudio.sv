@@ -125,7 +125,6 @@ always_ff @(posedge aclk) begin
 	end else begin
 
 		re <= 1'b0;
-		//opl2fifowe <= 1'b0;
 
 		case (cmdmode)
 			WCMD: begin

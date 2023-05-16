@@ -16,9 +16,8 @@ module gpucore(
 	output wire [31:0] vblankcount);
 
 // A simple graphics unit with the following features:
-// - Two video output modes (320x240 and 640x480)
-// - Indexed color output (8bpp)
-// - Framebuffer scan-out from any cache aligned memory location
+// - Three video output modes (320x240 and 640x480 indexed, and 320x240 16bit)
+// - Framebuffer scan-out from any cache aligned memory location in mapped device memory
 // - Frame counter support for vsync implementations
 // - Memory mapped command buffer interface
 
@@ -43,6 +42,7 @@ module gpucore(
 // NOTE: First, set up the scanout address, then enable video scanout
 logic [31:0] scanaddr = 32'h00000000;
 logic [31:0] scanoffset = 0;
+logic [31:0] colorscanoffset = 0;
 logic scanenable = 1'b0;
 
 // --------------------------------------------------
@@ -68,27 +68,40 @@ assign gpufifore = cmdre;
 // --------------------------------------------------
 
 logic [7:0] burstlen = 'd20;	// 20 reads for 320*240, 40 reads for 640*480 in paletted mode (each read is 128bits)
-logic scanmode = 1'b0;			// 320 pixel mode (640 when high)
+logic scanwidth = 1'b0;			// 0:320 pixel wide, 1:640 pixel wide
+logic colormode = 1'b0;			// 0:indexed color, 1:16bit color
 
 // --------------------------------------------------
 // Scanline cache and output address selection
 // --------------------------------------------------
 
-logic [127:0] scanlinecache [0:63]; // 64 blocks of 16 pixels worth of scanline cache (20 used in index color 320*240 mode, 40 in 640*480)
+// The scanline cache is made of 64 blocks
+// Each block holds a set of 16 indexed color pixels in 8bit index color mode
+// Alternatively, they can hold 8 16bit RGB colors in truecolor mode (only 320-wide mode supports 16bit color at this point)
+// 20 enties are used in index color 320-wide mode
+// 40 enties are used in index color 640-wide mode
+logic [127:0] scanlinecache [0:63];
 
-// localindex is the 16 pixel pixel index counter, which can move either at 1:2 (pixel doubling) or 1:1 the scan rate (no doubling)
+// localindex is the 16 pixel index counter, which can move either at 1:2 (pixel doubling) or 1:1 the scan rate (no doubling)
 logic [3:0] localindex;
+// localtrue is the 8 pixel index counter, for the 16bit color mode
+logic [2:0] localtrue;
 // cacheindex is the 16 pixel wide block index across a scanline
 logic [5:0] cacheindex;
+// cachetrue is the 8 pixel wide block index across a scanline for 16bit color mode
+logic [5:0] cachetrue;
 
 always_comb begin
-	localindex = scanmode ? video_x[3:0] : video_x[4:1];
-	cacheindex = scanmode ? video_x[9:4] : video_x[10:5];
+	localtrue = scanwidth ? video_x[2:0] : video_x[3:1];
+	cachetrue = scanwidth ? video_x[8:3] : video_x[9:4];
+	localindex = scanwidth ? video_x[3:0] : video_x[4:1];
+	cacheindex = scanwidth ? video_x[9:4] : video_x[10:5];
 end
 
 logic [7:0] palettewa;
 logic palettewe = 1'b0;
 logic [7:0] palettera;
+logic [15:0] rgbcolor;
 logic [23:0] palettedin = 24'h000000;
 
 // Generate palette read address from current pixel's color index
@@ -96,6 +109,7 @@ always_ff @(posedge clk25) begin
 	if (~aresetn) begin
 		// 
 	end else begin
+		// Color index
 		unique case (localindex)
 			4'b0000: palettera <= scanlinecache[cacheindex][7 : 0];
 			4'b0001: palettera <= scanlinecache[cacheindex][15 : 8];
@@ -113,6 +127,25 @@ always_ff @(posedge clk25) begin
 			4'b1101: palettera <= scanlinecache[cacheindex][111 : 104];
 			4'b1110: palettera <= scanlinecache[cacheindex][119 : 112];
 			4'b1111: palettera <= scanlinecache[cacheindex][127 : 120];
+		endcase
+	end
+end
+
+// Generate actual RGB color for 16bit mode
+always_ff @(posedge clk25) begin
+	if (~aresetn) begin
+		// 
+	end else begin
+		// Color index
+		unique case (localtrue)
+			3'b000: rgbcolor <= scanlinecache[cachetrue][15 : 0];
+			3'b001: rgbcolor <= scanlinecache[cachetrue][31 : 16];
+			3'b010: rgbcolor <= scanlinecache[cachetrue][47 : 32];
+			3'b011: rgbcolor <= scanlinecache[cachetrue][63 : 48];
+			3'b100: rgbcolor <= scanlinecache[cachetrue][79 : 64];
+			3'b101: rgbcolor <= scanlinecache[cachetrue][95 : 80];
+			3'b110: rgbcolor <= scanlinecache[cachetrue][111 : 96];
+			3'b111: rgbcolor <= scanlinecache[cachetrue][127 : 112];
 		endcase
 	end
 end
@@ -139,7 +172,14 @@ always @(posedge clk25) begin // Tied to GPU clock
 	if (~aresetn) begin
 		paletteout <= 24'd0;
 	end else begin
-		paletteout <= (scanenable && scanline < 480) ? paletteentries[palettera] : 0;
+		unique case ({scanenable && (scanline < 480), colormode})
+			2'b10: paletteout <= paletteentries[palettera];
+			2'b11: paletteout <= {
+				rgbcolor[5:0],2'd0,		// G
+				rgbcolor[10:6],3'd0,	// R
+				rgbcolor[15:11],3'd0};	// B
+			default: paletteout <= 0;
+		endcase
 	end
 end
 
@@ -290,9 +330,9 @@ always_ff @(posedge aclk) begin
 			VMODE: begin
 				if (gpufifovalid && ~gpufifoempty) begin
 					scanenable <= gpufifodout[0]; // [0]: video output enabled when high, otherwise contents of scanline cache repeats across screen
-					burstlen <= gpufifodout[1] ? 'd39 : 'd19;		// [1]: 40 bursts for 640px, 20 bursts for 320px
-					scanmode <= gpufifodout[1];
-					// rgb_vs_pal <= gpufifodout[2]; // select 16bit BGR mode (5:6:5) when high vs 8bit paletted mode when low
+					burstlen <= (gpufifodout[1] || gpufifodout[2]) ? 'd39 : 'd19;	// [1]: 40 bursts for 640px, 40 or 20 bursts for 320px depending on colormode
+					scanwidth <= gpufifodout[1];	// 0:320-wide, 1:640-wide
+					colormode <= gpufifodout[2];	// 0:8bit indexed, 1:16bit rgb
 					// ? <= gpufifodout[31:3] unused for now
 					// Advance FIFO
 					cmdre <= 1'b1;
@@ -348,12 +388,13 @@ always_ff @(posedge aclk) begin
 	end else begin
 		case (scanstate)
 			DETECTSCANLINEEND: begin
-				if (scanpixel == 638 && scanline < 480 && (~scanline[0] || scanmode)) begin
+				if (scanpixel == 638 && scanline < 480 && (~scanline[0] || scanwidth)) begin
 					// Starting 2 pixels earlier than 640 (due to cdc delays we're actually at 640)
 					// We have now 162 pixels worth of time (ending at 800) to cache the next scanline
 					// This usually completes within 5 to 10 pixel's worth of time.
 					// That leaves us with plenty of time to do other memory read operations such as loading sprite data.
 					scanoffset <= scanline[8:0] * 640;
+					colorscanoffset <= {1'b0,scanline[8:1]} * 640;
 					scanstate <= scanenable ? STARTLOAD : DETECTSCANLINEEND;
 				end else
 					// NOTE: Below scanline 480 is a good time for pending raster write work to run
@@ -363,7 +404,11 @@ always_ff @(posedge aclk) begin
 				// This has to be a 64 byte cache aligned address to match cache burst reads we're running
 				// Each scanline is a multiple of 64 bytes, so no need to further align here unless we have an odd output size (320 and 640 work just fine)
 				m_axi.arlen <= burstlen;
-				m_axi.araddr <= scanaddr + ( scanmode ? scanoffset : {2'b00,scanoffset[31:2]});
+				case (1'b1)
+					scanwidth:	m_axi.araddr <= scanaddr + scanoffset;					// 640-wide indexed color
+					colormode:	m_axi.araddr <= scanaddr + colorscanoffset;				// 320-wide 16bit color
+					default:	m_axi.araddr <= scanaddr + {2'b00,scanoffset[31:2]};	// 320-wide indexed color
+				endcase
 				m_axi.arvalid <= 1;
 				scanstate <= TRIGGERBURST;
 			end
