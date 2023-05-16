@@ -28,6 +28,15 @@ module gpucore(
 // - Add rasterization support
 
 // --------------------------------------------------
+// Scanline and scan pixel cdc registers
+// --------------------------------------------------
+
+(* async_reg = "true" *) logic [8:0] scanlinepre = 'd0;
+(* async_reg = "true" *) logic [8:0] scanline = 'd0;
+(* async_reg = "true" *) logic [9:0] scanpixelpre = 'd0;
+(* async_reg = "true" *) logic [9:0] scanpixel = 'd0;
+
+// --------------------------------------------------
 // Scan setup
 // --------------------------------------------------
 
@@ -65,7 +74,7 @@ logic scanmode = 1'b0;			// 320 pixel mode (640 when high)
 // Scanline cache and output address selection
 // --------------------------------------------------
 
-logic [127:0] scanlinecache [0:63]; // 64 blocks of 16 pixels worth of scanline cache (20 used in index color 320*240 mode)
+logic [127:0] scanlinecache [0:63]; // 64 blocks of 16 pixels worth of scanline cache (20 used in index color 320*240 mode, 40 in 640*480)
 
 // localindex is the 16 pixel pixel index counter, which can move either at 1:2 (pixel doubling) or 1:1 the scan rate (no doubling)
 logic [3:0] localindex;
@@ -130,7 +139,7 @@ always @(posedge clk25) begin // Tied to GPU clock
 	if (~aresetn) begin
 		paletteout <= 24'd0;
 	end else begin
-		paletteout <= scanenable ? paletteentries[palettera] : 0;
+		paletteout <= (scanenable && scanline < 480) ? paletteentries[palettera] : 0;
 	end
 end
 
@@ -310,11 +319,7 @@ end
 // Scan-out logic
 // --------------------------------------------------
 
-// domain cross
-(* async_reg = "true" *) logic [8:0] scanlinepre = 'd0;
-(* async_reg = "true" *) logic [8:0] scanline = 'd0;
-(* async_reg = "true" *) logic [9:0] scanpixelpre = 'd0;
-(* async_reg = "true" *) logic [9:0] scanpixel = 'd0;
+// Vertical blanking counter
 logic [31:0] blankcounter = 32'd0;
 
 always_ff @(posedge aclk) begin
@@ -343,9 +348,11 @@ always_ff @(posedge aclk) begin
 	end else begin
 		case (scanstate)
 			DETECTSCANLINEEND: begin
-				if (scanpixel == 638 && scanline <= 480 && (~scanline[0] || scanmode)) begin
-					// Starting at pixel 640 (638 due to DC delay), we have 160 pixels worth of time to cache the next scanline
-					// This usually completes within 5 to 10 pixel's worth of time, way before the next scanline starts scanning
+				if (scanpixel == 638 && scanline < 480 && (~scanline[0] || scanmode)) begin
+					// Starting 2 pixels earlier than 640 (due to cdc delays we're actually at 640)
+					// We have now 162 pixels worth of time (ending at 800) to cache the next scanline
+					// This usually completes within 5 to 10 pixel's worth of time.
+					// That leaves us with plenty of time to do other memory read operations such as loading sprite data.
 					scanoffset <= scanline[8:0] * 640;
 					scanstate <= scanenable ? STARTLOAD : DETECTSCANLINEEND;
 				end else
