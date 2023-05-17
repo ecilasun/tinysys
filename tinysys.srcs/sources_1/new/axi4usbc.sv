@@ -21,6 +21,24 @@ wire [7:0] readdata;
 logic we = 1'b0;
 
 // ----------------------------------------------------------------------------
+// GPX cdc from usb to aclk domain
+// ----------------------------------------------------------------------------
+
+// cdc for usb interrupt line
+(* async_reg = "true" *) logic usbgpxcdcA = 1'b0;
+(* async_reg = "true" *) logic usbgpxcdcB = 1'b0;
+
+always @(posedge aclk) begin
+	if (~aresetn) begin
+		usbgpxcdcA <= 1'b0;
+		usbgpxcdcB <= 1'b0;
+	end else begin
+		usbgpxcdcA <= usbcconn.gpx;
+		usbgpxcdcB <= usbgpxcdcA;
+	end
+end
+
+// ----------------------------------------------------------------------------
 // spi master device
 // ----------------------------------------------------------------------------
 
@@ -204,7 +222,7 @@ always @(posedge aclk) begin
 			end
 			2'b10: begin
 				if (s_axi.rready) begin
-					s_axi.rdata <= {31'd0, ~infifoempty};
+					s_axi.rdata <= {30'd0, usbgpxcdcB, ~infifoempty};
 					s_axi.rvalid <= 1'b1;
 					raddrstate <= 2'b00;
 				end
