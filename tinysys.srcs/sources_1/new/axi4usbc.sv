@@ -10,9 +10,6 @@ module axi4usbc(
     max3420wires.def usbcconn,
 	axi4if.slave s_axi);
 
-assign usbcconn.resn = aresetn;	// Low during reset
-assign usbirq = ~usbcconn.irq;
-
 logic writestate = 1'b0;
 logic [1:0] raddrstate = 2'b00;
 
@@ -21,12 +18,16 @@ wire [7:0] readdata;
 logic we = 1'b0;
 
 // ----------------------------------------------------------------------------
-// GPX cdc from usb to aclk domain
+// GPX cdc from usb to aclk domain and other usb wiring
 // ----------------------------------------------------------------------------
 
 // cdc for usb interrupt line
 (* async_reg = "true" *) logic usbgpxcdcA = 1'b0;
 (* async_reg = "true" *) logic usbgpxcdcB = 1'b0;
+
+// cdc for usb interrupt line
+(* async_reg = "true" *) logic usbirqcdcA = 1'b1;
+(* async_reg = "true" *) logic usbirqcdcB = 1'b1;
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
@@ -35,8 +36,13 @@ always @(posedge aclk) begin
 	end else begin
 		usbgpxcdcA <= usbcconn.gpx;
 		usbgpxcdcB <= usbgpxcdcA;
+		usbirqcdcA <= usbcconn.irq;
+		usbirqcdcB <= usbirqcdcA;
 	end
 end
+
+assign usbirq = usbirqcdcB;
+assign usbcconn.resn = aresetn;	// Low during reset
 
 // ----------------------------------------------------------------------------
 // spi master device

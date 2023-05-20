@@ -177,7 +177,6 @@ always_ff @(posedge aclk) begin
 			CUPDATE: begin
 				cachewe <= 64'hFFFFFFFFFFFFFFFF; // All entries
 				cdin <= {cachedin[3], cachedin[2], cachedin[1], cachedin[0]}; // Data from memory
-				clineaddr <= cline;
 				clinedin <= {1'b1, ctag}; // valid + tag
 				clinewe <= 1'b1;
 				cachestate <= CUPDATEDELAY;

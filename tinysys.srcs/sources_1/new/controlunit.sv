@@ -34,6 +34,7 @@ logic [17:0] instrOneHotOut;
 logic [3:0] aluop;
 logic [2:0] bluop;
 logic [2:0] func3;
+logic [2:0] rfunc3;
 logic [6:0] func7;
 logic [11:0] func12;
 logic [4:0] rs1;
@@ -153,11 +154,10 @@ integerdividersigned IDIVS (
 typedef enum logic [3:0] {
 	READINSTR, READREG,
 	WRITE, DISPATCH,
-	MATHWAIT, LWAIT,
+	MATHWAIT,
 	SYSOP, SYSWBACK, SYSWAIT,
 	CSROPS, WCSROP,
-	SYSCDISCARD, SYSCFLUSH, WCACHE,
-	WBACK } controlunitmode;
+	SYSCDISCARD, SYSCFLUSH, WCACHE} controlunitmode;
 controlunitmode ctlmode = READINSTR;
 
 logic [31:0] rwaddress = 32'd0;
@@ -181,8 +181,54 @@ always @(posedge aclk) begin
 	end
 end
 
-logic pendingwrite = 1'b0;
+// WBACK
+wire pendingwback = rwen;
+logic pendingload = 1'b0;
 
+always_comb begin
+	if (m_ibus.rdone) begin
+		unique case(rfunc3)
+			3'b000: begin // BYTE with sign extension
+				unique case(rwaddress[1:0])
+					2'b11: begin rdin = {{24{m_ibus.rdata[31]}}, m_ibus.rdata[31:24]}; end
+					2'b10: begin rdin = {{24{m_ibus.rdata[23]}}, m_ibus.rdata[23:16]}; end
+					2'b01: begin rdin = {{24{m_ibus.rdata[15]}}, m_ibus.rdata[15:8]}; end
+					2'b00: begin rdin = {{24{m_ibus.rdata[7]}}, m_ibus.rdata[7:0]}; end
+				endcase
+			end
+			3'b001: begin // HALF with sign extension
+				unique case(rwaddress[1])
+					1'b1: begin rdin = {{16{m_ibus.rdata[31]}}, m_ibus.rdata[31:16]}; end
+					1'b0: begin rdin = {{16{m_ibus.rdata[15]}}, m_ibus.rdata[15:0]}; end
+				endcase
+			end
+			3'b100: begin // BYTE with zero extension
+				unique case(rwaddress[1:0])
+					2'b11: begin rdin = {24'd0, m_ibus.rdata[31:24]}; end
+					2'b10: begin rdin = {24'd0, m_ibus.rdata[23:16]}; end
+					2'b01: begin rdin = {24'd0, m_ibus.rdata[15:8]}; end
+					2'b00: begin rdin = {24'd0, m_ibus.rdata[7:0]}; end 
+				endcase
+			end
+			3'b101: begin // HALF with zero extension
+				unique case(rwaddress[1])
+					1'b1: begin rdin = {16'd0, m_ibus.rdata[31:16]}; end
+					1'b0: begin rdin = {16'd0, m_ibus.rdata[15:0]}; end
+				endcase
+			end
+			3'b010: begin // WORD
+				rdin = m_ibus.rdata;
+			end
+		endcase
+		rwen = m_ibus.rdone;
+	end else begin
+		rdin = wbdin;
+		rwen = wback;
+	end
+end
+
+// EXEC
+logic pendingwrite = 1'b0;
 always @(posedge aclk) begin
 	if (~aresetn) begin
 
@@ -192,11 +238,10 @@ always @(posedge aclk) begin
 		m_ibus.wstrobe <= 4'h0;
 		m_ibus.cstrobe <= 1'b0;
 		m_ibus.dcacheop <= 2'b0;
-		
+
 		ififore <= 1'b0;
-		rwen <= 1'b0;
 		wback <= 1'b0;
-		
+
 		B <= 32'd0;
 
 		wbdin <= 32'd0;
@@ -205,7 +250,6 @@ always @(posedge aclk) begin
 
 		btready <= 1'b0;	// Stop branch target ready strobe
 		ififore <= 1'b0;	// Stop instruction fifo read enable strobe
-		rwen <= 1'b0;		// Stop register writeback strobe
 		wback <= 1'b0;		// Stop register writeback shadow strobe 
 
 		m_ibus.rstrobe <= 1'b0;	// Stop data read strobe
@@ -217,9 +261,9 @@ always @(posedge aclk) begin
 
 		wbdin <= 32'd0;
 
-		if (m_ibus.wdone)
-			pendingwrite <= 1'b0;
-		
+		if (m_ibus.wdone) pendingwrite <= 1'b0;
+		if (m_ibus.rdone) pendingload <= 1'b0;
+
 		unique case(ctlmode)
 			READINSTR: begin
 				// Grab next decoded instruction if there's something in the FIFO
@@ -230,8 +274,8 @@ always @(posedge aclk) begin
 					rs1, rs2, rd,
 					immed, PC[31:1], stepsize} <= ififodout;
 				PC[0] <= 1'b0; // NOTE: Since we don't do byte addressing, lowest bit is always set to zero
-				ififore <= (ififovalid && ~ififoempty);
-				ctlmode <= (ififovalid && ~ififoempty) ? READREG : READINSTR;
+				ififore <= (ififovalid && ~ififoempty && ~pendingwback && ~pendingload);
+				ctlmode <= (ififovalid && ~ififoempty && ~pendingwback && ~pendingload) ? READREG : READINSTR;
 			end
 
 			READREG: begin
@@ -283,6 +327,8 @@ always @(posedge aclk) begin
 					instrOneHotOut[`O_H_LOAD]: begin
 						m_ibus.raddr <= rwaddress;
 						m_ibus.rstrobe <= 1'b1;
+						rfunc3 <= func3;
+						pendingload <= 1'b1;
 					end
 					instrOneHotOut[`O_H_JAL],
 					instrOneHotOut[`O_H_JALR]: begin
@@ -298,7 +344,7 @@ always @(posedge aclk) begin
 				endcase
 
 				// sys, math, store and load require wait states
-				ctlmode <=	(mulstrobe || divstrobe) ? MATHWAIT : (instrOneHotOut[`O_H_SYSTEM] ? SYSOP : ( instrOneHotOut[`O_H_LOAD] ? LWAIT : WBACK));
+				ctlmode <=	(mulstrobe || divstrobe) ? MATHWAIT : (instrOneHotOut[`O_H_SYSTEM] ? SYSOP : READINSTR);
 			end
 
 			MATHWAIT: begin
@@ -309,45 +355,7 @@ always @(posedge aclk) begin
 				endcase
 
 				wback <= (mulready || divready || divuready);
-				ctlmode <= (mulready || divready || divuready) ? WBACK : MATHWAIT;
-			end
-
-			LWAIT: begin
-				unique case(func3)
-					3'b000: begin // BYTE with sign extension
-						unique case(rwaddress[1:0])
-							2'b11: begin wbdin <= {{24{m_ibus.rdata[31]}}, m_ibus.rdata[31:24]}; end
-							2'b10: begin wbdin <= {{24{m_ibus.rdata[23]}}, m_ibus.rdata[23:16]}; end
-							2'b01: begin wbdin <= {{24{m_ibus.rdata[15]}}, m_ibus.rdata[15:8]}; end
-							2'b00: begin wbdin <= {{24{m_ibus.rdata[7]}}, m_ibus.rdata[7:0]}; end
-						endcase
-					end
-					3'b001: begin // HALF with sign extension
-						unique case(rwaddress[1])
-							1'b1: begin wbdin <= {{16{m_ibus.rdata[31]}}, m_ibus.rdata[31:16]}; end
-							1'b0: begin wbdin <= {{16{m_ibus.rdata[15]}}, m_ibus.rdata[15:0]}; end
-						endcase
-					end
-					3'b100: begin // BYTE with zero extension
-						unique case(rwaddress[1:0])
-							2'b11: begin wbdin <= {24'd0, m_ibus.rdata[31:24]}; end
-							2'b10: begin wbdin <= {24'd0, m_ibus.rdata[23:16]}; end
-							2'b01: begin wbdin <= {24'd0, m_ibus.rdata[15:8]}; end
-							2'b00: begin wbdin <= {24'd0, m_ibus.rdata[7:0]}; end 
-						endcase
-					end
-					3'b101: begin // HALF with zero extension
-						unique case(rwaddress[1])
-							1'b1: begin wbdin <= {16'd0, m_ibus.rdata[31:16]}; end
-							1'b0: begin wbdin <= {16'd0, m_ibus.rdata[15:0]}; end
-						endcase
-					end
-					3'b010: begin // WORD
-						wbdin <= m_ibus.rdata;
-					end
-				endcase
-				wback <= m_ibus.rdone;
-				ctlmode <= m_ibus.rdone ? WBACK : LWAIT;
+				ctlmode <= (mulready || divready || divuready) ? READINSTR : MATHWAIT;
 			end
 
 			SYSOP: begin
@@ -427,17 +435,11 @@ always @(posedge aclk) begin
 			end
 
 			SYSWAIT: begin
-				ctlmode <= m_ibus.wdone ? WBACK : SYSWAIT;
+				ctlmode <= m_ibus.wdone ? READINSTR : SYSWAIT;
 
 				// Store old CSR value in wbdest
 				wbdin <= csrprevval;
 				wback <= m_ibus.wdone;
-			end
-
-			WBACK: begin
-				rdin <= wbdin;
-				rwen <= wback;
-				ctlmode <= READINSTR;
 			end
 		endcase
 	end
