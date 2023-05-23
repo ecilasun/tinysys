@@ -64,6 +64,53 @@ logic cmdre = 1'b0;
 assign gpufifore = cmdre;
 
 // --------------------------------------------------
+// Character RAM
+// --------------------------------------------------
+
+// 80*60 for 640*480
+logic [7:0] charRAM[0:4799];
+
+initial begin
+	for (int i=0;i<4800;i++)
+		charRAM[i] = 0;
+end
+
+wire [6:0] charblockx = scanpixel[9:3];
+wire [5:0] charblocky = scanline[8:3];
+wire [12:0] charaddr = charblockx + charblocky*80;
+
+logic charwe = 1'b0;
+logic [7:0] charin;
+logic [12:0] charWaddr = 13'd0;
+always @(posedge aclk) begin
+	if (charwe)
+		charRAM[charWaddr] = charin;
+end
+
+wire [7:0] charOut = charRAM[charaddr];
+
+// --------------------------------------------------
+// Font ROM
+// --------------------------------------------------
+
+// 256*24 1bit grid
+logic [0:0] fontROM[0:6143];
+
+initial begin
+	$readmemh("font.mem", fontROM);
+end
+
+wire [5:0] charrow = {charOut[7:5],3'b0}; // (currentchar/32)*8
+wire [7:0] charcol = {charOut[4:0],3'b0}; // (currentchar%32)*8
+
+logic [15:0] fontAddrs;
+assign fontAddrs[7:0] = charcol + scanpixel[2:0]; 
+assign fontAddrs[15:8] = charrow + scanline[2:0];	// (charrow+(y%8))*256 + (charcol+(x%8))
+
+wire fontBit = fontROM[fontAddrs];
+wire [7:0] fontByte = {8{fontBit}};
+
+// --------------------------------------------------
 // Setup
 // --------------------------------------------------
 
@@ -165,8 +212,8 @@ always @(posedge clk25) begin // Tied to GPU clock
 		paletteout <= 24'd0;
 	end else begin
 		unique case ({scanenable && (scanline < 480), colormode})
-			2'b10: paletteout <= paletteentries[palettera];
-			2'b11: paletteout <= {
+			2'b10: paletteout <= fontByte ? 24'hFFFFFF : paletteentries[palettera];
+			2'b11: paletteout <= fontByte ? 24'hFFFFFF : {
 				rgbcolor[5:0],2'd0,		// G
 				rgbcolor[10:6],3'd0,	// R
 				rgbcolor[15:11],3'd0};	// B
@@ -198,7 +245,7 @@ hdmi_device HDMI(
    .pclk(clk25),
    .tmds_clk(clk125), // pixel clock x5
 
-   .in_vga_red(paletteout[15:8]),
+   .in_vga_red(paletteout[15:8]),		// TODO: Have other options for console compositing
    .in_vga_green(paletteout[23:16]),
    .in_vga_blue(paletteout[7:0]),
 
@@ -257,9 +304,7 @@ typedef enum logic [2:0] {
 	SETVPAGE,
 	SETPAL,
 	VMODE,
-	//DMASOURCE,
-	//DMATARGET,
-	//DMAKICK,
+	PUTCHAR,
 	FINALIZE } gpucmdmodetype;
 gpucmdmodetype cmdmode = WCMD;
 
@@ -274,6 +319,7 @@ always_ff @(posedge aclk) begin
 
 		cmdre <= 1'b0;
 		palettewe <= 1'b0;
+		charwe <= 1'b0;
 
 		case (cmdmode)
 			WCMD: begin
@@ -291,10 +337,7 @@ always_ff @(posedge aclk) begin
 					32'h00000000:	cmdmode <= SETVPAGE;	// Set the scanout start address (followed by 32bit cached memory address, 64 byte cache aligned)
 					32'h00000001:	cmdmode <= SETPAL;		// Set 24 bit color palette entry (followed by 8bit address+24bit color in next word)
 					32'h00000002:	cmdmode <= VMODE;		// Set up video mode or turn off scan logic (default is 320x240*8bit paletted)
-					// TODO: Primitive binning/setup, sprite draw, LBVH hit tests or anything else that makes sense to have here
-					//32'h000000??:	cmdmode <= DMASOURCE;	// Set up source address for DMA
-					//32'h000000??:	cmdmode <= DMATARGET;	// Set up target address for DMA
-					//32'h000000??:	cmdmode <= DMAKICK;		// Queue up a DMA operation (optionally zero-masked)
+					32'h00000003:	cmdmode <= PUTCHAR;		// Write one character at given x/y
 					default:		cmdmode <= FINALIZE;	// Invalid command, wait one clock and try next
 				endcase
 			end
@@ -341,13 +384,20 @@ always_ff @(posedge aclk) begin
 					cmdmode <= FINALIZE;
 				end
 			end
-
-			/*DMASOURCE: begin
+			
+			PUTCHAR: begin
+				if (gpufifovalid && ~gpufifoempty) begin
+					// bits[31:21]	-> unused for now, could be color/attribs etc
+					// bits[20:8]	-> x+y*80 (13 bits)
+					// bits[7:0]	-> char (8 bits)
+					charWaddr <= gpufifodout[20:8];
+					charwe <= 1'b1;
+					charin <= gpufifodout[7:0];
+					// Advance FIFO
+					cmdre <= 1'b1;
+					cmdmode <= FINALIZE;
+				end
 			end
-			DMATARGET: begin
-			end
-			DMAKICK: begin
-			end*/
 
 			FINALIZE: begin
 				cmdmode <= WCMD;

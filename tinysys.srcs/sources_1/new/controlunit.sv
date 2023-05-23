@@ -107,6 +107,7 @@ arithmeticlogic arithmeticlogicinst(
 // IMUL/IDIV
 // --------------------------------------------------
 
+logic subresetn = 1'b0;
 logic mulstrobe = 1'b0;
 logic divstrobe = 1'b0;
 logic [2:0] mathop = 3'b000;
@@ -115,7 +116,7 @@ wire mulready;
 wire [31:0] product;
 integermultiplier IMULSU(
     .aclk(aclk),
-    .aresetn(aresetn),
+    .aresetn(subresetn),
     .start(mulstrobe),
     .ready(mulready),
     .func3(func3),
@@ -127,7 +128,7 @@ wire divuready;
 wire [31:0] quotientu, remainderu;
 integerdividerunsigned IDIVU (
 	.aclk(aclk),
-	.aresetn(aresetn),
+	.aresetn(subresetn),
 	.start(divstrobe),
 	.ready(divuready),
 	.dividend(A),
@@ -139,7 +140,7 @@ wire divready;
 wire [31:0] quotient, remainder;
 integerdividersigned IDIVS (
 	.aclk(aclk),
-	.aresetn(aresetn),
+	.aresetn(subresetn),
 	.start(divstrobe),
 	.ready(divready),
 	.dividend(A),
@@ -152,13 +153,14 @@ integerdividersigned IDIVS (
 // --------------------------------------------------
 
 typedef enum logic [3:0] {
+	INIT,
 	READINSTR, READREG,
 	WRITE, DISPATCH,
 	MATHWAIT,
 	SYSOP, SYSWBACK, SYSWAIT,
 	CSROPS, WCSROP,
 	SYSCDISCARD, SYSCFLUSH, WCACHE} controlunitmode;
-controlunitmode ctlmode = READINSTR;
+controlunitmode ctlmode = INIT;
 
 logic [31:0] rwaddress = 32'd0;
 logic [31:0] offsetPC = 32'd0;
@@ -243,6 +245,7 @@ always @(posedge aclk) begin
 		wback <= 1'b0;
 
 		B <= 32'd0;
+		subresetn <= 1'b0;
 
 		wbdin <= 32'd0;
 
@@ -265,6 +268,11 @@ always @(posedge aclk) begin
 		if (m_ibus.rdone) pendingload <= 1'b0;
 
 		unique case(ctlmode)
+			INIT: begin
+				subresetn <= 1'b1;
+				ctlmode <= READINSTR;
+			end
+
 			READINSTR: begin
 				// Grab next decoded instruction if there's something in the FIFO
 				{	rs3, func7, csroffset,
