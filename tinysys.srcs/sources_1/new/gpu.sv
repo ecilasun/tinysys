@@ -82,6 +82,7 @@ wire [12:0] charaddr = charblockx + charblocky*80;
 logic charwe = 1'b0;
 logic [7:0] charin;
 logic [12:0] charWaddr = 13'd0;
+
 always @(posedge aclk) begin
 	if (charwe)
 		charRAM[charWaddr] = charin;
