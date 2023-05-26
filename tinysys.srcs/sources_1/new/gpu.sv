@@ -84,8 +84,12 @@ logic [15:0] charin;
 logic [12:0] charWaddr;
 
 always @(posedge aclk) begin
-	if (charwe)
-		charRAM[charWaddr] <= charin;
+	if (~aresetn) begin
+		//
+	end else begin
+		if (charwe)
+			charRAM[charWaddr] <= charin;
+	end
 end
 
 wire [7:0] charOut = charRAM[charaddr][7:0];
