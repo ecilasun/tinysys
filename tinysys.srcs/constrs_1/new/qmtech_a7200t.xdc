@@ -3,7 +3,7 @@
 ## ------------------------------------------------------------------------------------------------------
 
 ## (C) 2023 Engin Cilasun
-## Applies to expansion board ISSUE-1A
+## Applies to expansion board ISSUE-1E/1F
 ## Please do not change/remove the Clock Groups or False Paths regardless of the warnings during synth
 ## Also note that changing any of the pin positions will change the timing closure of the device
 ## due to changes in placing and routing
@@ -25,39 +25,26 @@ create_clock -period 20.000 -name sys_clk_pin -waveform {0.000 10.000} -add [get
 ## LEDs
 ## ------------------------------------------------------------------------------------------------------
 
-## LED[0]: pin U2:45    [V20]
-## LED[1]: pin U2:47    [U18]
-## LED[2]: pin U2:49    [V19]
-## LED[3]: pin U2:51    [AB22]
+## LED[0]: pin U2:[U21]
+## LED[1]: pin U2:[V20]
+## LED[2]: pin U2:[U18]
+## LED[3]: pin U2:[V19]
 
-set_property -dict {PACKAGE_PIN V20 IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
-set_property -dict {PACKAGE_PIN U18 IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
-set_property -dict {PACKAGE_PIN V19 IOSTANDARD LVCMOS33} [get_ports {leds[2]}]
-set_property -dict {PACKAGE_PIN AB22 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
+set_property -dict {PACKAGE_PIN U21 IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
+set_property -dict {PACKAGE_PIN V20 IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
+set_property -dict {PACKAGE_PIN U18 IOSTANDARD LVCMOS33} [get_ports {leds[2]}]
+set_property -dict {PACKAGE_PIN V19 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
 
 
 ## ------------------------------------------------------------------------------------------------------
 ## UART Tx/Rx debug port (tie to an external USB-UART cable or other device)
 ## ------------------------------------------------------------------------------------------------------
 
-## Sorted by UART module pin order
-## VCC:     pin U4:3&4
-## GND:     pin U4:1&2&5&6
-## RXD_OUT: pin U4:7         [B1]
-## TDX_IN:  pin U4:9         [C2]
+## RXD_OUT: pin U4:23         [M1]
+## TDX_IN:  pin U4:25         [K4]
 
-set_property -dict {PACKAGE_PIN B1 IOSTANDARD LVCMOS33} [get_ports uart_rxd_out]
-set_property -dict {PACKAGE_PIN C2 IOSTANDARD LVCMOS33} [get_ports uart_txd_in]
-
-## ------------------------------------------------------------------------------------------------------
-## USB-A - USB host connector - WiP, will replace with a MAX3421
-## ------------------------------------------------------------------------------------------------------
-
-## usb_d_p:   pin U2:60    [AA18]
-## usb_d_n:   pin U2:59    [AB18]
-
-set_property -dict {PACKAGE_PIN AA18 IOSTANDARD LVCMOS33} [get_ports usb_d_p]
-set_property -dict {PACKAGE_PIN AB18 IOSTANDARD LVCMOS33} [get_ports usb_d_n]
+set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports uart_rxd_out]
+set_property -dict {PACKAGE_PIN K4 IOSTANDARD LVCMOS33} [get_ports uart_txd_in]
 
 ## ------------------------------------------------------------------------------------------------------
 ## Micro SD card
@@ -65,22 +52,22 @@ set_property -dict {PACKAGE_PIN AB18 IOSTANDARD LVCMOS33} [get_ports usb_d_n]
 
 ## Sorted by sdcard pin order
 ## SD     SPI
-## DAT[2] -         pin U2:46  [U20]  sdpin#1
-## DAT[3] CSn       pin U2:48  [U17]  sdpin#2
-## CMD    MOSI 	    pin U2:50  [V18]  sdpin#3
+## DAT[2] -         pin U2:58  [Y18]  sdpin#1
+## DAT[3] CSn       pin U2:56  [AA19] sdpin#2
+## CMD    MOSI 	    pin U2:54  [AA20] sdpin#3
 ## VDD    VDD       VCC               sdpin#4
 ## CLK    SCLK      pin U2:52  [AB21] sdpin#5
 ## VSS    VSS       GND               sdpin#6
-## DAT[0] MISO      pin U2:54  [AA20] sdpin#7
-## DAT[1] -         pin U2:56  [AA19] sdpin#8
-## SWTCH            pin U2:58  [Y18]  sdpin#switch
+## DAT[0] MISO      pin U2:50  [V18]  sdpin#7
+## DAT[1] -         pin U2:48  [U17]  sdpin#8
+## SWTCH            pin U2:46  [U20]  sdpin#switch
 
 ## SPI mode - sorted by sdcard pin order
-set_property -dict {PACKAGE_PIN U17 IOSTANDARD LVCMOS33} [get_ports sdcard_cs_n]
-set_property -dict {PACKAGE_PIN V18 IOSTANDARD LVCMOS33} [get_ports sdcard_mosi]
+set_property -dict {PACKAGE_PIN AA19 IOSTANDARD LVCMOS33} [get_ports sdcard_cs_n]
+set_property -dict {PACKAGE_PIN AA20 IOSTANDARD LVCMOS33} [get_ports sdcard_mosi]
 set_property -dict {PACKAGE_PIN AB21 IOSTANDARD LVCMOS33} [get_ports sdcard_clk]
-set_property -dict {PACKAGE_PIN AA20 IOSTANDARD LVCMOS33} [get_ports sdcard_miso]
-set_property -dict {PACKAGE_PIN Y18 IOSTANDARD LVCMOS33} [get_ports sdcard_swtch]
+set_property -dict {PACKAGE_PIN V18  IOSTANDARD LVCMOS33} [get_ports sdcard_miso]
+set_property -dict {PACKAGE_PIN U20  IOSTANDARD LVCMOS33} [get_ports sdcard_swtch]
 
 ## SD mode - sorted by sdcard pin order
 ## set_property -dict {PACKAGE_PIN U20 IOSTANDARD LVCMOS33} [get_ports {sd_dat[2]}]
@@ -104,10 +91,10 @@ set_property -dict {PACKAGE_PIN Y18 IOSTANDARD LVCMOS33} [get_ports sdcard_swtch
 ## hdmi_tx_p[0]  pin U4:47 [AB3]
 ## hdmi_tx_n[0]  pin U4:48 [AB2]
 
-set_property -dict {PACKAGE_PIN T1 IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_p]
-set_property -dict {PACKAGE_PIN U1 IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_n]
-set_property -dict {PACKAGE_PIN W1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[1]}]
-set_property -dict {PACKAGE_PIN Y1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[1]}]
+set_property -dict {PACKAGE_PIN T1  IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_p]
+set_property -dict {PACKAGE_PIN U1  IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_n]
+set_property -dict {PACKAGE_PIN W1  IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[1]}]
+set_property -dict {PACKAGE_PIN Y1  IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[1]}]
 set_property -dict {PACKAGE_PIN AA1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[2]}]
 set_property -dict {PACKAGE_PIN AB1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[2]}]
 set_property -dict {PACKAGE_PIN AB3 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[0]}]
@@ -174,6 +161,18 @@ set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports usbc_int]
 set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
 ## MAX3420E's INT pin requires an external pullup resistor when in INTLEVEL mode
 set_property PULLUP TRUE [get_ports usbc_int]
+
+## ------------------------------------------------------------------------------------------------------
+## USB-A - MAX3421EECJ over SPI interface
+## ------------------------------------------------------------------------------------------------------
+
+## usbclk     pin U2:59  [AB18] -> up to 26MHz
+## usbmosi    pin U2:55  [AB20] -> spi mosi
+## usbmiso    pin U2:57  [Y19] -> spi miso
+## usbres_n   pin U2:51  [AB22] -> hold low to reset the chip
+## usbbss_n   pin U2:60  [AA18] -> slave select input, active low (required to send spi commands)
+## usbint     pin U2:53  [AA21] -> set the IE bit(bit#0) in the CPUCTL(r16) register to enable interrupts
+## usbgpx     pin U2:  [] -> not connected
 
 ## ------------------------------------------------------------------------------------------------------
 ## NMI switch

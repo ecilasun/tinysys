@@ -10,9 +10,6 @@ module tophat(
     // UART - USB-c module
     ,output wire uart_rxd_out
 	,input wire uart_txd_in
-	// USB RX/TX
-	,inout wire usb_d_p
-	,inout wire usb_d_n
 	// DDR3 SDRAM
 	,output wire ddr3_reset_n
 	,output wire [0:0] ddr3_cke
@@ -47,6 +44,8 @@ module tophat(
 	,output wire usbc_resn
 	,input wire usbc_int
 	,input wire usbc_gpx
+	// USB-A via MAX4321
+	// TODO: wire the pins here
 	// ADC
 	,output wire adclk
 	,input wire addout
