@@ -18,8 +18,8 @@ assign romReady = ROMavailable;
 // ------------------------------------------------------------------------------------
 
 localparam ROMSTART = RESETVECTOR;						// This is also the start of the ROM target
-localparam ROMSIZE = 8192;								// Full size of the actual ROM including blank space
-localparam ROMIMAGEEND = ROMSTART + (ROMSIZE-1)*16;		// We assume a full ROM image of 8192 entries
+localparam ROMSIZE = 4096;								// Full size of the actual ROM including blank space
+localparam ROMIMAGEEND = ROMSTART + (ROMSIZE-1)*16;		// We assume a full ROM image of 4096 entries (64Kbytes)
 logic [12:0] bootROMaddr;
 logic [127:0] bootROM[0:ROMSIZE-1];
 
@@ -28,6 +28,7 @@ initial begin
 	for (int i=0; i<ROMSIZE; ++i)
 		bootROM[i] = 128'd0;
 	// Replace start section with actual ROM contents
+	// Make sure this binary is <= 64Kbytes (i.e. < 4096 cache entries)
 	$readmemh("romimage.mem", bootROM);
 end
 
