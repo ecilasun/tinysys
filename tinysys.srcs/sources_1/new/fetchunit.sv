@@ -32,21 +32,13 @@ module fetchunit #(
 // Reset CDC and debounce
 // --------------------------------------------------
 
-logic prevresetn = 1'b1;
 wire stableresetn;
 
 debounce resetnswtchdebounce(
-	.clk(clk10),
+	.clk(aclk),
 	.reset(~aresetn),
 	.bouncy(sysresetn),
 	.stable(stableresetn) );
-
-(* async_reg = "true" *) logic rstnA = 1'b1;
-(* async_reg = "true" *) logic rstnB = 1'b1;
-always @(posedge aclk) begin
-	rstnA <= stableresetn;
-	rstnB <= rstnA;
-end
 
 // --------------------------------------------------
 // Internal states
@@ -206,7 +198,7 @@ fetchstate postInject = FETCH;	// Where to go after injection ends
 logic [15:0] lowerhalf = 16'd0;
 
 always @(posedge aclk) begin
-	if (~aresetn || ~rstnB) begin
+	if (~aresetn || ~stableresetn) begin
 		fetchmode <= INIT;
 		fetchena <= 1'b0;
 		ififowr_en <= 1'b0;
