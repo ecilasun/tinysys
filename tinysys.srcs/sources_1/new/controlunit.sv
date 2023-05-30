@@ -107,7 +107,6 @@ arithmeticlogic arithmeticlogicinst(
 // IMUL/IDIV
 // --------------------------------------------------
 
-logic subresetn = 1'b0;
 logic mulstrobe = 1'b0;
 logic divstrobe = 1'b0;
 logic [2:0] mathop = 3'b000;
@@ -116,7 +115,7 @@ wire mulready;
 wire [31:0] product;
 integermultiplier IMULSU(
     .aclk(aclk),
-    .aresetn(subresetn),
+    .aresetn(aresetn),
     .start(mulstrobe),
     .ready(mulready),
     .func3(func3),
@@ -128,7 +127,7 @@ wire divuready;
 wire [31:0] quotientu, remainderu;
 integerdividerunsigned IDIVU (
 	.aclk(aclk),
-	.aresetn(subresetn),
+	.aresetn(aresetn),
 	.start(divstrobe),
 	.ready(divuready),
 	.dividend(A),
@@ -140,7 +139,7 @@ wire divready;
 wire [31:0] quotient, remainder;
 integerdividersigned IDIVS (
 	.aclk(aclk),
-	.aresetn(subresetn),
+	.aresetn(aresetn),
 	.start(divstrobe),
 	.ready(divready),
 	.dividend(A),
@@ -256,7 +255,6 @@ always @(posedge aclk) begin
 			m_ibus.wstrobe <= 4'h0;
 			m_ibus.cstrobe <= 1'b0;
 			m_ibus.dcacheop <= 2'b0;
-			subresetn <= 1'b1;
 			ctlmode <= READINSTR;
 		end
 
@@ -439,7 +437,6 @@ always @(posedge aclk) begin
 	endcase
 
 	if (~aresetn) begin
-		subresetn <= 1'b0;
 		ctlmode <= INIT;
 	end
 end

@@ -78,14 +78,15 @@ always @(posedge aclk) begin
 	// Common condition to fire an IRQ:
 	// Fetch isn't holding an IRQ, specific interrups are enabled, and global machine interrupts are enabled
 
-	// Software interrupt
-	softInterruptEna <= mieshadow[0] && mstatusIEshadow; // The rest of this condition is in fetch unit (based on instruction)
+	softInterruptEna <= mieshadow[0] && mstatusIEshadow; // Software interrupt (The rest of this condition is in fetch unit based on instruction)
+	timerInterrupt <= mieshadow[1] && mstatusIEshadow && (wallclocktime >= timecmpshadow); // Timer interrupt
+	hwInterrupt <= mieshadow[2] && mstatusIEshadow && (~uartrcvempty || ~keyfifoempty || ~usbirq); // Machine external interrupt (UART, SDCard Switch)
 
-	// Timer interrupt
-	timerInterrupt <= mieshadow[1] && mstatusIEshadow && (wallclocktime >= timecmpshadow);
-
-	// Machine external interrupt (UART, SDCard Switch)
-	hwInterrupt <= mieshadow[2] && mstatusIEshadow && (~uartrcvempty || ~keyfifoempty || ~usbirq); // USB irq is active low
+	if (~aresetn) begin
+		softInterruptEna <= 0;
+		timerInterrupt <= 0;
+		hwInterrupt <= 0;
+	end
 end
 
 assign sie = softInterruptEna;
