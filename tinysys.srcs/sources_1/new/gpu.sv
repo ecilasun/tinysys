@@ -84,12 +84,8 @@ logic [15:0] charin;
 logic [12:0] charWaddr;
 
 always @(posedge aclk) begin
-	if (~aresetn) begin
-		//
-	end else begin
-		if (charwe)
-			charRAM[charWaddr] <= charin;
-	end
+	if (charwe)
+		charRAM[charWaddr] <= charin;
 end
 
 wire [7:0] charOut = charRAM[charaddr][7:0];
@@ -152,48 +148,40 @@ logic [23:0] palettedin = 24'h000000;
 
 // Generate palette read address from current pixel's color index
 always_ff @(posedge clk25) begin
-	if (~aresetn) begin
-		// 
-	end else begin
-		// Color index
-		unique case (colorpixel)
-			4'b0000: palettera <= scanlinecache[colorblock][7 : 0];
-			4'b0001: palettera <= scanlinecache[colorblock][15 : 8];
-			4'b0010: palettera <= scanlinecache[colorblock][23 : 16];
-			4'b0011: palettera <= scanlinecache[colorblock][31 : 24];
-			4'b0100: palettera <= scanlinecache[colorblock][39 : 32];
-			4'b0101: palettera <= scanlinecache[colorblock][47 : 40];
-			4'b0110: palettera <= scanlinecache[colorblock][55 : 48];
-			4'b0111: palettera <= scanlinecache[colorblock][63 : 56];
-			4'b1000: palettera <= scanlinecache[colorblock][71 : 64];
-			4'b1001: palettera <= scanlinecache[colorblock][79 : 72];
-			4'b1010: palettera <= scanlinecache[colorblock][87 : 80];
-			4'b1011: palettera <= scanlinecache[colorblock][95 : 88];
-			4'b1100: palettera <= scanlinecache[colorblock][103 : 96];
-			4'b1101: palettera <= scanlinecache[colorblock][111 : 104];
-			4'b1110: palettera <= scanlinecache[colorblock][119 : 112];
-			4'b1111: palettera <= scanlinecache[colorblock][127 : 120];
-		endcase
-	end
+	// Color index
+	unique case (colorpixel)
+		4'b0000: palettera <= scanlinecache[colorblock][7 : 0];
+		4'b0001: palettera <= scanlinecache[colorblock][15 : 8];
+		4'b0010: palettera <= scanlinecache[colorblock][23 : 16];
+		4'b0011: palettera <= scanlinecache[colorblock][31 : 24];
+		4'b0100: palettera <= scanlinecache[colorblock][39 : 32];
+		4'b0101: palettera <= scanlinecache[colorblock][47 : 40];
+		4'b0110: palettera <= scanlinecache[colorblock][55 : 48];
+		4'b0111: palettera <= scanlinecache[colorblock][63 : 56];
+		4'b1000: palettera <= scanlinecache[colorblock][71 : 64];
+		4'b1001: palettera <= scanlinecache[colorblock][79 : 72];
+		4'b1010: palettera <= scanlinecache[colorblock][87 : 80];
+		4'b1011: palettera <= scanlinecache[colorblock][95 : 88];
+		4'b1100: palettera <= scanlinecache[colorblock][103 : 96];
+		4'b1101: palettera <= scanlinecache[colorblock][111 : 104];
+		4'b1110: palettera <= scanlinecache[colorblock][119 : 112];
+		4'b1111: palettera <= scanlinecache[colorblock][127 : 120];
+	endcase
 end
 
 // Generate actual RGB color for 16bit mode
 always_ff @(posedge clk25) begin
-	if (~aresetn) begin
-		// 
-	end else begin
-		// Color index
-		unique case (colorpixel[2:0])
-			3'b000: rgbcolor <= scanlinecache[colorblock][15 : 0];
-			3'b001: rgbcolor <= scanlinecache[colorblock][31 : 16];
-			3'b010: rgbcolor <= scanlinecache[colorblock][47 : 32];
-			3'b011: rgbcolor <= scanlinecache[colorblock][63 : 48];
-			3'b100: rgbcolor <= scanlinecache[colorblock][79 : 64];
-			3'b101: rgbcolor <= scanlinecache[colorblock][95 : 80];
-			3'b110: rgbcolor <= scanlinecache[colorblock][111 : 96];
-			3'b111: rgbcolor <= scanlinecache[colorblock][127 : 112];
-		endcase
-	end
+	// Color index
+	unique case (colorpixel[2:0])
+		3'b000: rgbcolor <= scanlinecache[colorblock][15 : 0];
+		3'b001: rgbcolor <= scanlinecache[colorblock][31 : 16];
+		3'b010: rgbcolor <= scanlinecache[colorblock][47 : 32];
+		3'b011: rgbcolor <= scanlinecache[colorblock][63 : 48];
+		3'b100: rgbcolor <= scanlinecache[colorblock][79 : 64];
+		3'b101: rgbcolor <= scanlinecache[colorblock][95 : 80];
+		3'b110: rgbcolor <= scanlinecache[colorblock][111 : 96];
+		3'b111: rgbcolor <= scanlinecache[colorblock][127 : 112];
+	endcase
 end
 
 // --------------------------------------------------
@@ -213,23 +201,19 @@ always @(posedge aclk) begin // Tied to GPU clock
 end
 
 // Read port
-logic [23:0] paletteout;
+logic [23:0] paletteout = 0;
 always @(posedge clk25) begin // Tied to GPU clock
-	if (~aresetn) begin
-		paletteout <= 24'd0;
-	end else begin
-		// NOTE: This currently uses MASK mode
-		// All possible modes:
-		// MASK / MAX / REPLACE / BLEND
-		unique case ({scanenable && (scanline < 480), colormode})
-			2'b10: paletteout <= fontPixel ? paletteentries[fontColor] : paletteentries[palettera];
-			2'b11: paletteout <= fontPixel ? paletteentries[fontColor] : {
-				rgbcolor[5:0],2'd0,		// G
-				rgbcolor[10:6],3'd0,	// R
-				rgbcolor[15:11],3'd0};	// B
-			default: paletteout <= 0;
-		endcase
-	end
+	// NOTE: This currently uses MASK mode
+	// All possible modes:
+	// MASK / MAX / REPLACE / BLEND
+	unique case ({scanenable && (scanline < 480), colormode})
+		2'b10: paletteout <= fontPixel ? paletteentries[fontColor] : paletteentries[palettera];
+		2'b11: paletteout <= fontPixel ? paletteentries[fontColor] : {
+			rgbcolor[5:0],2'd0,		// G
+			rgbcolor[10:6],3'd0,	// R
+			rgbcolor[15:11],3'd0};	// B
+		default: paletteout <= 0;
+	endcase
 end
 
 // --------------------------------------------------
@@ -300,8 +284,8 @@ assign m_axi.wlast = 0;
 assign m_axi.wdata = 'd0;
 assign m_axi.bready = 0;
 
-typedef enum logic [2:0] {DETECTSCANLINEEND, STARTLOAD, TRIGGERBURST, DATABURST} scanstatetype;
-scanstatetype scanstate = DETECTSCANLINEEND;
+typedef enum logic [2:0] {SINIT, DETECTSCANLINEEND, STARTLOAD, TRIGGERBURST, DATABURST} scanstatetype;
+scanstatetype scanstate = SINIT;
 
 logic [6:0] rdata_cnt = 'd0;
 
@@ -310,111 +294,113 @@ logic [6:0] rdata_cnt = 'd0;
 // --------------------------------------------------
 
 typedef enum logic [2:0] {
+	CINIT,
 	WCMD, DISPATCH,
 	SETVPAGE,
 	SETPAL,
 	VMODE,
 	PUTCHAR,
 	FINALIZE } gpucmdmodetype;
-gpucmdmodetype cmdmode = WCMD;
+gpucmdmodetype cmdmode = CINIT;
 
 logic [31:0] gpucmd = 'd0;
 
 always_ff @(posedge aclk) begin
-	if (~aresetn) begin
-		cmdmode <= WCMD;
-		cmdre <= 1'b0;
-		palettewe <= 1'b0;
-	end else begin
+	cmdre <= 1'b0;
+	palettewe <= 1'b0;
+	charWaddr <= 13'dz;
+	charwe <= 1'b0;
 
-		cmdre <= 1'b0;
-		palettewe <= 1'b0;
-		charWaddr <= 13'dz;
-		charwe <= 1'b0;
+	case (cmdmode)
+		CINIT: begin
+			cmdmode <= WCMD;
+		end
 
-		case (cmdmode)
-			WCMD: begin
-				if (gpufifovalid && ~gpufifoempty) begin
-					gpucmd <= gpufifodout;
-					// Advance FIFO
-					cmdre <= 1'b1;
-					// Dispatch cmd
-					cmdmode <= DISPATCH;
-				end
+		WCMD: begin
+			if (gpufifovalid && ~gpufifoempty) begin
+				gpucmd <= gpufifodout;
+				// Advance FIFO
+				cmdre <= 1'b1;
+				// Dispatch cmd
+				cmdmode <= DISPATCH;
 			end
+		end
 
-			DISPATCH: begin
-				case (gpucmd)
-					32'h00000000:	cmdmode <= SETVPAGE;	// Set the scanout start address (followed by 32bit cached memory address, 64 byte cache aligned)
-					32'h00000001:	cmdmode <= SETPAL;		// Set 24 bit color palette entry (followed by 8bit address+24bit color in next word)
-					32'h00000002:	cmdmode <= VMODE;		// Set up video mode or turn off scan logic (default is 320x240*8bit paletted)
-					32'h00000003:	cmdmode <= PUTCHAR;		// Write one character and its color attribute at given x/y
-					default:		cmdmode <= FINALIZE;	// Invalid command, wait one clock and try next
+		DISPATCH: begin
+			case (gpucmd)
+				32'h00000000:	cmdmode <= SETVPAGE;	// Set the scanout start address (followed by 32bit cached memory address, 64 byte cache aligned)
+				32'h00000001:	cmdmode <= SETPAL;		// Set 24 bit color palette entry (followed by 8bit address+24bit color in next word)
+				32'h00000002:	cmdmode <= VMODE;		// Set up video mode or turn off scan logic (default is 320x240*8bit paletted)
+				32'h00000003:	cmdmode <= PUTCHAR;		// Write one character and its color attribute at given x/y
+				default:		cmdmode <= FINALIZE;	// Invalid command, wait one clock and try next
+			endcase
+		end
+
+		SETVPAGE: begin
+			if (gpufifovalid && ~gpufifoempty) begin
+				scanaddr <= gpufifodout;	// Set new video scanout address (64 byte cache aligned, as we read in bursts)
+				// Advance FIFO
+				cmdre <= 1'b1;
+				cmdmode <= FINALIZE;
+			end
+		end
+
+		SETPAL: begin
+			if (gpufifovalid && ~gpufifoempty) begin
+				palettewe <= 1'b1;
+				palettewa <= gpufifodout[31:24];	// 8 bit palette index
+				palettedin <= gpufifodout[23:0];	// 24 bit color
+				// Advance FIFO
+				cmdre <= 1'b1;
+				cmdmode <= FINALIZE;
+			end
+		end
+
+		VMODE: begin
+			if (gpufifovalid && ~gpufifoempty) begin
+				scanenable <= gpufifodout[0];	// 0:video output disabled, 1:video output enabled
+				scanwidth <= gpufifodout[1];	// 0:320-wide, 1:640-wide
+				colormode <= gpufifodout[2];	// 0:8bit indexed, 1:16bit rgb
+				// ? <= gpufifodout[31:3] unused for now
+				// Set up burst count to 20 / 40 / 80 depending on video mode
+				unique case ({gpufifodout[1], gpufifodout[2]})
+					2'b00: burstlen <= 'd19;	// 320*240 8bpp
+					2'b01: burstlen <= 'd39;	// 320*240 16bpp
+					2'b10: burstlen <= 'd39;	// 640*480 8bpp
+					2'b11: burstlen <= 'd79;	// 640*480 16bpp
 				endcase
+				unique case (gpufifodout[1])
+					2'b0: scaninc <= 640;	// 320*240
+					2'b1: scaninc <= 1280;	// 640*480
+				endcase
+				// Advance FIFO
+				cmdre <= 1'b1;
+				cmdmode <= FINALIZE;
 			end
+		end
+		
+		PUTCHAR: begin
+			if (gpufifovalid && ~gpufifoempty) begin
+				// bits[31:29]	-> unused for now, could be blink etc (2 bits)
+				// bits[28:16]	-> x+y*80 (13 bits)
+				// bits[15:0]	-> char palette index + ASCII code (16 bits)
+				charWaddr <= gpufifodout[28:16];
+				charwe <= 1'b1;
+				charin <= gpufifodout[15:0];
+				// Advance FIFO
+				cmdre <= 1'b1;
+				cmdmode <= FINALIZE;
+			end
+		end
 
-			SETVPAGE: begin
-				if (gpufifovalid && ~gpufifoempty) begin
-					scanaddr <= gpufifodout;	// Set new video scanout address (64 byte cache aligned, as we read in bursts)
-					// Advance FIFO
-					cmdre <= 1'b1;
-					cmdmode <= FINALIZE;
-				end
-			end
+		FINALIZE: begin
+			cmdmode <= WCMD;
+		end
 
-			SETPAL: begin
-				if (gpufifovalid && ~gpufifoempty) begin
-					palettewe <= 1'b1;
-					palettewa <= gpufifodout[31:24];	// 8 bit palette index
-					palettedin <= gpufifodout[23:0];	// 24 bit color
-					// Advance FIFO
-					cmdre <= 1'b1;
-					cmdmode <= FINALIZE;
-				end
-			end
+	endcase
 
-			VMODE: begin
-				if (gpufifovalid && ~gpufifoempty) begin
-					scanenable <= gpufifodout[0];	// 0:video output disabled, 1:video output enabled
-					scanwidth <= gpufifodout[1];	// 0:320-wide, 1:640-wide
-					colormode <= gpufifodout[2];	// 0:8bit indexed, 1:16bit rgb
-					// ? <= gpufifodout[31:3] unused for now
-					// Set up burst count to 20 / 40 / 80 depending on video mode
-					unique case ({gpufifodout[1], gpufifodout[2]})
-						2'b00: burstlen <= 'd19;	// 320*240 8bpp
-						2'b01: burstlen <= 'd39;	// 320*240 16bpp
-						2'b10: burstlen <= 'd39;	// 640*480 8bpp
-						2'b11: burstlen <= 'd79;	// 640*480 16bpp
-					endcase
-					unique case (gpufifodout[1])
-						2'b0: scaninc <= 640;	// 320*240
-						2'b1: scaninc <= 1280;	// 640*480
-					endcase
-					// Advance FIFO
-					cmdre <= 1'b1;
-					cmdmode <= FINALIZE;
-				end
-			end
-			
-			PUTCHAR: begin
-				if (gpufifovalid && ~gpufifoempty) begin
-					// bits[31:29]	-> unused for now, could be blink etc (2 bits)
-					// bits[28:16]	-> x+y*80 (13 bits)
-					// bits[15:0]	-> char palette index + ASCII code (16 bits)
-					charWaddr <= gpufifodout[28:16];
-					charwe <= 1'b1;
-					charin <= gpufifodout[15:0];
-					// Advance FIFO
-					cmdre <= 1'b1;
-					cmdmode <= FINALIZE;
-				end
-			end
-
-			FINALIZE: begin
-				cmdmode <= WCMD;
-			end
-
-		endcase
+	if (~aresetn) begin
+		cmdmode <= CINIT;
 	end
 end
 
@@ -426,74 +412,78 @@ end
 logic [31:0] blankcounter = 32'd0;
 
 always_ff @(posedge aclk) begin
+	scanlinepre <= video_y[8:0];
+	scanline <= scanlinepre;
+	scanpixelpre <= video_x[9:0];
+	scanpixel <= scanpixelpre;
+	// Increment vertical blank counter (mapped to word reads from gpu fifo address)
+	blankcounter <= blankcounter + (scanline == 480 ? 32'd1 : 32'd0);
+
 	if (~aresetn) begin
 		//scanline <= 9'd0;
 		scanlinepre <= 9'd0;
 		scanpixelpre <= 9'd0;
 		scanpixel <= 9'd0;
 		blankcounter <= 32'd0;
-	end else begin
-		scanlinepre <= video_y[8:0];
-		scanline <= scanlinepre;
-		scanpixelpre <= video_x[9:0];
-		scanpixel <= scanpixelpre;
-		// Increment vertical blank counter (mapped to word reads from gpu fifo address)
-		blankcounter <= blankcounter + (scanline == 480 ? 32'd1 : 32'd0);
 	end
 end
 assign vblankcount = blankcounter;
 
 always_ff @(posedge aclk) begin
-	if (~aresetn) begin
-		m_axi.arvalid <= 0;
-		m_axi.rready <= 0;
-		scanstate <= DETECTSCANLINEEND;
-	end else begin
-		case (scanstate)
-			DETECTSCANLINEEND: begin
-				if (scanenable && scanpixel == 638 && scanline < 480 && (~scanline[0] || scanwidth)) begin
-					scanoffset <= scanoffset + (colormode ? scaninc : {1'b0,scaninc[31:1]});
-					if (scanline == 0)
-						scanoffset <= scanaddr;
-					scanstate <= STARTLOAD;
-				end else
-					scanstate <= DETECTSCANLINEEND;
-			end
+	case (scanstate)
+		SINIT: begin
+			m_axi.arvalid <= 0;
+			m_axi.rready <= 0;
+			scanstate <= DETECTSCANLINEEND;
+		end
 
-			STARTLOAD: begin
-				// This has to be a 64 byte cache aligned address to match cache burst reads we're running
-				// Each scanline is a multiple of 64 bytes, so no need to further align here unless we have an odd output size (320 and 640 work just fine)
-				m_axi.arlen <= burstlen;
-				m_axi.araddr <= scanoffset;
-				m_axi.arvalid <= 1;
+		DETECTSCANLINEEND: begin
+			if (scanenable && scanpixel == 638 && scanline < 480 && (~scanline[0] || scanwidth)) begin
+				scanoffset <= scanoffset + (colormode ? scaninc : {1'b0,scaninc[31:1]});
+				if (scanline == 0)
+					scanoffset <= scanaddr;
+				scanstate <= STARTLOAD;
+			end else
+				scanstate <= DETECTSCANLINEEND;
+		end
+
+		STARTLOAD: begin
+			// This has to be a 64 byte cache aligned address to match cache burst reads we're running
+			// Each scanline is a multiple of 64 bytes, so no need to further align here unless we have an odd output size (320 and 640 work just fine)
+			m_axi.arlen <= burstlen;
+			m_axi.araddr <= scanoffset;
+			m_axi.arvalid <= 1;
+			scanstate <= TRIGGERBURST;
+		end
+
+		TRIGGERBURST: begin
+			if (/*m_axi.arvalid && */m_axi.arready) begin
+				rdata_cnt <= 0;
+				m_axi.arvalid <= 0;
+				m_axi.rready <= 1;
+				scanstate <= DATABURST;
+			end else begin
 				scanstate <= TRIGGERBURST;
 			end
+		end
 
-			TRIGGERBURST: begin
-				if (/*m_axi.arvalid && */m_axi.arready) begin
-					rdata_cnt <= 0;
-					m_axi.arvalid <= 0;
-					m_axi.rready <= 1;
-					scanstate <= DATABURST;
-				end else begin
-					scanstate <= TRIGGERBURST;
-				end
+		DATABURST: begin
+			if (m_axi.rvalid  /*&& m_axi.rready*/) begin
+				// Load data into scanline cache in 128bit chunks (16 pixels at 8bpp, 20 of them)
+				// NOTE: video mode control sets up burst length to either 40 or 80
+				scanlinecache[rdata_cnt] <= m_axi.rdata;
+				rdata_cnt <= rdata_cnt + 'd1;
+				m_axi.rready <= ~m_axi.rlast;
+				scanstate <= m_axi.rlast ? DETECTSCANLINEEND : DATABURST;
+			end else begin
+				scanstate <= DATABURST;
 			end
+		end
 
-			DATABURST: begin
-				if (m_axi.rvalid  /*&& m_axi.rready*/) begin
-					// Load data into scanline cache in 128bit chunks (16 pixels at 8bpp, 20 of them)
-					// NOTE: video mode control sets up burst length to either 40 or 80
-					scanlinecache[rdata_cnt] <= m_axi.rdata;
-					rdata_cnt <= rdata_cnt + 'd1;
-					m_axi.rready <= ~m_axi.rlast;
-					scanstate <= m_axi.rlast ? DETECTSCANLINEEND : DATABURST;
-				end else begin
-					scanstate <= DATABURST;
-				end
-			end
+	endcase
 
-		endcase
+	if (~aresetn) begin
+		scanstate <= SINIT;
 	end
 end
 

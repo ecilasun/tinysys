@@ -250,6 +250,12 @@ always @(posedge aclk) begin
 
 	unique case(ctlmode)
 		INIT: begin
+			m_ibus.raddr <= 32'd0;
+			m_ibus.waddr <= 32'd0;
+			m_ibus.rstrobe <= 1'b0;
+			m_ibus.wstrobe <= 4'h0;
+			m_ibus.cstrobe <= 1'b0;
+			m_ibus.dcacheop <= 2'b0;
 			subresetn <= 1'b1;
 			ctlmode <= READINSTR;
 		end
@@ -433,16 +439,7 @@ always @(posedge aclk) begin
 	endcase
 
 	if (~aresetn) begin
-		m_ibus.raddr <= 32'd0;
-		m_ibus.waddr <= 32'd0;
-		m_ibus.rstrobe <= 1'b0;
-		m_ibus.wstrobe <= 4'h0;
-		m_ibus.cstrobe <= 1'b0;
-		m_ibus.dcacheop <= 2'b0;
-		ififore <= 1'b0;
-		wback <= 1'b0;
 		subresetn <= 1'b0;
-		wbdin <= 32'd0;
 		ctlmode <= INIT;
 	end
 end
