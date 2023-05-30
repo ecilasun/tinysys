@@ -93,7 +93,6 @@ logic [5:0] count;
 logic [31:0] reg_q;
 logic [31:0] reg_r;
 logic [31:0] reg_b;
-wire [31:0] reg_r2;
 logic rdy = 1'b0;
 logic r_sign;
 logic negd;

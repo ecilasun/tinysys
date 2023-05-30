@@ -17,7 +17,6 @@ logic writestate = 1'b0;
 logic [1:0] raddrstate = 2'b00;
 
 logic [7:0] writedata = 7'd0;
-wire [7:0] readdata;
 logic we = 1'b0;
 
 // --------------------------------------------------

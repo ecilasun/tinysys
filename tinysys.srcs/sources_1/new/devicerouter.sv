@@ -13,7 +13,7 @@ module devicerouter(
 // Write router
 // ------------------------------------------------------------------------------------
 
-logic [10:0] validwaddr = 9'd0;
+logic [9:0] validwaddr = 10'd0;
 
 always_comb begin
 	unique case(axi_s.awaddr[30:12])
@@ -125,7 +125,7 @@ end
 // Read router
 // ------------------------------------------------------------------------------------
 
-logic [10:0] validraddr = 9'd0;
+logic [9:0] validraddr = 10'd0;
 
 always_comb begin
 	unique case(axi_s.araddr[30:12])

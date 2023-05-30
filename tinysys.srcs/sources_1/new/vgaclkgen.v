@@ -60,7 +60,7 @@ module my_vga_clk_generator #( `MY_VGA_DEFAULT_PARAMS ) (
      */
 
     /* verilator lint_off UNUSED */
-    wire locked;
+    //wire locked;
 
 assign out_vsync = ((out_vcnt >= (VACTIVE + VFP -1)) && (out_vcnt < (VACTIVE + VFP + VSLEN))) ^ ~VPOL;
 assign out_hsync = ((out_hcnt >= (HACTIVE + HFP -1)) && (out_hcnt < (HACTIVE + HFP + HSLEN))) ^ ~HPOL;

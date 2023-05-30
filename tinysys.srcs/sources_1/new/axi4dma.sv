@@ -48,7 +48,6 @@ dmacmdmodetype cmdmode = WCMD;
 logic [31:0] dmacmd;
 logic [31:0] dmasourceaddr;
 logic [31:0] dmatargetaddr;
-logic [31:0] dmatargetend;
 logic [7:0] dmasingleburstcount = 8'd0;
 logic [7:0] burstcursor = 8'd0;
 logic [127:0] burstcache[0:255];

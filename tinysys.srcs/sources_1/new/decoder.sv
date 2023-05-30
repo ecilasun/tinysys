@@ -48,14 +48,14 @@ wire selector = instrOneHot[`O_H_JALR] || instrOneHot[`O_H_OP_IMM] || instrOneHo
 
 // Every instruction except SYS:3'b000, BRANCH, FPU ops and STORE are recoding form
 // i.e. NOT (branch or store) OR (SYS AND at least one bit set)
-wire isfpuopcode = 
+/*wire isfpuopcode = 
 	instrOneHot[`O_H_FLOAT_OP] ||
 	instrOneHot[`O_H_FLOAT_LDW] ||
 	instrOneHot[`O_H_FLOAT_STW] ||
 	instrOneHot[`O_H_FLOAT_MADD] ||
 	instrOneHot[`O_H_FLOAT_MSUB] ||
 	instrOneHot[`O_H_FLOAT_NMSUB] ||
-	instrOneHot[`O_H_FLOAT_NMADD];
+	instrOneHot[`O_H_FLOAT_NMADD];*/
 
 // NOTE: Load _is_ recording form but it's delayed vs where we normaly flag 'recording', so it's omitted from list and handled mamually
 //wire recordingform = ~(instrOneHot[`O_H_BRANCH] || instrOneHot[`O_H_LOAD] || instrOneHot[`O_H_STORE] || isfpuopcode) || (instrOneHot[`O_H_SYSTEM] & (|func3));

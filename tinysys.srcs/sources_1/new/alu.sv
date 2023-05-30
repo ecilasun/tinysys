@@ -8,8 +8,8 @@ module arithmeticlogic (
 	input wire [31:0] val2,
 	input wire [3:0] aluop );
 
-wire [9:0] aluonehot = {
-	aluop == `ALU_ADD  ? 1'b1 : 1'b0,
+wire [8:0] aluonehot = {
+	/*aluop == `ALU_OR   ? 1'b1 : 1'b0,*/
 	aluop == `ALU_SUB  ? 1'b1 : 1'b0,
 	aluop == `ALU_SLL  ? 1'b1 : 1'b0,
 	aluop == `ALU_SLT  ? 1'b1 : 1'b0,
@@ -17,7 +17,7 @@ wire [9:0] aluonehot = {
 	aluop == `ALU_XOR  ? 1'b1 : 1'b0,
 	aluop == `ALU_SRL  ? 1'b1 : 1'b0,
 	aluop == `ALU_SRA  ? 1'b1 : 1'b0,
-	aluop == `ALU_OR   ? 1'b1 : 1'b0,
+	aluop == `ALU_ADD  ? 1'b1 : 1'b0,
 	aluop == `ALU_AND  ? 1'b1 : 1'b0 };
 
 logic [31:0] vsum;
@@ -75,7 +75,7 @@ always_comb begin
 	priority case(1'b1)
 		// integer ops
 		aluonehot[0]:	aluout = vand;
-		aluonehot[1]:	aluout = vor;
+		aluonehot[1]:	aluout = vsum;
 		aluonehot[2]:	aluout = vsra;
 		aluonehot[3]:	aluout = vshr;
 		aluonehot[4]:	aluout = vxor;
@@ -83,8 +83,7 @@ always_comb begin
 		aluonehot[6]:	aluout = vsless;
 		aluonehot[7]:	aluout = vshl;
 		aluonehot[8]:	aluout = vdiff;
-		aluonehot[9]:	aluout = vsum;
-		//default:		aluout = 32'd0;
+		default:		aluout = vor; // aluonehot[9]
 	endcase
 end
 

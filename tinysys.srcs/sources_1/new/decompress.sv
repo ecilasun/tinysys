@@ -7,7 +7,6 @@ module instructiondecompressor(
     output reg [31:0] fullinstr );
 
 always @ (*) begin
-	fullinstr = 32'd0; // Initially undefined
 	unique case ({instr_lowword[15:13], instr_lowword[1:0]})
 		`INSTR_CADDI4SPN: begin // rd = (zero extended nonzero immediate)*4+sp
 			if (instr_lowword[12:2] != 11'h0 && instr_lowword[12:5] != 8'h0)
@@ -107,6 +106,10 @@ always @ (*) begin
 				else
 					fullinstr = { 7'b0000000, instr_lowword[6:2], instr_lowword[11:7], 3'b000, instr_lowword[11:7], `INSTR_ADD }; // CADD
 			end
+		end
+		
+		default: begin
+			fullinstr = 32'd0; // Unknown encoding, generate illegal instruction
 		end
 	endcase
 end

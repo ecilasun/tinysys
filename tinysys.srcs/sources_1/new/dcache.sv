@@ -75,7 +75,6 @@ cachemem CacheMemory512(
 	.rsta_busy(rsta_busy) );	// Reset busy
 
 initial begin
-	integer i;
 	for (int i=0; i<256; i=i+1) begin	// 256 lines total
 		cachelinewb[i] = 1'b0;			// cache lines do not require write-back for initial cache-miss
 		cachelinevalid[i] = 1'b0;		// this cache line is invalid (contents not associated with a memory location)

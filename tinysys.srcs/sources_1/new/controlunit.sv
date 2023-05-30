@@ -218,7 +218,7 @@ always_comb begin
 					1'b0: begin rdin = {16'd0, m_ibus.rdata[15:0]}; end
 				endcase
 			end
-			3'b010: begin // WORD
+			default: begin // WORD - 3'b010
 				rdin = m_ibus.rdata;
 			end
 		endcase

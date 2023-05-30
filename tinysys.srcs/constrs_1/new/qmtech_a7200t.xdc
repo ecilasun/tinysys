@@ -145,20 +145,22 @@ set_property -dict {PACKAGE_PIN N19 IOSTANDARD LVCMOS33} [get_ports au_mclk]
 ## ------------------------------------------------------------------------------------------------------
 
 ## usbres_n   pin U2:14  [H20] -> hold low to reset the chip
-## usbclk     pin U2:11  [K22] -> up to 26MHz
+## usbgpi     pin U2:13  [G20] -> GPI, suggested to keep grounded in MAX3420E errata
 ## usbbss_n   pin U2:12  [K21] -> slave select input, active low (required to send spi commands)
-## usbmiso    pin U2:9   [H18] -> spi miso
+## usbclk     pin U2:11  [K22] -> up to 26MHz
 ## usbmosi    pin U2:10  [H17] -> spi mosi
-## usbgpx     pin U2:7   [H22] -> operate / vbus_det / busact or start-of-frame indicator depending on gpxa/gpxb register contents
+## usbmiso    pin U2:9   [H18] -> spi miso
 ## usbint     pin U2:8   [J22] -> set the IE bit(bit#0) in the CPUCTL(r16) register to enable interrupts
+## usbgpx     pin U2:7   [H22] -> operate / vbus_det / busact or start-of-frame indicator depending on gpxa/gpxb register contents
 
 set_property -dict {PACKAGE_PIN H20 IOSTANDARD LVCMOS33} [get_ports usbc_resn]
-set_property -dict {PACKAGE_PIN K22 IOSTANDARD LVCMOS33} [get_ports usbc_clk]
+# set_property -dict {PACKAGE_PIN G20 IOSTANDARD LVCMOS33} [get_ports usbc_gpi]
 set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports usbc_ss_n]
-set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports usbc_miso]
+set_property -dict {PACKAGE_PIN K22 IOSTANDARD LVCMOS33} [get_ports usbc_clk]
 set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports usbc_mosi]
-set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
+set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports usbc_miso]
 set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports usbc_int]
+set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
 
 ## MAX3420E's INT pin requires an external pullup resistor when in INTLEVEL mode
 set_property PULLUP TRUE [get_ports usbc_int]

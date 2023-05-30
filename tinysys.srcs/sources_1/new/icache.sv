@@ -61,7 +61,6 @@ cachemem CacheMemory512(
 	.rsta_busy(rsta_busy) );	// Reset busy
 
 initial begin
-	integer i;
 	for (int i=0; i<256; i=i+1) begin	// 256 lines total
 		cachelinetags[i] = 'd0;			// contents invalid, at start of memory
 	end

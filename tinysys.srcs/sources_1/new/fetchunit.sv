@@ -236,7 +236,8 @@ always @(posedge aclk) begin
 				IR <= isfullinstr ? instruction : decompressedinstr;
 
 				// Either directly stream out or read the rest of a misaligned instruction
-				fetchmode <= rready ? ((misaligned && isfullinstr) ? FETCHREST : STREAMOUT) : FETCH;
+				// NOTE: Stall when instruction fifo is full (currently unlikely but possible)
+				fetchmode <= (rready && ~ififofull) ? ((misaligned && isfullinstr) ? FETCHREST : STREAMOUT) : FETCH;
 
 				// Lower half of misaligned instruction
 				lowerhalf <= instruction[31:16];
@@ -397,7 +398,7 @@ always @(posedge aclk) begin
 			end
 
 			INJECT: begin
-				ififowr_en <= 1'b1;
+				ififowr_en <= ~ififofull;
 				ififodin <= {
 					rs3, func7, csroffset,
 					func12, func3,
@@ -407,7 +408,8 @@ always @(posedge aclk) begin
 					immed, PC};
 
 				// WARNING: Injection ignores all instruction handling and never advances the PC
-				fetchmode <= STARTINJECT;
+				// NOTE: We will spin here if instruction fifo is full
+				fetchmode <= ~ififofull ? STARTINJECT : INJECT;
 			end
 
 			POSTENTER: begin

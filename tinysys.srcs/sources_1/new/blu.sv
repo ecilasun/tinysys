@@ -10,8 +10,8 @@ module branchlogic(
 
 logic branch = 1'b0;
 
-wire [5:0] aluonehot = {
-	bluop == `BLU_EQ  ? 1'b1 : 1'b0,
+wire [4:0] bluonehot = {
+	/*bluop == `BLU_EQ  ? 1'b1 : 1'b0,*/
 	bluop == `BLU_NE  ? 1'b1 : 1'b0,
 	bluop == `BLU_L   ? 1'b1 : 1'b0,
 	bluop == `BLU_GE  ? 1'b1 : 1'b0,
@@ -29,13 +29,12 @@ end
 always_comb begin
 	priority case(1'b1)
 		// branch alu
-		aluonehot[0]:	branchout = ~less;
-		aluonehot[1]:	branchout = less;
-		aluonehot[2]:	branchout = ~sless;
-		aluonehot[3]:	branchout = sless;
-		aluonehot[4]:	branchout = ~eq;
-		aluonehot[5]:	branchout = eq;
-		//default:		branchout = 1'b0;
+		bluonehot[0]:	branchout = ~less;
+		bluonehot[1]:	branchout = less;
+		bluonehot[2]:	branchout = ~sless;
+		bluonehot[3]:	branchout = sless;
+		bluonehot[4]:	branchout = ~eq;
+		default:		branchout = eq; // bluonehot[5]
 	endcase
 end
 
