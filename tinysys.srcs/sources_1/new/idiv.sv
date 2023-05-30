@@ -21,17 +21,12 @@ logic [31:0] reg_b;
 logic rdy = 1'b0;
 logic r_sign;
 assign ready = rdy;
-logic [32:0] sub_add;
-logic [31:0] rem;
-logic [31:0] quo;
 
 logic divstate = 1'b0;
 
-always @(negedge aclk) begin
-    sub_add <= r_sign ? ({reg_r,reg_q[31]}+{1'b0,reg_b}) : ({reg_r,reg_q[31]}-{1'b0,reg_b});
-    rem <= r_sign ? reg_r + reg_b : reg_r;
-    quo <= reg_q;
-end
+wire [32:0] sub_add = r_sign ? ({reg_r,reg_q[31]}+{1'b0,reg_b}) : ({reg_r,reg_q[31]}-{1'b0,reg_b});
+wire [31:0] rem = r_sign ? reg_r + reg_b : reg_r;
+wire [31:0] quo = reg_q;
 
 always @(posedge aclk)begin
     count <= count+1;
@@ -91,17 +86,12 @@ logic r_sign;
 logic negd;
 logic negq;
 assign ready = rdy;
-logic [32:0] sub_add;
-logic [31:0] rem;
-logic [31:0] quo;
 
 logic divstate = 1'b0;
 
-always @(negedge aclk) begin
-    sub_add <= r_sign ? ({reg_r,reg_q[31]}+{1'b0,reg_b}) : ({reg_r,reg_q[31]}-{1'b0,reg_b});
-    rem <= r_sign ? reg_r + reg_b : reg_r;
-    quo <= reg_q;
-end
+wire [32:0] sub_add = r_sign ? ({reg_r,reg_q[31]}+{1'b0,reg_b}) : ({reg_r,reg_q[31]}-{1'b0,reg_b});
+wire [31:0] rem = r_sign ? reg_r + reg_b : reg_r;
+wire [31:0] quo = reg_q;
 
 always @(posedge aclk) begin
     count <= count+1;
