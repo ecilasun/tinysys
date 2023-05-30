@@ -127,90 +127,95 @@ typedef enum logic [4:0] {
 cachestatetype cachestate = IDLE;
 
 always_ff @(posedge aclk) begin
-	if (~aresetn) begin
-		cachestate <= IDLE;
-		memwritestrobe <= 1'b0;
-		memreadstrobe <= 1'b0;
-		//cdin <= 512'd0;
-	end else begin
+	memwritestrobe <= 1'b0;
+	memreadstrobe <= 1'b0;
+	wready <= 1'b0;
+	rready <= 1'b0;
+	ucwstrb <= 4'h0;
+	ucre <= 1'b0;
+	cachewe <= 64'd0;
 
-		memwritestrobe <= 1'b0;
-		memreadstrobe <= 1'b0;
-		wready <= 1'b0;
-		rready <= 1'b0;
-		ucwstrb <= 4'h0;
-		ucre <= 1'b0;
-		cachewe <= 64'd0;
+	unique case(cachestate)
+		IDLE : begin
+			rwmode <= {ren, |wstrb};		// Record r/w mode
+			bsel <= wstrb;					// Write byte select
+			coffset <= offset;				// Cache offset 0..15
+			cline <= line;					// Cache line
+			ctag <= tag;					// Cache tag 00000..1ffff
+			ptag <= cachelinetags[line];	// Previous cache tag
+			inputdata <= din;
 
-		unique case(cachestate)
-			IDLE : begin
-				rwmode <= {ren, |wstrb};		// Record r/w mode
-				bsel <= wstrb;					// Write byte select
-				coffset <= offset;				// Cache offset 0..15
-				cline <= line;					// Cache line
-				ctag <= tag;					// Cache tag 00000..1ffff
-				ptag <= cachelinetags[line];	// Previous cache tag
-				inputdata <= din;
+			casex ({dcacheop[0], isuncached, ren, |wstrb})
+				4'b0001: cachestate <= CWRITE;
+				4'b0010: cachestate <= CREAD;
+				4'b0101: cachestate <= UCWRITE;
+				4'b0110: cachestate <= UCREAD;
+				4'b1xxx: cachestate <= dcacheop[1] ? CDATAFLUSHBEGIN : CDATANOFLUSHBEGIN;
+				default: cachestate <= IDLE;
+			endcase
+		end
 
-				casex ({dcacheop[0], isuncached, ren, |wstrb})
-					4'b0001: cachestate <= CWRITE;
-					4'b0010: cachestate <= CREAD;
-					4'b0101: cachestate <= UCWRITE;
-					4'b0110: cachestate <= UCREAD;
-					4'b1xxx: cachestate <= dcacheop[1] ? CDATAFLUSHBEGIN : CDATANOFLUSHBEGIN;
-					default: cachestate <= IDLE;
-				endcase
+		CDATANOFLUSHBEGIN: begin
+			// Clear and invalidate cache line
+			cachelinewb[dccount] <= 1'b0;
+			cachelinevalid[dccount] <= 1'b0;
+			cachelinetags[dccount] <= 'd0;
+			cachestate <= CDATANOFLUSHSTEP;
+		end
+
+		CDATANOFLUSHSTEP: begin
+			// Go to next line (wraps around to 0 at 255)
+			dccount <= dccount + 8'd1;
+			// Finish our mock 'write' operation
+			wready <= dccount == 8'hFF;
+			// Repeat until we process line 0xFF and go back to idle state
+			cachestate <= dccount == 8'hFF ? IDLE : CDATANOFLUSHBEGIN;
+		end
+		
+		CDATAFLUSHBEGIN: begin
+			// Switch cache address to use flush counter
+			flushing <= 1'b1;
+			cachestate <= CDATAFLUSHWAITCREAD;
+		end
+
+		CDATAFLUSHWAITCREAD: begin
+			// We keep the tag same, since we only want to make sure data is written back, not evicted
+			flushline <= cachelinetags[dccount];
+			// One clock delay to read cache value at {dccount}
+			cachestate <= CDATAFLUSH;
+		end
+
+		CDATAFLUSH: begin
+			// Nothing to write back for next time around
+			cachelinewb[dccount] <= 1'b0;
+			// Either write back to memory or skip
+			// If cache line is valid, we keep it valid
+			if (cachelinewb[dccount] && cachelinevalid[dccount]) begin
+				// Write current line back to RAM
+				cacheaddress <= {1'b0, flushline, dccount, 6'd0};
+				cachedout <= {cdout[127:0], cdout[255:128], cdout[383:256], cdout[511:384]};
+				memwritestrobe <= 1'b1;
+				// We're done if this was the last write
+				cachestate <= CDATAFLUSHWAIT;
+			end else begin // Otherwise, skip write back
+				// Skip this line if it doesn't need a write back operation
+				cachestate <= CDATAFLUSHSKIP;
 			end
+		end
 
-			CDATANOFLUSHBEGIN: begin
-				// Clear and invalidate cache line
-				cachelinewb[dccount] <= 1'b0;
-				cachelinevalid[dccount] <= 1'b0;
-				cachelinetags[dccount] <= 'd0;
-				cachestate <= CDATANOFLUSHSTEP;
-			end
+		CDATAFLUSHSKIP: begin
+			// Go to next line (wraps around to 0 at 255)
+			dccount <= dccount + 8'd1;
+			// Stop 'flushing' mode if we're done
+			flushing <= dccount != 8'hFF;
+			// Finish our mock 'write' operation if we're done
+			wready <= dccount == 8'hFF;
+			// Repeat until we process line 0xFF and go back to idle state
+			cachestate <= dccount == 8'hFF ? IDLE : CDATAFLUSHWAITCREAD;
+		end
 
-			CDATANOFLUSHSTEP: begin
-				// Go to next line (wraps around to 0 at 255)
-				dccount <= dccount + 8'd1;
-				// Finish our mock 'write' operation
-				wready <= dccount == 8'hFF;
-				// Repeat until we process line 0xFF and go back to idle state
-				cachestate <= dccount == 8'hFF ? IDLE : CDATANOFLUSHBEGIN;
-			end
-			
-			CDATAFLUSHBEGIN: begin
-				// Switch cache address to use flush counter
-				flushing <= 1'b1;
-				cachestate <= CDATAFLUSHWAITCREAD;
-			end
-
-			CDATAFLUSHWAITCREAD: begin
-				// We keep the tag same, since we only want to make sure data is written back, not evicted
-				flushline <= cachelinetags[dccount];
-				// One clock delay to read cache value at {dccount}
-				cachestate <= CDATAFLUSH;
-			end
-
-			CDATAFLUSH: begin
-				// Nothing to write back for next time around
-				cachelinewb[dccount] <= 1'b0;
-				// Either write back to memory or skip
-				// If cache line is valid, we keep it valid
-				if (cachelinewb[dccount] && cachelinevalid[dccount]) begin
-					// Write current line back to RAM
-					cacheaddress <= {1'b0, flushline, dccount, 6'd0};
-					cachedout <= {cdout[127:0], cdout[255:128], cdout[383:256], cdout[511:384]};
-					memwritestrobe <= 1'b1;
-					// We're done if this was the last write
-					cachestate <= CDATAFLUSHWAIT;
-				end else begin // Otherwise, skip write back
-					// Skip this line if it doesn't need a write back operation
-					cachestate <= CDATAFLUSHSKIP;
-				end
-			end
-
-			CDATAFLUSHSKIP: begin
+		CDATAFLUSHWAIT: begin
+			if (wdone) begin
 				// Go to next line (wraps around to 0 at 255)
 				dccount <= dccount + 8'd1;
 				// Stop 'flushing' mode if we're done
@@ -219,161 +224,155 @@ always_ff @(posedge aclk) begin
 				wready <= dccount == 8'hFF;
 				// Repeat until we process line 0xFF and go back to idle state
 				cachestate <= dccount == 8'hFF ? IDLE : CDATAFLUSHWAITCREAD;
+			end else begin
+				// Memory write didn't complete yet
+				cachestate <= CDATAFLUSHWAIT;
 			end
+		end
 
-			CDATAFLUSHWAIT: begin
-				if (wdone) begin
-					// Go to next line (wraps around to 0 at 255)
-					dccount <= dccount + 8'd1;
-					// Stop 'flushing' mode if we're done
-					flushing <= dccount != 8'hFF;
-					// Finish our mock 'write' operation if we're done
-					wready <= dccount == 8'hFF;
-					// Repeat until we process line 0xFF and go back to idle state
-					cachestate <= dccount == 8'hFF ? IDLE : CDATAFLUSHWAITCREAD;
-				end else begin
-					// Memory write didn't complete yet
-					cachestate <= CDATAFLUSHWAIT;
-				end
-			end
+		UCWRITE: begin
+			ucaddrs <= addr;
+			ucdout <= inputdata;
+			ucwstrb <= bsel;
+			cachestate <= UCWRITEDELAY;
+		end
 
-			UCWRITE: begin
-				ucaddrs <= addr;
-				ucdout <= inputdata;
-				ucwstrb <= bsel;
+		UCWRITEDELAY: begin
+			if (ucwritedone) begin
+				wready <= 1'b1;
+				cachestate <= IDLE;
+			end else begin
 				cachestate <= UCWRITEDELAY;
 			end
+		end
 
-			UCWRITEDELAY: begin
-				if (ucwritedone) begin
-					wready <= 1'b1;
-					cachestate <= IDLE;
-				end else begin
-					cachestate <= UCWRITEDELAY;
-				end
-			end
+		UCREAD: begin
+			ucaddrs <= addr;
+			ucre <= 1'b1;
+			cachestate <= UCREADDELAY;
+		end
 
-			UCREAD: begin
-				ucaddrs <= addr;
-				ucre <= 1'b1;
+		UCREADDELAY: begin
+			if (ucreaddone) begin
+				dout <= ucdin;
+				rready <= 1'b1;
+				cachestate <= IDLE;
+			end else begin
 				cachestate <= UCREADDELAY;
 			end
+		end
 
-			UCREADDELAY: begin
-				if (ucreaddone) begin
-					dout <= ucdin;
-					rready <= 1'b1;
-					cachestate <= IDLE;
-				end else begin
-					cachestate <= UCREADDELAY;
-				end
+		CWRITE: begin
+			if ((ctag == ptag) && cachelinevalid[cline]) begin
+				cdin <= {	inputdata, inputdata, inputdata, inputdata,
+							inputdata, inputdata, inputdata, inputdata,
+							inputdata, inputdata, inputdata, inputdata,
+							inputdata, inputdata, inputdata, inputdata};	// Incoming data replicated to 512bits, to be masked by cachewe
+				unique case(coffset)
+					4'b0000: cachewe <= { 60'd0, bsel        };
+					4'b0001: cachewe <= { 56'd0, bsel, 4'd0  };
+					4'b0010: cachewe <= { 52'd0, bsel, 8'd0  };
+					4'b0011: cachewe <= { 48'd0, bsel, 12'd0 };
+					4'b0100: cachewe <= { 44'd0, bsel, 16'd0 };
+					4'b0101: cachewe <= { 40'd0, bsel, 20'd0 };
+					4'b0110: cachewe <= { 36'd0, bsel, 24'd0 };
+					4'b0111: cachewe <= { 32'd0, bsel, 28'd0 };
+					4'b1000: cachewe <= { 28'd0, bsel, 32'd0 };
+					4'b1001: cachewe <= { 24'd0, bsel, 36'd0 };
+					4'b1010: cachewe <= { 20'd0, bsel, 40'd0 };
+					4'b1011: cachewe <= { 16'd0, bsel, 44'd0 };
+					4'b1100: cachewe <= { 12'd0, bsel, 48'd0 };
+					4'b1101: cachewe <= { 8'd0,  bsel, 52'd0 };
+					4'b1110: cachewe <= { 4'd0,  bsel, 56'd0 };
+					4'b1111: cachewe <= {        bsel, 60'd0 };
+				endcase
+				// This cache line needs to be written back to memory on next miss
+				cachelinewb[cline] <= 1'b1;
+				wready <= 1'b1;
+				cachestate <= IDLE;
+			end else begin
+				cachestate <= cachelinewb[cline] ? CWBACK : CPOPULATE;
 			end
+		end
 
-			CWRITE: begin
-				if ((ctag == ptag) && cachelinevalid[cline]) begin
-					cdin <= {	inputdata, inputdata, inputdata, inputdata,
-								inputdata, inputdata, inputdata, inputdata,
-								inputdata, inputdata, inputdata, inputdata,
-								inputdata, inputdata, inputdata, inputdata};	// Incoming data replicated to 512bits, to be masked by cachewe
-					unique case(coffset)
-						4'b0000: cachewe <= { 60'd0, bsel        };
-						4'b0001: cachewe <= { 56'd0, bsel, 4'd0  };
-						4'b0010: cachewe <= { 52'd0, bsel, 8'd0  };
-						4'b0011: cachewe <= { 48'd0, bsel, 12'd0 };
-						4'b0100: cachewe <= { 44'd0, bsel, 16'd0 };
-						4'b0101: cachewe <= { 40'd0, bsel, 20'd0 };
-						4'b0110: cachewe <= { 36'd0, bsel, 24'd0 };
-						4'b0111: cachewe <= { 32'd0, bsel, 28'd0 };
-						4'b1000: cachewe <= { 28'd0, bsel, 32'd0 };
-						4'b1001: cachewe <= { 24'd0, bsel, 36'd0 };
-						4'b1010: cachewe <= { 20'd0, bsel, 40'd0 };
-						4'b1011: cachewe <= { 16'd0, bsel, 44'd0 };
-						4'b1100: cachewe <= { 12'd0, bsel, 48'd0 };
-						4'b1101: cachewe <= { 8'd0,  bsel, 52'd0 };
-						4'b1110: cachewe <= { 4'd0,  bsel, 56'd0 };
-						4'b1111: cachewe <= {        bsel, 60'd0 };
-					endcase
-					// This cache line needs to be written back to memory on next miss
-					cachelinewb[cline] <= 1'b1;
-					wready <= 1'b1;
-					cachestate <= IDLE;
-				end else begin
-					cachestate <= cachelinewb[cline] ? CWBACK : CPOPULATE;
-				end
+		CREAD: begin
+			if ((ctag == ptag) && cachelinevalid[cline]) begin
+				// Return word directly from cache
+				unique case(coffset)
+					4'b0000:  dout <= cdout[31:0];
+					4'b0001:  dout <= cdout[63:32];
+					4'b0010:  dout <= cdout[95:64];
+					4'b0011:  dout <= cdout[127:96];
+					4'b0100:  dout <= cdout[159:128];
+					4'b0101:  dout <= cdout[191:160];
+					4'b0110:  dout <= cdout[223:192];
+					4'b0111:  dout <= cdout[255:224];
+					4'b1000:  dout <= cdout[287:256];
+					4'b1001:  dout <= cdout[319:288];
+					4'b1010:  dout <= cdout[351:320];
+					4'b1011:  dout <= cdout[383:352];
+					4'b1100:  dout <= cdout[415:384];
+					4'b1101:  dout <= cdout[447:416];
+					4'b1110:  dout <= cdout[479:448];
+					4'b1111:  dout <= cdout[511:480];
+				endcase
+				rready <= 1'b1;
+				cachestate <= IDLE;
+			end else begin // Cache miss when ctag != ptag
+				cachestate <= cachelinewb[cline] ? CWBACK : CPOPULATE;
 			end
+		end
 
-			CREAD: begin
-				if ((ctag == ptag) && cachelinevalid[cline]) begin
-					// Return word directly from cache
-					unique case(coffset)
-						4'b0000:  dout <= cdout[31:0];
-						4'b0001:  dout <= cdout[63:32];
-						4'b0010:  dout <= cdout[95:64];
-						4'b0011:  dout <= cdout[127:96];
-						4'b0100:  dout <= cdout[159:128];
-						4'b0101:  dout <= cdout[191:160];
-						4'b0110:  dout <= cdout[223:192];
-						4'b0111:  dout <= cdout[255:224];
-						4'b1000:  dout <= cdout[287:256];
-						4'b1001:  dout <= cdout[319:288];
-						4'b1010:  dout <= cdout[351:320];
-						4'b1011:  dout <= cdout[383:352];
-						4'b1100:  dout <= cdout[415:384];
-						4'b1101:  dout <= cdout[447:416];
-						4'b1110:  dout <= cdout[479:448];
-						4'b1111:  dout <= cdout[511:480];
-					endcase
-					rready <= 1'b1;
-					cachestate <= IDLE;
-				end else begin // Cache miss when ctag != ptag
-					cachestate <= cachelinewb[cline] ? CWBACK : CPOPULATE;
-				end
+		CWBACK : begin
+			if (cachelinevalid[cline]) begin
+				// Use old memory address with device selector, aligned to cache boundary, top bit ignored (cached address)
+				cacheaddress <= {1'b0, ptag, cline, 6'd0};
+				cachedout <= {cdout[127:0], cdout[255:128], cdout[383:256], cdout[511:384]};
+				memwritestrobe <= 1'b1;
+				cachestate <= CWBACKWAIT;
+			end else begin
+				// Nothing to write back for invalid line, just populate
+				cachestate <= CPOPULATE;
 			end
+		end
 
-			CWBACK : begin
-				if (cachelinevalid[cline]) begin
-					// Use old memory address with device selector, aligned to cache boundary, top bit ignored (cached address)
-					cacheaddress <= {1'b0, ptag, cline, 6'd0};
-					cachedout <= {cdout[127:0], cdout[255:128], cdout[383:256], cdout[511:384]};
-					memwritestrobe <= 1'b1;
-					cachestate <= CWBACKWAIT;
-				end else begin
-					// Nothing to write back for invalid line, just populate
-					cachestate <= CPOPULATE;
-				end
-			end
+		CWBACKWAIT: begin
+			cachestate <= wdone ? CPOPULATE : CWBACKWAIT;
+		end
 
-			CWBACKWAIT: begin
-				cachestate <= wdone ? CPOPULATE : CWBACKWAIT;
-			end
+		CPOPULATE : begin
+			// Same as current memory address with device selector, aligned to cache boundary, top bit ignored (cached address)
+			cacheaddress <= {1'b0, ctag, cline, 6'd0};
+			memreadstrobe <= 1'b1;
+			cachestate <= CPOPULATEWAIT;
+		end
 
-			CPOPULATE : begin
-				// Same as current memory address with device selector, aligned to cache boundary, top bit ignored (cached address)
-				cacheaddress <= {1'b0, ctag, cline, 6'd0};
-				memreadstrobe <= 1'b1;
-				cachestate <= CPOPULATEWAIT;
-			end
+		CPOPULATEWAIT: begin
+			cachestate <= rdone ? CUPDATE : CPOPULATEWAIT;
+		end
 
-			CPOPULATEWAIT: begin
-				cachestate <= rdone ? CUPDATE : CPOPULATEWAIT;
-			end
+		CUPDATE: begin
+			cachewe <= 64'hFFFFFFFFFFFFFFFF; // All entries
+			cdin <= {cachedin[3], cachedin[2], cachedin[1], cachedin[0]}; // Data from memory
+			cachestate <= CUPDATEDELAY;
+		end
 
-			CUPDATE: begin
-				cachewe <= 64'hFFFFFFFFFFFFFFFF; // All entries
-				cdin <= {cachedin[3], cachedin[2], cachedin[1], cachedin[0]}; // Data from memory
-				cachestate <= CUPDATEDELAY;
-			end
+		CUPDATEDELAY: begin
+			ptag <= ctag;
+			cachelinetags[cline] <= ctag;
+			// No need to write back since contents are valid and unmodifed
+			cachelinewb[cline] <= 1'b0;
+			// Contents are now associated with a memory location
+			cachelinevalid[cline] <= 1'b1;
+			cachestate <= (rwmode == 2'b01) ? CWRITE : CREAD;
+		end
+	endcase
 
-			CUPDATEDELAY: begin
-				ptag <= ctag;
-				cachelinetags[cline] <= ctag;
-				// No need to write back since contents are valid and unmodifed
-				cachelinewb[cline] <= 1'b0;
-				// Contents are now associated with a memory location
-				cachelinevalid[cline] <= 1'b1;
-				cachestate <= (rwmode == 2'b01) ? CWRITE : CREAD;
-			end
-		endcase
+	if (~aresetn) begin
+		cachestate <= IDLE;
+		memwritestrobe <= 1'b0;
+		memreadstrobe <= 1'b0;
+		//cdin <= 512'd0;
 	end
 end
 

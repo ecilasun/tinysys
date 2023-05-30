@@ -232,224 +232,218 @@ end
 // EXEC
 logic pendingwrite = 1'b0;
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	btready <= 1'b0;	// Stop branch target ready strobe
+	ififore <= 1'b0;	// Stop instruction fifo read enable strobe
+	wback <= 1'b0;		// Stop register writeback shadow strobe 
 
+	m_ibus.rstrobe <= 1'b0;	// Stop data read strobe
+	m_ibus.wstrobe <= 4'h0;	// Stop data write strobe
+	m_ibus.cstrobe <= 1'b0;	// Stop data cache strobe
+
+	mulstrobe <= 1'b0;	// Stop integer mul strobe 
+	divstrobe <= 1'b0;	// Stop integer div/rem strobe
+
+	wbdin <= 32'd0;
+
+	if (m_ibus.wdone) pendingwrite <= 1'b0;
+	if (m_ibus.rdone) pendingload <= 1'b0;
+
+	unique case(ctlmode)
+		INIT: begin
+			subresetn <= 1'b1;
+			ctlmode <= READINSTR;
+		end
+
+		READINSTR: begin
+			// Grab next decoded instruction if there's something in the FIFO
+			{	rs3, func7, csroffset,
+				func12, func3,
+				instrOneHotOut, selectimmedasrval2,
+				bluop, aluop,
+				rs1, rs2, rd,
+				immed, PC[31:1], stepsize} <= ififodout;
+			PC[0] <= 1'b0; // NOTE: Since we don't do byte addressing, lowest bit is always set to zero
+			ififore <= (ififovalid && ~ififoempty && ~pendingwback && ~pendingload);
+			ctlmode <= (ififovalid && ~ififoempty && ~pendingwback && ~pendingload) ? READREG : READINSTR;
+		end
+
+		READREG: begin
+			// Set up inputs to math/branch units, addresses, and any math strobes required
+			A <= rval1;
+			B <= rval2;
+			C <= selectimmedasrval2 ? immed : rval2;
+			D <= immed;
+			wbdest <= rd;
+			rwaddress <= rval1 + immed;
+			offsetPC <= PC + immed;
+			adjacentPC <= PC + (stepsize ? 32'd4 : 32'd2);
+			mulstrobe <= (aluop==`ALU_MUL);
+			divstrobe <= (aluop==`ALU_DIV || aluop==`ALU_REM);				
+			mathop <= {aluop==`ALU_MUL, aluop==`ALU_DIV, aluop==`ALU_REM};
+			// Store doesn't wait in-place, but we can ensure there's no data in flight at this late point
+			ctlmode <= pendingwrite ? READREG : (instrOneHotOut[`O_H_STORE] ? WRITE : DISPATCH);
+		end
+
+		WRITE: begin
+			m_ibus.waddr <= rwaddress;
+			pendingwrite <= 1'b1;
+			unique case(func3)
+				3'b000:  m_ibus.wdata <= {B[7:0], B[7:0], B[7:0], B[7:0]};
+				3'b001:  m_ibus.wdata <= {B[15:0], B[15:0]};
+				default: m_ibus.wdata <= B;
+			endcase
+			unique case(func3)
+				3'b000:  m_ibus.wstrobe <= {rwaddress[1]&rwaddress[0], rwaddress[1]&(~rwaddress[0]), (~rwaddress[1])&rwaddress[0], (~rwaddress[1])&(~rwaddress[0])};
+				3'b001:  m_ibus.wstrobe <= {rwaddress[1], rwaddress[1], ~rwaddress[1], ~rwaddress[1]};
+				default: m_ibus.wstrobe <= 4'b1111;
+			endcase
+			ctlmode <= READINSTR;
+		end
+
+		DISPATCH: begin
+			// Most instructions are done here and go directly to writeback
+			unique case(1'b1)
+				instrOneHotOut[`O_H_OP],
+				instrOneHotOut[`O_H_OP_IMM]: begin
+					wbdin <= aluout;
+					wback <= 1'b1;
+				end
+				instrOneHotOut[`O_H_AUIPC],
+				instrOneHotOut[`O_H_LUI]: begin
+					wbdin <= instrOneHotOut[`O_H_AUIPC] ? offsetPC : D;
+					wback <= 1'b1;
+				end
+				instrOneHotOut[`O_H_LOAD]: begin
+					m_ibus.raddr <= rwaddress;
+					m_ibus.rstrobe <= 1'b1;
+					rfunc3 <= func3;
+					pendingload <= 1'b1;
+				end
+				instrOneHotOut[`O_H_JAL],
+				instrOneHotOut[`O_H_JALR]: begin
+					wbdin <= adjacentPC;
+					wback <= 1'b1;
+					btarget <= instrOneHotOut[`O_H_JAL] ? offsetPC : rwaddress;
+					btready <= 1'b1;
+				end
+				instrOneHotOut[`O_H_BRANCH]: begin
+					btarget <= branchout ? offsetPC : adjacentPC;
+					btready <= 1'b1;
+				end
+			endcase
+
+			// sys, math, store and load require wait states
+			ctlmode <=	(mulstrobe || divstrobe) ? MATHWAIT : (instrOneHotOut[`O_H_SYSTEM] ? SYSOP : READINSTR);
+		end
+
+		MATHWAIT: begin
+			unique case(1'b1)
+				mathop[0]:	wbdin <= (func3 == `F3_REM) ? remainder : remainderu;
+				mathop[1]:	wbdin <= (func3 == `F3_DIV) ? quotient : quotientu;
+				mathop[2]:	wbdin <= product;
+			endcase
+
+			wback <= (mulready || divready || divuready);
+			ctlmode <= (mulready || divready || divuready) ? READINSTR : MATHWAIT;
+		end
+
+		SYSOP: begin
+			case ({func3, func12})
+				{3'b000, `F12_CDISCARD}:	ctlmode <= SYSCDISCARD;
+				{3'b000, `F12_CFLUSH}:		ctlmode <= SYSCFLUSH;
+				//{3'b000, `F12_MRET}:		ctlmode <= SYSMRET;		// Handled by Fetch unit
+				//{3'b000, `F12_WFI}:		ctlmode <= SYSWFI;		// Handled by Fetch unit
+				//{3'b000, `F12_EBREAK}:	ctlmode <= SYSEBREAK;	// Handled by Fetch unit
+				//{3'b000, `F12_ECALL}:		ctlmode <= SYSECALL;	// Handled by Fetch unit
+				default:					ctlmode <= CSROPS;
+			endcase
+		end
+
+		SYSCDISCARD: begin
+			m_ibus.dcacheop <= 2'b01; // {nowb,iscachecmd}
+			m_ibus.cstrobe <= 1'b1;
+			ctlmode <= WCACHE;
+		end
+
+		SYSCFLUSH: begin
+			m_ibus.dcacheop <= 2'b11; // {wb,iscachecmd}
+			m_ibus.cstrobe <= 1'b1;
+			ctlmode <= WCACHE;
+		end
+
+		WCACHE: begin
+			// Wait for pending cache operation to complete and unblock fetch unit
+			btarget <= adjacentPC;
+			btready <= m_ibus.cdone;
+			ctlmode <= m_ibus.cdone ? READINSTR : WCACHE;
+		end
+
+		CSROPS: begin
+			m_ibus.raddr <= {20'h80004, csroffset}; // TODO: 0x8000?+(CID<<12) but make sure CSR address space is at the end
+			m_ibus.rstrobe <= 1'b1;
+			ctlmode <= WCSROP;
+		end
+
+		WCSROP: begin
+			if (m_ibus.rdone) begin
+				csrprevval <= m_ibus.rdata;
+			end
+			ctlmode <= m_ibus.rdone ? SYSWBACK : WCSROP;
+		end
+
+		SYSWBACK: begin
+			// Update CSR register with read value
+			m_ibus.waddr <= {20'h80004, csroffset}; // TODO: 0x8000?+(CID<<12) but make sure CSR address space is at the end
+			m_ibus.wstrobe <= 4'b1111;
+			unique case (func3)
+				3'b001: begin // CSRRW
+					m_ibus.wdata <= A;
+				end
+				3'b101: begin // CSRRWI
+					m_ibus.wdata <= D;
+				end
+				3'b010: begin // CSRRS
+					m_ibus.wdata <= csrprevval | A;
+				end
+				3'b110: begin // CSRRSI
+					m_ibus.wdata <= csrprevval | D;
+				end
+				3'b011: begin // CSRRC
+					m_ibus.wdata <= csrprevval & (~A);
+				end
+				3'b111: begin // CSRRCI
+					m_ibus.wdata <= csrprevval & (~D);
+				end
+				default: begin // Unknown
+					m_ibus.wdata <= csrprevval;
+				end
+			endcase
+
+			// Wait for CSR writeback
+			ctlmode <= SYSWAIT;
+		end
+
+		SYSWAIT: begin
+			ctlmode <= m_ibus.wdone ? READINSTR : SYSWAIT;
+
+			// Store old CSR value in wbdest
+			wbdin <= csrprevval;
+			wback <= m_ibus.wdone;
+		end
+	endcase
+
+	if (~aresetn) begin
 		m_ibus.raddr <= 32'd0;
 		m_ibus.waddr <= 32'd0;
 		m_ibus.rstrobe <= 1'b0;
 		m_ibus.wstrobe <= 4'h0;
 		m_ibus.cstrobe <= 1'b0;
 		m_ibus.dcacheop <= 2'b0;
-
 		ififore <= 1'b0;
 		wback <= 1'b0;
-
-		B <= 32'd0;
 		subresetn <= 1'b0;
-
 		wbdin <= 32'd0;
-
-	end else begin
-
-		btready <= 1'b0;	// Stop branch target ready strobe
-		ififore <= 1'b0;	// Stop instruction fifo read enable strobe
-		wback <= 1'b0;		// Stop register writeback shadow strobe 
-
-		m_ibus.rstrobe <= 1'b0;	// Stop data read strobe
-		m_ibus.wstrobe <= 4'h0;	// Stop data write strobe
-		m_ibus.cstrobe <= 1'b0;	// Stop data cache strobe
-
-		mulstrobe <= 1'b0;	// Stop integer mul strobe 
-		divstrobe <= 1'b0;	// Stop integer div/rem strobe
-
-		wbdin <= 32'd0;
-
-		if (m_ibus.wdone) pendingwrite <= 1'b0;
-		if (m_ibus.rdone) pendingload <= 1'b0;
-
-		unique case(ctlmode)
-			INIT: begin
-				subresetn <= 1'b1;
-				ctlmode <= READINSTR;
-			end
-
-			READINSTR: begin
-				// Grab next decoded instruction if there's something in the FIFO
-				{	rs3, func7, csroffset,
-					func12, func3,
-					instrOneHotOut, selectimmedasrval2,
-					bluop, aluop,
-					rs1, rs2, rd,
-					immed, PC[31:1], stepsize} <= ififodout;
-				PC[0] <= 1'b0; // NOTE: Since we don't do byte addressing, lowest bit is always set to zero
-				ififore <= (ififovalid && ~ififoempty && ~pendingwback && ~pendingload);
-				ctlmode <= (ififovalid && ~ififoempty && ~pendingwback && ~pendingload) ? READREG : READINSTR;
-			end
-
-			READREG: begin
-				// Set up inputs to math/branch units, addresses, and any math strobes required
-				A <= rval1;
-				B <= rval2;
-				C <= selectimmedasrval2 ? immed : rval2;
-				D <= immed;
-				wbdest <= rd;
-				rwaddress <= rval1 + immed;
-				offsetPC <= PC + immed;
-				adjacentPC <= PC + (stepsize ? 32'd4 : 32'd2);
-				mulstrobe <= (aluop==`ALU_MUL);
-				divstrobe <= (aluop==`ALU_DIV || aluop==`ALU_REM);				
-				mathop <= {aluop==`ALU_MUL, aluop==`ALU_DIV, aluop==`ALU_REM};
-				// Store doesn't wait in-place, but we can ensure there's no data in flight at this late point
-				ctlmode <= pendingwrite ? READREG : (instrOneHotOut[`O_H_STORE] ? WRITE : DISPATCH);
-			end
-
-			WRITE: begin
-				m_ibus.waddr <= rwaddress;
-				pendingwrite <= 1'b1;
-				unique case(func3)
-					3'b000:  m_ibus.wdata <= {B[7:0], B[7:0], B[7:0], B[7:0]};
-					3'b001:  m_ibus.wdata <= {B[15:0], B[15:0]};
-					default: m_ibus.wdata <= B;
-				endcase
-				unique case(func3)
-					3'b000:  m_ibus.wstrobe <= {rwaddress[1]&rwaddress[0], rwaddress[1]&(~rwaddress[0]), (~rwaddress[1])&rwaddress[0], (~rwaddress[1])&(~rwaddress[0])};
-					3'b001:  m_ibus.wstrobe <= {rwaddress[1], rwaddress[1], ~rwaddress[1], ~rwaddress[1]};
-					default: m_ibus.wstrobe <= 4'b1111;
-				endcase
-				ctlmode <= READINSTR;
-			end
-
-			DISPATCH: begin
-				// Most instructions are done here and go directly to writeback
-				unique case(1'b1)
-					instrOneHotOut[`O_H_OP],
-					instrOneHotOut[`O_H_OP_IMM]: begin
-						wbdin <= aluout;
-						wback <= 1'b1;
-					end
-					instrOneHotOut[`O_H_AUIPC],
-					instrOneHotOut[`O_H_LUI]: begin
-						wbdin <= instrOneHotOut[`O_H_AUIPC] ? offsetPC : D;
-						wback <= 1'b1;
-					end
-					instrOneHotOut[`O_H_LOAD]: begin
-						m_ibus.raddr <= rwaddress;
-						m_ibus.rstrobe <= 1'b1;
-						rfunc3 <= func3;
-						pendingload <= 1'b1;
-					end
-					instrOneHotOut[`O_H_JAL],
-					instrOneHotOut[`O_H_JALR]: begin
-						wbdin <= adjacentPC;
-						wback <= 1'b1;
-						btarget <= instrOneHotOut[`O_H_JAL] ? offsetPC : rwaddress;
-						btready <= 1'b1;
-					end
-					instrOneHotOut[`O_H_BRANCH]: begin
-						btarget <= branchout ? offsetPC : adjacentPC;
-						btready <= 1'b1;
-					end
-				endcase
-
-				// sys, math, store and load require wait states
-				ctlmode <=	(mulstrobe || divstrobe) ? MATHWAIT : (instrOneHotOut[`O_H_SYSTEM] ? SYSOP : READINSTR);
-			end
-
-			MATHWAIT: begin
-				unique case(1'b1)
-					mathop[0]:	wbdin <= (func3 == `F3_REM) ? remainder : remainderu;
-					mathop[1]:	wbdin <= (func3 == `F3_DIV) ? quotient : quotientu;
-					mathop[2]:	wbdin <= product;
-				endcase
-
-				wback <= (mulready || divready || divuready);
-				ctlmode <= (mulready || divready || divuready) ? READINSTR : MATHWAIT;
-			end
-
-			SYSOP: begin
-				case ({func3, func12})
-					{3'b000, `F12_CDISCARD}:	ctlmode <= SYSCDISCARD;
-					{3'b000, `F12_CFLUSH}:		ctlmode <= SYSCFLUSH;
-					//{3'b000, `F12_MRET}:		ctlmode <= SYSMRET;		// Handled by Fetch unit
-					//{3'b000, `F12_WFI}:		ctlmode <= SYSWFI;		// Handled by Fetch unit
-					//{3'b000, `F12_EBREAK}:	ctlmode <= SYSEBREAK;	// Handled by Fetch unit
-					//{3'b000, `F12_ECALL}:		ctlmode <= SYSECALL;	// Handled by Fetch unit
-					default:					ctlmode <= CSROPS;
-				endcase
-			end
-
-			SYSCDISCARD: begin
-				m_ibus.dcacheop <= 2'b01; // {nowb,iscachecmd}
-				m_ibus.cstrobe <= 1'b1;
-				ctlmode <= WCACHE;
-			end
-
-			SYSCFLUSH: begin
-				m_ibus.dcacheop <= 2'b11; // {wb,iscachecmd}
-				m_ibus.cstrobe <= 1'b1;
-				ctlmode <= WCACHE;
-			end
-
-			WCACHE: begin
-				// Wait for pending cache operation to complete and unblock fetch unit
-				btarget <= adjacentPC;
-				btready <= m_ibus.cdone;
-				ctlmode <= m_ibus.cdone ? READINSTR : WCACHE;
-			end
-
-			CSROPS: begin
-				m_ibus.raddr <= {20'h80004, csroffset}; // TODO: 0x8000?+(CID<<12) but make sure CSR address space is at the end
-				m_ibus.rstrobe <= 1'b1;
-				ctlmode <= WCSROP;
-			end
-
-			WCSROP: begin
-				if (m_ibus.rdone) begin
-					csrprevval <= m_ibus.rdata;
-				end
-				ctlmode <= m_ibus.rdone ? SYSWBACK : WCSROP;
-			end
-
-			SYSWBACK: begin
-				// Update CSR register with read value
-				m_ibus.waddr <= {20'h80004, csroffset}; // TODO: 0x8000?+(CID<<12) but make sure CSR address space is at the end
-				m_ibus.wstrobe <= 4'b1111;
-				unique case (func3)
-					3'b001: begin // CSRRW
-						m_ibus.wdata <= A;
-					end
-					3'b101: begin // CSRRWI
-						m_ibus.wdata <= D;
-					end
-					3'b010: begin // CSRRS
-						m_ibus.wdata <= csrprevval | A;
-					end
-					3'b110: begin // CSRRSI
-						m_ibus.wdata <= csrprevval | D;
-					end
-					3'b011: begin // CSRRC
-						m_ibus.wdata <= csrprevval & (~A);
-					end
-					3'b111: begin // CSRRCI
-						m_ibus.wdata <= csrprevval & (~D);
-					end
-					default: begin // Unknown
-						m_ibus.wdata <= csrprevval;
-					end
-				endcase
-
-				// Wait for CSR writeback
-				ctlmode <= SYSWAIT;
-			end
-
-			SYSWAIT: begin
-				ctlmode <= m_ibus.wdone ? READINSTR : SYSWAIT;
-
-				// Store old CSR value in wbdest
-				wbdin <= csrprevval;
-				wback <= m_ibus.wdone;
-			end
-		endcase
+		ctlmode <= INIT;
 	end
 end
 
