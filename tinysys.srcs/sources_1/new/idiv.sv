@@ -24,11 +24,12 @@ assign ready = rdy;
 
 logic divstate = 1'b0;
 
-wire [32:0] sub_add = r_sign ? ({reg_r,reg_q[31]}+{1'b0,reg_b}) : ({reg_r,reg_q[31]}-{1'b0,reg_b});
+wire [32:0] sub_addn = ({reg_r,reg_q[31]}+{1'b0,reg_b});
+wire [32:0] sub_addm = ({reg_r,reg_q[31]}-{1'b0,reg_b});
 wire [31:0] rem = r_sign ? reg_r + reg_b : reg_r;
 wire [31:0] quo = reg_q;
 
-always @(posedge aclk)begin
+always @(posedge aclk) begin
     count <= count+1;
     rdy <= 1'b0;
     unique case (divstate)
@@ -41,9 +42,18 @@ always @(posedge aclk)begin
             divstate <= start;
         end
         1'b1: begin
-            reg_r <= sub_add[31:0];
-            r_sign <= sub_add[32];
-            reg_q <= {reg_q[30:0], ~sub_add[32]};
+        	unique case (r_sign)
+        		1'b1: begin
+            		reg_r <= sub_addn[31:0];
+    		        r_sign <= sub_addn[32];
+	            	reg_q <= {reg_q[30:0], ~sub_addn[32]};
+        		end
+        		1'b0: begin
+            		reg_r <= sub_addm[31:0];
+    		        r_sign <= sub_addm[32];
+	            	reg_q <= {reg_q[30:0], ~sub_addm[32]};
+        		end
+        	endcase
             rdy <= count[5];
             divstate <= ~count[5];
             if (count[5]) begin
@@ -89,7 +99,8 @@ assign ready = rdy;
 
 logic divstate = 1'b0;
 
-wire [32:0] sub_add = r_sign ? ({reg_r,reg_q[31]}+{1'b0,reg_b}) : ({reg_r,reg_q[31]}-{1'b0,reg_b});
+wire [32:0] sub_addn = ({reg_r,reg_q[31]}+{1'b0,reg_b});
+wire [32:0] sub_addm = ({reg_r,reg_q[31]}-{1'b0,reg_b});
 wire [31:0] rem = r_sign ? reg_r + reg_b : reg_r;
 wire [31:0] quo = reg_q;
 
@@ -108,9 +119,18 @@ always @(posedge aclk) begin
             divstate <= start;
         end
         1'b1: begin
-            reg_r <= sub_add[31:0];
-            r_sign <= sub_add[32];
-            reg_q <= {reg_q[30:0], ~sub_add[32]};
+        	unique case (r_sign)
+        		1'b1: begin
+            		reg_r <= sub_addn[31:0];
+    		        r_sign <= sub_addn[32];
+	            	reg_q <= {reg_q[30:0], ~sub_addn[32]};
+        		end
+        		1'b0: begin
+            		reg_r <= sub_addm[31:0];
+    		        r_sign <= sub_addm[32];
+	            	reg_q <= {reg_q[30:0], ~sub_addm[32]};
+        		end
+        	endcase
             rdy <= count[5];
             divstate <= ~count[5];
             if (count[5]) begin

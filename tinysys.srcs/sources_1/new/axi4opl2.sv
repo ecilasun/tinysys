@@ -11,7 +11,7 @@ module axi4opl2(
 // OPL2 fifo
 // ------------------------------------------------------------------------------------
 
-logic [8:0] opl2fifodin = 9'd0;
+logic [8:0] opl2fifodin;
 wire [8:0] opl2fifodout;
 logic opl2fifowe = 1'b0;
 logic opl2fifore = 1'b0;
@@ -132,84 +132,90 @@ always @(posedge aclk) begin
 	end
 end
 
-logic writestate = 1'b0;
+logic [1:0] writestate = 2'b0;
 
 always @(posedge aclk) begin
+	opl2fifowe <= 1'b0;
+
+	s_axi.wready <= 1'b0;
+	s_axi.bvalid <= 1'b0;
+
+	unique case (writestate)
+		2'b00: begin
+			s_axi.bresp <= 2'b00; // okay
+			s_axi.bvalid <= 1'b0;
+			s_axi.wready <= 1'b0;
+			opl2fifodin <= 9'd0;
+			writestate <= 2'b01;
+		end
+		2'b01: begin
+			if (s_axi.wvalid && ~opl2fifofull) begin // && opl2ce) begin
+				unique case (s_axi.awaddr[3:0])
+					4'h0: begin
+						// Will be latched on next CE
+						// DO NO
+						// CSn RDn WRn A0
+						// 0   1   0   0	// write register address
+						// Only stores A0 since the other two are zeroes
+						opl2fifodin <= {1'b0,s_axi.wdata[7:0]};
+						opl2fifowe <= 1'b1; 
+					end
+					4'h4: begin
+						// CSn RDn WRn A0
+						// 0   1   0   1	// write register value
+						// Only stores A0 since the other two are zeroes
+						opl2fifodin <= {1'b1,s_axi.wdata[7:0]};
+						opl2fifowe <= 1'b1;
+					end
+				endcase
+				writestate <= 2'b10;
+				s_axi.wready <= 1'b1;
+			end
+		end
+		2'b10: begin
+			if (s_axi.bready) begin
+				s_axi.bvalid <= 1'b1;
+				writestate <= 2'b01;
+			end
+		end
+	endcase
+
 	if (~aresetn) begin
-		s_axi.bresp <= 2'b00; // okay
-		s_axi.bvalid <= 1'b0;
-		s_axi.wready <= 1'b0;
-		writestate <= 1'b0;
-	end else begin
-
-		opl2fifowe <= 1'b0;
-
-		s_axi.wready <= 1'b0;
-		s_axi.bvalid <= 1'b0;
-
-		unique case (writestate)
-			1'b0: begin
-				if (s_axi.wvalid && ~opl2fifofull) begin // && opl2ce) begin
-					unique case (s_axi.awaddr[3:0])
-						4'h0: begin
-							// Will be latched on next CE
-							// DO NO
-							// CSn RDn WRn A0
-							// 0   1   0   0	// write register address
-							// Only stores A0 since the other two are zeroes
-							opl2fifodin <= {1'b0,s_axi.wdata[7:0]};
-							opl2fifowe <= 1'b1; 
-						end
-						4'h4: begin
-							// CSn RDn WRn A0
-							// 0   1   0   1	// write register value
-							// Only stores A0 since the other two are zeroes
-							opl2fifodin <= {1'b1,s_axi.wdata[7:0]};
-							opl2fifowe <= 1'b1;
-						end
-					endcase
-					writestate <= 1'b1;
-					s_axi.wready <= 1'b1;
-				end
-			end
-			1'b1: begin
-				if (s_axi.bready) begin
-					s_axi.bvalid <= 1'b1;
-					writestate <= 1'b0;
-				end
-			end
-		endcase
+		writestate <= 2'b00;
 	end
 end
 
-logic raddrstate = 1'b0;
+logic [1:0] raddrstate = 2'b00;
 
 always @(posedge aclk) begin
+	s_axi.rvalid <= 1'b0;
+	s_axi.arready <= 1'b0;
+	unique case (raddrstate)
+		2'b00: begin
+			s_axi.rlast <= 1'b1;
+			s_axi.arready <= 1'b0;
+			s_axi.rvalid <= 1'b0;
+			s_axi.rresp <= 2'b00;
+			raddrstate <= 2'b01;
+		end
+		2'b01: begin
+			if (s_axi.arvalid) begin
+				s_axi.arready <= 1'b1;
+				raddrstate <= 2'b10;
+			end
+		end
+		2'b10: begin
+			if (s_axi.rready) begin
+				// OPL2 state
+				s_axi.rdata[31:0] <= {24'd0, opl2doutcdc};
+				s_axi.rvalid <= 1'b1;
+				raddrstate <= 2'b01;
+			end
+		end
+	endcase
+
 	if (~aresetn) begin
-		s_axi.rlast <= 1'b1;
-		s_axi.arready <= 1'b0;
-		s_axi.rvalid <= 1'b0;
-		s_axi.rresp <= 2'b00;
-		raddrstate <= 1'b0;
-	end else begin
-		s_axi.rvalid <= 1'b0;
-		s_axi.arready <= 1'b0;
-		unique case (raddrstate)
-			1'b0: begin
-				if (s_axi.arvalid) begin
-					s_axi.arready <= 1'b1;
-					raddrstate <= 1'b1;
-				end
-			end
-			1'b1: begin
-				if (s_axi.rready) begin
-					// OPL2 state
-					s_axi.rdata[31:0] <= {24'd0, opl2doutcdc};
-					s_axi.rvalid <= 1'b1;
-					raddrstate <= 1'b0;
-				end
-			end
-		endcase
+		raddrstate <= 2'b00;
 	end
 end
 

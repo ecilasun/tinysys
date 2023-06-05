@@ -66,8 +66,8 @@ set_property -dict {PACKAGE_PIN K4 IOSTANDARD LVCMOS33} [get_ports uart_txd_in]
 set_property -dict {PACKAGE_PIN AA19 IOSTANDARD LVCMOS33} [get_ports sdcard_cs_n]
 set_property -dict {PACKAGE_PIN AA20 IOSTANDARD LVCMOS33} [get_ports sdcard_mosi]
 set_property -dict {PACKAGE_PIN AB21 IOSTANDARD LVCMOS33} [get_ports sdcard_clk]
-set_property -dict {PACKAGE_PIN V18  IOSTANDARD LVCMOS33} [get_ports sdcard_miso]
-set_property -dict {PACKAGE_PIN U20  IOSTANDARD LVCMOS33} [get_ports sdcard_swtch]
+set_property -dict {PACKAGE_PIN V18 IOSTANDARD LVCMOS33} [get_ports sdcard_miso]
+set_property -dict {PACKAGE_PIN U20 IOSTANDARD LVCMOS33} [get_ports sdcard_swtch]
 
 ## SD mode - sorted by sdcard pin order
 ## set_property -dict {PACKAGE_PIN U20 IOSTANDARD LVCMOS33} [get_ports {sd_dat[2]}]
@@ -91,10 +91,10 @@ set_property -dict {PACKAGE_PIN U20  IOSTANDARD LVCMOS33} [get_ports sdcard_swtc
 ## hdmi_tx_p[0]  pin U4:47 [AB3]
 ## hdmi_tx_n[0]  pin U4:48 [AB2]
 
-set_property -dict {PACKAGE_PIN T1  IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_p]
-set_property -dict {PACKAGE_PIN U1  IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_n]
-set_property -dict {PACKAGE_PIN W1  IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[1]}]
-set_property -dict {PACKAGE_PIN Y1  IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[1]}]
+set_property -dict {PACKAGE_PIN T1 IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_p]
+set_property -dict {PACKAGE_PIN U1 IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_n]
+set_property -dict {PACKAGE_PIN W1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[1]}]
+set_property -dict {PACKAGE_PIN Y1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[1]}]
 set_property -dict {PACKAGE_PIN AA1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[2]}]
 set_property -dict {PACKAGE_PIN AB1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[2]}]
 set_property -dict {PACKAGE_PIN AB3 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[0]}]
@@ -163,7 +163,7 @@ set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports usbc_int]
 set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
 
 ## MAX3420E's INT pin requires an external pullup resistor when in INTLEVEL mode
-set_property PULLUP TRUE [get_ports usbc_int]
+set_property PULLUP true [get_ports usbc_int]
 
 ## ------------------------------------------------------------------------------------------------------
 ## USB-A - MAX3421EECJ over SPI interface
@@ -253,3 +253,7 @@ set_clock_groups -name asyncJ -asynchronous -group [get_clocks -of_objects [get_
 
 ## There is no path from GPU to I$, only appears so because we're connected to the same bus
 ## set_false_path -from [get_pins {socinstance/GPU/m_axi\\.araddr_reg/CLK}] -to [get_pins socinstance/fetchdecodeinst/instructioncacheinst/instructioncachectlinst/dout_reg*/CE]
+
+## Human input
+## set_input_delay -clock [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT0]] -200.000 [get_ports sysresetn]
+## set_input_delay -clock [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT0]] -200.000 [get_ports sdcard_swtch]
