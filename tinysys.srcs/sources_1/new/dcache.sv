@@ -43,6 +43,7 @@ logic [16:0] ptag;					// previous cache tag (17 bits)
 logic [16:0] ctag;					// current cache tag (17 bits)
 logic [3:0] coffset;				// current word offset 0..15
 logic [7:0] cline;					// current cache line 0..256
+logic valid;						// valid flag for current cache line
 
 logic cachelinewb[0:255];			// cache line needs write back when high
 logic cachelinevalid[0:255];		// cache line state (invalid / valid)
@@ -144,6 +145,7 @@ always_ff @(posedge aclk) begin
 			ctag <= tag;					// Cache tag 00000..1ffff
 			ptag <= cachelinetags[line];	// Previous cache tag
 			inputdata <= din;
+			valid <= cachelinevalid[line];
 
 			casex ({dcacheop[0], isuncached, ren, |wstrb})
 				4'b0001: cachestate <= CWRITE;
@@ -263,7 +265,7 @@ always_ff @(posedge aclk) begin
 		end
 
 		CWRITE: begin
-			if ((ctag == ptag) && cachelinevalid[cline]) begin
+			if ((ctag == ptag) && valid) begin
 				cdin <= {	inputdata, inputdata, inputdata, inputdata,
 							inputdata, inputdata, inputdata, inputdata,
 							inputdata, inputdata, inputdata, inputdata,
@@ -296,7 +298,7 @@ always_ff @(posedge aclk) begin
 		end
 
 		CREAD: begin
-			if ((ctag == ptag) && cachelinevalid[cline]) begin
+			if ((ctag == ptag) && valid) begin
 				// Return word directly from cache
 				unique case(coffset)
 					4'b0000:  dout <= cdout[31:0];
@@ -324,7 +326,7 @@ always_ff @(posedge aclk) begin
 		end
 
 		CWBACK : begin
-			if (cachelinevalid[cline]) begin
+			if (valid) begin
 				// Use old memory address with device selector, aligned to cache boundary, top bit ignored (cached address)
 				cacheaddress <= {1'b0, ptag, cline, 6'd0};
 				cachedout <= {cdout[127:0], cdout[255:128], cdout[383:256], cdout[511:384]};
@@ -364,15 +366,13 @@ always_ff @(posedge aclk) begin
 			cachelinewb[cline] <= 1'b0;
 			// Contents are now associated with a memory location
 			cachelinevalid[cline] <= 1'b1;
+			valid <= 1'b1;
 			cachestate <= (rwmode == 2'b01) ? CWRITE : CREAD;
 		end
 	endcase
 
 	if (~aresetn) begin
 		cachestate <= IDLE;
-		memwritestrobe <= 1'b0;
-		memreadstrobe <= 1'b0;
-		//cdin <= 512'd0;
 	end
 end
 

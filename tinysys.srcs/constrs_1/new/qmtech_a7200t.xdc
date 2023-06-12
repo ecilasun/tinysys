@@ -163,7 +163,7 @@ set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports usbc_int]
 set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
 
 ## MAX3420E's INT pin requires an external pullup resistor when in INTLEVEL mode
-set_property PULLUP true [get_ports usbc_int]
+#set_property PULLUP true [get_ports usbc_int]
 
 ## ------------------------------------------------------------------------------------------------------
 ## USB-A - MAX3421EECJ over SPI interface
