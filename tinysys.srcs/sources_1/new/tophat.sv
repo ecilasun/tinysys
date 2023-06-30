@@ -45,7 +45,12 @@ module tophat(
 	,input wire usbc_int
 	,input wire usbc_gpx
 	// USB-A via MAX4321
-	// TODO: wire the pins here
+	,input wire usba_miso
+	,output wire usba_ss_n
+	,output wire usba_clk
+	,output wire usba_mosi
+	,output wire usba_resn
+	,input wire usba_int
 	// ADC
 	,output wire adclk
 	,input wire addout
@@ -131,6 +136,15 @@ max3420wires usbcconn(
 	.irq(usbc_int),
 	.gpx(usbc_gpx));
 
+max3420wires usbaconn(
+	.miso(usba_miso),
+	.cs_n(usba_ss_n),
+	.clk(usba_clk),
+	.mosi(usba_mosi),
+	.resn(usba_resn),
+	.irq(usba_int),
+	.gpx(1'b0));
+
 // --------------------------------------------------
 // ADC wires
 // --------------------------------------------------
@@ -176,6 +190,7 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.gpuvideoout(gpuvideoout),
 	.sdconn(sdconn),
 	.usbcconn(usbcconn),
+	.usbaconn(usbaconn),
 	.adcconn(adcconn));
 
 endmodule

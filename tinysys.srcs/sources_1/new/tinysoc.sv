@@ -22,6 +22,7 @@ module tinysoc #(
 	audiowires.def i2sconn,
 	sdcardwires.def sdconn,
 	max3420wires.def usbcconn,
+	max3420wires.def usbaconn,
 	adcwires.def adcconn);
 
 // --------------------------------------------------
@@ -45,9 +46,10 @@ axi4if spiif();				// Sub bus: SPI control device
 axi4if csrif();				// Sub bus: CSR file device
 axi4if xadcif();			// Sub bus: ADC controller
 axi4if dmaif();				// Sub bus: DMA controller
-axi4if uscbif();			// Sub bus: USB-C controller
+axi4if usbcif();			// Sub bus: USB-C controller (device)
 axi4if audioif();			// Sub bus: APU i2s audio output unit
 axi4if opl2if();			// Sub bus: OPL2 interface
+axi4if usbaif();			// Sub bus: USB-A controller (host)
 
 ibusif ibus();				// Internal bus between units
 
@@ -272,7 +274,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // USBC: 80007000  80007FFF  19'b000_0000_0000_0000_0111  4KB
 // APUC: 80008000  80008FFF  19'b000_0000_0000_0000_1000  4KB
 // OPL2: 80009000  80009FFF  19'b000_0000_0000_0000_1001  4KB
-// ----: 8000A000  8000AFFF  19'b000_0000_0000_0000_1010  4KB
+// USBA: 8000A000  8000AFFF  19'b000_0000_0000_0000_1010  4KB
 // ----: 8000B000  8000BFFF  19'b000_0000_0000_0000_1011  4KB
 // ----: 8000C000  8000CFFF  19'b000_0000_0000_0000_1100  4KB
 // ----: 8000D000  8000DFFF  19'b000_0000_0000_0000_1101  4KB
@@ -284,6 +286,7 @@ devicerouter devicerouterinst(
 	.aresetn(aresetn),
     .axi_s(devicebus),
     .addressmask({
+    	19'b000_0000_0000_0000_1010,	// USBA USB-A access via SPI
     	19'b000_0000_0000_0000_1001,	// OPL2	OPL2(YM8312) Command and Register Ports
     	19'b000_0000_0000_0000_1000,	// APUC	Audio Processing Unit Command Fifo
         19'b000_0000_0000_0000_0111,	// USBC USB-C access via SPI
@@ -294,7 +297,7 @@ devicerouter devicerouterinst(
 		19'b000_0000_0000_0000_0010,	// GPUC Graphics Processing Unit Command Fifo
 		19'b000_0000_0000_0000_0001,	// LEDS Debug / Status LED interface
 		19'b000_0000_0000_0000_0000 }),	// UART UART read/write port
-    .axi_m({opl2if, audioif, uscbif, dmaif, xadcif, csrif, spiif, gpucmdif, ledif, uartif}));
+    .axi_m({usbaif, opl2if, audioif, usbcif, dmaif, xadcif, csrif, spiif, gpucmdif, ledif, uartif}));
 
 // --------------------------------------------------
 // Memory mapped devices
@@ -302,7 +305,7 @@ devicerouter devicerouterinst(
 
 wire uartrcvempty;
 wire keyfifoempty;
-wire usbirq;
+wire usbcirq, usbairq;
 
 axi4uart #(.BAUDRATE(115200), .FREQ(10000000)) uartinst(
 	.aclk(aclk),
@@ -343,8 +346,16 @@ axi4usbc usbcinst(
 	.aresetn(aresetn),
 	.spibaseclock(clk50),
 	.usbcconn(usbcconn),
-	.usbirq(usbirq),
-	.s_axi(uscbif));
+	.usbirq(usbcirq),
+	.s_axi(usbcif));
+
+axi4usbc usbainst(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.spibaseclock(clk50),
+	.usbcconn(usbaconn),
+	.usbirq(usbairq),
+	.s_axi(usbaif));
 
 // CSR file acts as a region of uncached memory
 // Access to register indices get mapped to LOAD/STORE
@@ -361,7 +372,7 @@ axi4CSRFile csrfileinst(
 	// External interrupt wires
 	.uartrcvempty(uartrcvempty),
 	.keyfifoempty(keyfifoempty),
-	.usbirq(usbirq),
+	.usbirq({usbairq, usbcirq}),
 	// Shadow registers
 	.mepc(mepc),
 	.mtvec(mtvec),

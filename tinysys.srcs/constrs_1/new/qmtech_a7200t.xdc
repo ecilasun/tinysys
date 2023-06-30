@@ -141,7 +141,7 @@ set_property -dict {PACKAGE_PIN L15 IOSTANDARD LVCMOS33} [get_ports au_lrclk]
 set_property -dict {PACKAGE_PIN N19 IOSTANDARD LVCMOS33} [get_ports au_mclk]
 
 ## ------------------------------------------------------------------------------------------------------
-## USB-C - MAX3420EECJ over SPI interface
+## USB-C - MAX3420EECJ over SPI interface, USB Device
 ## ------------------------------------------------------------------------------------------------------
 
 ## usbres_n   pin U2:14  [H20] -> hold low to reset the chip
@@ -166,16 +166,23 @@ set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
 #set_property PULLUP true [get_ports usbc_int]
 
 ## ------------------------------------------------------------------------------------------------------
-## USB-A - MAX3421EECJ over SPI interface
+## USB-A - MAX3421EECJ over SPI interface, USB Host
 ## ------------------------------------------------------------------------------------------------------
 
+## usbres_n   pin U2:51  [AB22] -> hold low to reset the chip
+## usbbss_n   pin U2:60  [AA18] -> slave select input, active low (required to send spi commands)
 ## usbclk     pin U2:59  [AB18] -> up to 26MHz
 ## usbmosi    pin U2:55  [AB20] -> spi mosi
 ## usbmiso    pin U2:57  [Y19] -> spi miso
-## usbres_n   pin U2:51  [AB22] -> hold low to reset the chip
-## usbbss_n   pin U2:60  [AA18] -> slave select input, active low (required to send spi commands)
 ## usbint     pin U2:53  [AA21] -> set the IE bit(bit#0) in the CPUCTL(r16) register to enable interrupts
-## usbgpx     pin U2:  [] -> not connected
+
+set_property -dict {PACKAGE_PIN AB22 IOSTANDARD LVCMOS33} [get_ports usba_resn]
+set_property -dict {PACKAGE_PIN AA18 IOSTANDARD LVCMOS33} [get_ports usba_ss_n]
+set_property -dict {PACKAGE_PIN AB18 IOSTANDARD LVCMOS33} [get_ports usba_clk]
+set_property -dict {PACKAGE_PIN AB20 IOSTANDARD LVCMOS33} [get_ports usba_mosi]
+set_property -dict {PACKAGE_PIN Y19  IOSTANDARD LVCMOS33} [get_ports usba_miso]
+set_property -dict {PACKAGE_PIN AA21 IOSTANDARD LVCMOS33} [get_ports usba_int]
+set_property PULLUP true [get_ports usba_int]
 
 ## ------------------------------------------------------------------------------------------------------
 ## NMI switch
