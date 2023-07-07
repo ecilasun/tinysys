@@ -113,3 +113,4 @@ NOTE: One thing worth mentioning is that at this time Win32 compiler toolchain w
 Be advised that all software has been tested with and geared to use a gcc-riscv 32bit environment under Linux, therefore any compiler changes and/or bit width changes are untested at this moment, as well as some glitches / mismatches that might occur under Windows setups.
 
 Copyright 2023 Engin Cilasun
+Please see license.txt file for details
