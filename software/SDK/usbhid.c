@@ -105,15 +105,6 @@ void MAX3421CtlReset()
 	MAX3421WriteByte(rUSBIRQ, bmOSCOKIRQ); // Clear IRQ
 }
 
-void MAX3421EnableIRQs()
-{
-	// Enable IRQs
-	// NOTE: bmIN2BAVIE is disabled since having it on spams the INT pin beyond practical serviceability
-	// Try to push data by polling from main thread instead
-	MAX3421WriteByte(rEPIEN, bmSUDAVIE | /*bmIN2BAVIE |*/ bmOUT1DAVIE);
-	MAX3421WriteByte(rUSBIEN, bmURESIE | bmURESDNIE);
-}
-
 void USBHostInit(uint32_t enableInterrupts)
 {
 	// Must set context first
@@ -122,13 +113,17 @@ void USBHostInit(uint32_t enableInterrupts)
 
 	MAX3421WriteByte(rPINCTL, bmFDUPSPI | bmINTLEVEL | gpxSOF);
 	MAX3421CtlReset();
-	MAX3421WriteByte(rGPIO, 0x0);
+	//MAX3421WriteByte(rGPIO, 0x0);
 
-	// Set DPPULLDN=0x80, DMPULLDN=0x40, HOST=0x01
-	MAX3421WriteByte(rMODE, 0xC1);
+	MAX3421WriteByte(rMODE, bmDPPULLDN | bmDMPULLDN | bmHOST);
+	MAX3421WriteByte(rHIEN, bmCONDETIE | bmFRAMEIE);
+	MAX3421WriteByte(rHCTL, bmSAMPLEBUS);
 
-	// Set up connection detect
-	MAX3421WriteByte(rHIEN, 0x20);
+	if (enableInterrupts)
+	{
+		//MAX3421WriteByte(rHIRQ, bmCONDETIRQ);
+		MAX3421WriteByte(rCPUCTL, bmIE);
+	}
 
 	// Generate descriptor table for a USB serial device
 	/*MakeHostDescriptors(s_usbhost);
