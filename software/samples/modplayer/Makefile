@@ -6,7 +6,7 @@ default: all
 
 src_dir = .
 corelib_dir = ../../SDK
-thirdparty_libs = ../../../3rdparty
+thirdparty_libs = ../../3rdparty
 
 # Rules
 

@@ -8,8 +8,8 @@ default: all
 
 src_dir = .
 corelib_dir = ../SDK
-memtest_libs = ../../3rdparty/memtest
-nanojpeg_libs = ../../3rdparty/nanojpeg
+memtest_libs = ../3rdparty/memtest
+nanojpeg_libs = ../3rdparty/nanojpeg
 
 # Executable folders
 

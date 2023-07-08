@@ -8,7 +8,7 @@ default: all
 
 src_dir = .
 corelib_dir = ../SDK
-thirdparty_libs = ../../3rdparty
+thirdparty_libs = ../3rdparty
 
 # Executable folders
 
@@ -25,7 +25,7 @@ folders = \
 RISCV_PREFIX ?= riscv64-unknown-elf-
 RISCV_GCC ?= $(RISCV_PREFIX)gcc
 RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump
-RISCVTOOL ?= ../../build/release/riscvtool
+RISCVTOOL ?= ../build/release/riscvtool
 # No filesystem when defined
 # FILESYSTEM ?= -DDISABLE_FILESYSTEM
 FILESYSTEM ?= -DENABLE_FILESYSTEM -DLFS_NO_MALLOC -DLFS_NO_DEBUG
