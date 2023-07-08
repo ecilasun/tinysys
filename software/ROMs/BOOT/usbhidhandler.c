@@ -1,7 +1,7 @@
 #include "usbhidhandler.h"
+#include "usbhid.h"
 #include "leds.h"
 #include "uart.h"
-
 
 void HandleUSBHID()
 {

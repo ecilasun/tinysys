@@ -266,8 +266,11 @@ void ExecuteCmd(char *_cmd)
 		// Start USB port with serial device configuration
 		if (s_usbserialenabled == 0)
 		{
-			UARTWrite("Initializing USB serial\n");
+			UARTWrite("Initializing USB serial device\n");
 			USBSerialInit(1);
+			UARTWrite("MAX3420 die rev# ");
+			UARTWriteHexByte(MAX3420ReadByte(rREVISION));
+			UARTWrite("\n");
 			s_usbserialenabled = 1;
 		}
 		else

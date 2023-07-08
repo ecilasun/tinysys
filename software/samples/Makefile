@@ -15,6 +15,8 @@ nanojpeg_libs = ../3rdparty/nanojpeg
 
 folders = \
 	helloworld \
+	usbserial \
+	usbhost \
 	adc \
 	memtest \
 	syscalltest \
@@ -25,7 +27,6 @@ folders = \
 	jpegview \
 	led \
 	vgmplayer \
-	usbserial \
 	dump \
 
 # Rules

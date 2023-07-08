@@ -10,19 +10,19 @@ volatile uint32_t *IO_USBCSTA = (volatile uint32_t* ) (DEVICE_USBC+4); // Output
 
 static uint32_t statusF = 0;
 static uint32_t sparebyte = 0;
-static struct SUSBContext *s_usb = NULL;
+static struct SUSBContext *s_usbser = NULL;
 
-#define ASSERT_CS *IO_USBCTRX = 0x100;
-#define RESET_CS *IO_USBCTRX = 0x101;
+#define ASSERT_MAX3420_CS *IO_USBCTRX = 0x100;
+#define RESET_MAX3420_CS *IO_USBCTRX = 0x101;
 
 void USBSerialSetContext(struct SUSBContext *ctx)
 {
-	s_usb = ctx;
+	s_usbser = ctx;
 }
 
 struct SUSBContext *USBSerialGetContext()
 {
-	return s_usb;
+	return s_usbser;
 }
 
 void MAX3420FlushOutputFIFO()
@@ -37,29 +37,29 @@ uint8_t MAX3420GetGPX()
 
 uint8_t MAX3420ReadByte(uint8_t command)
 {
-	ASSERT_CS
+	ASSERT_MAX3420_CS
 	*IO_USBCTRX = command;   // -> status in read FIFO
 	statusF = *IO_USBCTRX;   // unused
 	*IO_USBCTRX = 0;		 // -> read value in read FIFO
 	sparebyte = *IO_USBCTRX; // output value
-	RESET_CS
+	RESET_MAX3420_CS
 
 	return sparebyte;
 }
 
 void MAX3420WriteByte(uint8_t command, uint8_t data)
 {
-	ASSERT_CS
+	ASSERT_MAX3420_CS
 	*IO_USBCTRX = command | 0x02; // -> zero in read FIFO
 	statusF = *IO_USBCTRX;		// unused
 	*IO_USBCTRX = data;		   // -> zero in read FIFO
 	sparebyte = *IO_USBCTRX;	  // unused
-	RESET_CS
+	RESET_MAX3420_CS
 }
 
 int MAX3420ReadBytes(uint8_t command, uint8_t length, uint8_t *buffer)
 {
-	ASSERT_CS
+	ASSERT_MAX3420_CS
 	*IO_USBCTRX = command;   // -> status in read FIFO
 	statusF = *IO_USBCTRX;   // unused
 	//*IO_USBCTRX = 0;		 // -> read value in read FIFO
@@ -70,14 +70,14 @@ int MAX3420ReadBytes(uint8_t command, uint8_t length, uint8_t *buffer)
 		*IO_USBCTRX = 0;		  // send one dummy byte per input desired
 		buffer[i] = *IO_USBCTRX;  // store data byte
 	}
-	RESET_CS
+	RESET_MAX3420_CS
 
 	return 0;
 }
 
 void MAX3420WriteBytes(uint8_t command, uint8_t length, uint8_t *buffer)
 {
-	ASSERT_CS
+	ASSERT_MAX3420_CS
 	*IO_USBCTRX = command | 0x02;   // -> status in read FIFO
 	statusF = *IO_USBCTRX;		  // unused
 	//*IO_USBCTRX = 0;		 // -> read value in read FIFO
@@ -88,7 +88,7 @@ void MAX3420WriteBytes(uint8_t command, uint8_t length, uint8_t *buffer)
 		*IO_USBCTRX = buffer[i];  // send one dummy byte per input desired
 		sparebyte = *IO_USBCTRX;  // unused
 	}
-	RESET_CS
+	RESET_MAX3420_CS
 }
 
 void MAX3420CtlReset()
@@ -217,11 +217,11 @@ void MAX3420EnableIRQs()
 void USBSerialInit(uint32_t enableInterrupts)
 {
 	// Must set context first
-	if (s_usb==NULL)
+	if (s_usbser==NULL)
 		return;
 
 	// Generate descriptor table for a USB serial device
-	MakeCDCDescriptors(s_usb);
+	MakeCDCDescriptors(s_usbser);
 
 	// Enable full-duplex, int low, gpxA/B passthrough
 	MAX3420WriteByte(rPINCTL, bmFDUPSPI | bmINTLEVEL | gpxSOF);

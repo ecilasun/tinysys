@@ -431,7 +431,7 @@ int main(int argc, char *argv[])
 		USBSerialInit(1);
 
 		UARTWrite("MAX3420 die rev# ");
-		UARTWriteHexByte(MAX3420ReadByte(rRevision));
+		UARTWriteHexByte(MAX3420ReadByte(rREVISION));
 		UARTWrite("\n");
 
 		UARTWrite("USB ISR will handle further communications.\n");
@@ -442,7 +442,7 @@ int main(int argc, char *argv[])
 		USBSerialInit(0);
 
 		UARTWrite("MAX3420 die rev# ");
-		UARTWriteHexByte(MAX3420ReadByte(rRevision));
+		UARTWriteHexByte(MAX3420ReadByte(rREVISION));
 		UARTWrite("\n");
 
 		// Ordinarily ROM listens to this
