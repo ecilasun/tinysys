@@ -1,0 +1,36 @@
+EESchema-LIBRARY Version 2.3
+#encoding utf-8
+#(c) SnapEDA 2016 (snapeda.com)
+#This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA) with Design Exception 1.0
+#
+# SJ-3523-SMT-TR
+#
+DEF SJ-3523-SMT-TR J 0 40 Y N 1 L N
+F0 "J" -201 226 50 H V L BNN
+F1 "SJ-3523-SMT-TR" -201 -301 50 H V L BNN
+F2 "CUI_SJ-3523-SMT-TR" 0 0 50 H I L BNN
+F3 "" 0 0 50 H I L BNN
+F4 "Manufacturer recommendations" 0 0 50 H I L BNN "STANDARD"
+F5 "CUI Inc" 0 0 50 H I L BNN "MF"
+DRAW
+P 2 0 0 6 -135 50 -135 -100 N
+P 2 0 0 6 -135 -100 -85 -100 N
+P 2 0 0 6 -85 -100 -85 50 N
+P 2 0 0 6 -85 50 -110 50 N
+P 2 0 0 6 -110 50 -135 50 N
+P 2 0 0 6 -110 50 -110 100 N
+P 2 0 0 6 -110 100 200 100 N
+P 2 0 0 6 50 0 10 -50 N
+P 2 0 0 6 10 -50 -30 0 N
+P 2 0 0 6 200 0 50 0 N
+P 2 0 0 6 200 -100 140 -100 N
+P 2 0 0 6 60 -100 100 -50 N
+P 2 0 0 6 100 -50 140 -100 N
+S -200 -200 200 200 0 0 10 f
+X ~ 1 300 100 100 L 40 40 0 0 P 
+X ~ 3 300 0 100 L 40 40 0 0 P 
+X ~ 2 300 -100 100 L 40 40 0 0 P 
+ENDDRAW
+ENDDEF
+#
+# End Library
