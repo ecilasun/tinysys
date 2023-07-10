@@ -57,33 +57,47 @@ int main(int argc, char *argv[])
 	struct SUSBContext s_usbhostctx;
     USBHostSetContext(&s_usbhostctx);
 
-	UARTWrite("Bringing up USB-A\nUsing polling\n");
-	USBHostInit(0);
-
-	UARTWrite("MAX3421 die rev# ");
-	UARTWriteHexByte(MAX3421ReadByte(rREVISION));
-	UARTWrite("\n");
-
-	UARTWrite("Polling...");
-	do
+	if (argc>1)
 	{
-		uint8_t irq = MAX3421ReadByte(rHIRQ);
-		if (irq&bmFRAMEIRQ)
+		UARTWrite("Bringing up USB-A\nUsing ISR in ROM\n");
+		USBHostInit(1);
+
+		UARTWrite("MAX3421 die rev# ");
+		UARTWriteHexByte(MAX3421ReadByte(rREVISION));
+		UARTWrite("\n");
+
+		UARTWrite("USB ISR will handle further communications.\n");
+	}
+	else
+	{
+		UARTWrite("Bringing up USB-A\nUsing polling\n");
+		USBHostInit(0);
+
+		UARTWrite("MAX3421 die rev# ");
+		UARTWriteHexByte(MAX3421ReadByte(rREVISION));
+		UARTWrite("\n");
+
+		UARTWrite("Polling...");
+		do
 		{
-			UARTWrite("Frame\n");
-			MAX3421WriteByte(rHIRQ, bmFRAMEIRQ);
-		}
-		if (irq&bmCONDETIRQ)
-		{
-			BusProbe();
-			MAX3421WriteByte(rHIRQ, bmCONDETIRQ);
-		}
-		/*else
-		{
-			UARTWriteHexByte(irq);
-			UARTWrite(" ");
-		}*/
-	} while (1);
+			uint8_t irq = MAX3421ReadByte(rHIRQ);
+			if (irq&bmFRAMEIRQ)
+			{
+				UARTWrite("Frame\n");
+				MAX3421WriteByte(rHIRQ, bmFRAMEIRQ);
+			}
+			if (irq&bmCONDETIRQ)
+			{
+				BusProbe();
+				MAX3421WriteByte(rHIRQ, bmCONDETIRQ);
+			}
+			/*else
+			{
+				UARTWriteHexByte(irq);
+				UARTWrite(" ");
+			}*/
+		} while (1);
+	}
 	
 
 	return 0;
