@@ -531,7 +531,7 @@ int main(int argc, char *argv[])
 			// Exhaust incoming data buffer and echo to debug and the new com port
 			if (s_inputbufferlen && !s_suspended)
 			{
-				USBSerialWrite(s_inputbuffer, s_inputbufferlen);
+				USBSerialWriteN((const char*)s_inputbuffer, s_inputbufferlen);
 				for (uint8_t i=0; i<s_inputbufferlen; ++i)
 					*IO_UARTTX = s_inputbuffer[i];
 				s_inputbufferlen = 0;

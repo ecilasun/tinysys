@@ -1,6 +1,5 @@
 #include <math.h>
 #include "core.h"
-#include "uart.h"
 #include "gpu.h"
 #include "xadc.h"
 
