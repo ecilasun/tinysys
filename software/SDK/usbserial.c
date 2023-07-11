@@ -1,6 +1,7 @@
 #include "usbserial.h"
 #include "basesystem.h"
 #include "uart.h"
+#include "encoding.h"
 #include <string.h>
 
 // Helper routines to set up the onboard MAX3420 in USB serial mode
@@ -214,11 +215,11 @@ void MAX3420EnableIRQs()
 	MAX3420WriteByte(rUSBIEN, bmURESIE | bmURESDNIE);
 }
 
-void USBSerialInit(uint32_t enableInterrupts)
+int USBSerialInit(uint32_t enableInterrupts)
 {
 	// Must set context first
 	if (s_usbser==NULL)
-		return;
+		return 0;
 
 	// Generate descriptor table for a USB serial device
 	MakeCDCDescriptors(s_usbser);
@@ -241,18 +242,102 @@ void USBSerialInit(uint32_t enableInterrupts)
 		// Enable interrupt generation via INT pin
 		MAX3420WriteByte(rCPUCTL, bmIE);
 	}
+
+	return 1;
 }
 
-int USBSerialWrite(uint8_t *buffer, const uint32_t length)
+int USBSerialWriteN(const char *outstring, uint32_t count)
 {
-	if (length != 0)
+	uint8_t *cptr = (uint8_t*)outstring;
+	uint32_t blockCount = count/64;
+	uint32_t leftoverCount = count%64;
+
+	for(uint32_t i=0; i<blockCount; ++i)
 	{
-		// Submit
+		// Wait for an opportunity to push the string out
+		while((MAX3420ReadByte(rEPIRQ) & bmIN2BAVIRQ) == 0) { }
 		MAX3420WriteByte(rCPUCTL, 0); // Disable interrupts
-		MAX3420WriteBytes(rEP2INFIFO, length, buffer);
-		MAX3420WriteByte(rEP2INBC, length);
+		//write_csr(mstatus, 0); // Disable machine interrupts
+		MAX3420WriteBytes(rEP2INFIFO, 64, (uint8_t*)cptr);
+		MAX3420WriteByte(rEP2INBC, 64);
+		MAX3420FlushOutputFIFO();
+		//write_csr(mstatus, MSTATUS_MIE); // Enable machine interrupts
 		MAX3420WriteByte(rCPUCTL, bmIE); // Enable interrupts
-		return 1;
+		cptr += 64;
 	}
-	return 0;
+
+	// Wait for an opportunity to push the string out
+	while((MAX3420ReadByte(rEPIRQ) & bmIN2BAVIRQ) == 0) { }
+	MAX3420WriteByte(rCPUCTL, 0); // Disable interrupts
+	//write_csr(mstatus, 0); // Disable machine interrupts
+	MAX3420WriteBytes(rEP2INFIFO, leftoverCount, (uint8_t*)cptr);
+	MAX3420WriteByte(rEP2INBC, leftoverCount);
+	MAX3420FlushOutputFIFO();
+	//write_csr(mstatus, MSTATUS_MIE); // Enable machine interrupts
+	MAX3420WriteByte(rCPUCTL, bmIE); // Enable interrupts
+
+	return count;
+}
+
+int USBSerialWrite(const char *outstring)
+{
+	uint32_t count = 0;
+	while(outstring[count]!=0) { count++; }
+	return USBSerialWriteN(outstring, count);
+}
+
+int USBSerialWriteHexByte(const uint8_t i)
+{
+    const char hexdigits[] = "0123456789ABCDEF";
+    char msg[] = "  ";
+
+    msg[0] = hexdigits[((i>>4)%16)];
+    msg[1] = hexdigits[(i%16)];
+
+    return USBSerialWriteN(msg, 2);
+}
+
+int USBSerialWriteHex(const uint32_t i)
+{
+    const char hexdigits[] = "0123456789ABCDEF";
+    char msg[] = "        ";
+
+    msg[0] = hexdigits[((i>>28)%16)];
+    msg[1] = hexdigits[((i>>24)%16)];
+    msg[2] = hexdigits[((i>>20)%16)];
+    msg[3] = hexdigits[((i>>16)%16)];
+    msg[4] = hexdigits[((i>>12)%16)];
+    msg[5] = hexdigits[((i>>8)%16)];
+    msg[6] = hexdigits[((i>>4)%16)];
+    msg[7] = hexdigits[(i%16)];
+
+    return USBSerialWriteN(msg, 8);
+}
+
+int USBSerialWriteDecimal(const int32_t i)
+{
+    const char digits[] = "0123456789";
+    char msg[] = "                                ";
+
+    int d = 1000000000;
+    uint32_t enableappend = 0;
+    uint32_t m = 0;
+
+    if (i<0)
+        msg[m++] = '-';
+
+    for (int c=0;c<10;++c)
+    {
+        uint32_t r = ((i/d)%10)&0x7FFFFFFF;
+        // Ignore preceeding zeros
+        if ((r!=0) || enableappend || d==1)
+        {
+            enableappend = 1; // Rest of the digits can be appended
+            msg[m++] = digits[r];
+        }
+        d = d/10;
+    }
+    msg[m] = 0;
+
+    return USBSerialWrite(msg);
 }

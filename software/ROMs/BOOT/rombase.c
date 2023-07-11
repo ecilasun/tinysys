@@ -1,5 +1,6 @@
 #include "rombase.h"
 #include "sdcard.h"
+#include "usbserial.h"
 #include "usbserialhandler.h"
 #include "usbhidhandler.h"
 #include <stdlib.h>
@@ -12,64 +13,64 @@ static FATFS Fs;
 
 void ReportErrorShort(const uint32_t _width, const char *_error)
 {
-	UARTWrite("\033[0m\n\n\033[31m\033[40m");
-	UARTWrite("┌");
+	USBSerialWrite("\033[0m\n\n\033[31m\033[40m");
+	USBSerialWrite("┌");
 	for (uint32_t w=0;w<_width-2;++w)
-		UARTWrite("─");
-	UARTWrite("┐\n│");
+		USBSerialWrite("─");
+	USBSerialWrite("┐\n│");
 
 	// Message
 	int W = strlen(_error);
 	W = (_width-2) - W;
-	UARTWrite(_error);
+	USBSerialWrite(_error);
 	for (int w=0;w<W;++w)
-		UARTWrite(" ");
+		USBSerialWrite(" ");
 
-	UARTWrite("│\n└");
+	USBSerialWrite("│\n└");
 	for (uint32_t w=0;w<_width-2;++w)
-		UARTWrite("─");
-	UARTWrite("┘\n\033[0m\n");
+		USBSerialWrite("─");
+	USBSerialWrite("┘\n\033[0m\n");
 }
 
 void ReportError(const uint32_t _width, const char *_error, uint32_t _cause, uint32_t _value, uint32_t _PC)
 {
-	UARTWrite("\033[0m\n\n\033[31m\033[40m");
+	USBSerialWrite("\033[0m\n\n\033[31m\033[40m");
 
-	UARTWrite("┌");
+	USBSerialWrite("┌");
 	for (uint32_t w=0;w<_width-2;++w)
-		UARTWrite("─");
-	UARTWrite("┐\n│");
+		USBSerialWrite("─");
+	USBSerialWrite("┐\n│");
 
 	// Message
 	int W = strlen(_error);
 	W = (_width-2) - W;
-	UARTWrite(_error);
+	USBSerialWrite(_error);
 	for (int w=0;w<W;++w)
-		UARTWrite(" ");
-	UARTWrite("│\n|");
+		USBSerialWrite(" ");
+	USBSerialWrite("│\n|");
 
 	// Cause
-	UARTWrite("cause:");
-	UARTWriteHex(_cause);
+	USBSerialWrite("cause:");
+	USBSerialWriteHex(_cause);
 	for (uint32_t w=0;w<_width-16;++w)
-		UARTWrite(" ");
+		USBSerialWrite(" ");
 
 	// Value
-	UARTWrite("│\n|value:");
-	UARTWriteHex(_value);
+	USBSerialWrite("│\n|value:");
+	USBSerialWriteHex(_value);
 	for (uint32_t w=0;w<_width-16;++w)
-		UARTWrite(" ");
+		USBSerialWrite(" ");
 
 	// PC
-	UARTWrite("│\n|PC:");
-	UARTWriteHex(_PC);
+	USBSerialWrite("│\n|PC:");
+	USBSerialWriteHex(_PC);
 	for (uint32_t w=0;w<_width-13;++w)
-		UARTWrite(" ");
+		USBSerialWrite(" ");
 
-	UARTWrite("│\n└");
+	USBSerialWrite("│\n└");
 	for (uint32_t w=0;w<_width-2;++w)
-		UARTWrite("─");
-	UARTWrite("┘\n\033[0m\n");
+		USBSerialWrite("─");
+	USBSerialWrite("┘\n\033[0m\n");
 }
 
 uint32_t MountDrive()
@@ -83,7 +84,7 @@ uint32_t MountDrive()
 			return 0;
 	}
 
-	UARTWrite("Device sd: mounted\n");
+	USBSerialWrite("Device sd: mounted\n");
 	return 1;
 }
 
@@ -93,7 +94,7 @@ void UnmountDrive()
 	/*if (unmountattempt != FR_OK)
 		ReportError(32, "File system error (unmount)", unmountattempt, 0, 0);
 	else*/
-		UARTWrite("Device sd: unmounted\n");
+		USBSerialWrite("Device sd: unmounted\n");
 }
 
 void ListFiles(const char *path)
@@ -111,19 +112,19 @@ void ListFiles(const char *path)
 			char *isexe = strstr(finf.fname, ".elf");
 			int isdir = finf.fattrib&AM_DIR;
 			if (isdir)
-				UARTWrite("\033[33m"); // Yellow
+				USBSerialWrite("\033[33m"); // Yellow
 			if (isexe!=NULL)
-				UARTWrite("\033[32m"); // Green
-			UARTWrite(finf.fname);
+				USBSerialWrite("\033[32m"); // Green
+			USBSerialWrite(finf.fname);
 			if (isdir)
-				UARTWrite("\t\t<dir>");
+				USBSerialWrite("\t\t<dir>");
 			else
 			{
-				UARTWrite("\t\t");
-				UARTWriteDecimal((int32_t)finf.fsize);
-				UARTWrite("b");
+				USBSerialWrite("\t\t");
+				USBSerialWriteDecimal((int32_t)finf.fsize);
+				USBSerialWrite("b");
 			}
-			UARTWrite("\033[0m\n");
+			USBSerialWrite("\033[0m\n");
 		} while(1);
 
 		f_closedir(&dir);
@@ -295,8 +296,8 @@ void HandleUART()
 void HandleSDCardDetect()
 {
 	uint32_t cardState = *IO_CARDDETECT;
-	/*UARTWriteHex(cardState);
-	UARTWrite("\n");*/
+	/*USBSerialWriteHex(cardState);
+	USBSerialWrite("\n");*/
 
 	if (cardState == 0x0)	// Removed
 		UnmountDrive();
@@ -616,16 +617,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 
 					if (file == STDOUT_FILENO || file == STDERR_FILENO)
 					{
-						char *cptr = (char*)ptr;
-						const char *eptr = cptr + count;
-						int i = 0;
-						while (cptr != eptr)
-						{
-							*IO_UARTTX = *cptr;
-							++i;
-							++cptr;
-						}
-						write_csr(0x8AA, i);
+						int outcount = USBSerialWriteN((const char*)ptr, count);
+						write_csr(0x8AA, outcount);
 					}
 					else
 					{

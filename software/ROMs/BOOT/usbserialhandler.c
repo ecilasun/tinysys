@@ -220,10 +220,10 @@ void std_request(uint8_t *SUD)
 			break;
 		}
 		case	SR_GET_STATUS:			send_status(SUD);					break;
-		case	SR_SET_INTERFACE:		UARTWrite("!set_interface\n");	   break;
-		case	SR_GET_INTERFACE:		UARTWrite("!get_interface\n");	   break;
-		case	SR_GET_CONFIGURATION:   get_configuration();				 break;
-		case	SR_SET_CONFIGURATION:   set_configuration(SUD);			  break;
+		case	SR_SET_INTERFACE:		UARTWrite("!set_interface\n");	    break;
+		case	SR_GET_INTERFACE:		UARTWrite("!get_interface\n");	    break;
+		case	SR_GET_CONFIGURATION:   get_configuration();				break;
+		case	SR_SET_CONFIGURATION:   set_configuration(SUD);			    break;
 		case	SR_SET_ADDRESS:
 		{
 			//UARTWrite("setaddress: 0x");

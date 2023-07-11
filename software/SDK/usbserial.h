@@ -53,8 +53,13 @@ void MAX3420EnableIRQs();
 
 void USBSerialSetContext(struct SUSBContext *ctx);
 struct SUSBContext *USBSerialGetContext();
-void USBSerialInit(uint32_t enableInterrupts);
-int USBSerialWrite(uint8_t *buffer, const uint32_t length);
+int USBSerialInit(uint32_t enableInterrupts);
+
+int USBSerialWriteN(const char *outstring, uint32_t count);
+int USBSerialWrite(const char *outstring);
+int USBSerialWriteHexByte(const uint8_t i);
+int USBSerialWriteHex(const uint32_t i);
+int USBSerialWriteDecimal(const int32_t i);
 
 // MAX3420E Registers
 #define rEP0FIFO    0<<3

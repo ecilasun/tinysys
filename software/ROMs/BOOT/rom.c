@@ -12,7 +12,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define VERSIONSTRING "v1.020"
+#define VERSIONSTRING "v1.021"
 
 static struct EVideoContext s_gpuContext;
 
@@ -25,10 +25,8 @@ static int32_t s_cmdLen = 0;
 static uint32_t s_startAddress = 0;
 static int s_refreshConsoleOut = 1;
 static int s_stop_ring_buffer = 0;
+static int s_stop_output = 0;
 static int s_usbserialenabled = 0;
-
-static uint8_t s_outputbuffer[64];
-static int s_outputbufferlen = 0;
 
 static struct SUSBContext s_usbserialctx;
 
@@ -84,12 +82,12 @@ void receive_file(const char *savename)
 {
 	// TODO: Load file from remote over UART
 	if (!savename)
-		UARTWrite("usage: rcv targetfilename\n");
+		USBSerialWrite("usage: rcv targetfilename\n");
 	else
 	{
-		UARTWrite("Waiting for file '");
-		UARTWrite(savename);
-		UARTWrite("'...\n");
+		USBSerialWrite("Waiting for file '");
+		USBSerialWrite(savename);
+		USBSerialWrite("'...\n");
 
 		s_stop_ring_buffer = 1;
 
@@ -106,13 +104,13 @@ void receive_file(const char *savename)
 				case 3: if (RingBufferRead(&LL, sizeof(uint32_t))) state = 4; break;
 				case 4: {
 					uint32_t bytecount = ((HH&0xFF)<<24) | ((HL&0xFF)<<16) | ((LH&0xFF)<<8) | (LL&0xFF);
-					UARTWrite("Receiving 0x");
-					UARTWriteHex(bytecount);
-					UARTWrite(" bytes...");
+					USBSerialWrite("Receiving 0x");
+					USBSerialWriteHex(bytecount);
+					USBSerialWrite(" bytes...");
 
 					if (bytecount > 65536)
 					{
-						UARTWrite("Unsupported file size\n");
+						USBSerialWrite("Unsupported file size\n");
 						s_stop_ring_buffer = 0;
 						return;
 					}
@@ -137,11 +135,11 @@ void receive_file(const char *savename)
 							}
 						}
 						f_close(&fp);
-						UARTWrite("done\n");
+						USBSerialWrite("done\n");
 						state = 5;
 					}
 					else
-						UARTWrite("Target file could not be created\n");
+						USBSerialWrite("Target file could not be created\n");
 
 					break;
 				}
@@ -181,45 +179,43 @@ void ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "clear"))
 	{
-		UARTWrite("\033[H\033[0m\033[2J");
+		USBSerialWrite("\033[H\033[0m\033[2J");
 	}
 	else if (!strcmp(command, "mem"))
 	{
-		UARTWrite("Available memory:");
+		USBSerialWrite("Available memory:");
 		uint32_t inkbytes = core_memavail()/1024;
 		uint32_t inmbytes = inkbytes/1024;
 		if (inmbytes!=0)
 		{
-			UARTWriteDecimal(inmbytes);
-			UARTWrite(" Mbytes\n");
+			USBSerialWriteDecimal(inmbytes);
+			USBSerialWrite(" Mbytes\n");
 		}
 		else
 		{
-			UARTWriteDecimal(inkbytes);
-			UARTWrite(" Kbytes\n");
+			USBSerialWriteDecimal(inkbytes);
+			USBSerialWrite(" Kbytes\n");
 		}
 	}
-	else if (!strcmp(command, "proc"))
+	else if (!strcmp(command, "ps"))
 	{
 		struct STaskContext *ctx = GetTaskContext();
 		if (ctx->numTasks==1)
-			UARTWrite("No tasks running\n");
+			USBSerialWrite("No tasks running\n");
 		else
 		{
 			for (int i=1;i<ctx->numTasks;++i)
 			{
 				struct STask *task = &ctx->tasks[i];
-				// UARTWrite("#");
-				// UARTWriteDecimal(i);
-				UARTWrite(" task:");
-				UARTWrite(task->name);
-				UARTWrite(" len:");
-				UARTWriteDecimal(task->runLength);
-				UARTWrite(" state:");
-				UARTWriteDecimal(task->state);
-				UARTWrite(" PC:");
-				UARTWriteHex(task->regs[0]);
-				UARTWrite("\n");
+				USBSerialWrite(" task:");
+				USBSerialWrite(task->name);
+				USBSerialWrite(" len:");
+				USBSerialWriteDecimal(task->runLength);
+				USBSerialWrite(" state:");
+				USBSerialWriteDecimal(task->state);
+				USBSerialWrite(" PC:");
+				USBSerialWriteHex(task->regs[0]);
+				USBSerialWrite("\n");
 			}
 		}
 	}
@@ -227,7 +223,7 @@ void ExecuteCmd(char *_cmd)
 	{
 		const char *path = strtok(NULL, " ");
 		if (!path)
-			UARTWrite("usage: rm fname\n");
+			USBSerialWrite("usage: rm fname\n");
 		else
 			remove(path);
 	}
@@ -236,7 +232,7 @@ void ExecuteCmd(char *_cmd)
 		const char *path = strtok(NULL, " ");
 		// Change working directory
 		if (!path)
-			UARTWrite("usage: cwd path\n");
+			USBSerialWrite("usage: cwd path\n");
 		else
 		{
 			f_chdir(path);
@@ -250,52 +246,51 @@ void ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "ver"))
 	{
-		UARTWrite("tinysys " VERSIONSTRING "\n");
+		USBSerialWrite("tinysys " VERSIONSTRING "\n");
 	}
 	else if (!strcmp(command, "tmp"))
 	{
-		UARTWrite("Temperature:");
+		USBSerialWrite("Temperature:");
 		uint32_t ADCcode = *XADCTEMP;
 		//float temp_centigrates = (ADCcode*503.975f)/4096.f-273.15f;
 		uint32_t temp_centigrates = (ADCcode*503975)/4096000-273;
-		UARTWriteDecimal(temp_centigrates);
-		UARTWrite("\n");
+		USBSerialWriteDecimal(temp_centigrates);
+		USBSerialWrite("\n");
 	}
 	else if (!strcmp(command, "usb"))
 	{
 		// Start USB port with serial device configuration
 		if (s_usbserialenabled == 0)
 		{
-			UARTWrite("Initializing USB serial device\n");
-			USBSerialInit(1);
-			UARTWrite("MAX3420 die rev# ");
-			UARTWriteHexByte(MAX3420ReadByte(rREVISION));
-			UARTWrite("\n");
-			s_usbserialenabled = 1;
+			USBSerialWrite("Initializing USB serial device\n");
+			s_usbserialenabled = USBSerialInit(1);
+			USBSerialWrite("MAX3420 die rev# ");
+			USBSerialWriteHexByte(MAX3420ReadByte(rREVISION));
+			USBSerialWrite("\n");
 		}
 		else
-			UARTWrite("USB serial already enabled\n");
+			USBSerialWrite("USB serial already enabled\n");
 	}
 	else if (!strcmp(command, "help"))
 	{
 		// Bright blue
-		UARTWrite("\033[0m\n\033[94m");
-		UARTWrite("Available commands\n");
-		UARTWrite("ver: Show version info\n");
-		UARTWrite("clear: Clear terminal\n");
-		UARTWrite("cwd path: Change working directory\n");
-		UARTWrite("ls [path]: Show list of files in cwd or path\n");
-		UARTWrite("rm fname: Delete file\n");
-		UARTWrite("rcv fname: Receive and save a file to storage\n");
-		UARTWrite("proc: Show process info\n");
-		UARTWrite("mount: Mount drive sd:\n");
-		UARTWrite("umount: Unmount drive sd:\n");
-		UARTWrite("usb: Start USB serial port\n");
-		UARTWrite("mem: Show available memory\n");
-		UARTWrite("tmp: Show device temperature\n");
-		UARTWrite("Any other input will load a file from sd: with matching name\n");
-		UARTWrite("CTRL+C terminates current program\n");
-		UARTWrite("\033[0m\n");
+		USBSerialWrite("\033[0m\n\033[94m");
+		USBSerialWrite("Available commands\n");
+		USBSerialWrite("ver: Show version info\n");
+		USBSerialWrite("clear: Clear terminal\n");
+		USBSerialWrite("cwd path: Change working directory\n");
+		USBSerialWrite("ls [path]: Show list of files in cwd or path\n");
+		USBSerialWrite("rm fname: Delete file\n");
+		USBSerialWrite("rcv fname: Receive and save a file to storage\n");
+		USBSerialWrite("ps: Show process info\n");
+		USBSerialWrite("mount: Mount drive sd:\n");
+		USBSerialWrite("umount: Unmount drive sd:\n");
+		USBSerialWrite("usb: Start USB serial port\n");
+		USBSerialWrite("mem: Show available memory\n");
+		USBSerialWrite("tmp: Show device temperature\n");
+		USBSerialWrite("Any other input will load a file from sd: with matching name\n");
+		USBSerialWrite("CTRL+C terminates current program\n");
+		USBSerialWrite("\033[0m\n");
 	}
 	else // Anything else defers to being a command on storage
 		loadELF = 1;
@@ -307,10 +302,11 @@ void ExecuteCmd(char *_cmd)
 		// until we get a virtual memory device
 		if (tctx->numTasks>1)
 		{
-			UARTWrite("Virtual memory support required to run more than one task.\n");
+			USBSerialWrite("Virtual memory support required to run more than one task.\n");
 		}
 		else
 		{
+			s_stop_output = 1;
 			char filename[128];
 			strcpy(filename, s_workdir); // current path already contains trailing slash
 			strcat(filename, command);
@@ -391,16 +387,21 @@ int main()
 	// Ready to start, silence LED activity since other systems need it
 	LEDSetState(0x0);
 
-	// Splash - we drop to embedded OS if there's no boot image (boot.elf)
-	UARTWrite("\033[H\033[0m\033[2J\033[96;40mtinysys embedded OS " VERSIONSTRING "\033[0m\n\n");
-	UARTWrite("Use 'help' a list of available commands\n");
-
 	// Start the timer and hardware interrupt handlers.
 	// This is where all task switching and other interrupt handling occurs
 	InstallISR();
 
-	// Allocate usb context but don't start it yet
+	// Set up kernel side usb context
     USBSerialSetContext(&s_usbserialctx);
+	// Start USB serial
+	s_usbserialenabled = USBSerialInit(1);
+	//USBSerialWrite("MAX3420 die rev# ");
+	//USBSerialWriteHexByte(MAX3420ReadByte(rREVISION));
+	//USBSerialWrite("\n");
+
+	// // Splash - we drop to embedded OS if there's no boot image (boot.elf)
+	// USBSerialWrite("\033[H\033[0m\033[2J\033[96;40mtinysys embedded OS " VERSIONSTRING "\033[0m\n\n");
+	// USBSerialWrite("Use 'help' a list of available commands\n");
 
 	// Main CLI loop
 	while (1)
@@ -413,8 +414,6 @@ int main()
 		while (!s_stop_ring_buffer && RingBufferRead(&uartData, sizeof(uint32_t)))
 		{
 			uint8_t asciicode = (uint8_t)(uartData&0xFF);
-			if (s_usbserialenabled)
-				s_outputbuffer[s_outputbufferlen++] = asciicode;
 
 			++s_refreshConsoleOut;
 			switch (asciicode)
@@ -462,12 +461,13 @@ int main()
 		struct STask *task = &taskctx->tasks[1];
 		if (task->state == TS_TERMINATED)
 		{
+			s_stop_output = 0;
 			task->state = TS_UNKNOWN;
-			UARTWrite("\n");
-			UARTWrite(task->name);
-			UARTWrite("' terminated (0x");
-			UARTWriteHex(task->exitCode);
-			UARTWrite(")\n");
+			USBSerialWrite("\n");
+			USBSerialWrite(task->name);
+			USBSerialWrite("' terminated (0x");
+			USBSerialWriteHex(task->exitCode);
+			USBSerialWrite(")\n");
 			++s_refreshConsoleOut;
 			DeviceDefaultState();
 		}
@@ -475,7 +475,8 @@ int main()
 		if (execcmd)
 		{
 			++s_refreshConsoleOut;
-			UARTWrite("\n");
+			if (!s_stop_output)
+				USBSerialWrite("\n");
 			ExecuteCmd(s_cmdString);
 			// Rewind
 			s_cmdLen = 0;
@@ -487,17 +488,13 @@ int main()
 			s_refreshConsoleOut = 0;
 			s_cmdString[s_cmdLen] = 0;
 			// Reset current line and emit the command string
-			UARTWrite("\033[2K\r");
-			UARTWrite(s_workdir);
-			UARTWrite(":");
-			UARTWrite(s_cmdString);
-		}
-
-		// Echo to USB serial
-		if (s_outputbufferlen && s_usbserialenabled)
-		{
-			USBSerialWrite(s_outputbuffer, s_outputbufferlen);
-			s_outputbufferlen = 0;
+			if (!s_stop_output)
+			{
+				USBSerialWrite("\033[2K\r");
+				USBSerialWrite(s_workdir);
+				USBSerialWrite(":");
+				USBSerialWrite(s_cmdString);
+			}
 		}
 	}
 
