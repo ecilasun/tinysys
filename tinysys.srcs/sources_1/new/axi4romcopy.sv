@@ -67,77 +67,78 @@ logic [31:0] dmatargetaddr;
 logic [31:0] dmatargetend;
 
 always_ff @(posedge aclk) begin
+
+	romre <= 1'b0;
+
+	case (cmdmode)
+
+		INIT: begin
+			// Set up for 128Kbytes of ROM copy starting at 0x0FFE0000
+			dmatargetaddr <= ROMSTART;
+			dmatargetend <= ROMIMAGEEND;
+
+			m_axi.awvalid <= 0;
+			m_axi.wvalid <= 0;
+			m_axi.wstrb <= 16'h0000;
+			m_axi.wlast <= 0;
+			m_axi.bready <= 0;
+			ROMavailable <= 1'b0;
+			bootROMaddr <= 13'd0;
+
+			romre <= 1'b0;
+			cmdmode <= STARTCOPYROM;
+		end
+
+		STARTCOPYROM: begin
+			m_axi.awvalid <= 1'b1;
+			m_axi.awaddr <= dmatargetaddr;
+			romre <= 1'b1;
+			dmatargetaddr <= dmatargetaddr + 32'd16; // Next batch
+			cmdmode <= ROMWRITELINE;
+		end
+
+		ROMWRITELINE: begin
+			if (m_axi.awready) begin // m_axi.awvalid
+				m_axi.awvalid <= 1'b0;
+
+				m_axi.wvalid <= 1'b1;
+				m_axi.wstrb <= 16'hFFFF;
+				m_axi.wdata <= bootROMdout;
+				m_axi.wlast <= 1'b1;
+
+				cmdmode <= ROMWAITWREADY;
+			end
+		end
+
+		ROMWAITWREADY: begin
+			if (m_axi.wready) begin // && m_axi.wvalid
+				bootROMaddr <= bootROMaddr + 13'd1;
+				m_axi.wvalid <= 0;
+				m_axi.wstrb <= 16'h0000;
+				m_axi.wlast <= 0;
+				m_axi.bready <= 1;
+				cmdmode <= ROMWAITBREADY;
+			end
+		end
+
+		ROMWAITBREADY: begin
+			if (m_axi.bvalid) begin // && m_axi.bready
+				m_axi.bready <= 0;
+				ROMavailable <= (dmatargetaddr == dmatargetend) ? 1'b1 : 1'b0;
+				// Drop into idle state if ROM copy is done, otherwise loop
+				cmdmode <= (dmatargetaddr == dmatargetend) ? IDLE : STARTCOPYROM;
+			end
+		end
+		
+		IDLE: begin
+			// TODO: Is there a way to power this module off entirely?
+			cmdmode <= IDLE;
+		end
+
+	endcase
+
 	if (~aresetn) begin
-		m_axi.awvalid <= 0;
-		m_axi.wvalid <= 0;
-		m_axi.wstrb <= 16'h0000;
-		m_axi.wlast <= 0;
-		m_axi.bready <= 0;
-		ROMavailable <= 1'b0;
-		bootROMaddr <= 13'd0;
 		cmdmode <= INIT;
-	end else begin
-
-		romre <= 1'b0;
-
-		case (cmdmode)
-
-			INIT: begin
-				// Set up for 128Kbytes of ROM copy starting at 0x0FFE0000
-				dmatargetaddr <= ROMSTART;
-				dmatargetend <= ROMIMAGEEND;
-
-				romre <= 1'b0;
-				cmdmode <= STARTCOPYROM;
-			end
-
-			STARTCOPYROM: begin
-				m_axi.awvalid <= 1'b1;
-				m_axi.awaddr <= dmatargetaddr;
-				romre <= 1'b1;
-				dmatargetaddr <= dmatargetaddr + 32'd16; // Next batch
-				cmdmode <= ROMWRITELINE;
-			end
-
-			ROMWRITELINE: begin
-				if (m_axi.awready) begin // m_axi.awvalid
-					m_axi.awvalid <= 1'b0;
-
-					m_axi.wvalid <= 1'b1;
-					m_axi.wstrb <= 16'hFFFF;
-					m_axi.wdata <= bootROMdout;
-					m_axi.wlast <= 1'b1;
-
-					cmdmode <= ROMWAITWREADY;
-				end
-			end
-
-			ROMWAITWREADY: begin
-				if (m_axi.wready) begin // && m_axi.wvalid
-					bootROMaddr <= bootROMaddr + 13'd1;
-					m_axi.wvalid <= 0;
-					m_axi.wstrb <= 16'h0000;
-					m_axi.wlast <= 0;
-					m_axi.bready <= 1;
-					cmdmode <= ROMWAITBREADY;
-				end
-			end
-
-			ROMWAITBREADY: begin
-				if (m_axi.bvalid) begin // && m_axi.bready
-					m_axi.bready <= 0;
-					ROMavailable <= (dmatargetaddr == dmatargetend) ? 1'b1 : 1'b0;
-					// Drop into idle state if ROM copy is done, otherwise loop
-					cmdmode <= (dmatargetaddr == dmatargetend) ? IDLE : STARTCOPYROM;
-				end
-			end
-			
-			IDLE: begin
-                // TODO: Is there a way to power this module off entirely?
-				cmdmode <= IDLE;
-			end
-
-		endcase
 	end
 end
 

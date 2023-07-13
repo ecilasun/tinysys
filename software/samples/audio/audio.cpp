@@ -3,7 +3,6 @@
 #include <cstdlib>
 
 #include "core.h"
-#include "uart.h"
 #include "apu.h"
 
 static short *apubuffer;
@@ -15,9 +14,7 @@ static short *apubuffer;
 int main()
 {
 	apubuffer = (short*)APUAllocateBuffer(BUFFER_SAMPLES*NUM_CHANNELS*sizeof(short));
-	UARTWrite("APU mix buffer at 0x");
-	UARTWriteHex((unsigned int)apubuffer);
-	UARTWrite("\n");
+	printf("APU mix buffer at 0x%.4x\n", (unsigned int)apubuffer);
 
 	APUSetBufferSize(BUFFER_SAMPLES);
 	APUSetSampleRate(ASR_22050_Hz);

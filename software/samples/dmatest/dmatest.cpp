@@ -2,16 +2,16 @@
 #include "core.h"
 #include "gpu.h"
 #include "dma.h"
-#include "uart.h"
+#include <stdio.h>
 
 int main(int argc, char *argv[])
 {
-	UARTWrite("DMA test\n");
+	printf("DMA test\n");
 
 	const uint32_t W = 320;
 	const uint32_t H = 240;
 
-	UARTWrite("Preparing buffers\n");
+	printf("Preparing buffers\n");
 
 	// Create source and target buffers (using GPU functions to get aligned buffer addresses)
 	uint8_t *bufferB = GPUAllocateBuffer(W*H);
@@ -39,16 +39,10 @@ int main(int argc, char *argv[])
 
 	// Kick a DMA copy to move buffer A contents onto buffer B
 	const uint32_t blockCountInMultiplesOf16bytes = (W*H)/16;
-	UARTWrite("Initiating copy loop of ");
 	// Figure out how many DMAs this splits into
 	const uint32_t leftoverDMA = blockCountInMultiplesOf16bytes%256;
 	const uint32_t fullDMAs = blockCountInMultiplesOf16bytes/256;
-	UARTWriteDecimal(fullDMAs);
-	UARTWrite("*256*16byte blocks and ");
-	UARTWriteDecimal(leftoverDMA);
-	UARTWrite("*1*16byte block for a total of ");
-	UARTWriteDecimal(fullDMAs*4096+leftoverDMA*16);
-	UARTWrite("bytes\n");
+	printf("Initiating copy loop of %ld*256*16byte blocks and %ld*1*16byte block for a total of %ld bytes\n", fullDMAs, leftoverDMA, fullDMAs*4096+leftoverDMA*16);
 
 	int32_t offset = 0;
 	int32_t dir = 2;
@@ -65,11 +59,7 @@ int main(int argc, char *argv[])
 		averagetime = (averagetime + (uint32_t)(endtime-starttime))/2;
 
 		if (outstats % 512 == 0)
-		{
-			UARTWrite("DMA clocks (average): ");
-			UARTWriteDecimal(averagetime);
-			UARTWrite("\n");
-		}
+			printf("DMA clocks (average): %ld\n", averagetime);
 		++outstats;
 
 		starttime = E32ReadTime();

@@ -25,7 +25,6 @@
 #include <stdlib.h>
 
 #include "basesystem.h"
-#include "uart.h"
 
 int main(int argc, char *argv[])
 {

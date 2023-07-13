@@ -1,6 +1,5 @@
 #include "basesystem.h"
 #include "sdcard.h"
-#include "uart.h"
 #include "leds.h"
 #include <stdio.h>
 
@@ -173,12 +172,12 @@ uint8_t __attribute__ ((noinline)) SDIdle()
    SDCmd(CMD0_GO_IDLE_STATE, 0);
    uint8_t response = SDResponse1(); // Expected: 0x01
 
-   if (response != 0x01) // SPI mode
+   /*if (response != 0x01) // SPI mode
    {
       UARTWrite("SDIdle expected 0x01, got 0x");
       UARTWriteHex(response);
       UARTWrite("\n");
-   }
+   }*/
 
    return response;
 }
@@ -191,7 +190,7 @@ uint8_t __attribute__ ((noinline)) SDCheckVoltageRange()
    uint32_t databack;
    uint8_t response = SDResponse7(&databack); // Expected: 0x01(version 2 SDCARD) or 0x05(version 1 or MMC card)
 
-   if (response != 0x01) // V2 SD Card, 0x05 for a V1 SD Card / MMC card
+   /*if (response != 0x01) // V2 SD Card, 0x05 for a V1 SD Card / MMC card
    {
       UARTWrite("SDCheckVoltageRange expected 0x01, got 0x");
       UARTWriteHex(response);
@@ -203,7 +202,7 @@ uint8_t __attribute__ ((noinline)) SDCheckVoltageRange()
       UARTWrite("SDCheckVoltageRange expected 0x000001AA, got 0x");
       UARTWriteHex(databack);
       UARTWrite("\n");
-   }
+   }*/
 
    return response;
 }
@@ -212,17 +211,17 @@ uint8_t __attribute__ ((noinline)) SDCardInit()
 {
    // Set high capacity mode on
    int timeout = 0;
-   uint8_t rA = 0xFF, rB = 0xFF;
+   uint8_t /*rA = 0xFF, */rB = 0xFF;
    do {
       // ACMD header
       SDCmd(CMD55_APP_CMD, 0x00000000);
-      rA = SDResponse1(); // Expected: 0x00?? - NOTE: Won't handle old cards!
+      /*rA =*/ rB = SDResponse1(); // Expected: 0x00?? - NOTE: Won't handle old cards!
       SDCmd(ACMD41_SD_SEND_OP_COND, 0x40000000);
       rB = SDResponse1(); // Expected: 0x00 eventually, but will also get several 0x01 (idle)
       ++timeout;
    } while (rB != SD_READY && timeout < G_SPI_TIMEOUT);
 
-   if (rA != 0x01)
+   /*if (rA != 0x01)
    {
       UARTWrite("SDCardInit expected 0x01, got 0x");
       UARTWriteHex(rA);
@@ -234,7 +233,7 @@ uint8_t __attribute__ ((noinline)) SDCardInit()
       UARTWrite("SDCardInit expected 0x00, got 0x");
       UARTWriteHex(rB);
       UARTWrite("\n");
-   }
+   }*/
 
    // Initialize
    /**IO_SPIRXTX = 0xFF;
@@ -296,7 +295,7 @@ uint8_t __attribute__ ((noinline)) SDReadSingleBlock(uint32_t sector, uint8_t *d
    LEDSetState(oldstate);
 
    // Error
-   if (!(response&0xF0))
+   /*if (!(response&0xF0))
    {
       if (response&0x01)
          UARTWrite("SDReadSingleBlock: error response = 'error'\n");
@@ -312,7 +311,7 @@ uint8_t __attribute__ ((noinline)) SDReadSingleBlock(uint32_t sector, uint8_t *d
       }
       if (response&0x10)
          UARTWrite("SDReadSingleBlock: error response = 'Card locked'\n");
-   }
+   }*/
 
    return response;
 }
@@ -348,7 +347,7 @@ uint8_t __attribute__ ((noinline)) SDWriteSingleBlock(uint32_t sector, uint8_t *
    SDCmd(CMD24_WRITE_BLOCK, sector);
    uint8_t response = SDResponse1(); // R1: expect 0x00
 
-   int haserror = 0;
+   //int haserror = 0;
    if (response == SD_READY)
    {
 		// Send start token - single block (0xFD->multiblock)
@@ -368,13 +367,13 @@ uint8_t __attribute__ ((noinline)) SDWriteSingleBlock(uint32_t sector, uint8_t *
       if (token != 0x05) // 0x0b==crc error, 0x0d==data rejected
       {
          // Error
-         if (token == 0x0b) UARTWrite("CRC error\n");
-         if (token == 0x0d) UARTWrite("Data rejected\n");
+         //if (token == 0x0b) UARTWrite("CRC error\n");
+         //if (token == 0x0d) UARTWrite("Data rejected\n");
          // Expected status&x1F==0x05
          // 010:accepted, 101:rejected-crcerror, 110:rejected-writeerror
          SDCmd(CMD13_SEND_STATUS, 0);
          response = SDResponse1();
-         haserror = 1;
+         //haserror = 1;
       }
       else
       {
@@ -384,19 +383,19 @@ uint8_t __attribute__ ((noinline)) SDWriteSingleBlock(uint32_t sector, uint8_t *
    }
    else
    {
-      UARTWrite("Expected 0x00, ");
-      haserror = 1;
+      //UARTWrite("Expected 0x00, ");
+      //haserror = 1;
    }
 
    LEDSetState(oldstate);
 
    // Error
-   if (haserror)
+   /*if (haserror)
    {
    	UARTWrite("SDWriteSingleBlock: write response: 0x");
       UARTWriteHexByte(response);
       UARTWrite("\n");
-   }
+   }*/
 
    return response;
 }
@@ -431,11 +430,11 @@ int __attribute__ ((noinline)) SDIOControl(const uint8_t cmd, void *buffer)
          E32Sleep(HALF_MILLISECOND_IN_TICKS);
       }
       break;
-      default:
+      /*default:
       {
          UARTWrite("SDIOControl: unknown ctrl\n");
       }
-      break;
+      break;*/
    }
    return 0;
 }

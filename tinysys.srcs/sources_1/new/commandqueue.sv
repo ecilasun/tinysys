@@ -91,8 +91,10 @@ end
 // Reads from command fifo will return externally supplied device status
 
 always @(posedge aclk) begin
+
 	s_axi.rvalid <= 1'b0;
 	s_axi.arready <= 1'b0;
+
 	unique case (raddrstate)
 		2'b00: begin
 			s_axi.rlast <= 1'b1;

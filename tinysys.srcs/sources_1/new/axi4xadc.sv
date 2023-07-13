@@ -207,54 +207,57 @@ logic [1:0] raddrstate = 2'b00;
 logic [2:0] chsel = 3'b000;
 
 always @(posedge aclk) begin
+
+	s_axi.rvalid <= 1'b0;
+	s_axi.arready <= 1'b0;
+	s_axi.rlast <= 1'b0;
+	s_axi.rresp <= 2'b00;
+
+	unique case (raddrstate)
+		2'b00: begin
+			if (s_axi.arvalid) begin
+				s_axi.arready <= 1'b1;
+
+				// Channel index mapping
+				//5 432 10.0
+				//0_000_00 0x00 CH0
+				//0_001_00 0x04 CH1
+				//0_010_00 0x08 CH2
+				//0_011_00 0x0C CH3
+				//0_100_00 0x10 CH4
+				//0_101_00 0x14 CH5
+				//0_110_00 0x18 CH6
+				//0_111_00 0x1C CH7
+				//1_000_00 0x20 TMP
+
+				chsel <= s_axi.araddr[4:2];
+
+				unique case(s_axi.araddr[5:2])
+					4'b1_000: raddrstate <= 2'b01;	// 0x20 onwards: Temperature
+					default: raddrstate <= 2'b10;	// 0x00..0x18: CH0..CH7 analog samples
+				endcase
+			end
+		end
+		2'b01: begin
+			if (s_axi.rready) begin
+				s_axi.rdata <= {116'd0, devicetemperature};
+				s_axi.rlast <= 1'b1;
+				s_axi.rvalid <= 1'b1;
+				raddrstate <= 2'b00;
+			end
+		end
+		2'b10: begin
+			if (s_axi.rready) begin
+				s_axi.rdata <= {118'd0, chstash[chsel]};
+				s_axi.rlast <= 1'b1;
+				s_axi.rvalid <= 1'b1;
+				raddrstate <= 2'b00;
+			end
+		end
+	endcase
+
 	if (~aresetn) begin
-		s_axi.rlast <= 1'b1;
-		s_axi.arready <= 1'b0;
-		s_axi.rvalid <= 1'b0;
-		s_axi.rresp <= 2'b00;
-	end else begin
-		s_axi.rvalid <= 1'b0;
-		s_axi.arready <= 1'b0;
-		unique case (raddrstate)
-			2'b00: begin
-				if (s_axi.arvalid) begin
-					s_axi.arready <= 1'b1;
-
-					// Channel index mapping
-					//5 432 10.0
-					//0_000_00 0x00 CH0
-					//0_001_00 0x04 CH1
-					//0_010_00 0x08 CH2
-					//0_011_00 0x0C CH3
-					//0_100_00 0x10 CH4
-					//0_101_00 0x14 CH5
-					//0_110_00 0x18 CH6
-					//0_111_00 0x1C CH7
-					//1_000_00 0x20 TMP
-
-					chsel <= s_axi.araddr[4:2];
-
-					unique case(s_axi.araddr[5:2])
-						4'b1_000: raddrstate <= 2'b01;	// 0x20 onwards: Temperature
-						default: raddrstate <= 2'b10;	// 0x00..0x18: CH0..CH7 analog samples
-					endcase
-				end
-			end
-			2'b01: begin
-				if (s_axi.rready) begin
-					s_axi.rdata <= {116'd0, devicetemperature};
-					s_axi.rvalid <= 1'b1;
-					raddrstate <= 2'b00;
-				end
-			end
-			2'b10: begin
-				if (s_axi.rready) begin
-					s_axi.rdata <= {118'd0, chstash[chsel]};
-					s_axi.rvalid <= 1'b1;
-					raddrstate <= 2'b00;
-				end
-			end
-		endcase
+		raddrstate <= 2'b00;
 	end
 end
 

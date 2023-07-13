@@ -6,7 +6,6 @@
 #include "task.h"
 #include "fat32/ff.h"
 #include "leds.h"
-#include "uart.h"
 #include "elf.h"
 #include "ringbuffer.h"
 

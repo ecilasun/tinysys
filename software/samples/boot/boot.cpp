@@ -1,6 +1,5 @@
 #include "basesystem.h"
 #include "encoding.h"
-#include "uart.h"
 
 // When started at boot time, this code will have
 // no access to base facilities therefore it'll
@@ -16,18 +15,17 @@
 
 int main()
 {
-    UARTWrite("Checking hardware interrupt state\n");
-
+    // Check hardware interrupt state
     uint32_t state = read_csr(mie);
 
     if ((state & (MIP_MSIP | MIP_MEIP | MIP_MTIP)) != 0)
     {
-        UARTWrite("Launched from ROM, aborting...\n");
+        // Launched from ROM? Abort
         return 0;
     }
     else
     {
-        UARTWrite("Direct access to hardware, spinning...\n");
+        // Direct access to hardware? Spin
     }
 
     while(1){

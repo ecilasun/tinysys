@@ -2,7 +2,6 @@
 
 #include "core.h"
 #include "basesystem.h"
-#include "uart.h"
 
 #include <stdlib.h>
 #include <errno.h>

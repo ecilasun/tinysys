@@ -1,5 +1,6 @@
 #include "rombase.h"
 #include "sdcard.h"
+#include "uart.h"
 #include "usbserial.h"
 #include "usbserialhandler.h"
 #include "usbhidhandler.h"
@@ -183,8 +184,10 @@ uint32_t LoadExecutable(const char *filename, const bool reportError)
 {
 	FIL fp;
 	FRESULT fr = f_open(&fp, filename, FA_READ);
+
 	if (fr == FR_OK)
 	{
+		// Something was there, load and parse it
 		struct SElfFileHeader32 fheader;
 		UINT readsize;
 		f_read(&fp, &fheader, sizeof(fheader), &readsize);
@@ -192,7 +195,7 @@ uint32_t LoadExecutable(const char *filename, const bool reportError)
 		uint32_t heap_start = ParseELFHeaderAndLoadSections(&fp, &fheader, &branchaddress);
 		f_close(&fp);
 
-		// Success
+		// Success?
 		if (heap_start != 0)
 		{
 			asm volatile(
@@ -200,7 +203,8 @@ uint32_t LoadExecutable(const char *filename, const bool reportError)
 				"fence.i;"          // Invalidate I$
 			);
 
-			// Set brk() to end of BSS
+			// Set brk() to end of executable's BSS
+			// TODO: MMU should handle address space mapping and we should not have to do this manually
 			set_elf_heap(heap_start);
 
 			return branchaddress;

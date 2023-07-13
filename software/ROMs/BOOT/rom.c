@@ -12,7 +12,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define VERSIONSTRING "v1.021"
+#define VERSIONSTRING "v1.023"
 
 static struct EVideoContext s_gpuContext;
 
@@ -89,6 +89,7 @@ void receive_file(const char *savename)
 		USBSerialWrite(savename);
 		USBSerialWrite("'...\n");
 
+		// Do not let user input interfere
 		s_stop_ring_buffer = 1;
 
 		uint32_t HH=0, HL=0, LH=0, LL=0;
@@ -257,20 +258,6 @@ void ExecuteCmd(char *_cmd)
 		USBSerialWriteDecimal(temp_centigrates);
 		USBSerialWrite("\n");
 	}
-	else if (!strcmp(command, "usb"))
-	{
-		// Start USB port with serial device configuration
-		if (s_usbserialenabled == 0)
-		{
-			USBSerialWrite("Initializing USB serial device\n");
-			s_usbserialenabled = USBSerialInit(1);
-			USBSerialWrite("MAX3420 die rev# ");
-			USBSerialWriteHexByte(MAX3420ReadByte(rREVISION));
-			USBSerialWrite("\n");
-		}
-		else
-			USBSerialWrite("USB serial already enabled\n");
-	}
 	else if (!strcmp(command, "help"))
 	{
 		// Bright blue
@@ -285,7 +272,6 @@ void ExecuteCmd(char *_cmd)
 		USBSerialWrite("ps: Show process info\n");
 		USBSerialWrite("mount: Mount drive sd:\n");
 		USBSerialWrite("umount: Unmount drive sd:\n");
-		USBSerialWrite("usb: Start USB serial port\n");
 		USBSerialWrite("mem: Show available memory\n");
 		USBSerialWrite("tmp: Show device temperature\n");
 		USBSerialWrite("Any other input will load a file from sd: with matching name\n");
@@ -306,7 +292,6 @@ void ExecuteCmd(char *_cmd)
 		}
 		else
 		{
-			s_stop_output = 1;
 			char filename[128];
 			strcpy(filename, s_workdir); // current path already contains trailing slash
 			strcat(filename, command);
@@ -314,26 +299,31 @@ void ExecuteCmd(char *_cmd)
 
 			// First parameter is excutable name
 			s_startAddress = LoadExecutable(filename, true);
-			strcpy(s_execName, filename);
-
-			const char *param = strtok(NULL, " ");
-			// Change working directory
-			if (!param)
-				s_execParamCount = 1;
-			else
-			{
-				strncpy(s_execParam, param, 64);
-				s_execParamCount = 2;
-			}
-
-			// TODO: Push argc/argv onto stack
+			// TODO: Scan and push all argv and the correct argc onto stack
 
 			// If we succeeded in loading the executable, the trampoline task can branch into it.
 			// NOTE: Without code relocation or virtual memory, two executables will ovelap when loaded
 			// even though each gets a new task slot assigned.
 			// This will cause corruption of the runtime environment.
 			if (s_startAddress != 0x0)
+			{
+				// Halt output from CLI
+				s_stop_output = 1;
+
+				strcpy(s_execName, filename);
+
+				const char *param = strtok(NULL, " ");
+				// Change working directory
+				if (!param)
+					s_execParamCount = 1;
+				else
+				{
+					strncpy(s_execParam, param, 64);
+					s_execParamCount = 2;
+				}
+
 				TaskAdd(tctx, command, RunExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+			}
 		}
 	}
 }

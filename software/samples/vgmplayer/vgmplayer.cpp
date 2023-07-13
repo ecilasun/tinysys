@@ -2,7 +2,6 @@
 #include "vgmopl2.h"
 
 #include "basesystem.h"
-#include "uart.h"
 
 // Disclaimer:
 // Portions of this software based on, uses code or information from the following works:

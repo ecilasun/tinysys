@@ -42,6 +42,7 @@ assign audiore = re;
 // ------------------------------------------------------------------------------------
 
 typedef enum logic [3:0] {
+	INIT,
 	WCMD, DISPATCH,
 	APUSTART,
 	APUBUFFERSIZE,
@@ -50,7 +51,7 @@ typedef enum logic [3:0] {
 	APUSETRATE,
 	STARTDMA, WAITREADADDR, READLOOP,
 	FINALIZE } apucmdmodetype;
-apucmdmodetype cmdmode = WCMD;
+apucmdmodetype cmdmode = INIT;
 
 logic [31:0] apucmd;					// Command code
 logic [31:0] apusourceaddr;				// Memory address to DMA the audio samples from
@@ -84,12 +85,12 @@ logic [7:0] burstcursor = 8'd0;
 logic [1:0] sampleoutputrate = 2'b00;
 
 always_ff @(posedge aclk) begin
+	bufferSwapCountCDC1 <= bufferSwapCount;
+	bufferSwapCountCDC2 <= bufferSwapCountCDC1;
+
 	if (~aresetn) begin
 		bufferSwapCountCDC1 <= 32'd0;
 		bufferSwapCountCDC2 <= 32'd0;
-	end else begin
-		bufferSwapCountCDC1 <= bufferSwapCount;
-		bufferSwapCountCDC2 <= bufferSwapCountCDC1;
 	end
 end
 
@@ -112,118 +113,121 @@ assign m_axi.awlen = 0;
 assign m_axi.wdata = 0;
 
 always_ff @(posedge aclk) begin
-	if (~aresetn) begin
-		m_axi.awvalid <= 0;
-		m_axi.wvalid <= 0;
-		m_axi.wstrb <= 16'h0000;
-		m_axi.wlast <= 0;
-		m_axi.bready <= 0;
-		m_axi.arvalid <= 0;
-		m_axi.rready <= 0;
-		burstcursor <= 8'd0;
-		cmdmode <= WCMD;
-	end else begin
 
-		re <= 1'b0;
+	re <= 1'b0;
 
-		case (cmdmode)
-			WCMD: begin
-				if (abvalid && ~abempty) begin
-					apucmd <= audiodin;
-					// Advance FIFO
-					re <= 1'b1;
-					// Dispatch cmd
-					cmdmode <= DISPATCH;
-				end
+	case (cmdmode)
+		INIT: begin
+			m_axi.awvalid <= 0;
+			m_axi.wvalid <= 0;
+			m_axi.wstrb <= 16'h0000;
+			m_axi.wlast <= 0;
+			m_axi.bready <= 0;
+			m_axi.arvalid <= 0;
+			m_axi.rready <= 0;
+			burstcursor <= 8'd0;
+			cmdmode <= WCMD;
+		end
+
+		WCMD: begin
+			if (abvalid && ~abempty) begin
+				apucmd <= audiodin;
+				// Advance FIFO
+				re <= 1'b1;
+				// Dispatch cmd
+				cmdmode <= DISPATCH;
 			end
+		end
 
-			DISPATCH: begin
-				case (apucmd)
-					32'h00000000:	cmdmode <= APUBUFFERSIZE;	// Set up size of DMA copies and playback range, in words
-					32'h00000001:	cmdmode <= APUSTART;		// Start DMA into write page
-					32'h00000002:	cmdmode <= APUSTOP;			// TODO: Stop all sound output
-					32'h00000003:	cmdmode <= APUSWAP;			// Swap r/w pages
-					32'h00000004:	cmdmode <= APUSETRATE;		// TODO: Set sample duplication count to x1 (44.1KHz), x2(22.05KHz) or x4(11.025KHz)
-					default:		cmdmode <= FINALIZE;		// Invalid command, wait one clock and try next
-				endcase
-			end
+		DISPATCH: begin
+			case (apucmd)
+				32'h00000000:	cmdmode <= APUBUFFERSIZE;	// Set up size of DMA copies and playback range, in words
+				32'h00000001:	cmdmode <= APUSTART;		// Start DMA into write page
+				32'h00000002:	cmdmode <= APUSTOP;			// TODO: Stop all sound output
+				32'h00000003:	cmdmode <= APUSWAP;			// Swap r/w pages
+				32'h00000004:	cmdmode <= APUSETRATE;		// TODO: Set sample duplication count to x1 (44.1KHz), x2(22.05KHz) or x4(11.025KHz)
+				default:		cmdmode <= FINALIZE;		// Invalid command, wait one clock and try next
+			endcase
+		end
 
-			APUSTART: begin
-				if (abvalid && ~abempty) begin
-					apusourceaddr <= audiodin;
-					// Advance FIFO
-					re <= 1'b1;
-					cmdmode <= STARTDMA;
-				end
+		APUSTART: begin
+			if (abvalid && ~abempty) begin
+				apusourceaddr <= audiodin;
+				// Advance FIFO
+				re <= 1'b1;
+				cmdmode <= STARTDMA;
 			end
+		end
 
-			APUBUFFERSIZE: begin
-				if (abvalid && ~abempty) begin
-					apuwordcount <= audiodin[9:0];		// wordcount-1 (0..1023), typically 1023
-					apuburstcount <= audiodin[10:2];	// burstcount = wordcount>>2, typically 255
-					// Advance FIFO
-					re <= 1'b1;
-					cmdmode <= FINALIZE;
-				end
-			end
-
-			APUSTOP: begin
-				burstcursor <= 0;
-				cmdmode <= APUCLEARLOOP;
-			end
-			
-			APUCLEARLOOP: begin
-				samplebuffer[writeLine] <= 0;
-				burstcursor <= burstcursor + 8'd1;
-				cmdmode <= (burstcursor == 8'hFF) ? FINALIZE : APUCLEARLOOP;
-			end
-
-			APUSWAP: begin
-				// Swap read/write buffers if we're at the end of a playback buffer
-				writeBufferSelect <= ~writeBufferSelect;
+		APUBUFFERSIZE: begin
+			if (abvalid && ~abempty) begin
+				apuwordcount <= audiodin[9:0];		// wordcount-1 (0..1023), typically 1023
+				apuburstcount <= audiodin[10:2];	// burstcount = wordcount>>2, typically 255
+				// Advance FIFO
+				re <= 1'b1;
 				cmdmode <= FINALIZE;
 			end
+		end
 
-			APUSETRATE: begin
-				if (abvalid && ~abempty) begin
-					sampleoutputrate <= audiodin[1:0]; // 2'b00:x1, 2'b01:x2, 2'b10:x4, 2'b11:undefined
-					// Advance FIFO
-					re <= 1'b1;
-					cmdmode <= FINALIZE;
-				end
+		APUSTOP: begin
+			burstcursor <= 0;
+			cmdmode <= APUCLEARLOOP;
+		end
+		
+		APUCLEARLOOP: begin
+			samplebuffer[writeLine] <= 0;
+			burstcursor <= burstcursor + 8'd1;
+			cmdmode <= (burstcursor == 8'hFF) ? FINALIZE : APUCLEARLOOP;
+		end
+
+		APUSWAP: begin
+			// Swap read/write buffers if we're at the end of a playback buffer
+			writeBufferSelect <= ~writeBufferSelect;
+			cmdmode <= FINALIZE;
+		end
+
+		APUSETRATE: begin
+			if (abvalid && ~abempty) begin
+				sampleoutputrate <= audiodin[1:0]; // 2'b00:x1, 2'b01:x2, 2'b10:x4, 2'b11:undefined
+				// Advance FIFO
+				re <= 1'b1;
+				cmdmode <= FINALIZE;
 			end
+		end
 
-			STARTDMA: begin
-				burstcursor <= 8'd0;
-				m_axi.arlen <= apuburstcount;
-				m_axi.arvalid <= 1;
-				m_axi.araddr <= apusourceaddr; 
-				cmdmode <= WAITREADADDR;
+		STARTDMA: begin
+			burstcursor <= 8'd0;
+			m_axi.arlen <= apuburstcount;
+			m_axi.arvalid <= 1;
+			m_axi.araddr <= apusourceaddr; 
+			cmdmode <= WAITREADADDR;
+		end
+
+		WAITREADADDR: begin
+			if (m_axi.arready) begin
+				m_axi.arvalid <= 0;
+				m_axi.rready <= 1;
+				cmdmode <= READLOOP;
 			end
+		end
 
-			WAITREADADDR: begin
-				if (m_axi.arready) begin
-					m_axi.arvalid <= 0;
-					m_axi.rready <= 1;
-					cmdmode <= READLOOP;
-				end
+		READLOOP: begin
+			if (m_axi.rvalid) begin
+				m_axi.rready <= ~m_axi.rlast;
+				samplebuffer[writeLine] <= m_axi.rdata;
+				burstcursor <= burstcursor + 8'd1;
+				cmdmode <= ~m_axi.rlast ? READLOOP : FINALIZE;
 			end
+		end
+		
+		FINALIZE: begin
+			cmdmode <= WCMD;
+		end
 
-			READLOOP: begin
-				if (m_axi.rvalid) begin
-					m_axi.rready <= ~m_axi.rlast;
-					samplebuffer[writeLine] <= m_axi.rdata;
-					burstcursor <= burstcursor + 8'd1;
-					cmdmode <= ~m_axi.rlast ? READLOOP : FINALIZE;
-				end
-			end
-			
-			FINALIZE: begin
-				cmdmode <= WCMD;
-			end
+	endcase
 
-		endcase
-
+	if (~aresetn) begin
+		cmdmode <= INIT;
 	end
 end
 

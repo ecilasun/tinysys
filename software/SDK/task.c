@@ -2,7 +2,6 @@
 #include "basesystem.h"
 #include "task.h"
 #include "leds.h"
-#include "uart.h"
 
 #include <stdlib.h>
 
@@ -176,12 +175,6 @@ uint32_t TaskSwitchToNext(struct STaskContext *_ctx)
 	{
 		if (currentTask != 0)
 		{
-			/*UARTWrite("\nTask '");
-			UARTWrite(_ctx->tasks[currentTask].name);
-			UARTWrite("' terminated with return code 0x");
-			UARTWriteHex(_ctx->tasks[currentTask].exitCode);	// a0 contains the exit code
-			UARTWrite("\n");*/
-
 			// Mark as 'terminated'
 			_ctx->tasks[currentTask].state = TS_TERMINATED;
 			// Replace with task at end of list, if we're not the end of list
@@ -194,10 +187,10 @@ uint32_t TaskSwitchToNext(struct STaskContext *_ctx)
 			_ctx->currentTask = 0;
 			currentTask = 0;
 		}
-		else
+		/*else
 		{
 			UARTWrite("\nKernel stub can't be terminated.\n");
-		}
+		}*/
 	}
 	else
 	{

@@ -121,146 +121,150 @@ end
 
 // main state machine
 always @(posedge aclk) begin
+
+	s_axi.awready <= 1'b0;
+
+	unique case(waddrstate)
+		2'b00: begin
+			if (s_axi.awvalid) begin
+				s_axi.awready <= 1'b1;
+				//writeaddress <= s_axi.awaddr; // todo: select subdevice using some bits of address
+				waddrstate <= 2'b01;
+			end
+		end
+		default/*2'b01*/: begin
+			waddrstate <= 2'b00;
+		end
+	endcase
+
 	if (~aresetn) begin
-		s_axi.awready <= 1'b0;
-	end else begin
-		// write address
-		unique case(waddrstate)
-			2'b00: begin
-				if (s_axi.awvalid) begin
-					s_axi.awready <= 1'b1;
-					//writeaddress <= s_axi.awaddr; // todo: select subdevice using some bits of address
-					waddrstate <= 2'b01;
-				end
-			end
-			default/*2'b01*/: begin
-				s_axi.awready <= 1'b0;
-				waddrstate <= 2'b00;
-			end
-		endcase
+		waddrstate <= 2'b00;
 	end
 end
 
 always @(posedge aclk) begin
+
+	we <= 4'h0;
+	s_axi.wready <= 1'b0;
+	s_axi.bvalid <= 1'b0;
+	s_axi.bresp <= 2'b00; // okay
+
+	unique case(writestate)
+		2'b00: begin
+			if (s_axi.wvalid) begin
+				unique case(s_axi.awaddr[3:0])
+					4'h0: begin // rx data
+						// Cannot write here, skip
+						writestate <= 2'b01;
+						s_axi.wready <= 1'b1;
+					end
+					4'h4: begin // tx data
+						if (~uartsendfull) begin
+							din <= s_axi.wdata[7:0];
+							we <= s_axi.wstrb[3:0];
+							writestate <= 2'b01;
+							s_axi.wready <= 1'b1;
+						end
+					end
+					4'h8: begin // status register
+						// Cannot write here, skip
+						writestate <= 2'b01;
+						s_axi.wready <= 1'b1;
+					end
+					default/*2'hC*/: begin // control register
+						// Cannot write here (yet), skip
+						writestate <= 2'b01;
+						s_axi.wready <= 1'b1;
+					end
+				endcase
+			end
+		end
+		default/*2'b01*/: begin
+			if (s_axi.bready) begin
+				s_axi.bvalid <= 1'b1;
+				writestate <= 2'b00;
+			end
+		end
+	endcase
+
 	if (~aresetn) begin
-		s_axi.bresp <= 2'b00; // okay
-		s_axi.bvalid <= 1'b0;
-		s_axi.wready <= 1'b0;
 		writestate <= 2'b00;
-		din <= 8'd0;
-	end else begin
-		// write data
-		we <= 4'h0;
-		s_axi.wready <= 1'b0;
-		s_axi.bvalid <= 1'b0;
-		unique case(writestate)
-			2'b00: begin
-				if (s_axi.wvalid) begin
-					unique case(s_axi.awaddr[3:0])
-						4'h0: begin // rx data
-							// Cannot write here, skip
-							writestate <= 2'b01;
-							s_axi.wready <= 1'b1;
-						end
-						4'h4: begin // tx data
-							if (~uartsendfull) begin
-								din <= s_axi.wdata[7:0];
-								we <= s_axi.wstrb[3:0];
-								writestate <= 2'b01;
-								s_axi.wready <= 1'b1;
-							end
-						end
-						4'h8: begin // status register
-							// Cannot write here, skip
-							writestate <= 2'b01;
-							s_axi.wready <= 1'b1;
-						end
-						default/*2'hC*/: begin // control register
-							// Cannot write here (yet), skip
-							writestate <= 2'b01;
-							s_axi.wready <= 1'b1;
-						end
-					endcase
-				end
-			end
-			default/*2'b01*/: begin
-				if (s_axi.bready) begin
-					s_axi.bvalid <= 1'b1;
-					writestate <= 2'b00;
-				end
-			end
-		endcase
 	end
 end
 
 always @(posedge aclk) begin
+
+	uartrcvre <= 1'b0;
+	s_axi.rvalid <= 1'b0;
+	s_axi.arready <= 1'b0;
+	s_axi.rlast <= 1'b0;
+	s_axi.rresp <= 2'b00;
+
+	// read address
+	unique case(raddrstate)
+		3'b000: begin
+			if (s_axi.arvalid) begin
+				s_axi.arready <= 1'b1;
+				unique case(s_axi.araddr[3:0])
+					4'h0: raddrstate <= 3'b001; // RX
+					4'h4: raddrstate <= 3'b010; // TX
+					4'h8: raddrstate <= 3'b011; // Status
+					4'hC: raddrstate <= 3'b100; // Control
+					//default: raddrstate <= 3'b101; // Misc
+				endcase
+			end
+		end
+		
+		3'b001: begin
+			// RX
+			if (s_axi.rready && uartrcvvalid /*&& ~uartrcvempty*/) begin
+				s_axi.rdata[31:0] <= {uartrcvdout, uartrcvdout, uartrcvdout, uartrcvdout};
+				s_axi.rvalid <= 1'b1;
+				s_axi.rlast <= 1'b1;
+				raddrstate <= 3'b000;
+				// Advance fifo
+				uartrcvre <= 1'b1;
+			end
+		end
+
+		3'b010: begin
+			// TX
+			// cannot read this port (output), skip
+			s_axi.rdata[31:0] <= 32'd0;
+			s_axi.rvalid <= 1'b1;
+			s_axi.rlast <= 1'b1;
+			raddrstate <= 3'b000;
+		end
+
+		3'b011: begin
+			// Rx status register
+			s_axi.rdata[31:0] <= {30'd0, uartrcvfull, ~uartrcvempty};
+			s_axi.rvalid <= 1'b1;
+			s_axi.rlast <= 1'b1;
+			raddrstate <= 3'b000;
+		end
+
+		3'b100: begin
+			// Control register
+			// cannot read this (yet), skip
+			s_axi.rdata[31:0] <= 32'd0;
+			s_axi.rvalid <= 1'b1;
+			s_axi.rlast <= 1'b1;
+			raddrstate <= 3'b000;
+		end
+
+		/*3'b101: begin
+			// All others
+			s_axi.rdata[31:0] <= 32'd0;
+			s_axi.rvalid <= 1'b1;
+			raddrstate <= 3'b000;
+		end*/
+	endcase
+
 	if (~aresetn) begin
-		s_axi.rlast <= 1'b1;
-		s_axi.arready <= 1'b0;
-		s_axi.rvalid <= 1'b0;
-		s_axi.rresp <= 2'b00;
-		s_axi.rdata <= 'd0;
-	end else begin
-		uartrcvre <= 1'b0;
-		s_axi.rvalid <= 1'b0;
-		s_axi.arready <= 1'b0;
-		// read address
-		unique case(raddrstate)
-			3'b000: begin
-				if (s_axi.arvalid) begin
-					s_axi.arready <= 1'b1;
-					unique case(s_axi.araddr[3:0])
-						4'h0: raddrstate <= 3'b001; // RX
-						4'h4: raddrstate <= 3'b010; // TX
-						4'h8: raddrstate <= 3'b011; // Status
-						4'hC: raddrstate <= 3'b100; // Control
-						//default: raddrstate <= 3'b101; // Misc
-					endcase
-				end
-			end
-			
-			3'b001: begin
-				// RX
-				if (s_axi.rready && uartrcvvalid /*&& ~uartrcvempty*/) begin
-					s_axi.rdata[31:0] <= {uartrcvdout, uartrcvdout, uartrcvdout, uartrcvdout};
-					s_axi.rvalid <= 1'b1;
-					raddrstate <= 3'b000;
-					// Advance fifo
-					uartrcvre <= 1'b1;
-				end
-			end
-
-			3'b010: begin
-				// TX
-				// cannot read this port (output), skip
-				s_axi.rdata[31:0] <= 32'd0;
-				s_axi.rvalid <= 1'b1;
-				raddrstate <= 3'b000;
-			end
-
-			3'b011: begin
-				// Rx status register
-				s_axi.rdata[31:0] <= {30'd0, uartrcvfull, ~uartrcvempty};
-				s_axi.rvalid <= 1'b1;
-				raddrstate <= 3'b000;
-			end
-
-			3'b100: begin
-				// Control register
-				// cannot read this (yet), skip
-				s_axi.rdata[31:0] <= 32'd0;
-				s_axi.rvalid <= 1'b1;
-				raddrstate <= 3'b000;
-			end
-
-			/*3'b101: begin
-				// All others
-				s_axi.rdata[31:0] <= 32'd0;
-				s_axi.rvalid <= 1'b1;
-				raddrstate <= 3'b000;
-			end*/
-		endcase
+		raddrstate <= 3'b000;
 	end
+
 end
 
 endmodule
