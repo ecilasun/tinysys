@@ -449,7 +449,9 @@ void HandleUSBSerial()
 	}
 	/*else if (epIrq & bmIN2BAVIRQ)
 	{
-		USBWriteByte(rEPIRQ, bmIN2BAVIRQ); // Clear
+		//USBWriteByte(rEPIRQ, bmIN2BAVIRQ); // Clear
+		// Application note states we have to clear BAV IRQs by writing count for double-buffering to work
+		MAX3420WriteByte(rEP2INBC, 0);
 		// Output
 		EmitBufferedOutput();
 	}*/

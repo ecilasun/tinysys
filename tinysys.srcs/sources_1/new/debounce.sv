@@ -13,7 +13,7 @@ always @(posedge clk) begin
 	if (reset == 1) begin
 		debounced <= 8'h00;
 	end else begin
-		debounced <= {debounced[7:0], bouncy};
+		debounced <= {debounced[6:0], bouncy};
 		if (debounced == 8'h00)
 			stabilized <= 1'b0;
 		else if (debounced == 8'hFF)

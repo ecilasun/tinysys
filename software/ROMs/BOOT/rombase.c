@@ -336,6 +336,11 @@ uint32_t IsFileHandleAllocated(const uint32_t _bitIndex, const uint32_t  _input)
 	return (_input & mask) ? 1 : 0;
 }
 
+void HandleSoftReset(const uint32_t _PC)
+{
+	ReportError(34, "Soft reset handler not installed", 0, 0, _PC);
+}
+
 //void __attribute__((aligned(16))) __attribute__((interrupt("machine"))) interrupt_service_routine() // Auto-saves registers
 void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routine() // Manual register save
 {
@@ -413,6 +418,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				else if (hwid&2) HandleSDCardDetect();
 				else if (hwid&4) HandleUSBSerial();
 				else if (hwid&8) HandleUSBHID();
+				else if (hwid&16) HandleSoftReset(PC);
 				else // No familiar bit set, unknown device
 				{
 					ReportError(32, "Unknown hardware device, core halted", code, hwid, PC);
@@ -445,6 +451,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 
 				// Terminate task on first chance and remove from list of running tasks
 				TaskExitCurrentTask(&g_taskctx);
+				// Force switch to next task
+				TaskSwitchToNext(&g_taskctx);
 
 				// TODO: Drop into debugger if one's loaded
 
@@ -460,6 +468,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 
 				// Exit task in non-debug mode
 				TaskExitCurrentTask(&g_taskctx);
+				// Force switch to next task
+				TaskSwitchToNext(&g_taskctx);
 
 				// TODO: Drop into debugger if one's loaded
 

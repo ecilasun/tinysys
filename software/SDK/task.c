@@ -86,7 +86,6 @@ void TaskExitCurrentTask(struct STaskContext *_ctx)
 	struct STask *task = &_ctx->tasks[taskid];
 	task->state = TS_TERMINATING;
 	task->exitCode = 0;
-	write_csr(0x8AA, 0); // Return a0 = 0x0
 }
 
 void TaskExitTaskWithID(struct STaskContext *_ctx, uint32_t _taskid, uint32_t _signal)
@@ -97,7 +96,6 @@ void TaskExitTaskWithID(struct STaskContext *_ctx, uint32_t _taskid, uint32_t _s
 	struct STask *task = &_ctx->tasks[_taskid];
 	task->state = TS_TERMINATING;
 	task->exitCode = _signal;
-	write_csr(0x8AA, _signal); // Return a0 = _signal
 }
 
 uint32_t TaskSwitchToNext(struct STaskContext *_ctx)

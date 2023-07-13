@@ -256,25 +256,24 @@ int USBSerialWriteN(const char *outstring, uint32_t count)
 	{
 		// Wait for an opportunity to push the string out
 		while((MAX3420ReadByte(rEPIRQ) & bmIN2BAVIRQ) == 0) { }
-		MAX3420WriteByte(rCPUCTL, 0); // Disable interrupts
-		//write_csr(mstatus, 0); // Disable machine interrupts
+		MAX3420WriteByte(rCPUCTL, 0); // Disable MAX3420 interrupts so we don't fall into ISR for USB
 		MAX3420WriteBytes(rEP2INFIFO, 64, (uint8_t*)cptr);
 		MAX3420WriteByte(rEP2INBC, 64);
 		MAX3420FlushOutputFIFO();
-		//write_csr(mstatus, MSTATUS_MIE); // Enable machine interrupts
-		MAX3420WriteByte(rCPUCTL, bmIE); // Enable interrupts
+		MAX3420WriteByte(rCPUCTL, bmIE); // Enable MAX3420 interrupts
 		cptr += 64;
 	}
 
-	// Wait for an opportunity to push the string out
-	while((MAX3420ReadByte(rEPIRQ) & bmIN2BAVIRQ) == 0) { }
-	MAX3420WriteByte(rCPUCTL, 0); // Disable interrupts
-	//write_csr(mstatus, 0); // Disable machine interrupts
-	MAX3420WriteBytes(rEP2INFIFO, leftoverCount, (uint8_t*)cptr);
-	MAX3420WriteByte(rEP2INBC, leftoverCount);
-	MAX3420FlushOutputFIFO();
-	//write_csr(mstatus, MSTATUS_MIE); // Enable machine interrupts
-	MAX3420WriteByte(rCPUCTL, bmIE); // Enable interrupts
+	if (leftoverCount)
+	{
+		// Wait for an opportunity to push the string out
+		while((MAX3420ReadByte(rEPIRQ) & bmIN2BAVIRQ) == 0) { }
+		MAX3420WriteByte(rCPUCTL, 0); // Disable MAX3420 interrupts so we don't fall into ISR for USB
+		MAX3420WriteBytes(rEP2INFIFO, leftoverCount, (uint8_t*)cptr);
+		MAX3420WriteByte(rEP2INBC, leftoverCount);
+		MAX3420FlushOutputFIFO();
+		MAX3420WriteByte(rCPUCTL, bmIE); // Enable MAX3420 interrupts
+	}
 
 	return count;
 }

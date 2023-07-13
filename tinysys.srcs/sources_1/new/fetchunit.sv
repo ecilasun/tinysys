@@ -8,8 +8,6 @@ module fetchunit #(
 	input wire aclk,
 	input wire clk10,
 	input wire aresetn,
-	// Soft reset
-	input wire sysresetn,
 	// Stall control
 	input wire branchresolved,
 	input wire [31:0] branchtarget,
@@ -27,18 +25,6 @@ module fetchunit #(
 	input wire romReady,
 	// To system bus
 	axi4if.master m_axi );
-
-// --------------------------------------------------
-// Reset CDC and debounce
-// --------------------------------------------------
-
-wire stableresetn;
-
-debounce resetnswtchdebounce(
-	.clk(aclk),
-	.reset(~aresetn),
-	.bouncy(sysresetn),
-	.stable(stableresetn) );
 
 // --------------------------------------------------
 // Internal states
@@ -431,7 +417,7 @@ always @(posedge aclk) begin
 
 	endcase
 
-	if (~aresetn || ~stableresetn) begin
+	if (~aresetn) begin
 		fetchmode <= INIT;
 	end
 end

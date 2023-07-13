@@ -74,7 +74,6 @@ fetchunit #(.RESETVECTOR(RESETVECTOR)) fetchdecodeinst (
 	.aclk(aclk),
 	.clk10(clk10),
 	.aresetn(aresetn),
-	.sysresetn(sysresetn),
 	.branchresolved(branchresolved),
 	.branchtarget(branchtarget),
 	.ififoempty(ififoempty),
@@ -373,6 +372,8 @@ axi4CSRFile csrfileinst(
 	.uartrcvempty(uartrcvempty),
 	.keyfifoempty(keyfifoempty),
 	.usbirq({usbairq, usbcirq}),
+	// Soft reset
+	.sysresetn(sysresetn),
 	// Shadow registers
 	.mepc(mepc),
 	.mtvec(mtvec),
