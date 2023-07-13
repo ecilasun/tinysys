@@ -299,12 +299,16 @@ devicerouter devicerouterinst(
     .axi_m({usbaif, opl2if, audioif, usbcif, dmaif, xadcif, csrif, spiif, gpucmdif, ledif, uartif}));
 
 // --------------------------------------------------
-// Memory mapped devices
+// Interrupt wires
 // --------------------------------------------------
 
 wire uartrcvempty;
 wire keyfifoempty;
 wire usbcirq, usbairq;
+
+// --------------------------------------------------
+// Memory mapped devices
+// --------------------------------------------------
 
 axi4uart #(.BAUDRATE(115200), .FREQ(10000000)) uartinst(
 	.aclk(aclk),
@@ -340,7 +344,7 @@ axi4sdcard sdcardinst(
 	.keyfifoempty(keyfifoempty),
 	.s_axi(spiif));
 
-axi4usbc usbcinst(
+axi4usbc usbserialport(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.spibaseclock(clk50),
@@ -348,7 +352,7 @@ axi4usbc usbcinst(
 	.usbirq(usbcirq),
 	.s_axi(usbcif));
 
-axi4usbc usbainst(
+axi4usbc usbhostport(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.spibaseclock(clk50),

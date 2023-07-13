@@ -6,7 +6,7 @@ SIZE = $(CROSS)size
 
 # CFLAGS=-mcmodel=medany -std=gnu99 --param l1-cache-line-size=64 --param l1-cache-size=16 -Wall -ggdb -Og -flto -march=rv32im -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -lgcc -lm -I.. -I../../../../SDK/
 
-CFLAGS = -mcmodel=medany -std=gnu99 --param l1-cache-line-size=64 --param l1-cache-size=16 -Wall -O1 -flto -march=rv32imc_zicsr_zifencei -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -I.. -I../../../../SDK/
+CFLAGS = -mcmodel=medany -std=gnu99 --param l1-cache-line-size=64 --param l1-cache-size=16 -Wall -Oz -flto -march=rv32imc_zicsr_zifencei -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -I.. -I../../../../SDK/
 
 CFLAGS += \
 	-DNORMALUNIX \

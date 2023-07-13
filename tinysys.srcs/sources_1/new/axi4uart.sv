@@ -171,7 +171,7 @@ always @(posedge aclk) begin
 						writestate <= 2'b01;
 						s_axi.wready <= 1'b1;
 					end
-					default/*2'hC*/: begin // control register
+					default/*2'hC*/: begin // control register - all other addresses
 						// Cannot write here (yet), skip
 						writestate <= 2'b01;
 						s_axi.wready <= 1'b1;
@@ -199,6 +199,7 @@ always @(posedge aclk) begin
 	s_axi.arready <= 1'b0;
 	s_axi.rlast <= 1'b0;
 	s_axi.rresp <= 2'b00;
+	s_axi.rdata[31:8] <= 24'd0;
 
 	// read address
 	unique case(raddrstate)
@@ -209,8 +210,7 @@ always @(posedge aclk) begin
 					4'h0: raddrstate <= 3'b001; // RX
 					4'h4: raddrstate <= 3'b010; // TX
 					4'h8: raddrstate <= 3'b011; // Status
-					4'hC: raddrstate <= 3'b100; // Control
-					//default: raddrstate <= 3'b101; // Misc
+					default/*4'hC*/: raddrstate <= 3'b100; // Control (all other addresses)
 				endcase
 			end
 		end
@@ -218,7 +218,7 @@ always @(posedge aclk) begin
 		3'b001: begin
 			// RX
 			if (s_axi.rready && uartrcvvalid /*&& ~uartrcvempty*/) begin
-				s_axi.rdata[31:0] <= {uartrcvdout, uartrcvdout, uartrcvdout, uartrcvdout};
+				s_axi.rdata[7:0] <= uartrcvdout;
 				s_axi.rvalid <= 1'b1;
 				s_axi.rlast <= 1'b1;
 				raddrstate <= 3'b000;
@@ -254,7 +254,7 @@ always @(posedge aclk) begin
 		end
 
 		/*3'b101: begin
-			// All others
+			// Etc
 			s_axi.rdata[31:0] <= 32'd0;
 			s_axi.rvalid <= 1'b1;
 			raddrstate <= 3'b000;
