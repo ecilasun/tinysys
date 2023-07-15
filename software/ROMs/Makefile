@@ -29,7 +29,8 @@ RISCVTOOL ?= ../build/release/riscvtool
 # No filesystem when defined
 # FILESYSTEM ?= -DDISABLE_FILESYSTEM
 FILESYSTEM ?= -DENABLE_FILESYSTEM -DLFS_NO_MALLOC -DLFS_NO_DEBUG
-# The COE file will be using 16 byte (128bit) output width to match the ROM layout (x4 16byte reads from cache controller)
+# The COE file will be using 16 byte (128bit) output width to match the ROM layout
+# (cache controller reads x4 16byte chunks for each line)
 ROMWORDSIZE ?= 16
 # 512 bit cache lines makes 64 bytes per line
 # 256 cache lines makes total cache size 16 Kbytes

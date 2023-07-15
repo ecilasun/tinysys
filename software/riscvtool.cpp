@@ -343,12 +343,6 @@ void sendfile(char *_filename)
 	fsetpos(fp, &pos);
     filebytesize = getfilelength(endpos);
 
-    if (filebytesize > 65536)
-    {
-        printf("Can't send files larger than 64K\n");
-        return;
-    }
-
     unsigned char *bytestoread = new unsigned char[filebytesize];
     fread(bytestoread, 1, filebytesize, fp);
     fclose(fp);

@@ -170,16 +170,16 @@ void MakeCDCDescriptors(struct SUSBContext *ctx)
 	// Data in
 	ctx->input.bLength = sizeof(struct USBEndpointDescriptor); // 7
 	ctx->input.bDescriptorType = USBDesc_Endpoint;
-	ctx->input.bEndpointAddress = 0x82;   // EP2 in
-	ctx->input.bmAttributes = 0x02;	   // Bulk endpoint
+	ctx->input.bEndpointAddress = 0x82;		// EP2 in
+	ctx->input.bmAttributes = 0x02;			// Bulk endpoint
 	ctx->input.wMaxPacketSize = 64;
 	ctx->input.bInterval = 0;
 
 	// Data out
 	ctx->output.bLength = sizeof(struct USBEndpointDescriptor); // 7
 	ctx->output.bDescriptorType = USBDesc_Endpoint;
-	ctx->output.bEndpointAddress = 0x01;  // EP1 out
-	ctx->output.bmAttributes = 0x02;	  // Bulk endpoint
+	ctx->output.bEndpointAddress = 0x01;	// EP1 out
+	ctx->output.bmAttributes = 0x02;		// Bulk endpoint
 	ctx->output.wMaxPacketSize = 64;
 	ctx->output.bInterval = 0;
 
@@ -257,7 +257,7 @@ int USBSerialWriteN(const char *outstring, uint32_t count)
 
 	for(uint32_t i=0; i<blockCount; ++i)
 	{
-		// Wait for an opportunity to push the string out
+		// Wait for buffer available for EP2 fifo
 		while((MAX3420ReadByte(rEPIRQ) & bmIN2BAVIRQ) == 0) { }
 		MAX3420WriteByte(rCPUCTL, 0); // Disable MAX3420 interrupts so we don't fall into ISR for USB
 		MAX3420WriteBytes(rEP2INFIFO, 64, (uint8_t*)cptr);
@@ -269,7 +269,7 @@ int USBSerialWriteN(const char *outstring, uint32_t count)
 
 	if (leftoverCount)
 	{
-		// Wait for an opportunity to push the string out
+		// Wait for buffer available for EP2 fifo
 		while((MAX3420ReadByte(rEPIRQ) & bmIN2BAVIRQ) == 0) { }
 		MAX3420WriteByte(rCPUCTL, 0); // Disable MAX3420 interrupts so we don't fall into ISR for USB
 		MAX3420WriteBytes(rEP2INFIFO, leftoverCount, (uint8_t*)cptr);
@@ -292,56 +292,56 @@ int USBSerialWrite(const char *outstring)
 
 int USBSerialWriteHexByte(const uint8_t i)
 {
-    const char hexdigits[] = "0123456789ABCDEF";
-    char msg[] = "  ";
+	const char hexdigits[] = "0123456789ABCDEF";
+	char msg[] = "  ";
 
-    msg[0] = hexdigits[((i>>4)%16)];
-    msg[1] = hexdigits[(i%16)];
+	msg[0] = hexdigits[((i>>4)%16)];
+	msg[1] = hexdigits[(i%16)];
 
-    return USBSerialWriteN(msg, 2);
+	return USBSerialWriteN(msg, 2);
 }
 
 int USBSerialWriteHex(const uint32_t i)
 {
-    const char hexdigits[] = "0123456789ABCDEF";
-    char msg[] = "        ";
+	const char hexdigits[] = "0123456789ABCDEF";
+	char msg[] = "        ";
 
-    msg[0] = hexdigits[((i>>28)%16)];
-    msg[1] = hexdigits[((i>>24)%16)];
-    msg[2] = hexdigits[((i>>20)%16)];
-    msg[3] = hexdigits[((i>>16)%16)];
-    msg[4] = hexdigits[((i>>12)%16)];
-    msg[5] = hexdigits[((i>>8)%16)];
-    msg[6] = hexdigits[((i>>4)%16)];
-    msg[7] = hexdigits[(i%16)];
+	msg[0] = hexdigits[((i>>28)%16)];
+	msg[1] = hexdigits[((i>>24)%16)];
+	msg[2] = hexdigits[((i>>20)%16)];
+	msg[3] = hexdigits[((i>>16)%16)];
+	msg[4] = hexdigits[((i>>12)%16)];
+	msg[5] = hexdigits[((i>>8)%16)];
+	msg[6] = hexdigits[((i>>4)%16)];
+	msg[7] = hexdigits[(i%16)];
 
-    return USBSerialWriteN(msg, 8);
+	return USBSerialWriteN(msg, 8);
 }
 
 int USBSerialWriteDecimal(const int32_t i)
 {
-    const char digits[] = "0123456789";
-    char msg[] = "                                ";
+	const char digits[] = "0123456789";
+	char msg[] = "                                ";
 
-    int d = 1000000000;
-    uint32_t enableappend = 0;
-    uint32_t m = 0;
+	int d = 1000000000;
+	uint32_t enableappend = 0;
+	uint32_t m = 0;
 
-    if (i<0)
-        msg[m++] = '-';
+	if (i<0)
+		msg[m++] = '-';
 
-    for (int c=0;c<10;++c)
-    {
-        uint32_t r = ((i/d)%10)&0x7FFFFFFF;
-        // Ignore preceeding zeros
-        if ((r!=0) || enableappend || d==1)
-        {
-            enableappend = 1; // Rest of the digits can be appended
-            msg[m++] = digits[r];
-        }
-        d = d/10;
-    }
-    msg[m] = 0;
+	for (int c=0;c<10;++c)
+	{
+		uint32_t r = ((i/d)%10)&0x7FFFFFFF;
+		// Ignore preceeding zeros
+		if ((r!=0) || enableappend || d==1)
+		{
+			enableappend = 1; // Rest of the digits can be appended
+			msg[m++] = digits[r];
+		}
+		d = d/10;
+	}
+	msg[m] = 0;
 
-    return USBSerialWrite(msg);
+	return USBSerialWrite(msg);
 }

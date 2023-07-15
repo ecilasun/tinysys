@@ -267,6 +267,7 @@ always @(posedge aclk) begin
 				rs1, rs2, rd,
 				immed, PC[31:1], stepsize} <= ififodout;
 			PC[0] <= 1'b0; // NOTE: Since we don't do byte addressing, lowest bit is always set to zero
+			// H1,H2,H3: Wait for fetch, pending register writeback, pending load
 			ififore <= (ififovalid && ~ififoempty && ~pendingwback && ~pendingload);
 			ctlmode <= (ififovalid && ~ififoempty && ~pendingwback && ~pendingload) ? READREG : READINSTR;
 		end
@@ -284,7 +285,7 @@ always @(posedge aclk) begin
 			mulstrobe <= (aluop==`ALU_MUL);
 			divstrobe <= (aluop==`ALU_DIV || aluop==`ALU_REM);				
 			mathop <= {aluop==`ALU_MUL, aluop==`ALU_DIV, aluop==`ALU_REM};
-			// Store doesn't wait in-place, but we can ensure there's no data in flight at this late point
+			// H0: Wait for pending write
 			ctlmode <= pendingwrite ? READREG : (instrOneHotOut[`O_H_STORE] ? WRITE : DISPATCH);
 		end
 

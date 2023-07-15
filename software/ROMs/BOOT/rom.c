@@ -72,6 +72,9 @@ void DeviceDefaultState()
 	// Stop any pending OPL2 audio output by sending a series commands
 	OPL2Stop();
 
+	// Turn off LEDs
+	LEDSetState(0x0);
+
 	// Shut down display
 	s_gpuContext.m_vmode = EVM_320_Wide;
 	s_gpuContext.m_cmode = ECM_8bit_Indexed;
@@ -345,6 +348,7 @@ int main()
 	s_startAddress = LoadExecutable("sd:/boot.elf", false);
 	if (s_startAddress != 0x0)
 	{
+		DeviceDefaultState();
 		// The boot executable is responsible for
 		// setting the entire hardware up including
 		// copying itself to the ROM shadow address
