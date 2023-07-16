@@ -11,4 +11,4 @@ software/**/*.txt
 software/**/*.elf
 software/**/*.coe
 software/.lock*
-board/expansionboardA-backups/**
+board/expansionboardA-backups/**.zip
