@@ -277,6 +277,7 @@ always @(posedge aclk) begin
 		end
 
 		WAITNEWBRANCHTARGET: begin
+			// HAZARD#4: Wait for branch target resolve
 			// Resume fetch when branch address is resolved
 			fetchena <= branchresolved;
 			// New PC to resume fetch at
