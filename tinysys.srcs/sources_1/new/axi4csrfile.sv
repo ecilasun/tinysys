@@ -13,7 +13,6 @@ module axi4CSRFile(
 	// IRQ lines to fetch unit
 	output wire [1:0] irqReq,
 	// Incoming hardware interrupt requests
-	input wire uartrcvempty,
 	input wire keyfifoempty,
 	input wire [1:0] usbirq,
 	// Software level reset switch
@@ -94,7 +93,7 @@ always @(posedge aclk) begin
 
 	softInterruptEna <= mieshadow[0] && mstatusIEshadow; // Software interrupt (The rest of this condition is in fetch unit based on instruction)
 	timerInterrupt <= mieshadow[1] && mstatusIEshadow && (wallclocktime >= timecmpshadow); // Timer interrupt
-	hwInterrupt <= mieshadow[2] && mstatusIEshadow && (stablereset || ~uartrcvempty || ~keyfifoempty || ~usbirq[1] || ~usbirq[0]); // Machine external interrupt (UART, SDCard Switch)
+	hwInterrupt <= mieshadow[2] && mstatusIEshadow && (stablereset || ~keyfifoempty || ~usbirq[1] || ~usbirq[0]); // Machine external interrupts
 
 	if (~aresetn) begin
 		softInterruptEna <= 0;
@@ -215,7 +214,7 @@ always @(posedge aclk) begin
 					`CSR_TIMELO:	s_axi.rdata[31:0] <= wallclocktime[31:0];
 					`CSR_CYCLELO:	s_axi.rdata[31:0] <= cpuclocktime[31:0];
 					// interrupt states of all hardware devices
-					`CSR_HWSTATE:	s_axi.rdata[31:0] <= {27'd0, stablereset, ~usbirq[1], ~usbirq[0], ~keyfifoempty, ~uartrcvempty};
+					`CSR_HWSTATE:	s_axi.rdata[31:0] <= {27'd0, stablereset, ~usbirq[1], ~usbirq[0], ~keyfifoempty, 1'b0};
 					default:		s_axi.rdata[31:0] <= csrdout;	// Pass through actual data
 				endcase
 				s_axi.rvalid <= 1'b1;

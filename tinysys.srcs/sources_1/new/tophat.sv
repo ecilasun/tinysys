@@ -7,9 +7,6 @@ module tophat(
     ,input wire sysresetn
     // Debug LEDs
     ,output wire [3:0] leds
-    // UART - USB-c module
-    ,output wire uart_rxd_out
-	,input wire uart_txd_in
 	// DDR3 SDRAM
 	,output wire ddr3_reset_n
 	,output wire [0:0] ddr3_cke
@@ -182,8 +179,6 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.sysresetn(sysresetn), // Soft reboot
 	.preresetn(preresetn),
 	// Device wires
-	.uart_rxd_out(uart_rxd_out),
-	.uart_txd_in(uart_txd_in),
 	.leds(leds),
 	.ddr3conn(ddr3conn),
 	.i2sconn(i2sconn),

@@ -1,4 +1,4 @@
-21594631468605099
+21490715148639380
 1_1825027_1
 SW_1-1825027-1
 
@@ -1260,6 +1260,13 @@ tactile switch Wurth Wuerth
 4
 2
 Button_Switch_SMD
+SW_Push_1P1T_XKB_TS-1187A
+SMD Tactile Switch, http://www.helloxkb.com/public/images/pdf/TS-1187A-X-X-X.pdf
+SPST Tactile Switch
+0
+4
+2
+Button_Switch_SMD
 SW_Push_SPST_NO_Alps_SKRK
 http://www.alps.com/prod/info/E/HTML/Tact/SurfaceMount/SKRK/SKRKAHE020.html
 SMD SMT button
@@ -1961,8 +1968,8 @@ switch SPDT
 3
 Button_Switch_THT
 SW_E-Switch_EG1271_SPDT
-E-Switch sub miniature slide switch, EG series, SPDT, http://spec_sheets.e-switch.com/specs/P040047.pdf
-switch DPDT
+E-Switch sub miniature slide switch, EG series, SPDT, https://www.e-switch.com/wp-content/uploads/2022/06/EG.pdf
+switch SPDT
 0
 6
 6
@@ -8384,6 +8391,13 @@ Molex Microcoaxial RF Connectors (MCRF), mates Hirose U.FL, (http://www.molex.co
 mcrf hirose ufl u.fl microcoaxial
 0
 4
+2
+Connector_Coaxial
+WR-MMCX_Wuerth_66012102111404_Vertical
+Würth WR-MMCX PCB SMT Jack, Vertical (https://www.we-online.com/components/products/datasheet/66012102111404.pdf)
+Coaxial Connector 50 ohms Female
+0
+3
 2
 Connector_Coaxial
 WR-MMCX_Wuerth_66011102111302_Horizontal
@@ -27544,489 +27558,6 @@ phoenix_contact connector MSTB_01x16_GF_5.00mm_MH
 0
 16
 16
-Connector_Phoenix_SPT
-PhoenixContact_SPT_1.5_2-H-3.5_1x02_P3.5mm_Horizontal
-Connector Phoenix Contact, SPT 1.5/2-H-3.5 Terminal Block, 1990737 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1990737), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 1.5/2-H-3.5 1990737
-0
-4
-2
-Connector_Phoenix_SPT
-PhoenixContact_SPT_1.5_3-H-3.5_1x03_P3.5mm_Horizontal
-Connector Phoenix Contact, SPT 1.5/3-H-3.5 Terminal Block, 1990740 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1990740), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 1.5/3-H-3.5 1990740
-0
-6
-3
-Connector_Phoenix_SPT
-PhoenixContact_SPT_1.5_4-H-3.5_1x04_P3.5mm_Horizontal
-Connector Phoenix Contact, SPT 1.5/4-H-3.5 Terminal Block, 1990753 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1990753), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 1.5/4-H-3.5 1990753
-0
-8
-4
-Connector_Phoenix_SPT
-PhoenixContact_SPT_1.5_5-H-3.5_1x05_P3.5mm_Horizontal
-Connector Phoenix Contact, SPT 1.5/5-H-3.5 Terminal Block, 1990766 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1990766), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 1.5/5-H-3.5 1990766
-0
-10
-5
-Connector_Phoenix_SPT
-PhoenixContact_SPT_1.5_6-H-3.5_1x06_P3.5mm_Horizontal
-Connector Phoenix Contact, SPT 1.5/6-H-3.5 Terminal Block, 1990779 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1990779), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 1.5/6-H-3.5 1990779
-0
-12
-6
-Connector_Phoenix_SPT
-PhoenixContact_SPT_1.5_7-H-3.5_1x07_P3.5mm_Horizontal
-Connector Phoenix Contact, SPT 1.5/7-H-3.5 Terminal Block, 1990782 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1990782), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 1.5/7-H-3.5 1990782
-0
-14
-7
-Connector_Phoenix_SPT
-PhoenixContact_SPT_1.5_8-H-3.5_1x08_P3.5mm_Horizontal
-Connector Phoenix Contact, SPT 1.5/8-H-3.5 Terminal Block, 1990795 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1990795), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 1.5/8-H-3.5 1990795
-0
-16
-8
-Connector_Phoenix_SPT
-PhoenixContact_SPT_1.5_9-H-3.5_1x09_P3.5mm_Horizontal
-Connector Phoenix Contact, SPT 1.5/9-H-3.5 Terminal Block, 1990805 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1990805), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 1.5/9-H-3.5 1990805
-0
-18
-9
-Connector_Phoenix_SPT
-PhoenixContact_SPT_1.5_10-H-3.5_1x10_P3.5mm_Horizontal
-Connector Phoenix Contact, SPT 1.5/10-H-3.5 Terminal Block, 1990818 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1990818), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 1.5/10-H-3.5 1990818
-0
-20
-10
-Connector_Phoenix_SPT
-PhoenixContact_SPT_1.5_11-H-3.5_1x11_P3.5mm_Horizontal
-Connector Phoenix Contact, SPT 1.5/11-H-3.5 Terminal Block, 1990821 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1990821), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 1.5/11-H-3.5 1990821
-0
-22
-11
-Connector_Phoenix_SPT
-PhoenixContact_SPT_1.5_12-H-3.5_1x12_P3.5mm_Horizontal
-Connector Phoenix Contact, SPT 1.5/12-H-3.5 Terminal Block, 1990834 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1990834), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 1.5/12-H-3.5 1990834
-0
-24
-12
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_1-H-5.0_1x01_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/1-H-5.0 Terminal Block, 1751066 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1751066), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/1-H-5.0 1751066
-0
-2
-1
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_2-H-5.0-EX_1x02_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/2-H-5.0-EX Terminal Block, 1732386 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732386), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/2-H-5.0-EX 1732386
-0
-4
-2
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_2-H-5.0_1x02_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/2-H-5.0 Terminal Block, 1990973 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1990973), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/2-H-5.0 1990973
-0
-4
-2
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_2-V-5.0-EX_1x02_P5.0mm_Vertical
-Connector Phoenix Contact, SPT 2.5/2-V-5.0-EX Terminal Block, 1732496 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732496), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/2-V-5.0-EX 1732496
-0
-4
-2
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_3-H-5.0-EX_1x03_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/3-H-5.0-EX Terminal Block, 1732399 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732399), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/3-H-5.0-EX 1732399
-0
-6
-3
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_3-H-5.0_1x03_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/3-H-5.0 Terminal Block, 1990986 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1990986), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/3-H-5.0 1990986
-0
-6
-3
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_3-V-5.0-EX_1x03_P5.0mm_Vertical
-Connector Phoenix Contact, SPT 2.5/3-V-5.0-EX Terminal Block, 1732506 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732506), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/3-V-5.0-EX 1732506
-0
-6
-3
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_4-H-5.0-EX_1x04_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/4-H-5.0-EX Terminal Block, 1732409 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732409), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/4-H-5.0-EX 1732409
-0
-8
-4
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_4-H-5.0_1x04_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/4-H-5.0 Terminal Block, 1990999 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1990999), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/4-H-5.0 1990999
-0
-8
-4
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_4-V-5.0-EX_1x04_P5.0mm_Vertical
-Connector Phoenix Contact, SPT 2.5/4-V-5.0-EX Terminal Block, 1732519 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732519), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/4-V-5.0-EX 1732519
-0
-8
-4
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_5-H-5.0-EX_1x05_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/5-H-5.0-EX Terminal Block, 1732412 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732412), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/5-H-5.0-EX 1732412
-0
-10
-5
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_5-H-5.0_1x05_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/5-H-5.0 Terminal Block, 1991008 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1991008), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/5-H-5.0 1991008
-0
-10
-5
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_5-V-5.0-EX_1x05_P5.0mm_Vertical
-Connector Phoenix Contact, SPT 2.5/5-V-5.0-EX Terminal Block, 1732522 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732522), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/5-V-5.0-EX 1732522
-0
-10
-5
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_6-H-5.0-EX_1x06_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/6-H-5.0-EX Terminal Block, 1732425 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732425), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/6-H-5.0-EX 1732425
-0
-12
-6
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_6-H-5.0_1x06_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/6-H-5.0 Terminal Block, 1991011 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1991011), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/6-H-5.0 1991011
-0
-12
-6
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_6-V-5.0-EX_1x06_P5.0mm_Vertical
-Connector Phoenix Contact, SPT 2.5/6-V-5.0-EX Terminal Block, 1732535 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732535), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/6-V-5.0-EX 1732535
-0
-12
-6
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_7-H-5.0-EX_1x07_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/7-H-5.0-EX Terminal Block, 1732438 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732438), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/7-H-5.0-EX 1732438
-0
-14
-7
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_7-H-5.0_1x07_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/7-H-5.0 Terminal Block, 1991024 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1991024), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/7-H-5.0 1991024
-0
-14
-7
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_7-V-5.0-EX_1x07_P5.0mm_Vertical
-Connector Phoenix Contact, SPT 2.5/7-V-5.0-EX Terminal Block, 1732548 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732548), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/7-V-5.0-EX 1732548
-0
-14
-7
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_8-H-5.0-EX_1x08_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/8-H-5.0-EX Terminal Block, 1732441 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732441), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/8-H-5.0-EX 1732441
-0
-16
-8
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_8-H-5.0_1x08_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/8-H-5.0 Terminal Block, 1991037 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1991037), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/8-H-5.0 1991037
-0
-16
-8
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_8-V-5.0-EX_1x08_P5.0mm_Vertical
-Connector Phoenix Contact, SPT 2.5/8-V-5.0-EX Terminal Block, 1732551 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732551), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/8-V-5.0-EX 1732551
-0
-16
-8
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_9-H-5.0-EX_1x09_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/9-H-5.0-EX Terminal Block, 1732454 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732454), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/9-H-5.0-EX 1732454
-0
-18
-9
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_9-H-5.0_1x09_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/9-H-5.0 Terminal Block, 1991040 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1991040), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/9-H-5.0 1991040
-0
-18
-9
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_9-V-5.0-EX_1x09_P5.0mm_Vertical
-Connector Phoenix Contact, SPT 2.5/9-V-5.0-EX Terminal Block, 1732564 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732564), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/9-V-5.0-EX 1732564
-0
-18
-9
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_10-H-5.0-EX_1x10_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/10-H-5.0-EX Terminal Block, 1732467 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732467), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/10-H-5.0-EX 1732467
-0
-20
-10
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_10-H-5.0_1x10_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/10-H-5.0 Terminal Block, 1991053 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1991053), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/10-H-5.0 1991053
-0
-20
-10
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_10-V-5.0-EX_1x10_P5.0mm_Vertical
-Connector Phoenix Contact, SPT 2.5/10-V-5.0-EX Terminal Block, 1732577 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732577), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/10-V-5.0-EX 1732577
-0
-20
-10
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_11-H-5.0-EX_1x11_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/11-H-5.0-EX Terminal Block, 1732470 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732470), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/11-H-5.0-EX 1732470
-0
-22
-11
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_11-H-5.0_1x11_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/11-H-5.0 Terminal Block, 1991066 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1991066), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/11-H-5.0 1991066
-0
-22
-11
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_11-V-5.0-EX_1x11_P5.0mm_Vertical
-Connector Phoenix Contact, SPT 2.5/11-V-5.0-EX Terminal Block, 1732580 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732580), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/11-V-5.0-EX 1732580
-0
-22
-11
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_12-H-5.0-EX_1x12_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/12-H-5.0-EX Terminal Block, 1732483 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732483), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/12-H-5.0-EX 1732483
-0
-24
-12
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_12-H-5.0_1x12_P5.0mm_Horizontal
-Connector Phoenix Contact, SPT 2.5/12-H-5.0 Terminal Block, 1991079 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1991079), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/12-H-5.0 1991079
-0
-24
-12
-Connector_Phoenix_SPT
-PhoenixContact_SPT_2.5_12-V-5.0-EX_1x12_P5.0mm_Vertical
-Connector Phoenix Contact, SPT 2.5/12-V-5.0-EX Terminal Block, 1732593 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1732593), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 2.5/12-V-5.0-EX 1732593
-0
-24
-12
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_1-H-7.5_1x01_P7.5mm_Horizontal
-Connector Phoenix Contact, SPT 5/1-H-7.5 Terminal Block, 1719189 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719189), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/1-H-7.5 1719189
-0
-2
-1
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_1-V-7.5_1x01_P7.5mm_Vertical
-Connector Phoenix Contact, SPT 5/1-V-7.5 Terminal Block, 1719309 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719309), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/1-V-7.5 1719309
-0
-2
-1
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_2-H-7.5-ZB_1x02_P7.5mm_Horizontal
-Connector Phoenix Contact, SPT 5/2-H-7.5-ZB Terminal Block, 1719192 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719192), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/2-H-7.5-ZB 1719192
-0
-2
-2
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_2-V-7.5_1x02_P7.5mm_Vertical
-Connector Phoenix Contact, SPT 5/2-V-7.5 Terminal Block, 1738144 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1738144), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/2-V-7.5 1738144
-0
-4
-2
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_3-H-7.5-ZB_1x03_P7.5mm_Horizontal
-Connector Phoenix Contact, SPT 5/3-H-7.5-ZB Terminal Block, 1719202 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719202), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/3-H-7.5-ZB 1719202
-0
-3
-3
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_3-H-7.5_1x03_P7.5mm_Horizontal
-Connector Phoenix Contact, SPT 5/3-H-7.5 Terminal Block, 1701361 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1701361), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/3-H-7.5 1701361
-0
-6
-3
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_3-V-7.5-ZB_1x03_P7.5mm_Vertical
-Connector Phoenix Contact, SPT 5/3-V-7.5-ZB Terminal Block, 1719325 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719325), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/3-V-7.5-ZB 1719325
-0
-3
-3
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_4-H-7.5-ZB_1x04_P7.5mm_Horizontal
-Connector Phoenix Contact, SPT 5/4-H-7.5-ZB Terminal Block, 1719215 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719215), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/4-H-7.5-ZB 1719215
-0
-4
-4
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_5-H-7.5-ZB_1x05_P7.5mm_Horizontal
-Connector Phoenix Contact, SPT 5/5-H-7.5-ZB Terminal Block, 1719228 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719228), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/5-H-7.5-ZB 1719228
-0
-5
-5
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_5-V-7.5-ZB_1x05_P7.5mm_Vertical
-Connector Phoenix Contact, SPT 5/5-V-7.5-ZB Terminal Block, 1719341 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719341), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/5-V-7.5-ZB 1719341
-0
-5
-5
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_6-H-7.5-ZB_1x06_P7.5mm_Horizontal
-Connector Phoenix Contact, SPT 5/6-H-7.5-ZB Terminal Block, 1719231 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719231), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/6-H-7.5-ZB 1719231
-0
-6
-6
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_6-V-7.5-ZB_1x06_P7.5mm_Vertical
-Connector Phoenix Contact, SPT 5/6-V-7.5-ZB Terminal Block, 1719354 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719354), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/6-V-7.5-ZB 1719354
-0
-6
-6
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_7-H-7.5-ZB_1x07_P7.5mm_Horizontal
-Connector Phoenix Contact, SPT 5/7-H-7.5-ZB Terminal Block, 1719244 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719244), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/7-H-7.5-ZB 1719244
-0
-7
-7
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_7-V-7.5-ZB_1x07_P7.5mm_Vertical
-Connector Phoenix Contact, SPT 5/7-V-7.5-ZB Terminal Block, 1719367 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719367), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/7-V-7.5-ZB 1719367
-0
-7
-7
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_8-H-7.5-ZB_1x08_P7.5mm_Horizontal
-Connector Phoenix Contact, SPT 5/8-H-7.5-ZB Terminal Block, 1719257 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719257), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/8-H-7.5-ZB 1719257
-0
-8
-8
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_8-V-7.5-ZB_1x08_P7.5mm_Vertical
-Connector Phoenix Contact, SPT 5/8-V-7.5-ZB Terminal Block, 1719370 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719370), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/8-V-7.5-ZB 1719370
-0
-8
-8
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_9-H-7.5-ZB_1x09_P7.5mm_Horizontal
-Connector Phoenix Contact, SPT 5/9-H-7.5-ZB Terminal Block, 1719260 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719260), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/9-H-7.5-ZB 1719260
-0
-9
-9
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_9-V-7.5-ZB_1x09_P7.5mm_Vertical
-Connector Phoenix Contact, SPT 5/9-V-7.5-ZB Terminal Block, 1719383 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719383), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/9-V-7.5-ZB 1719383
-0
-9
-9
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_10-H-7.5-ZB_1x10_P7.5mm_Horizontal
-Connector Phoenix Contact, SPT 5/10-H-7.5-ZB Terminal Block, 1719273 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719273), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/10-H-7.5-ZB 1719273
-0
-10
-10
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_10-V-7.5-ZB_1x10_P7.5mm_Vertical
-Connector Phoenix Contact, SPT 5/10-V-7.5-ZB Terminal Block, 1719396 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719396), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/10-V-7.5-ZB 1719396
-0
-10
-10
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_11-H-7.5-ZB_1x11_P7.5mm_Horizontal
-Connector Phoenix Contact, SPT 5/11-H-7.5-ZB Terminal Block, 1719286 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719286), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/11-H-7.5-ZB 1719286
-0
-11
-11
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_11-V-7.5-ZB_1x11_P7.5mm_Vertical
-Connector Phoenix Contact, SPT 5/11-V-7.5-ZB Terminal Block, 1719406 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719406), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/11-V-7.5-ZB 1719406
-0
-11
-11
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_12-H-7.5-ZB_1x12_P7.5mm_Horizontal
-Connector Phoenix Contact, SPT 5/12-H-7.5-ZB Terminal Block, 1719299 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719299), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/12-H-7.5-ZB 1719299
-0
-12
-12
-Connector_Phoenix_SPT
-PhoenixContact_SPT_5_12-V-7.5-ZB_1x12_P7.5mm_Vertical
-Connector Phoenix Contact, SPT 5/12-V-7.5-ZB Terminal Block, 1719419 (https://www.phoenixcontact.com/online/portal/gb/?uri=pxc-oc-itemdetail:pid=1719419), generated with kicad-footprint-generator
-Connector Phoenix Contact SPT 5/12-V-7.5-ZB 1719419
-0
-12
-12
 Connector_Pin
 Pin_D0.7mm_L6.5mm_W1.8mm_FlatFork
 solder Pin_ with flat fork, hole diameter 0.7mm, length 6.5mm, width 1.8mm
@@ -45940,272 +45471,6 @@ connector Samtec HLE top entry
 0
 100
 100
-Connector_Samtec_HPM_THT
-Samtec_HPM-01-01-x-S_Straight_1x01_Pitch5.08mm
-Through hole straight Samtec HPM power header series 11.94mm post length, 1x01, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 11.94mm post length THT 1x01 5.08mm single row
-0
-1
-1
-Connector_Samtec_HPM_THT
-Samtec_HPM-01-05-x-S_Straight_1x01_Pitch5.08mm
-Through hole straight Samtec HPM power header series 3.81mm post length, 1x01, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 3.81mm post length THT 1x01 5.08mm single row
-0
-1
-1
-Connector_Samtec_HPM_THT
-Samtec_HPM-02-01-x-S_Straight_1x02_Pitch5.08mm
-Through hole straight Samtec HPM power header series 11.94mm post length, 1x02, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 11.94mm post length THT 1x02 5.08mm single row
-0
-2
-2
-Connector_Samtec_HPM_THT
-Samtec_HPM-02-05-x-S_Straight_1x02_Pitch5.08mm
-Through hole straight Samtec HPM power header series 3.81mm post length, 1x02, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 3.81mm post length THT 1x02 5.08mm single row
-0
-2
-2
-Connector_Samtec_HPM_THT
-Samtec_HPM-03-01-x-S_Straight_1x03_Pitch5.08mm
-Through hole straight Samtec HPM power header series 11.94mm post length, 1x03, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 11.94mm post length THT 1x03 5.08mm single row
-0
-3
-3
-Connector_Samtec_HPM_THT
-Samtec_HPM-03-05-x-S_Straight_1x03_Pitch5.08mm
-Through hole straight Samtec HPM power header series 3.81mm post length, 1x03, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 3.81mm post length THT 1x03 5.08mm single row
-0
-3
-3
-Connector_Samtec_HPM_THT
-Samtec_HPM-04-01-x-S_Straight_1x04_Pitch5.08mm
-Through hole straight Samtec HPM power header series 11.94mm post length, 1x04, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 11.94mm post length THT 1x04 5.08mm single row
-0
-4
-4
-Connector_Samtec_HPM_THT
-Samtec_HPM-04-05-x-S_Straight_1x04_Pitch5.08mm
-Through hole straight Samtec HPM power header series 3.81mm post length, 1x04, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 3.81mm post length THT 1x04 5.08mm single row
-0
-4
-4
-Connector_Samtec_HPM_THT
-Samtec_HPM-05-01-x-S_Straight_1x05_Pitch5.08mm
-Through hole straight Samtec HPM power header series 11.94mm post length, 1x05, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 11.94mm post length THT 1x05 5.08mm single row
-0
-5
-5
-Connector_Samtec_HPM_THT
-Samtec_HPM-05-05-x-S_Straight_1x05_Pitch5.08mm
-Through hole straight Samtec HPM power header series 3.81mm post length, 1x05, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 3.81mm post length THT 1x05 5.08mm single row
-0
-5
-5
-Connector_Samtec_HPM_THT
-Samtec_HPM-06-01-x-S_Straight_1x06_Pitch5.08mm
-Through hole straight Samtec HPM power header series 11.94mm post length, 1x06, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 11.94mm post length THT 1x06 5.08mm single row
-0
-6
-6
-Connector_Samtec_HPM_THT
-Samtec_HPM-06-05-x-S_Straight_1x06_Pitch5.08mm
-Through hole straight Samtec HPM power header series 3.81mm post length, 1x06, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 3.81mm post length THT 1x06 5.08mm single row
-0
-6
-6
-Connector_Samtec_HPM_THT
-Samtec_HPM-07-01-x-S_Straight_1x07_Pitch5.08mm
-Through hole straight Samtec HPM power header series 11.94mm post length, 1x07, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 11.94mm post length THT 1x07 5.08mm single row
-0
-7
-7
-Connector_Samtec_HPM_THT
-Samtec_HPM-07-05-x-S_Straight_1x07_Pitch5.08mm
-Through hole straight Samtec HPM power header series 3.81mm post length, 1x07, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 3.81mm post length THT 1x07 5.08mm single row
-0
-7
-7
-Connector_Samtec_HPM_THT
-Samtec_HPM-08-01-x-S_Straight_1x08_Pitch5.08mm
-Through hole straight Samtec HPM power header series 11.94mm post length, 1x08, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 11.94mm post length THT 1x08 5.08mm single row
-0
-8
-8
-Connector_Samtec_HPM_THT
-Samtec_HPM-08-05-x-S_Straight_1x08_Pitch5.08mm
-Through hole straight Samtec HPM power header series 3.81mm post length, 1x08, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 3.81mm post length THT 1x08 5.08mm single row
-0
-8
-8
-Connector_Samtec_HPM_THT
-Samtec_HPM-09-01-x-S_Straight_1x09_Pitch5.08mm
-Through hole straight Samtec HPM power header series 11.94mm post length, 1x09, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 11.94mm post length THT 1x09 5.08mm single row
-0
-9
-9
-Connector_Samtec_HPM_THT
-Samtec_HPM-09-05-x-S_Straight_1x09_Pitch5.08mm
-Through hole straight Samtec HPM power header series 3.81mm post length, 1x09, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 3.81mm post length THT 1x09 5.08mm single row
-0
-9
-9
-Connector_Samtec_HPM_THT
-Samtec_HPM-10-01-x-S_Straight_1x10_Pitch5.08mm
-Through hole straight Samtec HPM power header series 11.94mm post length, 1x10, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 11.94mm post length THT 1x10 5.08mm single row
-0
-10
-10
-Connector_Samtec_HPM_THT
-Samtec_HPM-10-05-x-S_Straight_1x10_Pitch5.08mm
-Through hole straight Samtec HPM power header series 3.81mm post length, 1x10, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 3.81mm post length THT 1x10 5.08mm single row
-0
-10
-10
-Connector_Samtec_HPM_THT
-Samtec_HPM-11-01-x-S_Straight_1x11_Pitch5.08mm
-Through hole straight Samtec HPM power header series 11.94mm post length, 1x11, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 11.94mm post length THT 1x11 5.08mm single row
-0
-11
-11
-Connector_Samtec_HPM_THT
-Samtec_HPM-11-05-x-S_Straight_1x11_Pitch5.08mm
-Through hole straight Samtec HPM power header series 3.81mm post length, 1x11, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 3.81mm post length THT 1x11 5.08mm single row
-0
-11
-11
-Connector_Samtec_HPM_THT
-Samtec_HPM-12-01-x-S_Straight_1x12_Pitch5.08mm
-Through hole straight Samtec HPM power header series 11.94mm post length, 1x12, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 11.94mm post length THT 1x12 5.08mm single row
-0
-12
-12
-Connector_Samtec_HPM_THT
-Samtec_HPM-12-05-x-S_Straight_1x12_Pitch5.08mm
-Through hole straight Samtec HPM power header series 3.81mm post length, 1x12, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 3.81mm post length THT 1x12 5.08mm single row
-0
-12
-12
-Connector_Samtec_HPM_THT
-Samtec_HPM-13-01-x-S_Straight_1x13_Pitch5.08mm
-Through hole straight Samtec HPM power header series 11.94mm post length, 1x13, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 11.94mm post length THT 1x13 5.08mm single row
-0
-13
-13
-Connector_Samtec_HPM_THT
-Samtec_HPM-13-05-x-S_Straight_1x13_Pitch5.08mm
-Through hole straight Samtec HPM power header series 3.81mm post length, 1x13, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 3.81mm post length THT 1x13 5.08mm single row
-0
-13
-13
-Connector_Samtec_HPM_THT
-Samtec_HPM-14-01-x-S_Straight_1x14_Pitch5.08mm
-Through hole straight Samtec HPM power header series 11.94mm post length, 1x14, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 11.94mm post length THT 1x14 5.08mm single row
-0
-14
-14
-Connector_Samtec_HPM_THT
-Samtec_HPM-14-05-x-S_Straight_1x14_Pitch5.08mm
-Through hole straight Samtec HPM power header series 3.81mm post length, 1x14, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 3.81mm post length THT 1x14 5.08mm single row
-0
-14
-14
-Connector_Samtec_HPM_THT
-Samtec_HPM-15-01-x-S_Straight_1x15_Pitch5.08mm
-Through hole straight Samtec HPM power header series 11.94mm post length, 1x15, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 11.94mm post length THT 1x15 5.08mm single row
-0
-15
-15
-Connector_Samtec_HPM_THT
-Samtec_HPM-15-05-x-S_Straight_1x15_Pitch5.08mm
-Through hole straight Samtec HPM power header series 3.81mm post length, 1x15, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 3.81mm post length THT 1x15 5.08mm single row
-0
-15
-15
-Connector_Samtec_HPM_THT
-Samtec_HPM-16-01-x-S_Straight_1x16_Pitch5.08mm
-Through hole straight Samtec HPM power header series 11.94mm post length, 1x16, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 11.94mm post length THT 1x16 5.08mm single row
-0
-16
-16
-Connector_Samtec_HPM_THT
-Samtec_HPM-16-05-x-S_Straight_1x16_Pitch5.08mm
-Through hole straight Samtec HPM power header series 3.81mm post length, 1x16, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 3.81mm post length THT 1x16 5.08mm single row
-0
-16
-16
-Connector_Samtec_HPM_THT
-Samtec_HPM-17-01-x-S_Straight_1x17_Pitch5.08mm
-Through hole straight Samtec HPM power header series 11.94mm post length, 1x17, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 11.94mm post length THT 1x17 5.08mm single row
-0
-17
-17
-Connector_Samtec_HPM_THT
-Samtec_HPM-17-05-x-S_Straight_1x17_Pitch5.08mm
-Through hole straight Samtec HPM power header series 3.81mm post length, 1x17, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 3.81mm post length THT 1x17 5.08mm single row
-0
-17
-17
-Connector_Samtec_HPM_THT
-Samtec_HPM-18-01-x-S_Straight_1x18_Pitch5.08mm
-Through hole straight Samtec HPM power header series 11.94mm post length, 1x18, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 11.94mm post length THT 1x18 5.08mm single row
-0
-18
-18
-Connector_Samtec_HPM_THT
-Samtec_HPM-18-05-x-S_Straight_1x18_Pitch5.08mm
-Through hole straight Samtec HPM power header series 3.81mm post length, 1x18, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 3.81mm post length THT 1x18 5.08mm single row
-0
-18
-18
-Connector_Samtec_HPM_THT
-Samtec_HPM-19-01-x-S_Straight_1x19_Pitch5.08mm
-Through hole straight Samtec HPM power header series 11.94mm post length, 1x19, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 11.94mm post length THT 1x19 5.08mm single row
-0
-19
-19
-Connector_Samtec_HPM_THT
-Samtec_HPM-19-05-x-S_Straight_1x19_Pitch5.08mm
-Through hole straight Samtec HPM power header series 3.81mm post length, 1x19, 5.08mm pitch, single row
-Through hole Samtec HPM power header series 3.81mm post length THT 1x19 5.08mm single row
-0
-19
-19
 Connector_Stocko
 Stocko_MKS_1651-6-0-202_1x2_P2.50mm_Vertical
 Stocko MKS 16xx series connector, (https://www.stocko-contact.com/downloads/steckverbindersystem-raster-2,5-mm.pdf#page=15), generated with kicad-footprint-generator
@@ -49525,6 +48790,20 @@ Hahn ACDC-Converter THT
 4
 4
 Converter_ACDC
+Converter_ACDC_HiLink_HLK-5Mxx
+ACDC-Converter, 10W, HiLink, HLK-5Mxx, (http://h.hlktech.com/download/ACDC%E7%94%B5%E6%BA%90%E6%A8%A1%E5%9D%975W%E7%B3%BB%E5%88%97/1/%E6%B5%B7%E5%87%8C%E7%A7%915W%E7%B3%BB%E5%88%97%E7%94%B5%E6%BA%90%E6%A8%A1%E5%9D%97%E8%A7%84%E6%A0%BC%E4%B9%A6V2.8.pdf)
+ACDC-Converter 5W THT HiLink board mount module
+0
+4
+4
+Converter_ACDC
+Converter_ACDC_HiLink_HLK-10Mxx
+ACDC-Converter, 10W, HiLink, HLK-10Mxx, THT, http://h.hlktech.com/download/ACDC%E7%94%B5%E6%BA%90%E6%A8%A1%E5%9D%9710W%E7%B3%BB%E5%88%97/1/%E6%B5%B7%E5%87%8C%E7%A7%9110W%E7%B3%BB%E5%88%97%E7%94%B5%E6%BA%90%E6%A8%A1%E5%9D%97%E8%A7%84%E6%A0%BC%E4%B9%A6V1.8.pdf
+ACDC-Converter 10W THT HiLink board mount module
+0
+4
+4
+Converter_ACDC
 Converter_ACDC_HiLink_HLK-PMxx
 ACDC-Converter, 3W, HiLink, HLK-PMxx, THT, http://www.hlktech.net/product_detail.php?ProId=54
 ACDC-Converter 3W THT HiLink board mount module
@@ -49896,6 +49175,13 @@ dc-dc recom buck sip-12 pitch 2.54mm
 12
 12
 Converter_DCDC
+Converter_DCDC_RECOM_RCD-24_THT
+Constant current LED Driver DC/DC Converter, https://g.recomcdn.com/media/Datasheet/pdf/.fYUQjOlW/.t2a80a771bdbb0ef300f7/Datasheet-93/RCD-24.pdf
+Led Driver DC-DC 
+0
+6
+6
+Converter_DCDC
 Converter_DCDC_RECOM_RPA60-xxxxSFW
 RPA60-FW 60W Isolated DC to DC Converters
 DCDC Regulator Single
@@ -49986,6 +49272,13 @@ traco dcdc tht 15w
 0
 9
 9
+Converter_DCDC
+Converter_DCDC_TRACO_THN30-xxxx_THT
+DCDC-Converter TRACO THN 10 to 30W, Single or dual Output, (https://www.tracopower.com/sites/default/files/products/datasheets/thn15wi_datasheet.pdf)
+DCDC-Converter TRACO THN30 Generic
+0
+6
+5
 Converter_DCDC
 Converter_DCDC_TRACO_TMR-1-xxxx_Dual_THT
 DCDC-Converter, TRACO, TMR 1-xxxx, Dual output, Rev. March 21.2016
@@ -51022,6 +50315,13 @@ SMD SMT crystal
 0
 2
 2
+Crystal
+Crystal_SMD_SeikoEpson_FA128-4Pin_2.0x1.6mm
+crystal Epson Toyocom FA-128 (https://support.epson.biz/td/api/doc_check.php?dl=brief_FA-128&lang=en), 2x1.6mm^2 package
+SMD SMT crystal
+0
+4
+4
 Crystal
 Crystal_SMD_SeikoEpson_FA238-4Pin_3.2x2.5mm
 crystal Epson Toyocom FA-238 https://support.epson.biz/td/api/doc_check.php?dl=brief_fa-238v_en.pdf, 3.2x2.5mm^2 package
@@ -55692,6 +54992,13 @@ surface mount common mode bead
 4
 4
 Inductor_SMD
+L_CommonModeChoke_Murata_DLW5BTMxxxSQ2x_5x5mm
+Wire Wound Chip Common Mode Choke Coil SMD, Murata DLW5BTxxxSQ2x, https://www.murata.com/products/productdata/8796762701854/EFLC0020.pdf, manual footprint
+inductor common mode choke
+0
+4
+4
+Inductor_SMD
 L_CommonModeChoke_Wuerth_WE-SL5
 WE-SL5 SMT Common Mode Line Filter, https://www.we-online.de/katalog/en/WE-SL5/, https://www.we-online.de/katalog/datasheet/744272471.pdf
 SMT Common Mode Line Filter
@@ -57560,34 +56867,6 @@ wurth wuerth smd inductor
 0
 2
 2
-Inductor_SMD_Wurth
-L_Wurth_WE-LQSH-2010
-Semi-Shielded High Saturation Power Inductor, body 2x1.6mm, https://www.we-online.com/catalog/en/WE-LQSH#/articles/WE-LQSH-2010
-SMT
-0
-2
-2
-Inductor_SMD_Wurth
-L_Wurth_WE-LQSH-2512
-Semi-Shielded High Saturation Power Inductor, body 2.5x2mm, https://www.we-online.com/catalog/en/WE-LQSH#/articles/WE-LQSH-2512
-SMT
-0
-2
-2
-Inductor_SMD_Wurth
-L_Wurth_WE-LQSH-3012
-Semi-Shielded High Saturation Power Inductor, body 3x3mm, https://www.we-online.com/catalog/en/WE-LQSH#/articles/WE-LQSH-3012
-SMT
-0
-2
-2
-Inductor_SMD_Wurth
-L_Wurth_WE-LQSH-4020
-Semi-Shielded High Saturation Power Inductor, body 4x4mm, https://www.we-online.com/catalog/en/WE-LQSH#/articles/WE-LQSH-4020
-SMT
-0
-2
-2
 Inductor_THT
 Choke_EPCOS_B82722A
 Current-Compensated Ring Core Double Chokes, EPCOS, B82722A, 22.3mmx22.7mm, https://en.tdk.eu/inf/30/db/ind_2008/b82722a_j.pdf
@@ -59394,76 +58673,6 @@ L_Toroid Vertical series Radial pin pitch 31.80mm  length 67.6mm width 36.1mm Vi
 0
 2
 2
-Inductor_THT_Wurth
-L_Wurth_WE-HCFT-2012_LeadDiameter1.2mm
-Shielded High Current Inductor, body 17x22mm, https://www.we-online.com/catalog/en/WE-HCFT#/articles/WE-HCFT-2012-ROUND
-THT
-0
-2
-2
-Inductor_THT_Wurth
-L_Wurth_WE-HCFT-2012_LeadDiameter1.5mm
-Shielded High Current Inductor, body 17x22mm, https://www.we-online.com/catalog/en/WE-HCFT#/articles/WE-HCFT-2012-ROUND
-THT
-0
-2
-2
-Inductor_THT_Wurth
-L_Wurth_WE-HCFT-2504
-Shielded High Current Inductor, body 22x25.7mm, https://www.we-online.com/catalog/en/WE-HCFT#/articles/WE-HCFT_SIZE_2504
-THT
-0
-2
-2
-Inductor_THT_Wurth
-L_Wurth_WE-HCFT-3521
-Shielded High Current Inductor, body 21.5x36mm, https://www.we-online.com/catalog/en/WE-HCFT#/articles/WE-HCFT-3521
-THT
-0
-4
-2
-Inductor_THT_Wurth
-L_Wurth_WE-HCFT-3533_LeadDiameter1.8mm
-Shielded High Current Inductor, body 34.5x36mm, https://www.we-online.com/catalog/en/WE-HCFT#/articles/WE-HCFT-3533-ROUND
-THT
-0
-4
-2
-Inductor_THT_Wurth
-L_Wurth_WE-HCFT-3533_LeadDiameter2.0mm
-Shielded High Current Inductor, body 34.5x36mm, https://www.we-online.com/catalog/en/WE-HCFT#/articles/WE-HCFT-3533-ROUND
-THT
-0
-4
-2
-Inductor_THT_Wurth
-L_Wurth_WE-HCFT-3540_LeadDiameter0.8mm
-Shielded High Current Inductor, body 41x36mm, https://www.we-online.com/catalog/en/WE-HCFT#/articles/WE-HCFT-3540
-THT
-0
-4
-2
-Inductor_THT_Wurth
-L_Wurth_WE-HCFT-3540_LeadDiameter1.3mm
-Shielded High Current Inductor, body 41x36mm, https://www.we-online.com/catalog/en/WE-HCFT#/articles/WE-HCFT-3540
-THT
-0
-4
-2
-Inductor_THT_Wurth
-L_Wurth_WE-HCFT-3540_LeadDiameter1.5mm
-Shielded High Current Inductor, body 41x36mm, https://www.we-online.com/catalog/en/WE-HCFT#/articles/WE-HCFT-3540
-THT
-0
-4
-2
-Inductor_THT_Wurth
-L_Wurth_WE-HCFT-3540_LeadDiameter2.0mm
-Shielded High Current Inductor, body 41x36mm, https://www.we-online.com/catalog/en/WE-HCFT#/articles/WE-HCFT-3540
-THT
-0
-4
-2
 Jumper
 SolderJumper-2_P1.3mm_Bridged2Bar_Pad1.0x1.5mm
 SMD Solder Jumper, 1x1.5mm Pads, 0.3mm gap, bridged with 2 copper strips
@@ -61046,13 +60255,6 @@ ESP8266 WiFi microcontroller
 0
 16
 16
-Motors
-Vybronics_VZ30C1T8219732L
-Vibration motor, 2.3-3.2V, 14000rpm, 0.7G, https://www.vybronics.com/wp-content/uploads/datasheet-files/Vybronics-VZ30C1T8219732L-datasheet.pdf
-vibration motor Vybronics
-0
-12
-3
 MountingEquipment
 DINRailAdapter_3xM3_PhoenixContact_1201578
 https://www.phoenixcontact.com/online/portal/us?uri=pxc-oc-itemdetail:pid=1201578&library=usen&tab=1
@@ -64428,6 +63630,13 @@ SMD SMT crystal oscillator hand-soldering
 4
 4
 Oscillator
+Oscillator_SMD_SeikoEpson_TG2520SMN-xxx-xxxxxx-4Pin_2.5x2.0mm
+Miniature Crystal Clock Oscillator TG2520 series, https://support.epson.biz/td/api/doc_check.php?dl=app_TG2520SMN&lang=en
+Miniature Crystal Clock Oscillator TG2520 series SMD SMT
+0
+4
+4
+Oscillator
 Oscillator_SMD_SiTime_PQFD-6L_3.2x2.5mm
 3.2x2.5mm, 6-pin QFN (https://www.sitime.com/datasheet/SiT9365 page 13)
 SMD SMT mems oscillator
@@ -67276,6 +66485,27 @@ pqfn 44 7x7mm
 0
 125
 27
+Package_DFN_QFN
+LQFN-10-1EP_2x2mm_P0.5mm_EP0.7x0.7mm
+LQFN, 10 Pin (https://www.analog.com/media/en/package-pcb-resources/package/pkg_pdf/ltc-legacy-lqfn/05081644_0_LQFN10.pdf), generated with kicad-footprint-generator ipc_noLead_generator.py
+LQFN NoLead
+0
+12
+11
+Package_DFN_QFN
+LQFN-12-1EP_2x2mm_P0.5mm_EP0.7x0.7mm
+LQFN, 12 Pin (https://www.analog.com/media/en/package-pcb-resources/package/pkg_pdf/ltc-legacy-lqfn/05081530_B_LQFN12.pdf), generated with kicad-footprint-generator ipc_noLead_generator.py
+LQFN NoLead
+0
+14
+13
+Package_DFN_QFN
+LQFN-16-1EP_3x3mm_P0.5mm_EP1.7x1.7mm
+LQFN, 16 Pin (https://www.analog.com/media/en/package-pcb-resources/package/pkg_pdf/ltc-legacy-lqfn/05081595_0_lqfn16.pdf), generated with kicad-footprint-generator ipc_noLead_generator.py
+LQFN NoLead
+0
+18
+17
 Package_DFN_QFN
 Linear_DE14MA
 14-Lead Plastic DFN, 4mm x 3mm (http://www.analog.com/media/en/package-pcb-resources/package/pkg_pdf/ltc-legacy-dfn/05081731_C_DE14MA.pdf)
@@ -80017,6 +79247,13 @@ Antenna ProAnt OnBoard 868Mhz 915Mhz 2400Mhz
 6
 6
 RF_Antenna
+Astrocast_AST50127-00
+L-band patch antenna, https://docs.astrocast.com/dl/0534-DOC-M2M-ASTRO-Patch_Antenna-Datasheet.pdf
+L-band antenna astrocast Patch Antenna
+0
+1
+1
+RF_Antenna
 Coilcraft_MA5532-AE_RFID
 RFID Transponder Coil
 antenna rfid coilcraft
@@ -80086,6 +79323,13 @@ balun RF
 0
 6
 6
+RF_Converter
+Balun_Johanson_0900FM15K0039
+Johanson 0900FM15K0039 DFN, 10 Pin (https://www.johansontechnology.com/datasheets/0900FM15K0039/0900FM15K0039.pdf), generated with kicad-footprint-generator ipc_noLead_generator.py
+Johanson DFN NoLead
+0
+10
+10
 RF_Converter
 Balun_Johanson_0900PC15J0013
 Johanson 0900PC15J0013 DFN, 10 Pin (https://www.johansontechnology.com/datasheets/0900PC15J0013/0900PC15J0013.pdf), generated with kicad-footprint-generator ipc_noLead_generator.py
@@ -80471,6 +79715,13 @@ LoRa Ra-01
 0
 16
 16
+RF_Module
+Astrocast_AST50147-00
+L-band satellite communication module, https://docs.astrocast.com/dl/0532-DOC-M2M-ASTRO-Astronode_S-Datasheet.pdf
+RF module Astrocast radio Astronode
+0
+38
+38
 RF_Module
 Atmel_ATSAMR21G18-MR210UA_NoRFPads
 http://ww1.microchip.com/downloads/en/devicedoc/atmel-42475-atsamr21g18-mr210ua_datasheet.pdf
@@ -83076,12 +82327,26 @@ infineon mems microphone
 15
 5
 Sensor_Audio
+InvenSense_ICS-43434-6_3.5x2.65mm
+TDK InvenSense MEMS I2S Microphone: https://invensense.tdk.com/products/ics-43434/
+microphone MEMS I2S ICS-43434 TDK InvenSense
+0
+6
+6
+Sensor_Audio
 Knowles_LGA-5_3.5x2.65mm
 https://www.knowles.com/docs/default-source/model-downloads/sph0641lu4h-1-revb.pdf
 MEMS Microphone LGA
 0
 5
 5
+Sensor_Audio
+Knowles_SPH0645LM4H-6_3.5x2.65mm
+Knowles MEMS I2S Microphone: https://www.knowles.com/subdepartment/dpt-microphones/subdpt-sisonic-surface-mount-mems
+microphone MEMS I2S SPH0645LM4H Knowles
+0
+6
+6
 Sensor_Audio
 ST_HLGA-6_3.76x4.72mm_P1.65mm
 http://www.st.com/content/ccc/resource/technical/document/datasheet/group3/27/62/48/98/44/54/4d/36/DM00303211/files/DM00303211.pdf/jcr:content/translations/en.DM00303211.pdf
@@ -83625,6 +82890,13 @@ Symbol
 ESD-Logo_44.1x40mm_SilkScreen
 Electrostatic discharge Logo
 Logo ESD
+0
+0
+0
+Symbol
+EasterEgg_EWG1308-2013_ClassA
+Egg with 42x60mm Body-Size, ClassA, according to EWG1308/2013
+egg easter 
 0
 0
 0

@@ -43,8 +43,8 @@ set_property -dict {PACKAGE_PIN V19 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
 ## RXD_OUT: pin U4:23         [M1]
 ## TDX_IN:  pin U4:25         [K4]
 
-set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports uart_rxd_out]
-set_property -dict {PACKAGE_PIN K4 IOSTANDARD LVCMOS33} [get_ports uart_txd_in]
+# set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports uart_rxd_out]
+# set_property -dict {PACKAGE_PIN K4 IOSTANDARD LVCMOS33} [get_ports uart_txd_in]
 
 ## ------------------------------------------------------------------------------------------------------
 ## Micro SD card

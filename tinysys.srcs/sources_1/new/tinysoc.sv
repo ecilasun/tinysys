@@ -15,8 +15,6 @@ module tinysoc #(
 	input wire sysresetn,
 	input wire preresetn,
 	output wire [3:0] leds,
-	output wire uart_rxd_out,
-	input wire uart_txd_in,
 	gpuwires.def gpuvideoout,
 	ddr3sdramwires.def ddr3conn,
 	audiowires.def i2sconn,
@@ -39,7 +37,6 @@ axi4if audiobus();			// Bus for audio device output
 axi4if memorybus();			// Main memory
 
 axi4if devicebus();			// Arbitrated, to devices
-axi4if uartif();			// Sub bus: UART device
 axi4if ledif();				// Sub bus: LED contol device
 axi4if gpucmdif();			// Sub bus: GPU command fifo
 axi4if spiif();				// Sub bus: SPI control device
@@ -263,7 +260,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 
 // 12bit (4K) address space reserved for each memory mapped device
 // dev   start     end       addrs[30:12]                 size  notes
-// UART: 80000000  80000FFF  19'b000_0000_0000_0000_0000  4KB
+// ----: 80000000  80000FFF  19'b000_0000_0000_0000_0000  4KB
 // LEDS: 80001000  80001FFF  19'b000_0000_0000_0000_0001  4KB
 // GPUC: 80002000  80002FFF  19'b000_0000_0000_0000_0010  4KB
 // SDCC: 80003000  80003FFF  19'b000_0000_0000_0000_0011  4KB
@@ -294,30 +291,19 @@ devicerouter devicerouterinst(
 		19'b000_0000_0000_0000_0100,	// CSRF Control and Status Register File for HART#0
 		19'b000_0000_0000_0000_0011,	// SDCC SDCard access via SPI
 		19'b000_0000_0000_0000_0010,	// GPUC Graphics Processing Unit Command Fifo
-		19'b000_0000_0000_0000_0001,	// LEDS Debug / Status LED interface
-		19'b000_0000_0000_0000_0000 }),	// UART UART read/write port
-    .axi_m({usbaif, opl2if, audioif, usbcif, dmaif, xadcif, csrif, spiif, gpucmdif, ledif, uartif}));
+		19'b000_0000_0000_0000_0001}),	// LEDS Debug / Status LED interface
+    .axi_m({usbaif, opl2if, audioif, usbcif, dmaif, xadcif, csrif, spiif, gpucmdif, ledif}));
 
 // --------------------------------------------------
 // Interrupt wires
 // --------------------------------------------------
 
-wire uartrcvempty;
 wire keyfifoempty;
 wire usbcirq, usbairq;
 
 // --------------------------------------------------
 // Memory mapped devices
 // --------------------------------------------------
-
-axi4uart #(.BAUDRATE(115200), .FREQ(10000000)) uartinst(
-	.aclk(aclk),
-	.uartclk(clk10),
-	.aresetn(aresetn),
-	.s_axi(uartif),
-	.uart_rxd_out(uart_rxd_out),
-	.uart_txd_in(uart_txd_in),
-	.uartrcvempty(uartrcvempty));
 
 axi4led leddevice(
 	.aclk(aclk),
@@ -373,7 +359,6 @@ axi4CSRFile csrfileinst(
 	// IRQ tracking
 	.irqReq(irqReq),
 	// External interrupt wires
-	.uartrcvempty(uartrcvempty),
 	.keyfifoempty(keyfifoempty),
 	.usbirq({usbairq, usbcirq}),
 	// Soft reset
