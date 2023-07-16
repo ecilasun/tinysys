@@ -185,7 +185,6 @@ always_ff @(posedge aclk) begin
 
 	if (~aresetn) begin
 		cachestate <= IDLE;
-		memreadstrobe <= 1'b0;
 	end
 end
 

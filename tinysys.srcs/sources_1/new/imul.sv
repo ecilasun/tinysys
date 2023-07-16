@@ -28,48 +28,46 @@ mult_gen_0 signextendedmultiplier(
 	.CE(aresetn & (start | busy)) );
 
 always_ff @(posedge aclk) begin
+	busy2 <= busy;
+	if (start) begin
+		unique case (func3)
+			`F3_MUL, `F3_MULH: begin
+				a <= {multiplicand[31], multiplicand};
+				b <= {multiplier[31], multiplier};
+			end
+			`F3_MULHSU: begin
+				a <= {multiplicand[31], multiplicand};
+				b <= {1'b0, multiplier};
+			end
+			`F3_MULHU: begin
+				a <= {1'b0, multiplicand};
+				b <= {1'b0, multiplier};
+			end
+		endcase
+		n <= 5; // Match this to the latency of the DSP multiplier
+		busy <= 1'b1;
+	end else begin
+		if (busy) begin
+			if (n == 0) begin
+				unique case (func3)
+					`F3_MUL: begin
+						product <= dspproduct[31:0];
+					end
+					default : begin // `f3_mulh, `f3_mulhsu, `f3_mulhu
+						product <= dspproduct[63:32]; // or is this 64:33 ?
+					end
+				endcase
+				busy <= 1'b0;
+			end else begin
+				n <= n - 4'd1;
+			end 
+		end else begin
+			product <= 32'd0;
+		end
+	end
+
 	if (~aresetn) begin
 		product <= 32'd0;
-//		busy <= 1'b0;
-//		busy2 <= 1'b0;
-	end else begin
-		busy2 <= busy;
-		if (start) begin
-			unique case (func3)
-				`F3_MUL, `F3_MULH: begin
-					a <= {multiplicand[31], multiplicand};
-					b <= {multiplier[31], multiplier};
-				end
-				`F3_MULHSU: begin
-					a <= {multiplicand[31], multiplicand};
-					b <= {1'b0, multiplier};
-				end
-				`F3_MULHU: begin
-					a <= {1'b0, multiplicand};
-					b <= {1'b0, multiplier};
-				end
-			endcase
-			n <= 5; // Match this to the latency of the DSP multiplier
-			busy <= 1'b1;
-		end else begin
-			if (busy) begin
-				if (n == 0) begin
-					unique case (func3)
-						`F3_MUL: begin
-							product <= dspproduct[31:0];
-						end
-						default : begin // `f3_mulh, `f3_mulhsu, `f3_mulhu
-							product <= dspproduct[63:32]; // or is this 64:33 ?
-						end
-					endcase
-					busy <= 1'b0;
-				end else begin
-					n <= n - 4'd1;
-				end 
-			end else begin
-				product <= 32'd0;
-			end
-		end
 	end
 end
 

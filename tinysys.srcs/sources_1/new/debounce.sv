@@ -10,14 +10,16 @@ logic [7:0] debounced = 8'h00;
 logic stabilized;
 
 always @(posedge clk) begin
+
+	debounced <= {debounced[6:0], bouncy};
+
+	if (debounced == 8'h00)
+		stabilized <= 1'b0;
+	else if (debounced == 8'hFF)
+		stabilized <= 1'b1;
+
 	if (reset == 1) begin
 		debounced <= 8'h00;
-	end else begin
-		debounced <= {debounced[6:0], bouncy};
-		if (debounced == 8'h00)
-			stabilized <= 1'b0;
-		else if (debounced == 8'hFF)
-			stabilized <= 1'b1;
 	end
 end
 

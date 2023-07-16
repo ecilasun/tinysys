@@ -41,42 +41,40 @@ typedef enum logic [1:0] {FETCH, READ, CACHEOP, WRITE} dataunitmode;
 dataunitmode datamode = FETCH;
 
 always @(posedge aclk) begin
+	s_ibus.rdone <= 1'b0;
+	s_ibus.wdone <= 1'b0;
+	s_ibus.cdone <= 1'b0;
+
+	datare <= 1'b0;
+	datawe <= 1'b0;
+	dcacheop <= 2'b00;
+
+	unique case(datamode)
+		FETCH: begin
+			addrs <= s_ibus.rstrobe ? s_ibus.raddr : s_ibus.waddr;
+			datain <= s_ibus.wdata;
+			datare <= s_ibus.rstrobe;
+			datawe <= s_ibus.wstrobe;
+			dcacheop <= s_ibus.cstrobe ? s_ibus.dcacheop : 2'b00;
+			datamode <= s_ibus.cstrobe ? CACHEOP : (s_ibus.rstrobe ? READ : (s_ibus.wstrobe ? WRITE : FETCH));
+		end
+		READ: begin
+			s_ibus.rdone <= rready;
+			s_ibus.rdata <= dataout;
+			datamode <= rready ? FETCH : READ;
+		end
+		WRITE: begin
+			s_ibus.wdone <= wready;
+			datamode <= wready ? FETCH : WRITE;
+		end
+		CACHEOP: begin
+			s_ibus.cdone <= wready;
+			datamode <= wready ? FETCH : CACHEOP;
+		end
+	endcase
+
 	if (~aresetn) begin
 		datamode <= FETCH;
-	end else begin
-
-		s_ibus.rdone <= 1'b0;
-		s_ibus.wdone <= 1'b0;
-		s_ibus.cdone <= 1'b0;
-
-		datare <= 1'b0;
-		datawe <= 1'b0;
-		dcacheop <= 2'b00;
-
-		unique case(datamode)
-			FETCH: begin
-				addrs <= s_ibus.rstrobe ? s_ibus.raddr : s_ibus.waddr;
-				datain <= s_ibus.wdata;
-				datare <= s_ibus.rstrobe;
-				datawe <= s_ibus.wstrobe;
-				dcacheop <= s_ibus.cstrobe ? s_ibus.dcacheop : 2'b00;
-				datamode <= s_ibus.cstrobe ? CACHEOP : (s_ibus.rstrobe ? READ : (s_ibus.wstrobe ? WRITE : FETCH));
-			end
-			READ: begin
-				s_ibus.rdone <= rready;
-				s_ibus.rdata <= dataout;
-				datamode <= rready ? FETCH : READ;
-			end
-			WRITE: begin
-				s_ibus.wdone <= wready;
-				datamode <= wready ? FETCH : WRITE;
-			end
-			CACHEOP: begin
-				s_ibus.cdone <= wready;
-				datamode <= wready ? FETCH : CACHEOP;
-			end
-		endcase
-
 	end
 end
 

@@ -168,19 +168,19 @@ logic [31:0] offsetPC = 32'd0;
 logic [31:0] adjacentPC = 32'd0;
 
 always @(posedge aclk) begin
+	// TODO: Stop this if CPU's halted for debug
+	cyclecount <= cyclecount + 64'd1;
+
 	if (~aresetn) begin
 		cyclecount <= 64'd0;
-	end else begin
-		// TODO: Stop this if CPU's halted for debug
-		cyclecount <= cyclecount + 64'd1;
 	end
 end
 
 always @(posedge aclk) begin
+	retiredcount <= retiredcount + (ctlmode==READREG ? 64'd1 : 64'd0);
+
 	if (~aresetn) begin
 		retiredcount <= 64'd0;
-	end else begin
-		retiredcount <= retiredcount + (ctlmode==READREG ? 64'd1 : 64'd0);
 	end
 end
 
