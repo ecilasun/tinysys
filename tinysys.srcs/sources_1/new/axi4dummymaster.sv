@@ -34,40 +34,45 @@ assign m_axi.arvalid = m_axi.arready;
 assign m_axi.araddr = 'd0;
 assign m_axi.rready = 0;
 
-/*typedef enum logic [1:0] {RIDLE, RADDR, RDATA} readstate_type;
-readstate_type readstate = RIDLE;
+/*typedef enum logic [1:0] {RINIT, RIDLE, RADDR, RDATA} readstate_type;
+readstate_type readstate = RINIT;
 
 always @(posedge aclk) begin
+
+	case(readstate)
+		RINIT: begin
+			m_axi.arvalid <= 0;
+			m_axi.araddr <= 'd0;
+			m_axi.rready <= 0;
+			readstate <= RIDLE;
+		end
+
+		RIDLE: begin
+			m_axi.araddr <= raddr;
+			raddr <= raddr + 32'd16;
+			m_axi.arvalid <= 1'b1;
+			readstate <= RADDR;
+		end
+
+		RADDR: begin
+			if (m_axi.arready) begin // && m_axi.arvalid
+				m_axi.arvalid <= 1'b0;
+				m_axi.rready <= 1'b1;
+				readstate <= RDATA;
+			end
+		end
+
+		RDATA: begin
+			if (m_axi.rvalid) begin // && m_axi.rready
+				m_axi.rready <= 1'b0;
+				readdata <= m_axi.rdata;
+				readstate <= RIDLE;
+			end
+		end
+	endcase
+
 	if (~aresetn) begin
-		m_axi.arvalid <= 0;
-		m_axi.araddr <= 'd0;
-		m_axi.rready <= 0;
-	end else begin
-
-		case(readstate)
-			RIDLE: begin
-				m_axi.araddr <= raddr;
-				raddr <= raddr + 32'd16;
-				m_axi.arvalid <= 1'b1;
-				readstate <= RADDR;
-			end
-
-			RADDR: begin
-				if (m_axi.arready) begin // && m_axi.arvalid
-					m_axi.arvalid <= 1'b0;
-					m_axi.rready <= 1'b1;
-					readstate <= RDATA;
-				end
-			end
-
-			RDATA: begin
-				if (m_axi.rvalid) begin // && m_axi.rready
-					m_axi.rready <= 1'b0;
-					readdata <= m_axi.rdata;
-					readstate <= RIDLE;
-				end
-			end
-		endcase
+		readstate <= RINIT;
 	end
 end*/
 
@@ -90,61 +95,65 @@ assign m_axi.wlast = 0;
 assign m_axi.wdata = 'd0;
 assign m_axi.bready = 0;
 
-/*typedef enum logic [1:0] {WIDLE, WADDR, WDATA, WRESP} writestate_type;
-writestate_type writestate = WIDLE;
+/*typedef enum logic [2:0] {WINIT, WIDLE, WADDR, WDATA, WRESP} writestate_type;
+writestate_type writestate = WINIT;
 
 always @(posedge aclk) begin
-	if (~aresetn) begin
-		m_axi.awvalid <= 0;
-		m_axi.awaddr <= 'd0;
-		m_axi.wvalid <= 0;
-		m_axi.wstrb <= 16'h0000;
-		m_axi.wlast <= 0;
-		m_axi.wdata <= 'd0;
-		m_axi.bready <= 0;
-	end else begin
-		// Dummy memory write
-		case(writestate)
-			WIDLE : begin
-				m_axi.awaddr <= waddr;
-				waddr <= waddr + 32'd16;
-				m_axi.awvalid <= 1;
+	case(writestate)
+		WINIT: begin
+			m_axi.awvalid <= 0;
+			m_axi.awaddr <= 'd0;
+			m_axi.wvalid <= 0;
+			m_axi.wstrb <= 16'h0000;
+			m_axi.wlast <= 0;
+			m_axi.wdata <= 'd0;
+			m_axi.bready <= 0;
+			writestate <= WIDLE;
+		end
+
+		WIDLE : begin
+			m_axi.awaddr <= waddr;
+			waddr <= waddr + 32'd16;
+			m_axi.awvalid <= 1;
+			writestate <= WADDR;
+		end
+
+		WADDR : begin
+			if (m_axi.awready) begin // && m_axi.awvalid
+				m_axi.awvalid <= 0;
+				m_axi.wdata <= {MASTERID, MASTERID, MASTERID, MASTERID};//din[wdata_cnt];
+				m_axi.wstrb <= 16'hFFFF;
+				m_axi.wvalid <= 1;
+				m_axi.wlast <= 1;
+				writestate <= WDATA;
+			end else begin
 				writestate <= WADDR;
 			end
+		end
 
-			WADDR : begin
-				if (m_axi.awready) begin // && m_axi.awvalid
-					m_axi.awvalid <= 0;
-					m_axi.wdata <= {MASTERID, MASTERID, MASTERID, MASTERID};//din[wdata_cnt];
-					m_axi.wstrb <= 16'hFFFF;
-					m_axi.wvalid <= 1;
-					m_axi.wlast <= 1;
-					writestate <= WDATA;
-				end else begin
-					writestate <= WADDR;
-				end
+		WDATA : begin
+			if (m_axi.wready) begin // && m_axi.wvalid
+				m_axi.wvalid <= 0;
+				m_axi.bready <= 1;
+				writestate <= WRESP;
 			end
+		end
 
-			WDATA : begin
-				if (m_axi.wready) begin // && m_axi.wvalid
-					m_axi.wvalid <= 0;
-					m_axi.bready <= 1;
-					writestate <= WRESP;
-				end
+		WRESP: begin
+			if (m_axi.bvalid) begin // && m_axi.bready
+				m_axi.wvalid <= 0;
+				m_axi.wstrb <= 16'h0000;
+				m_axi.wlast <= 0;
+				m_axi.bready <= 0;
+				writestate <= WIDLE;
+			end else begin
+				writestate <= WRESP;
 			end
+		end
+	endcase
 
-			WRESP: begin
-				if (m_axi.bvalid) begin // && m_axi.bready
-					m_axi.wvalid <= 0;
-					m_axi.wstrb <= 16'h0000;
-					m_axi.wlast <= 0;
-					m_axi.bready <= 0;
-					writestate <= WIDLE;
-				end else begin
-					writestate <= WRESP;
-				end
-			end
-		endcase
+	if (~aresetn) begin
+		writestate <= WINIT;
 	end
 end*/
 

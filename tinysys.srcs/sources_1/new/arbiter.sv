@@ -208,6 +208,7 @@ always_ff @(posedge aclk) begin
 
 	if (~aresetn) begin
 		readstate <= INIT;
+		rarbstate <= ARBITRATE0;
 	end
 end
 
@@ -430,6 +431,7 @@ always_ff @(posedge aclk) begin
 
 	if (~aresetn) begin
 		writestate <= INIT;
+		warbstate <= ARBITRATE0;
 	end
 end
 

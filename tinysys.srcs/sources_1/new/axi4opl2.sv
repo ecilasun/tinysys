@@ -84,24 +84,23 @@ assign sampleout = opl2sndout;
 // Drive through fifo
 
 always @(posedge audioclock) begin
+	opl2csn <= 1'b1;	// Release bus
+	opl2wen <= 1'b1;	// Read
+	opl2din <= 8'dz;	// Manual states we should set data to high impedance
+
+	opl2fifore <= 1'b0;
+
+	if (~opl2fifoempty && opl2fifovalid) begin// && opl2ce) begin
+		opl2csn <= 1'b0;
+		opl2wen <= 1'b0;
+		opl2addr <= opl2fifodout[8];
+		opl2din <= opl2fifodout[7:0];
+		// Advance fifo
+		opl2fifore <= 1'b1;
+	end
+
 	if (~aresetn) begin
-		//
-	end else begin
-
-		opl2csn <= 1'b1;	// Release bus
-		opl2wen <= 1'b1;	// Read
-		opl2din <= 8'dz;	// Manual states we should set data to high impedance
-
 		opl2fifore <= 1'b0;
-
-		if (~opl2fifoempty && opl2fifovalid) begin// && opl2ce) begin
-			opl2csn <= 1'b0;
-			opl2wen <= 1'b0;
-			opl2addr <= opl2fifodout[8];
-			opl2din <= opl2fifodout[7:0];
-			// Advance fifo
-			opl2fifore <= 1'b1;
-		end
 	end
 end
 
@@ -109,26 +108,29 @@ end
 // AXI4 interface
 // ------------------------------------------------------------------------------------
 
-logic waddrstate = 1'b0;
+logic [1:0] waddrstate = 2'b00;
 
 always @(posedge aclk) begin
+
+	unique case (waddrstate)
+		2'b00: begin
+			s_axi.awready <= 1'b0;
+			waddrstate <= 2'b01;
+		end
+		2'b01: begin
+			if (s_axi.awvalid) begin
+				s_axi.awready <= 1'b1;
+				waddrstate <= 2'b10;
+			end
+		end
+		2'b10: begin
+			s_axi.awready <= 1'b0;
+			waddrstate <= 2'b01;
+		end
+	endcase
+
 	if (~aresetn) begin
-		s_axi.awready <= 1'b0;
-		waddrstate <= 1'b0;
-	end else begin
-		// write address
-		unique case (waddrstate)
-			1'b0: begin
-				if (s_axi.awvalid) begin
-					s_axi.awready <= 1'b1;
-					waddrstate <= 1'b1;
-				end
-			end
-			1'b1: begin
-				s_axi.awready <= 1'b0;
-				waddrstate <= 1'b0;
-			end
-		endcase
+		waddrstate <= 2'b00;
 	end
 end
 
@@ -188,8 +190,10 @@ end
 logic [1:0] raddrstate = 2'b00;
 
 always @(posedge aclk) begin
+
 	s_axi.rvalid <= 1'b0;
 	s_axi.arready <= 1'b0;
+
 	unique case (raddrstate)
 		2'b00: begin
 			s_axi.rlast <= 1'b1;

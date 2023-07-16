@@ -64,7 +64,6 @@ always_ff @(posedge aclk) begin
 
 	case (cmdmode)
 
-
 		INIT: begin
 			m_axi.awvalid <= 0;
 			m_axi.wvalid <= 0;
