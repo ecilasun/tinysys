@@ -87,6 +87,7 @@ integerregisterfile registerfileinst(
 
 wire branchout;
 branchlogic branchlogicinst(
+	.aresetn(aresetn),
 	.branchout(branchout),
 	.val1(A),
 	.val2(B),
@@ -98,6 +99,7 @@ branchlogic branchlogicinst(
 
 wire [31:0] aluout;
 arithmeticlogic arithmeticlogicinst(
+	.aresetn(aresetn),
 	.aluout(aluout),
 	.val1(A),
 	.val2(C),

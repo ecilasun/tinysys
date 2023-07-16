@@ -132,7 +132,7 @@ always_ff @(posedge aclk) begin
 				rreq[4]: begin rgrant <= 6'b010000; rarbstate <= ARBITRATE4; end
 				rreq[5]: begin rgrant <= 6'b100000; rarbstate <= ARBITRATE5; end
 				rreq[0]: begin rgrant <= 6'b000001; rarbstate <= ARBITRATE0; end
-				default: rgrant = 6'b000000;
+				default: rgrant <= 6'b000000;
 			endcase
 		end
 
@@ -145,7 +145,7 @@ always_ff @(posedge aclk) begin
 				rreq[5]: begin rgrant <= 6'b100000; rarbstate <= ARBITRATE5; end
 				rreq[0]: begin rgrant <= 6'b000001; rarbstate <= ARBITRATE0; end
 				rreq[1]: begin rgrant <= 6'b000010; rarbstate <= ARBITRATE1; end
-				default: rgrant = 6'b00000;
+				default: rgrant <= 6'b000000;
 			endcase
 		end
 
@@ -158,7 +158,7 @@ always_ff @(posedge aclk) begin
 				rreq[0]: begin rgrant <= 6'b000001; rarbstate <= ARBITRATE0; end
 				rreq[1]: begin rgrant <= 6'b000010; rarbstate <= ARBITRATE1; end
 				rreq[2]: begin rgrant <= 6'b000100; rarbstate <= ARBITRATE2; end
-				default: rgrant = 6'b00000;
+				default: rgrant <= 6'b000000;
 			endcase
 		end
 
@@ -171,7 +171,7 @@ always_ff @(posedge aclk) begin
 				rreq[1]: begin rgrant <= 6'b000010; rarbstate <= ARBITRATE1; end
 				rreq[2]: begin rgrant <= 6'b000100; rarbstate <= ARBITRATE2; end
 				rreq[3]: begin rgrant <= 6'b001000; rarbstate <= ARBITRATE3; end
-				default: rgrant = 6'b00000;
+				default: rgrant <= 6'b000000;
 			endcase
 		end
 
@@ -184,7 +184,7 @@ always_ff @(posedge aclk) begin
 				rreq[2]: begin rgrant <= 6'b000100; rarbstate <= ARBITRATE2; end
 				rreq[3]: begin rgrant <= 6'b001000; rarbstate <= ARBITRATE3; end
 				rreq[4]: begin rgrant <= 6'b010000; rarbstate <= ARBITRATE4; end
-				default: rgrant = 6'b00000;
+				default: rgrant <= 6'b000000;
 			endcase
 		end
 
@@ -197,7 +197,7 @@ always_ff @(posedge aclk) begin
 				rreq[3]: begin rgrant <= 6'b001000; rarbstate <= ARBITRATE3; end
 				rreq[4]: begin rgrant <= 6'b010000; rarbstate <= ARBITRATE4; end
 				rreq[5]: begin rgrant <= 6'b100000; rarbstate <= ARBITRATE5; end
-				default: rgrant = 6'b00000;
+				default: rgrant <= 6'b000000;
 			endcase
 		end
 

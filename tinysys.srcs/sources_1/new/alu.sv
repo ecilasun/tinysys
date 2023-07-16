@@ -3,6 +3,7 @@
 `include "shared.vh"
 
 module arithmeticlogic (
+	input wire aresetn,
 	output logic [31:0] aluout,
 	input wire [31:0] val1,
 	input wire [31:0] val2,
@@ -85,6 +86,10 @@ always_comb begin
 		aluonehot[8]:	aluout = vdiff;
 		default:		aluout = vor; // aluonehot[9]
 	endcase
+
+	if (~aresetn) begin
+		aluout = 32'd0;
+	end
 end
 
 endmodule

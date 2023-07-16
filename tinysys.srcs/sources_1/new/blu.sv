@@ -3,6 +3,7 @@
 `include "shared.vh"
 
 module branchlogic(
+	input wire aresetn,
 	output logic branchout,
 	input wire [31:0] val1,
 	input wire [31:0] val2,
@@ -36,6 +37,10 @@ always_comb begin
 		bluonehot[4]:	branchout = ~eq;
 		default:		branchout = eq; // bluonehot[5]
 	endcase
+
+	if (~aresetn) begin
+		branchout = 1'b0;
+	end
 end
 
 endmodule
