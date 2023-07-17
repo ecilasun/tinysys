@@ -253,7 +253,7 @@ int USBSerialWriteN(const char *outstring, uint32_t count)
 	uint32_t leftoverCount = count%64;
 
 	uint32_t currLED = LEDGetState();
-	LEDSetState(currLED | 0x4);
+	LEDSetState(currLED | 0x8);
 
 	for(uint32_t i=0; i<blockCount; ++i)
 	{

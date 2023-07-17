@@ -24,9 +24,7 @@ static uint32_t s_execParamCount = 1;
 static int32_t s_cmdLen = 0;
 static uint32_t s_startAddress = 0;
 static int s_refreshConsoleOut = 1;
-static int s_stop_ring_buffer = 0;
-static int s_stop_output = 0;
-static int s_usbserialenabled = 0;
+//static int s_usbserialenabled = 0;
 
 static struct SUSBContext s_usbserialctx;
 
@@ -79,78 +77,6 @@ void DeviceDefaultState()
 	s_gpuContext.m_vmode = EVM_320_Wide;
 	s_gpuContext.m_cmode = ECM_8bit_Indexed;
 	GPUSetVMode(&s_gpuContext, EVS_Disable);
-}
-
-void receive_file(const char *savename)
-{
-	// TODO: Load file from remote over UART
-	if (!savename)
-		USBSerialWrite("usage: rcv targetfilename\n");
-	else
-	{
-		USBSerialWrite("Waiting for file '");
-		USBSerialWrite(savename);
-		USBSerialWrite("'...\n");
-
-		// Do not let user input interfere
-		s_stop_ring_buffer = 1;
-
-		uint32_t HH=0, HL=0, LH=0, LL=0;
-		int state = 0;
-		int done = 0;
-		uint32_t incoming = 0;
-		do
-		{
-			switch (state)
-			{
-				case 0: if (RingBufferRead(&HH, sizeof(uint32_t))) state = 1; break;
-				case 1: if (RingBufferRead(&HL, sizeof(uint32_t))) state = 2; break;
-				case 2: if (RingBufferRead(&LH, sizeof(uint32_t))) state = 3; break;
-				case 3: if (RingBufferRead(&LL, sizeof(uint32_t))) state = 4; break;
-				case 4: {
-					uint32_t bytecount = ((HH&0xFF)<<24) | ((HL&0xFF)<<16) | ((LH&0xFF)<<8) | (LL&0xFF);
-
-					FIL fp;
-					FRESULT res = f_open(&fp, savename, FA_CREATE_ALWAYS | FA_WRITE);
-					if (res == FR_OK)
-					{
-						// 4- Write all future bytes to file
-						uint32_t cnt = 0;
-						uint32_t D;
-						while (cnt != bytecount)
-						{
-							if (RingBufferRead(&D, sizeof(uint32_t)))
-							{
-								USBSerialWrite("\033[2K\rReceiving 0x");
-								USBSerialWriteHex(incoming++);
-								USBSerialWrite(" / 0x");
-								USBSerialWriteHex(bytecount);
-								USBSerialWrite(" bytes");
-								D = D&0xFF;
-								UINT wb = 0;
-								f_write(&fp, &D, 1, &wb);
-								/*if ((cnt%64)==0)
-									USBSerialWriteN("A", 1); // Packed acknowledged*/
-								++cnt;
-							}
-						}
-						f_close(&fp);
-						USBSerialWrite("\033[2K\rdone\n");
-						state = 5;
-					}
-					else
-						USBSerialWrite("Target file could not be created\n");
-
-					break;
-				}
-				default:
-					done = 1;
-				break;
-			}
-		} while (!done);
-		
-		s_stop_ring_buffer = 0;
-	}
 }
 
 void ExecuteCmd(char *_cmd)
@@ -239,11 +165,6 @@ void ExecuteCmd(char *_cmd)
 			strncpy(s_workdir, path, 64);
 		}
 	}
-	else if (!strcmp(command, "rcv"))
-	{
-		const char *savename = strtok(NULL, " ");
-		receive_file(savename);
-	}
 	else if (!strcmp(command, "ver"))
 	{
 		USBSerialWrite("tinysys " VERSIONSTRING "\n");
@@ -267,7 +188,6 @@ void ExecuteCmd(char *_cmd)
 		USBSerialWrite("cwd path: Change working directory\n");
 		USBSerialWrite("ls [path]: Show list of files in cwd or path\n");
 		USBSerialWrite("rm fname: Delete file\n");
-		USBSerialWrite("rcv fname: Receive and save a file to storage\n");
 		USBSerialWrite("ps: Show process info\n");
 		USBSerialWrite("mount: Mount drive sd:\n");
 		USBSerialWrite("umount: Unmount drive sd:\n");
@@ -306,9 +226,6 @@ void ExecuteCmd(char *_cmd)
 			// This will cause corruption of the runtime environment.
 			if (s_startAddress != 0x0)
 			{
-				// Halt output from CLI
-				s_stop_output = 1;
-
 				strcpy(s_execName, filename);
 
 				const char *param = strtok(NULL, " ");
@@ -384,7 +301,7 @@ int main()
 	// Set up kernel side usb context
     USBSerialSetContext(&s_usbserialctx);
 	// Start USB serial
-	s_usbserialenabled = USBSerialInit(1);
+	/*s_usbserialenabled =*/ USBSerialInit(1);
 	//USBSerialWrite("MAX3420 die rev# ");
 	//USBSerialWriteHexByte(MAX3420ReadByte(rREVISION));
 	//USBSerialWrite("\n");
@@ -400,8 +317,7 @@ int main()
 		uint32_t uartData = 0;
 		int execcmd = 0;
 
-		// NOTE: In debug mode none of the following UART dependent code will work
-		while (!s_stop_ring_buffer && RingBufferRead(&uartData, sizeof(uint32_t)))
+		while (RingBufferRead(&uartData, sizeof(uint32_t)))
 		{
 			uint8_t asciicode = (uint8_t)(uartData&0xFF);
 
@@ -451,7 +367,6 @@ int main()
 		struct STask *task = &taskctx->tasks[1];
 		if (task->state == TS_TERMINATED)
 		{
-			s_stop_output = 0;
 			task->state = TS_UNKNOWN;
 			USBSerialWrite("\n");
 			USBSerialWrite(task->name);
@@ -465,8 +380,7 @@ int main()
 		if (execcmd)
 		{
 			++s_refreshConsoleOut;
-			if (!s_stop_output)
-				USBSerialWrite("\n");
+			USBSerialWrite("\n");
 			ExecuteCmd(s_cmdString);
 			// Rewind
 			s_cmdLen = 0;
@@ -478,13 +392,10 @@ int main()
 			s_refreshConsoleOut = 0;
 			s_cmdString[s_cmdLen] = 0;
 			// Reset current line and emit the command string
-			if (!s_stop_output)
-			{
-				USBSerialWrite("\033[2K\r");
-				USBSerialWrite(s_workdir);
-				USBSerialWrite(":");
-				USBSerialWrite(s_cmdString);
-			}
+			USBSerialWrite("\033[2K\r");
+			USBSerialWrite(s_workdir);
+			USBSerialWrite(":");
+			USBSerialWrite(s_cmdString);
 		}
 	}
 

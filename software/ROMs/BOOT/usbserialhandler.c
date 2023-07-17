@@ -352,9 +352,10 @@ void HandleUSBSerial()
 	}
 	/*else if (epIrq & bmIN2BAVIRQ)
 	{
-		LEDSetState(currLED | 0x4);
+		LEDSetState(currLED | 0x8);
 		// Application note states we have to clear BAV IRQs by writing count for double-buffering to work
 		MAX3420WriteByte(rEP2INBC, 0);
+		// Or, EmitBufferedOutput(), where 0 length is 'no data' but still counts as IRQ off
 	}*/
 	else if (epIrq & bmIN3BAVIRQ)
 	{
