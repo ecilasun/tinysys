@@ -122,13 +122,25 @@ class CSerialPort{
 #endif
     }
 
+    uint32_t Receive(void *_target, unsigned int _rcvlength)
+    {
+#if defined(CAT_LINUX)
+        int n = read(serial_port, _target, _rcvlength);
+        if (n < 0)
+            printf("ERROR: read() failed\n");
+        return n;
+#else
+        #pragma error("TODO: Implement Receive()")
+#endif
+    }
+
     uint32_t Send(const unsigned char *_sendbytes, unsigned int _sendlength)
     {
 #if defined(CAT_LINUX)
         int n = write(serial_port, _sendbytes, _sendlength);
         if (n < 0)
             printf("ERROR: write() failed\n");
-        return _sendlength;
+        return n;
 #else // CAT_WINDOWS
         DWORD byteswritten;
         // Send the command
@@ -370,16 +382,19 @@ void sendfile(char *_filename)
     uint32_t num64BytePackets = totalLength/64;
     uint32_t leftoverBytes = totalLength%64;
     uint32_t i = 0;
+    uint32_t dummy = 0;
     for (i=0; i<num64BytePackets; ++i)
     {
         serial.Send(&bytestoread[i*64], 64);
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        //serial.Receive(&dummy, 1);
     }
 
     if (leftoverBytes)
     {
         serial.Send(&bytestoread[i*64], leftoverBytes);
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        //serial.Receive(&dummy, 1);
     }
 
     serial.Close();

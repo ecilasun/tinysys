@@ -5,7 +5,6 @@
 #define GPUCMD_SETVPAGE    0x00000000
 #define GPUCMD_SETPAL      0x00000001
 #define GPUCMD_SETVMODE    0x00000002
-#define GPUCMD_PUTCHAR     0x00000003
 
 // Scanout hardware format is: 16bit B:R:G
 #define MAKECOLORRGB16(_r, _g, _b) ((_b<<11) | (_r<<6) | _g)
@@ -53,7 +52,6 @@ void GPUSetVMode(struct EVideoContext *_context, const enum EVideoScanoutEnable 
 void GPUSetScanoutAddress(struct EVideoContext *_context, const uint32_t _scanOutAddress64ByteAligned);
 void GPUSetWriteAddress(struct EVideoContext *_context, const uint32_t _cpuWriteAddress64ByteAligned);
 void GPUSetPal(const uint8_t _paletteIndex, const uint32_t _red, const uint32_t _green, const uint32_t _blue);
-void GPUCharOut(struct EVideoContext *_context, const uint16_t _col, const uint16_t _row, const uint16_t _attr_character);
 uint32_t GPUReadVBlankCounter();
 
 // Software emulated

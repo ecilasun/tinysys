@@ -64,56 +64,6 @@ logic cmdre = 1'b0;
 assign gpufifore = cmdre;
 
 // --------------------------------------------------
-// Character RAM
-// --------------------------------------------------
-
-// 80*60 for 640*480
-logic [15:0] charRAM[0:4799];
-
-initial begin
-	for (int i=0;i<4800;i++)
-		charRAM[i] = 16'h0200; // Green text by default
-end
-
-wire [6:0] charblockx = scanpixel[9:3];
-wire [5:0] charblocky = scanline[8:3];
-wire [12:0] charaddr = charblockx + charblocky*80;
-
-logic charwe = 1'b0;
-logic [15:0] charin;
-logic [12:0] charWaddr;
-
-always @(posedge aclk) begin
-	if (charwe)
-		charRAM[charWaddr] <= charin;
-end
-
-wire [7:0] charOut = charRAM[charaddr][7:0];
-wire [7:0] charPalOut = charRAM[charaddr][15:8];
-
-// --------------------------------------------------
-// Font ROM
-// --------------------------------------------------
-
-// 256*24 1bit grid
-logic [0:0] fontROM[0:6143];
-
-initial begin
-	$readmemh("font.mem", fontROM);
-end
-
-wire [5:0] charrow = {charOut[7:5],3'b0}; // (currentchar/32)*8
-wire [7:0] charcol = {charOut[4:0],3'b0}; // (currentchar%32)*8
-
-logic [15:0] fontAddrs;
-assign fontAddrs[7:0] = charcol + scanpixel[2:0]; 
-assign fontAddrs[15:8] = charrow + scanline[2:0];	// (charrow+(y%8))*256 + (charcol+(x%8))
-
-wire fontBit = fontROM[fontAddrs];
-wire fontPixel = fontBit;
-wire [7:0] fontColor = charPalOut;
-
-// --------------------------------------------------
 // Setup
 // --------------------------------------------------
 
@@ -207,8 +157,8 @@ always @(posedge clk25) begin // Tied to GPU clock
 	// All possible modes:
 	// MASK / MAX / REPLACE / BLEND
 	unique case ({scanenable && (scanline < 480), colormode})
-		2'b10: paletteout <= fontPixel ? paletteentries[fontColor] : paletteentries[palettera];
-		2'b11: paletteout <= fontPixel ? paletteentries[fontColor] : {
+		2'b10: paletteout <= paletteentries[palettera];
+		2'b11: paletteout <= {
 			rgbcolor[5:0],2'd0,		// G
 			rgbcolor[10:6],3'd0,	// R
 			rgbcolor[15:11],3'd0};	// B
@@ -299,7 +249,6 @@ typedef enum logic [2:0] {
 	SETVPAGE,
 	SETPAL,
 	VMODE,
-	PUTCHAR,
 	FINALIZE } gpucmdmodetype;
 gpucmdmodetype cmdmode = CINIT;
 
@@ -308,8 +257,6 @@ logic [31:0] gpucmd = 'd0;
 always_ff @(posedge aclk) begin
 	cmdre <= 1'b0;
 	palettewe <= 1'b0;
-	charWaddr <= 13'dz;
-	charwe <= 1'b0;
 
 	case (cmdmode)
 		CINIT: begin
@@ -331,7 +278,6 @@ always_ff @(posedge aclk) begin
 				32'h00000000:	cmdmode <= SETVPAGE;	// Set the scanout start address (followed by 32bit cached memory address, 64 byte cache aligned)
 				32'h00000001:	cmdmode <= SETPAL;		// Set 24 bit color palette entry (followed by 8bit address+24bit color in next word)
 				32'h00000002:	cmdmode <= VMODE;		// Set up video mode or turn off scan logic (default is 320x240*8bit paletted)
-				32'h00000003:	cmdmode <= PUTCHAR;		// Write one character and its color attribute at given x/y
 				default:		cmdmode <= FINALIZE;	// Invalid command, wait one clock and try next
 			endcase
 		end
@@ -379,20 +325,6 @@ always_ff @(posedge aclk) begin
 			end
 		end
 		
-		PUTCHAR: begin
-			if (gpufifovalid && ~gpufifoempty) begin
-				// bits[31:29]	-> unused for now, could be blink etc (2 bits)
-				// bits[28:16]	-> x+y*80 (13 bits)
-				// bits[15:0]	-> char palette index + ASCII code (16 bits)
-				charWaddr <= gpufifodout[28:16];
-				charwe <= 1'b1;
-				charin <= gpufifodout[15:0];
-				// Advance FIFO
-				cmdre <= 1'b1;
-				cmdmode <= FINALIZE;
-			end
-		end
-
 		FINALIZE: begin
 			cmdmode <= WCMD;
 		end

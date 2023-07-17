@@ -168,13 +168,6 @@ void GPUSetPal(const uint8_t _paletteIndex, const uint32_t _red, const uint32_t 
     *GPUIO = (_paletteIndex<<24) | (MAKECOLORRGB24(_red, _green, _blue)&0x00FFFFFFFF);
 }
 
-void GPUCharOut(struct EVideoContext *_context, const uint16_t _col, const uint16_t _row, const uint16_t _attr_character)
-{
-    uint32_t address = (_col+_row*_context->m_consoleWidth) & 0x00001FFF; // Max 13 bits
-    *GPUIO = GPUCMD_PUTCHAR;
-    *GPUIO = (address<<16) | (_attr_character&0xFF00) | ((_attr_character&0x00FF)-32);
-}
-
 void GPUPrintString(struct EVideoContext *_context, const int _col, const int _row, const char *_message, int _length)
 {
     uint8_t *vramBase = (uint8_t*)_context->m_cpuWriteAddressCacheAligned;

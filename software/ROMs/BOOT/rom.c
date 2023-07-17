@@ -12,7 +12,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define VERSIONSTRING "v1.023"
+#define VERSIONSTRING "v1.024"
 
 static struct EVideoContext s_gpuContext;
 
@@ -98,6 +98,7 @@ void receive_file(const char *savename)
 		uint32_t HH=0, HL=0, LH=0, LL=0;
 		int state = 0;
 		int done = 0;
+		uint32_t incoming = 0;
 		do
 		{
 			switch (state)
@@ -108,16 +109,6 @@ void receive_file(const char *savename)
 				case 3: if (RingBufferRead(&LL, sizeof(uint32_t))) state = 4; break;
 				case 4: {
 					uint32_t bytecount = ((HH&0xFF)<<24) | ((HL&0xFF)<<16) | ((LH&0xFF)<<8) | (LL&0xFF);
-					USBSerialWrite("Receiving 0x");
-					USBSerialWriteHex(bytecount);
-					USBSerialWrite(" bytes...");
-
-					if (bytecount > 65536)
-					{
-						USBSerialWrite("Unsupported file size\n");
-						s_stop_ring_buffer = 0;
-						return;
-					}
 
 					FIL fp;
 					FRESULT res = f_open(&fp, savename, FA_CREATE_ALWAYS | FA_WRITE);
@@ -130,16 +121,21 @@ void receive_file(const char *savename)
 						{
 							if (RingBufferRead(&D, sizeof(uint32_t)))
 							{
+								USBSerialWrite("\033[2K\rReceiving 0x");
+								USBSerialWriteHex(incoming++);
+								USBSerialWrite(" / 0x");
+								USBSerialWriteHex(bytecount);
+								USBSerialWrite(" bytes");
 								D = D&0xFF;
 								UINT wb = 0;
 								f_write(&fp, &D, 1, &wb);
 								/*if ((cnt%64)==0)
-									*IO_UARTRX = 0xFF;*/ // TODO: We need to send ack after each packet, also add CRC check.
+									USBSerialWriteN("A", 1); // Packed acknowledged*/
 								++cnt;
 							}
 						}
 						f_close(&fp);
-						USBSerialWrite("done\n");
+						USBSerialWrite("\033[2K\rdone\n");
 						state = 5;
 					}
 					else
