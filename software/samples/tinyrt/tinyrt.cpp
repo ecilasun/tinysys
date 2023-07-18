@@ -430,6 +430,8 @@ void render(Sphere* spheres, int nb_spheres, Light* lights, int nb_lights) {
     for (int i = 0; i<graphics_width; i++) {
       render_pixel(i,j  ,spheres,nb_spheres,lights,nb_lights);
     }
+    // Flush scanline
+    CFLUSH_D_L1;
   }
 #endif
    stats_end_frame();
