@@ -14,6 +14,7 @@ nanojpeg_libs = ../3rdparty/nanojpeg
 # Executable folders
 
 folders = \
+	triangle \
 	helloworld \
 	usbserial \
 	usbhost \
