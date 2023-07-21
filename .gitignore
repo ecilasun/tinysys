@@ -6,6 +6,7 @@ tinysys.ip_user_files/**
 tmp/simtop.*
 tinysys.srcs/sources_1/ip/.Xil/**.lock
 software/.waf3**
+software/waf3**
 software/build**
 software/**/*.txt
 software/**/*.elf
