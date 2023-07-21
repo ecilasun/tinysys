@@ -108,6 +108,9 @@ const uint32_t vgapalette[] __attribute__((aligned(16))) = {
 // NOTE: Reads from this address will return the vblank counter
 volatile uint32_t *GPUIO = (volatile uint32_t* ) DEVICE_GPUC;
 
+// Rasterizer control
+volatile uint32_t *RPUIO = (volatile uint32_t* ) DEVICE_RPUC;
+
 // GPU buffers are allocated aligned to 4K boundaries
 uint8_t *GPUAllocateBuffer(const uint32_t _size)
 {
@@ -206,4 +209,24 @@ uint32_t GPUReadVBlankCounter()
 {
     // vblank counter lives at this address
     return *GPUIO;
+}
+
+void RPUSetoutAddress(const uint32_t _rpuWriteAddress64ByteAligned)
+{
+    *RPUIO = RASTERCMD_OUTADDRS;
+    *RPUIO = _rpuWriteAddress64ByteAligned;
+}
+
+void RPUSetPrimitive(struct SPrimitive* _primitive)
+{
+    *RPUIO = RASTERCMD_SETPRIM;
+    *RPUIO = (_primitive->y0<<16) | _primitive->x0;
+    *RPUIO = (_primitive->y1<<16) | _primitive->x1;
+    *RPUIO = (_primitive->y2<<16) | _primitive->x2;
+}
+
+void RPURasterizeTile(const uint16_t tileX, const uint16_t tileY)
+{
+    *RPUIO = RASTERCMD_RASTERTILE;
+    *RPUIO = (tileY<<16) | tileX;
 }

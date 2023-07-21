@@ -7,7 +7,6 @@
 
 #include "basesystem.h"
 #include "core.h"
-#include "uart.h"
 #include "gpu.h"
 
 uint8_t *framebuffer;

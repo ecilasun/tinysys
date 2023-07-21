@@ -214,7 +214,7 @@ always @(posedge aclk) begin
 					`CSR_TIMELO:	s_axi.rdata[31:0] <= wallclocktime[31:0];
 					`CSR_CYCLELO:	s_axi.rdata[31:0] <= cpuclocktime[31:0];
 					// interrupt states of all hardware devices
-					`CSR_HWSTATE:	s_axi.rdata[31:0] <= {27'd0, stablereset, ~usbirq[1], ~usbirq[0], ~keyfifoempty, 1'b0};
+					`CSR_HWSTATE:	s_axi.rdata[31:0] <= {28'd0, stablereset, ~usbirq[1], ~usbirq[0], ~keyfifoempty};
 					default:		s_axi.rdata[31:0] <= csrdout;	// Pass through actual data
 				endcase
 				s_axi.rvalid <= 1'b1;

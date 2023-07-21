@@ -33,10 +33,13 @@ axi4if gpubus();			// Graphics unit bus
 axi4if dmabus();			// Direct memory access bus
 axi4if romcopybus();		// Bus for boot ROM copy (TODO: switch between ROM types?)
 axi4if audiobus();			// Bus for audio device output
+axi4if rasterbus();			// Bus for rasterizer memory access
 
 axi4if memorybus();			// Main memory
 
 axi4if devicebus();			// Arbitrated, to devices
+
+axi4if rpucmdif();			// Sub bus: RPU command fifo
 axi4if ledif();				// Sub bus: LED contol device
 axi4if gpucmdif();			// Sub bus: GPU command fifo
 axi4if spiif();				// Sub bus: SPI control device
@@ -161,6 +164,24 @@ gpucore GPU(
 	.vblankcount(vblankcount));
 
 // --------------------------------------------------
+// Rasterizer unit
+// --------------------------------------------------
+
+wire rasterfifoempty;
+wire [31:0] rasterfifodout;
+wire rasterfifore;
+wire rasterfifovalid;
+
+rasterizer RAST(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.m_axi(rasterbus),
+	.rasterfifoempty(rasterfifoempty),
+	.rasterfifodout(rasterfifodout),
+	.rasterfifore(rasterfifore),
+	.rasterfifovalid(rasterfifovalid));
+
+// --------------------------------------------------
 // DMA unit
 // --------------------------------------------------
 
@@ -225,10 +246,10 @@ axi4i2saudio APU(
 // Traffic arbiter between master units and memory
 // --------------------------------------------------
 
-arbiter arbiter6x1inst(
+arbiter arbiter7x1inst(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.axi_s({romcopybus, audiobus, dmabus, gpubus, databus, instructionbus}),
+	.axi_s({romcopybus, audiobus, dmabus, rasterbus, gpubus, databus, instructionbus}),
 	.axi_m(memorybus) );
 
 // --------------------------------------------------
@@ -260,7 +281,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 
 // 12bit (4K) address space reserved for each memory mapped device
 // dev   start     end       addrs[30:12]                 size  notes
-// ----: 80000000  80000FFF  19'b000_0000_0000_0000_0000  4KB
+// RPUC: 80000000  80000FFF  19'b000_0000_0000_0000_0000  4KB
 // LEDS: 80001000  80001FFF  19'b000_0000_0000_0000_0001  4KB
 // GPUC: 80002000  80002FFF  19'b000_0000_0000_0000_0010  4KB
 // SDCC: 80003000  80003FFF  19'b000_0000_0000_0000_0011  4KB
@@ -291,8 +312,9 @@ devicerouter devicerouterinst(
 		19'b000_0000_0000_0000_0100,	// CSRF Control and Status Register File for HART#0
 		19'b000_0000_0000_0000_0011,	// SDCC SDCard access via SPI
 		19'b000_0000_0000_0000_0010,	// GPUC Graphics Processing Unit Command Fifo
-		19'b000_0000_0000_0000_0001}),	// LEDS Debug / Status LED interface
-    .axi_m({usbaif, opl2if, audioif, usbcif, dmaif, xadcif, csrif, spiif, gpucmdif, ledif}));
+		19'b000_0000_0000_0000_0001,	// LEDS Debug / Status LED interface
+		19'b000_0000_0000_0000_0000}),	// RPUC Rasterizer Unit Command Fifo
+    .axi_m({usbaif, opl2if, audioif, usbcif, dmaif, xadcif, csrif, spiif, gpucmdif, ledif, rpucmdif}));
 
 // --------------------------------------------------
 // Interrupt wires
@@ -320,6 +342,15 @@ commandqueue gpucmdinst(
 	.fifore(gpufifore),
 	.fifovalid(gpufifovalid),
 	.devicestate(vblankcount));
+
+commandqueue rastercmdinst(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.s_axi(rpucmdif),
+	.fifoempty(rasterfifoempty),
+	.fifodout(rasterfifodout),
+	.fifore(rasterfifore),
+	.fifovalid(rasterfifovalid));
 
 axi4sdcard sdcardinst(
 	.aclk(aclk),

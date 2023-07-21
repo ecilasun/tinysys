@@ -1,6 +1,5 @@
 #include "rombase.h"
 #include "sdcard.h"
-#include "uart.h"
 #include "usbserial.h"
 #include "usbserialhandler.h"
 #include "usbhidhandler.h"
@@ -280,23 +279,6 @@ struct STaskContext *GetTaskContext()
 	return &g_taskctx;
 }
 
-void HandleUART()
-{
-	// XOFF - hold data traffic from sender so that we don't get stuck here
-	// *IO_UARTTX = 0x13;
-
-	// Echo back incoming bytes
-	while (UARTInputFifoHasData())
-	{
-		// Store incoming character in ring buffer
-		uint32_t incoming = *IO_UARTRX;
-		RingBufferWrite(&incoming, sizeof(uint32_t));
-	}
-
-	// XON - resume data traffic from sender
-	// *IO_UARTTX = 0x11;
-}
-
 void HandleSDCardDetect()
 {
 	uint32_t cardState = *IO_CARDDETECT;
@@ -418,11 +400,10 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				// Bit mask of devices causing the current interrupt
 				uint32_t hwid = read_csr(0xFFF);
 
-				if (hwid&1) HandleUART();
-				else if (hwid&2) HandleSDCardDetect();
-				else if (hwid&4) HandleUSBSerial();
-				else if (hwid&8) HandleUSBHID();
-				else if (hwid&16) HandleSoftReset(PC);
+				if (hwid&1) HandleSDCardDetect();
+				else if (hwid&2) HandleUSBSerial();
+				else if (hwid&4) HandleUSBHID();
+				else if (hwid&8) HandleSoftReset(PC);
 				else // No familiar bit set, unknown device
 				{
 					ReportError(32, "Unknown hardware device, core halted", code, hwid, PC);

@@ -2,9 +2,22 @@
 
 #include <inttypes.h>
 
-#define GPUCMD_SETVPAGE    0x00000000
-#define GPUCMD_SETPAL      0x00000001
-#define GPUCMD_SETVMODE    0x00000002
+#define GPUCMD_SETVPAGE 0x00000000
+#define GPUCMD_SETPAL   0x00000001
+#define GPUCMD_SETVMODE 0x00000002
+
+#define RASTERCMD_OUTADDRS   0x00000000
+#define RASTERCMD_SETPRIM    0x00000001
+#define RASTERCMD_RASTERTILE 0x00000002
+
+#pragma pack(push,1)
+struct SPrimitive
+{
+    uint16_t x0,y0;
+    uint16_t x1,y1;
+    uint16_t x2,y2;
+};
+#pragma pack(pop)
 
 // Scanout hardware format is: 16bit B:R:G
 #define MAKECOLORRGB16(_r, _g, _b) ((_b<<11) | (_r<<6) | _g)
@@ -57,3 +70,8 @@ uint32_t GPUReadVBlankCounter();
 // Software emulated
 void GPUPrintString(struct EVideoContext *_context, const int _col, const int _row, const char *_message, int _length);
 void GPUClearScreen(struct EVideoContext *_context, const uint32_t _colorWord);
+
+// Hardware rasterizer
+void RPUSetoutAddress(const uint32_t _rpuWriteAddress64ByteAligned);
+void RPUSetPrimitive(struct SPrimitive* _primitive);
+void RPURasterizeTile(const uint16_t tileX, const uint16_t tileY);
