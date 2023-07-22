@@ -172,7 +172,7 @@ wire [31:0] rasterfifodout;
 wire rasterfifore;
 wire rasterfifovalid;
 
-rasterizer RAST(
+rasterizer RPU(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.m_axi(rasterbus),
