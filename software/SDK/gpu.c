@@ -225,8 +225,9 @@ void RPUSetPrimitive(struct SPrimitive* _primitive)
     *RPUIO = (_primitive->y2<<16) | _primitive->x2;
 }
 
-void RPURasterizeTile(const uint16_t tileX, const uint16_t tileY)
+void RPURasterizeTile(const uint16_t tileMinX, const uint16_t tileMinY, const uint16_t tileMaxX, const uint16_t tileMaxY)
 {
     *RPUIO = RASTERCMD_RASTERTILE;
-    *RPUIO = (tileY<<16) | tileX;
+    *RPUIO = (tileMinY<<16) | tileMinX;
+    *RPUIO = (tileMaxY<<16) | tileMaxX;
 }

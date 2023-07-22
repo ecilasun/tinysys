@@ -9,6 +9,7 @@
 
 static uint8_t *s_framebufferA;
 static uint8_t *s_framebufferB;
+static uint8_t *s_rasterTemp;
 
 static inline int32_t max(int32_t x, int32_t y) { return x>y?x:y; }
 static inline int32_t min(int32_t x, int32_t y) { return x<y?x:y; }
@@ -60,10 +61,14 @@ void raster(uint8_t* _fb, const sVec2 &v0, const sVec2 &v1, const sVec2 &v2)
 
 int main(int argc, char *argv[])
 {
-	printf("Software rasterization test\n");
+	if (argc <= 1)
+		printf("Software rasterization test\n");
+	else
+		printf("Hardware rasterization test\n");
 
 	s_framebufferB = GPUAllocateBuffer(320*240);
 	s_framebufferA = GPUAllocateBuffer(320*240);
+	s_rasterTemp = GPUAllocateBuffer(64);
 
 	struct EVideoContext vx;
     vx.m_vmode = EVM_320_Wide;
@@ -73,29 +78,83 @@ int main(int argc, char *argv[])
 	GPUSetScanoutAddress(&vx, (uint32_t)s_framebufferB);
 	GPUSetDefaultPalette(&vx);
 
-	uint32_t cycle = 0;
-	while (1)
+	if (argc <= 1)
 	{
-		uint8_t *readpage = (cycle%2) ? s_framebufferA : s_framebufferB;
-		uint8_t *writepage = (cycle%2) ? s_framebufferB : s_framebufferA;
-
-		GPUSetWriteAddress(&vx, (uint32_t)writepage);
-		GPUSetScanoutAddress(&vx, (uint32_t)readpage);
-
-		GPUClearScreen(&vx, 0x00000000);
-
-		for (int i=0;i<32;++i)
+		uint32_t cycle = 0;
+		while (1)
 		{
-			sVec2 v0 = sVec2{rand()%256, rand()%256};
-			sVec2 v1 = sVec2{rand()%256, rand()%256};
-			sVec2 v2 = sVec2{rand()%256, rand()%256};
-			raster(writepage, v0, v1, v2);
+			uint8_t *readpage = (cycle%2) ? s_framebufferA : s_framebufferB;
+			uint8_t *writepage = (cycle%2) ? s_framebufferB : s_framebufferA;
+
+			GPUSetWriteAddress(&vx, (uint32_t)writepage);
+			GPUSetScanoutAddress(&vx, (uint32_t)readpage);
+
+			GPUClearScreen(&vx, 0x00000000);
+
+			for (int i=0;i<32;++i)
+			{
+				sVec2 v0 = sVec2{rand()%256, rand()%256};
+				sVec2 v1 = sVec2{rand()%256, rand()%256};
+				sVec2 v2 = sVec2{rand()%256, rand()%256};
+				raster(writepage, v0, v1, v2);
+			}
+
+			// Make sure writes are visible
+			CFLUSH_D_L1;
+
+			++cycle;
 		}
+	}
+	else
+	{
+		uint32_t cycle = 0;
+		while (1)
+		{
+			uint8_t *readpage = (cycle%2) ? s_framebufferA : s_framebufferB;
+			uint8_t *writepage = (cycle%2) ? s_framebufferB : s_framebufferA;
 
-		// Make sure writes are visible
-		CFLUSH_D_L1;
+			GPUSetWriteAddress(&vx, (uint32_t)writepage);
+			GPUSetScanoutAddress(&vx, (uint32_t)readpage);
 
-		++cycle;
+			GPUClearScreen(&vx, 0x00000000);
+
+			RPUSetoutAddress((uint32_t)s_rasterTemp);
+			for (int i=0; i<32; ++i)
+			{
+				SPrimitive prim;
+				prim.x0 = rand()%256;
+				prim.y0 = rand()%256;
+				prim.x1 = rand()%256;
+				prim.y1 = rand()%256;
+				prim.x2 = rand()%256;
+				prim.y2 = rand()%256;
+				
+				RPUSetPrimitive(&prim);
+
+				int16_t minx = max(0, min(prim.x0, min(prim.x1, prim.x2)))/4;
+				int16_t miny = max(0, min(prim.y0, min(prim.y1, prim.y2)))/4;
+				int16_t maxx = min(319, max(prim.x0, max(prim.x1, prim.x2)))/4;
+				int16_t maxy = min(239, max(prim.y0, max(prim.y1, prim.y2)))/4;
+
+				uint8_t V = rand()%255;
+				for (int16_t j = miny; j < maxy; ++j)
+				{
+					for (int16_t i = minx; i < maxx; ++i)
+					{
+						if (*s_rasterTemp)
+						{
+							RPURasterizeTile(i*4, j*4, i*4+3, j*4+3);
+							writepage[i*4+j*4*320] = V;
+						}
+					}
+				}
+			}
+
+			// Make sure writes are visible
+			CFLUSH_D_L1;
+
+			++cycle;
+		}
 	}
 
 	return 0;

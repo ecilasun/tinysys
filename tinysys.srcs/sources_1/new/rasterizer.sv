@@ -114,14 +114,14 @@ logic [3:0] tilecoverage;
 logic cmdre = 1'b0;
 assign rasterfifore = cmdre;
 
-typedef enum logic [3:0] {
+typedef enum logic [4:0] {
 	INIT,
 	WCMD, DISPATCH,
 	SETRASTEROUT,
 	SETPRIMITIVE,
 	SETVERTEX1,
 	SETVERTEX2,
-	RASTERTILE, RASTETILERADJ, TILERASTERWAIT0, TILERASTERWAIT1, TILERASTERWAIT2, TILERASTERDONE, TILERASTERWA, TILERASTERWB,
+	RASTERTILE, RASTETILERADJ, TILERASTERWAIT0, TILERASTERWAIT1, TILERASTERWAIT2, TILERASTERDONE, TILERASTERWA, TILERASTERWB, TILERASTEREND,
 	FINALIZE } rastercmdmodetype;
 rastercmdmodetype cmdmode = INIT;
 
@@ -137,9 +137,9 @@ always_ff @(posedge aclk) begin
 			m_axi.awaddr <= 'd0;
 			m_axi.wvalid <= 0;
 			m_axi.wstrb <= 16'h0000;
-			m_axi.wlast <= 1'b1;
+			m_axi.wlast <= 1'b0;
+			m_axi.bready <= 1'b0;
 			m_axi.wdata <= 128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
-			m_axi.bready <= 1'b1;
 			cmdmode <= WCMD;
 		end
 
@@ -167,7 +167,7 @@ always_ff @(posedge aclk) begin
 				rasteraddr <= rasterfifodout;
 				// Advance FIFO
 				cmdre <= 1'b1;
-				cmdmode <= SETVERTEX1;
+				cmdmode <= FINALIZE;
 			end
 		end
 
@@ -254,6 +254,7 @@ always_ff @(posedge aclk) begin
 				m_axi.awvalid <= 1'b0;
 				m_axi.wvalid <= 1'b1;
 				m_axi.wstrb <= {12'h000, tilecoverage}; // TODO: Byte write mask for the 4x4 tile, for now it's only 4 vertices
+				m_axi.wlast <= 1'b1;
 				cmdmode <= TILERASTERWB;
 			end
 		end
@@ -261,7 +262,17 @@ always_ff @(posedge aclk) begin
 		TILERASTERWB: begin
 			if (m_axi.wready) begin
 				m_axi.wvalid <= 1'b0;
-				m_axi.wstrb <=1'b0; 
+				m_axi.wstrb <= 16'h0000;
+				m_axi.wlast <= 1'b0;
+				m_axi.bready <= 1;
+				cmdmode <= TILERASTEREND;
+			end
+		end
+
+		TILERASTEREND: begin
+			if (m_axi.bvalid) begin // && m_axi.bready
+				m_axi.bready <= 0;
+				cmdmode <= FINALIZE;
 			end
 		end
 
