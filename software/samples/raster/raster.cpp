@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 	else
 		printf("Hardware rasterization test\n");
 
-	s_framebufferB = GPUAllocateBuffer(320*240);
+	s_framebufferB = GPUAllocateBuffer(320*240); // Or think of it as 1280*64 for tiles
 	s_framebufferA = GPUAllocateBuffer(320*240);
 
 	struct EVideoContext vx;
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 			GPUSetWriteAddress(&vx, (uint32_t)writepage);
 			GPUSetScanoutAddress(&vx, (uint32_t)readpage);
 
-			GPUClearScreen(&vx, 0x00000000);
+			GPUClearScreen(&vx, 0x07070707); // Gray for visibility
 
 			for (int i=0;i<32;++i)
 			{
@@ -114,8 +114,9 @@ int main(int argc, char *argv[])
 			GPUSetWriteAddress(&vx, (uint32_t)writepage);
 			GPUSetScanoutAddress(&vx, (uint32_t)readpage);
 
-			GPUClearScreen(&vx, 0x00000000);
+			GPUClearScreen(&vx, 0x07070707); // Gray for visibility
 
+			uint32_t offset = 0;
 			for (int i=0; i<32; ++i)
 			{
 				SPrimitive prim;
@@ -134,18 +135,19 @@ int main(int argc, char *argv[])
 				int16_t maxx = min(319, max(prim.x0, max(prim.x1, prim.x2)))/4;
 				int16_t maxy = min(239, max(prim.y0, max(prim.y1, prim.y2)))/4;
 
-				uint32_t offset = 0;
 				for (int16_t j = miny; j < maxy; ++j)
 				{
 					for (int16_t i = minx; i < maxx; ++i)
 					{
 						// 128bit aligned address for 16 pixels' worth of output
 						// Hardware generates 4x4 pixel masks but the output is
-						// liner in memory so it's going to be 16 pixels, packed side by side
+						// linear in memory so it's going to be 16 pixels, packed side by side
 						// on the same scanline if viewed as raw output.
 						// Here we rewind and start each triangle from offset zero
 						// for debug purposes.
-						RPUSetTileAddress((uint32_t)writepage + 4*offset);
+						uint32_t tileIndex = i+j*80;
+						uint32_t tileAddress = tileIndex*16;
+						RPUSetTileAddress((uint32_t)writepage + tileAddress);
 						RPURasterizeTile(i*4, j*4);
 						offset++;
 					}

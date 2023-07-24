@@ -15,7 +15,7 @@ module rasterizer(
 
 assign m_axi.arlen = 0;				// one burst
 assign m_axi.arsize = SIZE_16_BYTE; // 128bit read bus
-assign m_axi.arburst = BURST_INCR;
+assign m_axi.arburst = BURST_FIXED;
 
 // NOTE: No memory read yet
 assign m_axi.arvalid = 0;
@@ -24,7 +24,7 @@ assign m_axi.rready = 0;
 
 assign m_axi.awlen = 0;				// one burst
 assign m_axi.awsize = SIZE_16_BYTE; // 128bit write bus
-assign m_axi.awburst = BURST_INCR;
+assign m_axi.awburst = BURST_FIXED;
 
 // Tile pixel coordinate of upper left corner
 logic signed [15:0] tileX = 0;
@@ -81,11 +81,13 @@ typedef enum logic [4:0] {
 	SETRASTEROUT,
 	SETRASTERCOLOR,
 	SETPRIMITIVE, SETVERTEX1, SETVERTEX2,
-	RASTERIZETILE, WRASTER, TILERASTERDONE, TILERASTERWBACK, TILERASTERWRITEWREADY, TILERASTEREND,
+	RASTERIZETILE, WRASTER, TILERASTERDONE, TILERASTERWBACK, TILERASTERWRITEBEGIN, TILERASTERWRITEWREADY, TILERASTEREND,
 	FINALIZE } rastercmdmodetype;
 rastercmdmodetype cmdmode = INIT;
 
 logic [31:0] rastercmd = 'd0;
+logic [31:0] outaddr;
+logic [127:0] outdata;
 
 always_ff @(posedge aclk) begin
 
@@ -101,7 +103,8 @@ always_ff @(posedge aclk) begin
 			m_axi.wlast <= 1'b0;
 			m_axi.bready <= 1'b0;
 			// White color index in default VGA palette
-			m_axi.wdata <= 128'h0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F;
+			outdata <= 128'h0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F;
+			outaddr <= 32'd0;
 			cmdmode <= WCMD;
 		end
 
@@ -127,7 +130,7 @@ always_ff @(posedge aclk) begin
 
 		SETRASTEROUT: begin
 			if (rasterfifovalid && ~rasterfifoempty) begin
-				m_axi.awaddr <= rasterfifodout;
+				outaddr <= rasterfifodout;
 				// Advance FIFO
 				cmdre <= 1'b1;
 				cmdmode <= FINALIZE;
@@ -136,7 +139,7 @@ always_ff @(posedge aclk) begin
 		
 		SETRASTERCOLOR: begin
 			if (rasterfifovalid && ~rasterfifoempty) begin
-				m_axi.wdata <= {rasterfifodout, rasterfifodout, rasterfifodout, rasterfifodout};
+				outdata <= {rasterfifodout, rasterfifodout, rasterfifodout, rasterfifodout};
 				// Advance FIFO
 				cmdre <= 1'b1;
 				cmdmode <= FINALIZE;
@@ -183,13 +186,14 @@ always_ff @(posedge aclk) begin
 
 		WRASTER: begin
 			if (eready01 & eready12 & eready20) begin
+    			tilecoverage <= emask01 & emask12 & emask20;
+                // Binary tile overlap test result would be: (|emask01) & (|emask12) & (|emask20)
 				cmdmode <= TILERASTERDONE;
 			end
 		end
 		
 		TILERASTERDONE: begin
-			//tilemask <= (|emask01) & (|emask12) & (|emask20);	// Biunary tile overlap test result
-			tilecoverage <= emask01 & emask12 & emask20;
+			m_axi.awaddr <= outaddr;
 			m_axi.awvalid <= 1'b1;
 			cmdmode <= TILERASTERWBACK;
 		end
@@ -197,11 +201,16 @@ always_ff @(posedge aclk) begin
 		TILERASTERWBACK: begin
 			if (m_axi.awready) begin
 				m_axi.awvalid <= 1'b0;
-				m_axi.wvalid <= 1'b1;
-				m_axi.wstrb <= tilecoverage; // 4x4 tile mask, flattened to adjacent 16 pixels in memory
-				m_axi.wlast <= 1'b1;
-				cmdmode <= TILERASTERWRITEWREADY;
+				cmdmode <= TILERASTERWRITEBEGIN;
 			end
+		end
+		
+		TILERASTERWRITEBEGIN: begin
+			m_axi.wvalid <= 1'b1;
+			m_axi.wdata <= outdata;
+			m_axi.wstrb <= tilecoverage; // 4x4 tile mask, flattened to adjacent 16 pixels in memory
+			m_axi.wlast <= 1'b1;
+			cmdmode <= TILERASTERWRITEWREADY;
 		end
 
 		TILERASTERWRITEWREADY: begin
