@@ -116,7 +116,6 @@ int main(int argc, char *argv[])
 
 			GPUClearScreen(&vx, 0x07070707); // Gray for visibility
 
-			uint32_t offset = 0;
 			for (int i=0; i<32; ++i)
 			{
 				SPrimitive prim;
@@ -149,13 +148,9 @@ int main(int argc, char *argv[])
 						uint32_t tileAddress = tileIndex*16;
 						RPUSetTileAddress((uint32_t)writepage + tileAddress);
 						RPURasterizeTile(i*4, j*4);
-						offset++;
 					}
 				}
 			}
-
-			// Make sure writes are visible
-			CFLUSH_D_L1;
 
 			++cycle;
 		}

@@ -227,7 +227,7 @@ void RPUSetPrimitive(struct SPrimitive* _primitive)
 
 void RPURasterizeTile(const uint16_t _tileX, const uint16_t _tileY)
 {
-    *RPUIO = RASTERCMD_RASTERTILE;
+    *RPUIO = RASTERCMD_RASTERIZETILE;
     *RPUIO = (_tileY<<16) | _tileX;
 }
 

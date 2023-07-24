@@ -38,7 +38,7 @@ logic signed [15:0] y1 = 0;
 logic signed [15:0] x2 = 0;
 logic signed [15:0] y2 = 0;
 
-logic rena = 1'b1;
+logic rena = 1'b0;
 wire [15:0] emask01;
 wire [15:0] emask12;
 wire [15:0] emask20;
@@ -81,7 +81,7 @@ typedef enum logic [4:0] {
 	SETRASTEROUT,
 	SETRASTERCOLOR,
 	SETPRIMITIVE, SETVERTEX1, SETVERTEX2,
-	RASTERIZETILE, WRASTER, TILERASTERDONE, TILERASTERWBACK, TILERASTERWRITEBEGIN, TILERASTERWRITEWREADY, TILERASTEREND,
+	RASTERIZETILE, WRASTER, TILERASTERDONE, TILERASTERWBACK, TILERASTERWRITEWREADY, TILERASTEREND,
 	FINALIZE } rastercmdmodetype;
 rastercmdmodetype cmdmode = INIT;
 
@@ -136,15 +136,6 @@ always_ff @(posedge aclk) begin
 				cmdmode <= FINALIZE;
 			end
 		end
-		
-		SETRASTERCOLOR: begin
-			if (rasterfifovalid && ~rasterfifoempty) begin
-				outdata <= {rasterfifodout, rasterfifodout, rasterfifodout, rasterfifodout};
-				// Advance FIFO
-				cmdre <= 1'b1;
-				cmdmode <= FINALIZE;
-			end
-		end
 
 		SETPRIMITIVE: begin
 			if (rasterfifovalid && ~rasterfifoempty) begin
@@ -175,8 +166,7 @@ always_ff @(posedge aclk) begin
 
 		RASTERIZETILE: begin
 			if (rasterfifovalid && ~rasterfifoempty) begin
-				tileY <= $signed(rasterfifodout[31:16]);
-				tileX <= $signed(rasterfifodout[15:0]);
+				{tileY, tileX} <= rasterfifodout;
 				rena <= 1'b1;
 				// Advance FIFO
 				cmdre <= 1'b1;
@@ -201,16 +191,14 @@ always_ff @(posedge aclk) begin
 		TILERASTERWBACK: begin
 			if (m_axi.awready) begin
 				m_axi.awvalid <= 1'b0;
-				cmdmode <= TILERASTERWRITEBEGIN;
+
+                m_axi.wvalid <= 1'b1;
+                m_axi.wstrb <= tilecoverage; // 4x4 tile mask, flattened to adjacent 16 pixels in memory
+                m_axi.wdata <= outdata;
+                m_axi.wlast <= 1'b1;
+
+				cmdmode <= TILERASTERWRITEWREADY;
 			end
-		end
-		
-		TILERASTERWRITEBEGIN: begin
-			m_axi.wvalid <= 1'b1;
-			m_axi.wdata <= outdata;
-			m_axi.wstrb <= tilecoverage; // 4x4 tile mask, flattened to adjacent 16 pixels in memory
-			m_axi.wlast <= 1'b1;
-			cmdmode <= TILERASTERWRITEWREADY;
 		end
 
 		TILERASTERWRITEWREADY: begin
@@ -226,6 +214,15 @@ always_ff @(posedge aclk) begin
 		TILERASTEREND: begin
 			if (m_axi.bvalid) begin // && m_axi.bready
 				m_axi.bready <= 0;
+				cmdmode <= FINALIZE;
+			end
+		end
+
+		SETRASTERCOLOR: begin
+			if (rasterfifovalid && ~rasterfifoempty) begin
+				outdata <= {rasterfifodout, rasterfifodout, rasterfifodout, rasterfifodout};
+				// Advance FIFO
+				cmdre <= 1'b1;
 				cmdmode <= FINALIZE;
 			end
 		end
