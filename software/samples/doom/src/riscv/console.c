@@ -19,7 +19,7 @@
 
 #include "basesystem.h"
 #include "mini-printf.h"
-#include "uart.h"
+#include "usbserial.h"
 
 void
 console_init(void)
@@ -30,35 +30,38 @@ console_init(void)
 void
 console_putchar(char c)
 {
-	*IO_UARTTX = (uint32_t)c;
+	char tmp[2];
+	tmp[0] = c;
+	USBSerialWriteN(tmp, 1);
 }
 
 char
 console_getchar(void)
 {
 	char c = 0;
-	while (UARTInputFifoHasData())
+	/*while (UARTInputFifoHasData())
 	{
 		c = *IO_UARTRX;
-	}
+	}*/
 	return c;
 }
 
 int
 console_getchar_nowait(void)
 {
-	char c=0;
+	/*char c=0;
 	unsigned int hasdata = UARTInputFifoHasData();
 	if (hasdata)
 		c = *IO_UARTRX;
 
-	return hasdata ? c&0xFF : -1;// & 0x80000000 ? -1 : (c & 0xff);
+	return hasdata ? c&0xFF : -1;// & 0x80000000 ? -1 : (c & 0xff);*/
+	return -1;
 }
 
 void
 console_puts(const char *p)
 {
-	UARTWrite(p);
+	USBSerialWrite(p);
 }
 
 int
