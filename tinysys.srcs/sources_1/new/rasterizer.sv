@@ -14,7 +14,7 @@ module rasterizer(
 	input wire rasterfifovalid);
 
 assign m_axi.arlen = 0;				// one burst
-assign m_axi.arsize = SIZE_16_BYTE; // 128bit read bus
+assign m_axi.arsize = SIZE_16_BYTE; // 128bit wide reads (not used yet)
 assign m_axi.arburst = BURST_FIXED;
 
 // NOTE: No memory read yet
@@ -23,7 +23,7 @@ assign m_axi.araddr = 0;
 assign m_axi.rready = 0;
 
 assign m_axi.awlen = 0;				// one burst
-assign m_axi.awsize = SIZE_16_BYTE; // 128bit write bus
+assign m_axi.awsize = SIZE_16_BYTE; // 128bit wide writes
 assign m_axi.awburst = BURST_FIXED;
 
 // Tile pixel coordinate of upper left corner
@@ -193,7 +193,7 @@ always_ff @(posedge aclk) begin
 				m_axi.awvalid <= 1'b0;
 
                 m_axi.wvalid <= 1'b1;
-                m_axi.wstrb <= tilecoverage; // 4x4 tile mask, flattened to adjacent 16 pixels in memory
+                m_axi.wstrb <= tilecoverage; // 4x4 tile coverage mask
                 m_axi.wdata <= outdata;
                 m_axi.wlast <= 1'b1;
 

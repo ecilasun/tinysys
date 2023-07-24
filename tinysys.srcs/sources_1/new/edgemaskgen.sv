@@ -146,10 +146,10 @@ always @(posedge clk) begin
         ENDRASTER: begin
             // Gather sign bits into edge mask
             rmask <= {
-                result[15][15:15], result[14][15:15], result[13][15:15], result[12][15:15],
-                result[11][15:15], result[10][15:15], result[9][15:15],  result[8][15:15],
-                result[7][15:15],  result[6][15:15],  result[5][15:15],  result[4][15:15],
-                result[3][15:15],  result[2][15:15],  result[1][15:15],  result[0][15:15] };
+                result[15]<0?1'b1:1'b0, result[14]<0?1'b1:1'b0, result[13]<0?1'b1:1'b0, result[12]<0?1'b1:1'b0,
+                result[11]<0?1'b1:1'b0, result[10]<0?1'b1:1'b0, result[9]<0?1'b1:1'b0,  result[8]<0?1'b1:1'b0,
+                result[7]<0?1'b1:1'b0,  result[6]<0?1'b1:1'b0,  result[5]<0?1'b1:1'b0,  result[4]<0?1'b1:1'b0,
+                result[3]<0?1'b1:1'b0,  result[2]<0?1'b1:1'b0,  result[1]<0?1'b1:1'b0,  result[0]<0?1'b1:1'b0 };
             bready <= 1'b1;
             rstate <= RWCMD;
         end

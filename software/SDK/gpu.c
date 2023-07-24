@@ -211,10 +211,10 @@ uint32_t GPUReadVBlankCounter()
     return *GPUIO;
 }
 
-void RPUSetTileAddress(const uint32_t _rpuWriteAddress64ByteAligned)
+void RPUSetTileAddress(const uint32_t _rpuWriteAddress16ByteAligned)
 {
     *RPUIO = RASTERCMD_OUTADDRS;
-    *RPUIO = _rpuWriteAddress64ByteAligned;
+    *RPUIO = _rpuWriteAddress16ByteAligned;
 }
 
 void RPUSetPrimitive(struct SPrimitive* _primitive)

@@ -2,6 +2,7 @@
 #include "core.h"
 #include "gpu.h"
 #include <stdio.h>
+#include <string.h>
 #include <random>
 
 // NOTE: This is a really slow way to rasterize
@@ -106,6 +107,10 @@ int main(int argc, char *argv[])
 	else
 	{
 		uint32_t cycle = 0;
+		memset(s_framebufferA, 0x01, 320*240); // Alternate between blue/magenta to detect writes
+		memset(s_framebufferB, 0x05, 320*240);
+		CFLUSH_D_L1;
+
 		while (1)
 		{
 			uint8_t *readpage = (cycle%2) ? s_framebufferA : s_framebufferB;
@@ -113,8 +118,6 @@ int main(int argc, char *argv[])
 
 			GPUSetWriteAddress(&vx, (uint32_t)writepage);
 			GPUSetScanoutAddress(&vx, (uint32_t)readpage);
-
-			GPUClearScreen(&vx, 0x07070707); // Gray for visibility
 
 			for (int i=0; i<32; ++i)
 			{
@@ -125,15 +128,30 @@ int main(int argc, char *argv[])
 				prim.y1 = rand()%256;
 				prim.x2 = rand()%256;
 				prim.y2 = rand()%256;
+				uint8_t V = rand()%255;
 				
 				RPUSetPrimitive(&prim);
-				RPUSetColor(rand()%255);
+				RPUSetColor(V);
 
 				int16_t minx = max(0, min(prim.x0, min(prim.x1, prim.x2)))/4;
 				int16_t miny = max(0, min(prim.y0, min(prim.y1, prim.y2)))/4;
 				int16_t maxx = min(319, max(prim.x0, max(prim.x1, prim.x2)))/4;
 				int16_t maxy = min(239, max(prim.y0, max(prim.y1, prim.y2)))/4;
 
+				// CPU write - Mark one pixel out of 16 as debug aid
+				for (int16_t j = miny; j < maxy; ++j)
+				{
+					for (int16_t i = minx; i < maxx; ++i)
+					{
+						uint32_t tileIndex = i+j*80;
+						uint32_t tileAddress = tileIndex*16;
+						writepage[tileAddress] = V;
+					}
+				}
+
+				// RPU write - 128bit writes per tile from RPU side
+				// This version does the sweep in software, to be
+				// ported to hardware once writes work as expected.
 				for (int16_t j = miny; j < maxy; ++j)
 				{
 					for (int16_t i = minx; i < maxx; ++i)

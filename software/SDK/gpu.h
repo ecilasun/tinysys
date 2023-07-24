@@ -73,7 +73,7 @@ void GPUPrintString(struct EVideoContext *_context, const int _col, const int _r
 void GPUClearScreen(struct EVideoContext *_context, const uint32_t _colorWord);
 
 // Hardware rasterizer
-void RPUSetTileAddress(const uint32_t _rpuWriteAddress64ByteAligned);
+void RPUSetTileAddress(const uint32_t _rpuWriteAddress16ByteAligned);
 void RPUSetPrimitive(struct SPrimitive* _primitive);
 void RPURasterizeTile(const uint16_t _tileX, const uint16_t _tileY);
 void RPUSetColor(const uint8_t _colorIndex);
