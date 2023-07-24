@@ -5,9 +5,6 @@
 #include <string.h>
 #include <random>
 
-// NOTE: This is a really slow way to rasterize
-// https://www.scratchapixel.com/lessons/3d-basic-rendering/rasterization-practical-implementation/rasterization-practical-implementation.html
-
 static uint8_t *s_framebufferA;
 static uint8_t *s_framebufferB;
 
@@ -19,7 +16,7 @@ struct sVec2
 	int32_t x, y;
 };
 
-int32_t edgeFunction(const sVec2 &v0, const sVec2 &v1, const sVec2 &p)
+/*int32_t edgeFunction(const sVec2 &v0, const sVec2 &v1, const sVec2 &p)
 {
 	// Same as what our hardware does
 	int32_t A = (p.y - v0.y);
@@ -27,65 +24,72 @@ int32_t edgeFunction(const sVec2 &v0, const sVec2 &v1, const sVec2 &p)
 	int32_t dx = (v0.x - v1.x);
 	int32_t dy = (v1.y - v0.y);
 	return A*dx + B*dy;
-}
+}*/
 
-void raster(uint8_t* _fb, const sVec2 &v0, const sVec2 &v1, const sVec2 &v2)
+void edgeMask(int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t tx, int32_t ty, uint32_t *rmask)
 {
-	int32_t minx = max(0, min(v0.x, min(v1.x, v2.x)));
-	int32_t miny = max(0, min(v0.y, min(v1.y, v2.y)));
-	int32_t maxx = min(319, max(v0.x, max(v1.x, v2.x)));
-	int32_t maxy = min(239, max(v0.y, max(v1.y, v2.y)));
+	// edge 0
+	int32_t dx = (x0 - x1);
+	int32_t dy = (y1 - y0);
+	int32_t A0 = (ty - y0);
+	int32_t B0 = (tx - x0);
 
-	uint8_t V = rand()%255;
+	int32_t A1 = A0;
+	int32_t A2 = A0;
+	int32_t A3 = A0;
+	int32_t B1 = B0+1;
+	int32_t B2 = B0+2;
+	int32_t B3 = B0+3;
 
-	//int32_t attr0 = vertex 0 attribute
-	//int32_t attr1 = vertex 1 attribute
-	//int32_t attr2 = vertex 2 attribute
+	int32_t A4 = A0+1;
+	int32_t A5 = A0+1;
+	int32_t A6 = A0+1;
+	int32_t A7 = A0+1;
+	int32_t B4 = B0;
+	int32_t B5 = B0+1;
+	int32_t B6 = B0+2;
+	int32_t B7 = B0+3;
 
-	//int32_t area = edgeFunction(v0, v1, v2);
+	int32_t A8  = A0+2;
+	int32_t A9  = A0+2;
+	int32_t A10 = A0+2;
+	int32_t A11 = A0+2;
+	int32_t B8  = B0;
+	int32_t B9  = B0+1;
+	int32_t B10 = B0+2;
+	int32_t B11 = B0+3;
 
-	// Evaluate the gradient once outside
-	/*sVec2 topleft = {minx,miny};
-	sVec2 topleftpX = {minx+1,miny};
-	sVec2 topleftpY = {minx,miny+1};
-	int32_t w0 = edgeFunction(v1, v2, topleft);
-	int32_t w1 = edgeFunction(v2, v0, topleft);
-	int32_t w2 = edgeFunction(v0, v1, topleft);
-	int32_t dx12 = edgeFunction(v1, v2, topleftpX) - w0;
-	int32_t dy12 = edgeFunction(v1, v2, topleftpY) - w0;
-	int32_t dx20 = edgeFunction(v2, v0, topleftpX) - w1;
-	int32_t dy20 = edgeFunction(v2, v0, topleftpY) - w1;
-	int32_t dx01 = edgeFunction(v0, v1, topleftpX) - w2;
-	int32_t dy01 = edgeFunction(v0, v1, topleftpY) - w2;
+	int32_t A12 = A0+3;
+	int32_t A13 = A0+3;
+	int32_t A14 = A0+3;
+	int32_t A15 = A0+3;
+	int32_t B12 = B0;
+	int32_t B13 = B0+1;
+	int32_t B14 = B0+2;
+	int32_t B15 = B0+3;
 
-	for each X step, add dx12 to w0 (and respectively w1 and w2)
-	at the end of the line, reset w0 to start value+line*dy12 to
-	*/
+	int32_t R0 = A0*dx + B0*dy;
+	int32_t R1 = A1*dx + B1*dy;
+	int32_t R2 = A2*dx + B2*dy;
+	int32_t R3 = A3*dx + B3*dy;
+	int32_t R4 = A4*dx + B4*dy;
+	int32_t R5 = A5*dx + B5*dy;
+	int32_t R6 = A6*dx + B6*dy;
+	int32_t R7 = A7*dx + B7*dy;
+	int32_t R8 = A8*dx + B8*dy;
+	int32_t R9 = A9*dx + B9*dy;
+	int32_t R10 = A10*dx + B10*dy;
+	int32_t R11 = A11*dx + B11*dy;
+	int32_t R12 = A12*dx + B12*dy;
+	int32_t R13 = A13*dx + B13*dy;
+	int32_t R14 = A14*dx + B14*dy;
+	int32_t R15 = A15*dx + B15*dy;
 
-	for (int32_t j = miny; j < maxy; ++j)
-	{
-		for (int32_t i = minx; i < maxx; ++i)
-		{
-			sVec2 p = {i,j};//{i + 0.5f, j + 0.5f};
-			int32_t w0 = edgeFunction(v1, v2, p);
-			int32_t w1 = edgeFunction(v2, v0, p);
-			int32_t w2 = edgeFunction(v0, v1, p);
-			// Hardware only checks sign bit, same deal here
-			// Eventually it'll calculate the gradients via
-			// gx=edge(x+1,y)-edge(x,y)
-			// and
-			// gy=edge(x,y+1)-edge(x,y)
-			// once for the top left corner
-			if (w0 >= 0 && w1 >= 0 && w2 >= 0)
-			{
-				/*w0 /= area;
-				w1 /= area;
-				w2 /= area;
-				int32_t ipolAttr = w0 * attr0 + w1 * attr1 + w2 * attr2;*/
-				_fb[i+j*320] = V;
-			}
-		}
-	}
+	// Imitate byte write mask + 128bit write in hardware
+	rmask[0] = (R15<0?0:0xFF000000) | (R14<0?0:0x00FF0000) | (R13<0?0:0x0000FF00) | (R12<0?0:0x000000FF);
+	rmask[1] = (R11<0?0:0xFF000000) | (R10<0?0:0x00FF0000) | (R9<0?0:0x0000FF00)  | (R8<0?0:0x000000FF);
+	rmask[2] = (R7<0?0:0xFF000000)  | (R6<0?0:0x00FF0000)  | (R5<0?0:0x0000FF00)  | (R4<0?0:0x000000FF);
+	rmask[3] = (R3<0?0:0xFF000000)  | (R2<0?0:0x00FF0000)  | (R1<0?0:0x0000FF00)  | (R0<0?0:0x000000FF);
 }
 
 int main(int argc, char *argv[])
@@ -119,12 +123,56 @@ int main(int argc, char *argv[])
 
 			GPUClearScreen(&vx, 0x07070707); // Gray for visibility
 
-			for (int i=0;i<32;++i)
+			for (int i=0; i<32; ++i)
 			{
-				sVec2 v0 = sVec2{rand()%256, rand()%256};
-				sVec2 v1 = sVec2{rand()%256, rand()%256};
-				sVec2 v2 = sVec2{rand()%256, rand()%256};
-				raster(writepage, v0, v1, v2);
+				SPrimitive prim;
+				prim.x0 = rand()%256;
+				prim.y0 = rand()%256;
+				prim.x1 = rand()%256;
+				prim.y1 = rand()%256;
+				prim.x2 = rand()%256;
+				prim.y2 = rand()%256;
+				uint8_t V = rand()%256;
+				uint32_t wV = (V<<24)|(V<<16)|(V<<8)|(V);
+
+				int32_t minx = max(0, min(prim.x0, min(prim.x1, prim.x2)))/4;
+				int32_t miny = max(0, min(prim.y0, min(prim.y1, prim.y2)))/4;
+				int32_t maxx = min(319, max(prim.x0, max(prim.x1, prim.x2)))/4;
+				int32_t maxy = min(239, max(prim.y0, max(prim.y1, prim.y2)))/4;
+
+				for (int32_t j = miny; j < maxy; ++j)
+				{
+					for (int32_t i = minx; i < maxx; ++i)
+					{
+						// 128bit aligned address for 16 pixels' worth of output
+						// Hardware generates 4x4 pixel masks but the output is
+						// linear in memory so it's going to be 16 pixels, packed side by side
+						// on the same scanline if viewed as raw output.
+						// Here we rewind and start each triangle from offset zero
+						// for debug purposes.
+						uint32_t tileIndex = i+j*80;
+						uint32_t tileAddress = tileIndex*16;
+						uint32_t *rasterout = (uint32_t*)(writepage + tileAddress);
+
+						uint32_t mask0[4], mask1[4], mask2[4];
+						edgeMask(prim.x0, prim.y0, prim.x1, prim.y1, i*4, j*4, mask0);
+						edgeMask(prim.x1, prim.y1, prim.x2, prim.y2, i*4, j*4, mask1);
+						edgeMask(prim.x2, prim.y2, prim.x0, prim.y0, i*4, j*4, mask2);
+
+						uint32_t m0 = mask0[0] & mask1[0] & mask2[0];
+						uint32_t m1 = mask0[1] & mask1[1] & mask2[1];
+						uint32_t m2 = mask0[2] & mask1[2] & mask2[2];
+						uint32_t m3 = mask0[3] & mask1[3] & mask2[3];
+
+						// Imitate byte write mask + 128bit write in hardware
+						// One problem here is that we don't have a true write mask
+						// so we have to resort to read-write
+						rasterout[0] = ((~m0)&rasterout[0]) | (m0&wV);
+						rasterout[1] = ((~m1)&rasterout[1]) | (m1&wV);
+						rasterout[2] = ((~m2)&rasterout[2]) | (m2&wV);
+						rasterout[3] = ((~m3)&rasterout[3]) | (m3&wV);
+					}
+				}
 			}
 
 			// Make sure writes are visible
@@ -164,28 +212,17 @@ int main(int argc, char *argv[])
 				RPUSetPrimitive(&prim);
 				RPUSetColor(V);
 
-				int16_t minx = max(0, min(prim.x0, min(prim.x1, prim.x2)))/4;
-				int16_t miny = max(0, min(prim.y0, min(prim.y1, prim.y2)))/4;
-				int16_t maxx = min(319, max(prim.x0, max(prim.x1, prim.x2)))/4;
-				int16_t maxy = min(239, max(prim.y0, max(prim.y1, prim.y2)))/4;
-
-				// CPU write - Mark one pixel out of 16 as debug aid
-				/*for (int16_t j = miny; j < maxy; ++j)
-				{
-					for (int16_t i = minx; i < maxx; ++i)
-					{
-						uint32_t tileIndex = i+j*80;
-						uint32_t tileAddress = tileIndex*16;
-						writepage[tileAddress] = V;
-					}
-				}*/
+				int32_t minx = max(0, min(prim.x0, min(prim.x1, prim.x2)))/4;
+				int32_t miny = max(0, min(prim.y0, min(prim.y1, prim.y2)))/4;
+				int32_t maxx = min(319, max(prim.x0, max(prim.x1, prim.x2)))/4;
+				int32_t maxy = min(239, max(prim.y0, max(prim.y1, prim.y2)))/4;
 
 				// RPU write - 128bit writes per tile from RPU side
 				// This version does the sweep in software, to be
 				// ported to hardware once writes work as expected.
-				for (int16_t j = miny; j < maxy; ++j)
+				for (int32_t j = miny; j < maxy; ++j)
 				{
-					for (int16_t i = minx; i < maxx; ++i)
+					for (int32_t i = minx; i < maxx; ++i)
 					{
 						// 128bit aligned address for 16 pixels' worth of output
 						// Hardware generates 4x4 pixel masks but the output is
@@ -196,7 +233,7 @@ int main(int argc, char *argv[])
 						uint32_t tileIndex = i+j*80;
 						uint32_t tileAddress = tileIndex*16;
 						RPUSetTileAddress((uint32_t)writepage + tileAddress);
-						RPURasterizeTile(i*4, j*4);
+						RPURasterizeTile((uint16_t)(i*4), (uint16_t)(j*4));
 					}
 				}
 			}

@@ -36,18 +36,19 @@ typedef enum logic [2:0] {
     ENDRASTER } rasterstatetype;
 rasterstatetype rstate = RINIT;
 
-logic signed [15:0] tilex;
-logic signed [15:0] tiley;
-logic signed [15:0] x0;
-logic signed [15:0] y0;
-logic signed [15:0] x1;
-logic signed [15:0] y1;
-logic signed [15:0] dx;
-logic signed [15:0] dy;
-logic signed [15:0] A[0:15];
-logic signed [15:0] B[0:15];
-logic signed [15:0] partial[0:15];
-logic signed [15:0] result[0:15];
+// All internal math is 18 bits, sign extended from incoming 16 bits
+logic signed [17:0] tilex;
+logic signed [17:0] tiley;
+logic signed [17:0] x0;
+logic signed [17:0] y0;
+logic signed [17:0] x1;
+logic signed [17:0] y1;
+logic signed [17:0] dx;
+logic signed [17:0] dy;
+logic signed [17:0] A[0:15];
+logic signed [17:0] B[0:15];
+logic signed [17:0] partial[0:15];
+logic signed [17:0] result[0:15];
 logic bready;
 
 assign ready = bready;
@@ -63,12 +64,13 @@ always @(posedge clk) begin
         end
  
         RWCMD: begin
-            x0 <= v0x;
-            y0 <= v0y;
-            x1 <= v1x;
-            y1 <= v1y;
-            tilex <= tx;
-            tiley <= ty;
+            // Sign extend and store the values
+            x0 <= {v0x[15], v0x[15], v0x};
+            y0 <= {v0y[15], v0y[15], v0y};
+            x1 <= {v1x[15], v1x[15], v1x};
+            y1 <= {v1y[15], v1y[15], v1y};
+            tilex <= {tx[15], tx[15], tx};
+            tiley <= {ty[15], ty[15], ty};
             rstate <= ena ? SETUPRASTER : RWCMD;
         end
         
@@ -93,36 +95,36 @@ always @(posedge clk) begin
             A[1] <= A[0];
             A[2] <= A[0];
             A[3] <= A[0];
-            B[1] <= B[0]+1;
-            B[2] <= B[0]+2;
-            B[3] <= B[0]+3;
+            B[1] <= B[0]+18'd1;
+            B[2] <= B[0]+18'd2;
+            B[3] <= B[0]+18'd3;
 
-            A[4] <= A[0]+1;
-            A[5] <= A[0]+1;
-            A[6] <= A[0]+1;
-            A[7] <= A[0]+1;
+            A[4] <= A[0]+18'd1;
+            A[5] <= A[0]+18'd1;
+            A[6] <= A[0]+18'd1;
+            A[7] <= A[0]+18'd1;
             B[4] <= B[0];
-            B[5] <= B[0]+1;
-            B[6] <= B[0]+2;
-            B[7] <= B[0]+3;
+            B[5] <= B[0]+18'd1;
+            B[6] <= B[0]+18'd2;
+            B[7] <= B[0]+18'd3;
 
-            A[8]  <= A[0]+2;
-            A[9]  <= A[0]+2;
-            A[10] <= A[0]+2;
-            A[11] <= A[0]+2;
+            A[8]  <= A[0]+18'd2;
+            A[9]  <= A[0]+18'd2;
+            A[10] <= A[0]+18'd2;
+            A[11] <= A[0]+18'd2;
             B[8]  <= B[0];
-            B[9]  <= B[0]+1;
-            B[10] <= B[0]+2;
-            B[11] <= B[0]+3;
+            B[9]  <= B[0]+18'd1;
+            B[10] <= B[0]+18'd2;
+            B[11] <= B[0]+18'd3;
 
-            A[12] <= A[0]+3;
-            A[13] <= A[0]+3;
-            A[14] <= A[0]+3;
-            A[15] <= A[0]+3;
+            A[12] <= A[0]+18'd3;
+            A[13] <= A[0]+18'd3;
+            A[14] <= A[0]+18'd3;
+            A[15] <= A[0]+18'd3;
             B[12] <= B[0];
-            B[13] <= B[0]+1;
-            B[14] <= B[0]+2;
-            B[15] <= B[0]+3;
+            B[13] <= B[0]+18'd1;
+            B[14] <= B[0]+18'd2;
+            B[15] <= B[0]+18'd3;
 
             rstate <= GENMASK;
         end
