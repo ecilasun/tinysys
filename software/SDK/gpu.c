@@ -203,6 +203,7 @@ void GPUClearScreen(struct EVideoContext *_context, const uint32_t _colorWord)
     uint32_t W = _context->m_graphicsHeight * _context->m_strideInWords;
     for (uint32_t i=0; i<W; ++i)
         vramBaseAsWord[i] = _colorWord;
+    CFLUSH_D_L1;
 }
 
 uint32_t GPUReadVBlankCounter()

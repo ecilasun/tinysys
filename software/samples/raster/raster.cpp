@@ -19,9 +19,14 @@ struct sVec2
 	int32_t x, y;
 };
 
-int32_t edgeFunction(const sVec2 &a, const sVec2 &b, const sVec2 &c)
+int32_t edgeFunction(const sVec2 &v0, const sVec2 &v1, const sVec2 &p)
 {
-	return (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x);
+	// Same as what our hardware does
+	int32_t A = (p.y - v0.y);
+	int32_t B = (p.x - v0.x);
+	int32_t dx = (v0.x - v1.x);
+	int32_t dy = (v1.y - v0.y);
+	return A*dx + B*dy;
 }
 
 void raster(uint8_t* _fb, const sVec2 &v0, const sVec2 &v1, const sVec2 &v2)
@@ -39,6 +44,24 @@ void raster(uint8_t* _fb, const sVec2 &v0, const sVec2 &v1, const sVec2 &v2)
 
 	//int32_t area = edgeFunction(v0, v1, v2);
 
+	// Evaluate the gradient once outside
+	/*sVec2 topleft = {minx,miny};
+	sVec2 topleftpX = {minx+1,miny};
+	sVec2 topleftpY = {minx,miny+1};
+	int32_t w0 = edgeFunction(v1, v2, topleft);
+	int32_t w1 = edgeFunction(v2, v0, topleft);
+	int32_t w2 = edgeFunction(v0, v1, topleft);
+	int32_t dx12 = edgeFunction(v1, v2, topleftpX) - w0;
+	int32_t dy12 = edgeFunction(v1, v2, topleftpY) - w0;
+	int32_t dx20 = edgeFunction(v2, v0, topleftpX) - w1;
+	int32_t dy20 = edgeFunction(v2, v0, topleftpY) - w1;
+	int32_t dx01 = edgeFunction(v0, v1, topleftpX) - w2;
+	int32_t dy01 = edgeFunction(v0, v1, topleftpY) - w2;
+
+	for each X step, add dx12 to w0 (and respectively w1 and w2)
+	at the end of the line, reset w0 to start value+line*dy12 to
+	*/
+
 	for (int32_t j = miny; j < maxy; ++j)
 	{
 		for (int32_t i = minx; i < maxx; ++i)
@@ -47,6 +70,12 @@ void raster(uint8_t* _fb, const sVec2 &v0, const sVec2 &v1, const sVec2 &v2)
 			int32_t w0 = edgeFunction(v1, v2, p);
 			int32_t w1 = edgeFunction(v2, v0, p);
 			int32_t w2 = edgeFunction(v0, v1, p);
+			// Hardware only checks sign bit, same deal here
+			// Eventually it'll calculate the gradients via
+			// gx=edge(x+1,y)-edge(x,y)
+			// and
+			// gy=edge(x,y+1)-edge(x,y)
+			// once for the top left corner
 			if (w0 >= 0 && w1 >= 0 && w2 >= 0)
 			{
 				/*w0 /= area;
@@ -107,8 +136,8 @@ int main(int argc, char *argv[])
 	else
 	{
 		uint32_t cycle = 0;
-		memset(s_framebufferA, 0x01, 320*240); // Alternate between blue/magenta to detect writes
-		memset(s_framebufferB, 0x05, 320*240);
+		memset(s_framebufferA, 0x07, 320*240); // Gray
+		memset(s_framebufferB, 0x07, 320*240);
 		CFLUSH_D_L1;
 
 		while (1)
@@ -118,6 +147,8 @@ int main(int argc, char *argv[])
 
 			GPUSetWriteAddress(&vx, (uint32_t)writepage);
 			GPUSetScanoutAddress(&vx, (uint32_t)readpage);
+
+			GPUClearScreen(&vx, 0x07070707); // Gray for visibility
 
 			for (int i=0; i<32; ++i)
 			{
@@ -139,7 +170,7 @@ int main(int argc, char *argv[])
 				int16_t maxy = min(239, max(prim.y0, max(prim.y1, prim.y2)))/4;
 
 				// CPU write - Mark one pixel out of 16 as debug aid
-				for (int16_t j = miny; j < maxy; ++j)
+				/*for (int16_t j = miny; j < maxy; ++j)
 				{
 					for (int16_t i = minx; i < maxx; ++i)
 					{
@@ -147,7 +178,7 @@ int main(int argc, char *argv[])
 						uint32_t tileAddress = tileIndex*16;
 						writepage[tileAddress] = V;
 					}
-				}
+				}*/
 
 				// RPU write - 128bit writes per tile from RPU side
 				// This version does the sweep in software, to be

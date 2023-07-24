@@ -17,9 +17,21 @@ module edgemaskgen(
     // Tile mask
     output logic [15:0] rmask);
 
+/*
+// Hardware based on the following function, replicated 16 times for a 4x4 tile
+int32_t edgeFunction(const sVec2 &v0, const sVec2 &v1, const sVec2 &p)
+{
+	// Same as what our hardware does
+	int32_t A = (p.y - v0.y); // 16 copies, 1 for each pixel
+	int32_t B = (p.x - v0.x); // 16 copies, 1 for each pixel
+	int32_t dx = (v0.x - v1.x); // One-time
+	int32_t dy = (v1.y - v0.y); // One-time
+	return A*dx + B*dy;
+}*/
+
 typedef enum logic [2:0] {
     RINIT, RWCMD,
-    STARTRASTER,
+    SETUPRASTER, STARTRASTER,
     GENMASK, GENTWO,
     ENDRASTER } rasterstatetype;
 rasterstatetype rstate = RINIT;
@@ -57,48 +69,60 @@ always @(posedge clk) begin
             y1 <= v1y;
             tilex <= tx;
             tiley <= ty;
-            rstate <= ena ? STARTRASTER : RWCMD;
+            rstate <= ena ? SETUPRASTER : RWCMD;
         end
- 
-        STARTRASTER: begin
+        
+        SETUPRASTER: begin
+            // A = ty-v0.y
+            // B = tx-v0.x
+            // dx = v0.x-v1.x
+            // dy = v1.y-v0.y
+            // det = A*dx + B*dy
             dx <= x0-x1;
             dy <= y1-y0;
 
-            A[0] <= tiley+0-x0;
-            B[0] <= tilex+0-x0;
-            A[1] <= tiley+0-x0;
-            B[1] <= tilex+1-x0;
-            A[2] <= tiley+0-x0;
-            B[2] <= tilex+2-x0;
-            A[3] <= tiley+0-x0;
-            B[3] <= tilex+3-x0;
+            // All other A/Bs are +1..+3 of the same value
+            A[0] <= tiley-y0;
+            B[0] <= tilex-x0;
 
-            A[4] <= tiley+1-x0;
-            B[4] <= tilex+0-x0;
-            A[5] <= tiley+1-x0;
-            B[5] <= tilex+1-x0;
-            A[6] <= tiley+1-x0;
-            B[6] <= tilex+2-x0;
-            A[7] <= tiley+1-x0;
-            B[7] <= tilex+3-x0;
+            rstate <= STARTRASTER;
+        end
+ 
+        STARTRASTER: begin
+            // Shifted versions of A[0] and B[0] for each tile pixel
+            A[1] <= A[0];
+            A[2] <= A[0];
+            A[3] <= A[0];
+            B[1] <= B[0]+1;
+            B[2] <= B[0]+2;
+            B[3] <= B[0]+3;
 
-            A[8] <= tiley+2-x0;
-            B[8] <= tilex+0-x0;
-            A[9] <= tiley+2-x0;
-            B[9] <= tilex+1-x0;
-            A[10] <= tiley+2-x0;
-            B[10] <= tilex+2-x0;
-            A[11] <= tiley+2-x0;
-            B[11] <= tilex+3-x0;
+            A[4] <= A[0]+1;
+            A[5] <= A[0]+1;
+            A[6] <= A[0]+1;
+            A[7] <= A[0]+1;
+            B[4] <= B[0];
+            B[5] <= B[0]+1;
+            B[6] <= B[0]+2;
+            B[7] <= B[0]+3;
 
-            A[12] <= tiley+3-x0;
-            B[12] <= tilex+0-x0;
-            A[13] <= tiley+3-x0;
-            B[13] <= tilex+1-x0;
-            A[14] <= tiley+3-x0;
-            B[14] <= tilex+2-x0;
-            A[15] <= tiley+3-x0;
-            B[15] <= tilex+3-x0;
+            A[8]  <= A[0]+2;
+            A[9]  <= A[0]+2;
+            A[10] <= A[0]+2;
+            A[11] <= A[0]+2;
+            B[8]  <= B[0];
+            B[9]  <= B[0]+1;
+            B[10] <= B[0]+2;
+            B[11] <= B[0]+3;
+
+            A[12] <= A[0]+3;
+            A[13] <= A[0]+3;
+            A[14] <= A[0]+3;
+            A[15] <= A[0]+3;
+            B[12] <= B[0];
+            B[13] <= B[0]+1;
+            B[14] <= B[0]+2;
+            B[15] <= B[0]+3;
 
             rstate <= GENMASK;
         end
@@ -122,7 +146,7 @@ always @(posedge clk) begin
             partial[15] <= B[15]*dy;
             rstate <= GENTWO;
         end
-        
+
         GENTWO: begin
             result[0] <= A[0]*dx + partial[0];
             result[1] <= A[1]*dx + partial[1];
@@ -146,10 +170,10 @@ always @(posedge clk) begin
         ENDRASTER: begin
             // Gather sign bits into edge mask
             rmask <= {
-                result[15]<0?1'b1:1'b0, result[14]<0?1'b1:1'b0, result[13]<0?1'b1:1'b0, result[12]<0?1'b1:1'b0,
-                result[11]<0?1'b1:1'b0, result[10]<0?1'b1:1'b0, result[9]<0?1'b1:1'b0,  result[8]<0?1'b1:1'b0,
-                result[7]<0?1'b1:1'b0,  result[6]<0?1'b1:1'b0,  result[5]<0?1'b1:1'b0,  result[4]<0?1'b1:1'b0,
-                result[3]<0?1'b1:1'b0,  result[2]<0?1'b1:1'b0,  result[1]<0?1'b1:1'b0,  result[0]<0?1'b1:1'b0 };
+                result[15]<0?1'b0:1'b1, result[14]<0?1'b0:1'b1, result[13]<0?1'b0:1'b1, result[12]<0?1'b0:1'b1,
+                result[11]<0?1'b0:1'b1, result[10]<0?1'b0:1'b1, result[9]<0?1'b0:1'b1,  result[8]<0?1'b0:1'b1,
+                result[7]<0?1'b0:1'b1,  result[6]<0?1'b0:1'b1,  result[5]<0?1'b0:1'b1,  result[4]<0?1'b0:1'b1,
+                result[3]<0?1'b0:1'b1,  result[2]<0?1'b0:1'b1,  result[1]<0?1'b0:1'b1,  result[0]<0?1'b0:1'b1 };
             bready <= 1'b1;
             rstate <= RWCMD;
         end
