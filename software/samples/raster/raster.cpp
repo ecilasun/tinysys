@@ -9,7 +9,6 @@
 
 static uint8_t *s_framebufferA;
 static uint8_t *s_framebufferB;
-static uint8_t *s_rasterTemp;
 
 static inline int32_t max(int32_t x, int32_t y) { return x>y?x:y; }
 static inline int32_t min(int32_t x, int32_t y) { return x<y?x:y; }
@@ -68,7 +67,6 @@ int main(int argc, char *argv[])
 
 	s_framebufferB = GPUAllocateBuffer(320*240);
 	s_framebufferA = GPUAllocateBuffer(320*240);
-	s_rasterTemp = GPUAllocateBuffer(64);
 
 	struct EVideoContext vx;
     vx.m_vmode = EVM_320_Wide;
@@ -118,7 +116,6 @@ int main(int argc, char *argv[])
 
 			GPUClearScreen(&vx, 0x00000000);
 
-			RPUSetoutAddress((uint32_t)s_rasterTemp);
 			for (int i=0; i<32; ++i)
 			{
 				SPrimitive prim;
@@ -130,22 +127,27 @@ int main(int argc, char *argv[])
 				prim.y2 = rand()%256;
 				
 				RPUSetPrimitive(&prim);
+				RPUSetColor(rand()%255);
 
 				int16_t minx = max(0, min(prim.x0, min(prim.x1, prim.x2)))/4;
 				int16_t miny = max(0, min(prim.y0, min(prim.y1, prim.y2)))/4;
 				int16_t maxx = min(319, max(prim.x0, max(prim.x1, prim.x2)))/4;
 				int16_t maxy = min(239, max(prim.y0, max(prim.y1, prim.y2)))/4;
 
-				uint8_t V = rand()%255;
+				uint32_t offset = 0;
 				for (int16_t j = miny; j < maxy; ++j)
 				{
 					for (int16_t i = minx; i < maxx; ++i)
 					{
-						if (*s_rasterTemp)
-						{
-							RPURasterizeTile(i*4, j*4, i*4+3, j*4+3);
-							writepage[i*4+j*4*320] = V;
-						}
+						// 128bit aligned address for 16 pixels' worth of output
+						// Hardware generates 4x4 pixel masks but the output is
+						// liner in memory so it's going to be 16 pixels, packed side by side
+						// on the same scanline if viewed as raw output.
+						// Here we rewind and start each triangle from offset zero
+						// for debug purposes.
+						RPUSetTileAddress((uint32_t)writepage + 4*offset);
+						RPURasterizeTile(i*4, j*4);
+						offset++;
 					}
 				}
 			}

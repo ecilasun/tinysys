@@ -132,7 +132,7 @@ end
 // Read router
 // ------------------------------------------------------------------------------------
 
-logic [9:0] validraddr = 10'd0;
+logic [10:0] validraddr = 11'd0;
 
 always_comb begin
 	unique case(axi_s.araddr[30:12])

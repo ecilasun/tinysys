@@ -211,7 +211,7 @@ uint32_t GPUReadVBlankCounter()
     return *GPUIO;
 }
 
-void RPUSetoutAddress(const uint32_t _rpuWriteAddress64ByteAligned)
+void RPUSetTileAddress(const uint32_t _rpuWriteAddress64ByteAligned)
 {
     *RPUIO = RASTERCMD_OUTADDRS;
     *RPUIO = _rpuWriteAddress64ByteAligned;
@@ -225,9 +225,14 @@ void RPUSetPrimitive(struct SPrimitive* _primitive)
     *RPUIO = (_primitive->y2<<16) | _primitive->x2;
 }
 
-void RPURasterizeTile(const uint16_t tileMinX, const uint16_t tileMinY, const uint16_t tileMaxX, const uint16_t tileMaxY)
+void RPURasterizeTile(const uint16_t _tileX, const uint16_t _tileY)
 {
     *RPUIO = RASTERCMD_RASTERTILE;
-    *RPUIO = (tileMinY<<16) | tileMinX;
-    *RPUIO = (tileMaxY<<16) | tileMaxX;
+    *RPUIO = (_tileY<<16) | _tileX;
+}
+
+void RPUSetColor(const uint8_t _colorIndex)
+{
+    *RPUIO = RASTERCMD_SETCOLOR;
+    *RPUIO = (_colorIndex<<24)|(_colorIndex<<16)|(_colorIndex<<8)|_colorIndex;
 }
