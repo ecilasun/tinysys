@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 
 			GPUClearScreen(&vx, 0x07070707); // Gray for visibility
 
-			for (int i=0; i<128; ++i)
+			for (int i=0; i<4096; ++i)
 			{
 				SPrimitive prim;
 				prim.x0 = rand()%320;
@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
 
 			GPUClearScreen(&vx, 0x07070707); // Gray for visibility
 
-			for (int i=0; i<128; ++i)
+			for (int i=0; i<4096; ++i)
 			{
 				SPrimitive prim;
 				prim.x0 = rand()%320;

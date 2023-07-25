@@ -86,7 +86,7 @@ void MAX3421WriteBytes(uint8_t command, uint8_t length, uint8_t *buffer)
 
 void MAX3421CtlReset()
 {
-	// Reset MAX3420E by setting res high then low
+	// Reset MAX3421E by setting res high then low
 	MAX3421WriteByte(rUSBCTL, bmCHIPRES);
 	MAX3421WriteByte(rUSBCTL, 0);
 
@@ -114,7 +114,7 @@ void USBHostInit(uint32_t enableInterrupts)
 	MAX3421CtlReset();
 	//MAX3421WriteByte(rGPIO, 0x0);
 
-	MAX3421WriteByte(rMODE, bmDPPULLDN | bmDMPULLDN | bmHOST);
+	MAX3421WriteByte(rMODE, bmDPPULLDN | bmDMPULLDN | bmHOST);// | bmLOWSPEED | bmSOFKAENAB);
 	MAX3421WriteByte(rHIEN, bmCONDETIE | bmFRAMEIE);
 	MAX3421WriteByte(rHCTL, bmSAMPLEBUS);
 
