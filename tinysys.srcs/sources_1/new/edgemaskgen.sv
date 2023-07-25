@@ -32,23 +32,23 @@ int32_t edgeFunction(const sVec2 &v0, const sVec2 &v1, const sVec2 &p)
 typedef enum logic [2:0] {
     RINIT, RWCMD,
     SETUPRASTER, STARTRASTER,
-    GENMASK, GENTWO,
+    GENMASKB, GENMASKA,
     ENDRASTER } rasterstatetype;
 rasterstatetype rstate = RINIT;
 
 // All internal math is 18 bits, sign extended from incoming 16 bits
-logic signed [17:0] tilex;
-logic signed [17:0] tiley;
-logic signed [17:0] x0;
-logic signed [17:0] y0;
-logic signed [17:0] x1;
-logic signed [17:0] y1;
-logic signed [17:0] dx;
-logic signed [17:0] dy;
-logic signed [17:0] A[0:15];
-logic signed [17:0] B[0:15];
-logic signed [17:0] partial[0:15];
-logic signed [17:0] result[0:15];
+logic signed [15:0] tilex;
+logic signed [15:0] tiley;
+logic signed [15:0] x0;
+logic signed [15:0] y0;
+logic signed [15:0] x1;
+logic signed [15:0] y1;
+logic signed [15:0] dx;
+logic signed [15:0] dy;
+logic signed [15:0] A[0:15];
+logic signed [15:0] B[0:15];
+logic signed [15:0] partial[0:15];
+logic signed [15:0] result[0:15];
 logic bready;
 
 assign ready = bready;
@@ -60,30 +60,26 @@ always @(posedge clk) begin
     unique case(rstate)
         RINIT: begin
             // Initial setup (detached from reset)
+            rmask <= 16'd0;
             rstate <= RWCMD;
         end
  
         RWCMD: begin
-            // Sign extend and store the values
-            x0 <= {v0x[15], v0x[15], v0x};
-            y0 <= {v0y[15], v0y[15], v0y};
-            x1 <= {v1x[15], v1x[15], v1x};
-            y1 <= {v1y[15], v1y[15], v1y};
-            tilex <= {tx[15], tx[15], tx};
-            tiley <= {ty[15], ty[15], ty};
+            x0 <= v0x;
+            y0 <= v0y;
+            x1 <= v1x;
+            y1 <= v1y;
+
+            tilex <= tx;
+            tiley <= ty;
+
             rstate <= ena ? SETUPRASTER : RWCMD;
         end
         
         SETUPRASTER: begin
-            // A = ty-v0.y
-            // B = tx-v0.x
-            // dx = v0.x-v1.x
-            // dy = v1.y-v0.y
-            // det = A*dx + B*dy
             dx <= x0-x1;
             dy <= y1-y0;
 
-            // All other A/Bs are +1..+3 of the same value
             A[0] <= tiley-y0;
             B[0] <= tilex-x0;
 
@@ -91,45 +87,44 @@ always @(posedge clk) begin
         end
  
         STARTRASTER: begin
-            // Shifted versions of A[0] and B[0] for each tile pixel
             A[1] <= A[0];
+            B[1] <= B[0]+1;
             A[2] <= A[0];
+            B[2] <= B[0]+2;
             A[3] <= A[0];
-            B[1] <= B[0]+18'd1;
-            B[2] <= B[0]+18'd2;
-            B[3] <= B[0]+18'd3;
+            B[3] <= B[0]+3;
 
-            A[4] <= A[0]+18'd1;
-            A[5] <= A[0]+18'd1;
-            A[6] <= A[0]+18'd1;
-            A[7] <= A[0]+18'd1;
+            A[4] <= A[0]+1;
             B[4] <= B[0];
-            B[5] <= B[0]+18'd1;
-            B[6] <= B[0]+18'd2;
-            B[7] <= B[0]+18'd3;
+            A[5] <= A[0]+1;
+            B[5] <= B[0]+1;
+            A[6] <= A[0]+1;
+            B[6] <= B[0]+2;
+            A[7] <= A[0]+1;
+            B[7] <= B[0]+3;
 
-            A[8]  <= A[0]+18'd2;
-            A[9]  <= A[0]+18'd2;
-            A[10] <= A[0]+18'd2;
-            A[11] <= A[0]+18'd2;
-            B[8]  <= B[0];
-            B[9]  <= B[0]+18'd1;
-            B[10] <= B[0]+18'd2;
-            B[11] <= B[0]+18'd3;
+            A[8] <= A[0]+2;
+            B[8] <= B[0];
+            A[9] <= A[0]+2;
+            B[9] <= B[0]+1;
+            A[10] <= A[0]+2;
+            B[10] <= B[0]+2;
+            A[11] <= A[0]+2;
+            B[11] <= B[0]+3;
 
-            A[12] <= A[0]+18'd3;
-            A[13] <= A[0]+18'd3;
-            A[14] <= A[0]+18'd3;
-            A[15] <= A[0]+18'd3;
+            A[12] <= A[0]+3;
             B[12] <= B[0];
-            B[13] <= B[0]+18'd1;
-            B[14] <= B[0]+18'd2;
-            B[15] <= B[0]+18'd3;
+            A[13] <= A[0]+3;
+            B[13] <= B[0]+1;
+            A[14] <= A[0]+3;
+            B[14] <= B[0]+2;
+            A[15] <= A[0]+3;
+            B[15] <= B[0]+3;
 
-            rstate <= GENMASK;
+            rstate <= GENMASKB;
         end
         
-        GENMASK: begin
+        GENMASKB: begin
             partial[0] <= B[0]*dy;
             partial[1] <= B[1]*dy;
             partial[2] <= B[2]*dy;
@@ -146,10 +141,10 @@ always @(posedge clk) begin
             partial[13] <= B[13]*dy;
             partial[14] <= B[14]*dy;
             partial[15] <= B[15]*dy;
-            rstate <= GENTWO;
+            rstate <= GENMASKA;
         end
 
-        GENTWO: begin
+        GENMASKA: begin
             result[0] <= A[0]*dx + partial[0];
             result[1] <= A[1]*dx + partial[1];
             result[2] <= A[2]*dx + partial[2];
@@ -182,7 +177,7 @@ always @(posedge clk) begin
     endcase
 
     if (~rstn) begin
-        rmask <= 16'd0;
+        rstate <= RINIT;
     end
 end
 

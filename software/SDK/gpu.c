@@ -220,10 +220,12 @@ void RPUSetTileAddress(const uint32_t _rpuWriteAddress16ByteAligned)
 
 void RPUSetPrimitive(struct SPrimitive* _primitive)
 {
-    *RPUIO = RASTERCMD_SETPRIM;
-    *RPUIO = (_primitive->y0<<16) | _primitive->x0;
-    *RPUIO = (_primitive->y1<<16) | _primitive->x1;
+    *RPUIO = RASTERCMD_PUSHVERTEX;
     *RPUIO = (_primitive->y2<<16) | _primitive->x2;
+    *RPUIO = RASTERCMD_PUSHVERTEX;
+    *RPUIO = (_primitive->y1<<16) | _primitive->x1;
+    *RPUIO = RASTERCMD_PUSHVERTEX;
+    *RPUIO = (_primitive->y0<<16) | _primitive->x0;
 }
 
 void RPURasterizeTile(const uint16_t _tileX, const uint16_t _tileY)

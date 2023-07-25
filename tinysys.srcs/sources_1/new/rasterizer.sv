@@ -27,16 +27,11 @@ assign m_axi.awsize = SIZE_16_BYTE; // 128bit wide writes
 assign m_axi.awburst = BURST_FIXED;
 
 // Tile pixel coordinate of upper left corner
-logic signed [15:0] tileX = 0;
-logic signed [15:0] tileY = 0;
+logic [15:0] tileX = 0;
+logic [15:0] tileY = 0;
 
 // Current triangle vertices
-logic signed [15:0] x0 = 0;
-logic signed [15:0] y0 = 0;
-logic signed [15:0] x1 = 0;
-logic signed [15:0] y1 = 0;
-logic signed [15:0] x2 = 0;
-logic signed [15:0] y2 = 0;
+logic [95:0] vertexdata;
 
 logic rena = 1'b0;
 wire [15:0] emask01;
@@ -47,21 +42,21 @@ wire eready01, eready12, eready20;
 edgemaskgen edgeTest01(
     .clk(aclk),
     .rstn(aresetn),
-    .tx(tileX), .ty(tileY), .v0x(x0), .v0y(y0), .v1x(x1), .v1y(y1),
+    .tx(tileX), .ty(tileY), .v1x(vertexdata[15:0]), .v1y(vertexdata[31:16]), .v0x(vertexdata[47:32]), .v0y(vertexdata[63:48]),
     .ena(rena), .ready(eready01),
     .rmask(emask01));
 
 edgemaskgen edgeTest12(
     .clk(aclk),
     .rstn(aresetn),
-    .tx(tileX), .ty(tileY), .v0x(x1), .v0y(y1), .v1x(x2), .v1y(y2),
+    .tx(tileX), .ty(tileY), .v1x(vertexdata[47:32]), .v1y(vertexdata[63:48]), .v0x(vertexdata[79:64]), .v0y(vertexdata[95:80]),
     .ena(rena), .ready(eready12),
     .rmask(emask12));
 
 edgemaskgen edgeTest20(
     .clk(aclk),
     .rstn(aresetn),
-    .tx(tileX), .ty(tileY), .v0x(x2), .v0y(y2), .v1x(x0), .v1y(y0),
+    .tx(tileX), .ty(tileY), .v1x(vertexdata[79:64]), .v1y(vertexdata[95:80]), .v0x(vertexdata[15:0]), .v0y(vertexdata[31:16]),
     .ena(rena), .ready(eready20),
     .rmask(emask20));
 
@@ -80,7 +75,7 @@ typedef enum logic [4:0] {
 	WCMD, DISPATCH,
 	SETRASTEROUT,
 	SETRASTERCOLOR,
-	SETPRIMITIVE, SETVERTEX1, SETVERTEX2,
+	PUSHVERTEX,
 	RASTERIZETILE, WRASTER, TILERASTERDONE, TILERASTERWBACK, TILERASTERWRITEWREADY, TILERASTEREND,
 	FINALIZE } rastercmdmodetype;
 rastercmdmodetype cmdmode = INIT;
@@ -121,7 +116,7 @@ always_ff @(posedge aclk) begin
 		DISPATCH: begin
 			case (rastercmd)
 				32'h00000000:	cmdmode <= SETRASTEROUT;	// Set output address for the raster mask result
-				32'h00000001:	cmdmode <= SETPRIMITIVE;	// 3 sets of 16 bit signed x-y pairs to follow
+				32'h00000001:	cmdmode <= PUSHVERTEX;		// 16 bit signed x-y pair to follow
 				32'h00000002:	cmdmode <= RASTERIZETILE;	// 2 sets of 16 bit tile min/max corners to follow. Tile mask written to memory on next clock.
 				32'h00000003:   cmdmode <= SETRASTERCOLOR;  // Set color index / 16bpp color for rasterizer
 				default:		cmdmode <= FINALIZE;		// Invalid command, wait one clock and try next
@@ -137,27 +132,9 @@ always_ff @(posedge aclk) begin
 			end
 		end
 
-		SETPRIMITIVE: begin
+		PUSHVERTEX: begin
 			if (rasterfifovalid && ~rasterfifoempty) begin
-				{y0,x0} <= rasterfifodout;
-				// Advance FIFO
-				cmdre <= 1'b1;
-				cmdmode <= SETVERTEX1;
-			end
-		end
-
-		SETVERTEX1: begin
-			if (rasterfifovalid && ~rasterfifoempty) begin
-				{y1,x1} <= rasterfifodout;
-				// Advance FIFO
-				cmdre <= 1'b1;
-				cmdmode <= SETVERTEX2;
-			end
-		end
-
-		SETVERTEX2: begin
-			if (rasterfifovalid && ~rasterfifoempty) begin
-				{y2,x2} <= rasterfifodout;
+				vertexdata <= {vertexdata[79:0], rasterfifodout};
 				// Advance FIFO
 				cmdre <= 1'b1;
 				cmdmode <= FINALIZE;

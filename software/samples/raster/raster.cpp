@@ -35,55 +35,72 @@ void edgeMask(int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t tx, int32_
 	int32_t B0 = (tx - x0);
 
 	int32_t A1 = A0;
-	int32_t A2 = A0;
-	int32_t A3 = A0;
 	int32_t B1 = B0+1;
+	int32_t A2 = A0;
 	int32_t B2 = B0+2;
+	int32_t A3 = A0;
 	int32_t B3 = B0+3;
 
 	int32_t A4 = A0+1;
-	int32_t A5 = A0+1;
-	int32_t A6 = A0+1;
-	int32_t A7 = A0+1;
 	int32_t B4 = B0;
+	int32_t A5 = A0+1;
 	int32_t B5 = B0+1;
+	int32_t A6 = A0+1;
 	int32_t B6 = B0+2;
+	int32_t A7 = A0+1;
 	int32_t B7 = B0+3;
 
 	int32_t A8  = A0+2;
-	int32_t A9  = A0+2;
-	int32_t A10 = A0+2;
-	int32_t A11 = A0+2;
 	int32_t B8  = B0;
+	int32_t A9  = A0+2;
 	int32_t B9  = B0+1;
+	int32_t A10 = A0+2;
 	int32_t B10 = B0+2;
+	int32_t A11 = A0+2;
 	int32_t B11 = B0+3;
 
 	int32_t A12 = A0+3;
-	int32_t A13 = A0+3;
-	int32_t A14 = A0+3;
-	int32_t A15 = A0+3;
 	int32_t B12 = B0;
+	int32_t A13 = A0+3;
 	int32_t B13 = B0+1;
+	int32_t A14 = A0+3;
 	int32_t B14 = B0+2;
+	int32_t A15 = A0+3;
 	int32_t B15 = B0+3;
 
-	int32_t R0 = A0*dx + B0*dy;
-	int32_t R1 = A1*dx + B1*dy;
-	int32_t R2 = A2*dx + B2*dy;
-	int32_t R3 = A3*dx + B3*dy;
-	int32_t R4 = A4*dx + B4*dy;
-	int32_t R5 = A5*dx + B5*dy;
-	int32_t R6 = A6*dx + B6*dy;
-	int32_t R7 = A7*dx + B7*dy;
-	int32_t R8 = A8*dx + B8*dy;
-	int32_t R9 = A9*dx + B9*dy;
-	int32_t R10 = A10*dx + B10*dy;
-	int32_t R11 = A11*dx + B11*dy;
-	int32_t R12 = A12*dx + B12*dy;
-	int32_t R13 = A13*dx + B13*dy;
-	int32_t R14 = A14*dx + B14*dy;
-	int32_t R15 = A15*dx + B15*dy;
+	int32_t R0  = B0*dy;
+	int32_t R1  = B1*dy;
+	int32_t R2  = B2*dy;
+	int32_t R3  = B3*dy;
+	int32_t R4  = B4*dy;
+	int32_t R5  = B5*dy;
+	int32_t R6  = B6*dy;
+	int32_t R7  = B7*dy;
+	int32_t R8  = B8*dy;
+	int32_t R9  = B9*dy;
+	int32_t R10 = B10*dy;
+	int32_t R11 = B11*dy;
+	int32_t R12 = B12*dy;
+	int32_t R13 = B13*dy;
+	int32_t R14 = B14*dy;
+	int32_t R15 = B15*dy;
+
+	R0  += A0*dx;
+	R1  += A1*dx;
+	R2  += A2*dx;
+	R3  += A3*dx;
+	R4  += A4*dx;
+	R5  += A5*dx;
+	R6  += A6*dx;
+	R7  += A7*dx;
+	R8  += A8*dx;
+	R9  += A9*dx;
+	R10 += A10*dx;
+	R11 += A11*dx;
+	R12 += A12*dx;
+	R13 += A13*dx;
+	R14 += A14*dx;
+	R15 += A15*dx;
 
 	// Imitate byte write mask + 128bit write in hardware
 	rmask[0] = (R15<0?0:0xFF000000) | (R14<0?0:0x00FF0000) | (R13<0?0:0x0000FF00) | (R12<0?0:0x000000FF);
@@ -123,7 +140,7 @@ int main(int argc, char *argv[])
 
 			GPUClearScreen(&vx, 0x07070707); // Gray for visibility
 
-			for (int i=0; i<32; ++i)
+			for (int i=0; i<128; ++i)
 			{
 				SPrimitive prim;
 				prim.x0 = rand()%256;
@@ -155,9 +172,9 @@ int main(int argc, char *argv[])
 						uint32_t *rasterout = (uint32_t*)(writepage + tileAddress);
 
 						uint32_t mask0[4], mask1[4], mask2[4];
-						edgeMask(prim.x0, prim.y0, prim.x1, prim.y1, i*4, j*4, mask0);
-						edgeMask(prim.x1, prim.y1, prim.x2, prim.y2, i*4, j*4, mask1);
-						edgeMask(prim.x2, prim.y2, prim.x0, prim.y0, i*4, j*4, mask2);
+						edgeMask(prim.x1, prim.y1, prim.x0, prim.y0, i*4, j*4, mask0);
+						edgeMask(prim.x2, prim.y2, prim.x1, prim.y1, i*4, j*4, mask1);
+						edgeMask(prim.x0, prim.y0, prim.x2, prim.y2, i*4, j*4, mask2);
 
 						uint32_t m0 = mask0[0] & mask1[0] & mask2[0];
 						uint32_t m1 = mask0[1] & mask1[1] & mask2[1];
@@ -198,7 +215,7 @@ int main(int argc, char *argv[])
 
 			GPUClearScreen(&vx, 0x07070707); // Gray for visibility
 
-			for (int i=0; i<32; ++i)
+			for (int i=0; i<128; ++i)
 			{
 				SPrimitive prim;
 				prim.x0 = rand()%256;
