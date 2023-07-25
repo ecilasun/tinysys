@@ -218,14 +218,14 @@ void RPUSetTileAddress(const uint32_t _rpuWriteAddress16ByteAligned)
     *RPUIO = _rpuWriteAddress16ByteAligned;
 }
 
-void RPUSetPrimitive(struct SPrimitive* _primitive)
+void RPUPushPrimitive(struct SPrimitive* _primitive)
 {
-    *RPUIO = RASTERCMD_PUSHVERTEX;
-    *RPUIO = (_primitive->y2<<16) | _primitive->x2;
-    *RPUIO = RASTERCMD_PUSHVERTEX;
-    *RPUIO = (_primitive->y1<<16) | _primitive->x1;
-    *RPUIO = RASTERCMD_PUSHVERTEX;
+    *RPUIO = RASTERCMD_PUSHVERTEX0;
     *RPUIO = (_primitive->y0<<16) | _primitive->x0;
+    *RPUIO = RASTERCMD_PUSHVERTEX1;
+    *RPUIO = (_primitive->y1<<16) | _primitive->x1;
+    *RPUIO = RASTERCMD_PUSHVERTEX2;
+    *RPUIO = (_primitive->y2<<16) | _primitive->x2;
 }
 
 void RPURasterizeTile(const uint16_t _tileX, const uint16_t _tileY)
@@ -237,5 +237,5 @@ void RPURasterizeTile(const uint16_t _tileX, const uint16_t _tileY)
 void RPUSetColor(const uint8_t _colorIndex)
 {
     *RPUIO = RASTERCMD_SETCOLOR;
-    *RPUIO = (_colorIndex<<24)|(_colorIndex<<16)|(_colorIndex<<8)|_colorIndex;
+    *RPUIO = (_colorIndex<<24) | (_colorIndex<<16) | (_colorIndex<<8) | _colorIndex;
 }

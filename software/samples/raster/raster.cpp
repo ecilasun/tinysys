@@ -143,19 +143,19 @@ int main(int argc, char *argv[])
 			for (int i=0; i<128; ++i)
 			{
 				SPrimitive prim;
-				prim.x0 = rand()%256;
-				prim.y0 = rand()%256;
-				prim.x1 = rand()%256;
-				prim.y1 = rand()%256;
-				prim.x2 = rand()%256;
-				prim.y2 = rand()%256;
+				prim.x0 = rand()%320;
+				prim.y0 = rand()%240;
+				prim.x1 = rand()%320;
+				prim.y1 = rand()%240;
+				prim.x2 = rand()%320;
+				prim.y2 = rand()%240;
 				uint8_t V = rand()%256;
 				uint32_t wV = (V<<24)|(V<<16)|(V<<8)|(V);
 
-				int32_t minx = max(0, min(prim.x0, min(prim.x1, prim.x2)))/4;
-				int32_t miny = max(0, min(prim.y0, min(prim.y1, prim.y2)))/4;
-				int32_t maxx = min(319, max(prim.x0, max(prim.x1, prim.x2)))/4;
-				int32_t maxy = min(239, max(prim.y0, max(prim.y1, prim.y2)))/4;
+				int32_t minx = min(prim.x0, min(prim.x1, prim.x2))/4;
+				int32_t miny = min(prim.y0, min(prim.y1, prim.y2))/4;
+				int32_t maxx = max(prim.x0, max(prim.x1, prim.x2))/4;
+				int32_t maxy = max(prim.y0, max(prim.y1, prim.y2))/4;
 
 				for (int32_t j = miny; j < maxy; ++j)
 				{
@@ -184,15 +184,18 @@ int main(int argc, char *argv[])
 						// Imitate byte write mask + 128bit write in hardware
 						// One problem here is that we don't have a true write mask
 						// so we have to resort to read-write
-						rasterout[0] = ((~m0)&rasterout[0]) | (m0&wV);
-						rasterout[1] = ((~m1)&rasterout[1]) | (m1&wV);
-						rasterout[2] = ((~m2)&rasterout[2]) | (m2&wV);
-						rasterout[3] = ((~m3)&rasterout[3]) | (m3&wV);
+						if (m0|m1|m2|m3)
+						{
+							rasterout[0] = ((~m0)&rasterout[0]) | (m0&wV);
+							rasterout[1] = ((~m1)&rasterout[1]) | (m1&wV);
+							rasterout[2] = ((~m2)&rasterout[2]) | (m2&wV);
+							rasterout[3] = ((~m3)&rasterout[3]) | (m3&wV);
+						}
 					}
 				}
 			}
 
-			// Make sure writes are visible
+			// Make sure CPU writes are visible
 			CFLUSH_D_L1;
 
 			++cycle;
@@ -203,6 +206,8 @@ int main(int argc, char *argv[])
 		uint32_t cycle = 0;
 		memset(s_framebufferA, 0x07, 320*240); // Gray
 		memset(s_framebufferB, 0x07, 320*240);
+
+		// Make sure CPU writes are visible
 		CFLUSH_D_L1;
 
 		while (1)
@@ -218,21 +223,25 @@ int main(int argc, char *argv[])
 			for (int i=0; i<128; ++i)
 			{
 				SPrimitive prim;
-				prim.x0 = rand()%256;
-				prim.y0 = rand()%256;
-				prim.x1 = rand()%256;
-				prim.y1 = rand()%256;
-				prim.x2 = rand()%256;
-				prim.y2 = rand()%256;
+				prim.x0 = rand()%320;
+				prim.y0 = rand()%240;
+				prim.x1 = rand()%320;
+				prim.y1 = rand()%240;
+				prim.x2 = rand()%320;
+				prim.y2 = rand()%240;
 				uint8_t V = rand()%255;
 				
-				RPUSetPrimitive(&prim);
+				// TODO: Instead of inidividual primitives, push primitive stream address and length
+				RPUPushPrimitive(&prim);
 				RPUSetColor(V);
 
-				int32_t minx = max(0, min(prim.x0, min(prim.x1, prim.x2)))/4;
-				int32_t miny = max(0, min(prim.y0, min(prim.y1, prim.y2)))/4;
-				int32_t maxx = min(319, max(prim.x0, max(prim.x1, prim.x2)))/4;
-				int32_t maxy = min(239, max(prim.y0, max(prim.y1, prim.y2)))/4;
+				int32_t minx = min(prim.x0, min(prim.x1, prim.x2))/4;
+				int32_t miny = min(prim.y0, min(prim.y1, prim.y2))/4;
+				int32_t maxx = max(prim.x0, max(prim.x1, prim.x2))/4;
+				int32_t maxy = max(prim.y0, max(prim.y1, prim.y2))/4;
+
+				// TODO: Instead of rasterizing manually, hardware
+				// should self-feed the rasterizer with relevant work
 
 				// RPU write - 128bit writes per tile from RPU side
 				// This version does the sweep in software, to be
@@ -250,6 +259,7 @@ int main(int argc, char *argv[])
 						uint32_t tileIndex = i+j*80;
 						uint32_t tileAddress = tileIndex*16;
 						RPUSetTileAddress((uint32_t)writepage + tileAddress);
+						// NOTE: GPU writes will always be visible for now since writes are not cached
 						RPURasterizeTile((uint16_t)(i*4), (uint16_t)(j*4));
 					}
 				}

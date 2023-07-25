@@ -31,7 +31,12 @@ logic [15:0] tileX = 0;
 logic [15:0] tileY = 0;
 
 // Current triangle vertices
-logic [95:0] vertexdata;
+logic [15:0] x0;
+logic [15:0] y0;
+logic [15:0] x1;
+logic [15:0] y1;
+logic [15:0] x2;
+logic [15:0] y2;
 
 logic rena = 1'b0;
 wire [15:0] emask01;
@@ -42,21 +47,21 @@ wire eready01, eready12, eready20;
 edgemaskgen edgeTest01(
     .clk(aclk),
     .rstn(aresetn),
-    .tx(tileX), .ty(tileY), .v1x(vertexdata[15:0]), .v1y(vertexdata[31:16]), .v0x(vertexdata[47:32]), .v0y(vertexdata[63:48]),
+    .tx(tileX), .ty(tileY), .v1x(x0), .v1y(y0), .v0x(x1), .v0y(y1),
     .ena(rena), .ready(eready01),
     .rmask(emask01));
 
 edgemaskgen edgeTest12(
     .clk(aclk),
     .rstn(aresetn),
-    .tx(tileX), .ty(tileY), .v1x(vertexdata[47:32]), .v1y(vertexdata[63:48]), .v0x(vertexdata[79:64]), .v0y(vertexdata[95:80]),
+    .tx(tileX), .ty(tileY), .v1x(x1), .v1y(y1), .v0x(x2), .v0y(y2),
     .ena(rena), .ready(eready12),
     .rmask(emask12));
 
 edgemaskgen edgeTest20(
     .clk(aclk),
     .rstn(aresetn),
-    .tx(tileX), .ty(tileY), .v1x(vertexdata[79:64]), .v1y(vertexdata[95:80]), .v0x(vertexdata[15:0]), .v0y(vertexdata[31:16]),
+    .tx(tileX), .ty(tileY), .v1x(x2), .v1y(y2), .v0x(x0), .v0y(y0),
     .ena(rena), .ready(eready20),
     .rmask(emask20));
 
@@ -114,12 +119,12 @@ always_ff @(posedge aclk) begin
 		end
 
 		DISPATCH: begin
-			case (rastercmd)
-				32'h00000000:	cmdmode <= SETRASTEROUT;	// Set output address for the raster mask result
-				32'h00000001:	cmdmode <= PUSHVERTEX;		// 16 bit signed x-y pair to follow
-				32'h00000002:	cmdmode <= RASTERIZETILE;	// 2 sets of 16 bit tile min/max corners to follow. Tile mask written to memory on next clock.
-				32'h00000003:   cmdmode <= SETRASTERCOLOR;  // Set color index / 16bpp color for rasterizer
-				default:		cmdmode <= FINALIZE;		// Invalid command, wait one clock and try next
+			case (rastercmd[15:0])
+				16'h0000:	cmdmode <= SETRASTEROUT;	// Set output address for the raster mask result
+				16'h0001:	cmdmode <= PUSHVERTEX;		// 16 bit signed x-y pair to follow
+				16'h0002:	cmdmode <= RASTERIZETILE;	// 2 sets of 16 bit tile min/max corners to follow. Tile mask written to memory on next clock.
+				16'h0003:   cmdmode <= SETRASTERCOLOR;  // Set color index / 16bpp color for rasterizer
+				default:	cmdmode <= FINALIZE;		// Invalid command, wait one clock and try next
 			endcase
 		end
 
@@ -134,7 +139,11 @@ always_ff @(posedge aclk) begin
 
 		PUSHVERTEX: begin
 			if (rasterfifovalid && ~rasterfifoempty) begin
-				vertexdata <= {vertexdata[79:0], rasterfifodout};
+				unique case (rastercmd[17:16])
+					2'b00: {y0,x0} <= rasterfifodout;
+					2'b01: {y1,x1} <= rasterfifodout;
+					default: {y2,x2} <= rasterfifodout;
+				endcase
 				// Advance FIFO
 				cmdre <= 1'b1;
 				cmdmode <= FINALIZE;
@@ -154,8 +163,9 @@ always_ff @(posedge aclk) begin
 		WRASTER: begin
 			if (eready01 & eready12 & eready20) begin
     			tilecoverage <= emask01 & emask12 & emask20;
-                // Binary tile overlap test result would be: (|emask01) & (|emask12) & (|emask20)
-				cmdmode <= TILERASTERDONE;
+    			// Only rasterize if we have valid geometry here
+    			// TODO: Sweep raster instead
+				cmdmode <= |(emask01 & emask12 & emask20) ? TILERASTERDONE : FINALIZE;
 			end
 		end
 		

@@ -6,10 +6,12 @@
 #define GPUCMD_SETPAL   0x00000001
 #define GPUCMD_SETVMODE 0x00000002
 
-#define RASTERCMD_OUTADDRS      0x00000000
-#define RASTERCMD_PUSHVERTEX    0x00000001
-#define RASTERCMD_RASTERIZETILE 0x00000002
-#define RASTERCMD_SETCOLOR      0x00000003
+#define RASTERCMD_OUTADDRS       0x00000000
+#define RASTERCMD_PUSHVERTEX0    0x00000001
+#define RASTERCMD_PUSHVERTEX1    0x00010001
+#define RASTERCMD_PUSHVERTEX2    0x00020001
+#define RASTERCMD_RASTERIZETILE  0x00000002
+#define RASTERCMD_SETCOLOR       0x00000003
 
 #pragma pack(push,1)
 struct SPrimitive
@@ -74,6 +76,6 @@ void GPUClearScreen(struct EVideoContext *_context, const uint32_t _colorWord);
 
 // Hardware rasterizer
 void RPUSetTileAddress(const uint32_t _rpuWriteAddress16ByteAligned);
-void RPUSetPrimitive(struct SPrimitive* _primitive);
+void RPUPushPrimitive(struct SPrimitive* _primitive);
 void RPURasterizeTile(const uint16_t _tileX, const uint16_t _tileY);
 void RPUSetColor(const uint8_t _colorIndex);
