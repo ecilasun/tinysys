@@ -7,7 +7,8 @@
 
 static uint8_t *s_framebufferA;
 static uint8_t *s_framebufferB;
-
+static uint8_t *s_rasterBuffer;
+ 
 static inline int32_t max(int32_t x, int32_t y) { return x>y?x:y; }
 static inline int32_t min(int32_t x, int32_t y) { return x<y?x:y; }
 
@@ -141,7 +142,7 @@ int main(int argc, char *argv[])
 			GPUClearScreen(&vx, 0x07070707); // Gray for visibility
 
 			uint64_t starttime = E32ReadTime();
-			for (int i=0; i<64; ++i)
+			for (int i=0; i<512; ++i)
 			{
 				SPrimitive prim;
 				prim.x0 = rand()%320;
@@ -207,6 +208,14 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
+		s_rasterBuffer = GPUAllocateBuffer(80*60*16); // Tile buffer
+
+		// Rasterizer output buffer
+		// Ideally this is not the current write page,
+		// and gets DMA-untiled onto it once all output is done
+		RPUSetTileBuffer((uint32_t)s_rasterBuffer);
+		memset(s_rasterBuffer, 0x00, 80*60*16); // Black
+
 		uint32_t cycle = 0;
 		memset(s_framebufferA, 0x07, 320*240); // Gray
 		memset(s_framebufferB, 0x07, 320*240);
@@ -216,22 +225,9 @@ int main(int argc, char *argv[])
 
 		while (1)
 		{
-			uint8_t *readpage = (cycle%2) ? s_framebufferA : s_framebufferB;
-			uint8_t *writepage = (cycle%2) ? s_framebufferB : s_framebufferA;
-
-			// Simple graphics output page
-			GPUSetWriteAddress(&vx, (uint32_t)writepage);
-			GPUSetScanoutAddress(&vx, (uint32_t)readpage);
-
-			// Rasterizer output buffer
-			// Ideally this is not the current write page,
-			// and gets DMA-untiled onto it once all output is done
-			RPUSetTileBuffer((uint32_t)writepage);
-
-			GPUClearScreen(&vx, 0x07070707); // Gray for visibility
-
+			// Produce raw raster output
 			uint64_t starttime = E32ReadTime();
-			for (int i=0; i<64; ++i)
+			for (int i=0; i<512; ++i)
 			{
 				SPrimitive prim;
 				prim.x0 = rand()%320;
@@ -249,6 +245,35 @@ int main(int argc, char *argv[])
 			uint64_t endtime = E32ReadTime();
 
 			printf("Raster time: %ld ms\n", ClockToMs(endtime-starttime));
+
+			// Set up output / scanout pages
+
+			uint8_t *readpage = (cycle%2) ? s_framebufferA : s_framebufferB;
+			uint8_t *writepage = (cycle%2) ? s_framebufferB : s_framebufferA;
+
+			GPUSetWriteAddress(&vx, (uint32_t)writepage);
+			GPUSetScanoutAddress(&vx, (uint32_t)readpage);
+
+			// Resolve onto write page
+			for (uint32_t ty=0;ty<60;++ty)
+			{
+				for (uint32_t tx=0;tx<80;++tx)
+				{
+					// Read 16 byte source
+					uint32_t *tilebuffer = (uint32_t*)(s_rasterBuffer+(tx+ty*80)*16);
+					uint32_t T0 = tilebuffer[0];
+					uint32_t T1 = tilebuffer[1];
+					uint32_t T2 = tilebuffer[2];
+					uint32_t T3 = tilebuffer[3];
+
+					// Expand onto target
+					uint32_t *writepageasword = (uint32_t*)(writepage + tx*4+ty*4*320);
+					writepageasword[0] = T0;
+					writepageasword[80] = T1;
+					writepageasword[160] = T2;
+					writepageasword[240] = T3;
+				}
+			}
 
 			++cycle;
 		}
