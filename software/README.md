@@ -13,6 +13,7 @@ There's a convenience script in this directory that will automate this task for 
 
 # Build riscvtool
 
+For this purpose, you may first want to open the 'software' directory in Visual Studio Code so that the root path is now /tinysys/software.
 Before you can build the riscvtool itself, use the ctrl+shift+b shortcut in Visual Studio Code and select 'configure'. After this initial step you can use the same shortcut and select 'build'.
 Alternatively, you can use the following command sequences:
 ```
