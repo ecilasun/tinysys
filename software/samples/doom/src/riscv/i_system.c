@@ -71,7 +71,7 @@ I_GetRemoteEvent(void)
 
 	// Read the data on ADC port
 	// TODO: This will read individual x/y/button channels
-	uint32_t val = ANALOGINPUTS[0];
+	uint32_t val = ADCGetAnalogInput(0);
 	if (val < 0x20 && !latch) // 5V and not latched yet
 	{
 		// Once only until we release the 'key'

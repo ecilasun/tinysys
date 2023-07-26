@@ -2,6 +2,5 @@
 
 #include <inttypes.h>
 
-// Read only port for ADC access
-extern volatile uint32_t *XADCTEMP;
-extern volatile uint32_t *ANALOGINPUTS;
+uint32_t ADCGetRawTemperature();
+uint32_t ADCGetAnalogInput(const uint8_t _inputIndex);

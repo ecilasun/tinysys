@@ -63,15 +63,15 @@ int main()
 		uint32_t vblankcount = GPUReadVBlankCounter();
 		if (vblankcount > prevvblankcount)
 		{
-			uint32_t ADCcode = *XADCTEMP;
-			uint32_t channel0data = ANALOGINPUTS[0];
-			uint32_t channel1data = ANALOGINPUTS[1];
-			uint32_t channel2data = ANALOGINPUTS[2];
-			uint32_t channel3data = ANALOGINPUTS[3];
-			uint32_t channel4data = ANALOGINPUTS[4];
-			uint32_t channel5data = ANALOGINPUTS[5];
-			uint32_t channel6data = ANALOGINPUTS[6];
-			uint32_t channel7data = ANALOGINPUTS[7];
+			uint32_t ADCcode = ADCGetRawTemperature();
+			uint32_t channel0data = ADCGetAnalogInput(0);
+			uint32_t channel1data = ADCGetAnalogInput(1);
+			uint32_t channel2data = ADCGetAnalogInput(2);
+			uint32_t channel3data = ADCGetAnalogInput(3);
+			uint32_t channel4data = ADCGetAnalogInput(4);
+			uint32_t channel5data = ADCGetAnalogInput(5);
+			uint32_t channel6data = ADCGetAnalogInput(6);
+			uint32_t channel7data = ADCGetAnalogInput(7);
 			float temp_centigrates = (ADCcode*503.975f)/4096.f-273.15f;
 
 			// Clear write buffer

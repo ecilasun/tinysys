@@ -30,10 +30,10 @@ int main( int argc, char **argv )
     {
         // Read analog inputs
         for (uint32_t ch=0;ch<8;++ch)
-            ch0buffer[ch][x] = ANALOGINPUTS[ch];
+            ch0buffer[ch][x] = ADCGetAnalogInput(ch);
 
         // Read temperature
-        temperaturebuffer[x] = *XADCTEMP;
+        temperaturebuffer[x] = ADCGetRawTemperature();
 
         // Next sample slot
         x++;
