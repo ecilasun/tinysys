@@ -238,3 +238,8 @@ void RPUSetColor(const uint8_t _colorIndex)
     *RPUIO = RASTERCMD_SETRASTERCOLOR;
     *RPUIO = (_colorIndex<<24) | (_colorIndex<<16) | (_colorIndex<<8) | _colorIndex;
 }
+
+void RPUWait()
+{
+    while (*RPUIO) { asm volatile("nop;"); }
+}

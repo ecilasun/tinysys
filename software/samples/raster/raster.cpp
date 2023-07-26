@@ -121,8 +121,8 @@ int main(int argc, char *argv[])
 	s_framebufferA = GPUAllocateBuffer(320*240);
 
 	struct EVideoContext vx;
-    vx.m_vmode = EVM_320_Wide;
-    vx.m_cmode = ECM_8bit_Indexed;
+	vx.m_vmode = EVM_320_Wide;
+	vx.m_cmode = ECM_8bit_Indexed;
 	GPUSetVMode(&vx, EVS_Enable);
 	GPUSetWriteAddress(&vx, (uint32_t)s_framebufferA);
 	GPUSetScanoutAddress(&vx, (uint32_t)s_framebufferB);

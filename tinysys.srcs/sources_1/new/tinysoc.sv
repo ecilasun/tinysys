@@ -171,7 +171,7 @@ wire rasterfifoempty;
 wire [31:0] rasterfifodout;
 wire rasterfifore;
 wire rasterfifovalid;
-
+wire rasterstate;
 rasterizer RPU(
 	.aclk(aclk),
 	.aresetn(aresetn),
@@ -179,7 +179,8 @@ rasterizer RPU(
 	.rasterfifoempty(rasterfifoempty),
 	.rasterfifodout(rasterfifodout),
 	.rasterfifore(rasterfifore),
-	.rasterfifovalid(rasterfifovalid));
+	.rasterfifovalid(rasterfifovalid),
+	.rasterstate(rasterstate));
 
 // --------------------------------------------------
 // DMA unit
@@ -350,7 +351,8 @@ commandqueue rastercmdinst(
 	.fifoempty(rasterfifoempty),
 	.fifodout(rasterfifodout),
 	.fifore(rasterfifore),
-	.fifovalid(rasterfifovalid));
+	.fifovalid(rasterfifovalid),
+	.devicestate({31'd0,rasterstate}));
 
 axi4sdcard sdcardinst(
 	.aclk(aclk),

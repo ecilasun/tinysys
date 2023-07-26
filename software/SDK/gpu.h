@@ -79,3 +79,4 @@ void RPUSetTileBuffer(const uint32_t _rpuWriteAddress16ByteAligned);
 void RPUPushPrimitive(struct SPrimitive* _primitive);
 void RPURasterizePrimitive();
 void RPUSetColor(const uint8_t _colorIndex);
+void RPUWait();

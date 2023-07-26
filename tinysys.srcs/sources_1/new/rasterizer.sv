@@ -11,7 +11,8 @@ module rasterizer(
 	input wire rasterfifoempty,
 	input wire [31:0] rasterfifodout,
 	output wire rasterfifore,
-	input wire rasterfifovalid);
+	input wire rasterfifovalid,
+	output wire rasterstate);
 
 assign m_axi.arlen = 0;				// one burst
 assign m_axi.arsize = SIZE_16_BYTE; // 128bit wide reads (not used yet)
@@ -163,14 +164,14 @@ end
 
 logic [127:0] outdata;
 
-logic [15:0] rtilex;
-logic [15:0] rtiley;
-logic [15:0] rx0;
-logic [15:0] ry0;
-logic [15:0] rx1;
-logic [15:0] ry1;
-logic [15:0] rx2;
-logic [15:0] ry2;
+logic signed [15:0] rtilex;
+logic signed [15:0] rtiley;
+logic signed [15:0] rx0;
+logic signed [15:0] ry0;
+logic signed [15:0] rx1;
+logic signed [15:0] ry1;
+logic signed [15:0] rx2;
+logic signed [15:0] ry2;
 logic [7:0] rcolor;
 logic [3:0] runused;
 
@@ -204,7 +205,7 @@ edgemaskgen edgeTest20(
 typedef enum logic [3:0] {
 	RINIT,
 	RWCMD,
-	SETUPBOUNDS, ENDSETUPBOUNDS,
+	SETUPBOUNDS, ENDSETUPBOUNDS, CLIPBOUNDS,
 	BEGINSWEEP, RASTERIZETILE, EMITTILE,
 	WAITTILEWADDR, WAITTILEWREADY, WAITTILEBREADY,
 	NEXTTILE } rasterizermodetype;
@@ -260,7 +261,17 @@ always_ff @(posedge aclk) begin
 			miny <= miny < ry2 ? miny : ry2;
 			maxx <= maxx < rx2 ? rx2 : maxx;
 			maxy <= maxy < ry2 ? ry2 : maxy;
-			rastermode <= BEGINSWEEP;
+			rastermode <= CLIPBOUNDS;    // TODO: Make this optional via view_clip_enable flag
+		end
+
+		CLIPBOUNDS: begin
+			// Clamp to viewport
+			minx <= minx < 0 ? 0 : minx;
+			miny <= miny < 0 ? 0 : miny;
+			maxx <= maxx > 319 ? 319 : maxx;
+			maxy <= maxy > 239 ? 239 : maxy;
+			// Do not attempt to rasterize if bounds are offscreen
+			rastermode <= (minx>319 || miny>239 || maxx<0 || maxy<0) ? RWCMD : BEGINSWEEP;
 		end
 
 		BEGINSWEEP: begin
@@ -354,13 +365,7 @@ always_ff @(posedge aclk) begin
     
 end
 
-/*
-	// We have 80 tiles horizontal and 60 tiles vertical for a total of 4800 (0x12C0) tiles
-	// For each tile, the corresponding memory address is base address (16byte aligned)
-	// plus tile index times 16
-	// m_axi.waddr <= rasterbaseaddr + {(rtilex + rtiley*80), 4'd0};
-	// m_axi.wdata <= outdata;
-	// m_axi.wstrb <= tilecoverage (i.e. emask01 & emask12 & emask20)
-*/
+// Rasterizer completely idle
+assign rasterstate = ~rwempty && (rastermode == RWCMD);
 
 endmodule
