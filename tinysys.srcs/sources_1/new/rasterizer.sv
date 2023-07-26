@@ -366,6 +366,6 @@ always_ff @(posedge aclk) begin
 end
 
 // Rasterizer completely idle
-assign rasterstate = ~rwempty && (rastermode == RWCMD);
+assign rasterstate = ~(rwempty && (rastermode == RWCMD));
 
 endmodule
