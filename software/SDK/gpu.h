@@ -16,9 +16,9 @@
 #pragma pack(push,1)
 struct SPrimitive
 {
-    uint16_t x0,y0;
-    uint16_t x1,y1;
-    uint16_t x2,y2;
+    int16_t x0,y0;
+    int16_t x1,y1;
+    int16_t x2,y2;
 };
 #pragma pack(pop)
 
@@ -75,7 +75,7 @@ void GPUPrintString(struct EVideoContext *_context, const int _col, const int _r
 void GPUClearScreen(struct EVideoContext *_context, const uint32_t _colorWord);
 
 // Hardware rasterizer
-void RPUSetTileBuffer(const uint32_t _rpuWriteAddress16ByteAligned);
+void RPUSetTileBuffer(const uint32_t _rpuTileBuffer16ByteAligned);
 void RPUPushPrimitive(struct SPrimitive* _primitive);
 void RPURasterizePrimitive();
 void RPUSetColor(const uint8_t _colorIndex);

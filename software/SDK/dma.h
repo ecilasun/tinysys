@@ -15,3 +15,4 @@ void DMACopy4K(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targe
 void DMACopy(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned, const uint8_t _blockCountInMultiplesOf16bytes);
 void DMATag(const uint32_t _tag);
 uint32_t DMAPending();
+void DMAResolveTiles(const uint32_t _rpuTileBuffer16ByteAligned, const uint32_t _gpuWritePage16ByteAligned)

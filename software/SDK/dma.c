@@ -39,3 +39,33 @@ uint32_t DMAPending()
 {
     return *DMAIO;
 }
+
+void DMAResolveTiles(const uint32_t _rpuTileBuffer16ByteAligned, const uint32_t _gpuWritePage16ByteAligned)
+{
+    // TODO: Let hardware handle this
+    /**DMAIO = DMACMD_RESOLVETILES;
+    *DMAIO = _rpuTileBuffer16ByteAligned;
+    *DMAIO = _gpuWritePage16ByteAligned;*/
+
+	// Software emulation
+	for (uint32_t ty=0;ty<60;++ty)
+	{
+		for (uint32_t tx=0;tx<80;++tx)
+		{
+			// Read 16 byte source
+			uint32_t *tilebuffer = (uint32_t*)(_rpuTileBuffer16ByteAligned+(tx+ty*80)*16);
+			uint32_t T0 = tilebuffer[0];
+			uint32_t T1 = tilebuffer[1];
+			uint32_t T2 = tilebuffer[2];
+			uint32_t T3 = tilebuffer[3];
+
+			// Expand onto target
+			uint32_t *writepageasword = (uint32_t*)(_gpuWritePage16ByteAligned + tx*4+ty*4*320);
+			writepageasword[0] = T0;
+			writepageasword[80] = T1;
+			writepageasword[160] = T2;
+			writepageasword[240] = T3;
+		}
+	}
+    CFLUSH_D_L1;
+}

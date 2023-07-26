@@ -13,6 +13,7 @@
 #include "basesystem.h"
 #include "core.h"
 #include "gpu.h"
+#include "dma.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -254,33 +255,11 @@ int main(int argc, char** argv)
 			GPUSetWriteAddress(&s_vctx, (uint32_t)writepage);
 			GPUSetScanoutAddress(&s_vctx, (uint32_t)readpage);
 
-			// Wait for pending rasterizer work to finish
+			// Wait for all raster work to finish
 			RPUWait();
 
-			// Resolve onto write page
-			for (uint32_t ty=0;ty<60;++ty)
-			{
-				for (uint32_t tx=0;tx<80;++tx)
-				{
-					// Read 16 byte source
-					uint32_t *tilebuffer = (uint32_t*)(s_rasterBuffer+(tx+ty*80)*16);
-					uint32_t T0 = tilebuffer[0];
-					uint32_t T1 = tilebuffer[1];
-					uint32_t T2 = tilebuffer[2];
-					uint32_t T3 = tilebuffer[3];
-
-					// Expand onto target
-					uint32_t *writepageasword = (uint32_t*)(writepage + tx*4+ty*4*320);
-					writepageasword[0] = T0;
-					writepageasword[80] = T1;
-					writepageasword[160] = T2;
-					writepageasword[240] = T3;
-				}
-			}
-
-			// Make sure CPU writes are visible after the manual resolve
-			// NOTE: DMA resolve won't need this
-			CFLUSH_D_L1;
+			// Get the DMA unit to resolve and write output onto the current GPU write page
+			DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)writepage);
 
 			++cycle;
 		} while(res);

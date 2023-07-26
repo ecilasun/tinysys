@@ -1,6 +1,7 @@
 #include "basesystem.h"
 #include "core.h"
 #include "gpu.h"
+#include "dma.h"
 #include <stdio.h>
 #include <string.h>
 #include <random>
@@ -220,7 +221,7 @@ int main(int argc, char *argv[])
 		memset(s_framebufferA, 0x07, 320*240); // Gray
 		memset(s_framebufferB, 0x07, 320*240);
 
-		// Make sure CPU writes are visible
+		// Make sure CPU writes are visible in memory
 		CFLUSH_D_L1;
 
 		while (1)
@@ -229,13 +230,14 @@ int main(int argc, char *argv[])
 			uint64_t starttime = E32ReadTime();
 			for (int i=0; i<512; ++i)
 			{
+				// Enforce primitives larger than the screen size to test clipping
 				SPrimitive prim;
-				prim.x0 = rand()%320;
-				prim.y0 = rand()%240;
-				prim.x1 = rand()%320;
-				prim.y1 = rand()%240;
-				prim.x2 = rand()%320;
-				prim.y2 = rand()%240;
+				prim.x0 = 160 + (rand()%200) - (rand()%200);
+				prim.y0 = 120 + (rand()%200) - (rand()%200);
+				prim.x1 = 160 + (rand()%200) - (rand()%200);
+				prim.y1 = 120 + (rand()%200) - (rand()%200);
+				prim.x2 = 160 + (rand()%200) - (rand()%200);
+				prim.y2 = 120 + (rand()%200) - (rand()%200);
 				uint8_t V = rand()%255;
 
 				RPUPushPrimitive(&prim);
@@ -254,26 +256,11 @@ int main(int argc, char *argv[])
 			GPUSetWriteAddress(&vx, (uint32_t)writepage);
 			GPUSetScanoutAddress(&vx, (uint32_t)readpage);
 
-			// Resolve onto write page
-			for (uint32_t ty=0;ty<60;++ty)
-			{
-				for (uint32_t tx=0;tx<80;++tx)
-				{
-					// Read 16 byte source
-					uint32_t *tilebuffer = (uint32_t*)(s_rasterBuffer+(tx+ty*80)*16);
-					uint32_t T0 = tilebuffer[0];
-					uint32_t T1 = tilebuffer[1];
-					uint32_t T2 = tilebuffer[2];
-					uint32_t T3 = tilebuffer[3];
+			// Wait for all raster work to finish
+			RPUWait();
 
-					// Expand onto target
-					uint32_t *writepageasword = (uint32_t*)(writepage + tx*4+ty*4*320);
-					writepageasword[0] = T0;
-					writepageasword[80] = T1;
-					writepageasword[160] = T2;
-					writepageasword[240] = T3;
-				}
-			}
+			// Get the DMA unit to resolve and write output onto the current GPU write page
+			DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)writepage);
 
 			++cycle;
 		}
