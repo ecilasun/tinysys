@@ -140,7 +140,8 @@ int main(int argc, char *argv[])
 
 			GPUClearScreen(&vx, 0x07070707); // Gray for visibility
 
-			for (int i=0; i<4096; ++i)
+			uint64_t starttime = E32ReadTime();
+			for (int i=0; i<64; ++i)
 			{
 				SPrimitive prim;
 				prim.x0 = rand()%320;
@@ -194,6 +195,9 @@ int main(int argc, char *argv[])
 					}
 				}
 			}
+			uint64_t endtime = E32ReadTime();
+
+			printf("Raster time: %ld ms\n", ClockToMs(endtime-starttime));
 
 			// Make sure CPU writes are visible
 			CFLUSH_D_L1;
@@ -215,12 +219,19 @@ int main(int argc, char *argv[])
 			uint8_t *readpage = (cycle%2) ? s_framebufferA : s_framebufferB;
 			uint8_t *writepage = (cycle%2) ? s_framebufferB : s_framebufferA;
 
+			// Simple graphics output page
 			GPUSetWriteAddress(&vx, (uint32_t)writepage);
 			GPUSetScanoutAddress(&vx, (uint32_t)readpage);
 
+			// Rasterizer output buffer
+			// Ideally this is not the current write page,
+			// and gets DMA-untiled onto it once all output is done
+			RPUSetTileBuffer((uint32_t)writepage);
+
 			GPUClearScreen(&vx, 0x07070707); // Gray for visibility
 
-			for (int i=0; i<4096; ++i)
+			uint64_t starttime = E32ReadTime();
+			for (int i=0; i<64; ++i)
 			{
 				SPrimitive prim;
 				prim.x0 = rand()%320;
@@ -230,40 +241,14 @@ int main(int argc, char *argv[])
 				prim.x2 = rand()%320;
 				prim.y2 = rand()%240;
 				uint8_t V = rand()%255;
-				
-				// TODO: Instead of inidividual primitives, push primitive stream address and length
+
 				RPUPushPrimitive(&prim);
 				RPUSetColor(V);
-
-				int32_t minx = min(prim.x0, min(prim.x1, prim.x2))/4;
-				int32_t miny = min(prim.y0, min(prim.y1, prim.y2))/4;
-				int32_t maxx = max(prim.x0, max(prim.x1, prim.x2))/4;
-				int32_t maxy = max(prim.y0, max(prim.y1, prim.y2))/4;
-
-				// TODO: Instead of rasterizing manually, hardware
-				// should self-feed the rasterizer with relevant work
-
-				// RPU write - 128bit writes per tile from RPU side
-				// This version does the sweep in software, to be
-				// ported to hardware once writes work as expected.
-				for (int32_t j = miny; j < maxy; ++j)
-				{
-					for (int32_t i = minx; i < maxx; ++i)
-					{
-						// 128bit aligned address for 16 pixels' worth of output
-						// Hardware generates 4x4 pixel masks but the output is
-						// linear in memory so it's going to be 16 pixels, packed side by side
-						// on the same scanline if viewed as raw output.
-						// Here we rewind and start each triangle from offset zero
-						// for debug purposes.
-						uint32_t tileIndex = i+j*80;
-						uint32_t tileAddress = tileIndex*16;
-						RPUSetTileAddress((uint32_t)writepage + tileAddress);
-						// NOTE: GPU writes will always be visible for now since writes are not cached
-						RPURasterizeTile((uint16_t)(i*4), (uint16_t)(j*4));
-					}
-				}
+				RPURasterizePrimitive();
 			}
+			uint64_t endtime = E32ReadTime();
+
+			printf("Raster time: %ld ms\n", ClockToMs(endtime-starttime));
 
 			++cycle;
 		}
