@@ -211,10 +211,10 @@ typedef enum logic [3:0] {
 	NEXTTILE } rasterizermodetype;
 rasterizermodetype rastermode = RINIT;
 
-logic [15:0] minx;
-logic [15:0] miny;
-logic [15:0] maxx;
-logic [15:0] maxy;
+logic signed [15:0] minx;
+logic signed [15:0] miny;
+logic signed [15:0] maxx;
+logic signed [15:0] maxy;
 
 logic [13:0] cx;
 logic [13:0] cy;

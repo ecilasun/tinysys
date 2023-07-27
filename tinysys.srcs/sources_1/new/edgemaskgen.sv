@@ -36,18 +36,18 @@ typedef enum logic [2:0] {
     ENDRASTER } rasterstatetype;
 rasterstatetype rstate = RINIT;
 
-logic signed [15:0] tilex;
-logic signed [15:0] tiley;
-logic signed [15:0] x0;
-logic signed [15:0] y0;
-logic signed [15:0] x1;
-logic signed [15:0] y1;
-logic signed [15:0] dx;
-logic signed [15:0] dy;
-logic signed [15:0] A[0:15];
-logic signed [15:0] B[0:15];
-logic signed [15:0] partial[0:15];
-logic signed [15:0] result[0:15];
+logic signed [17:0] tilex;
+logic signed [17:0] tiley;
+logic signed [17:0] x0;
+logic signed [17:0] y0;
+logic signed [17:0] x1;
+logic signed [17:0] y1;
+logic signed [17:0] dx;
+logic signed [17:0] dy;
+logic signed [17:0] A[0:15];
+logic signed [17:0] B[0:15];
+logic signed [17:0] partial[0:15];
+logic signed [17:0] result[0:15];
 logic bready;
 
 assign ready = bready;
@@ -64,13 +64,13 @@ always @(posedge clk) begin
         end
  
         RWCMD: begin
-            x0 <= v0x;
-            y0 <= v0y;
-            x1 <= v1x;
-            y1 <= v1y;
+            x0 <= {v0x[15],v0x[15],v0x};
+            y0 <= {v0y[15],v0y[15],v0y};
+            x1 <= {v1x[15],v1x[15],v1x};
+            y1 <= {v1y[15],v1y[15],v1y};
 
-            tilex <= tx;
-            tiley <= ty;
+            tilex <= {2'b00,tx};
+            tiley <= {2'b00,ty};
 
             rstate <= ena ? SETUPRASTER : RWCMD;
         end

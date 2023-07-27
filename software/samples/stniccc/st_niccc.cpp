@@ -57,8 +57,8 @@ static void clear(void) {
 	SPrimitive prim;
 	prim.x0 = 0;
 	prim.y0 = 0;
-	prim.x1 = 0;
-	prim.y1 = 200;
+	prim.x1 = 256;
+	prim.y1 = 0;
 	prim.x2 = 256;
 	prim.y2 = 200;
 	RPUPushPrimitive(&prim);
@@ -67,8 +67,8 @@ static void clear(void) {
 
 	prim.x0 = 256;
 	prim.y0 = 200;
-	prim.x1 = 256;
-	prim.y1 = 0;
+	prim.x1 = 0;
+	prim.y1 = 200;
 	prim.x2 = 0;
 	prim.y2 = 0;
 	RPUPushPrimitive(&prim);
@@ -128,7 +128,7 @@ static int read_frame(void)
 				int g3 = (rgb & 0x070) >> 4;
 				int r3 = (rgb & 0x700) >> 8;
 
-				// Re-encode them as 24bpp color
+				// We can directly use this color as inedx to our 256 color LUT
 				cmap[15-b] = (uint8_t)((b3<<6) | (g3<<3) | r3);
 			}
 		}
