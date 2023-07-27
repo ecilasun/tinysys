@@ -16,10 +16,12 @@
 #include "dma.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 int cur_byte_address = 0;
 
 FILE *s_fp;
+uint8_t *filedata;
 EVideoContext s_vctx;
 uint8_t *s_framebufferB;
 uint8_t *s_framebufferA;
@@ -28,7 +30,8 @@ uint8_t *s_rasterBuffer;
 static uint8_t next_byte(void)
 {
 	uint8_t result;
-	fread(&result, 1, 1, s_fp);
+	// fread(&result, 1, 1, s_fp);
+	result = filedata[cur_byte_address];
 	++cur_byte_address;
 	return result;
 }
@@ -51,25 +54,25 @@ static inline void map_vertex(int16_t* X, int16_t* Y)
 }
 
 static void clear(void) {
-	RPUSetColor(0);
-
-	SPrimitive prim;
-	prim.x0 = 0;
-	prim.y0 = 0;
-	prim.x2 = 0;
-	prim.y2 = 200;
-	prim.x1 = 320;
-	prim.y1 = 200;
+	SPrimitive primA;
+	primA.x0 = 0;
+	primA.y0 = 0;
+	primA.x1 = 0;
+	primA.y1 = 200;
+	primA.x2 = 256;
+	primA.y2 = 200;
 	RPUPushPrimitive(&prim);
+	RPUSetColor(0);
 	RPURasterizePrimitive();
 
-	prim.x0 = 320;
+	prim.x0 = 256;
 	prim.y0 = 200;
-	prim.x2 = 320;
-	prim.y2 = 0;
-	prim.x1 = 0;
+	prim.x1 = 256;
 	prim.y1 = 0;
+	prim.x2 = 0;
+	prim.y2 = 0;
 	RPUPushPrimitive(&prim);
+	RPUSetColor(0);
 	RPURasterizePrimitive();
 }
 
@@ -196,10 +199,10 @@ static int read_frame(void)
 			SPrimitive prim;
 			prim.x0 = poly[2*0];
 			prim.y0 = poly[2*0+1];
-			prim.x2 = poly[2*(i+1)];
-			prim.y2 = poly[2*(i+1)+1];
 			prim.x1 = poly[2*(i+2)];
 			prim.y1 = poly[2*(i+2)+1];
+			prim.x2 = poly[2*(i+1)];
+			prim.y2 = poly[2*(i+1)+1];
 
 			RPUPushPrimitive(&prim);
 			RPUSetColor(cmap[poly_col]);
@@ -243,6 +246,19 @@ int main(int argc, char** argv)
 			return -1;
 		}
 
+		// Read the whole thing into memory
+		{
+			fpos_t pos, endpos;
+			fgetpos(s_fp, &pos);
+			fseek(s_fp, 0, SEEK_END);
+			fgetpos(s_fp, &endpos);
+			fsetpos(s_fp, &pos);
+			uint32_t fsize = (uint32_t)endpos;
+			filedata = (uint8_t*)malloc(fsize);
+			fread(filedata, 1, fsize, s_fp);
+			fclose(s_fp);
+		}
+
 		uint32_t cycle = 0;
 		int res = 0;
 		do
@@ -252,6 +268,14 @@ int main(int argc, char** argv)
 
 			res = read_frame();
 
+			// Wait for vsync
+			uint32_t prevvsync = GPUReadVBlankCounter();
+			uint32_t currentvsync;
+			do {
+				currentvsync = GPUReadVBlankCounter();
+			} while (currentvsync == prevvsync);
+
+			// Swap buffers
 			GPUSetWriteAddress(&s_vctx, (uint32_t)writepage);
 			GPUSetScanoutAddress(&s_vctx, (uint32_t)readpage);
 
@@ -263,7 +287,5 @@ int main(int argc, char** argv)
 
 			++cycle;
 		} while(res);
-		
-		fclose(s_fp);
 	}
 }
