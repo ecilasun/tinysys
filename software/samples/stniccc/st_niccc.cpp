@@ -54,13 +54,13 @@ static inline void map_vertex(int16_t* X, int16_t* Y)
 }
 
 static void clear(void) {
-	SPrimitive primA;
-	primA.x0 = 0;
-	primA.y0 = 0;
-	primA.x1 = 0;
-	primA.y1 = 200;
-	primA.x2 = 256;
-	primA.y2 = 200;
+	SPrimitive prim;
+	prim.x0 = 0;
+	prim.y0 = 0;
+	prim.x1 = 0;
+	prim.y1 = 200;
+	prim.x2 = 256;
+	prim.y2 = 200;
 	RPUPushPrimitive(&prim);
 	RPUSetColor(0);
 	RPURasterizePrimitive();
