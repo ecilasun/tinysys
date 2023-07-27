@@ -36,7 +36,6 @@ typedef enum logic [2:0] {
     ENDRASTER } rasterstatetype;
 rasterstatetype rstate = RINIT;
 
-// All internal math is 18 bits, sign extended from incoming 16 bits
 logic signed [15:0] tilex;
 logic signed [15:0] tiley;
 logic signed [15:0] x0;

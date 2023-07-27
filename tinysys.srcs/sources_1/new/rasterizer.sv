@@ -251,16 +251,16 @@ always_ff @(posedge aclk) begin
 			// Find min/max bounds
 			minx <= rx0 < rx1 ? rx0 : rx1;
 			miny <= ry0 < ry1 ? ry0 : ry1;
-			maxx <= rx0 < rx1 ? rx1 : rx0;
-			maxy <= ry0 < ry1 ? ry1 : ry0;
+			maxx <= rx0 >= rx1 ? rx0 : rx1;
+			maxy <= ry0 >= ry1 ? ry0 : ry1;
 			rastermode <= ENDSETUPBOUNDS;
 		end
 		
 		ENDSETUPBOUNDS: begin
 			minx <= minx < rx2 ? minx : rx2;
 			miny <= miny < ry2 ? miny : ry2;
-			maxx <= maxx < rx2 ? rx2 : maxx;
-			maxy <= maxy < ry2 ? ry2 : maxy;
+			maxx <= maxx >= rx2 ? maxx : rx2;
+			maxy <= maxy >= ry2 ? maxy : ry2;
 			rastermode <= CLIPBOUNDS;    // TODO: Make this optional via view_clip_enable flag
 		end
 
@@ -282,7 +282,7 @@ always_ff @(posedge aclk) begin
 			outdata <= {rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor};
 			rastermode <= RASTERIZETILE;
 		end
-	   
+
 		RASTERIZETILE: begin
 			// Rasterize current tile
 			rtilex <= {cx,2'b00}; // Rasterizer requires pixel positions, hence the *4
@@ -321,7 +321,7 @@ always_ff @(posedge aclk) begin
 				rastermode <= |(emask01 & emask12 & emask20) ? WAITTILEWADDR : NEXTTILE;
 			end
 		end
-		
+
 		WAITTILEWADDR: begin
 			if (m_axi.awready) begin
 				m_axi.awvalid <= 1'b0;
@@ -334,7 +334,7 @@ always_ff @(posedge aclk) begin
 				rastermode <= WAITTILEWREADY;
 			end
 		end
-		
+
 		WAITTILEWREADY: begin
 			if (m_axi.wready) begin
 				m_axi.wvalid <= 1'b0;
@@ -344,7 +344,7 @@ always_ff @(posedge aclk) begin
 				rastermode <= WAITTILEBREADY;
 			end
 		end
-		
+
 		WAITTILEBREADY: begin
 			if (m_axi.bvalid) begin // && m_axi.bready
 				m_axi.bready <= 0;
@@ -366,6 +366,6 @@ always_ff @(posedge aclk) begin
 end
 
 // Rasterizer completely idle
-assign rasterstate = ~(rwempty && (rastermode == RWCMD));
+assign rasterstate = ~(rasterfifoempty && rwempty);
 
 endmodule
