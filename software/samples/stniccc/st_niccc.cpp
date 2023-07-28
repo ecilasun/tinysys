@@ -76,11 +76,6 @@ static void clear(void) {
 	RPURasterizePrimitive();
 }
 
-/* 
-* Polygon color map
-*/
-uint32_t cmap[16];
-
 /*
 * Current frame's vertices coordinates (if frame is indexed).
 */
@@ -128,8 +123,8 @@ static int read_frame(void)
 				int g3 = (rgb & 0x070) >> 4;
 				int r3 = (rgb & 0x700) >> 8;
 
-				// We can directly use this color as inedx to our 256 color LUT
-				cmap[15-b] = (uint8_t)((b3<<6) | (g3<<3) | r3);
+				// Set the actual hardware color register
+				GPUSetPal(15-b, r3*36,g3*36,b3*36);
 			}
 		}
 	}
@@ -205,7 +200,7 @@ static int read_frame(void)
 			prim.y2 = poly[2*(i+1)+1];
 
 			RPUPushPrimitive(&prim);
-			RPUSetColor(cmap[poly_col]);
+			RPUSetColor(poly_col);
 			RPURasterizePrimitive();
 		}
 	}
@@ -229,12 +224,6 @@ int main(int argc, char** argv)
 	GPUSetScanoutAddress(&s_vctx, (uint32_t)s_framebufferB);
 	GPUSetDefaultPalette(&s_vctx);
 	RPUSetTileBuffer((uint32_t)s_rasterBuffer);
-
-	int target = 0;
-	for (int b=0;b<4;++b)
-		for (int g=0;g<8;++g)
-			for (int r=0;r<8;++r)
-				GPUSetPal(target++, r*36, g*36, b*85);
 
 	while(1)
 	{

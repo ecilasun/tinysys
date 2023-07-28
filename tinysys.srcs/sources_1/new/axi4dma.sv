@@ -14,6 +14,12 @@ module axi4dma(
 
 logic cmdre = 1'b0;
 assign dmafifore = cmdre;
+
+// Syncronization mechanism:
+// Add one extra dummy item after the last DMA command
+// Wait for FIFO to become empty
+// That essantially means we've DMAd everyting, turned
+// around and also read the last dummy command.
 assign dmabusy = ~dmafifoempty;
 
 // ------------------------------------------------------------------------------------

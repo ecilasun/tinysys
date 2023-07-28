@@ -65,13 +65,13 @@
     <Option Name="WTVcsLaunchSim" Val="0"/>
     <Option Name="WTRivieraLaunchSim" Val="0"/>
     <Option Name="WTActivehdlLaunchSim" Val="0"/>
-    <Option Name="WTXSimExportSim" Val="388"/>
-    <Option Name="WTModelSimExportSim" Val="388"/>
-    <Option Name="WTQuestaExportSim" Val="388"/>
+    <Option Name="WTXSimExportSim" Val="392"/>
+    <Option Name="WTModelSimExportSim" Val="392"/>
+    <Option Name="WTQuestaExportSim" Val="392"/>
     <Option Name="WTIesExportSim" Val="0"/>
-    <Option Name="WTVcsExportSim" Val="388"/>
-    <Option Name="WTRivieraExportSim" Val="388"/>
-    <Option Name="WTActivehdlExportSim" Val="388"/>
+    <Option Name="WTVcsExportSim" Val="392"/>
+    <Option Name="WTRivieraExportSim" Val="392"/>
+    <Option Name="WTActivehdlExportSim" Val="392"/>
     <Option Name="GenerateIPUpgradeLog" Val="TRUE"/>
     <Option Name="XSimRadix" Val="hex"/>
     <Option Name="XSimTimeUnit" Val="ns"/>
@@ -656,14 +656,14 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/rasterizer.sv">
+      <File Path="$PSRCDIR/sources_1/new/registerfile.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/registerfile.sv">
+      <File Path="$PSRCDIR/sources_1/new/rpu.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>

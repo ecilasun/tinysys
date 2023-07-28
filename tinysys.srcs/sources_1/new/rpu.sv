@@ -4,7 +4,7 @@ import axi4pkg::*;
 
 // Tile rasterizer
 
-module rasterizer(
+module rastercore(
 	input wire aclk,
 	input wire aresetn,
 	axi4if.master m_axi,
