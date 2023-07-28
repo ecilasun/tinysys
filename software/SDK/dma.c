@@ -43,9 +43,12 @@ uint32_t DMAPending()
 void DMAResolveTiles(const uint32_t _rpuTileBuffer16ByteAligned, const uint32_t _gpuWritePage16ByteAligned)
 {
     // TODO: Let hardware handle this
-    /**DMAIO = DMACMD_RESOLVETILES;
+    /*
+    *DMAIO = DMACMD_SETSOURCE;
     *DMAIO = _rpuTileBuffer16ByteAligned;
-    *DMAIO = _gpuWritePage16ByteAligned;*/
+    *DMAIO = DMACMD_SETTARGET;
+    *DMAIO = _gpuWritePage16ByteAligned;
+    *DMAIO = DMACMD_RESOLVETILES;*/
 
 	// Software emulation
 	for (uint32_t ty=0;ty<60;++ty)

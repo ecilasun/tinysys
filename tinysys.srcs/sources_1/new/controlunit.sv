@@ -156,7 +156,7 @@ integerdividersigned IDIVS (
 typedef enum logic [3:0] {
 	INIT,
 	READINSTR, READREG,
-	WRITE, DISPATCH,
+	WRITE, READ, DISPATCH,
 	MATHWAIT,
 	SYSOP, SYSWBACK, SYSWAIT,
 	CSROPS, WCSROP,
@@ -270,43 +270,64 @@ always @(posedge aclk) begin
 				immed, PC[31:1], stepsize} <= ififodout;
 			PC[0] <= 1'b0; // NOTE: Since we don't do byte addressing, lowest bit is always set to zero
 			// HAZARD#0: Wait for fetch fifo to populate
-			// HAZARD#1: Wait for pending register writeback
-			// HAZARD#2: Wait for pending memory load
-			ififore <= (ififovalid && ~ififoempty && ~pendingwback && ~pendingload);
-			ctlmode <= (ififovalid && ~ififoempty && ~pendingwback && ~pendingload) ? READREG : READINSTR;
+			ififore <= (ififovalid && ~ififoempty);
+			ctlmode <= (ififovalid && ~ififoempty) ? READREG : READINSTR;
 		end
 
 		READREG: begin
-			// Set up inputs to math/branch units, addresses, and any math strobes required
-			A <= rval1;
-			B <= rval2;
-			C <= selectimmedasrval2 ? immed : rval2;
-			D <= immed;
-			wbdest <= rd;
-			rwaddress <= rval1 + immed;
-			offsetPC <= PC + immed;
-			adjacentPC <= PC + (stepsize ? 32'd4 : 32'd2);
-			mulstrobe <= (aluop==`ALU_MUL);
-			divstrobe <= (aluop==`ALU_DIV || aluop==`ALU_REM);				
-			mathop <= {aluop==`ALU_MUL, aluop==`ALU_DIV, aluop==`ALU_REM};
-			// HAZARD#3: Wait for pending write
-			ctlmode <= pendingwrite ? READREG : (instrOneHotOut[`O_H_STORE] ? WRITE : DISPATCH);
+			if (pendingwback || pendingload) begin
+				// HAZARD#1: Wait for pending register writeback
+				// HAZARD#2: Wait for pending memory load
+				ctlmode <= READREG;
+			end else begin
+				// Set up inputs to math/branch units, addresses, and any math strobes required
+				A <= rval1;
+				B <= rval2;
+				C <= selectimmedasrval2 ? immed : rval2;
+				D <= immed;
+				wbdest <= rd;
+				rwaddress <= rval1 + immed;
+				offsetPC <= PC + immed;
+				adjacentPC <= PC + (stepsize ? 32'd4 : 32'd2);
+				mulstrobe <= (aluop==`ALU_MUL);
+				divstrobe <= (aluop==`ALU_DIV || aluop==`ALU_REM);				
+				mathop <= {aluop==`ALU_MUL, aluop==`ALU_DIV, aluop==`ALU_REM};
+				ctlmode <= instrOneHotOut[`O_H_STORE] ? WRITE : (instrOneHotOut[`O_H_LOAD] ? READ : DISPATCH);
+			end
 		end
 
 		WRITE: begin
-			m_ibus.waddr <= rwaddress;
-			pendingwrite <= 1'b1;
-			unique case(func3)
-				3'b000:  m_ibus.wdata <= {B[7:0], B[7:0], B[7:0], B[7:0]};
-				3'b001:  m_ibus.wdata <= {B[15:0], B[15:0]};
-				default: m_ibus.wdata <= B;
-			endcase
-			unique case(func3)
-				3'b000:  m_ibus.wstrobe <= {rwaddress[1]&rwaddress[0], rwaddress[1]&(~rwaddress[0]), (~rwaddress[1])&rwaddress[0], (~rwaddress[1])&(~rwaddress[0])};
-				3'b001:  m_ibus.wstrobe <= {rwaddress[1], rwaddress[1], ~rwaddress[1], ~rwaddress[1]};
-				default: m_ibus.wstrobe <= 4'b1111;
-			endcase
-			ctlmode <= READINSTR;
+			if (pendingwrite) begin
+				// HAZARD#3: Wait for pending write before read
+				ctlmode <= WRITE;
+			end else begin
+				m_ibus.waddr <= rwaddress;
+				pendingwrite <= 1'b1;
+				unique case(func3)
+					3'b000:  m_ibus.wdata <= {B[7:0], B[7:0], B[7:0], B[7:0]};
+					3'b001:  m_ibus.wdata <= {B[15:0], B[15:0]};
+					default: m_ibus.wdata <= B;
+				endcase
+				unique case(func3)
+					3'b000:  m_ibus.wstrobe <= {rwaddress[1]&rwaddress[0], rwaddress[1]&(~rwaddress[0]), (~rwaddress[1])&rwaddress[0], (~rwaddress[1])&(~rwaddress[0])};
+					3'b001:  m_ibus.wstrobe <= {rwaddress[1], rwaddress[1], ~rwaddress[1], ~rwaddress[1]};
+					default: m_ibus.wstrobe <= 4'b1111;
+				endcase
+				ctlmode <= READINSTR;
+			end
+		end
+
+		READ: begin
+			if (pendingwrite) begin
+				// HAZARD#3: Wait for pending write before write
+				ctlmode <= READ;
+			end else begin
+				m_ibus.raddr <= rwaddress;
+				m_ibus.rstrobe <= 1'b1;
+				rfunc3 <= func3;
+				pendingload <= 1'b1;
+				ctlmode <= READINSTR;
+			end
 		end
 
 		DISPATCH: begin
@@ -321,12 +342,6 @@ always @(posedge aclk) begin
 				instrOneHotOut[`O_H_LUI]: begin
 					wbdin <= instrOneHotOut[`O_H_AUIPC] ? offsetPC : D;
 					wback <= 1'b1;
-				end
-				instrOneHotOut[`O_H_LOAD]: begin
-					m_ibus.raddr <= rwaddress;
-					m_ibus.rstrobe <= 1'b1;
-					rfunc3 <= func3;
-					pendingload <= 1'b1;
 				end
 				instrOneHotOut[`O_H_JAL],
 				instrOneHotOut[`O_H_JALR]: begin
@@ -369,15 +384,25 @@ always @(posedge aclk) begin
 		end
 
 		SYSCDISCARD: begin
-			m_ibus.dcacheop <= 2'b01; // {nowb,iscachecmd}
-			m_ibus.cstrobe <= 1'b1;
-			ctlmode <= WCACHE;
+			if (pendingwrite) begin
+				// HAZARD#3: Wait for pending write before cache op
+				ctlmode <= SYSCDISCARD;
+			end else begin
+				m_ibus.dcacheop <= 2'b01; // {nowb,iscachecmd}
+				m_ibus.cstrobe <= 1'b1;
+				ctlmode <= WCACHE;
+			end
 		end
 
 		SYSCFLUSH: begin
-			m_ibus.dcacheop <= 2'b11; // {wb,iscachecmd}
-			m_ibus.cstrobe <= 1'b1;
-			ctlmode <= WCACHE;
+			if (pendingwrite) begin
+				// HAZARD#3: Wait for pending write before cache op
+				ctlmode <= SYSCFLUSH;
+			end else begin
+				m_ibus.dcacheop <= 2'b11; // {wb,iscachecmd}
+				m_ibus.cstrobe <= 1'b1;
+				ctlmode <= WCACHE;
+			end
 		end
 
 		WCACHE: begin
@@ -388,9 +413,14 @@ always @(posedge aclk) begin
 		end
 
 		CSROPS: begin
-			m_ibus.raddr <= {20'h80004, csroffset}; // TODO: 0x8000?+(CID<<12) but make sure CSR address space is at the end
-			m_ibus.rstrobe <= 1'b1;
-			ctlmode <= WCSROP;
+			if (pendingwrite) begin
+				// HAZARD#3: Wait for pending write before CSR operation
+				ctlmode <= CSROPS;
+			end else begin
+				m_ibus.raddr <= {20'h80004, csroffset}; // TODO: 0x8000?+(CID<<12) but make sure CSR address space is at the end
+				m_ibus.rstrobe <= 1'b1;
+				ctlmode <= WCSROP;
+			end
 		end
 
 		WCSROP: begin
@@ -401,35 +431,40 @@ always @(posedge aclk) begin
 		end
 
 		SYSWBACK: begin
-			// Update CSR register with read value
-			m_ibus.waddr <= {20'h80004, csroffset}; // TODO: 0x8000?+(CID<<12) but make sure CSR address space is at the end
-			m_ibus.wstrobe <= 4'b1111;
-			unique case (func3)
-				3'b001: begin // CSRRW
-					m_ibus.wdata <= A;
-				end
-				3'b101: begin // CSRRWI
-					m_ibus.wdata <= D;
-				end
-				3'b010: begin // CSRRS
-					m_ibus.wdata <= csrprevval | A;
-				end
-				3'b110: begin // CSRRSI
-					m_ibus.wdata <= csrprevval | D;
-				end
-				3'b011: begin // CSRRC
-					m_ibus.wdata <= csrprevval & (~A);
-				end
-				3'b111: begin // CSRRCI
-					m_ibus.wdata <= csrprevval & (~D);
-				end
-				default: begin // Unknown
-					m_ibus.wdata <= csrprevval;
-				end
-			endcase
+			if (pendingwrite) begin
+				// HAZARD#3: Wait for pending write before CSR writeback
+				ctlmode <= SYSWBACK;
+			end else begin
+				// Update CSR register with read value
+				m_ibus.waddr <= {20'h80004, csroffset}; // TODO: 0x8000?+(CID<<12) but make sure CSR address space is at the end
+				m_ibus.wstrobe <= 4'b1111;
+				unique case (func3)
+					3'b001: begin // CSRRW
+						m_ibus.wdata <= A;
+					end
+					3'b101: begin // CSRRWI
+						m_ibus.wdata <= D;
+					end
+					3'b010: begin // CSRRS
+						m_ibus.wdata <= csrprevval | A;
+					end
+					3'b110: begin // CSRRSI
+						m_ibus.wdata <= csrprevval | D;
+					end
+					3'b011: begin // CSRRC
+						m_ibus.wdata <= csrprevval & (~A);
+					end
+					3'b111: begin // CSRRCI
+						m_ibus.wdata <= csrprevval & (~D);
+					end
+					default: begin // Unknown
+						m_ibus.wdata <= csrprevval;
+					end
+				endcase
 
-			// Wait for CSR writeback
-			ctlmode <= SYSWAIT;
+				// Wait for CSR writeback
+				ctlmode <= SYSWAIT;
+			end
 		end
 
 		SYSWAIT: begin

@@ -14,13 +14,13 @@ initial begin
 end
 
 wire [3:0] ledout;
-wire uart_rxd_out;
-wire uart_txd_in = 1'b1;
 
 wire sdcard_mosi;
 wire sdcard_miso = sdcard_mosi; // nul device
 wire usbc_mosi;
 wire usbc_miso = usbc_mosi; // nul device
+wire usba_mosi;
+wire usba_miso = usba_mosi; // nul device
 
 wire adclk = 1'b0;
 wire addout = 1'b0;
@@ -42,9 +42,6 @@ wire [1:0]   ddr3_dm;
 wire [1:0]   ddr3_dqs_p;
 wire [1:0]   ddr3_dqs_n;
 wire [15:0]  ddr3_dq;
-
-wire usb_d_p;
-wire usb_d_n;
 
 ddr3_model ddr3simmod(
     .rst_n(ddr3_reset_n),
@@ -69,12 +66,6 @@ tophat main(
     .sysresetn(boardresetn),
     // LEDs
     .leds(ledout),
-    // UART
-    .uart_rxd_out(uart_rxd_out),
-    .uart_txd_in(uart_txd_in),
-    // USB
-	.usb_d_p(usb_d_p),
-	.usb_d_n(usb_d_n),
 	// DDR3 SDRAM
 	.ddr3_reset_n(ddr3_reset_n),
 	.ddr3_cke(ddr3_cke),
@@ -109,11 +100,23 @@ tophat main(
 	.usbc_resn(),
 	.usbc_int(1'b0),
 	.usbc_gpx(1'b0),
+	// USB-A via MAX4321
+	.usba_miso(usba_miso),
+	.usba_ss_n(),
+	.usba_clk(),
+	.usba_mosi(usba_mosi),
+	.usba_resn(),
+	.usba_int(1'b0),
 	// ADC
 	.adclk(adclk),
 	.addout(addout),
 	.addin(addin),
-	.adcs(adcs));
+	.adcs(adcs),
+	// Audio out
+	.au_sdin(),
+	.au_sclk(),
+	.au_lrclk(),
+	.au_mclk());
 
 always begin
 	#10
