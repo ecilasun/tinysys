@@ -51,19 +51,21 @@ void DMAResolveTiles(const uint32_t _rpuTileBuffer16ByteAligned, const uint32_t 
     *DMAIO = DMACMD_RESOLVETILES;*/
 
 	// Software emulation
-	for (uint32_t ty=0;ty<60;++ty)
+	for (uint32_t ty=0; ty<60; ++ty) // 240/4
 	{
-		for (uint32_t tx=0;tx<80;++tx)
+        uint32_t Y = _rpuTileBuffer16ByteAligned + ty*80*16;
+        uint32_t U = _gpuWritePage16ByteAligned + ty*4*320;
+		for (uint32_t tx=0;tx<80;++tx) // 320/4
 		{
 			// Read 16 byte source
-			uint32_t *tilebuffer = (uint32_t*)(_rpuTileBuffer16ByteAligned+(tx+ty*80)*16);
+			uint32_t *tilebuffer = (uint32_t*)(Y+tx*16);
 			uint32_t T0 = tilebuffer[0];
 			uint32_t T1 = tilebuffer[1];
 			uint32_t T2 = tilebuffer[2];
 			uint32_t T3 = tilebuffer[3];
 
 			// Expand onto target
-			uint32_t *writepageasword = (uint32_t*)(_gpuWritePage16ByteAligned + tx*4+ty*4*320);
+			uint32_t *writepageasword = (uint32_t*)(U+tx*4);
 			writepageasword[0] = T0;
 			writepageasword[80] = T1;
 			writepageasword[160] = T2;

@@ -413,7 +413,8 @@ module ddr3_model (
 
         if (!$value$plusargs("model_data+%s", tmp_model_dir))
         begin
-            tmp_model_dir = "/mnt/560d989f-3b06-4708-85b1-fa599a0bdd0c/tinysys/tmp";
+            //tmp_model_dir = "/mnt/560d989f-3b06-4708-85b1-fa599a0bdd0c/tinysys/tmp";
+            tmp_model_dir = "C:/repos/tinysys/tmp";
             // Linux: tmp_model_dir = "/mnt/560d989f-3b06-4708-85b1-fa599a0bdd0c/tinysys/tmp";
             // Windows: tmp_model_dir = "C:/repos/tinysys/tmp";
             $display(

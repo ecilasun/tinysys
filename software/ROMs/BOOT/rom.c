@@ -47,8 +47,8 @@ void RunExecTask()
 		"sw %1, 4(sp);"		// Store argv[1] (path to exec)
 		"sw %2, 8(sp);"		// Store argv[2] (exec params)
 		"sw zero, 12(sp);"	// Store argv[3] (nullptr)
-		"lw s0, %0;"        // Target branch address
-		"jalr s0;"          // Branch to the entry point
+		"lw s0, %0;"		// Target branch address
+		"jalr s0;"			// Branch to the entry point
 		"addi sp, sp, 16;"	// We most likely won't return here
 		: "=m" (s_startAddress)
 		: "r" (s_execName), "r" (s_execParam), "r" (s_execParamCount)
@@ -293,7 +293,7 @@ int main()
 	InstallISR();
 
 	// Set up kernel side usb context
-    USBSerialSetContext(&s_usbserialctx);
+	USBSerialSetContext(&s_usbserialctx);
 	// Start USB serial
 	/*s_usbserialenabled =*/ USBSerialInit(1);
 
@@ -359,8 +359,8 @@ int main()
 		if (task->state == TS_TERMINATED)
 		{
 			task->state = TS_UNKNOWN;
-			mini_snprintf(s_tmpstr, 512, "\n'%s' terminated (0x%x)\n", task->name, task->exitCode);
-			USBSerialWrite(s_tmpstr);
+			/*mini_snprintf(s_tmpstr, 512, "\n'%s' terminated (0x%x)\n", task->name, task->exitCode);
+			USBSerialWrite(s_tmpstr);*/
 			++s_refreshConsoleOut;
 			DeviceDefaultState();
 		}

@@ -721,6 +721,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					uint32_t pid = read_csr(0x8AA); // A0
 					uint32_t sig = read_csr(0x8AB); // A1
 					TaskExitTaskWithID(&g_taskctx, pid, sig);
+					/*mini_snprintf(k_tmpstr, 128, "\nSIG:0x%x PID:0x%x\n", sig, pid);
+					USBSerialWrite(k_tmpstr);*/
 					write_csr(0x8AA, sig);
 				}
 				else if (value==214) // brk()

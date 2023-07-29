@@ -55,7 +55,7 @@ wire [7:0] spiincomingdata;
 logic cs_n = 1'b1;
 assign usbcconn.cs_n = cs_n;
 
-SPI_Master usbcspi(
+SPI_Master usbspi(
    // control/data signals,
    .i_Rst_L(aresetn),
    .i_Clk(spibaseclock),
@@ -79,7 +79,7 @@ logic infifowe = 1'b0, infifore = 1'b0;
 logic [7:0] infifodin = 8'h00;
 wire [7:0] infifodout;
 
-spimasterinfifo usbcspiinputfifo(
+spimasterinfifo usbspiinputfifo(
 	.wr_clk(spibaseclock),
 	.full(infifofull),
 	.din(infifodin),
@@ -107,7 +107,7 @@ logic outfifowe = 1'b0, outfifore = 1'b0;
 logic [8:0] outfifodin;
 wire [8:0] outfifodout;
 
-usbcspififo usbcoutputfifo(
+usbcspififo usboutputfifo(
 	.wr_clk(aclk),
 	.full(outfifofull),
 	.din(outfifodin),

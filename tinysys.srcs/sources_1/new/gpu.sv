@@ -16,15 +16,14 @@ module gpucore(
 	output wire [31:0] vblankcount);
 
 // A simple graphics unit with the following features:
-// - Three video output modes (320x240 and 640x480 indexed, and 320x240 16bit)
+// - Four video output modes (320x240 or 640x480, indexed or 16bpp)
 // - Framebuffer scan-out from any cache aligned memory location in mapped device memory
 // - Frame counter support for vsync implementations
 // - Memory mapped command buffer interface
 
 // TODO:
 // - Allow command data to be read from any cache aligned memory location in 16 byte bursts
-// - Add sprite caching support at end of each scanline, and sprite compositing
-// - Add rasterization support
+// - Add sprite support
 
 // --------------------------------------------------
 // Scanline and scan pixel cdc registers
