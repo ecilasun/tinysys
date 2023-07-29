@@ -1,4 +1,5 @@
 #include "basesystem.h"
+#include "leds.h"
 #include "encoding.h"
 
 // When started at boot time, this code will have
@@ -15,6 +16,8 @@
 
 int main()
 {
+    int counter = 0;
+
     // Check hardware interrupt state
     uint32_t state = read_csr(mie);
 
@@ -26,6 +29,7 @@ int main()
     else
     {
         // Direct access to hardware? Spin
+        *LEDSTATE = counter++;
     }
 
     while(1){

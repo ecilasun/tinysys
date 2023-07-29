@@ -14,7 +14,8 @@ nanojpeg_libs = ../3rdparty/nanojpeg
 # Executable folders
 
 folders = \
-	stniccc \
+	oxygen \
+	audio \
 	raster \
 	helloworld \
 	usbserial \
@@ -30,6 +31,7 @@ folders = \
 	led \
 	vgmplayer \
 	dump \
+	more \
 
 # Rules
 

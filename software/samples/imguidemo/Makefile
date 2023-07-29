@@ -35,4 +35,5 @@ all: imguidemo.elf
 # Clean
 
 clean:
-	rm -rf $(objs) $(junk)
+	del $(objs) $(junk)
+# rm -rf $(objs) $(junk)
