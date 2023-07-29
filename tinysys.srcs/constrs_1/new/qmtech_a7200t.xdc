@@ -262,5 +262,5 @@ set_clock_groups -name asyncJ -asynchronous -group [get_clocks -of_objects [get_
 ## set_false_path -from [get_pins {socinstance/GPU/m_axi\\.araddr_reg/CLK}] -to [get_pins socinstance/fetchdecodeinst/instructioncacheinst/instructioncachectlinst/dout_reg*/CE]
 
 ## Human input
-## set_input_delay -clock [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT0]] -200.000 [get_ports sysresetn]
-## set_input_delay -clock [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT0]] -200.000 [get_ports sdcard_swtch]
+## set_input_delay -clock [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT0]] 0.000 [get_ports sysresetn]
+## set_input_delay -clock [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT0]] 0.000 [get_ports sdcard_swtch]
