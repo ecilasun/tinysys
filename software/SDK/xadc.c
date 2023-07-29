@@ -13,6 +13,11 @@ uint32_t ADCGetRawTemperature()
     return *XADCTEMP;
 }
 
+float ADCRawTemperatureToCentigrade(uint32_t rawtemp)
+{
+    return (rawtemp*503.975f)/4096.f-273.15f;
+}
+
 uint32_t ADCGetAnalogInput(const uint8_t _inputIndex)
 {
     return ANALOGINPUTS[_inputIndex];

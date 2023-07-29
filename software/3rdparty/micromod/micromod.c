@@ -57,13 +57,13 @@ static long speed, pl_count, pl_channel, random_seed;
 static struct channel channels[ MAX_CHANNELS ];
 
 static long calculate_num_patterns( signed char *module_header ) {
-	long num_patterns, order_entry, pattern;
-	num_patterns = 0;
-	for( pattern = 0; pattern < 128; pattern++ ) {
-		order_entry = module_header[ 952 + pattern ] & 0x7F;
-		if( order_entry >= num_patterns ) num_patterns = order_entry + 1;
+	long lnum_patterns, order_entry, lpattern;
+	lnum_patterns = 0;
+	for( lpattern = 0; lpattern < 128; lpattern++ ) {
+		order_entry = module_header[ 952 + lpattern ] & 0x7F;
+		if( order_entry >= lnum_patterns ) lnum_patterns = order_entry + 1;
 	}
-	return num_patterns;
+	return lnum_patterns;
 }
 
 static long calculate_num_channels( signed char *module_header ) {

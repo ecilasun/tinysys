@@ -7,14 +7,16 @@
 #include "gpu.h"
 #include "opl2.h"
 #include "usbserial.h"
+#include "mini-printf.h"
 
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
 
-#define VERSIONSTRING "v1.024"
+#define VERSIONSTRING "v1.025"
 
 static struct EVideoContext s_gpuContext;
+static char s_tmpstr[512];
 
 static char s_execName[64] = "ROM";
 static char s_execParam[64] = "auto";
@@ -24,11 +26,11 @@ static uint32_t s_execParamCount = 1;
 static int32_t s_cmdLen = 0;
 static uint32_t s_startAddress = 0;
 static int s_refreshConsoleOut = 1;
-//static int s_usbserialenabled = 0;
 
 static struct SUSBContext s_usbserialctx;
 
-void _stubTask() {
+void _stubTask()
+{
 	// NOTE: This task won't actually run
 	// It is a stub routine which will be stomped over by main()
 	// on first entry to the timer ISR
@@ -133,15 +135,8 @@ void ExecuteCmd(char *_cmd)
 			for (int i=1;i<ctx->numTasks;++i)
 			{
 				struct STask *task = &ctx->tasks[i];
-				USBSerialWrite(" task:");
-				USBSerialWrite(task->name);
-				USBSerialWrite(" len:");
-				USBSerialWriteDecimal(task->runLength);
-				USBSerialWrite(" state:");
-				USBSerialWriteDecimal(task->state);
-				USBSerialWrite(" PC:");
-				USBSerialWriteHex(task->regs[0]);
-				USBSerialWrite("\n");
+				mini_snprintf(s_tmpstr, 512, "task:%s len:%d state:%d PC:0x%x\n", task->name, task->runLength, task->state, task->regs[0]);
+				USBSerialWrite(s_tmpstr);
 			}
 		}
 	}
@@ -168,15 +163,13 @@ void ExecuteCmd(char *_cmd)
 	else if (!strcmp(command, "ver"))
 	{
 		USBSerialWrite("tinysys " VERSIONSTRING "\n");
-	}
-	else if (!strcmp(command, "tmp"))
-	{
-		USBSerialWrite("Temperature:");
-		uint32_t ADCcode = *XADCTEMP;
-		//float temp_centigrates = (ADCcode*503.975f)/4096.f-273.15f;
-		uint32_t temp_centigrates = (ADCcode*503975)/4096000-273;
-		USBSerialWriteDecimal(temp_centigrates);
+		USBSerialWrite("CPU: rv32imc_zicsr_zifencei\n");
+		USBSerialWrite("USB Serial: MAX3420 die rev# ");
+		USBSerialWriteHexByte(MAX3420ReadByte(rREVISION));
 		USBSerialWrite("\n");
+		/*USBSerialWrite("USB Host: MAX3421 die rev# ");
+		USBSerialWriteHexByte(MAX3421ReadByte(rREVISION));
+		USBSerialWrite("\n");*/
 	}
 	else if (!strcmp(command, "help"))
 	{
@@ -192,7 +185,6 @@ void ExecuteCmd(char *_cmd)
 		USBSerialWrite("mount: Mount drive sd:\n");
 		USBSerialWrite("umount: Unmount drive sd:\n");
 		USBSerialWrite("mem: Show available memory\n");
-		USBSerialWrite("tmp: Show device temperature\n");
 		USBSerialWrite("Any other input will load a file from sd: with matching name\n");
 		USBSerialWrite("CTRL+C terminates current program\n");
 		USBSerialWrite("\033[0m\n");
@@ -261,16 +253,18 @@ int main()
 	s_startAddress = LoadExecutable("sd:/boot.elf", false);
 	if (s_startAddress != 0x0)
 	{
+		// Reset to defaults
 		DeviceDefaultState();
-		// The boot executable is responsible for
-		// setting the entire hardware up including
-		// copying itself to the ROM shadow address
-		// at ROMSHADOW_START (0x0FFE0000 by default)
-		// This is easiest done by having main()
-		// copy a payload embedded in the binary itself
-		// and branch to _start() of the payload.
+		// Unmount current drive - the loaded app has to mount on their own
+		UnmountDrive();
+		// At this point there are no ISR, debug aid or any facilities
+		// and the boot app is on its own.
+		// The first thing the boot app has to do is
+		// to copy itself to the ROM shadow address
+		// and branch to it.
+		// From thereon it can become the replacement OS or RT application
 		RunExecTask();
-		// Do not let rest of the code run on return
+		// Not expecting it to return
 		while(1) {}
 	}
 
@@ -302,9 +296,6 @@ int main()
     USBSerialSetContext(&s_usbserialctx);
 	// Start USB serial
 	/*s_usbserialenabled =*/ USBSerialInit(1);
-	//USBSerialWrite("MAX3420 die rev# ");
-	//USBSerialWriteHexByte(MAX3420ReadByte(rREVISION));
-	//USBSerialWrite("\n");
 
 	// // Splash - we drop to embedded OS if there's no boot image (boot.elf)
 	// USBSerialWrite("\033[H\033[0m\033[2J\033[96;40mtinysys embedded OS " VERSIONSTRING "\033[0m\n\n");
@@ -368,11 +359,8 @@ int main()
 		if (task->state == TS_TERMINATED)
 		{
 			task->state = TS_UNKNOWN;
-			USBSerialWrite("\n");
-			USBSerialWrite(task->name);
-			USBSerialWrite("' terminated (0x");
-			USBSerialWriteHex(task->exitCode);
-			USBSerialWrite(")\n");
+			mini_snprintf(s_tmpstr, 512, "\n'%s' terminated (0x%x)\n", task->name, task->exitCode);
+			USBSerialWrite(s_tmpstr);
 			++s_refreshConsoleOut;
 			DeviceDefaultState();
 		}
@@ -392,10 +380,8 @@ int main()
 			s_refreshConsoleOut = 0;
 			s_cmdString[s_cmdLen] = 0;
 			// Reset current line and emit the command string
-			USBSerialWrite("\033[2K\r");
-			USBSerialWrite(s_workdir);
-			USBSerialWrite(":");
-			USBSerialWrite(s_cmdString);
+			mini_snprintf(s_tmpstr, 512, "\033[2K\r%s:%s", s_workdir, s_cmdString);
+			USBSerialWrite(s_tmpstr);
 		}
 	}
 

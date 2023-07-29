@@ -3,6 +3,7 @@
 		"chrono": "cpp",
 		"random": "cpp",
 		"limits": "cpp",
-		"algorithm": "cpp"
+		"algorithm": "cpp",
+		"mini-printf.h": "c"
 	}
 }
