@@ -71,7 +71,7 @@ wire [31:0] rval1;
 wire [31:0] rval2;
 logic [31:0] rdin;
 logic rwen = 1'b0;
-integerregisterfile registerfileinst(
+integerregisterfile GPR(
 	.clock(aclk),
 	.rs1(rs1),
 	.rs2(rs2),
@@ -86,7 +86,7 @@ integerregisterfile registerfileinst(
 // --------------------------------------------------
 
 wire branchout;
-branchlogic branchlogicinst(
+branchlogic BLU(
 	.aresetn(aresetn),
 	.branchout(branchout),
 	.val1(A),
@@ -98,7 +98,7 @@ branchlogic branchlogicinst(
 // --------------------------------------------------
 
 wire [31:0] aluout;
-arithmeticlogic arithmeticlogicinst(
+arithmeticlogic ALU(
 	.aresetn(aresetn),
 	.aluout(aluout),
 	.val1(A),
@@ -332,6 +332,7 @@ always @(posedge aclk) begin
 
 		DISPATCH: begin
 			// Most instructions are done here and go directly to writeback
+			btarget <= 32'd0;
 			unique case(1'b1)
 				instrOneHotOut[`O_H_OP],
 				instrOneHotOut[`O_H_OP_IMM]: begin

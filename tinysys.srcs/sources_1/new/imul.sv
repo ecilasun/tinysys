@@ -16,39 +16,55 @@ logic busy = 1'b0;
 logic busy2 = 1'b0;
 logic [32:0] a = 33'd0;
 logic [32:0] b = 33'd0;
-logic [3:0] n = 4'd0;
+logic [3:0] count = 4'd0;
 wire [65:0] dspproduct;
-assign ready = ~busy&busy2;
+logic done = 1'b0;
+assign ready = done;
 
+typedef enum logic [1:0] {INIT, WCMD, MULLOOP} mulcmdmodetype;
+mulcmdmodetype cmdmode = INIT;
+
+logic mulce;
 mult_gen_0 signextendedmultiplier(
 	.CLK(aclk),
 	.A(a),
 	.B(b),
 	.P(dspproduct),
-	.CE(aresetn & (start | busy)) );
+	.CE(mulce) );
 
 always_ff @(posedge aclk) begin
-	busy2 <= busy;
-	if (start) begin
-		unique case (func3)
-			`F3_MUL, `F3_MULH: begin
-				a <= {multiplicand[31], multiplicand};
-				b <= {multiplier[31], multiplier};
-			end
-			`F3_MULHSU: begin
-				a <= {multiplicand[31], multiplicand};
-				b <= {1'b0, multiplier};
-			end
-			`F3_MULHU: begin
-				a <= {1'b0, multiplicand};
-				b <= {1'b0, multiplier};
-			end
-		endcase
-		n <= 5; // Match this to the latency of the DSP multiplier
-		busy <= 1'b1;
-	end else begin
-		if (busy) begin
-			if (n == 0) begin
+
+    done <= 1'b0;
+
+    case (cmdmode)
+        INIT: begin
+            mulce <= 1'b0;
+            product <= 32'd0;
+            cmdmode <= WCMD;
+        end
+
+        WCMD: begin
+            unique case (func3)
+                `F3_MUL, `F3_MULH: begin
+                    a <= {multiplicand[31], multiplicand};
+                    b <= {multiplier[31], multiplier};
+                end
+                `F3_MULHSU: begin
+                    a <= {multiplicand[31], multiplicand};
+                    b <= {1'b0, multiplier};
+                end
+                `F3_MULHU: begin
+                    a <= {1'b0, multiplicand};
+                    b <= {1'b0, multiplier};
+                end
+            endcase
+            count <= 5; // Match this to the latency of the DSP multiplier
+            mulce <= start;
+            cmdmode <= start ? MULLOOP : WCMD;
+        end
+
+        MULLOOP: begin
+			if (count == 0) begin
 				unique case (func3)
 					`F3_MUL: begin
 						product <= dspproduct[31:0];
@@ -57,17 +73,18 @@ always_ff @(posedge aclk) begin
 						product <= dspproduct[63:32]; // or is this 64:33 ?
 					end
 				endcase
-				busy <= 1'b0;
+				mulce <= 1'b0;
+                done <= 1'b1;
+    			cmdmode <= WCMD;
 			end else begin
-				n <= n - 4'd1;
-			end 
-		end else begin
-			product <= 32'd0;
-		end
-	end
+				count <= count - 4'd1;
+    			cmdmode <= MULLOOP;
+			end
+        end
+    endcase
 
 	if (~aresetn) begin
-		product <= 32'd0;
+		cmdmode <= INIT;
 	end
 end
 

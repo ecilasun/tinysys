@@ -114,7 +114,7 @@ always_comb begin
 			axi_m.rready	= axi_s[0].rready;
 		end
 		default: begin
-			axi_m.araddr	= 0;
+			axi_m.araddr	= 32'dz;
 			axi_m.arvalid	= 0;
 			axi_m.arlen		= 0;
 			axi_m.arsize	= 0;
@@ -365,7 +365,7 @@ always_comb begin
 			axi_m.bready	= axi_s[0].bready;
 		end
 		default: begin
-			axi_m.awaddr	= 0;
+			axi_m.awaddr	= 32'dz;
 			axi_m.awvalid	= 0;
 			axi_m.awlen		= 0;
 			axi_m.awsize	= 0;
