@@ -22,7 +22,8 @@ logic rdy = 1'b0;
 logic r_sign;
 assign ready = rdy;
 
-logic divstate = 1'b0;
+typedef enum logic [1:0] {INIT, WCMD, DIVLOOP} divcmdmodetype;
+divcmdmodetype cmdmode = INIT;
 
 wire [32:0] sub_addn = ({reg_r,reg_q[31]}+{1'b0,reg_b});
 wire [32:0] sub_addm = ({reg_r,reg_q[31]}-{1'b0,reg_b});
@@ -30,18 +31,23 @@ wire [31:0] rem = r_sign ? reg_r + reg_b : reg_r;
 wire [31:0] quo = reg_q;
 
 always @(posedge aclk) begin
+
     count <= count+1;
     rdy <= 1'b0;
-    unique case (divstate)
-        1'b0: begin
+
+    unique case (cmdmode)
+        INIT: begin
             reg_r <= 32'b0;
+            cmdmode <= WCMD;
+        end
+        WCMD: begin
             r_sign <= 0;
             reg_q <= dividend;
             reg_b <= divisor;
             count <= 0;
-            divstate <= start;
+            cmdmode <= start ? DIVLOOP : WCMD;
         end
-        1'b1: begin
+        DIVLOOP: begin
         	unique case (r_sign)
         		1'b1: begin
             		reg_r <= sub_addn[31:0];
@@ -55,10 +61,11 @@ always @(posedge aclk) begin
         		end
         	endcase
             rdy <= count[5];
-            divstate <= ~count[5];
+            cmdmode <= count[5] ? WCMD : DIVLOOP;
             if (count[5]) begin
                 remainder <= rem;
                 quotient <= quo;
+                reg_r <= 32'b0;
             end else begin
                 remainder <= 32'd0;
                 quotient <= 32'd0;
@@ -67,7 +74,7 @@ always @(posedge aclk) begin
     endcase
 
     if (~aresetn) begin
-        divstate <= 1'b0;
+        cmdmode <= INIT;
     end
 end
 
@@ -97,7 +104,8 @@ logic negd;
 logic negq;
 assign ready = rdy;
 
-logic divstate = 1'b0;
+typedef enum logic [1:0] {INIT, WCMD, DIVLOOP} divcmdmodetype;
+divcmdmodetype cmdmode = INIT;
 
 wire [32:0] sub_addn = ({reg_r,reg_q[31]}+{1'b0,reg_b});
 wire [32:0] sub_addm = ({reg_r,reg_q[31]}-{1'b0,reg_b});
@@ -105,20 +113,25 @@ wire [31:0] rem = r_sign ? reg_r + reg_b : reg_r;
 wire [31:0] quo = reg_q;
 
 always @(posedge aclk) begin
+
     count <= count+1;
     rdy <= 0;
-    unique case (divstate)
-        1'b0: begin
+
+    unique case (cmdmode)
+        INIT: begin
             reg_r <= 32'b0;
+            cmdmode <= WCMD;
+        end
+        WCMD: begin
             r_sign <= 0;
             reg_q <= dividend[31] ? (~dividend+1) : dividend;	// ABS(dividend)
             reg_b <= divisor[31] ? (~divisor+1) : divisor;		// ABS(divisor)
             negd <= dividend[31];
             negq <= (divisor[31]^dividend[31]);
             count <= 0;
-            divstate <= start;
+            cmdmode <= start ? DIVLOOP : WCMD;
         end
-        1'b1: begin
+        DIVLOOP: begin
         	unique case (r_sign)
         		1'b1: begin
             		reg_r <= sub_addn[31:0];
@@ -132,10 +145,11 @@ always @(posedge aclk) begin
         		end
         	endcase
             rdy <= count[5];
-            divstate <= ~count[5];
+            cmdmode <= count[5] ? WCMD : DIVLOOP;
             if (count[5]) begin
                 remainder <= negd ? (~rem+1) : rem;
                 quotient <= negq ? (~quo+1) : quo;
+                reg_r <= 32'b0;
             end else begin
                 remainder <= 32'd0;
                 quotient <= 32'd0;
@@ -144,7 +158,7 @@ always @(posedge aclk) begin
     endcase
 
     if (~aresetn) begin
-        divstate <= 1'b0;
+        cmdmode <= INIT;
     end
 end
 endmodule
