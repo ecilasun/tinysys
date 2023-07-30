@@ -220,9 +220,9 @@ typedef enum logic [3:0] {
 	RWCMD,
 	SETUPBOUNDS, ENDSETUPBOUNDS, CLIPBOUNDS,
 	BEGINSWEEP, RASTERIZETILE, EMITTILE,
-	WAITTILEWADDR, WAITTILEWREADY,
+	WRITEBACKTILE,
 	NEXTTILE,
-	CACHESTROBE, WAITCACHEWREADY} rasterizermodetype;
+	CACHESTROBE} rasterizermodetype;
 rasterizermodetype rastermode = RINIT;
 
 logic signed [15:0] minx;
@@ -237,6 +237,10 @@ logic lasttile;
 // Tile coverage mask (byte write enable mask)
 logic [15:0] tilecoverage;
 
+// Pending writes
+logic [31:0] raddr;
+logic pendingwrite;
+
 always_ff @(posedge aclk) begin
 
 	rwren <= 1'b0;
@@ -244,10 +248,13 @@ always_ff @(posedge aclk) begin
 	wstrb <= 16'h0000;
 	cflush <= 1'b0;
 
+	if (wready) pendingwrite <= 1'b0;
+
 	case (rastermode)
 		RINIT: begin
 			// White color index in default VGA palette
 			outdata <= 128'h0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F;
+			pendingwrite <= 1'b0;
 			rastermode <= RWCMD;
 		end
 
@@ -271,16 +278,15 @@ always_ff @(posedge aclk) begin
 		end
 		
 		CACHESTROBE: begin
-			cflush <= 1'b1;
-			rastermode <= WAITCACHEWREADY;
-		end
-		
-		WAITCACHEWREADY: begin
-			if (wready) begin
+			if (~pendingwrite) begin
+				cflush <= 1'b1;
+				pendingwrite <= 1'b1;
 				rastermode <= RWCMD;
+			end else begin
+				rastermode <= CACHESTROBE;
 			end
 		end
-
+		
 		ENDSETUPBOUNDS: begin
 			minx <= minx < rx2 ? minx : rx2;
 			miny <= miny < ry2 ? miny : ry2;
@@ -327,7 +333,7 @@ always_ff @(posedge aclk) begin
 				// For each tile, the corresponding memory address is base address (16byte aligned)
 				// plus tile index times 16(bytes) in indexed color mode. For 16bit color mode the tile
 				// width is reduced by half (i.e. to 2 pixels of 16bits each from 4 pixels of 8bits each)
-				addr <= rasterbaseaddr + {(cx + cy*80), 4'd0};
+				raddr <= rasterbaseaddr + {(cx + cy*80), 4'd0};
 
 				// Step one line down if we're at the last column
 				if (cx >= maxx[15:2]) begin
@@ -341,20 +347,20 @@ always_ff @(posedge aclk) begin
 				// High when this is the last tile
 				lasttile <= (cy >= maxy[15:2]) && (cx >= maxx[15:2]);
 
-				rastermode <= |(emask01 & emask12 & emask20) ? WAITTILEWADDR : NEXTTILE;
+				rastermode <= |(emask01 & emask12 & emask20) ? WRITEBACKTILE : NEXTTILE;
 			end
 		end
 
-		WAITTILEWADDR: begin
-			// Write the 4x4 tile using coverage mask as byte strobe for transparent writes
-			wstrb <= tilecoverage;
-			din <= outdata;
-			rastermode <= WAITTILEWREADY;
-		end
-
-		WAITTILEWREADY: begin
-			if (wready) begin
+		WRITEBACKTILE: begin
+			if (~pendingwrite) begin
+				// Write the 4x4 tile using coverage mask as byte strobe for transparent writes
+				addr <= raddr;
+				wstrb <= tilecoverage;
+				din <= outdata;
+				pendingwrite <= 1'b1;
 				rastermode <= NEXTTILE;
+			end else begin
+				rastermode <= WRITEBACKTILE;
 			end
 		end
 
