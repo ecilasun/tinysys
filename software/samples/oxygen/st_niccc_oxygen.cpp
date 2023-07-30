@@ -255,12 +255,15 @@ int main(int argc, char** argv)
 			uint8_t *readpage = (cycle%2) ? s_framebufferA : s_framebufferB;
 			uint8_t *writepage = (cycle%2) ? s_framebufferB : s_framebufferA;
 
+			// See unresolved output
+			if (argc>1)
+				RPUSetTileBuffer((uint32_t)writepage);
+
 			res = read_frame();
 
 			// Make sure to flush rasterizer cache to raster memory before it's read
 			RPUFlushCache();
 
-			// Wait for vsync
 			uint32_t prevvsync = GPUReadVBlankCounter();
 			uint32_t currentvsync;
 			do {
@@ -275,7 +278,8 @@ int main(int argc, char** argv)
 			RPUWait();
 
 			// Get the DMA unit to resolve and write output onto the current GPU write page
-			DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)writepage);
+			if (argc<=1)
+				DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)writepage);
 
 			++cycle;
 		} while(res);
