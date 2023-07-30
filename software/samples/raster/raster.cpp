@@ -113,7 +113,7 @@ void edgeMask(int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t tx, int32_
 
 int main(int argc, char *argv[])
 {
-	if (argc <= 1)
+	if (argc > 1)
 		printf("Software rasterization test\n");
 	else
 		printf("Hardware rasterization test\n");
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 	GPUSetScanoutAddress(&vx, (uint32_t)s_framebufferB);
 	GPUSetDefaultPalette(&vx);
 
-	if (argc <= 1)
+	if (argc > 1)
 	{
 		uint32_t cycle = 0;
 		while (1)
@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
 		{
 			// Produce raw raster output
 			uint64_t starttime = E32ReadTime();
-			for (int i=0; i<512; ++i)
+			for (int i=0; i<8192; ++i)
 			{
 				// Enforce primitives larger than the screen size to test clipping
 				SPrimitive prim;
