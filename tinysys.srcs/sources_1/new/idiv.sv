@@ -22,7 +22,7 @@ logic rdy = 1'b0;
 logic r_sign;
 assign ready = rdy;
 
-typedef enum logic [1:0] {INIT, WCMD, DIVLOOP} divcmdmodetype;
+typedef enum logic [1:0] {INIT, WCMD, DIVLOOP, DIVEND} divcmdmodetype;
 divcmdmodetype cmdmode = INIT;
 
 wire [32:0] sub_addn = ({reg_r,reg_q[31]}+{1'b0,reg_b});
@@ -61,15 +61,18 @@ always @(posedge aclk) begin
         		end
         	endcase
             rdy <= count[5];
-            cmdmode <= count[5] ? WCMD : DIVLOOP;
+            cmdmode <= count[5] ? DIVEND : DIVLOOP;
             if (count[5]) begin
                 remainder <= rem;
                 quotient <= quo;
-                reg_r <= 32'b0;
             end else begin
                 remainder <= 32'd0;
                 quotient <= 32'd0;
             end
+        end
+        DIVEND: begin
+            reg_r <= 32'b0;
+            cmdmode <= WCMD;
         end
     endcase
 
@@ -104,7 +107,7 @@ logic negd;
 logic negq;
 assign ready = rdy;
 
-typedef enum logic [1:0] {INIT, WCMD, DIVLOOP} divcmdmodetype;
+typedef enum logic [1:0] {INIT, WCMD, DIVLOOP, DIVEND} divcmdmodetype;
 divcmdmodetype cmdmode = INIT;
 
 wire [32:0] sub_addn = ({reg_r,reg_q[31]}+{1'b0,reg_b});
@@ -145,15 +148,18 @@ always @(posedge aclk) begin
         		end
         	endcase
             rdy <= count[5];
-            cmdmode <= count[5] ? WCMD : DIVLOOP;
+            cmdmode <= count[5] ? DIVEND : DIVLOOP;
             if (count[5]) begin
                 remainder <= negd ? (~rem+1) : rem;
                 quotient <= negq ? (~quo+1) : quo;
-                reg_r <= 32'b0;
             end else begin
                 remainder <= 32'd0;
                 quotient <= 32'd0;
             end
+        end
+        DIVEND: begin
+            reg_r <= 32'b0;
+            cmdmode <= WCMD;
         end
     endcase
 
