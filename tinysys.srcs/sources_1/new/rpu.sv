@@ -14,21 +14,30 @@ module rastercore(
 	input wire rasterfifovalid,
 	output wire rasterstate);
 
-assign m_axi.arlen = 0;				// one burst
-assign m_axi.arsize = SIZE_16_BYTE; // 128bit wide reads (not used yet)
-assign m_axi.arburst = BURST_FIXED;
+// --------------------------------------------------
+// Raster cache
+// --------------------------------------------------
 
-// NOTE: No memory read yet
-assign m_axi.arvalid = 0;
-assign m_axi.araddr = 0;
-assign m_axi.rready = 0;
+logic [31:0] addr = 32'd0;
+logic [127:0] din = 128'd0;
+logic [15:0] wstrb = 0;
+logic ren = 1'b0;
+logic cflush = 1'b0;
+wire [127:0] dout;
+wire rready, wready;
 
-assign m_axi.awlen = 0;				// one burst
-assign m_axi.awsize = SIZE_16_BYTE; // 128bit wide writes
-assign m_axi.awburst = BURST_FIXED;
-
-// Tile coverage mask (byte write enable mask)
-logic [15:0] tilecoverage;
+rastercache rcache(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.addr(addr),
+	.din(din),
+	.dout(dout),
+	.wstrb(wstrb),
+	.ren(ren),
+	.flush(cflush),
+	.rready(rready),
+	.wready(wready),
+	.a4buscached(m_axi));
 
 // --------------------------------------------------
 // Rasterizer input fifo
@@ -63,7 +72,7 @@ logic [15:0] y2;
 logic cmdre = 1'b0;
 assign rasterfifore = cmdre;
 
-typedef enum logic [4:0] {
+typedef enum logic [2:0] {
 	INIT,
 	WCMD, DISPATCH,
 	SETRASTEROUT,
@@ -99,11 +108,15 @@ always_ff @(posedge aclk) begin
 		end
 
 		DISPATCH: begin
-			case (rastercmd[15:0])
-				16'h0000:	cmdmode <= SETRASTEROUT;	// Set base output address for the rasterizer
-				16'h0001:	cmdmode <= PUSHVERTEX;		// 16 bit signed x-y pair to follow (TODO: This comes from memory)
-				16'h0002:	cmdmode <= SETRASTERCOLOR;	// Set color index / 16bpp color for rasterizer
-				16'h0003:	cmdmode <= RASTERQUEUE;		// Push current primitive to rasterizer queue
+			// Command layout:
+			// [31:16] optional parameter
+			// [15:12] variant
+			// [11:0]  command
+			case (rastercmd[11:0])
+				12'h000:	cmdmode <= SETRASTEROUT;	// Set base output address for the rasterizer
+				12'h001:	cmdmode <= PUSHVERTEX;		// 16 bit signed x-y pair to follow (TODO: This comes from memory)
+				12'h002:	cmdmode <= SETRASTERCOLOR;	// Set color index / 16bpp color for rasterizer
+				12'h003:	cmdmode <= RASTERQUEUE;		// Push current primitive to rasterizer queue (optional variant to control cache)
 				default:	cmdmode <= FINALIZE;		// Invalid command, wait one clock and try next
 			endcase
 		end
@@ -132,7 +145,7 @@ always_ff @(posedge aclk) begin
 		
 		RASTERQUEUE: begin
 			// Push to rasterizer coarse tiling fifo
-			rwdin <= {4'd0,rastercolor,y2,x2,y1,x1,y0,x0};
+			rwdin <= {rastercolor,y2,x2,y1,x1,y0,x0, rastercmd[15:12]};
 			rwwen <= ~rwfull;
 			cmdmode <= ~rwfull ? FINALIZE : RASTERQUEUE;
 		end
@@ -173,7 +186,7 @@ logic signed [15:0] ry1;
 logic signed [15:0] rx2;
 logic signed [15:0] ry2;
 logic [7:0] rcolor;
-logic [3:0] runused;
+logic [3:0] rcommand;
 
 logic rena = 1'b0;
 wire [15:0] emask01;
@@ -207,8 +220,9 @@ typedef enum logic [3:0] {
 	RWCMD,
 	SETUPBOUNDS, ENDSETUPBOUNDS, CLIPBOUNDS,
 	BEGINSWEEP, RASTERIZETILE, EMITTILE,
-	WAITTILEWADDR, WAITTILEWREADY, WAITTILEBREADY,
-	NEXTTILE } rasterizermodetype;
+	WAITTILEWADDR, WAITTILEWREADY,
+	NEXTTILE,
+	CACHESTROBE, WAITCACHEWREADY} rasterizermodetype;
 rasterizermodetype rastermode = RINIT;
 
 logic signed [15:0] minx;
@@ -220,19 +234,18 @@ logic [13:0] cx;
 logic [13:0] cy;
 logic lasttile;
 
+// Tile coverage mask (byte write enable mask)
+logic [15:0] tilecoverage;
+
 always_ff @(posedge aclk) begin
 
 	rwren <= 1'b0;
 	rena <= 1'b0;
+	wstrb <= 16'h0000;
+	cflush <= 1'b0;
 
 	case (rastermode)
 		RINIT: begin
-			m_axi.awvalid <= 0;
-			m_axi.awaddr <= 'd0;
-			m_axi.wvalid <= 0;
-			m_axi.wstrb <= 16'h0000;
-			m_axi.wlast <= 1'b0;
-			m_axi.bready <= 1'b0;
 			// White color index in default VGA palette
 			outdata <= 128'h0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F;
 			rastermode <= RWCMD;
@@ -240,22 +253,34 @@ always_ff @(posedge aclk) begin
 
 		RWCMD: begin
 			if (rwvalid && ~rwempty) begin
-				{runused,rcolor,ry2,rx2,ry1,rx1,ry0,rx0} <= rwdout;
+				// TODO: If rcommand != 4'b0000 we need to flush the data cache
+				{rcolor,ry2,rx2,ry1,rx1,ry0,rx0,rcommand} <= rwdout;
 				// Advance FIFO
 				rwren <= 1'b1;
 				rastermode <= SETUPBOUNDS;
 			end
 		end
-	   
+
 		SETUPBOUNDS: begin
 			// Find min/max bounds
 			minx <= rx0 < rx1 ? rx0 : rx1;
 			miny <= ry0 < ry1 ? ry0 : ry1;
 			maxx <= rx0 >= rx1 ? rx0 : rx1;
 			maxy <= ry0 >= ry1 ? ry0 : ry1;
-			rastermode <= ENDSETUPBOUNDS;
+			rastermode <= (rcommand == 4'h1) ? CACHESTROBE : ENDSETUPBOUNDS;
 		end
 		
+		CACHESTROBE: begin
+			cflush <= 1'b1;
+			rastermode <= WAITCACHEWREADY;
+		end
+		
+		WAITCACHEWREADY: begin
+			if (wready) begin
+				rastermode <= RWCMD;
+			end
+		end
+
 		ENDSETUPBOUNDS: begin
 			minx <= minx < rx2 ? minx : rx2;
 			miny <= miny < ry2 ? miny : ry2;
@@ -302,9 +327,7 @@ always_ff @(posedge aclk) begin
 				// For each tile, the corresponding memory address is base address (16byte aligned)
 				// plus tile index times 16(bytes) in indexed color mode. For 16bit color mode the tile
 				// width is reduced by half (i.e. to 2 pixels of 16bits each from 4 pixels of 8bits each)
-				m_axi.awaddr <= rasterbaseaddr + {(cx + cy*80), 4'd0};
-				// Start memory write for an occupied tile
-				m_axi.awvalid <= |(emask01 & emask12 & emask20);
+				addr <= rasterbaseaddr + {(cx + cy*80), 4'd0};
 
 				// Step one line down if we're at the last column
 				if (cx >= maxx[15:2]) begin
@@ -323,31 +346,14 @@ always_ff @(posedge aclk) begin
 		end
 
 		WAITTILEWADDR: begin
-			if (m_axi.awready) begin
-				m_axi.awvalid <= 1'b0;
-
-                m_axi.wvalid <= 1'b1;
-                m_axi.wstrb <= tilecoverage; // 4x4 tile coverage mask
-                m_axi.wdata <= outdata;
-                m_axi.wlast <= 1'b1;
-
-				rastermode <= WAITTILEWREADY;
-			end
+			// Write the 4x4 tile using coverage mask as byte strobe for transparent writes
+			wstrb <= tilecoverage;
+			din <= outdata;
+			rastermode <= WAITTILEWREADY;
 		end
 
 		WAITTILEWREADY: begin
-			if (m_axi.wready) begin
-				m_axi.wvalid <= 1'b0;
-				m_axi.wstrb <= 16'h0000;
-				m_axi.wlast <= 1'b0;
-				m_axi.bready <= 1;
-				rastermode <= WAITTILEBREADY;
-			end
-		end
-
-		WAITTILEBREADY: begin
-			if (m_axi.bvalid) begin // && m_axi.bready
-				m_axi.bready <= 0;
+			if (wready) begin
 				rastermode <= NEXTTILE;
 			end
 		end
@@ -362,7 +368,7 @@ always_ff @(posedge aclk) begin
 	if (~aresetn) begin
 		rastermode <= RINIT;
 	end
-    
+
 end
 
 // Rasterizer completely idle

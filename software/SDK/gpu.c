@@ -239,6 +239,11 @@ void RPUSetColor(const uint8_t _colorIndex)
     *RPUIO = (_colorIndex<<24) | (_colorIndex<<16) | (_colorIndex<<8) | _colorIndex;
 }
 
+void RPUFlushCache()
+{
+    *RPUIO = RASTERCMD_FLUSHCACHE;
+}
+
 void RPUWait()
 {
     while (*RPUIO) { asm volatile("nop;"); }

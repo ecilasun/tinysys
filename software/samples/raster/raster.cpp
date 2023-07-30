@@ -244,6 +244,10 @@ int main(int argc, char *argv[])
 				RPUSetColor(V);
 				RPURasterizePrimitive();
 			}
+
+			// Make sure to flush rasterizer cache to raster memory before it's read
+			RPUFlushCache();
+
 			uint64_t endtime = E32ReadTime();
 
 			printf("Raster time: %ld ms\n", ClockToMs(endtime-starttime));

@@ -7,13 +7,14 @@
 #include "gpu.h"
 #include "opl2.h"
 #include "usbserial.h"
+#include "usbhid.h"
 #include "mini-printf.h"
 
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
 
-#define VERSIONSTRING "v1.025"
+#define VERSIONSTRING "v1.026"
 
 static struct EVideoContext s_gpuContext;
 static char s_tmpstr[512];
@@ -164,12 +165,16 @@ void ExecuteCmd(char *_cmd)
 	{
 		USBSerialWrite("tinysys " VERSIONSTRING "\n");
 		USBSerialWrite("CPU: rv32imc_zicsr_zifencei\n");
-		USBSerialWrite("USB Serial: MAX3420 die rev# ");
+		USBSerialWrite("GPU: width:640,320 depth:16,8\n");
+		USBSerialWrite("RPU: 16bytetiled,cached\n");
+		USBSerialWrite("APU: raw16bit\n");
+		USBSerialWrite("OPL: OPL2\n");
+		USBSerialWrite("USB: serial, MAX3420 die rev# ");
 		USBSerialWriteHexByte(MAX3420ReadByte(rREVISION));
 		USBSerialWrite("\n");
-		/*USBSerialWrite("USB Host: MAX3421 die rev# ");
+		USBSerialWrite("USB: host, MAX3421 die rev# ");
 		USBSerialWriteHexByte(MAX3421ReadByte(rREVISION));
-		USBSerialWrite("\n");*/
+		USBSerialWrite("\n");
 	}
 	else if (!strcmp(command, "help"))
 	{

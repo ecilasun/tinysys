@@ -257,6 +257,9 @@ int main(int argc, char** argv)
 
 			res = read_frame();
 
+			// Make sure to flush rasterizer cache to raster memory before it's read
+			RPUFlushCache();
+
 			// Wait for vsync
 			uint32_t prevvsync = GPUReadVBlankCounter();
 			uint32_t currentvsync;

@@ -12,6 +12,7 @@
 #define RASTERCMD_PUSHVERTEX2    0x00020001
 #define RASTERCMD_SETRASTERCOLOR 0x00000002
 #define RASTERCMD_RASTERIZEPRIM  0x00000003
+#define RASTERCMD_FLUSHCACHE     0x00001003
 
 #pragma pack(push,1)
 struct SPrimitive
@@ -79,4 +80,5 @@ void RPUSetTileBuffer(const uint32_t _rpuTileBuffer16ByteAligned);
 void RPUPushPrimitive(struct SPrimitive* _primitive);
 void RPURasterizePrimitive();
 void RPUSetColor(const uint8_t _colorIndex);
+void RPUFlushCache();
 void RPUWait();
