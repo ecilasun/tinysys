@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 	while (1)
 	{
 		// Wait until there are no more DMA operations in flight
-		while (DMAPending()) { asm volatile("nop;"); }
+		DMAWait();
 
 		uint64_t endtime = E32ReadTime();
 		averagetime = (averagetime + (uint32_t)(endtime-starttime))/2;

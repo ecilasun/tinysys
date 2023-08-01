@@ -6,20 +6,20 @@
 #define GPUCMD_SETPAL   0x00000001
 #define GPUCMD_SETVMODE 0x00000002
 
-#define RASTERCMD_OUTADDRS       0x00000000
-#define RASTERCMD_PUSHVERTEX0    0x00000001
-#define RASTERCMD_PUSHVERTEX1    0x00010001
-#define RASTERCMD_PUSHVERTEX2    0x00020001
+#define RASTERCMD_OUTADDRS	   0x00000000
+#define RASTERCMD_PUSHVERTEX0	0x00000001
+#define RASTERCMD_PUSHVERTEX1	0x00010001
+#define RASTERCMD_PUSHVERTEX2	0x00020001
 #define RASTERCMD_SETRASTERCOLOR 0x00000002
 #define RASTERCMD_RASTERIZEPRIM  0x00000003
-#define RASTERCMD_FLUSHCACHE     0x00001003
+#define RASTERCMD_FLUSHCACHE	 0x00001003
 
 #pragma pack(push,1)
 struct SPrimitive
 {
-    int16_t x0,y0;
-    int16_t x1,y1;
-    int16_t x2,y2;
+	int16_t x0,y0;
+	int16_t x1,y1;
+	int16_t x2,y2;
 };
 #pragma pack(pop)
 
@@ -28,35 +28,35 @@ struct SPrimitive
 
 enum EVideoMode
 {
-    EVM_320_Wide,
-    EVM_640_Wide,
-    EVM_Count
+	EVM_320_Wide,
+	EVM_640_Wide,
+	EVM_Count
 };
 
 enum EColorMode
 {
-    ECM_8bit_Indexed,
-    ECM_16bit_RGB,
-    ECM_Count
+	ECM_8bit_Indexed,
+	ECM_16bit_RGB,
+	ECM_Count
 };
 
 enum EVideoScanoutEnable
 {
-    EVS_Disable,
-    EVS_Enable,
-    EVS_Count
+	EVS_Disable,
+	EVS_Enable,
+	EVS_Count
 };
 
 struct EVideoContext
 {
-    enum EVideoMode m_vmode;
-    enum EColorMode m_cmode;
-    enum EVideoScanoutEnable m_scanEnable;
-    uint32_t m_strideInWords;
-    uint32_t m_scanoutAddressCacheAligned;
-    uint32_t m_cpuWriteAddressCacheAligned;
-    uint32_t m_graphicsWidth, m_graphicsHeight;
-    uint16_t m_consoleWidth, m_consoleHeight;
+	enum EVideoMode m_vmode;
+	enum EColorMode m_cmode;
+	enum EVideoScanoutEnable m_scanEnable;
+	uint32_t m_strideInWords;
+	uint32_t m_scanoutAddressCacheAligned;
+	uint32_t m_cpuWriteAddressCacheAligned;
+	uint32_t m_graphicsWidth, m_graphicsHeight;
+	uint16_t m_consoleWidth, m_consoleHeight;
 };
 
 // Utilities
@@ -81,4 +81,5 @@ void RPUPushPrimitive(struct SPrimitive* _primitive);
 void RPURasterizePrimitive();
 void RPUSetColor(const uint8_t _colorIndex);
 void RPUFlushCache();
+uint32_t RPUPending();
 void RPUWait();

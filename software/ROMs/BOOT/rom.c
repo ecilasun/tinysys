@@ -6,6 +6,7 @@
 #include "apu.h"
 #include "gpu.h"
 #include "opl2.h"
+#include "dma.h"
 #include "usbserial.h"
 #include "usbhid.h"
 #include "mini-printf.h"
@@ -27,6 +28,13 @@ static uint32_t s_execParamCount = 1;
 static int32_t s_cmdLen = 0;
 static uint32_t s_startAddress = 0;
 static int s_refreshConsoleOut = 1;
+
+static char *s_taskstates[]={
+	"UNKNOWN",
+	"PAUSED",
+	"RUNNING",
+	"TERMINATING",
+	"TERMINATED" };
 
 static struct SUSBContext s_usbserialctx;
 
@@ -75,6 +83,12 @@ void DeviceDefaultState()
 
 	// Turn off LEDs
 	LEDSetState(0x0);
+
+	// Wait for any pending raster ops to complete
+	RPUWait();
+
+	// Wait for any pending DMA to complete
+	DMAWait();
 
 	// Shut down display
 	s_gpuContext.m_vmode = EVM_320_Wide;
@@ -136,7 +150,7 @@ void ExecuteCmd(char *_cmd)
 			for (int i=1;i<ctx->numTasks;++i)
 			{
 				struct STask *task = &ctx->tasks[i];
-				mini_snprintf(s_tmpstr, 512, "task:%s len:%d state:%d PC:0x%x\n", task->name, task->runLength, task->state, task->regs[0]);
+				mini_snprintf(s_tmpstr, 512, "'%s'\t\tslice:%dus\t\tstate:%s\tPC:0x%x\n", task->name, task->runLength/ONE_MICROSECOND_IN_TICKS, s_taskstates[task->state], task->regs[0]);
 				USBSerialWrite(s_tmpstr);
 			}
 		}
@@ -164,17 +178,24 @@ void ExecuteCmd(char *_cmd)
 	else if (!strcmp(command, "ver"))
 	{
 		USBSerialWrite("tinysys " VERSIONSTRING "\n");
-		USBSerialWrite("CPU: rv32imc_zicsr_zifencei\n");
-		USBSerialWrite("GPU: width:640,320 depth:16,8\n");
-		USBSerialWrite("RPU: 16bytetiled,cached\n");
-		USBSerialWrite("APU: raw16bit\n");
-		USBSerialWrite("OPL: OPL2\n");
-		USBSerialWrite("USB: serial, MAX3420 die rev# ");
-		USBSerialWriteHexByte(MAX3420ReadByte(rREVISION));
-		USBSerialWrite("\n");
-		USBSerialWrite("USB: host, MAX3421 die rev# ");
-		USBSerialWriteHexByte(MAX3421ReadByte(rREVISION));
-		USBSerialWrite("\n");
+		uint8_t m3420rev = MAX3420ReadByte(rREVISION);
+		if (m3420rev != 0xFF)
+		{
+			USBSerialWrite("MAX3420(serial) rev# ");
+			USBSerialWriteHexByte(m3420rev);
+			USBSerialWrite("\n");
+		}
+		else
+			USBSerialWrite("MAX3420(serial) disabled\n");
+		uint8_t m3421rev = MAX3421ReadByte(rREVISION);
+		if (m3421rev != 0xFF)
+		{
+			USBSerialWrite("MAX3421(host) rev# ");
+			USBSerialWriteHexByte(m3421rev);
+			USBSerialWrite("\n");
+		}
+		else
+			USBSerialWrite("MAX3421(host) disabled\n");
 	}
 	else if (!strcmp(command, "help"))
 	{

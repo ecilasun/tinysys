@@ -120,131 +120,136 @@ uint8_t *GPUAllocateBuffer(const uint32_t _size)
 
 void GPUSetDefaultPalette(struct EVideoContext *_context)
 {
-    for (uint32_t i=0; i<256; ++i)
-    {
-        *GPUIO = GPUCMD_SETPAL;
-        *GPUIO = (i<<24) | vgapalette[i];
-    }
+	for (uint32_t i=0; i<256; ++i)
+	{
+		*GPUIO = GPUCMD_SETPAL;
+		*GPUIO = (i<<24) | vgapalette[i];
+	}
 }
 
 void GPUGetDimensions(const enum EVideoMode _mode, uint32_t *_width, uint32_t *_height)
 {
-    *_width = _mode == EVM_640_Wide ? 640 : 320;
-    *_height = _mode == EVM_640_Wide ? 480 : 240;
+	*_width = _mode == EVM_640_Wide ? 640 : 320;
+	*_height = _mode == EVM_640_Wide ? 480 : 240;
 }
 
 void GPUSetVMode(struct EVideoContext *_context, const enum EVideoScanoutEnable _scanEnable)
 {
-    // NOTE: Caller sets vmode/cmode fields
-    _context->m_scanEnable = _scanEnable;
-    _context->m_strideInWords = (_context->m_vmode == EVM_640_Wide || _context->m_cmode == ECM_16bit_RGB) ? 160 : 80;
-    _context->m_strideInWords *= _context->m_cmode == ECM_16bit_RGB ? 2 : 1;
+	// NOTE: Caller sets vmode/cmode fields
+	_context->m_scanEnable = _scanEnable;
+	_context->m_strideInWords = (_context->m_vmode == EVM_640_Wide || _context->m_cmode == ECM_16bit_RGB) ? 160 : 80;
+	_context->m_strideInWords *= _context->m_cmode == ECM_16bit_RGB ? 2 : 1;
 
-    GPUGetDimensions(_context->m_vmode, &_context->m_graphicsWidth, &_context->m_graphicsHeight);
+	GPUGetDimensions(_context->m_vmode, &_context->m_graphicsWidth, &_context->m_graphicsHeight);
 
-    // NOTE: For the time being console is always running at 640x480 mode
-    _context->m_consoleWidth = 80;//(uint16_t)(_context->m_graphicsWidth/8);
-    _context->m_consoleHeight = 60;//(uint16_t)(_context->m_graphicsHeight/8);
+	// NOTE: For the time being console is always running at 640x480 mode
+	_context->m_consoleWidth = 80;//(uint16_t)(_context->m_graphicsWidth/8);
+	_context->m_consoleHeight = 60;//(uint16_t)(_context->m_graphicsHeight/8);
 
-    *GPUIO = GPUCMD_SETVMODE;
-    *GPUIO = MAKEVMODEINFO((uint32_t)_context->m_cmode, (uint32_t)_context->m_vmode, (uint32_t)_scanEnable);
+	*GPUIO = GPUCMD_SETVMODE;
+	*GPUIO = MAKEVMODEINFO((uint32_t)_context->m_cmode, (uint32_t)_context->m_vmode, (uint32_t)_scanEnable);
 }
 
 void GPUSetScanoutAddress(struct EVideoContext *_context, const uint32_t _scanOutAddress64ByteAligned)
 {
-    _context->m_scanoutAddressCacheAligned = _scanOutAddress64ByteAligned;
-    //EAssert((_scanOutAddress64ByteAligned&0x3F) == 0, "Video scanout address has to be aligned to 64 bytes\n");
+	_context->m_scanoutAddressCacheAligned = _scanOutAddress64ByteAligned;
+	//EAssert((_scanOutAddress64ByteAligned&0x3F) == 0, "Video scanout address has to be aligned to 64 bytes\n");
 
-    *GPUIO = GPUCMD_SETVPAGE;
-    *GPUIO = _scanOutAddress64ByteAligned;
+	*GPUIO = GPUCMD_SETVPAGE;
+	*GPUIO = _scanOutAddress64ByteAligned;
 }
 
 void GPUSetWriteAddress(struct EVideoContext *_context, const uint32_t _writeAddress64ByteAligned)
 {
-    _context->m_cpuWriteAddressCacheAligned = _writeAddress64ByteAligned;
-    //EAssert((_writeAddress64ByteAligned&0x3F) == 0, "Video CPU write address has to be aligned to 64 bytes\n");
+	_context->m_cpuWriteAddressCacheAligned = _writeAddress64ByteAligned;
+	//EAssert((_writeAddress64ByteAligned&0x3F) == 0, "Video CPU write address has to be aligned to 64 bytes\n");
 }
 
 void GPUSetPal(const uint8_t _paletteIndex, const uint32_t _red, const uint32_t _green, const uint32_t _blue)
 {
-    *GPUIO = GPUCMD_SETPAL;
-    *GPUIO = (_paletteIndex<<24) | (MAKECOLORRGB24(_red, _green, _blue)&0x00FFFFFFFF);
+	*GPUIO = GPUCMD_SETPAL;
+	*GPUIO = (_paletteIndex<<24) | (MAKECOLORRGB24(_red, _green, _blue)&0x00FFFFFFFF);
 }
 
 void GPUPrintString(struct EVideoContext *_context, const int _col, const int _row, const char *_message, int _length)
 {
-    uint8_t *vramBase = (uint8_t*)_context->m_cpuWriteAddressCacheAligned;
-    uint32_t stride = _context->m_strideInWords*4;
+	uint8_t *vramBase = (uint8_t*)_context->m_cpuWriteAddressCacheAligned;
+	uint32_t stride = _context->m_strideInWords*4;
 
-    int i=0;
-    while (_message[i] != 0 && i<_length)
-    {
-        int currentchar = _message[i] - 32;
-        if (currentchar<0)
-        {
-            ++i;
-            continue;
-        }
+	int i=0;
+	while (_message[i] != 0 && i<_length)
+	{
+		int currentchar = _message[i] - 32;
+		if (currentchar<0)
+		{
+			++i;
+			continue;
+		}
 
-        int charrow = (currentchar>>5)*8;
-        int charcol = (currentchar%32)*8;
+		int charrow = (currentchar>>5)*8;
+		int charcol = (currentchar%32)*8;
 
-        for (int y=0; y<8; ++y)
-            for (int x=0; x<8; ++x)
-                vramBase[(_col+i)*8 + x + (_row+y)*stride] = residentfont[charcol+x+((charrow+y)*256)] & 0x0F;
+		for (int y=0; y<8; ++y)
+			for (int x=0; x<8; ++x)
+				vramBase[(_col+i)*8 + x + (_row+y)*stride] = residentfont[charcol+x+((charrow+y)*256)] & 0x0F;
 
-        ++i;
-    }
+		++i;
+	}
 }
 
 void GPUClearScreen(struct EVideoContext *_context, const uint32_t _colorWord)
 {
-    uint32_t *vramBaseAsWord = (uint32_t*)_context->m_cpuWriteAddressCacheAligned;
-    uint32_t W = _context->m_graphicsHeight * _context->m_strideInWords;
-    for (uint32_t i=0; i<W; ++i)
-        vramBaseAsWord[i] = _colorWord;
-    CFLUSH_D_L1;
+	uint32_t *vramBaseAsWord = (uint32_t*)_context->m_cpuWriteAddressCacheAligned;
+	uint32_t W = _context->m_graphicsHeight * _context->m_strideInWords;
+	for (uint32_t i=0; i<W; ++i)
+		vramBaseAsWord[i] = _colorWord;
+	CFLUSH_D_L1;
 }
 
 uint32_t GPUReadVBlankCounter()
 {
-    // vblank counter lives at this address
-    return *GPUIO;
+	// vblank counter lives at this address
+	return *GPUIO;
 }
 
 void RPUSetTileBuffer(const uint32_t _rpuWriteAddress16ByteAligned)
 {
-    *RPUIO = RASTERCMD_OUTADDRS;
-    *RPUIO = _rpuWriteAddress16ByteAligned;
+	*RPUIO = RASTERCMD_OUTADDRS;
+	*RPUIO = _rpuWriteAddress16ByteAligned;
 }
 
 void RPUPushPrimitive(struct SPrimitive* _primitive)
 {
-    *RPUIO = RASTERCMD_PUSHVERTEX0;
-    *RPUIO = (_primitive->y0<<16) | _primitive->x0;
-    *RPUIO = RASTERCMD_PUSHVERTEX1;
-    *RPUIO = (_primitive->y1<<16) | _primitive->x1;
-    *RPUIO = RASTERCMD_PUSHVERTEX2;
-    *RPUIO = (_primitive->y2<<16) | _primitive->x2;
+	*RPUIO = RASTERCMD_PUSHVERTEX0;
+	*RPUIO = (_primitive->y0<<16) | _primitive->x0;
+	*RPUIO = RASTERCMD_PUSHVERTEX1;
+	*RPUIO = (_primitive->y1<<16) | _primitive->x1;
+	*RPUIO = RASTERCMD_PUSHVERTEX2;
+	*RPUIO = (_primitive->y2<<16) | _primitive->x2;
 }
 
 void RPURasterizePrimitive()
 {
-    *RPUIO = RASTERCMD_RASTERIZEPRIM;
+	*RPUIO = RASTERCMD_RASTERIZEPRIM;
 }
 
 void RPUSetColor(const uint8_t _colorIndex)
 {
-    *RPUIO = RASTERCMD_SETRASTERCOLOR;
-    *RPUIO = (_colorIndex<<24) | (_colorIndex<<16) | (_colorIndex<<8) | _colorIndex;
+	*RPUIO = RASTERCMD_SETRASTERCOLOR;
+	*RPUIO = (_colorIndex<<24) | (_colorIndex<<16) | (_colorIndex<<8) | _colorIndex;
 }
 
 void RPUFlushCache()
 {
-    *RPUIO = RASTERCMD_FLUSHCACHE;
+	*RPUIO = RASTERCMD_FLUSHCACHE;
+}
+
+uint32_t RPUPending()
+{
+	return *RPUIO;
 }
 
 void RPUWait()
 {
-    while (*RPUIO) { asm volatile("nop;"); }
+	while (*RPUIO) { asm volatile("nop;"); }
 }

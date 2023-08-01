@@ -1,6 +1,7 @@
 #include "rombase.h"
 #include "sdcard.h"
 #include "usbserial.h"
+#include "mini-printf.h"
 #include "usbserialhandler.h"
 #include "usbhidhandler.h"
 #include <stdlib.h>
@@ -10,6 +11,8 @@
 #include <unistd.h>
 
 static FATFS Fs;
+
+static char k_tmpstr[64];
 
 void ReportErrorShort(const uint32_t _width, const char *_error)
 {
@@ -122,7 +125,7 @@ void ListFiles(const char *path)
 			{
 				USBSerialWrite("\t\t");
 				USBSerialWriteDecimal((int32_t)finf.fsize);
-				USBSerialWrite("b");
+				USBSerialWrite(" bytes");
 			}
 			USBSerialWrite("\033[0m\n");
 		} while(1);
@@ -198,8 +201,8 @@ uint32_t LoadExecutable(const char *filename, const bool reportError)
 		if (heap_start != 0)
 		{
 			asm volatile(
-				".word 0xFC000073;" // Invalidate & Write Back D$ (CFLUSH.D.L1)
-				"fence.i;"          // Invalidate I$
+				".word 0xFC000073;"	// Invalidate & Write Back D$ (CFLUSH.D.L1)
+				"fence.i;"			// Invalidate I$
 			);
 
 			// Set brk() to end of executable's BSS
@@ -478,7 +481,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				// 1024			open		long sys_open(const char __user * filename, int flags, umode_t mode); open/create file
 
 				// NOTE: this is a custom ecall to allow external debugger to access the OS task structures
-				// 0xFFFFFFFF	debugsetup	void *debugsetup(unsigned int flags); // flags: connect/disconnect
+				// 0xFFFFFFFF	setdebugger	void *setdebugger(unsigned int flags); // flags: connect/disconnect
 
 				if (value==0) // io_setup()
 				{
@@ -721,8 +724,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					uint32_t pid = read_csr(0x8AA); // A0
 					uint32_t sig = read_csr(0x8AB); // A1
 					TaskExitTaskWithID(&g_taskctx, pid, sig);
-					/*mini_snprintf(k_tmpstr, 128, "\nSIG:0x%x PID:0x%x\n", sig, pid);
-					USBSerialWrite(k_tmpstr);*/
+					mini_snprintf(k_tmpstr, 64, "\nSIG:0x%x PID:0x%x\n", sig, pid);
+					USBSerialWrite(k_tmpstr);
 					write_csr(0x8AA, sig);
 				}
 				else if (value==214) // brk()
@@ -803,9 +806,9 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 						write_csr(0x8AA, 0xFFFFFFFF);
 					}
 				}
-				else if (value==0xFFFFFFFF) // debugsetup()
+				else if (value==0xFFFFFFFF) // setdebugger()
 				{
-					ReportError(32, "Debuggers are not supported yet", code, value, PC);
+					ReportError(32, "Unimplemented debugger interface", code, value, PC);
 					write_csr(0x8AA, 0xFFFFFFFF);
 				}
 				else // Unimplemented syscalls drop here
@@ -831,6 +834,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			case CAUSE_STORE_PAGE_FAULT:*/
 			default:
 			{
+				// Code contains the CAUSE_ code
 				ReportError(32, "Guru meditation, core halted", code, value, PC);
 
 				// Put core to endless sleep
