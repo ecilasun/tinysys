@@ -17,8 +17,6 @@ module edgemaskgen(
 	// Tile mask
 	output logic [15:0] rmask);
 
-// https://fgiesen.wordpress.com/2013/02/08/triangle-rasterization-in-practice/
-
 /*
 // Tile dimension
 static const int stepXSize = 4;
