@@ -34,6 +34,16 @@ enum EUSBDeviceState
 	DEVS_ERROR
 };
 
+// SETUP packet offsets
+#define bmRequestType 0
+#define bRequest 1
+#define wValueL 2
+#define wValueH 3
+#define wIndexL 4
+#define wIndexH 5
+#define wLengthL 6
+#define wLengthH 7
+
 void USBHostSetContext(struct SUSBContext *ctx);
 struct SUSBContext *USBHostGetContext();
 void USBHostInit(uint32_t enableInterrupts);
@@ -224,3 +234,44 @@ enum EBusState USBBusProbe();
 // Full/low speed setup
 #define MODE_FS_HOST    (bmDPPULLDN|bmDMPULLDN|bmHOST|bmSOFKAENAB)
 #define MODE_LS_HOST    (bmDPPULLDN|bmDMPULLDN|bmHOST|bmLOWSPEED|bmSOFKAENAB)
+
+#define USB_REQUEST_GET_STATUS                  0       // Standard Device Request - GET STATUS
+#define USB_REQUEST_CLEAR_FEATURE               1       // Standard Device Request - CLEAR FEATURE
+#define USB_REQUEST_SET_FEATURE                 3       // Standard Device Request - SET FEATURE
+#define USB_REQUEST_SET_ADDRESS                 5       // Standard Device Request - SET ADDRESS
+#define USB_REQUEST_GET_DESCRIPTOR              6       // Standard Device Request - GET DESCRIPTOR
+#define USB_REQUEST_SET_DESCRIPTOR              7       // Standard Device Request - SET DESCRIPTOR
+#define USB_REQUEST_GET_CONFIGURATION           8       // Standard Device Request - GET CONFIGURATION
+#define USB_REQUEST_SET_CONFIGURATION           9       // Standard Device Request - SET CONFIGURATION
+#define USB_REQUEST_GET_INTERFACE               10      // Standard Device Request - GET INTERFACE
+#define USB_REQUEST_SET_INTERFACE               11      // Standard Device Request - SET INTERFACE
+#define USB_REQUEST_SYNCH_FRAME                 12      // Standard Device Request - SYNCH FRAME
+
+#define USB_FEATURE_ENDPOINT_HALT               0       // CLEAR/SET FEATURE - Endpoint Halt
+#define USB_FEATURE_DEVICE_REMOTE_WAKEUP        1       // CLEAR/SET FEATURE - Device remote wake-up
+#define USB_FEATURE_TEST_MODE                   2       // CLEAR/SET FEATURE - Test mode
+#define USB_SETUP_HOST_TO_DEVICE                0x00    // Device Request bmRequestType transfer direction - host to device transfer
+#define USB_SETUP_DEVICE_TO_HOST                0x80    // Device Request bmRequestType transfer direction - device to host transfer
+#define USB_SETUP_TYPE_STANDARD                 0x00    // Device Request bmRequestType type - standard
+#define USB_SETUP_TYPE_CLASS                    0x20    // Device Request bmRequestType type - class
+#define USB_SETUP_TYPE_VENDOR                   0x40    // Device Request bmRequestType type - vendor
+#define USB_SETUP_RECIPIENT_DEVICE              0x00    // Device Request bmRequestType recipient - device
+#define USB_SETUP_RECIPIENT_INTERFACE           0x01    // Device Request bmRequestType recipient - interface
+#define USB_SETUP_RECIPIENT_ENDPOINT            0x02    // Device Request bmRequestType recipient - endpoint
+#define USB_SETUP_RECIPIENT_OTHER               0x03    // Device Request bmRequestType recipient - other
+
+#define USB_DESCRIPTOR_DEVICE           0x01    // bDescriptorType for a Device Descriptor.
+#define USB_DESCRIPTOR_CONFIGURATION    0x02    // bDescriptorType for a Configuration Descriptor.
+#define USB_DESCRIPTOR_STRING           0x03    // bDescriptorType for a String Descriptor.
+#define USB_DESCRIPTOR_INTERFACE        0x04    // bDescriptorType for an Interface Descriptor.
+#define USB_DESCRIPTOR_ENDPOINT         0x05    // bDescriptorType for an Endpoint Descriptor.
+#define USB_DESCRIPTOR_DEVICE_QUALIFIER 0x06    // bDescriptorType for a Device Qualifier.
+#define USB_DESCRIPTOR_OTHER_SPEED      0x07    // bDescriptorType for a Other Speed Configuration.
+#define USB_DESCRIPTOR_INTERFACE_POWER  0x08    // bDescriptorType for Interface Power.
+#define USB_DESCRIPTOR_OTG              0x09    // bDescriptorType for an OTG Descriptor.
+
+#define bmREQ_GET_DESCR     USB_SETUP_DEVICE_TO_HOST|USB_SETUP_TYPE_STANDARD|USB_SETUP_RECIPIENT_DEVICE     //get descriptor request type
+#define bmREQ_SET           USB_SETUP_HOST_TO_DEVICE|USB_SETUP_TYPE_STANDARD|USB_SETUP_RECIPIENT_DEVICE     //set request type for all but 'set feature' and 'set interface'
+#define bmREQ_CL_GET_INTF   USB_SETUP_DEVICE_TO_HOST|USB_SETUP_TYPE_CLASS|USB_SETUP_RECIPIENT_INTERFACE     //get interface request type
+#define bmREQ_HIDOUT        USB_SETUP_HOST_TO_DEVICE|USB_SETUP_TYPE_CLASS|USB_SETUP_RECIPIENT_INTERFACE
+#define bmREQ_HIDIN         USB_SETUP_DEVICE_TO_HOST|USB_SETUP_TYPE_CLASS|USB_SETUP_RECIPIENT_INTERFACE

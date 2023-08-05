@@ -13,6 +13,9 @@ EBusState vbusState = BUSUNKNOWN;
 EUSBDeviceState olddevState = DEVS_UNKNOWN;
 EUSBDeviceState devState = DEVS_UNKNOWN;
 
+// Setup data
+uint8_t SUD[8];
+
 void EnumerateDevice()
 {
 	// TODO:
@@ -52,9 +55,9 @@ int main(int argc, char *argv[])
 				if (devState == DEVS_ATTACHED_WAITINGCONFIG)
 				{
 					devState = DEVS_ADDRESSING;
+					printf("irq(frame):%x\n", irq);
 					// TODO: Request device descriptor then go to ADDRESSING state
 				}
-				//printf("irq(frame):%x", irq);
 				MAX3421WriteByte(rHIRQ, bmFRAMEIRQ);
 			}
 			else if (irq&bmCONDETIRQ)
@@ -66,6 +69,12 @@ int main(int argc, char *argv[])
 			{
 				// Ignore send buffer available interrupt for now
 				MAX3421WriteByte(rHIRQ, bmSNDBAVIRQ);
+			}
+			else if (irq&bmHXFRDNIRQ)
+			{
+				// TODO: response to our SETUP package
+				printf("bmHXFRDNIRQ\n");
+				MAX3421WriteByte(rHIRQ, bmHXFRDNIRQ);
 			}
 			else
 			{
@@ -86,15 +95,21 @@ int main(int argc, char *argv[])
 					break;
 
 					case FSHOST:
-						MAX3421WriteByte(rMODE, bmDPPULLDN | bmDMPULLDN | bmHOST | bmSOFKAENAB);
-						devState = DEVS_ATTACHED;
-						LEDSetState(0x01);
+						if (devState != DEVS_ATTACHED)
+						{
+							MAX3421WriteByte(rMODE, bmDPPULLDN | bmDMPULLDN | bmHOST | bmSOFKAENAB);
+							devState = DEVS_ATTACHED;
+							LEDSetState(0x01);
+						}
 					break;
 
 					case LSHOST:
-						MAX3421WriteByte(rMODE, bmDPPULLDN | bmDMPULLDN | bmHOST | bmLOWSPEED | bmSOFKAENAB);
-						devState = DEVS_ATTACHED;
-						LEDSetState(0x02);
+						if (devState != DEVS_ATTACHED)
+						{
+							MAX3421WriteByte(rMODE, bmDPPULLDN | bmDMPULLDN | bmHOST | bmLOWSPEED | bmSOFKAENAB);
+							devState = DEVS_ATTACHED;
+							LEDSetState(0x02);
+						}
 					break;
 
 					case BUSUNKNOWN:
@@ -106,7 +121,7 @@ int main(int argc, char *argv[])
 
 			// USB task
 			if (olddevState != devState)
-				{
+			{
 				switch(devState)
 				{
 					case DEVS_UNKNOWN:
@@ -141,12 +156,36 @@ int main(int argc, char *argv[])
 					break;
 
 					case DEVS_ADDRESSING:
+					{
+						// See  https://github.com/felis/lightweight-usb-host/tree/master
+						printf("assigning address\n");
+						uint8_t addr = 0;
+						uint8_t newaddr = 1;
+						MAX3421WriteByte(rPERADDR, addr);
 						// set an addres (index in internal table) for the device and send it across
+						SUD[bmRequestType] = bmREQ_SET;
+						SUD[bRequest] = USB_REQUEST_SET_ADDRESS;
+						SUD[wValueL] = newaddr;
+						SUD[wValueH] = 0;
+						SUD[wIndexL] = 0;
+						SUD[wIndexH] = 0;
+						SUD[wLengthL] = 0;
+						SUD[wLengthH] = 0;
+						MAX3421WriteBytes(rSUDFIFO, 8, SUD);
+						// Send setup package to peripheral
+						uint8_t ep = 0;
+						MAX3421WriteByte( rHXFR, (tokSETUP|ep));
+						devState = DEVS_CONFIGURING;
+					}
 					break;
 
 					case DEVS_CONFIGURING:
+					{
+						printf("configuring\n");
 						// figure out the correct driver for the device
 						// For now we have one device, so give it the address 1
+						devState = DEVS_RUNNING;
+					}
 					break;
 
 					case DEVS_RUNNING:
