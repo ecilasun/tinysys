@@ -13,9 +13,19 @@ int MAX3421ReadBytes(uint8_t command, uint8_t length, uint8_t *buffer);
 void MAX3421WriteBytes(uint8_t command, uint8_t length, uint8_t *buffer);
 void MAX3421EnableIRQs();
 
+enum EBusState
+{
+	BUSUNKNOWN,
+	SE0,
+	SE1,
+	FSHOST,
+	LSHOST
+};
+
 void USBHostSetContext(struct SUSBContext *ctx);
 struct SUSBContext *USBHostGetContext();
 void USBHostInit(uint32_t enableInterrupts);
+enum EBusState USBBusProbe();
 
 // MAX3421E Registers - host mode
 #define rRCVFIFO	1<<3

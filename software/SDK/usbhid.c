@@ -1,4 +1,5 @@
 #include "usbhid.h"
+#include "usbserial.h"
 #include "basesystem.h"
 #include <string.h>
 
@@ -104,6 +105,53 @@ void MAX3421CtlReset()
 	MAX3421WriteByte(rUSBIRQ, bmOSCOKIRQ); // Clear IRQ
 }
 
+enum EBusState USBBusProbe()
+{
+	uint8_t bus_sample;
+
+	bus_sample = MAX3421ReadByte(rHRSL); // Get J,K status
+	bus_sample &= (bmJSTATUS|bmKSTATUS); // zero the rest of the byte
+
+	switch( bus_sample )
+	{
+		case bmJSTATUS:
+			if((MAX3421ReadByte(rMODE) & bmLOWSPEED) == 0 ) {
+				USBSerialWrite("full speed host - jstatus\n");
+				MAX3421WriteByte(rMODE, MODE_FS_HOST);       //start full-speed host
+				return FSHOST;
+			}
+			else {
+				USBSerialWrite("low speed host - jstatus\n");
+				MAX3421WriteByte(rMODE, MODE_LS_HOST);        //start low-speed host
+				return LSHOST;
+			}
+			break;
+		case bmKSTATUS:
+			if(( MAX3421ReadByte(rMODE) & bmLOWSPEED) == 0 )
+			{
+				USBSerialWrite("low speed host - kstatus\n");
+				MAX3421WriteByte(rMODE, MODE_LS_HOST);       //start low-speed host
+				return LSHOST;
+			}
+			else
+			{
+				USBSerialWrite("full speed host - kstatus\n");
+				MAX3421WriteByte(rMODE, MODE_FS_HOST);       //start full-speed host
+				return FSHOST;
+			}
+			break;
+		case bmSE1:              //illegal state
+			return SE1;
+			break;
+		case bmSE0:              //disconnected state
+			MAX3421WriteByte(rMODE, bmDPPULLDN | bmDMPULLDN | bmHOST | bmSEPIRQ);
+			return SE0;
+			break;
+	}
+
+	return BUSUNKNOWN;
+}
+
 void USBHostInit(uint32_t enableInterrupts)
 {
 	// Must set context first
@@ -112,37 +160,20 @@ void USBHostInit(uint32_t enableInterrupts)
 
 	MAX3421WriteByte(rPINCTL, bmFDUPSPI | bmINTLEVEL | gpxSOF);
 	MAX3421CtlReset();
-	//MAX3421WriteByte(rGPIO, 0x0);
+	//MAX3421WriteByte(rIOPINS1, 0x0);
 
-	MAX3421WriteByte(rMODE, bmDPPULLDN | bmDMPULLDN | bmHOST);// | bmLOWSPEED | bmSOFKAENAB);
-	MAX3421WriteByte(rHIEN, bmCONDETIE | bmFRAMEIE);
+	MAX3421WriteByte(rMODE, bmDPPULLDN | bmDMPULLDN | bmHOST | bmSOFKAENAB);
+	MAX3421WriteByte(rHIEN, bmCONDETIE | bmFRAMEIE | bmBUSEVENTIE);
+
+	// Wait for bus sample
 	MAX3421WriteByte(rHCTL, bmSAMPLEBUS);
+	while(!(MAX3421ReadByte(rHCTL) & bmSAMPLEBUS)) { };
+
+	USBBusProbe();
+	MAX3421WriteByte(rHIRQ, bmCONDETIRQ);
 
 	if (enableInterrupts)
 	{
-		//MAX3421WriteByte(rHIRQ, bmCONDETIRQ);
 		MAX3421WriteByte(rCPUCTL, bmIE);
 	}
-
-	// Generate descriptor table for a USB serial device
-	/*MakeHostDescriptors(s_usbhost);
-
-	// Enable full-duplex, int low, gpxA/B passthrough
-	MAX3421WriteByte(rPINCTL, bmFDUPSPI | bmINTLEVEL | gpxSOF);
-
-	// Reset the chip and wait for clock to stabilize
-	MAX3421CtlReset();
-
-	// Turn off GPIO
-	MAX3421WriteByte(rGPIO, 0x0);
-
-	// Connect
-	MAX3421WriteByte(rUSBCTL, bmCONNECT | bmVBGATE);
-
-	if (enableInterrupts)
-	{
-		MAX3421EnableIRQs();
-		// Enable interrupt generation via INT pin
-		MAX3421WriteByte(rCPUCTL, bmIE);
-	}*/
 }
