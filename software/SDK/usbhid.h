@@ -22,6 +22,18 @@ enum EBusState
 	LSHOST
 };
 
+enum EUSBDeviceState
+{
+	DEVS_UNKNOWN,
+	DEVS_DETACHED,
+	DEVS_ATTACHED,
+	DEVS_ATTACHED_WAITINGCONFIG,
+	DEVS_ADDRESSING,
+	DEVS_CONFIGURING,
+	DEVS_RUNNING,
+	DEVS_ERROR
+};
+
 void USBHostSetContext(struct SUSBContext *ctx);
 struct SUSBContext *USBHostGetContext();
 void USBHostInit(uint32_t enableInterrupts);

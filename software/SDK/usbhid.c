@@ -160,15 +160,13 @@ void USBHostInit(uint32_t enableInterrupts)
 
 	MAX3421WriteByte(rPINCTL, bmFDUPSPI | bmINTLEVEL | gpxSOF);
 	MAX3421CtlReset();
-	//MAX3421WriteByte(rIOPINS1, 0x0);
+	MAX3421WriteByte(rIOPINS1, 0x0);
+	MAX3421WriteByte(rIOPINS2, 0x0);
 
-	MAX3421WriteByte(rMODE, bmDPPULLDN | bmDMPULLDN | bmHOST | bmSOFKAENAB);
-	MAX3421WriteByte(rHIEN, bmCONDETIE | bmFRAMEIE | bmBUSEVENTIE);
+	MAX3421WriteByte(rMODE, bmDPPULLDN | bmDMPULLDN | bmHOST);
+	MAX3421WriteByte(rHIEN, bmCONDETIE | bmFRAMEIE);
 
-	// Wait for bus sample
 	MAX3421WriteByte(rHCTL, bmSAMPLEBUS);
-	while(!(MAX3421ReadByte(rHCTL) & bmSAMPLEBUS)) { };
-
 	USBBusProbe();
 	MAX3421WriteByte(rHIRQ, bmCONDETIRQ);
 
