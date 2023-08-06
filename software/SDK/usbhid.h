@@ -27,11 +27,11 @@ enum EUSBDeviceState
 	DEVS_UNKNOWN,
 	DEVS_DETACHED,
 	DEVS_ATTACHED,
-	DEVS_ATTACHED_WAITINGCONFIG,
 	DEVS_ADDRESSING,
 	DEVS_CONFIGURING,
 	DEVS_RUNNING,
-	DEVS_ERROR
+	DEVS_ERROR,
+	DEVS_HALT
 };
 
 // SETUP packet offsets
@@ -44,10 +44,29 @@ enum EUSBDeviceState
 #define wLengthL 6
 #define wLengthH 7
 
+struct USBEndpointRecord
+{
+    uint8_t epAddr;
+    uint8_t epTransferType;
+    unsigned int maxPacketSize;
+    uint8_t pollInterval;
+    uint8_t sendToggle;
+    uint8_t receiveToggle;
+};
+
+struct USBDeviceRecord
+{
+    struct USBEndpointRecord *endpointInfo;
+    uint8_t deviceClass;
+};
+
 void USBHostSetContext(struct SUSBContext *ctx);
 struct SUSBContext *USBHostGetContext();
 void USBHostInit(uint32_t enableInterrupts);
 enum EBusState USBBusProbe();
+uint8_t USBGetDeviceDescriptor();
+uint8_t USBAssignAddress();
+uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_t _bRequest, uint8_t _wValLo, uint8_t _wValHi, unsigned int _wInd, unsigned int _nbytes, char* _dataptr, unsigned int _nak_limit);
 
 // MAX3421E Registers - host mode
 #define rRCVFIFO	1<<3

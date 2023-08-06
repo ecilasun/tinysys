@@ -6,9 +6,11 @@
 
 // Please see
 // https://github.com/felis/ArduinoUSBhost/blob/master/Max3421e.cpp
+// https://github.com/electricimp/reference/blob/master/hardware/max3421e/max3421e.device.nut#L1447
+// https://github.com/felis/USB_Host_Shield/blob/880773a1cfd5a521f97493b0e4de7f243a2c2925/Usb.cpp#L383
 
-EBusState oldBusState = BUSUNKNOWN;
-EBusState vbusState = BUSUNKNOWN;
+EBusState old_probe_result = BUSUNKNOWN;
+EBusState probe_result = BUSUNKNOWN;
 
 EUSBDeviceState olddevState = DEVS_UNKNOWN;
 EUSBDeviceState devState = DEVS_UNKNOWN;
@@ -45,70 +47,69 @@ int main(int argc, char *argv[])
 		// Clear initial connection detect interrupt
 		MAX3421WriteByte(rHIRQ, bmCONDETIRQ);
 
+		// This imitates the interrupt work
 		do
 		{
+			uint8_t hirq_sendback = 0;
+
 			uint8_t irq = MAX3421ReadByte(rHIRQ);
 
-			if (irq&bmFRAMEIRQ)
+			if (irq&bmCONDETIRQ)
 			{
-				// Been waiting for config?
-				if (devState == DEVS_ATTACHED_WAITINGCONFIG)
-				{
-					devState = DEVS_ADDRESSING;
-					printf("irq(frame):%x\n", irq);
-					// TODO: Request device descriptor then go to ADDRESSING state
-				}
-				MAX3421WriteByte(rHIRQ, bmFRAMEIRQ);
+				probe_result = USBBusProbe();
+				hirq_sendback |= bmCONDETIRQ;
 			}
-			else if (irq&bmCONDETIRQ)
+			/*else if (irq&bmFRAMEIRQ)
 			{
-				vbusState = USBBusProbe();
-				MAX3421WriteByte(rHIRQ, bmCONDETIRQ);
+				// TODO:
+				hirq_sendback |= bmFRAMEIRQ;
 			}
 			else if (irq&bmSNDBAVIRQ)
 			{
 				// Ignore send buffer available interrupt for now
-				MAX3421WriteByte(rHIRQ, bmSNDBAVIRQ);
+				hirq_sendback |= bmSNDBAVIRQ;
 			}
 			else if (irq&bmHXFRDNIRQ)
 			{
 				// TODO: response to our SETUP package
 				printf("bmHXFRDNIRQ\n");
-				MAX3421WriteByte(rHIRQ, bmHXFRDNIRQ);
+				hirq_sendback |= bmHXFRDNIRQ;
 			}
 			else
 			{
 				printf("irq(unknown):%x\n", irq);
-			}
+			}*/
 
-			if (vbusState != oldBusState)
+			MAX3421WriteByte(rHIRQ, hirq_sendback);
+
+			uint32_t state_changed = probe_result != old_probe_result;
+
+			if (state_changed)
 			{
-				switch(vbusState)
+				old_probe_result = probe_result;
+				switch(probe_result)
 				{
 					case SE0:
+						// Regardless of previous state, detach device
+						printf("SE0\n");
 						devState = DEVS_DETACHED;
 						LEDSetState(0x00);
 					break;
 
 					case SE1:
+						printf("SE1\n");
+						// This is an error state
 						LEDSetState(0x0F);
 					break;
 
 					case FSHOST:
-						if (devState != DEVS_ATTACHED)
+					case LSHOST:
+						printf("FS/LSHOST\n");
+						// Full or low speed device attached
+						if (devState < DEVS_ATTACHED || devState >= DEVS_ERROR)
 						{
-							MAX3421WriteByte(rMODE, bmDPPULLDN | bmDMPULLDN | bmHOST | bmSOFKAENAB);
 							devState = DEVS_ATTACHED;
 							LEDSetState(0x01);
-						}
-					break;
-
-					case LSHOST:
-						if (devState != DEVS_ATTACHED)
-						{
-							MAX3421WriteByte(rMODE, bmDPPULLDN | bmDMPULLDN | bmHOST | bmLOWSPEED | bmSOFKAENAB);
-							devState = DEVS_ATTACHED;
-							LEDSetState(0x02);
 						}
 					break;
 
@@ -116,12 +117,12 @@ int main(int argc, char *argv[])
 						//
 					break;
 				}
-				oldBusState = vbusState;
 			}
 
 			// USB task
 			if (olddevState != devState)
 			{
+				olddevState = devState;
 				switch(devState)
 				{
 					case DEVS_UNKNOWN:
@@ -137,45 +138,30 @@ int main(int argc, char *argv[])
 
 					case DEVS_ATTACHED:
 					{
-						printf("attached\n");
-						// wait 200ms on first attach for settle
+						printf("attached, wfr\n");
+						// Wait 200ms on first attach for settle
 						E32Sleep(200*ONE_MILLISECOND_IN_TICKS);
-						// once settled, reset device, wait for reset
-						MAX3421WriteByte(rHIRQ, bmBUSEVENTIRQ);
+						// Once settled, reset device, wait for reset
 						MAX3421WriteByte(rHCTL, bmBUSRST);
-						// then wait for reset
 						while ((MAX3421ReadByte(rHCTL)&bmBUSRST) != 0) { asm volatile ("nop"); }
-						// wait for FRAME
-						printf("wfc\n");
-						devState = DEVS_ATTACHED_WAITINGCONFIG;
+						// Start generating SOF
+						MAX3421WriteByte(rMODE, MAX3421ReadByte(rMODE) | bmSOFKAENAB);
+						E32Sleep(20*ONE_MILLISECOND_IN_TICKS);
+						// Wait for first SOF
+						printf("wfsof\n");
+						while ((MAX3421ReadByte(rHIRQ)&bmFRAMEIRQ) == 0) { asm volatile ("nop"); }
+						// Get device descriptor
+						uint8_t rcode = USBGetDeviceDescriptor();
+						// Assign device address
+						devState = rcode ? DEVS_ADDRESSING : DEVS_ERROR;
 					}
-					break;
-
-					case DEVS_ATTACHED_WAITINGCONFIG:
-						// 
 					break;
 
 					case DEVS_ADDRESSING:
 					{
-						// See  https://github.com/felis/lightweight-usb-host/tree/master
-						printf("assigning address\n");
-						uint8_t addr = 0;
-						uint8_t newaddr = 1;
-						MAX3421WriteByte(rPERADDR, addr);
-						// set an addres (index in internal table) for the device and send it across
-						SUD[bmRequestType] = bmREQ_SET;
-						SUD[bRequest] = USB_REQUEST_SET_ADDRESS;
-						SUD[wValueL] = newaddr;
-						SUD[wValueH] = 0;
-						SUD[wIndexL] = 0;
-						SUD[wIndexH] = 0;
-						SUD[wLengthL] = 0;
-						SUD[wLengthH] = 0;
-						MAX3421WriteBytes(rSUDFIFO, 8, SUD);
-						// Send setup package to peripheral
-						uint8_t ep = 0;
-						MAX3421WriteByte( rHXFR, (tokSETUP|ep));
-						devState = DEVS_CONFIGURING;
+						printf("addressing\n");
+						uint8_t rcode = USBAssignAddress();
+						devState = rcode ? DEVS_CONFIGURING : DEVS_ERROR;
 					}
 					break;
 
@@ -193,10 +179,15 @@ int main(int argc, char *argv[])
 					break;
 
 					case DEVS_ERROR:
+						printf("error\n");
 						// Report error and stop device
+						devState = DEVS_HALT;
+					break;
+
+					case DEVS_HALT:
+						//
 					break;
 				}
-				olddevState = devState;
 			}
 
 		} while (1);

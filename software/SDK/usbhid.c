@@ -3,6 +3,9 @@
 #include "basesystem.h"
 #include <string.h>
 
+static struct USBEndpointRecord dev0ep;
+static struct USBDeviceRecord s_deviceTable[8];
+
 volatile uint32_t *IO_USBATRX = (volatile uint32_t* )DEVICE_USBA; // Receive fifo
 volatile uint32_t *IO_USBASTA = (volatile uint32_t* )(DEVICE_USBA+4); // Output FIFO state
 
@@ -158,6 +161,15 @@ void USBHostInit(uint32_t enableInterrupts)
 	if (s_usbhost==NULL)
 		return;
 
+	for(uint8_t i = 0; i<8; i++ )
+	{
+		s_deviceTable[i].endpointInfo = NULL;
+		s_deviceTable[i].deviceClass = 0;
+	}
+	s_deviceTable[0].endpointInfo = &dev0ep;
+	dev0ep.sendToggle = bmSNDTOG0;
+	dev0ep.receiveToggle = bmRCVTOG0;
+
 	MAX3421WriteByte(rPINCTL, bmFDUPSPI | bmINTLEVEL | gpxSOF);
 	MAX3421CtlReset();
 	MAX3421WriteByte(rIOPINS1, 0x0);
@@ -167,11 +179,326 @@ void USBHostInit(uint32_t enableInterrupts)
 	MAX3421WriteByte(rHIEN, bmCONDETIE | bmFRAMEIE);
 
 	MAX3421WriteByte(rHCTL, bmSAMPLEBUS);
-	USBBusProbe();
-	MAX3421WriteByte(rHIRQ, bmCONDETIRQ);
+	while(!(MAX3421ReadByte(rHCTL) & bmSAMPLEBUS)) {}; //wait for sample operation to finish
+	/*struct EBusState busState =*/ USBBusProbe();
 
+	MAX3421WriteByte(rHIRQ, bmCONDETIRQ);
 	if (enableInterrupts)
 	{
 		MAX3421WriteByte(rCPUCTL, bmIE);
 	}
+}
+
+uint8_t USBDispatchPacket(uint8_t _token, uint8_t _ep, unsigned int _nak_limit)
+{
+	unsigned long timeout = E32ReadTime() + 200*ONE_MILLISECOND_IN_TICKS;
+	uint8_t tmpdata;
+	uint8_t rcode = 0xFF;
+	unsigned int nak_count = 0;
+	char retry_count = 0;
+
+	while(timeout > E32ReadTime())
+	{
+		MAX3421WriteByte(rHXFR, (_token|_ep));
+		rcode = 0xFF;
+		while( E32ReadTime() < timeout )
+		{
+			tmpdata = MAX3421ReadByte(rHIRQ);
+			if(tmpdata & bmHXFRDNIRQ )
+			{
+				MAX3421WriteByte(rHIRQ, bmHXFRDNIRQ);
+				rcode = 0x00;
+				break;
+			}
+		}
+
+		if( rcode != 0x00 )
+			return rcode;
+
+		rcode = MAX3421ReadByte(rHRSL) & 0x0f;
+
+		switch(rcode)
+		{
+			case hrNAK:
+			{
+				nak_count++;
+				if( _nak_limit && ( nak_count == _nak_limit ))
+					return rcode;
+			}
+			break;
+
+			case hrTIMEOUT:
+			{
+				retry_count++;
+				if(retry_count == 64 )
+					return rcode;
+			}
+			break;
+
+			default:
+				return rcode;
+		}
+	}
+
+	return rcode;
+}
+
+uint8_t USBControlStatus(uint8_t _ep, uint8_t _direction, unsigned int _nak_limit)
+{
+	uint8_t rcode;
+	if(_direction)
+		rcode = USBDispatchPacket(tokOUTHS, _ep, _nak_limit);
+	else
+		rcode = USBDispatchPacket(tokINHS, _ep, _nak_limit);
+
+	return rcode;
+}
+
+uint8_t USBInTransfer(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _data, unsigned int _nak_limit)
+{
+	USBSerialWrite("Reading data packet\n");
+	uint8_t rcode;
+	uint8_t pktsize;
+	uint8_t maxpktsize = s_deviceTable[_addr].endpointInfo[_ep].maxPacketSize;
+
+	unsigned int xfrlen = 0;
+	MAX3421WriteByte(rHCTL, s_deviceTable[_addr].endpointInfo[_ep].receiveToggle);
+	while(1)
+	{
+		rcode = USBDispatchPacket(tokIN, _ep, _nak_limit);
+		if( rcode )
+			return rcode;
+
+		if((MAX3421ReadByte(rHIRQ) & bmRCVDAVIRQ) == 0 )
+			return 0xf0;
+
+		pktsize = MAX3421ReadByte(rRCVBC);
+		MAX3421ReadBytes(rRCVFIFO, pktsize, (uint8_t*)_data);
+		_data += pktsize;
+		MAX3421WriteByte(rHIRQ, bmRCVDAVIRQ);
+		xfrlen += pktsize;
+
+		if ((pktsize < maxpktsize ) || (xfrlen >= _nbytes))
+		{
+			if(MAX3421ReadByte(rHRSL) & bmRCVTOGRD )
+				s_deviceTable[_addr].endpointInfo[_ep].receiveToggle = bmRCVTOG1;
+			else
+				s_deviceTable[_addr].endpointInfo[_ep].receiveToggle = bmRCVTOG0;
+			return 0;
+		}
+	}
+}
+
+uint8_t USBOutTransfer(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _data, unsigned int nak_limit)
+{
+	USBSerialWrite("Writing data packet\n");
+	uint8_t rcode = 0xFF, retry_count;
+	char* data_p = _data;
+	unsigned int bytes_tosend, nak_count;
+	unsigned int bytes_left = _nbytes;
+	uint8_t maxpktsize = s_deviceTable[_addr].endpointInfo[_ep].maxPacketSize;
+	unsigned long timeout = E32ReadTime() + 200*ONE_MILLISECOND_IN_TICKS;
+
+	if (!maxpktsize)
+		return 0xFE;
+
+	MAX3421WriteByte(rHCTL, s_deviceTable[_addr].endpointInfo[_ep].sendToggle);
+	while(bytes_left)
+	{
+		retry_count = 0;
+		nak_count = 0;
+		bytes_tosend = (bytes_left >= maxpktsize) ? maxpktsize : bytes_left;
+
+		MAX3421WriteBytes(rSNDFIFO, bytes_tosend, (uint8_t*)data_p);
+		MAX3421WriteByte(rSNDBC, bytes_tosend);
+		MAX3421WriteByte(rHXFR, (tokOUT|_ep));
+		while(!(MAX3421ReadByte(rHIRQ) & bmHXFRDNIRQ));
+		MAX3421WriteByte(rHIRQ, bmHXFRDNIRQ);
+
+		rcode = MAX3421ReadByte(rHRSL) & 0x0f;
+		while( rcode && ( timeout > E32ReadTime()))
+		{
+			switch( rcode )
+			{
+				case hrNAK:
+				{
+					nak_count++;
+					if(nak_limit && (nak_count == 64))
+						return rcode;
+				}
+				break;
+
+				case hrTIMEOUT:
+				{
+					retry_count++;
+					if(retry_count == 64)
+						return rcode;
+				}
+				break;
+
+				default:  
+					return rcode;
+			}
+
+			MAX3421WriteByte(rSNDBC, 0);
+			MAX3421WriteByte(rSNDFIFO, *data_p);
+			MAX3421WriteByte(rSNDBC, bytes_tosend);
+			MAX3421WriteByte(rHXFR, (tokOUT | _ep));
+			while(!(MAX3421ReadByte(rHIRQ) & bmHXFRDNIRQ));
+			MAX3421WriteByte(rHIRQ, bmHXFRDNIRQ);
+			rcode = MAX3421ReadByte(rHRSL) & 0x0f;
+		}
+
+		bytes_left -= bytes_tosend;
+		data_p += bytes_tosend;
+	}
+	s_deviceTable[_addr].endpointInfo[_ep].sendToggle = (MAX3421ReadByte(rHRSL) & bmSNDTOGRD) ? bmSNDTOG1 : bmSNDTOG0;
+	return rcode;
+}
+
+uint8_t USBControlData(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _dataptr, uint8_t _direction, unsigned int _nak_limit)
+{
+	uint8_t rcode;
+	if( _direction )
+	{
+		s_deviceTable[_addr].endpointInfo[_ep].receiveToggle = bmRCVTOG1;
+		rcode = USBInTransfer(_addr, _ep, _nbytes, _dataptr, _nak_limit);
+		return rcode;
+	}
+	else
+	{
+		s_deviceTable[_addr].endpointInfo[_ep].sendToggle = bmSNDTOG1;
+		rcode = USBOutTransfer(_addr, _ep, _nbytes, _dataptr, _nak_limit );
+		return rcode;
+	}
+}
+
+uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_t _bRequest, uint8_t _wValLo, uint8_t _wValHi, unsigned int _wInd, unsigned int _nbytes, char* _dataptr, unsigned int _nak_limit)
+{
+	uint8_t direction = 0;
+	uint8_t rcode;
+	uint8_t setup_pkt[8];
+
+	MAX3421WriteByte(rPERADDR, _addr);
+	if( _bmReqType & 0x80 )
+		direction = 1;
+
+	setup_pkt[bmRequestType] = _bmReqType;
+	setup_pkt[bRequest] = _bRequest;
+	setup_pkt[wValueL] = _wValLo;
+	setup_pkt[wValueH] = _wValHi;
+	setup_pkt[wIndexL] = _wInd&0xFF;
+	setup_pkt[wIndexH] = (_wInd>>8)&0xFF;
+	setup_pkt[wLengthL] = _nbytes&0xFF;
+	setup_pkt[wLengthH] = (_nbytes>>8)&0xFF;
+
+	MAX3421WriteBytes(rSUDFIFO, 8, setup_pkt);
+	rcode = USBDispatchPacket(tokSETUP, _ep, _nak_limit);
+
+	if(rcode)
+	{
+		USBSerialWrite("Setup packet error\n");
+		//USBSerialWrite( rcode, HEX );
+		return(rcode);
+	}
+
+	if(_dataptr != NULL )
+	{
+		// data stage, if present
+		USBSerialWrite("Data packet access\n");
+		rcode = USBControlData(_addr, _ep, _nbytes, _dataptr, direction, _nak_limit);
+	}
+
+	if(rcode)
+	{
+		//return error
+		USBSerialWrite("Data packet error\n");
+		//Serial.print( rcode, HEX );
+		return(rcode);
+	}
+
+	rcode = USBControlStatus(_ep, direction, _nak_limit);
+
+	return rcode;
+}
+
+uint8_t USBGetDeviceDescriptor()
+{
+	struct USBDeviceDescriptor ddesc;
+
+	s_deviceTable[0].endpointInfo[0].maxPacketSize = 8;
+    uint8_t rcode = USBControlRequest(0, 0, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, 0x00, USB_DESCRIPTOR_DEVICE, 0x0000, 8, (char*)&ddesc, 64);
+
+	if (rcode == 0)
+	{
+		s_deviceTable[0].endpointInfo[0].maxPacketSize = ddesc.bMaxPacketSizeEP0;
+
+		// Retry with actual descriptor size
+	    rcode = USBControlRequest(0, 0, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, 0x00, USB_DESCRIPTOR_DEVICE, 0x0000, 18/*USB_DEVICE_DESCRIPTOR_SIZE*/, (char*)&ddesc, 64);
+
+		USBSerialWrite("\ndesctype:");
+		USBSerialWriteHex(ddesc.bDescriptorType);
+		USBSerialWrite("\nusbver:");
+		USBSerialWriteHex(ddesc.bcdUSB);
+		USBSerialWrite("\ndevclass:");
+		USBSerialWriteHex(ddesc.bDeviceClass);
+		USBSerialWrite("\nsubclass:");
+		USBSerialWriteHex(ddesc.bDeviceSubClass);
+		USBSerialWrite("\nprotocol:");
+		USBSerialWriteHex(ddesc.bDeviceProtocol);
+		USBSerialWrite("\nep0maxsize:");
+		USBSerialWriteHex(ddesc.bMaxPacketSizeEP0);
+		USBSerialWrite("\nvid:");
+		USBSerialWriteHex(ddesc.idVendor);
+		USBSerialWrite("\npid:");
+		USBSerialWriteHex(ddesc.idProduct);
+		USBSerialWrite("\ndev:");
+		USBSerialWriteHex(ddesc.bcdDevice);
+		USBSerialWrite("\nman$:");
+		USBSerialWriteHex(ddesc.iManufacturer);
+		USBSerialWrite("\nprod$:");
+		USBSerialWriteHex(ddesc.iProduct);
+		USBSerialWrite("\nser$:");
+		USBSerialWriteHex(ddesc.iSerialNumber);
+		USBSerialWrite("\nconfigs:");
+		USBSerialWriteHex(ddesc.bNumConfigurations);
+		USBSerialWrite("\n");
+
+		struct USBConfigurationDescriptor cdef;
+		uint8_t *buf = (uint8_t *)&cdef;
+		for (uint8_t c=0; c<ddesc.bNumConfigurations; ++c)
+		{
+			rcode = USBControlRequest(0, 0, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, 0x00, USB_DESCRIPTOR_CONFIGURATION, 0x0000, 9/*USB_CONFIGURATION_DESCRIPTOR_SIZE*/, (char*)&cdef, 64);
+			USBSerialWrite("device config #");
+			USBSerialWriteDecimal(c);
+			USBSerialWrite(": ");
+			for(uint32_t i=0;i<sizeof(struct USBConfigurationDescriptor);++i)
+				USBSerialWriteHexByte(buf[i]);
+		}
+		USBSerialWrite("\n");
+
+		return 1;
+	}
+
+	return 0; // Error
+}
+
+uint8_t USBAssignAddress()
+{
+	for (int i=1; i<8; ++i)
+	{
+		if (s_deviceTable[i].endpointInfo == NULL)
+		{
+			// Placeholder endpoint
+			s_deviceTable[i].endpointInfo = s_deviceTable[0].endpointInfo;
+
+			// Set new address
+    		uint8_t rcode = USBControlRequest(0, 0, bmREQ_SET, USB_REQUEST_SET_ADDRESS, i, 0x00, 0x0000, 0x0000, NULL, 64);
+
+			if(rcode == 0)
+				return 1;
+		}
+	}
+
+	return 0;
 }
