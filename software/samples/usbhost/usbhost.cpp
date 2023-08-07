@@ -7,7 +7,9 @@
 // Please see
 // https://github.com/felis/ArduinoUSBhost/blob/master/Max3421e.cpp
 // https://github.com/electricimp/reference/blob/master/hardware/max3421e/max3421e.device.nut#L1447
-// https://github.com/felis/USB_Host_Shield/blob/880773a1cfd5a521f97493b0e4de7f243a2c2925/Usb.cpp#L383
+// https://github.com/felis/USB_Host_Shield_2.0
+// https://github.com/felis/lightweight-usb-host/blob/81ed9d6f9fbefc6b33fdd5dfbd1a9636685f062b/transfer.c
+// https://github.com/felis/USB_Host_Shield_2.0/blob/59cc3d287dd1afe8d89856a8d4de0ad8fe9ef3c7/usbhid.h
 
 EBusState old_probe_result = BUSUNKNOWN;
 EBusState probe_result = BUSUNKNOWN;
@@ -25,6 +27,7 @@ void EnumerateDevice()
 
 int main(int argc, char *argv[])
 {
+	uint64_t nextPoll = 0;
 	printf("\nUSB Host sample\n");
 
 	struct SUSBContext s_usbhostctx;
@@ -59,12 +62,12 @@ int main(int argc, char *argv[])
 				probe_result = USBBusProbe();
 				hirq_sendback |= bmCONDETIRQ;
 			}
-			/*else if (irq&bmFRAMEIRQ)
+			else if (irq&bmFRAMEIRQ)
 			{
-				// TODO:
+				//printf()
 				hirq_sendback |= bmFRAMEIRQ;
 			}
-			else if (irq&bmSNDBAVIRQ)
+			/*else if (irq&bmSNDBAVIRQ)
 			{
 				// Ignore send buffer available interrupt for now
 				hirq_sendback |= bmSNDBAVIRQ;
@@ -156,28 +159,52 @@ int main(int argc, char *argv[])
 
 					case DEVS_ADDRESSING:
 					{
+						printf("setting boot protocol\n");
 						uint8_t rcode = USBAssignAddress();
-						devState = rcode ? DEVS_CONFIGURING : DEVS_ERROR;
-					}
-					break;
+						nextPoll = E32ReadTime() + 10*ONE_MILLISECOND_IN_TICKS;
 
-					case DEVS_CONFIGURING:
-					{
-						printf("configuring\n");
-						// figure out the correct driver for the device
-						// For now we have one device, so give it the address 1
-						devState = DEVS_RUNNING;
+						if (rcode == 0)
+							USBConfigHID();
+
+						devState = rcode ? DEVS_RUNNING : DEVS_ERROR;
 					}
 					break;
 
 					case DEVS_RUNNING:
-						// Nothing to do here, driver handles all
+					{
+						// Keep alive
+						olddevState = DEVS_UNKNOWN;
+
+						// TODO: Driver should handle this according to device type
+						uint64_t currentTime = E32ReadTime();
+						if (currentTime > nextPoll)
+						{
+							nextPoll = currentTime + 10*ONE_MICROSECOND_IN_TICKS;
+
+							// Use maxpacketsize of the endpoint(8), the proper device address(1) and endpoint index(0 at 0x81)
+							uint8_t keydata[8];
+							uint8_t addr = 1;
+							uint8_t ep = 0;
+							USBSetAddress(addr, ep);
+							uint8_t rcode = USBInTransfer(addr, ep, 8, (char*)keydata, 64);
+							if (rcode)
+							{
+								for (uint8_t k=0; k<8; ++k)
+									printf("%.2x", keydata[k]);
+								printf("\n");
+							}
+							else
+								devState = DEVS_ERROR;
+						}
+					}
 					break;
 
 					case DEVS_ERROR:
+					{
 						printf("error\n");
 						// Report error and stop device
 						devState = DEVS_HALT;
+					}
 					break;
 
 					case DEVS_HALT:

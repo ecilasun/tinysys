@@ -119,12 +119,12 @@ enum EBusState USBBusProbe()
 	{
 		case bmJSTATUS:
 			if((MAX3421ReadByte(rMODE) & bmLOWSPEED) == 0 ) {
-				USBSerialWrite("full speed host - jstatus\n");
+				//USBSerialWrite("full speed host - jstatus\n");
 				MAX3421WriteByte(rMODE, MODE_FS_HOST);       //start full-speed host
 				return FSHOST;
 			}
 			else {
-				USBSerialWrite("low speed host - jstatus\n");
+				//USBSerialWrite("low speed host - jstatus\n");
 				MAX3421WriteByte(rMODE, MODE_LS_HOST);        //start low-speed host
 				return LSHOST;
 			}
@@ -132,13 +132,13 @@ enum EBusState USBBusProbe()
 		case bmKSTATUS:
 			if(( MAX3421ReadByte(rMODE) & bmLOWSPEED) == 0 )
 			{
-				USBSerialWrite("low speed host - kstatus\n");
+				//USBSerialWrite("low speed host - kstatus\n");
 				MAX3421WriteByte(rMODE, MODE_LS_HOST);       //start low-speed host
 				return LSHOST;
 			}
 			else
 			{
-				USBSerialWrite("full speed host - kstatus\n");
+				//USBSerialWrite("full speed host - kstatus\n");
 				MAX3421WriteByte(rMODE, MODE_FS_HOST);       //start full-speed host
 				return FSHOST;
 			}
@@ -395,8 +395,9 @@ uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_
 
 	if(rcode)
 	{
-		USBSerialWrite("Setup packet error\n");
-		//USBSerialWrite( rcode, HEX );
+		USBSerialWrite("Setup packet error 0x");
+		USBSerialWriteHex(rcode);
+		USBSerialWrite("\n");
 		return(rcode);
 	}
 
@@ -409,8 +410,9 @@ uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_
 	if(rcode)
 	{
 		//return error
-		USBSerialWrite("Data packet error\n");
-		//Serial.print( rcode, HEX );
+		USBSerialWrite("Data packet error 0x");
+		USBSerialWriteHex(rcode);
+		USBSerialWrite("\n");
 		return(rcode);
 	}
 
@@ -549,14 +551,14 @@ uint8_t USBGetDeviceDescriptor()
 			// TODO: USBControlRequest() with string indices from above
 
 			// Get language descriptor
-			/*struct USBStringLanguageDescriptor lang;
+			struct USBStringLanguageDescriptor lang;
 			rcode = USBControlRequest(0, 0, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, 0, USB_DESCRIPTOR_STRING, 0x0000, 4, (char*)&lang, 64);
 			USBSerialWrite("  string #0:");
 			USBSerialWrite("\n  length:");
 			USBSerialWriteHex(lang.bLength);
 			USBSerialWrite("\n  language:");
 			USBSerialWriteHex(lang.wLanguage);
-			USBSerialWrite("\n");*/
+			USBSerialWrite("\n");
 		}
 		USBSerialWrite("\n");
 
@@ -580,7 +582,7 @@ uint8_t USBAssignAddress()
 
 			if(rcode == 0)
 			{
-				USBSerialWrite("assigned address #");
+				USBSerialWrite("Device path: \\dev\\usb\\");
 				USBSerialWriteDecimal(i);
 				USBSerialWrite("\n");
 				return i;
@@ -589,4 +591,24 @@ uint8_t USBAssignAddress()
 	}
 
 	return 0;
+}
+
+uint8_t USBConfigHID()
+{
+	// TODO: HID device address defaults to 1
+	uint8_t addr = 0;
+	uint8_t ep = 0;
+	uint8_t conf = 1;
+
+	uint8_t rcode = USBControlRequest(addr, ep, bmREQ_SET, USB_REQUEST_SET_CONFIGURATION, conf, 0x00, 0x0000, 0x0000, NULL, 64);
+	if (rcode == 0)
+		rcode = USBControlRequest(addr, ep, bmREQ_HIDOUT, HID_REQUEST_SET_PROTOCOL, USB_HID_BOOT_PROTOCOL, 0x00, 0x0000, 0x0000, NULL, 64);
+	return rcode;
+}
+
+void USBSetAddress(uint8_t _addr, uint8_t _ep)
+{
+	MAX3421WriteByte(rPERADDR, _addr);
+	uint8_t mode = MAX3421ReadByte(rMODE);
+	MAX3421WriteByte(rMODE, mode | bmHUBPRE);
 }

@@ -28,7 +28,6 @@ enum EUSBDeviceState
 	DEVS_DETACHED,
 	DEVS_ATTACHED,
 	DEVS_ADDRESSING,
-	DEVS_CONFIGURING,
 	DEVS_RUNNING,
 	DEVS_ERROR,
 	DEVS_HALT
@@ -66,7 +65,11 @@ void USBHostInit(uint32_t enableInterrupts);
 enum EBusState USBBusProbe();
 uint8_t USBGetDeviceDescriptor();
 uint8_t USBAssignAddress();
+uint8_t USBInTransfer(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _data, unsigned int _nak_limit);
+uint8_t USBOutTransfer(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _data, unsigned int nak_limit);
 uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_t _bRequest, uint8_t _wValLo, uint8_t _wValHi, unsigned int _wInd, unsigned int _nbytes, char* _dataptr, unsigned int _nak_limit);
+uint8_t USBConfigHID();
+void USBSetAddress(uint8_t _addr, uint8_t _ep);
 
 // MAX3421E Registers - host mode
 #define rRCVFIFO	1<<3
@@ -288,6 +291,20 @@ uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_
 #define USB_DESCRIPTOR_OTHER_SPEED      0x07    // bDescriptorType for a Other Speed Configuration.
 #define USB_DESCRIPTOR_INTERFACE_POWER  0x08    // bDescriptorType for Interface Power.
 #define USB_DESCRIPTOR_OTG              0x09    // bDescriptorType for an OTG Descriptor.
+
+#define HID_DESCRIPTOR_HID				0x21
+#define HID_DESCRIPTOR_REPORT			0x22
+#define HID_DESRIPTOR_PHY				0x23
+
+#define HID_REQUEST_GET_REPORT			0x01
+#define HID_REQUEST_GET_IDLE			0x02
+#define HID_REQUEST_GET_PROTOCOL		0x03
+#define HID_REQUEST_SET_REPORT			0x09
+#define HID_REQUEST_SET_IDLE			0x0A
+#define HID_REQUEST_SET_PROTOCOL		0x0B
+
+#define USB_HID_BOOT_PROTOCOL			0x00
+#define HID_RPT_PROTOCOL				0x01
 
 #define bmREQ_GET_DESCR     USB_SETUP_DEVICE_TO_HOST|USB_SETUP_TYPE_STANDARD|USB_SETUP_RECIPIENT_DEVICE     //get descriptor request type
 #define bmREQ_SET           USB_SETUP_HOST_TO_DEVICE|USB_SETUP_TYPE_STANDARD|USB_SETUP_RECIPIENT_DEVICE     //set request type for all but 'set feature' and 'set interface'
