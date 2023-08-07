@@ -91,7 +91,6 @@ int main(int argc, char *argv[])
 				{
 					case SE0:
 						// Regardless of previous state, detach device
-						printf("SE0\n");
 						devState = DEVS_DETACHED;
 						LEDSetState(0x00);
 					break;
@@ -104,7 +103,6 @@ int main(int argc, char *argv[])
 
 					case FSHOST:
 					case LSHOST:
-						printf("FS/LSHOST\n");
 						// Full or low speed device attached
 						if (devState < DEVS_ATTACHED || devState >= DEVS_ERROR)
 						{
@@ -138,7 +136,7 @@ int main(int argc, char *argv[])
 
 					case DEVS_ATTACHED:
 					{
-						printf("attached, wfr\n");
+						printf("attached\n");
 						// Wait 200ms on first attach for settle
 						E32Sleep(200*ONE_MILLISECOND_IN_TICKS);
 						// Once settled, reset device, wait for reset
@@ -148,7 +146,6 @@ int main(int argc, char *argv[])
 						MAX3421WriteByte(rMODE, MAX3421ReadByte(rMODE) | bmSOFKAENAB);
 						E32Sleep(20*ONE_MILLISECOND_IN_TICKS);
 						// Wait for first SOF
-						printf("wfsof\n");
 						while ((MAX3421ReadByte(rHIRQ)&bmFRAMEIRQ) == 0) { asm volatile ("nop"); }
 						// Get device descriptor
 						uint8_t rcode = USBGetDeviceDescriptor();
@@ -159,7 +156,6 @@ int main(int argc, char *argv[])
 
 					case DEVS_ADDRESSING:
 					{
-						printf("addressing\n");
 						uint8_t rcode = USBAssignAddress();
 						devState = rcode ? DEVS_CONFIGURING : DEVS_ERROR;
 					}

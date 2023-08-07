@@ -8,7 +8,7 @@
 
 struct USBCDCLineCoding
 {
-    uint32_t dwDTERate;
+	uint32_t dwDTERate;
 	uint8_t bCharFormat;
 	uint8_t bParityType;
 	uint8_t bDataBits;
@@ -25,7 +25,7 @@ struct USBDeviceDescriptor
 	uint8_t bLength;			// Length of total structure -> sizeof(USBDeviceDescriptor)
 	uint8_t bDescriptorType;	// Type of descriptor
 	uint16_t bcdUSB;			// Version in BCD
-	uint8_t  bDeviceClass;		// Device class
+	uint8_t bDeviceClass;		// Device class
 	uint8_t bDeviceSubClass;	// Subclass in device group
 	uint8_t bDeviceProtocol;	// Protocol code
 	uint8_t bMaxPacketSizeEP0;	// Max packet size of endpoint0; 8,16,32 or 64
@@ -93,14 +93,12 @@ struct USBStringDescriptor
 
 struct SUSBContext
 {
-    struct USBDeviceDescriptor device;
-    struct USBConfigurationDescriptor config;
-    // struct USBInterfaceDescriptor control;
-    // struct USBEndpointDescriptor notification;
-    struct USBInterfaceDescriptor data;
-    struct USBEndpointDescriptor input;
-    struct USBEndpointDescriptor output;
-    struct USBStringDescriptor strings[6];
+	struct USBDeviceDescriptor device;
+	struct USBConfigurationDescriptor config;
+	struct USBInterfaceDescriptor data;
+	struct USBEndpointDescriptor input;
+	struct USBEndpointDescriptor output;
+	struct USBStringDescriptor strings[6];
 };
 
 #pragma pack(pop)
