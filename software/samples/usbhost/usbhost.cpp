@@ -18,6 +18,7 @@ EUSBDeviceState olddevState = DEVS_UNKNOWN;
 EUSBDeviceState devState = DEVS_UNKNOWN;
 
 static uint8_t s_address = 0;
+static uint8_t s_prevkeydata[8];
 
 void EnumerateDevice()
 {
@@ -39,6 +40,9 @@ int main(int argc, char *argv[])
 	else
 	{
 		USBHostInit(0);
+
+		for (int i=0;i<8;++i)
+			s_prevkeydata[i] = 0;
 
 		uint8_t m3421rev = MAX3421ReadByte(rREVISION);
 		if (m3421rev != 0xFF)
@@ -189,15 +193,22 @@ int main(int argc, char *argv[])
 
 							// Use maxpacketsize of the endpoint(8), the proper device address(1) and endpoint index(0 at 0x81)
 							uint8_t keydata[8];
-							uint8_t ep = 0;
+							//uint8_t ep = 0;
 							//USBSetAddress(s_address, ep);
 							//uint8_t rcode = USBInTransfer(s_address, ep, 8, (char*)keydata, 64);
 							uint8_t rcode = USBReadHIDData(s_address, keydata);
 							if (rcode == 0)
 							{
-								for (uint8_t k=0; k<8; ++k)
-									printf("%.2x", keydata[k]);
-								printf("\n");
+								// TODO: Handle key held down at repeat rate
+								// Did key states change?
+								if (__builtin_memcmp(s_prevkeydata, keydata, 8))
+								{
+									// Store new state for next poll
+									__builtin_memcpy(s_prevkeydata, keydata, 8);
+									for (uint8_t k=0; k<8; ++k)
+										printf("%.2x", keydata[k]);
+									printf("\n");
+								}
 							}
 							else
 							{
