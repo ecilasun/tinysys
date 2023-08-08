@@ -61,11 +61,11 @@ int main(int argc, char *argv[])
 				probe_result = USBBusProbe();
 				hirq_sendback |= bmCONDETIRQ;
 			}
-			else if (irq&bmFRAMEIRQ)
+			/*else if (irq&bmFRAMEIRQ)
 			{
 				//printf()
 				hirq_sendback |= bmFRAMEIRQ;
-			}
+			}*/
 			/*else if (irq&bmSNDBAVIRQ)
 			{
 				// Ignore send buffer available interrupt for now
@@ -167,9 +167,9 @@ int main(int argc, char *argv[])
 
 						if (rcode == 0)
 						{
-							rcode = USBConfigHID();
+							rcode = USBConfigHID(s_address);
 							if (rcode == 0)
-								rcode = USBGetHIDDescriptor();
+								rcode = USBGetHIDDescriptor(s_address);
 						}
 
 						devState = rcode ? DEVS_ERROR : DEVS_RUNNING;
@@ -192,15 +192,18 @@ int main(int argc, char *argv[])
 							uint8_t ep = 0;
 							USBSetAddress(s_address, ep);
 							uint8_t rcode = USBInTransfer(s_address, ep, 8, (char*)keydata, 64);
-							//uint8_t rcode = USBReadHIDData(keydata);
+							//uint8_t rcode = USBReadHIDData(s_address, keydata);
 							if (rcode == 0)
 							{
 								for (uint8_t k=0; k<8; ++k)
 									printf("%.2x", keydata[k]);
 								printf("\n");
 							}
-							/*else
-								devState = DEVS_ERROR;*/
+							else
+							{
+								printf("InTransfer error: 0x%.2x", rcode);
+								devState = DEVS_ERROR;
+							}
 						}
 					}
 					break;
