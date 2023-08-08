@@ -91,6 +91,17 @@ struct USBStringDescriptor
 #endif
 };
 
+struct USBHIDDescriptor
+{
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint32_t bcdHID;
+	uint8_t bCountryCode;
+	uint8_t bNumDescriptors;
+	uint8_t bDescrType;
+	uint32_t wDescriptorLength;
+};
+
 struct SUSBContext
 {
 	struct USBDeviceDescriptor device;

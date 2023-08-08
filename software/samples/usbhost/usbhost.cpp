@@ -17,8 +17,7 @@ EBusState probe_result = BUSUNKNOWN;
 EUSBDeviceState olddevState = DEVS_UNKNOWN;
 EUSBDeviceState devState = DEVS_UNKNOWN;
 
-// Setup data
-uint8_t SUD[8];
+static uint8_t s_address = 0;
 
 void EnumerateDevice()
 {
@@ -131,10 +130,14 @@ int main(int argc, char *argv[])
 					break;
 
 					case DEVS_DETACHED:
-						printf("detached\n");
+					{
+						// We're always device #1
+						uint8_t rcode = USBDetach(s_address);
 						//init: usbinit();
 						//waitfordevice: MAX3421WriteByte(rHCTL, bmSAMPLEBUS);
 						//illegal: no idea
+						devState = rcode ? DEVS_ERROR : DEVS_UNKNOWN;
+					}
 					break;
 
 					case DEVS_ATTACHED:
@@ -153,20 +156,23 @@ int main(int argc, char *argv[])
 						// Get device descriptor
 						uint8_t rcode = USBGetDeviceDescriptor();
 						// Assign device address
-						devState = rcode ? DEVS_ADDRESSING : DEVS_ERROR;
+						devState = rcode ? DEVS_ERROR : DEVS_ADDRESSING;
 					}
 					break;
 
 					case DEVS_ADDRESSING:
 					{
-						printf("setting boot protocol\n");
-						uint8_t rcode = USBAssignAddress();
+						uint8_t rcode = USBAttach(&s_address);
 						nextPoll = E32ReadTime() + 10*ONE_MILLISECOND_IN_TICKS;
 
 						if (rcode == 0)
-							USBConfigHID();
+						{
+							rcode = USBConfigHID();
+							if (rcode == 0)
+								rcode = USBGetHIDDescriptor();
+						}
 
-						devState = rcode ? DEVS_RUNNING : DEVS_ERROR;
+						devState = rcode ? DEVS_ERROR : DEVS_RUNNING;
 					}
 					break;
 
@@ -183,18 +189,18 @@ int main(int argc, char *argv[])
 
 							// Use maxpacketsize of the endpoint(8), the proper device address(1) and endpoint index(0 at 0x81)
 							uint8_t keydata[8];
-							uint8_t addr = 1;
 							uint8_t ep = 0;
-							USBSetAddress(addr, ep);
-							uint8_t rcode = USBInTransfer(addr, ep, 8, (char*)keydata, 64);
-							if (rcode)
+							USBSetAddress(s_address, ep);
+							uint8_t rcode = USBInTransfer(s_address, ep, 8, (char*)keydata, 64);
+							//uint8_t rcode = USBReadHIDData(keydata);
+							if (rcode == 0)
 							{
 								for (uint8_t k=0; k<8; ++k)
 									printf("%.2x", keydata[k]);
 								printf("\n");
 							}
-							else
-								devState = DEVS_ERROR;
+							/*else
+								devState = DEVS_ERROR;*/
 						}
 					}
 					break;
