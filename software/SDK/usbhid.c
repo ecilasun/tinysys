@@ -627,7 +627,9 @@ uint8_t USBConfigHID(uint8_t _addr)
 	if (rcode == 0)
 	{
 		USBSerialWrite("switching to boot protocol\n");
-		rcode = USBControlRequest(_addr, ep, bmREQ_HIDOUT, HID_REQUEST_SET_PROTOCOL, HID_PROTOCOL_KEYBOARD, USB_HID_BOOT_PROTOCOL, 0x0000, 0x0000, NULL, 64);
+		// iface is interface number
+		uint8_t iface = 0;
+		rcode = USBControlRequest(_addr, ep, bmREQ_HIDOUT, HID_REQUEST_SET_PROTOCOL, USB_HID_BOOT_PROTOCOL, 0x00, iface, 0x0000, NULL, 64);
 	}
 
 	return rcode;
@@ -672,7 +674,8 @@ uint8_t USBReadHIDData(uint8_t _addr, uint8_t *_data)
 	uint8_t ep = 0;
 
 	uint8_t reportID = 1;
-    uint8_t rcode = USBControlRequest(_addr, ep, bmREQ_HIDIN, HID_REQUEST_GET_REPORT, reportID, HID_DESCRIPTOR_HID, HID_PROTOCOL_KEYBOARD, 8, (char*)_data, 64);
+	uint8_t iface = 0;
+    uint8_t rcode = USBControlRequest(_addr, ep, bmREQ_HIDIN, HID_REQUEST_GET_REPORT, reportID, HID_PROTOCOL_KEYBOARD, iface, 8, (char*)_data, 64);
 
 	return rcode;
 }

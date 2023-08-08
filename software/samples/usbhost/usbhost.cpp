@@ -190,9 +190,9 @@ int main(int argc, char *argv[])
 							// Use maxpacketsize of the endpoint(8), the proper device address(1) and endpoint index(0 at 0x81)
 							uint8_t keydata[8];
 							uint8_t ep = 0;
-							USBSetAddress(s_address, ep);
-							uint8_t rcode = USBInTransfer(s_address, ep, 8, (char*)keydata, 64);
-							//uint8_t rcode = USBReadHIDData(s_address, keydata);
+							//USBSetAddress(s_address, ep);
+							//uint8_t rcode = USBInTransfer(s_address, ep, 8, (char*)keydata, 64);
+							uint8_t rcode = USBReadHIDData(s_address, keydata);
 							if (rcode == 0)
 							{
 								for (uint8_t k=0; k<8; ++k)
