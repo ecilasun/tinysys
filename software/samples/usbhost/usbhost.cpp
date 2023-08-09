@@ -205,8 +205,10 @@ int main(int argc, char *argv[])
 								{
 									// Store new state for next poll
 									__builtin_memcpy(s_prevkeydata, keydata, 8);
-									for (uint8_t k=0; k<8; ++k)
-										printf("%.2x", keydata[k]);
+									for (uint8_t k=0; k<2; ++k)
+										printf("0x%.2x ", keydata[k]);
+									for (uint8_t k=2; k<8; ++k)
+										printf("%c", HIDScanToASCII(keydata[k], keydata[0]&0x22 ? 1:0));
 									printf("\n");
 								}
 							}
