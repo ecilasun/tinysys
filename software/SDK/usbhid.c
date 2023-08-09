@@ -674,12 +674,24 @@ uint8_t USBReadHIDData(uint8_t _addr, uint8_t *_data)
 	uint8_t ep = 0;
 
 	uint8_t reportID = 1;
+	uint8_t reportType = 1; // Keyboard data
 	uint8_t iface = 0;
-    uint8_t rcode = USBControlRequest(_addr, ep, bmREQ_HIDIN, HID_REQUEST_GET_REPORT, reportID, HID_PROTOCOL_KEYBOARD, iface, 8, (char*)_data, 64);
+    uint8_t rcode = USBControlRequest(_addr, ep, bmREQ_HIDIN, HID_REQUEST_GET_REPORT, reportID, reportType, iface, 8, (char*)_data, 64);
 
 	return rcode;
 }
 
+uint8_t USBWriteHIDData(uint8_t _addr, uint8_t *_data)
+{
+	uint8_t ep = 0;
+
+	uint8_t reportID = 0;
+	uint8_t reportType = 2; // LED control
+	uint8_t iface = 0;
+    uint8_t rcode = USBControlRequest(_addr, ep, bmREQ_HIDOUT, HID_REQUEST_SET_REPORT, reportID, reportType, iface, 1, (char*)_data, 64);
+
+	return rcode;
+}
 
 char scantoasciitable_lowercase[] = {
 //   0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F

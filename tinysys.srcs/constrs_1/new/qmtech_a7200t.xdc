@@ -191,6 +191,7 @@ set_property PULLUP true [get_ports usba_int]
 ## sysresetn     pin U4:59  [AA8]
 
 set_property -dict {PACKAGE_PIN AA8 IOSTANDARD LVCMOS33} [get_ports sysresetn]
+set_property PULLUP true [get_ports sysresetn]
 
 ## ------------------------------------------------------------------------------------------------------
 ## DDR3 SDRAM (MT41K128M16XX-15E)

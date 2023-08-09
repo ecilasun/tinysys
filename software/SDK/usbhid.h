@@ -73,6 +73,7 @@ uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_
 uint8_t USBConfigHID(uint8_t _addr);
 void USBSetAddress(uint8_t _addr, uint8_t _ep);
 uint8_t USBReadHIDData(uint8_t _addr, uint8_t *_data);
+uint8_t USBWriteHIDData(uint8_t _addr, uint8_t *_data);
 char HIDScanToASCII(const uint8_t _code, const uint8_t _uppercase);
 
 // MAX3421E Registers - host mode

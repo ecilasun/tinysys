@@ -19,6 +19,7 @@ EUSBDeviceState devState = DEVS_UNKNOWN;
 
 static uint8_t s_address = 0;
 static uint8_t s_prevkeydata[8];
+static uint8_t s_devicecontrol[8];
 
 void EnumerateDevice()
 {
@@ -210,6 +211,24 @@ int main(int argc, char *argv[])
 									for (uint8_t k=2; k<8; ++k)
 										printf("%c", HIDScanToASCII(keydata[k], keydata[0]&0x22 ? 1:0));
 									printf("\n");
+
+									if (keydata[0]&0x22)
+									{
+										// numlock:0x01
+										// caps:0x02
+										// scrolllock:0x04
+										s_devicecontrol[0] = 0x02; // Shift
+										rcode = USBWriteHIDData(s_address, s_devicecontrol);
+										if (rcode)
+											devState = DEVS_ERROR;
+									}
+									else
+									{
+										s_devicecontrol[0] = 0x00;
+										rcode = USBWriteHIDData(s_address, s_devicecontrol);
+										if (rcode)
+											devState = DEVS_ERROR;
+									}
 								}
 							}
 							else
