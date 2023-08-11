@@ -23,7 +23,6 @@ static uint8_t s_currentkeymap[256];
 static uint8_t s_prevkeymap[256];
 static uint16_t s_keystates[256];
 static uint8_t s_devicecontrol[8];
-static uint8_t s_latch;
 
 void EnumerateDevice()
 {
@@ -55,16 +54,11 @@ int main(int argc, char *argv[])
 		for (int i=0; i<8; ++i)
 			s_devicecontrol[i] = 0;
 
-		s_latch = 0;
-
 		uint8_t m3421rev = MAX3421ReadByte(rREVISION);
 		if (m3421rev != 0xFF)
 			printf("MAX3421(host) rev# %d\n",m3421rev);
 		else
 			printf("MAX3421(host) disabled\n");
-
-		// Clear initial connection detect interrupt
-		MAX3421WriteByte(rHIRQ, bmCONDETIRQ);
 
 		// This imitates the interrupt work
 		do
@@ -213,28 +207,6 @@ int main(int argc, char *argv[])
 							uint8_t rcode = USBReadHIDData(s_address, keydata);
 							if (rcode == 0)
 							{
-								// Toggle LEDs based on locked key state change
-								// numlock:0x01 -> num lock at index 83
-								// caps:0x02 -> caps lock at index 82
-								// scrolllock:0x04 -> scroll lock at index 84
-								uint8_t lockstate = (s_keystates[82]?0x02:0x00) | (s_keystates[83]?0x01:0x00) | (s_keystates[84]?0x04:0x00);
-								if (lockstate) // Any of the locked keys are pressed
-								{
-									if (!s_latch)
-									{
-										// Keep current state until keys are released
-										s_latch = 1;
-										// Toggle previous state
-										s_devicecontrol[0] ^= lockstate;
-										// Reflect to device
-										rcode = USBWriteHIDData(s_address, s_devicecontrol);
-										if (rcode)
-											devState = DEVS_ERROR;
-									}
-								}
-								else
-									s_latch = 0;
-
 								// Reflect into current keymap
 								for (uint32_t i=2; i<8; ++i)
 								{
@@ -264,8 +236,8 @@ int main(int argc, char *argv[])
 									// Update up/down state map alongside current modifier state
 									s_keystates[i] = keystate | modifierState;
 
-									// Insert down keys into input fifo
-									// This is required to provide in-order input for text entry.
+									// Insert down keys into input fifo in scan order
+									// NOTE: Could be moved out of here
 									if (keystate&1)
 									{
 										// Insert capital/lowercase ASCII code into input fifo
@@ -279,6 +251,22 @@ int main(int argc, char *argv[])
 
 								// Reset only after key repeat rate (~200 ms)
 								__builtin_memset(s_currentkeymap, 0, 256);
+
+								// Toggle LEDs based on locked key state change
+								// numlock:0x01
+								// caps:0x02
+								// scrolllock:0x04
+								// Any of the lock keys down?
+								uint8_t lockstate = ((s_keystates[39]&1)?0x02:0x00) | ((s_keystates[53]&1)?0x01:0x00) | ((s_keystates[47]&1)?0x04:0x00);
+								if (lockstate)
+								{
+									// Toggle previous state
+									s_devicecontrol[0] ^= lockstate;
+									// Reflect to device
+									rcode = USBWriteHIDData(s_address, s_devicecontrol);
+									if (rcode)
+										devState = DEVS_ERROR;
+								}
 							}
 							else
 							{
