@@ -22,7 +22,8 @@ static uint8_t s_address = 0;
 static uint8_t s_currentkeymap[256];
 static uint8_t s_prevkeymap[256];
 static uint16_t s_keystates[256];
-//static uint8_t s_devicecontrol[8]; // LED control
+static uint8_t s_devicecontrol[8];
+static uint8_t s_latch;
 
 void EnumerateDevice()
 {
@@ -51,6 +52,10 @@ int main(int argc, char *argv[])
 			s_prevkeymap[i] = 0;
 			s_keystates[i] = 0;
 		}
+		for (int i=0; i<8; ++i)
+			s_devicecontrol[i] = 0;
+
+		s_latch = 0;
 
 		uint8_t m3421rev = MAX3421ReadByte(rREVISION);
 		if (m3421rev != 0xFF)
@@ -208,6 +213,28 @@ int main(int argc, char *argv[])
 							uint8_t rcode = USBReadHIDData(s_address, keydata);
 							if (rcode == 0)
 							{
+								// Toggle LEDs based on locked key state change
+								// numlock:0x01 -> num lock at index 83
+								// caps:0x02 -> caps lock at index 82
+								// scrolllock:0x04 -> scroll lock at index 84
+								uint8_t lockstate = (s_keystates[82]?0x02:0x00) | (s_keystates[83]?0x01:0x00) | (s_keystates[84]?0x04:0x00);
+								if (lockstate) // Any of the locked keys are pressed
+								{
+									if (!s_latch)
+									{
+										// Keep current state until keys are released
+										s_latch = 1;
+										// Toggle previous state
+										s_devicecontrol[0] ^= lockstate;
+										// Reflect to device
+										rcode = USBWriteHIDData(s_address, s_devicecontrol);
+										if (rcode)
+											devState = DEVS_ERROR;
+									}
+								}
+								else
+									s_latch = 0;
+
 								// Reflect into current keymap
 								for (uint32_t i=2; i<8; ++i)
 								{
@@ -218,6 +245,13 @@ int main(int argc, char *argv[])
 
 								// Generate keyup / keydown flags
 								uint16_t modifierState = keydata[0]<<8;
+								// 7  6  5  4  3  2  1  0
+								// RG RA RS RC LG LA LS LC
+								//uint8_t isGraphics = modifierState&0x8800 ? 1:0;
+								//uint8_t isAlt = modifierState&0x4400 ? 1:0;
+								uint8_t isShift = modifierState&0x2200 ? 1:0;
+								//uint8_t isControl = modifierState&0x1100 ? 1:0;
+								uint8_t isCaps = isShift | (s_devicecontrol[0]&0x02);
 								for (uint32_t i=0; i<256; ++i)
 								{
 									uint16_t keystate = 0;
@@ -235,7 +269,7 @@ int main(int argc, char *argv[])
 									if (keystate&1)
 									{
 										// Insert capital/lowercase ASCII code into input fifo
-										uint32_t incoming = HIDScanToASCII(i, modifierState&0x2200 ? 1:0);
+										uint32_t incoming = HIDScanToASCII(i, isCaps);
 										RingBufferWrite(&incoming, sizeof(uint32_t));
 									}
 								}
@@ -245,31 +279,6 @@ int main(int argc, char *argv[])
 
 								// Reset only after key repeat rate (~200 ms)
 								__builtin_memset(s_currentkeymap, 0, 256);
-
-								/*for (uint8_t k=0; k<2; ++k)
-									printf("0x%.2x ", keydata[k]);
-								for (uint8_t k=2; k<8; ++k)
-									printf("%c", HIDScanToASCII(keydata[k], keydata[0]&0x22 ? 1:0));
-								printf("\n");*/
-
-								// Toggle LEDs based on state
-								/*if (keydata[0]&0x22)
-								{
-									// numlock:0x01
-									// caps:0x02
-									// scrolllock:0x04
-									s_devicecontrol[0] = 0x02; // Shift
-									rcode = USBWriteHIDData(s_address, s_devicecontrol);
-									if (rcode)
-										devState = DEVS_ERROR;
-								}
-								else
-								{
-									s_devicecontrol[0] = 0x00;
-									rcode = USBWriteHIDData(s_address, s_devicecontrol);
-									if (rcode)
-										devState = DEVS_ERROR;
-								}*/
 							}
 							else
 							{
