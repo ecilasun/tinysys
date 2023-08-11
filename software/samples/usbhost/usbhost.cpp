@@ -21,6 +21,7 @@ EUSBDeviceState devState = DEVS_UNKNOWN;
 static uint8_t s_address = 0;
 static uint8_t s_currentkeymap[256];
 static uint8_t s_prevkeymap[256];
+static uint16_t s_keystates[256];
 //static uint8_t s_devicecontrol[8]; // LED control
 
 void EnumerateDevice()
@@ -48,6 +49,7 @@ int main(int argc, char *argv[])
 		{
 			s_currentkeymap[i] = 0;
 			s_prevkeymap[i] = 0;
+			s_keystates[i] = 0;
 		}
 
 		uint8_t m3421rev = MAX3421ReadByte(rREVISION);
@@ -195,17 +197,18 @@ int main(int argc, char *argv[])
 						uint64_t currentTime = E32ReadTime();
 						if (currentTime > nextPoll)
 						{
+							uint8_t keydata[8];
+
 							nextPoll = currentTime + 10*ONE_MICROSECOND_IN_TICKS;
 
+							// TODO: Keyboard state should go to kernel memory from which applications can poll.
+							// That mechanism should ultimately replace the ringbuffer approach used for UART input.
+
 							// Use maxpacketsize of the endpoint(8), the proper device address(1) and endpoint index(0 at 0x81)
-							uint8_t keydata[8];
-							//uint8_t ep = 0;
-							//USBSetAddress(s_address, ep);
-							//uint8_t rcode = USBInTransfer(s_address, ep, 8, (char*)keydata, 64);
 							uint8_t rcode = USBReadHIDData(s_address, keydata);
 							if (rcode == 0)
 							{
-								// Set up current state
+								// Reflect into current keymap
 								for (uint32_t i=2; i<8; ++i)
 								{
 									uint8_t keyIndex = keydata[i];
@@ -213,16 +216,23 @@ int main(int argc, char *argv[])
 										s_currentkeymap[keyIndex] = 1;
 								}
 
-								// Generate keyup / keydown
+								// Generate keyup / keydown flags
+								uint8_t modifierState = keydata[0]<<8;
 								for (uint32_t i=0; i<256; ++i)
 								{
-									uint8_t keytype = 0;
+									uint32_t keystate = 0;
 									uint8_t prevstate = s_prevkeymap[i];
 									uint8_t currentstate = s_currentkeymap[i];
-									if (!prevstate && currentstate) keytype = 1; // key down
-									if (prevstate && !currentstate) keytype = 2; // key up
-									// Insert down keys
-									if (keytype == 1)
+									if (!prevstate && currentstate) keystate |= 1; // key down
+									if (prevstate && !currentstate) keystate |= 2; // key up
+									//if (prevstate && currentstate) keystate |= 4; // repeat
+
+									// Update up/down state map alongside current modifier state
+									s_keystates[i] = keystate | modifierState;
+
+									// Insert down keys into input fifo
+									// This is required to provide in-order input for text entry.
+									if (keystate&1)
 									{
 										uint32_t incoming = HIDScanToASCII(i, 0);
 										RingBufferWrite(&incoming, sizeof(uint32_t));
@@ -232,7 +242,7 @@ int main(int argc, char *argv[])
 								// Remember current state
 								__builtin_memcpy(s_prevkeymap, s_currentkeymap, 256);
 
-								// TODO: reset only after key repeat rate (~250 ms)
+								// Reset only after key repeat rate (~200 ms)
 								__builtin_memset(s_currentkeymap, 0, 256);
 
 								/*for (uint8_t k=0; k<2; ++k)
