@@ -217,10 +217,10 @@ int main(int argc, char *argv[])
 								}
 
 								// Generate keyup / keydown flags
-								uint8_t modifierState = keydata[0]<<8;
+								uint16_t modifierState = keydata[0]<<8;
 								for (uint32_t i=0; i<256; ++i)
 								{
-									uint32_t keystate = 0;
+									uint16_t keystate = 0;
 									uint8_t prevstate = s_prevkeymap[i];
 									uint8_t currentstate = s_currentkeymap[i];
 									if (!prevstate && currentstate) keystate |= 1; // key down
@@ -234,7 +234,8 @@ int main(int argc, char *argv[])
 									// This is required to provide in-order input for text entry.
 									if (keystate&1)
 									{
-										uint32_t incoming = HIDScanToASCII(i, 0);
+										// Insert capital/lowercase ASCII code into input fifo
+										uint32_t incoming = HIDScanToASCII(i, modifierState&0x2200 ? 1:0);
 										RingBufferWrite(&incoming, sizeof(uint32_t));
 									}
 								}
