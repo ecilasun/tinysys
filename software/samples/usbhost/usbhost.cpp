@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
 								// caps:0x02
 								// scrolllock:0x04
 								// Any of the lock keys down?
-								uint8_t lockstate = ((s_keystates[39]&1)?0x02:0x00) | ((s_keystates[53]&1)?0x01:0x00) | ((s_keystates[47]&1)?0x04:0x00);
+								uint8_t lockstate = ((s_keystates[0x39]&1)?0x02:0x00) | ((s_keystates[0x53]&1)?0x01:0x00) | ((s_keystates[0x47]&1)?0x04:0x00);
 								if (lockstate)
 								{
 									// Toggle previous state
