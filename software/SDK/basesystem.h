@@ -17,6 +17,12 @@
 
 // Physical address map for no-MMU raw mode at boot time
 #define APPMEM_START					0x00000000 // Top of RAM
+// General purpose ring buffer data (1K) and state
+#define RINGBUFFER_BASE					0x00000200
+#define RINGBUFFER_STATE				0x00000600
+// Keyboard input map
+#define KEYBOARD_KEYSTATE_BASE			0x00000800
+#define KEYBOARD_KEYSTATE_END			0x00000A00
 // Executable
 #define HEAP_START_APPMEM_END			0x02000000 // Executable space above this (32MBytes)
 // Heap

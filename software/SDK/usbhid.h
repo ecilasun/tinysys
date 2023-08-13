@@ -1,6 +1,7 @@
 #pragma once
 
 #include "usbcommon.h"
+#include "basesystem.h"
 
 extern volatile uint32_t *IO_USBATRX;
 extern volatile uint32_t *IO_USBASTA;
@@ -64,16 +65,16 @@ struct SUSBContext *USBHostGetContext();
 enum EBusState USBHostInit(uint32_t enableInterrupts);
 enum EBusState USBBusProbe();
 uint8_t USBGetDeviceDescriptor();
-uint8_t USBGetHIDDescriptor(uint8_t _addr);
-uint8_t USBAttach(uint8_t *_paddr);
+uint8_t USBGetHIDDescriptor(uint8_t _addr, uint8_t _ep);
+uint8_t USBAttach(uint8_t *_paddr, uint8_t *_pep);
 uint8_t USBDetach(uint8_t _addr);
 uint8_t USBInTransfer(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _data, unsigned int _nak_limit);
 uint8_t USBOutTransfer(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _data, unsigned int nak_limit);
 uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_t _bRequest, uint8_t _wValLo, uint8_t _wValHi, unsigned int _wInd, unsigned int _nbytes, char* _dataptr, unsigned int _nak_limit);
-uint8_t USBConfigHID(uint8_t _addr);
+uint8_t USBConfigHID(uint8_t _addr, uint8_t _ep);
 void USBSetAddress(uint8_t _addr, uint8_t _ep);
-uint8_t USBReadHIDData(uint8_t _addr, uint8_t *_data);
-uint8_t USBWriteHIDData(uint8_t _addr, uint8_t *_data);
+uint8_t USBReadHIDData(uint8_t _addr, uint8_t _ep, uint8_t *_data);
+uint8_t USBWriteHIDData(uint8_t _addr, uint8_t _ep, uint8_t *_data);
 char HIDScanToASCII(const uint8_t _code, const uint8_t _uppercase);
 
 // MAX3421E Registers - host mode

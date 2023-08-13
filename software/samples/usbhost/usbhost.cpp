@@ -18,10 +18,10 @@ EBusState probe_result = BUSUNKNOWN;
 EUSBDeviceState olddevState = DEVS_UNKNOWN;
 EUSBDeviceState devState = DEVS_UNKNOWN;
 
-static uint8_t s_address = 0;
+static uint8_t s_deviceAddress = 0;
+static uint8_t s_deviceEndpoint = 0;
 static uint8_t s_currentkeymap[256];
 static uint8_t s_prevkeymap[256];
-static uint16_t s_keystates[256];
 static uint8_t s_devicecontrol[8];
 
 void EnumerateDevice()
@@ -44,12 +44,12 @@ int main(int argc, char *argv[])
 	else
 	{
 		probe_result = USBHostInit(0);
+		uint16_t* keystates = (uint16_t*)KEYBOARD_KEYSTATE_BASE;
 
 		for (int i=0; i<256; ++i)
 		{
 			s_currentkeymap[i] = 0;
 			s_prevkeymap[i] = 0;
-			s_keystates[i] = 0;
 		}
 		for (int i=0; i<8; ++i)
 			s_devicecontrol[i] = 0;
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
 					case DEVS_DETACHED:
 					{
 						// We're always device #1
-						uint8_t rcode = USBDetach(s_address);
+						uint8_t rcode = USBDetach(s_deviceAddress);
 						//init: usbinit();
 						//waitfordevice: MAX3421WriteByte(rHCTL, bmSAMPLEBUS);
 						//illegal: no idea
@@ -173,14 +173,14 @@ int main(int argc, char *argv[])
 
 					case DEVS_ADDRESSING:
 					{
-						uint8_t rcode = USBAttach(&s_address);
+						uint8_t rcode = USBAttach(&s_deviceAddress, &s_deviceEndpoint);
 						nextPoll = E32ReadTime() + 10*ONE_MILLISECOND_IN_TICKS;
 
 						if (rcode == 0)
 						{
-							rcode = USBConfigHID(s_address);
+							rcode = USBConfigHID(s_deviceAddress, s_deviceEndpoint);
 							if (rcode == 0)
-								rcode = USBGetHIDDescriptor(s_address);
+								rcode = USBGetHIDDescriptor(s_deviceAddress, s_deviceEndpoint);
 						}
 
 						devState = rcode ? DEVS_ERROR : DEVS_RUNNING;
@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
 							// That mechanism should ultimately replace the ringbuffer approach used for UART input.
 
 							// Use maxpacketsize of the endpoint(8), the proper device address(1) and endpoint index(0 at 0x81)
-							uint8_t rcode = USBReadHIDData(s_address, keydata);
+							uint8_t rcode = USBReadHIDData(s_deviceAddress, s_deviceEndpoint, keydata);
 							if (rcode == 0)
 							{
 								// Reflect into current keymap
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
 									//if (prevstate && currentstate) keystate |= 4; // repeat
 
 									// Update up/down state map alongside current modifier state
-									s_keystates[i] = keystate | modifierState;
+									keystates[i] = keystate | modifierState;
 
 									// Insert down keys into input fifo in scan order
 									// NOTE: Could be moved out of here
@@ -258,25 +258,25 @@ int main(int argc, char *argv[])
 								// caps:0x02
 								// scrolllock:0x04
 								// Any of the lock keys down?
-								uint8_t lockstate = ((s_keystates[0x39]&1)?0x02:0x00) | ((s_keystates[0x53]&1)?0x01:0x00) | ((s_keystates[0x47]&1)?0x04:0x00);
+								uint8_t lockstate = ((keystates[0x39]&1)?0x02:0x00) | ((keystates[0x53]&1)?0x01:0x00) | ((keystates[0x47]&1)?0x04:0x00);
 								if (lockstate)
 								{
 									// Toggle previous state
 									s_devicecontrol[0] ^= lockstate;
 									// Reflect to device
-									rcode = USBWriteHIDData(s_address, s_devicecontrol);
+									rcode = USBWriteHIDData(s_deviceAddress, s_deviceEndpoint, s_devicecontrol);
 									if (rcode)
 										devState = DEVS_ERROR;
 								}
 							}
-							/*else
+							else
 							{
 								// This appears to happen after a while, but I won't disconnect the device here.
-								printf("\nUSBReadHIDData error: 0x%.2x\n", rcode);
-								devState = DEVS_ERROR;
-								// Refresh LED state to keep alive
-								rcode = USBWriteHIDData(s_address, s_devicecontrol);
-							}*/
+								//printf("\nUSBReadHIDData error: 0x%.2x\n", rcode);
+								//devState = DEVS_ERROR;
+								// TEST: Does refreshing the LED state work?
+								rcode = USBWriteHIDData(s_deviceAddress, s_deviceEndpoint, s_devicecontrol);
+							}
 						}
 					}
 					break;

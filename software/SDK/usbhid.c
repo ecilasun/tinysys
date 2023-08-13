@@ -188,6 +188,10 @@ enum EBusState USBHostInit(uint32_t enableInterrupts)
 		MAX3421WriteByte(rCPUCTL, bmIE);
 	}
 
+	// Reset keymap
+	uint16_t* keystate = (uint16_t*)KEYBOARD_KEYSTATE_BASE;
+	__builtin_memset(keystate, 0x00, 256*sizeof(uint16_t));
+
 	return busState;
 }
 
@@ -600,7 +604,7 @@ uint8_t USBGetDeviceDescriptor()
 	return 0;
 }
 
-uint8_t USBAttach(uint8_t *_paddr)
+uint8_t USBAttach(uint8_t *_paddr, uint8_t *_pep)
 {
 	for (int i=1; i<8; ++i)
 	{
@@ -617,6 +621,7 @@ uint8_t USBAttach(uint8_t *_paddr)
 				USBSerialWriteDecimal(i);
 				USBSerialWrite("\n");
 				*_paddr = i;
+				*_pep = 0; // TODO: User the real endpoint here
 				return 0;
 			}
 			else
@@ -641,31 +646,26 @@ uint8_t USBDetach(uint8_t _addr)
 	return 0;
 }
 
-uint8_t USBConfigHID(uint8_t _addr)
+uint8_t USBConfigHID(uint8_t _addr, uint8_t _ep)
 {
-	// TODO: HID device address defaults to 1
-	uint8_t ep = 0;
-	uint8_t conf = 1; // Is this correct?
+	uint8_t config = 1;
 
 	USBSerialWrite("setting HID configuration\n");
-	uint8_t rcode = USBControlRequest(_addr, ep, bmREQ_SET, USB_REQUEST_SET_CONFIGURATION, conf, 0x00, 0x0000, 0x0000, NULL, 64);
+	uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_SET, USB_REQUEST_SET_CONFIGURATION, config, 0x00, 0x0000, 0x0000, NULL, 64);
 
 	if (rcode == 0)
 	{
 		USBSerialWrite("switching to boot protocol\n");
 		// iface is interface number
 		uint8_t iface = 0;
-		rcode = USBControlRequest(_addr, ep, bmREQ_HIDOUT, HID_REQUEST_SET_PROTOCOL, USB_HID_BOOT_PROTOCOL, 0x00, iface, 0x0000, NULL, 64);
+		rcode = USBControlRequest(_addr, _ep, bmREQ_HIDOUT, HID_REQUEST_SET_PROTOCOL, USB_HID_BOOT_PROTOCOL, 0x00, iface, 0x0000, NULL, 64);
 	}
 
 	return rcode;
 }
 
-uint8_t USBGetHIDDescriptor(uint8_t _addr)
+uint8_t USBGetHIDDescriptor(uint8_t _addr, uint8_t _ep)
 {
-	// TODO: HID device address defaults to 1
-	uint8_t ep = 0;
-
 	// NOTE: You can parse this data using
 	// http://eleccelerator.com/usbdescreqparser/
 	// Remember to click USB HID Report Descriptor to parse!
@@ -676,7 +676,7 @@ uint8_t USBGetHIDDescriptor(uint8_t _addr)
 
 	USBSerialWrite("getting HID descriptor\n");
 	char tmpdata[64];
-    uint8_t rcode = USBControlRequest(_addr, ep, bmREQ_HIDREPORT, USB_REQUEST_GET_DESCRIPTOR, 0x00, HID_DESCRIPTOR_REPORT, 0x0000, 64, tmpdata, 64);
+    uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_HIDREPORT, USB_REQUEST_GET_DESCRIPTOR, 0x00, HID_DESCRIPTOR_REPORT, 0x0000, 64, tmpdata, 64);
 
 	if (rcode != 0)
 		return rcode;
@@ -695,26 +695,22 @@ void USBSetAddress(uint8_t _addr, uint8_t _ep)
 	MAX3421WriteByte(rMODE, mode | bmHUBPRE);
 }
 
-uint8_t USBReadHIDData(uint8_t _addr, uint8_t *_data)
+uint8_t USBReadHIDData(uint8_t _addr, uint8_t _ep, uint8_t *_data)
 {
-	uint8_t ep = 0;
-
 	uint8_t reportID = 1;
 	uint8_t reportType = 1; // Keyboard data
 	uint8_t iface = 0;
-    uint8_t rcode = USBControlRequest(_addr, ep, bmREQ_HIDIN, HID_REQUEST_GET_REPORT, reportID, reportType, iface, 8, (char*)_data, 64);
+    uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_HIDIN, HID_REQUEST_GET_REPORT, reportID, reportType, iface, 8, (char*)_data, 64);
 
 	return rcode;
 }
 
-uint8_t USBWriteHIDData(uint8_t _addr, uint8_t *_data)
+uint8_t USBWriteHIDData(uint8_t _addr, uint8_t _ep, uint8_t *_data)
 {
-	uint8_t ep = 0;
-
 	uint8_t reportID = 0;
 	uint8_t reportType = 2; // LED control
 	uint8_t iface = 0;
-    uint8_t rcode = USBControlRequest(_addr, ep, bmREQ_HIDOUT, HID_REQUEST_SET_REPORT, reportID, reportType, iface, 1, (char*)_data, 64);
+    uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_HIDOUT, HID_REQUEST_SET_REPORT, reportID, reportType, iface, 1, (char*)_data, 64);
 
 	return rcode;
 }
