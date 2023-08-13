@@ -5,33 +5,6 @@
 extern volatile uint32_t *IO_USBCTRX;
 extern volatile uint32_t *IO_USBCSTA;
 
-// Device classes
-
-#define USBClass_Device									0x00
-#define USBClass_Audio									0x01
-#define USBClass_CDCControl								0x02
-#define USBClass_HID									0x03
-#define USBClass_Physical								0x05
-#define USBClass_Image									0x06
-#define USBClass_Printer								0x07
-#define USBClass_MassStorage							0x08
-#define USBClass_Hub									0x09
-#define USBClass_CDCData								0x0A
-#define USBClass_SmartCard								0x0B
-#define USBClass_ContentSecurity						0x0D
-#define USBClass_Video									0x0E
-#define USBClass_PersonalHealthcare						0x0F
-#define USBClass_AudioVideoDevices						0x10
-#define USBClass_BillboardDeviceClass					0x11
-#define USBClass_USBTypeCBridgeClass					0x12
-#define USBClass_USBBulkDisplayProtocolDeviceClass		0x13
-#define USBClass_I3CDeviceClass							0x3C
-#define USBClass_DiagnosticDevice						0xDC
-#define USBClass_WirelessController						0xE0
-#define USBClass_Miscellaneous							0xEF
-#define USBClass_ApplicationSpecific					0xFE
-#define USBClass_VendorSpecific							0xFF
-
 // Descriptor types
 
 #define USBDesc_Device						0x01

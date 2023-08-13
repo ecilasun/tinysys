@@ -18,6 +18,10 @@ EBusState probe_result = BUSUNKNOWN;
 EUSBDeviceState olddevState = DEVS_UNKNOWN;
 EUSBDeviceState devState = DEVS_UNKNOWN;
 
+// The HID devices usually says 'no faster than 10ms' which means I could poll it at 15ms intervals
+// TODO: Grab this from the device
+static uint32_t s_devicePollInterval = 15;
+
 static uint8_t s_deviceAddress = 0;
 static uint8_t s_deviceEndpoint = 0;
 static uint8_t s_currentkeymap[256];
@@ -174,7 +178,8 @@ int main(int argc, char *argv[])
 					case DEVS_ADDRESSING:
 					{
 						uint8_t rcode = USBAttach(&s_deviceAddress, &s_deviceEndpoint);
-						nextPoll = E32ReadTime() + 10*ONE_MILLISECOND_IN_TICKS;
+						uint64_t currentTime = E32ReadTime();
+						nextPoll = currentTime + s_devicePollInterval*ONE_MILLISECOND_IN_TICKS;
 
 						if (rcode == 0)
 						{
@@ -198,8 +203,7 @@ int main(int argc, char *argv[])
 						{
 							uint8_t keydata[8];
 
-							// The device says 'no faster than 10ms' which means I could poll it at 15ms intervals
-							nextPoll = currentTime + 15*ONE_MICROSECOND_IN_TICKS;
+							nextPoll = currentTime + s_devicePollInterval*ONE_MICROSECOND_IN_TICKS;
 
 							// TODO: Keyboard state should go to kernel memory from which applications can poll.
 							// That mechanism should ultimately replace the ringbuffer approach used for UART input.
@@ -272,10 +276,10 @@ int main(int argc, char *argv[])
 							else
 							{
 								// This appears to happen after a while, but I won't disconnect the device here.
-								//printf("\nUSBReadHIDData error: 0x%.2x\n", rcode);
-								//devState = DEVS_ERROR;
+								printf("\nUSBReadHIDData error: 0x%.2x\n", rcode);
+								devState = DEVS_ERROR;
 								// TEST: Does refreshing the LED state work?
-								rcode = USBWriteHIDData(s_deviceAddress, s_deviceEndpoint, s_devicecontrol);
+								//rcode = USBWriteHIDData(s_deviceAddress, s_deviceEndpoint, s_devicecontrol);
 							}
 						}
 					}

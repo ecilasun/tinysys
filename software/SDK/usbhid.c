@@ -3,7 +3,10 @@
 #include "basesystem.h"
 #include <string.h>
 
-static struct USBEndpointRecord dev0ep;
+// Define this to allow boot protocol vs report protocol
+//#define USE_BOOT_PROTOCOL
+
+static struct USBEndpointRecord dev0controlEP;
 static struct USBDeviceRecord s_deviceTable[8];
 
 volatile uint32_t *IO_USBATRX = (volatile uint32_t* )DEVICE_USBA; // Receive fifo
@@ -166,9 +169,11 @@ enum EBusState USBHostInit(uint32_t enableInterrupts)
 		s_deviceTable[i].endpointInfo = NULL;
 		s_deviceTable[i].deviceClass = 0;
 	}
-	s_deviceTable[0].endpointInfo = &dev0ep;
-	dev0ep.sendToggle = bmSNDTOG0;
-	dev0ep.receiveToggle = bmRCVTOG0;
+
+	// Set up control endpoint for default device
+	s_deviceTable[0].endpointInfo = &dev0controlEP;
+	dev0controlEP.sendToggle = bmSNDTOG0;
+	dev0controlEP.receiveToggle = bmRCVTOG0;
 
 	MAX3421WriteByte(rPINCTL, bmFDUPSPI | bmINTLEVEL | gpxSOF);
 	MAX3421CtlReset();
@@ -428,6 +433,194 @@ uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_
 	return rcode;
 }
 
+uint8_t USBParseDescriptor(uint8_t *_desc, uint8_t* _dtype, uint8_t* _offset)
+{
+	uint8_t stringCount = 0;
+	struct USBCommonDescriptor* dcom = (struct USBCommonDescriptor*)_desc;
+	switch (dcom->bDescriptorType)
+	{
+		case USBDESCTYPE_DEVICE:
+		{
+			*_dtype = USBDESCTYPE_DEVICE;
+			*_offset = sizeof(struct USBDeviceDescriptor);
+			struct USBDeviceDescriptor* desc = (struct USBDeviceDescriptor*)_desc;
+			USBSerialWrite("\n   dtype: device");
+			USBSerialWrite("\n  usbver: ");
+			USBSerialWriteDecimal(desc->bcdUSB>>8);
+			USBSerialWrite(".");
+			USBSerialWriteDecimal(desc->bcdUSB & 0xFF);
+			USBSerialWrite("\ndevclass: 0x");
+			USBSerialWriteHexByte(desc->bDeviceClass);
+			USBSerialWrite("\nsubclass: 0x");
+			USBSerialWriteHexByte(desc->bDeviceSubClass);
+			USBSerialWrite("\nprotocol: 0x");
+			USBSerialWriteHexByte(desc->bDeviceProtocol);
+			USBSerialWrite("\nep0maxsz: 0x");
+			USBSerialWriteHexByte(desc->bMaxPacketSizeEP0);
+			USBSerialWrite("\n     VID: 0x");
+			USBSerialWriteHex(desc->idVendor);
+			USBSerialWrite("\n     PID: 0x");
+			USBSerialWriteHex(desc->idProduct);
+			USBSerialWrite("\n     dev: 0x");
+			USBSerialWriteHex(desc->bcdDevice);
+			USBSerialWrite("\n    man$: 0x");
+			USBSerialWriteHexByte(desc->iManufacturer);
+			stringCount += desc->iManufacturer!=0 ? 1:0;
+			USBSerialWrite("\n   prod$: 0x");
+			USBSerialWriteHexByte(desc->iProduct);
+			stringCount += desc->iProduct!=0 ? 1:0;
+			USBSerialWrite("\n   ser#$: 0x");
+			USBSerialWriteHexByte(desc->iSerialNumber);
+			stringCount += desc->iSerialNumber!=0 ? 1:0;
+			USBSerialWrite("\n configs: 0x");
+			USBSerialWriteHexByte(desc->bNumConfigurations);
+			USBSerialWrite("\n");
+		}
+		break;
+
+		case USBDESCTYPE_CONFIGURATION:
+		{
+			*_dtype = USBDESCTYPE_CONFIGURATION;
+			*_offset = sizeof(struct USBConfigurationDescriptor);
+			struct USBConfigurationDescriptor* desc = (struct USBConfigurationDescriptor*)_desc;
+			USBSerialWrite("\n     dtype: configuration");
+			USBSerialWrite("\n      tlen: 0x");
+			USBSerialWriteHex(desc->wTotalLength);
+			USBSerialWrite("\ninterfaces: 0x");
+			USBSerialWriteHexByte(desc->bNumInterfaces);
+			USBSerialWrite("\n      cval: 0x");
+			USBSerialWriteHexByte(desc->bConfigurationValue);
+			USBSerialWrite("\n     conf$: 0x");
+			USBSerialWriteHexByte(desc->iConfiguration);
+			stringCount += desc->iConfiguration!=0 ? 1:0;
+			USBSerialWrite("\n    attrib: 0x");
+			USBSerialWriteHexByte(desc->bmAttributes);
+			USBSerialWrite("\n  maxpower: 0x");
+			USBSerialWriteHexByte(desc->MaxPower);
+			USBSerialWrite("\n");
+		}
+		break;
+
+		case USBDESCTYPE_STRING:
+		{
+			*_dtype = USBDESCTYPE_STRING;
+			*_offset = sizeof(struct USBStringLanguageDescriptor);
+		}
+		break;
+
+		case USBDESCTYPE_INTERFACE:
+		{
+			*_dtype = USBDESCTYPE_INTERFACE;
+			*_offset = sizeof(struct USBInterfaceDescriptor);
+			struct USBInterfaceDescriptor *desc = (struct USBInterfaceDescriptor *)_desc;
+			USBSerialWrite("\n       dtype: interface");
+			USBSerialWrite("\n        inum: 0x");
+			USBSerialWriteHexByte(desc->bInterfaceNumber);
+			USBSerialWrite("\n      altset: 0x");
+			USBSerialWriteHexByte(desc->bAlternateSetting);
+			USBSerialWrite("\n       numep: 0x");
+			USBSerialWriteHexByte(desc->bNumEndpoints);
+			USBSerialWrite("\n       class: ");
+			switch(desc->bInterfaceClass)
+			{
+				case USBClass_MassStorage:
+					USBSerialWrite("mass storage");
+				break;
+				case USBClass_HID:
+					USBSerialWrite("HID");
+				break;
+				default:
+					USBSerialWriteHexByte(desc->bInterfaceClass);
+				break;
+			}
+			USBSerialWrite("\n    subclass: 0x");
+			USBSerialWriteHexByte(desc->bInterfaceSubClass);
+			USBSerialWrite("\n    protocol: 0x");
+			USBSerialWriteHexByte(desc->bInterfaceProtocol);
+			USBSerialWrite("\n      iface$: 0x");
+			USBSerialWriteHexByte(desc->iInterface);
+			stringCount += desc->iInterface!=0 ? 1:0;
+			USBSerialWrite("\n");
+		}
+		break;
+
+		case USBDESCTYPE_ENDPOINT:
+		{
+			*_dtype = USBDESCTYPE_ENDPOINT;
+			*_offset = sizeof(struct USBEndpointDescriptor);
+			struct USBEndpointDescriptor *desc = (struct USBEndpointDescriptor*)_desc;
+			USBSerialWrite("\n         dtype: endpoint");
+			USBSerialWrite("\n       address: 0x");
+			USBSerialWriteHexByte(desc->bEndpointAddress);
+			USBSerialWrite("\n      interval: 0x");
+			USBSerialWriteHexByte(desc->bInterval);
+			USBSerialWrite("\n        length: 0x");
+			USBSerialWriteHexByte(desc->bLength);
+			USBSerialWrite("\n        attrib: 0x");
+			USBSerialWriteHexByte(desc->bmAttributes);
+			USBSerialWrite("\n maxpacketsize: 0x");
+			USBSerialWriteHex(desc->wMaxPacketSize);
+			USBSerialWrite("\n");
+		}
+		break;
+
+		case USBDESCTYPE_HIDSPECIFIC:
+		{
+			*_dtype = USBDESCTYPE_HIDSPECIFIC;
+			*_offset = sizeof(struct USBHIDDescriptor);
+			struct USBHIDDescriptor *desc = (struct USBHIDDescriptor*)_desc;
+			USBSerialWrite("\n         dtype: HID");
+			USBSerialWrite("\n           HID: 0x");
+			USBSerialWriteHexByte(desc->bcdHID);
+			USBSerialWrite("\n  country code: 0x");
+			USBSerialWriteHexByte(desc->bCountryCode);
+			USBSerialWrite("\n     descBytes: 0x");
+			USBSerialWriteHexByte(desc->bNumDescriptors);
+			USBSerialWrite("\n          type: 0x");
+			USBSerialWriteHexByte(desc->bDescrType);
+			USBSerialWrite("\n");
+			*_offset = dcom->bLength;
+		}
+		break;
+
+		case USBDESCTYPE_UNKNOWN:
+		case USBDESCTYPE_DEVICEQUALIFIER:
+		case USBDESCTYPE_OTHERSPEEDCFG:
+		case USBDESCTYPE_INTERFACEPOWER:
+		case USBDESCTYPE_OTG:
+		case USBDESCTYPE_DEBUG:
+		case USBDESCTYPE_INTERFACEASSOC:
+		case USBDESCTYPE_SECURITY:
+		case USBDESCTYPE_KEY:
+		case USBDESCTYPE_ENCRYPTTYPE:
+		case USBDESCTYPE_BINARYDEVOBJSTORE:
+		case USBDESCTYPE_DEVICECAPABILITY:
+		case USBDESCTYPE_WIRELESSEPCOMPANION:
+		case USBDESCTYPE_SUPERSPEEDEPCOMPANION:
+		case USBDESCTYPE_SUPERSPEEDISOEPCOMPANION:
+		{
+			*_dtype = USBDESCTYPE_UNKNOWN;
+			*_offset = dcom->bLength;
+			USBSerialWrite("\n   dtype: 0x");
+			USBSerialWriteHexByte(dcom->bDescriptorType);
+			USBSerialWrite("\n");
+		}
+		break;
+
+		default:
+		{
+			*_dtype = USBDESCTYPE_UNKNOWN;
+			*_offset = 0xFF;
+			USBSerialWrite("\nError: invalid descriptor 0x\n");
+			USBSerialWriteHexByte(dcom->bDescriptorType);
+			USBSerialWrite("\n");
+		}
+		break;
+	}
+
+	return stringCount;
+}
+
 uint8_t USBGetDeviceDescriptor()
 {
 	struct USBDeviceDescriptor ddesc;
@@ -449,35 +642,9 @@ uint8_t USBGetDeviceDescriptor()
 	
 	int stringCount = 0;
 
-	USBSerialWrite("\ndesctype: 0x");
-	USBSerialWriteHexByte(ddesc.bDescriptorType);
-	USBSerialWrite("\n  usbver: ");
-	USBSerialWriteDecimal(ddesc.bcdUSB>>8);
-	USBSerialWrite(".");
-	USBSerialWriteDecimal(ddesc.bcdUSB & 0xFF);
-	USBSerialWrite("\ndevclass: 0x");
-	USBSerialWriteHexByte(ddesc.bDeviceClass);
-	USBSerialWrite("\nsubclass: 0x");
-	USBSerialWriteHexByte(ddesc.bDeviceSubClass);
-	USBSerialWrite("\nprotocol: 0x");
-	USBSerialWriteHexByte(ddesc.bDeviceProtocol);
-	USBSerialWrite("\nep0maxsz: 0x");
-	USBSerialWriteHexByte(ddesc.bMaxPacketSizeEP0);
-	USBSerialWrite("\n     VID: 0x");
-	USBSerialWriteHex(ddesc.idVendor);
-	USBSerialWrite("\n     PID: 0x");
-	USBSerialWriteHex(ddesc.idProduct);
-	USBSerialWrite("\n     dev: 0x");
-	USBSerialWriteHex(ddesc.bcdDevice);
-	USBSerialWrite("\n    man$: 0x");
-	USBSerialWriteHexByte(ddesc.iManufacturer); stringCount += ddesc.iManufacturer!=0 ? 1:0;
-	USBSerialWrite("\n   prod$: 0x");
-	USBSerialWriteHexByte(ddesc.iProduct); stringCount += ddesc.iProduct!=0 ? 1:0;
-	USBSerialWrite("\n   ser#$: 0x");
-	USBSerialWriteHexByte(ddesc.iSerialNumber); stringCount += ddesc.iSerialNumber!=0 ? 1:0;
-	USBSerialWrite("\n configs: 0x");
-	USBSerialWriteHexByte(ddesc.bNumConfigurations);
-	USBSerialWrite("\n");
+	uint8_t dtype = USBDESCTYPE_UNKNOWN;
+	uint8_t offset = 0;
+	stringCount += USBParseDescriptor((uint8_t*)&ddesc, &dtype, &offset);
 
 	struct USBConfigurationDescriptor cdef;
 	for (uint8_t c=0; c<ddesc.bNumConfigurations; ++c)
@@ -488,25 +655,6 @@ uint8_t USBGetDeviceDescriptor()
 		if (rcode != 0)
 			return rcode;
 
-		USBSerialWrite(" device config #");
-		USBSerialWriteDecimal(c);
-
-		USBSerialWrite("\n       type: 0x");
-		USBSerialWriteHexByte(cdef.bDescriptorType);
-		USBSerialWrite("\n       tlen: 0x");
-		USBSerialWriteHex(cdef.wTotalLength);
-		USBSerialWrite("\n interfaces: 0x");
-		USBSerialWriteHexByte(cdef.bNumInterfaces);
-		USBSerialWrite("\n       cval: 0x");
-		USBSerialWriteHexByte(cdef.bConfigurationValue);
-		USBSerialWrite("\n      conf$: 0x");
-		USBSerialWriteHexByte(cdef.iConfiguration); stringCount += cdef.iConfiguration!=0 ? 1:0;
-		USBSerialWrite("\n     attrib: 0x");
-		USBSerialWriteHexByte(cdef.bmAttributes);
-		USBSerialWrite("\n   maxpower: 0x");
-		USBSerialWriteHexByte(cdef.MaxPower);
-		USBSerialWrite("\n");
-
 		// re-request config descriptor with actual data size (cdef.wTotalLength)
 		char rawdata[256];
 		rcode = USBControlRequest(0, 0, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, c, USB_DESCRIPTOR_CONFIGURATION, 0x0000, cdef.wTotalLength, rawdata, 64);
@@ -514,58 +662,20 @@ uint8_t USBGetDeviceDescriptor()
 		if (rcode != 0)
 			return rcode;
 
-		// Skip to the first interface descriptor and list all interfaces
-		struct USBInterfaceDescriptor *idef = (struct USBInterfaceDescriptor *)&rawdata[9];
-		uint8_t eptotal = 0;
-		for (uint8_t i=0; i<cdef.bNumInterfaces; ++i)
-		{
-			USBSerialWrite("  interface #");
-			USBSerialWriteDecimal(i);
+		dtype = USBDESCTYPE_UNKNOWN;
+		offset = 0;
+		stringCount += USBParseDescriptor((uint8_t*)&cdef, &dtype, &offset);
 
-			USBSerialWrite("\n      type: 0x");
-			USBSerialWriteHexByte(idef->bDescriptorType);
-			USBSerialWrite("\n      inum: 0x");
-			USBSerialWriteHexByte(idef->bInterfaceNumber);
-			USBSerialWrite("\n    altset: 0x");
-			USBSerialWriteHexByte(idef->bAlternateSetting);
-			USBSerialWrite("\n     numep: 0x");
-			USBSerialWriteHexByte(idef->bNumEndpoints);
-			USBSerialWrite("\n     class: 0x");
-			USBSerialWriteHexByte(idef->bInterfaceClass);
-			USBSerialWrite("\n  subclass: 0x");
-			USBSerialWriteHexByte(idef->bInterfaceSubClass);
-			USBSerialWrite("\n  protocol: 0x");
-			USBSerialWriteHexByte(idef->bInterfaceProtocol);
-			USBSerialWrite("\n    iface$: 0x");
-			USBSerialWriteHexByte(idef->iInterface); stringCount += idef->iInterface!=0 ? 1:0;
-			USBSerialWrite("\n");
-			eptotal += idef->bNumEndpoints;
-			++idef;
+		while (offset < cdef.wTotalLength)
+		{
+			uint8_t descsize = 0;
+			stringCount += USBParseDescriptor((uint8_t*)&rawdata[offset], &dtype, &descsize);
+			if (descsize == 0xFF)
+				break;
+			offset += descsize;
 		}
 
-		struct USBEndpointDescriptor *edef = (struct USBEndpointDescriptor *)idef;
-		for (uint8_t e=0; e<eptotal; ++e)
-		{
-			USBSerialWrite("   endpoint #");
-			USBSerialWriteDecimal(e);
-
-			USBSerialWrite("\n            type: 0x");
-			USBSerialWriteHexByte(edef->bDescriptorType);
-			USBSerialWrite("\n         address: 0x");
-			USBSerialWriteHexByte(edef->bEndpointAddress);
-			USBSerialWrite("\n        interval: 0x");
-			USBSerialWriteHexByte(edef->bInterval);
-			USBSerialWrite("\n          length: 0x");
-			USBSerialWriteHexByte(edef->bLength);
-			USBSerialWrite("\n          attrib: 0x");
-			USBSerialWriteHexByte(edef->bmAttributes);
-			USBSerialWrite("\n   maxpacketsize: 0x");
-			USBSerialWriteHex(edef->wMaxPacketSize);
-			USBSerialWrite("\n");
-			++edef;
-		}
-
-		// Get language descriptor
+		// Get language descriptor and strings
 		struct USBStringLanguageDescriptor lang;
 		rcode = USBControlRequest(0, 0, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, 0, USB_DESCRIPTOR_STRING, 0x0000, 4, (char*)&lang, 64);
 
@@ -573,14 +683,12 @@ uint8_t USBGetDeviceDescriptor()
 			return rcode;
 
 		USBSerialWrite("Language descriptor (string #0):");
-		USBSerialWrite("\n  length: 0x");
+		USBSerialWrite("\n      length: 0x");
 		USBSerialWriteHexByte(lang.bLength);
-		USBSerialWrite("\nlanguage: 0x");
+		USBSerialWrite("\n    language: 0x");
 		USBSerialWriteHex(lang.wLanguage);
 		USBSerialWrite("\n");
 
-		// TODO: Rest of the strings will be:
-		// loop for all: short request to get size; long request to get actual string
 		for (int s=0; s<stringCount; ++s)
 		{
 			struct USBStringDescriptor str;
@@ -653,14 +761,16 @@ uint8_t USBConfigHID(uint8_t _addr, uint8_t _ep)
 	USBSerialWrite("setting HID configuration\n");
 	uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_SET, USB_REQUEST_SET_CONFIGURATION, config, 0x00, 0x0000, 0x0000, NULL, 64);
 
-	/*if (rcode == 0)
+#if defined(USE_BOOT_PROTOCOL)
+	if (rcode == 0)
 	{
 		USBSerialWrite("switching to boot protocol\n");
 		// iface is interface number
 		uint8_t iface = 0;
 		// Could also use HID_REPORT_PROTOCOL for report protocol
 		rcode = USBControlRequest(_addr, _ep, bmREQ_HIDOUT, HID_REQUEST_SET_PROTOCOL, USB_HID_BOOT_PROTOCOL, 0x00, iface, 0x0000, NULL, 64);
-	}*/
+	}
+#endif
 
 	return rcode;
 }
@@ -698,16 +808,17 @@ void USBSetAddress(uint8_t _addr, uint8_t _ep)
 
 uint8_t USBReadHIDData(uint8_t _addr, uint8_t _ep, uint8_t *_data)
 {
+#if defined(USE_BOOT_PROTOCOL)
+	// Using interrupt endpoint
+	MAX3421WriteByte(rPERADDR, _addr);
+	uint8_t rcode = USBControlData(_addr, _ep, 8, (char*)_data, 1, 64);
+#else
 	// Using control endpoint
 	uint8_t reportID = 1;
 	uint8_t reportType = 1; // Keyboard data
 	uint8_t iface = 0;
     uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_HIDIN, HID_REQUEST_GET_REPORT, reportID, reportType, iface, 8, (char*)_data, 64);
-
-	// Using interrupt endpoint
-	//MAX3421WriteByte(rPERADDR, _addr);
-	// NOTE: This will be the endpoint address on the interface that is the HID (which also contains the interval)
-	//uint8_t rcode = USBControlData(_addr, 0x81, 8, (char*)_data, 1, 64);
+#endif
 
 	return rcode;
 }

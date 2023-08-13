@@ -112,4 +112,53 @@ struct SUSBContext
 	struct USBStringDescriptor strings[6];
 };
 
+#define USBDESCTYPE_UNKNOWN						0x00
+#define USBDESCTYPE_DEVICE						0x01
+#define USBDESCTYPE_CONFIGURATION				0x02
+#define USBDESCTYPE_STRING						0x03
+#define USBDESCTYPE_INTERFACE					0x04
+#define USBDESCTYPE_ENDPOINT					0x05
+#define USBDESCTYPE_DEVICEQUALIFIER				0x06
+#define USBDESCTYPE_OTHERSPEEDCFG				0x07
+#define USBDESCTYPE_INTERFACEPOWER				0x08
+#define USBDESCTYPE_OTG							0x09
+#define USBDESCTYPE_DEBUG						0x0A
+#define USBDESCTYPE_INTERFACEASSOC				0x0B
+#define USBDESCTYPE_SECURITY					0x0C
+#define USBDESCTYPE_KEY							0x0D
+#define USBDESCTYPE_ENCRYPTTYPE					0x0E
+#define USBDESCTYPE_BINARYDEVOBJSTORE			0x0F
+#define USBDESCTYPE_DEVICECAPABILITY			0x10
+#define USBDESCTYPE_WIRELESSEPCOMPANION			0x11
+#define USBDESCTYPE_HIDSPECIFIC					0x21
+#define USBDESCTYPE_SUPERSPEEDEPCOMPANION		0x30
+#define USBDESCTYPE_SUPERSPEEDISOEPCOMPANION	0x31
+
+// Device classes
+
+#define USBClass_Device									0x00
+#define USBClass_Audio									0x01
+#define USBClass_CDCControl								0x02
+#define USBClass_HID									0x03
+#define USBClass_Physical								0x05
+#define USBClass_Image									0x06
+#define USBClass_Printer								0x07
+#define USBClass_MassStorage							0x08
+#define USBClass_Hub									0x09
+#define USBClass_CDCData								0x0A
+#define USBClass_SmartCard								0x0B
+#define USBClass_ContentSecurity						0x0D
+#define USBClass_Video									0x0E
+#define USBClass_PersonalHealthcare						0x0F
+#define USBClass_AudioVideoDevices						0x10
+#define USBClass_BillboardDeviceClass					0x11
+#define USBClass_USBTypeCBridgeClass					0x12
+#define USBClass_USBBulkDisplayProtocolDeviceClass		0x13
+#define USBClass_I3CDeviceClass							0x3C
+#define USBClass_DiagnosticDevice						0xDC
+#define USBClass_WirelessController						0xE0
+#define USBClass_Miscellaneous							0xEF
+#define USBClass_ApplicationSpecific					0xFE
+#define USBClass_VendorSpecific							0xFF
+
 #pragma pack(pop)
