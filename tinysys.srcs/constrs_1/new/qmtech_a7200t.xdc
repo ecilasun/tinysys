@@ -25,15 +25,15 @@ create_clock -period 20.000 -name sys_clk_pin -waveform {0.000 10.000} -add [get
 ## LEDs
 ## ------------------------------------------------------------------------------------------------------
 
-## LED[0]: pin U2:[U21]
-## LED[1]: pin U2:[V20]
-## LED[2]: pin U2:[U18]
-## LED[3]: pin U2:[V19]
+## LED[0]: pin U2:[Y4]
+## LED[1]: pin U2:[AA5]
+## LED[2]: pin U2:[AB7]
+## LED[3]: pin U2:[AA8]
 
-set_property -dict {PACKAGE_PIN U21 IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
-set_property -dict {PACKAGE_PIN V20 IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
-set_property -dict {PACKAGE_PIN U18 IOSTANDARD LVCMOS33} [get_ports {leds[2]}]
-set_property -dict {PACKAGE_PIN V19 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
+set_property -dict {PACKAGE_PIN Y4  IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
+set_property -dict {PACKAGE_PIN AA5 IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
+set_property -dict {PACKAGE_PIN AB7 IOSTANDARD LVCMOS33} [get_ports {leds[2]}]
+set_property -dict {PACKAGE_PIN AA8 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
 
 
 ## ------------------------------------------------------------------------------------------------------
@@ -161,9 +161,7 @@ set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports usbc_mosi]
 set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports usbc_miso]
 set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports usbc_int]
 set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
-
-## MAX3420E's INT pin requires an external pullup resistor when in INTLEVEL mode
-#set_property PULLUP true [get_ports usbc_int]
+set_property PULLUP true [get_ports usbc_int]
 
 ## ------------------------------------------------------------------------------------------------------
 ## USB-A - MAX3421EECJ over SPI interface, USB Host
@@ -188,9 +186,9 @@ set_property PULLUP true [get_ports usba_int]
 ## NMI switch
 ## ------------------------------------------------------------------------------------------------------
 
-## sysresetn     pin U4:59  [AA8]
+## sysresetn     pin U4:59  [AB8]
 
-set_property -dict {PACKAGE_PIN AA8 IOSTANDARD LVCMOS33} [get_ports sysresetn]
+set_property -dict {PACKAGE_PIN AB8 IOSTANDARD LVCMOS33} [get_ports sysresetn]
 set_property PULLUP true [get_ports sysresetn]
 
 ## ------------------------------------------------------------------------------------------------------
