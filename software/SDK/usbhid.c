@@ -653,13 +653,14 @@ uint8_t USBConfigHID(uint8_t _addr, uint8_t _ep)
 	USBSerialWrite("setting HID configuration\n");
 	uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_SET, USB_REQUEST_SET_CONFIGURATION, config, 0x00, 0x0000, 0x0000, NULL, 64);
 
-	if (rcode == 0)
+	/*if (rcode == 0)
 	{
 		USBSerialWrite("switching to boot protocol\n");
 		// iface is interface number
 		uint8_t iface = 0;
+		// Could also use HID_REPORT_PROTOCOL for report protocol
 		rcode = USBControlRequest(_addr, _ep, bmREQ_HIDOUT, HID_REQUEST_SET_PROTOCOL, USB_HID_BOOT_PROTOCOL, 0x00, iface, 0x0000, NULL, 64);
-	}
+	}*/
 
 	return rcode;
 }
@@ -697,10 +698,16 @@ void USBSetAddress(uint8_t _addr, uint8_t _ep)
 
 uint8_t USBReadHIDData(uint8_t _addr, uint8_t _ep, uint8_t *_data)
 {
+	// Using control endpoint
 	uint8_t reportID = 1;
 	uint8_t reportType = 1; // Keyboard data
 	uint8_t iface = 0;
     uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_HIDIN, HID_REQUEST_GET_REPORT, reportID, reportType, iface, 8, (char*)_data, 64);
+
+	// Using interrupt endpoint
+	//MAX3421WriteByte(rPERADDR, _addr);
+	// NOTE: This will be the endpoint address on the interface that is the HID (which also contains the interval)
+	//uint8_t rcode = USBControlData(_addr, 0x81, 8, (char*)_data, 1, 64);
 
 	return rcode;
 }

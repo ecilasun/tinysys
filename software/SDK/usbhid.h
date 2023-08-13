@@ -310,7 +310,7 @@ char HIDScanToASCII(const uint8_t _code, const uint8_t _uppercase);
 #define HID_REQUEST_SET_PROTOCOL		0x0B
 
 #define USB_HID_BOOT_PROTOCOL			0x00
-#define HID_RPT_PROTOCOL				0x01
+#define HID_REPORT_PROTOCOL				0x01
 
 // bInterfaceProtocol
 #define HID_PROTOCOL_NONE				0x00
