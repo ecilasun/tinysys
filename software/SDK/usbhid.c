@@ -155,11 +155,11 @@ enum EBusState USBBusProbe()
 	return BUSUNKNOWN;
 }
 
-void USBHostInit(uint32_t enableInterrupts)
+enum EBusState USBHostInit(uint32_t enableInterrupts)
 {
 	// Must set context first
 	if (s_usbhost==NULL)
-		return;
+		return BUSUNKNOWN;
 
 	for(uint8_t i = 0; i<8; i++ )
 	{
@@ -180,13 +180,15 @@ void USBHostInit(uint32_t enableInterrupts)
 
 	MAX3421WriteByte(rHCTL, bmSAMPLEBUS);
 	while(!(MAX3421ReadByte(rHCTL) & bmSAMPLEBUS)) {}; //wait for sample operation to finish
-	/*struct EBusState busState =*/ USBBusProbe();
+	enum EBusState busState = USBBusProbe();
 
 	MAX3421WriteByte(rHIRQ, bmCONDETIRQ);
 	if (enableInterrupts)
 	{
 		MAX3421WriteByte(rCPUCTL, bmIE);
 	}
+
+	return busState;
 }
 
 uint8_t USBDispatchPacket(uint8_t _token, uint8_t _ep, unsigned int _nak_limit)
@@ -627,13 +629,14 @@ uint8_t USBAttach(uint8_t *_paddr)
 
 uint8_t USBDetach(uint8_t _addr)
 {
-	USBSerialWrite("Device detached: \\dev\\usb\\");
-	USBSerialWriteDecimal(_addr);
-	USBSerialWrite("\n");
-
-	// Can't detach default address
+	// Can't detach device at default address (0)
 	if (_addr != 0)
+	{
+		USBSerialWrite("Device detached: \\dev\\usb\\");
+		USBSerialWriteDecimal(_addr);
+		USBSerialWrite("\n");
 		s_deviceTable[_addr].endpointInfo = NULL;
+	}
 
 	return 0;
 }

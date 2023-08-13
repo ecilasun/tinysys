@@ -61,7 +61,7 @@ struct USBDeviceRecord
 
 void USBHostSetContext(struct SUSBContext *ctx);
 struct SUSBContext *USBHostGetContext();
-void USBHostInit(uint32_t enableInterrupts);
+enum EBusState USBHostInit(uint32_t enableInterrupts);
 enum EBusState USBBusProbe();
 uint8_t USBGetDeviceDescriptor();
 uint8_t USBGetHIDDescriptor(uint8_t _addr);

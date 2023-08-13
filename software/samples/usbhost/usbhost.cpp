@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		USBHostInit(0);
+		probe_result = USBHostInit(0);
 
 		for (int i=0; i<256; ++i)
 		{
@@ -198,8 +198,8 @@ int main(int argc, char *argv[])
 						{
 							uint8_t keydata[8];
 
-							// The device says 'no faster than 10ms' which means I could poll it at 20ms intervals
-							nextPoll = currentTime + 20*ONE_MICROSECOND_IN_TICKS;
+							// The device says 'no faster than 10ms' which means I could poll it at 15ms intervals
+							nextPoll = currentTime + 15*ONE_MICROSECOND_IN_TICKS;
 
 							// TODO: Keyboard state should go to kernel memory from which applications can poll.
 							// That mechanism should ultimately replace the ringbuffer approach used for UART input.
@@ -269,12 +269,14 @@ int main(int argc, char *argv[])
 										devState = DEVS_ERROR;
 								}
 							}
-							else
+							/*else
 							{
-								// This appears to happen after a while :/
-								printf("InTransfer error: 0x%.2x", rcode);
+								// This appears to happen after a while, but I won't disconnect the device here.
+								printf("\nUSBReadHIDData error: 0x%.2x\n", rcode);
 								devState = DEVS_ERROR;
-							}
+								// Refresh LED state to keep alive
+								rcode = USBWriteHIDData(s_address, s_devicecontrol);
+							}*/
 						}
 					}
 					break;
