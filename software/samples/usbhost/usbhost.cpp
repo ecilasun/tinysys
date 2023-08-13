@@ -198,7 +198,8 @@ int main(int argc, char *argv[])
 						{
 							uint8_t keydata[8];
 
-							nextPoll = currentTime + 10*ONE_MICROSECOND_IN_TICKS;
+							// The device says 'no faster than 10ms' which means I could poll it at 20ms intervals
+							nextPoll = currentTime + 20*ONE_MICROSECOND_IN_TICKS;
 
 							// TODO: Keyboard state should go to kernel memory from which applications can poll.
 							// That mechanism should ultimately replace the ringbuffer approach used for UART input.
@@ -270,6 +271,7 @@ int main(int argc, char *argv[])
 							}
 							else
 							{
+								// This appears to happen after a while :/
 								printf("InTransfer error: 0x%.2x", rcode);
 								devState = DEVS_ERROR;
 							}
