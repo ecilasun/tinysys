@@ -19,6 +19,7 @@ static uint32_t sparebyte = 0;
 #define RESET_MAX3421_CS *IO_USBATRX = 0x101;
 
 static struct SUSBContext *s_usbhost = NULL;
+static uint8_t s_HIDDescriptorLen = 64;
 
 void USBHostSetContext(struct SUSBContext *ctx)
 {
@@ -576,6 +577,7 @@ uint8_t USBParseDescriptor(uint8_t *_desc, uint8_t* _dtype, uint8_t* _offset)
 			USBSerialWriteHexByte(desc->bCountryCode);
 			USBSerialWrite("\n     descBytes: 0x");
 			USBSerialWriteHexByte(desc->bNumDescriptors);
+			s_HIDDescriptorLen = desc->bNumDescriptors;
 			USBSerialWrite("\n          type: 0x");
 			USBSerialWriteHexByte(desc->bDescrType);
 			USBSerialWrite("\n");
@@ -693,17 +695,17 @@ uint8_t USBGetDeviceDescriptor()
 		{
 			struct USBStringDescriptor str;
 			rcode = USBControlRequest(0, 0, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, s+1, USB_DESCRIPTOR_STRING, 0x0000, 2, (char*)&str, 64);
-			if (rcode != 0)
-				return rcode;
-
-			rcode = USBControlRequest(0, 0, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, s+1, USB_DESCRIPTOR_STRING, 0x0000, str.bLength, (char*)&str, 64);
 			if (rcode == 0)
 			{
-				USBSerialWrite("str#");
-				USBSerialWriteDecimal(s+1);
-				USBSerialWrite(": \"");
-				USBSerialWriteN((char*)str.bString, str.bLength-2);
-				USBSerialWrite("\"\n");
+				rcode = USBControlRequest(0, 0, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, s+1, USB_DESCRIPTOR_STRING, 0x0000, str.bLength, (char*)&str, 64);
+				if (rcode == 0)
+				{
+					USBSerialWrite("str#");
+					USBSerialWriteDecimal(s+1);
+					USBSerialWrite(": \"");
+					USBSerialWriteN((char*)str.bString, str.bLength-2);
+					USBSerialWrite("\"\n");
+				}
 			}
 		}
 	}
@@ -775,7 +777,7 @@ uint8_t USBConfigHID(uint8_t _addr, uint8_t _ep)
 	return rcode;
 }
 
-uint8_t USBGetHIDDescriptor(uint8_t _addr, uint8_t _ep)
+uint8_t USBGetHIDDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_protocol)
 {
 	// NOTE: You can parse this data using
 	// http://eleccelerator.com/usbdescreqparser/
@@ -786,15 +788,31 @@ uint8_t USBGetHIDDescriptor(uint8_t _addr, uint8_t _ep)
 	// 0906 (usage keyboard)
 
 	USBSerialWrite("getting HID descriptor\n");
-	char tmpdata[64];
-    uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_HIDREPORT, USB_REQUEST_GET_DESCRIPTOR, 0x00, HID_DESCRIPTOR_REPORT, 0x0000, 64, tmpdata, 64);
+	char tmpdata[96];
+    uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_HIDREPORT, USB_REQUEST_GET_DESCRIPTOR, 0x00, HID_DESCRIPTOR_REPORT, 0x0000, s_HIDDescriptorLen, tmpdata, 64);
 
 	if (rcode != 0)
 		return rcode;
 
-	for(int i=0;i<64;++i)
+	for(int i=0;i<s_HIDDescriptorLen;++i)
 		USBSerialWriteHexByte(tmpdata[i]);
 	USBSerialWrite("\n");
+
+	if (tmpdata[3] == 0x02) 
+	{
+		*_protocol = HID_PROTOCOL_MOUSE;
+		USBSerialWrite("Mouse\n");
+	}
+	else if (tmpdata[3] == 0x06)
+	{
+		*_protocol = HID_PROTOCOL_KEYBOARD;
+		USBSerialWrite("Keyboard\n");
+	}
+	else
+	{
+		*_protocol = HID_PROTOCOL_NONE;
+		USBSerialWrite("Non-HID\n");
+	}
 
 	return 0;
 }
@@ -806,7 +824,7 @@ void USBSetAddress(uint8_t _addr, uint8_t _ep)
 	MAX3421WriteByte(rMODE, mode | bmHUBPRE);
 }
 
-uint8_t USBReadHIDData(uint8_t _addr, uint8_t _ep, uint8_t *_data)
+uint8_t USBReadHIDData(uint8_t _addr, uint8_t _ep, uint8_t *_data, uint8_t _reportIndex, uint8_t _reportType)
 {
 #if defined(USE_BOOT_PROTOCOL)
 	// Using interrupt endpoint
@@ -814,10 +832,8 @@ uint8_t USBReadHIDData(uint8_t _addr, uint8_t _ep, uint8_t *_data)
 	uint8_t rcode = USBControlData(_addr, _ep, 8, (char*)_data, 1, 64);
 #else
 	// Using control endpoint
-	uint8_t reportID = 1;
-	uint8_t reportType = 1; // Keyboard data
 	uint8_t iface = 0;
-    uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_HIDIN, HID_REQUEST_GET_REPORT, reportID, reportType, iface, 8, (char*)_data, 64);
+    uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_HIDIN, HID_REQUEST_GET_REPORT, _reportIndex, _reportType, iface, 8, (char*)_data, 64);
 #endif
 
 	return rcode;

@@ -27,6 +27,7 @@ static uint8_t s_deviceEndpoint = 0;
 static uint8_t s_currentkeymap[256];
 static uint8_t s_prevkeymap[256];
 static uint8_t s_devicecontrol[8];
+static uint8_t s_deviceProtocol = HID_PROTOCOL_NONE;
 
 void EnumerateDevice()
 {
@@ -185,7 +186,7 @@ int main(int argc, char *argv[])
 						{
 							rcode = USBConfigHID(s_deviceAddress, s_deviceEndpoint);
 							if (rcode == 0)
-								rcode = USBGetHIDDescriptor(s_deviceAddress, s_deviceEndpoint);
+								rcode = USBGetHIDDescriptor(s_deviceAddress, s_deviceEndpoint, &s_deviceProtocol);
 						}
 
 						devState = rcode ? DEVS_ERROR : DEVS_RUNNING;
@@ -208,78 +209,96 @@ int main(int argc, char *argv[])
 							// TODO: Keyboard state should go to kernel memory from which applications can poll.
 							// That mechanism should ultimately replace the ringbuffer approach used for UART input.
 
-							// Use maxpacketsize of the endpoint(8), the proper device address(1) and endpoint index(0 at 0x81)
-							uint8_t rcode = USBReadHIDData(s_deviceAddress, s_deviceEndpoint, keydata);
-							if (rcode == 0)
+							if (s_deviceProtocol == HID_PROTOCOL_KEYBOARD)
 							{
-								// Reflect into current keymap
-								for (uint32_t i=2; i<8; ++i)
+								uint8_t rcode = USBReadHIDData(s_deviceAddress, s_deviceEndpoint, keydata, 0x0, HID_REPORTTYPE_INPUT);
+								if (rcode == 0)
 								{
-									uint8_t keyIndex = keydata[i];
-									if (keyIndex != 0)
-										s_currentkeymap[keyIndex] = 1;
-								}
-
-								// Generate keyup / keydown flags
-								uint16_t modifierState = keydata[0]<<8;
-								// 7  6  5  4  3  2  1  0
-								// RG RA RS RC LG LA LS LC
-								//uint8_t isGraphics = modifierState&0x8800 ? 1:0;
-								//uint8_t isAlt = modifierState&0x4400 ? 1:0;
-								uint8_t isShift = modifierState&0x2200 ? 1:0;
-								//uint8_t isControl = modifierState&0x1100 ? 1:0;
-								uint8_t isCaps = isShift | (s_devicecontrol[0]&0x02);
-								for (uint32_t i=0; i<256; ++i)
-								{
-									uint16_t keystate = 0;
-									uint8_t prevstate = s_prevkeymap[i];
-									uint8_t currentstate = s_currentkeymap[i];
-									if (!prevstate && currentstate) keystate |= 1; // key down
-									if (prevstate && !currentstate) keystate |= 2; // key up
-									//if (prevstate && currentstate) keystate |= 4; // repeat
-
-									// Update up/down state map alongside current modifier state
-									keystates[i] = keystate | modifierState;
-
-									// Insert down keys into input fifo in scan order
-									// NOTE: Could be moved out of here
-									if (keystate&1)
+									// Reflect into current keymap
+									for (uint32_t i=2; i<8; ++i)
 									{
-										// Insert capital/lowercase ASCII code into input fifo
-										uint32_t incoming = HIDScanToASCII(i, isCaps);
-										RingBufferWrite(&incoming, sizeof(uint32_t));
+										uint8_t keyIndex = keydata[i];
+										if (keyIndex != 0)
+											s_currentkeymap[keyIndex] = 1;
+									}
+
+									// Generate keyup / keydown flags
+									uint16_t modifierState = keydata[0]<<8;
+									// 7  6  5  4  3  2  1  0
+									// RG RA RS RC LG LA LS LC
+									//uint8_t isGraphics = modifierState&0x8800 ? 1:0;
+									//uint8_t isAlt = modifierState&0x4400 ? 1:0;
+									uint8_t isShift = modifierState&0x2200 ? 1:0;
+									//uint8_t isControl = modifierState&0x1100 ? 1:0;
+									uint8_t isCaps = isShift | (s_devicecontrol[0]&0x02);
+									for (uint32_t i=0; i<256; ++i)
+									{
+										uint16_t keystate = 0;
+										uint8_t prevstate = s_prevkeymap[i];
+										uint8_t currentstate = s_currentkeymap[i];
+										if (!prevstate && currentstate) keystate |= 1; // key down
+										if (prevstate && !currentstate) keystate |= 2; // key up
+										//if (prevstate && currentstate) keystate |= 4; // repeat
+
+										// Update up/down state map alongside current modifier state
+										keystates[i] = keystate | modifierState;
+
+										// Insert down keys into input fifo in scan order
+										// NOTE: Could be moved out of here
+										if (keystate&1)
+										{
+											// Insert capital/lowercase ASCII code into input fifo
+											uint32_t incoming = HIDScanToASCII(i, isCaps);
+											RingBufferWrite(&incoming, sizeof(uint32_t));
+										}
+									}
+
+									// Remember current state
+									__builtin_memcpy(s_prevkeymap, s_currentkeymap, 256);
+
+									// Reset only after key repeat rate (~200 ms)
+									__builtin_memset(s_currentkeymap, 0, 256);
+
+									// Toggle LEDs based on locked key state change
+									// numlock:0x01
+									// caps:0x02
+									// scrolllock:0x04
+									// Any of the lock keys down?
+									uint8_t lockstate = ((keystates[0x39]&1)?0x02:0x00) | ((keystates[0x53]&1)?0x01:0x00) | ((keystates[0x47]&1)?0x04:0x00);
+									if (lockstate)
+									{
+										// Toggle previous state
+										s_devicecontrol[0] ^= lockstate;
+										// Reflect to device
+										rcode = USBWriteHIDData(s_deviceAddress, s_deviceEndpoint, s_devicecontrol);
+										if (rcode)
+											devState = DEVS_ERROR;
 									}
 								}
-
-								// Remember current state
-								__builtin_memcpy(s_prevkeymap, s_currentkeymap, 256);
-
-								// Reset only after key repeat rate (~200 ms)
-								__builtin_memset(s_currentkeymap, 0, 256);
-
-								// Toggle LEDs based on locked key state change
-								// numlock:0x01
-								// caps:0x02
-								// scrolllock:0x04
-								// Any of the lock keys down?
-								uint8_t lockstate = ((keystates[0x39]&1)?0x02:0x00) | ((keystates[0x53]&1)?0x01:0x00) | ((keystates[0x47]&1)?0x04:0x00);
-								if (lockstate)
+								else
 								{
-									// Toggle previous state
-									s_devicecontrol[0] ^= lockstate;
-									// Reflect to device
-									rcode = USBWriteHIDData(s_deviceAddress, s_deviceEndpoint, s_devicecontrol);
-									if (rcode)
-										devState = DEVS_ERROR;
+									// This appears to happen after a while, but I won't disconnect the device here.
+									printf("\nUSBReadHIDData error: 0x%.2x\n", rcode);
+									devState = DEVS_ERROR;
+									// TEST: Does refreshing the LED state work?
+									//rcode = USBWriteHIDData(s_deviceAddress, s_deviceEndpoint, s_devicecontrol);
+								}
+							}
+							else if (s_deviceProtocol == HID_PROTOCOL_MOUSE)
+							{
+								uint8_t rcode = USBReadHIDData(s_deviceAddress, s_deviceEndpoint, keydata, 0x0, HID_REPORTTYPE_INPUT);
+								if (rcode == 0)
+								{
+									for (uint32_t i=0; i<8; ++i)
+										printf("0x%.2x", keydata[i]);
+									printf("\n");
 								}
 							}
 							else
 							{
-								// This appears to happen after a while, but I won't disconnect the device here.
-								printf("\nUSBReadHIDData error: 0x%.2x\n", rcode);
+								// Nothing to talk about with this device since it's not HID
+								printf("\nNot a HID device\n");
 								devState = DEVS_ERROR;
-								// TEST: Does refreshing the LED state work?
-								//rcode = USBWriteHIDData(s_deviceAddress, s_deviceEndpoint, s_devicecontrol);
 							}
 						}
 					}
@@ -287,7 +306,7 @@ int main(int argc, char *argv[])
 
 					case DEVS_ERROR:
 					{
-						printf("error\n");
+						printf("Idling\n");
 						// Report error and stop device
 						devState = DEVS_HALT;
 					}
