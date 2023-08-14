@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
 
 							if (s_deviceProtocol == HID_PROTOCOL_KEYBOARD)
 							{
-								uint8_t rcode = USBReadHIDData(s_deviceAddress, s_deviceEndpoint, keydata, 0x0, HID_REPORTTYPE_INPUT);
+								uint8_t rcode = USBReadHIDData(s_deviceAddress, s_deviceEndpoint, 8, keydata, 0x0, HID_REPORTTYPE_INPUT);
 								if (rcode == 0)
 								{
 									// Reflect into current keymap
@@ -286,13 +286,17 @@ int main(int argc, char *argv[])
 							}
 							else if (s_deviceProtocol == HID_PROTOCOL_MOUSE)
 							{
-								uint8_t rcode = USBReadHIDData(s_deviceAddress, s_deviceEndpoint, keydata, 0x0, HID_REPORTTYPE_INPUT);
+								// X/Y/Wheel/Button
+								uint8_t rcode = USBReadHIDData(s_deviceAddress, s_deviceEndpoint, 4, keydata, 0x0, HID_REPORTTYPE_INPUT);
+								//uint8_t rcode = USBControlData(s_deviceAddress, s_deviceEndpoint, 4, (char*)keydata, 1, 64);
 								if (rcode == 0)
 								{
-									for (uint32_t i=0; i<8; ++i)
+									for (uint32_t i=0; i<4; ++i)
 										printf("0x%.2x", keydata[i]);
 									printf("\n");
 								}
+								else
+									devState = DEVS_ERROR;
 							}
 							else
 							{

@@ -824,16 +824,16 @@ void USBSetAddress(uint8_t _addr, uint8_t _ep)
 	MAX3421WriteByte(rMODE, mode | bmHUBPRE);
 }
 
-uint8_t USBReadHIDData(uint8_t _addr, uint8_t _ep, uint8_t *_data, uint8_t _reportIndex, uint8_t _reportType)
+uint8_t USBReadHIDData(uint8_t _addr, uint8_t _ep, uint8_t _dataLen, uint8_t *_data, uint8_t _reportIndex, uint8_t _reportType)
 {
 #if defined(USE_BOOT_PROTOCOL)
 	// Using interrupt endpoint
 	MAX3421WriteByte(rPERADDR, _addr);
-	uint8_t rcode = USBControlData(_addr, _ep, 8, (char*)_data, 1, 64);
+	uint8_t rcode = USBControlData(_addr, _ep, _dataLen, (char*)_data, 1, 64);
 #else
 	// Using control endpoint
 	uint8_t iface = 0;
-    uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_HIDIN, HID_REQUEST_GET_REPORT, _reportIndex, _reportType, iface, 8, (char*)_data, 64);
+    uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_HIDIN, HID_REQUEST_GET_REPORT, _reportIndex, _reportType, iface, _dataLen, (char*)_data, 64);
 #endif
 
 	return rcode;
