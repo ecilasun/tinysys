@@ -281,7 +281,7 @@ uint8_t USBInTransfer(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _d
 			return rcode;
 
 		if((MAX3421ReadByte(rHIRQ) & bmRCVDAVIRQ) == 0 )
-			return 0xf0;
+			return 0xf0; // No data available
 
 		pktsize = MAX3421ReadByte(rRCVBC);
 		MAX3421ReadBytes(rRCVFIFO, pktsize, (uint8_t*)_data);

@@ -296,7 +296,13 @@ int main(int argc, char *argv[])
 									printf("\n");
 								}
 								else
+								{
+									if (rcode == hrSTALL) // Request rejected
+										printf("Request rejected. EP0 (control endpoint) halted or failed\n");
+									if (rcode == 0xF0) // No data available
+										printf("No data available\n");
 									devState = DEVS_ERROR;
+								}
 							}
 							else
 							{
