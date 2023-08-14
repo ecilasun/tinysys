@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
 							{
 								// X/Y/Wheel/Button
 								uint8_t rcode = USBReadHIDData(s_deviceAddress, s_deviceEndpoint, 4, keydata, 0x0, HID_REPORTTYPE_INPUT);
-								//uint8_t rcode = USBControlData(s_deviceAddress, s_deviceEndpoint, 4, (char*)keydata, 1, 64);
+								//uint8_t rcode = USBControlRequest(s_deviceAddress, s_deviceEndpoint, bmREQ_HIDREPORT, USB_REQUEST_GET_DESCRIPTOR, 0x00, HID_DESRIPTOR_PHY, 0x0000, 4, (char*)keydata, 64);
 								if (rcode == 0)
 								{
 									for (uint32_t i=0; i<4; ++i)
