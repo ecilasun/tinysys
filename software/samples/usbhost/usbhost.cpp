@@ -1,5 +1,5 @@
 #include "basesystem.h"
-#include "usbhid.h"
+#include "usbhost.h"
 #include "leds.h"
 #include "ringbuffer.h"
 #include <malloc.h>
@@ -77,11 +77,11 @@ int main(int argc, char *argv[])
 				probe_result = USBBusProbe();
 				hirq_sendback |= bmCONDETIRQ;
 			}
-			/*else if (irq&bmFRAMEIRQ)
+			else if (irq&bmFRAMEIRQ)
 			{
 				//printf()
 				hirq_sendback |= bmFRAMEIRQ;
-			}*/
+			}
 			/*else if (irq&bmSNDBAVIRQ)
 			{
 				// Ignore send buffer available interrupt for now
@@ -98,7 +98,8 @@ int main(int argc, char *argv[])
 				printf("irq(unknown):%x\n", irq);
 			}*/
 
-			MAX3421WriteByte(rHIRQ, hirq_sendback);
+			if (hirq_sendback)
+				MAX3421WriteByte(rHIRQ, hirq_sendback);
 
 			uint32_t state_changed = probe_result != old_probe_result;
 
@@ -169,8 +170,9 @@ int main(int argc, char *argv[])
 						E32Sleep(20*ONE_MILLISECOND_IN_TICKS);
 						// Wait for first SOF
 						while ((MAX3421ReadByte(rHIRQ)&bmFRAMEIRQ) == 0) { asm volatile ("nop"); }
-						// Get device descriptor
-						uint8_t rcode = USBGetDeviceDescriptor();
+						E32Sleep(20*ONE_MILLISECOND_IN_TICKS);
+						// Get device descriptor from default address and control endpoint
+						uint8_t rcode = USBGetDeviceDescriptor(0, 0);
 						// Assign device address
 						devState = rcode ? DEVS_ERROR : DEVS_ADDRESSING;
 					}
@@ -182,7 +184,7 @@ int main(int argc, char *argv[])
 						uint64_t currentTime = E32ReadTime();
 						nextPoll = currentTime + s_devicePollInterval*ONE_MILLISECOND_IN_TICKS;
 
-						if (rcode == 0)
+						if (rcode == 0)// && s_deviceClass == HID)
 						{
 							rcode = USBConfigHID(s_deviceAddress, s_deviceEndpoint);
 							if (rcode == 0)
@@ -287,8 +289,9 @@ int main(int argc, char *argv[])
 							else if (s_deviceProtocol == HID_PROTOCOL_MOUSE)
 							{
 								// X/Y/Wheel/Button
-								uint8_t rcode = USBReadHIDData(s_deviceAddress, s_deviceEndpoint, 4, keydata, 0x0, HID_REPORTTYPE_INPUT);
-								//uint8_t rcode = USBControlRequest(s_deviceAddress, s_deviceEndpoint, bmREQ_HIDREPORT, USB_REQUEST_GET_DESCRIPTOR, 0x00, HID_DESRIPTOR_PHY, 0x0000, 4, (char*)keydata, 64);
+								//uint8_t rcode = USBReadHIDData(s_deviceAddress, s_deviceEndpoint, 4, keydata, 0x0, HID_REPORTTYPE_INPUT);
+								MAX3421WriteByte(rPERADDR, s_deviceAddress);
+								uint8_t rcode = USBControlData(s_deviceAddress, s_deviceEndpoint, 4, (char*)keydata, 1, 64);
 								if (rcode == 0)
 								{
 									for (uint32_t i=0; i<4; ++i)

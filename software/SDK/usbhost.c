@@ -1,4 +1,4 @@
-#include "usbhid.h"
+#include "usbhost.h"
 #include "usbserial.h"
 #include "basesystem.h"
 #include <string.h>
@@ -98,7 +98,6 @@ void MAX3421CtlReset()
 	MAX3421WriteByte(rUSBCTL, bmCHIPRES);
 	MAX3421WriteByte(rUSBCTL, 0);
 
-	// Wait for all output to be sent to the device
 	MAX3421FlushOutputFIFO();
 	E32Sleep(3*ONE_MILLISECOND_IN_TICKS);
 
@@ -185,6 +184,7 @@ enum EBusState USBHostInit(uint32_t enableInterrupts)
 	MAX3421WriteByte(rHIEN, bmCONDETIE | bmFRAMEIE);
 
 	MAX3421WriteByte(rHCTL, bmSAMPLEBUS);
+
 	while(!(MAX3421ReadByte(rHCTL) & bmSAMPLEBUS)) {}; //wait for sample operation to finish
 	enum EBusState busState = USBBusProbe();
 
@@ -211,9 +211,9 @@ uint8_t USBDispatchPacket(uint8_t _token, uint8_t _ep, unsigned int _nak_limit)
 
 	while(timeout > E32ReadTime())
 	{
-		MAX3421WriteByte(rHXFR, (_token|_ep));
+		MAX3421WriteByte(rHXFR, (_token | _ep));
 		rcode = 0xFF;
-		while( E32ReadTime() < timeout )
+		while( timeout > E32ReadTime() )
 		{
 			tmpdata = MAX3421ReadByte(rHIRQ);
 			if(tmpdata & bmHXFRDNIRQ )
@@ -227,7 +227,14 @@ uint8_t USBDispatchPacket(uint8_t _token, uint8_t _ep, unsigned int _nak_limit)
 		if( rcode != 0x00 )
 			return rcode;
 
-		rcode = MAX3421ReadByte(rHRSL) & 0x0f;
+		while( timeout > E32ReadTime() )
+		{
+			rcode = MAX3421ReadByte(rHRSL) & 0x0f;
+			if (rcode != hrBUSY)
+				break;
+			// else
+			// BUSY!
+		}
 
 		switch(rcode)
 		{
@@ -534,10 +541,51 @@ uint8_t USBParseDescriptor(uint8_t *_desc, uint8_t* _dtype, uint8_t* _offset)
 					USBSerialWriteHexByte(desc->bInterfaceClass);
 				break;
 			}
-			USBSerialWrite("\n    subclass: 0x");
-			USBSerialWriteHexByte(desc->bInterfaceSubClass);
-			USBSerialWrite("\n    protocol: 0x");
-			USBSerialWriteHexByte(desc->bInterfaceProtocol);
+			if (desc->bInterfaceClass == USBClass_HID)
+			{
+				USBSerialWrite("\n    subclass: ");
+				switch (desc->bInterfaceSubClass)
+				{
+					case 0:
+						USBSerialWrite("none");
+						break;
+					case 1:
+						USBSerialWrite("boot");
+						break;
+					default:
+						USBSerialWrite("reserved");
+						break;
+				}
+			}
+			else
+			{
+				USBSerialWrite("\n    subclass: 0x");
+				USBSerialWriteHexByte(desc->bInterfaceSubClass);
+			}
+			if (desc->bInterfaceClass == USBClass_HID)
+			{
+				USBSerialWrite("\n    protocol: ");
+				switch (desc->bInterfaceProtocol)
+				{
+					case 0:
+						USBSerialWrite("none");
+						break;
+					case 1:
+						USBSerialWrite("keyboard");
+						break;
+					case 2:
+						USBSerialWrite("mouse");
+						break;
+					default:
+						USBSerialWrite("reserved");
+						break;
+				}
+			}
+			else
+			{
+				USBSerialWrite("\n    protocol: 0x");
+				USBSerialWriteHexByte(desc->bInterfaceProtocol);
+			}
 			USBSerialWrite("\n      iface$: 0x");
 			USBSerialWriteHexByte(desc->iInterface);
 			stringCount += desc->iInterface!=0 ? 1:0;
@@ -623,21 +671,21 @@ uint8_t USBParseDescriptor(uint8_t *_desc, uint8_t* _dtype, uint8_t* _offset)
 	return stringCount;
 }
 
-uint8_t USBGetDeviceDescriptor()
+uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep)
 {
 	struct USBDeviceDescriptor ddesc;
 
-	s_deviceTable[0].endpointInfo[0].maxPacketSize = 8;
-    uint8_t rcode = USBControlRequest(0, 0, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, 0x00, USB_DESCRIPTOR_DEVICE, 0x0000, 8, (char*)&ddesc, 64);
+	s_deviceTable[_addr].endpointInfo[_ep].maxPacketSize = 8;
+    uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, 0x00, USB_DESCRIPTOR_DEVICE, 0x0000, 8, (char*)&ddesc, 64);
 
 	if (rcode != 0)
 		return rcode;
 
-	s_deviceTable[0].endpointInfo[0].maxPacketSize = ddesc.bMaxPacketSizeEP0;
+	s_deviceTable[_addr].endpointInfo[_ep].maxPacketSize = ddesc.bMaxPacketSizeEP0;
 
 	// Retry with actual descriptor size
 	// 18 == USB_DEVICE_DESCRIPTOR_SIZE
-	rcode = USBControlRequest(0, 0, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, 0x00, USB_DESCRIPTOR_DEVICE, 0x0000, 18, (char*)&ddesc, 64);
+	rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, 0x00, USB_DESCRIPTOR_DEVICE, 0x0000, 18, (char*)&ddesc, 64);
 
 	if (rcode != 0)
 		return rcode;
@@ -652,14 +700,14 @@ uint8_t USBGetDeviceDescriptor()
 	for (uint8_t c=0; c<ddesc.bNumConfigurations; ++c)
 	{
 		// 9 == USB_CONFIGURATION_DESCRIPTOR_SIZE
-		rcode = USBControlRequest(0, 0, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, c, USB_DESCRIPTOR_CONFIGURATION, 0x0000, 9, (char*)&cdef, 64);
+		rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, c, USB_DESCRIPTOR_CONFIGURATION, 0x0000, 9, (char*)&cdef, 64);
 
 		if (rcode != 0)
 			return rcode;
 
 		// re-request config descriptor with actual data size (cdef.wTotalLength)
 		char rawdata[256];
-		rcode = USBControlRequest(0, 0, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, c, USB_DESCRIPTOR_CONFIGURATION, 0x0000, cdef.wTotalLength, rawdata, 64);
+		rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, c, USB_DESCRIPTOR_CONFIGURATION, 0x0000, cdef.wTotalLength, rawdata, 64);
 
 		if (rcode != 0)
 			return rcode;
@@ -679,7 +727,7 @@ uint8_t USBGetDeviceDescriptor()
 
 		// Get language descriptor and strings
 		struct USBStringLanguageDescriptor lang;
-		rcode = USBControlRequest(0, 0, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, 0, USB_DESCRIPTOR_STRING, 0x0000, 4, (char*)&lang, 64);
+		rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, 0, USB_DESCRIPTOR_STRING, 0x0000, 4, (char*)&lang, 64);
 
 		if (rcode != 0)
 			return rcode;
@@ -694,10 +742,11 @@ uint8_t USBGetDeviceDescriptor()
 		for (int s=0; s<stringCount; ++s)
 		{
 			struct USBStringDescriptor str;
-			rcode = USBControlRequest(0, 0, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, s+1, USB_DESCRIPTOR_STRING, 0x0000, 2, (char*)&str, 64);
+			// Only length, though I thought we'd have to read the full USBStringDescriptor
+			rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, s+1, USB_DESCRIPTOR_STRING, 0x0000, 1, (char*)&str, 64);
 			if (rcode == 0)
 			{
-				rcode = USBControlRequest(0, 0, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, s+1, USB_DESCRIPTOR_STRING, 0x0000, str.bLength, (char*)&str, 64);
+				rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, s+1, USB_DESCRIPTOR_STRING, 0x0000, str.bLength, (char*)&str, 64);
 				if (rcode == 0)
 				{
 					USBSerialWrite("str#");
