@@ -17,16 +17,16 @@ static uint8_t *s_framebufferB;
 static uint8_t *s_rasterBuffer;
 
 #define SAMPLING_FREQ  44100	// 44.1khz
-#define REVERB_BUF_LEN 1100		// 12.5ms
+#define REVERB_BUF_LEN 4110		// 100ms
 #define OVERSAMPLE     2		// 2x oversampling
 #define NUM_CHANNELS   2		// Stereo
-#define BUFFER_SAMPLES 512		// buffer size
+#define BUFFER_SAMPLES 1024		// buffer size (max: 2048 bytes i.e. 1024 words)
 
 static short mix_buffer[ BUFFER_SAMPLES * NUM_CHANNELS * OVERSAMPLE ];
 static short reverb_buffer[ REVERB_BUF_LEN ];
-short *apubuffer;
-static long reverb_len, reverb_idx, filt_l, filt_r;
-static long samples_remaining;
+static short *apubuffer;
+static long reverb_len = REVERB_BUF_LEN, reverb_idx = 0, filt_l = 0, filt_r = 0;
+static long samples_remaining = 0;
 
 /*
 	2:1 downsampling with simple but effective anti-aliasing.
@@ -255,20 +255,28 @@ static long play_module( signed char *module )
 
 			// Fill current write buffer with new mix data
 			APUStartDMA((uint32_t)apubuffer);
+
 			// Wait for the APU to finish playing back current read buffer
+			// Meanwhile the playback buffer will still be going without interruptions
 			uint32_t currframe;
 			do
 			{
+				// Still working on same frame?
 				currframe = APUFrame();
 			} while (currframe == prevframe);
-			prevframe = currframe;
-			// Read buffer drained, swap to new read buffer
+
+			// Read buffer drained, swap to new read buffer with no gap
+			// NOTE: We probably need to signal early, long enough for
+			// the CPU to read, send the swap, and catch things in time for gapless playback
 			APUSwapBuffers();
+
+			// Remember this frame
+			prevframe = currframe;
 
 			if( samples_remaining <= 0 || result != 0 )
 				playing = 0;
 
-			DrawWaveform();
+			//DrawWaveform();
 		}
 	}
 	else
@@ -347,12 +355,8 @@ int main(int argc, char *argv[])
 
 	// Stop audio output
 	APUStop();
-
-	// NOTE: Use this until APUStop() is implemented
-	memset(apubuffer, 0, BUFFER_SAMPLES*NUM_CHANNELS*sizeof(short));
-	APUStartDMA((uint32_t)apubuffer);
 	APUSwapBuffers();
-	APUStartDMA((uint32_t)apubuffer);
+	APUStop();
 	APUSwapBuffers();
 
 	return 0;
