@@ -3,6 +3,9 @@
 #include "basesystem.h"
 #include <string.h>
 
+// Please see:
+// https://www.analog.com/media/en/technical-documentation/user-guides/max3421erevisions-1-and-2-host-out-transfers.pdf
+
 // Define this to allow boot protocol vs report protocol
 //#define USE_BOOT_PROTOCOL
 
@@ -329,11 +332,13 @@ uint8_t USBOutTransfer(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _
 
 		MAX3421WriteBytes(rSNDFIFO, bytes_tosend, (uint8_t*)data_p);
 		MAX3421WriteByte(rSNDBC, bytes_tosend);
-		MAX3421WriteByte(rHXFR, (tokOUT|_ep));
+		MAX3421WriteByte(rHXFR, (tokOUT | _ep));
 		while(!(MAX3421ReadByte(rHIRQ) & bmHXFRDNIRQ));
 		MAX3421WriteByte(rHIRQ, bmHXFRDNIRQ);
 
 		rcode = MAX3421ReadByte(rHRSL) & 0x0f;
+
+		// Not ACK, check condition and repeat transfer
 		while( rcode && ( timeout > E32ReadTime()))
 		{
 			switch( rcode )
@@ -358,9 +363,12 @@ uint8_t USBOutTransfer(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _
 					return rcode;
 			}
 
+			// Write only first byte to FIFO to regain control and re-send
 			MAX3421WriteByte(rSNDBC, 0);
 			MAX3421WriteByte(rSNDFIFO, *data_p);
 			MAX3421WriteByte(rSNDBC, bytes_tosend);
+
+			// Relaunch transfer
 			MAX3421WriteByte(rHXFR, (tokOUT | _ep));
 			while(!(MAX3421ReadByte(rHIRQ) & bmHXFRDNIRQ));
 			MAX3421WriteByte(rHIRQ, bmHXFRDNIRQ);
@@ -391,6 +399,48 @@ uint8_t USBControlData(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _
 	}
 }
 
+void USBErrorString(uint8_t rcode)
+{
+	if (rcode == hrSUCCESS)
+		USBSerialWrite("SUCCESS\n");
+	else if (rcode == hrBUSY)
+		USBSerialWrite("BUSY\n");
+	else if (rcode == hrBADREQ)
+		USBSerialWrite("BADREQ\n");
+	else if (rcode == hrUNDEF)
+		USBSerialWrite("UNDEF\n");
+	else if (rcode == hrNAK)
+		USBSerialWrite("NAK\n");
+	else if (rcode == hrSTALL)
+		USBSerialWrite("STALL\n");
+	else if (rcode == hrTOGERR)
+		USBSerialWrite("TOGERR\n");
+	else if (rcode == hrWRONGPID)
+		USBSerialWrite("WRONGPID\n");
+	else if (rcode == hrBADBC)
+		USBSerialWrite("BADBC\n");
+	else if (rcode == hrPIDERR)
+		USBSerialWrite("PIDERR\n");
+	else if (rcode == hrPKTERR)
+		USBSerialWrite("PKTERR\n");
+	else if (rcode == hrCRCERR)
+		USBSerialWrite("CRCERR\n");
+	else if (rcode == hrKERR)
+		USBSerialWrite("KERR\n");
+	else if (rcode == hrJERR)
+		USBSerialWrite("JERR\n");
+	else if (rcode == hrTIMEOUT)
+		USBSerialWrite("TIMEOUT\n");
+	else if (rcode == hrBABBLE)
+		USBSerialWrite("BABBLE\n");
+	else
+	{
+		USBSerialWrite("0x");
+		USBSerialWriteHex(rcode);
+		USBSerialWrite("\n");
+	}
+}
+
 uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_t _bRequest, uint8_t _wValLo, uint8_t _wValHi, unsigned int _wInd, unsigned int _nbytes, char* _dataptr, unsigned int _nak_limit)
 {
 	uint8_t direction = 0;
@@ -415,9 +465,8 @@ uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_
 
 	if(rcode)
 	{
-		USBSerialWrite("Setup packet error 0x");
-		USBSerialWriteHex(rcode);
-		USBSerialWrite("\n");
+		USBSerialWrite("Setup packet error: ");
+		USBErrorString(rcode);
 		return(rcode);
 	}
 
@@ -430,9 +479,8 @@ uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_
 	if(rcode)
 	{
 		//return error
-		USBSerialWrite("Data packet error 0x");
-		USBSerialWriteHex(rcode);
-		USBSerialWrite("\n");
+		USBSerialWrite("Data packet error: ");
+		USBErrorString(rcode);
 		return(rcode);
 	}
 
@@ -869,8 +917,10 @@ uint8_t USBGetHIDDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_protocol)
 void USBSetAddress(uint8_t _addr, uint8_t _ep)
 {
 	MAX3421WriteByte(rPERADDR, _addr);
-	uint8_t mode = MAX3421ReadByte(rMODE);
-	MAX3421WriteByte(rMODE, mode | bmHUBPRE);
+	// To cross to a low speed peripheral over a USB HUB
+	// Only applicable to low speed peripheral
+	//uint8_t mode = MAX3421ReadByte(rMODE);
+	//MAX3421WriteByte(rMODE, mode | bmHUBPRE);
 }
 
 uint8_t USBReadHIDData(uint8_t _addr, uint8_t _ep, uint8_t _dataLen, uint8_t *_data, uint8_t _reportIndex, uint8_t _reportType)

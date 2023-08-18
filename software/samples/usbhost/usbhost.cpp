@@ -1,6 +1,5 @@
 #include "basesystem.h"
 #include "usbhost.h"
-#include "leds.h"
 #include "ringbuffer.h"
 #include <malloc.h>
 #include <stdio.h>
@@ -82,7 +81,7 @@ int main(int argc, char *argv[])
 				//printf()
 				hirq_sendback |= bmFRAMEIRQ;
 			}
-			/*else if (irq&bmSNDBAVIRQ)
+			else if (irq&bmSNDBAVIRQ)
 			{
 				// Ignore send buffer available interrupt for now
 				hirq_sendback |= bmSNDBAVIRQ;
@@ -93,10 +92,16 @@ int main(int argc, char *argv[])
 				printf("bmHXFRDNIRQ\n");
 				hirq_sendback |= bmHXFRDNIRQ;
 			}
+			else if (irq&bmBUSEVENTIRQ)
+			{
+				// bus reset complete, or bus resume signalled
+				printf("bmBUSEVENTIRQ\n");
+				hirq_sendback |= bmHXFRDNIRQ;
+			}
 			else
 			{
 				printf("irq(unknown):%x\n", irq);
-			}*/
+			}
 
 			if (hirq_sendback)
 				MAX3421WriteByte(rHIRQ, hirq_sendback);
@@ -111,13 +116,11 @@ int main(int argc, char *argv[])
 					case SE0:
 						// Regardless of previous state, detach device
 						devState = DEVS_DETACHED;
-						LEDSetState(0x00);
 					break;
 
 					case SE1:
 						printf("SE1\n");
 						// This is an error state
-						LEDSetState(0x0F);
 					break;
 
 					case FSHOST:
@@ -126,7 +129,6 @@ int main(int argc, char *argv[])
 						if (devState < DEVS_ATTACHED || devState >= DEVS_ERROR)
 						{
 							devState = DEVS_ATTACHED;
-							LEDSetState(0x01);
 						}
 					break;
 
@@ -150,6 +152,8 @@ int main(int argc, char *argv[])
 					{
 						// We're always device #1
 						uint8_t rcode = USBDetach(s_deviceAddress);
+						if (rcode != 0)
+							USBErrorString(rcode);
 						//init: usbinit();
 						//waitfordevice: MAX3421WriteByte(rHCTL, bmSAMPLEBUS);
 						//illegal: no idea
@@ -170,10 +174,11 @@ int main(int argc, char *argv[])
 						E32Sleep(20*ONE_MILLISECOND_IN_TICKS);
 						// Wait for first SOF
 						while ((MAX3421ReadByte(rHIRQ)&bmFRAMEIRQ) == 0) { asm volatile ("nop"); }
-						E32Sleep(20*ONE_MILLISECOND_IN_TICKS);
 						// Get device descriptor from default address and control endpoint
 						uint8_t rcode = USBGetDeviceDescriptor(0, 0);
 						// Assign device address
+						if (rcode != 0)
+							USBErrorString(rcode);
 						devState = rcode ? DEVS_ERROR : DEVS_ADDRESSING;
 					}
 					break;
@@ -188,9 +193,16 @@ int main(int argc, char *argv[])
 						{
 							rcode = USBConfigHID(s_deviceAddress, s_deviceEndpoint);
 							if (rcode == 0)
+							{
 								rcode = USBGetHIDDescriptor(s_deviceAddress, s_deviceEndpoint, &s_deviceProtocol);
+								if (rcode != 0)
+									USBErrorString(rcode);
+							}
+							else
+								USBErrorString(rcode);
 						}
-
+						else
+							USBErrorString(rcode);
 						devState = rcode ? DEVS_ERROR : DEVS_RUNNING;
 					}
 					break;
@@ -280,7 +292,7 @@ int main(int argc, char *argv[])
 								else
 								{
 									// This appears to happen after a while, but I won't disconnect the device here.
-									printf("\nUSBReadHIDData error: 0x%.2x\n", rcode);
+									USBErrorString(rcode);
 									devState = DEVS_ERROR;
 									// TEST: Does refreshing the LED state work?
 									//rcode = USBWriteHIDData(s_deviceAddress, s_deviceEndpoint, s_devicecontrol);
@@ -298,12 +310,9 @@ int main(int argc, char *argv[])
 										printf("0x%.2x", keydata[i]);
 									printf("\n");
 								}
-								else
+								else if (rcode != hrSTALL)
 								{
-									if (rcode == hrSTALL) // Request rejected
-										printf("Request rejected. EP0 (control endpoint) halted or failed\n");
-									if (rcode == 0xF0) // No data available
-										printf("No data available\n");
+									USBErrorString(rcode);
 									devState = DEVS_ERROR;
 								}
 							}

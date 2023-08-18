@@ -75,6 +75,7 @@ void USBSetAddress(uint8_t _addr, uint8_t _ep);
 uint8_t USBReadHIDData(uint8_t _addr, uint8_t _ep,uint8_t _dataLen, uint8_t *_data, uint8_t _reportIndex, uint8_t _reportType);
 uint8_t USBWriteHIDData(uint8_t _addr, uint8_t _ep, uint8_t *_data);
 char HIDScanToASCII(const uint8_t _code, const uint8_t _uppercase);
+void USBErrorString(uint8_t rcode);
 
 // MAX3421E Registers - host mode
 #define rRCVFIFO	1<<3

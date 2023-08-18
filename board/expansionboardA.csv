@@ -22,9 +22,9 @@
 21;"U6";"CIR_3TSSOP-10";1;"CS4344-CZZR";;;
 22;"U2";"PinSocket_2x32_P2.54mm_Vertical";1;"GPIO_U2";;;
 23;"U4";"PinSocket_2x32_P2.54mm_Vertical";1;"GPIO_U4";;;
-24;"P1";"GCT_USB4085-GF-A_REVA4";1;"USB_C_Plug";;;
-25;"J3";"CUI_HD02-19-M-MSMT-TR";1;"HDMI_A";;;
-26;"CRD1";"HRS_DM3AT-SF-PEJM5";1;"DM3AT-SF-PEJM5";;;
-27;"C6,C7";"C_0805_2012Metric_Pad1.18x1.45mm_HandSolder";2;"10uf";;;
-28;"J2";"USB_A_Molex_67643_Horizontal";1;"USB_A_Stacked";;;
-29;"LSRIGHT1";"SPKR_AS01508MS-SC11-WP-R";1;"AS01508MS-SC11-WP-R";;;
+24;"J3";"CUI_HD02-19-M-MSMT-TR";1;"HDMI_A";;;
+25;"CRD1";"HRS_DM3AT-SF-PEJM5";1;"DM3AT-SF-PEJM5";;;
+26;"C6,C7";"C_0805_2012Metric_Pad1.18x1.45mm_HandSolder";2;"10uf";;;
+27;"J2";"USB_A_Molex_67643_Horizontal";1;"USB_A_Stacked";;;
+28;"LSRIGHT1";"SPKR_AS01508MS-SC11-WP-R";1;"AS01508MS-SC11-WP-R";;;
+29;"J1";"GCT_USB4085-GF-A_REVA4";1;"USB_C_Receptacle";;;
