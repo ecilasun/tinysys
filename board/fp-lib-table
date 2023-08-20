@@ -12,4 +12,5 @@
   (lib (name "MAX3421EEHJ_T")(type "KiCad")(uri "${KIPRJMOD}/MAX3421EEHJ_T")(options "")(descr ""))
   (lib (name "AS01508MS-SC11-WP-R")(type "KiCad")(uri "${KIPRJMOD}/AS01508MS-SC11-WP-R")(options "")(descr ""))
   (lib (name "LM1117MPX33NOPB")(type "KiCad")(uri "${KIPRJMOD}/LM1117MPX33NOPB")(options "")(descr ""))
+  (lib (name "KiCad")(type "KiCad")(uri "${KIPRJMOD}/IS61WV25616EDBLL-10TLI/KiCad")(options "")(descr ""))
 )

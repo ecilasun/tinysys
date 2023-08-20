@@ -12,4 +12,5 @@
   (lib (name "2023-04-30_01-05-07")(type "KiCad")(uri "${KIPRJMOD}/MAX3421EEHJ_T/2023-04-30_01-05-07.kicad_sym")(options "")(descr ""))
   (lib (name "AS01508MS-SC11-WP-R")(type "KiCad")(uri "${KIPRJMOD}/AS01508MS-SC11-WP-R/AS01508MS-SC11-WP-R.kicad_sym")(options "")(descr ""))
   (lib (name "LM1117MPX-3.3_NOPB")(type "KiCad")(uri "${KIPRJMOD}/LM1117MPX33NOPB/LM1117MPX-3.3_NOPB.kicad_sym")(options "")(descr ""))
+  (lib (name "IS61WV25616EDBLL-10TLI")(type "KiCad")(uri "${KIPRJMOD}/IS61WV25616EDBLL-10TLI/KiCad/IS61WV25616EDBLL-10TLI.kicad_sym")(options "")(descr ""))
 )
