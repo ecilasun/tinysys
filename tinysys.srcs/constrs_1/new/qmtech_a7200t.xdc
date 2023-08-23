@@ -163,6 +163,7 @@ set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports usbc_miso]
 set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports usbc_int]
 set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
 set_property PULLUP true [get_ports usbc_int]
+set_property PULLUP true [get_ports usbc_resn]
 
 ## ------------------------------------------------------------------------------------------------------
 ## USB-A - MAX3421EECJ over SPI interface, USB Host
@@ -182,6 +183,7 @@ set_property -dict {PACKAGE_PIN AB20 IOSTANDARD LVCMOS33} [get_ports usba_mosi]
 set_property -dict {PACKAGE_PIN Y19  IOSTANDARD LVCMOS33} [get_ports usba_miso]
 set_property -dict {PACKAGE_PIN AA21 IOSTANDARD LVCMOS33} [get_ports usba_int]
 set_property PULLUP true [get_ports usba_int]
+set_property PULLUP true [get_ports usba_resn]
 
 ## ------------------------------------------------------------------------------------------------------
 ## NMI switch

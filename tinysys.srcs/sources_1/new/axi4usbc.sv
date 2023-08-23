@@ -174,7 +174,7 @@ always @(posedge aclk) begin
 	unique case (writestate)
 		1'b0: begin
 			if (s_axi.wvalid && (~outfifofull)) begin
-				// SPI 0x80007000
+				// SPI 0x8000?000
 				outfifodin <= s_axi.wdata[8:0];
 				outfifowe <= 1'b1;
 				s_axi.wready <= 1'b1;
@@ -207,8 +207,8 @@ always @(posedge aclk) begin
 		2'b00: begin
 			if (s_axi.arvalid) begin
 				unique case (s_axi.araddr[3:0])
-					4'h0: raddrstate <= 2'b01; // SPI        0x80007000
-					4'h4: raddrstate <= 2'b10; // FIFO state 0x80007004
+					4'h0: raddrstate <= 2'b01; // SPI        0x8000?000
+					4'h4: raddrstate <= 2'b10; // FIFO state 0x8000?004
 				endcase
 				s_axi.arready <= 1'b1;
 			end

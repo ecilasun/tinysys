@@ -276,7 +276,7 @@ always_ff @(posedge aclk) begin
 			maxy <= ry0 >= ry1 ? ry0 : ry1;
 			rastermode <= (rcommand == 4'h1) ? CACHESTROBE : ENDSETUPBOUNDS;
 		end
-		
+
 		CACHESTROBE: begin
 			if (~pendingwrite) begin
 				cflush <= 1'b1;
@@ -347,6 +347,7 @@ always_ff @(posedge aclk) begin
 				// High when this is the last tile
 				lasttile <= (cy >= maxy[15:2]) && (cx >= maxx[15:2]);
 
+                // Skip tiles which don't contain the primitive
 				rastermode <= |(emask01 & emask12 & emask20) ? WRITEBACKTILE : NEXTTILE;
 			end
 		end
