@@ -301,19 +301,22 @@ int main(int argc, char *argv[])
 							else if (s_deviceProtocol == HID_PROTOCOL_MOUSE)
 							{
 								// X/Y/Wheel/Button
-								//uint8_t rcode = USBReadHIDData(s_deviceAddress, s_deviceEndpoint, 4, keydata, 0x0, HID_REPORTTYPE_INPUT);
-								MAX3421WriteByte(rPERADDR, s_deviceAddress);
-								uint8_t rcode = USBControlData(s_deviceAddress, s_deviceEndpoint, 4, (char*)keydata, 1, 64);
-								if (rcode == 0)
+								uint8_t rcode = USBReadHIDData(s_deviceAddress, s_deviceEndpoint, 4, keydata, 0x0, HID_REPORTTYPE_INPUT);
+								//MAX3421WriteByte(rPERADDR, s_deviceAddress);
+								//uint8_t rcode = USBControlData(s_deviceAddress, s_deviceEndpoint, 4, (char*)keydata, 1, 64);
+
+								if (rcode == hrSTALL)
+								{
+									uint16_t epAddress = 0x81;	// TODO: get it from device->endpoints[_ep]->epAddress
+									rcode = USBControlRequest(s_deviceAddress, s_deviceEndpoint, bmREQ_CLEAR_FEATURE, USB_REQUEST_CLEAR_FEATURE, USB_FEATURE_ENDPOINT_HALT, 0, epAddress, 0, NULL, 64);
+									if (rcode == hrSTALL)
+										devState = DEVS_ERROR;
+								}
+								else if (rcode == 0)
 								{
 									for (uint32_t i=0; i<4; ++i)
-										printf("0x%.2x", keydata[i]);
+										printf("%.2x", keydata[i]);
 									printf("\n");
-								}
-								else if (rcode != hrSTALL)
-								{
-									USBErrorString(rcode);
-									devState = DEVS_ERROR;
 								}
 							}
 							else

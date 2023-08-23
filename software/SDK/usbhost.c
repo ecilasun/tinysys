@@ -478,13 +478,18 @@ uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_
 
 	if(rcode)
 	{
-		//return error
 		USBSerialWrite("Data packet error: ");
 		USBErrorString(rcode);
 		return(rcode);
 	}
 
 	rcode = USBControlStatus(_ep, direction, _nak_limit);
+
+	if(rcode)
+	{
+		USBSerialWrite("Control status error: ");
+		USBErrorString(rcode);
+	}
 
 	return rcode;
 }
@@ -787,12 +792,12 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep)
 		USBSerialWriteHex(lang.wLanguage);
 		USBSerialWrite("\n");
 
-		for (int s=0; s<stringCount; ++s)
+		/*for (int s=0; s<stringCount; ++s)
 		{
 			struct USBStringDescriptor str;
 			// Only length, though I thought we'd have to read the full USBStringDescriptor
 			rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, s+1, USB_DESCRIPTOR_STRING, 0x0000, 1, (char*)&str, 64);
-			if (rcode == 0)
+			if (rcode == 0 && str.bLength != 0)
 			{
 				rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, s+1, USB_DESCRIPTOR_STRING, 0x0000, str.bLength, (char*)&str, 64);
 				if (rcode == 0)
@@ -804,7 +809,16 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep)
 					USBSerialWrite("\"\n");
 				}
 			}
-		}
+
+			if (rcode)
+			{
+				// Clear stall condition - TODO: This doesn't seem to work
+				uint16_t epAddress = 0x81;	// TODO: get it from device->endpoints[_ep]->epAddress
+				rcode = USBControlRequest(_addr, _ep, bmREQ_CLEAR_FEATURE, USB_REQUEST_CLEAR_FEATURE, USB_FEATURE_ENDPOINT_HALT, 0, epAddress, 0, NULL, 64);
+				if (rcode)
+					USBErrorString(rcode);
+			}
+		}*/
 	}
 
 	USBSerialWrite("\n");
@@ -934,7 +948,6 @@ uint8_t USBReadHIDData(uint8_t _addr, uint8_t _ep, uint8_t _dataLen, uint8_t *_d
 	uint8_t iface = 0;
     uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_HIDIN, HID_REQUEST_GET_REPORT, _reportIndex, _reportType, iface, _dataLen, (char*)_data, 64);
 #endif
-
 	return rcode;
 }
 
