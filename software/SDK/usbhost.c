@@ -6,9 +6,6 @@
 // Please see:
 // https://www.analog.com/media/en/technical-documentation/user-guides/max3421erevisions-1-and-2-host-out-transfers.pdf
 
-// Define this to allow boot protocol vs report protocol
-//#define USE_BOOT_PROTOCOL
-
 static struct USBEndpointRecord dev0controlEP;
 static struct USBDeviceRecord s_deviceTable[8];
 
@@ -17,6 +14,7 @@ volatile uint32_t *IO_USBASTA = (volatile uint32_t* )(DEVICE_USBA+4); // Output 
 
 static uint32_t statusF = 0;
 static uint32_t sparebyte = 0;
+static uint32_t s_protosubclass = 0;
 
 #define ASSERT_MAX3421_CS *IO_USBATRX = 0x100;
 #define RESET_MAX3421_CS *IO_USBATRX = 0x101;
@@ -480,15 +478,6 @@ uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_
 	{
 		USBSerialWrite("Data packet error: ");
 		USBErrorString(rcode);
-
-		if (rcode == hrSTALL)
-		{
-			uint16_t epAddress = 0x81;	// TODO: get it from device->endpoints[_ep]->epAddress
-			rcode = USBControlRequest(_addr, _ep, bmREQ_CLEAR_FEATURE, USB_REQUEST_CLEAR_FEATURE, USB_FEATURE_ENDPOINT_HALT, 0, epAddress, 0, NULL, 64);
-			if (rcode == 0)
-				USBSerialWrite("stall cleared\n");
-		}
-
 		return(rcode);
 	}
 
@@ -613,6 +602,7 @@ uint8_t USBParseDescriptor(uint8_t *_desc, uint8_t* _dtype, uint8_t* _offset)
 						break;
 					case 1:
 						USBSerialWrite("boot");
+						//s_protosubclass = 1; // Boot protocol used
 						break;
 					default:
 						USBSerialWrite("reserved");
@@ -735,6 +725,7 @@ uint8_t USBParseDescriptor(uint8_t *_desc, uint8_t* _dtype, uint8_t* _offset)
 
 uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep)
 {
+	s_protosubclass = 0;
 	struct USBDeviceDescriptor ddesc;
 
 	s_deviceTable[_addr].endpointInfo[_ep].maxPacketSize = 8;
@@ -903,8 +894,7 @@ uint8_t USBConfigHID(uint8_t _addr, uint8_t _ep)
 		}
 	}
 
-#if defined(USE_BOOT_PROTOCOL)
-	if (rcode == 0)
+	if (s_protosubclass == 1) // Using boot protocol
 	{
 		USBSerialWrite("switching to boot protocol\n");
 		// iface is interface number
@@ -912,7 +902,6 @@ uint8_t USBConfigHID(uint8_t _addr, uint8_t _ep)
 		// Could also use HID_REPORT_PROTOCOL for report protocol
 		rcode = USBControlRequest(_addr, _ep, bmREQ_HIDOUT, HID_REQUEST_SET_PROTOCOL, USB_HID_BOOT_PROTOCOL, 0x00, iface, 0x0000, NULL, 64);
 	}
-#endif
 
 	return rcode;
 }
@@ -968,15 +957,21 @@ void USBSetAddress(uint8_t _addr, uint8_t _ep)
 
 uint8_t USBReadHIDData(uint8_t _addr, uint8_t _ep, uint8_t _dataLen, uint8_t *_data, uint8_t _reportIndex, uint8_t _reportType)
 {
-#if defined(USE_BOOT_PROTOCOL)
-	// Using interrupt endpoint
-	MAX3421WriteByte(rPERADDR, _addr);
-	uint8_t rcode = USBControlData(_addr, _ep, _dataLen, (char*)_data, 1, 64);
-#else
-	// Using control endpoint
-	uint8_t iface = 0;
-    uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_HIDIN, HID_REQUEST_GET_REPORT, _reportIndex, _reportType, iface, _dataLen, (char*)_data, 64);
-#endif
+	uint8_t rcode;
+
+	if (s_protosubclass == 1) // Boot protocol
+	{
+		// Using interrupt endpoint
+		MAX3421WriteByte(rPERADDR, _addr);
+		rcode = USBControlData(_addr, _ep, _dataLen, (char*)_data, 1, 64);
+	}
+	else
+	{
+		// Using control endpoint
+		uint8_t iface = 0;
+    	rcode = USBControlRequest(_addr, _ep, bmREQ_HIDIN, HID_REQUEST_GET_REPORT, _reportIndex, _reportType, iface, _dataLen, (char*)_data, 64);
+	}
+
 	return rcode;
 }
 
