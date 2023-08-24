@@ -296,7 +296,7 @@ void USBErrorString(uint8_t rcode);
 #define USB_DESCRIPTOR_DEVICE_QUALIFIER 0x06    // bDescriptorType for a Device Qualifier.
 #define USB_DESCRIPTOR_OTHER_SPEED      0x07    // bDescriptorType for a Other Speed Configuration.
 #define USB_DESCRIPTOR_INTERFACE_POWER  0x08    // bDescriptorType for Interface Power.
-#define USB_DESCRIPTOR_OTG              0x09    // bDescriptorType for an OTG Descriptor.
+#define USB_DESCRIPTOR_OTG              0x09    // bDescriptorType for an On-The-Go Descriptor.
 
 #define HID_DESCRIPTOR_HID				0x21
 #define HID_DESCRIPTOR_REPORT			0x22

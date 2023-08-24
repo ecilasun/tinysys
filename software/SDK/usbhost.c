@@ -480,6 +480,15 @@ uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_
 	{
 		USBSerialWrite("Data packet error: ");
 		USBErrorString(rcode);
+
+		if (rcode == hrSTALL)
+		{
+			uint16_t epAddress = 0x81;	// TODO: get it from device->endpoints[_ep]->epAddress
+			rcode = USBControlRequest(_addr, _ep, bmREQ_CLEAR_FEATURE, USB_REQUEST_CLEAR_FEATURE, USB_FEATURE_ENDPOINT_HALT, 0, epAddress, 0, NULL, 64);
+			if (rcode == 0)
+				USBSerialWrite("stall cleared\n");
+		}
+
 		return(rcode);
 	}
 
@@ -792,7 +801,7 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep)
 		USBSerialWriteHex(lang.wLanguage);
 		USBSerialWrite("\n");
 
-		/*for (int s=0; s<stringCount; ++s)
+		for (int s=0; s<stringCount; ++s)
 		{
 			struct USBStringDescriptor str;
 			// Only length, though I thought we'd have to read the full USBStringDescriptor
@@ -812,13 +821,17 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep)
 
 			if (rcode)
 			{
-				// Clear stall condition - TODO: This doesn't seem to work
+				// Clear stall condition if this is not supported
 				uint16_t epAddress = 0x81;	// TODO: get it from device->endpoints[_ep]->epAddress
 				rcode = USBControlRequest(_addr, _ep, bmREQ_CLEAR_FEATURE, USB_REQUEST_CLEAR_FEATURE, USB_FEATURE_ENDPOINT_HALT, 0, epAddress, 0, NULL, 64);
-				if (rcode)
-					USBErrorString(rcode);
+				if (rcode == 0)
+				{
+					USBSerialWrite("stall cleared, won't query strings\n");
+					// Stop requesting strings
+					break;
+				}
 			}
-		}*/
+		}
 	}
 
 	USBSerialWrite("\n");
@@ -870,9 +883,25 @@ uint8_t USBDetach(uint8_t _addr)
 uint8_t USBConfigHID(uint8_t _addr, uint8_t _ep)
 {
 	uint8_t config = 1;
+	uint8_t interface = 0;
 
-	USBSerialWrite("setting HID configuration\n");
+	USBSerialWrite("setting configuration\n");
 	uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_SET, USB_REQUEST_SET_CONFIGURATION, config, 0x00, 0x0000, 0x0000, NULL, 64);
+
+	if (rcode == 0)
+	{
+		USBSerialWrite("setting interface\n");
+		rcode = USBControlRequest(_addr, _ep, bmREQ_SET, USB_REQUEST_SET_INTERFACE, interface, 0x00, 0x0000, 0x0000, NULL, 64);
+
+		// Check if interface changes are supported (maybe we only have one default)
+		if (rcode == hrSTALL)
+		{
+			uint16_t epAddress = 0x81;	// TODO: get it from device->endpoints[_ep]->epAddress
+			rcode = USBControlRequest(_addr, _ep, bmREQ_CLEAR_FEATURE, USB_REQUEST_CLEAR_FEATURE, USB_FEATURE_ENDPOINT_HALT, 0, epAddress, 0, NULL, 64);
+			if (rcode == 0)
+				USBSerialWrite("stall cleared\n");
+		}
+	}
 
 #if defined(USE_BOOT_PROTOCOL)
 	if (rcode == 0)
