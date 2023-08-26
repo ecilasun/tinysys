@@ -1,6 +1,6 @@
 #include "usbhost.h"
 #include "usbserial.h"
-#include "basesystem.h"
+#include "max3421e.h"
 #include <string.h>
 
 // Please see:
@@ -9,107 +9,22 @@
 static struct USBEndpointRecord dev0controlEP;
 static struct USBDeviceRecord s_deviceTable[8];
 
-volatile uint32_t *IO_USBATRX = (volatile uint32_t* )DEVICE_USBA; // Receive fifo
-volatile uint32_t *IO_USBASTA = (volatile uint32_t* )(DEVICE_USBA+4); // Output FIFO state
-
-static uint32_t statusF = 0;
-static uint32_t sparebyte = 0;
 static uint32_t s_protosubclass = 0;
 
-#define ASSERT_MAX3421_CS *IO_USBATRX = 0x100;
-#define RESET_MAX3421_CS *IO_USBATRX = 0x101;
-
-static struct SUSBContext *s_usbhost = NULL;
+static struct SUSBHostContext *s_usbhost = NULL;
 static uint8_t s_HIDDescriptorLen = 64;
 
-void USBHostSetContext(struct SUSBContext *ctx)
+// EBusState
+static uint32_t* s_probe_result = (uint32_t*)USB_HOST_STATE;
+
+void USBHostSetContext(struct SUSBHostContext *ctx)
 {
 	s_usbhost = ctx;
 }
 
-struct SUSBContext *USBHostGetContext()
+struct SUSBHostContext *USBHostGetContext()
 {
 	return s_usbhost;
-}
-
-void MAX3421FlushOutputFIFO()
-{
-	while ((*IO_USBASTA)&0x1) {}
-}
-
-uint8_t MAX3421ReadByte(uint8_t command)
-{
-	ASSERT_MAX3421_CS
-	*IO_USBATRX = command;   // -> status in read FIFO
-	statusF = *IO_USBATRX;   // unused
-	*IO_USBATRX = 0;		 // -> read value in read FIFO
-	sparebyte = *IO_USBATRX; // output value
-	RESET_MAX3421_CS
-
-	return sparebyte;
-}
-
-void MAX3421WriteByte(uint8_t command, uint8_t data)
-{
-	ASSERT_MAX3421_CS
-	*IO_USBATRX = command | 0x02; // -> zero in read FIFO
-	statusF = *IO_USBATRX;		// unused
-	*IO_USBATRX = data;		   // -> zero in read FIFO
-	sparebyte = *IO_USBATRX;	  // unused
-	RESET_MAX3421_CS
-}
-
-int MAX3421ReadBytes(uint8_t command, uint8_t length, uint8_t *buffer)
-{
-	ASSERT_MAX3421_CS
-	*IO_USBATRX = command;   // -> status in read FIFO
-	statusF = *IO_USBATRX;   // unused
-	//*IO_USBCTRX = 0;		 // -> read value in read FIFO
-	//sparebyte = *IO_USBCTRX; // output value
-
-	for (int i=0; i<length; i++)
-	{
-		*IO_USBATRX = 0;		  // send one dummy byte per input desired
-		buffer[i] = *IO_USBATRX;  // store data byte
-	}
-	RESET_MAX3421_CS
-
-	return 0;
-}
-
-void MAX3421WriteBytes(uint8_t command, uint8_t length, uint8_t *buffer)
-{
-	ASSERT_MAX3421_CS
-	*IO_USBATRX = command | 0x02;   // -> status in read FIFO
-	statusF = *IO_USBATRX;		  // unused
-	//*IO_USBATRX = 0;		 // -> read value in read FIFO
-	//sparebyte = *IO_USBATRX; // output value
-
-	for (int i=0; i<length; i++)
-	{
-		*IO_USBATRX = buffer[i];  // send one dummy byte per input desired
-		sparebyte = *IO_USBATRX;  // unused
-	}
-	RESET_MAX3421_CS
-}
-
-void MAX3421CtlReset()
-{
-	// Reset MAX3421E by setting res high then low
-	MAX3421WriteByte(rUSBCTL, bmCHIPRES);
-	MAX3421WriteByte(rUSBCTL, 0);
-
-	MAX3421FlushOutputFIFO();
-	E32Sleep(3*ONE_MILLISECOND_IN_TICKS);
-
-	// Wait for oscillator OK interrupt for the 12MHz external clock
-	uint8_t rd = 0;
-	while ((rd & bmOSCOKIRQ) == 0)
-	{
-		rd = MAX3421ReadByte(rUSBIRQ);
-		E32Sleep(3*ONE_MILLISECOND_IN_TICKS);
-	}
-	MAX3421WriteByte(rUSBIRQ, bmOSCOKIRQ); // Clear IRQ
 }
 
 enum EBusState USBBusProbe()
@@ -187,7 +102,8 @@ enum EBusState USBHostInit(uint32_t enableInterrupts)
 	MAX3421WriteByte(rHCTL, bmSAMPLEBUS);
 
 	while(!(MAX3421ReadByte(rHCTL) & bmSAMPLEBUS)) {}; //wait for sample operation to finish
-	enum EBusState busState = USBBusProbe();
+
+	*s_probe_result = (uint32_t)USBBusProbe();
 
 	MAX3421WriteByte(rHIRQ, bmCONDETIRQ);
 	if (enableInterrupts)
@@ -199,7 +115,7 @@ enum EBusState USBHostInit(uint32_t enableInterrupts)
 	uint16_t* keystate = (uint16_t*)KEYBOARD_KEYSTATE_BASE;
 	__builtin_memset(keystate, 0x00, 256*sizeof(uint16_t));
 
-	return busState;
+	return (enum EBusState)(*s_probe_result);
 }
 
 uint8_t USBDispatchPacket(uint8_t _token, uint8_t _ep, unsigned int _nak_limit)

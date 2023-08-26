@@ -8,14 +8,16 @@
 #include "opl2.h"
 #include "dma.h"
 #include "usbserial.h"
-#include "usbhid.h"
+#include "usbhost.h"
+#include "max3420e.h"
+#include "max3421e.h"
 #include "mini-printf.h"
 
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
 
-#define VERSIONSTRING "v1.026"
+#define VERSIONSTRING "v1.028"
 
 static struct EVideoContext s_gpuContext;
 static char s_tmpstr[512];
@@ -36,7 +38,8 @@ static char *s_taskstates[]={
 	"TERMINATING",
 	"TERMINATED" };
 
-static struct SUSBContext s_usbserialctx;
+static struct SUSBSerialContext s_usbserialctx;
+static struct SUSBHostContext s_usbhostctx;
 
 void _stubTask()
 {
@@ -181,7 +184,7 @@ void ExecuteCmd(char *_cmd)
 		uint8_t m3420rev = MAX3420ReadByte(rREVISION);
 		if (m3420rev != 0xFF)
 		{
-			USBSerialWrite("MAX3420(serial) rev# ");
+			USBSerialWrite("MAX3420(serial) rev# 0x");
 			USBSerialWriteHexByte(m3420rev);
 			USBSerialWrite("\n");
 		}
@@ -190,7 +193,7 @@ void ExecuteCmd(char *_cmd)
 		uint8_t m3421rev = MAX3421ReadByte(rREVISION);
 		if (m3421rev != 0xFF)
 		{
-			USBSerialWrite("MAX3421(host) rev# ");
+			USBSerialWrite("MAX3421(host) rev# 0x");
 			USBSerialWriteHexByte(m3421rev);
 			USBSerialWrite("\n");
 		}
@@ -318,10 +321,14 @@ int main()
 	// This is where all task switching and other interrupt handling occurs
 	InstallISR();
 
-	// Set up kernel side usb context
+	// Set up kernel side usb serial context
 	USBSerialSetContext(&s_usbserialctx);
 	// Start USB serial
 	/*s_usbserialenabled =*/ USBSerialInit(1);
+
+	// Set up kernel side usb host context
+	USBHostSetContext(&s_usbhostctx);
+	USBHostInit(1);
 
 	// // Splash - we drop to embedded OS if there's no boot image (boot.elf)
 	// USBSerialWrite("\033[H\033[0m\033[2J\033[96;40mtinysys embedded OS " VERSIONSTRING "\033[0m\n\n");
@@ -406,7 +413,7 @@ int main()
 			s_refreshConsoleOut = 0;
 			s_cmdString[s_cmdLen] = 0;
 			// Reset current line and emit the command string
-			mini_snprintf(s_tmpstr, 512, "\033[2K\r%s:%s", s_workdir, s_cmdString);
+			mini_snprintf(s_tmpstr, 512, "\033[2K\r%s>%s", s_workdir, s_cmdString);
 			USBSerialWrite(s_tmpstr);
 		}
 	}

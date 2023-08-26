@@ -102,7 +102,7 @@ struct USBHIDDescriptor
 	uint32_t wDescriptorLength;
 };
 
-struct SUSBContext
+struct SUSBSerialContext
 {
 	struct USBDeviceDescriptor device;
 	struct USBConfigurationDescriptor config;
@@ -110,6 +110,11 @@ struct SUSBContext
 	struct USBEndpointDescriptor input;
 	struct USBEndpointDescriptor output;
 	struct USBStringDescriptor strings[6];
+};
+
+struct SUSBHostContext
+{
+	uint8_t m_TBD;
 };
 
 #define USBDESCTYPE_UNKNOWN						0x00

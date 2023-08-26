@@ -104,6 +104,7 @@ void ListFiles(const char *path)
 {
 	DIR dir;
 	FRESULT re = f_opendir(&dir, path);
+	static const char blankspace[32] = "                                ";
 	if (re == FR_OK)
 	{
 		FILINFO finf;
@@ -118,14 +119,39 @@ void ListFiles(const char *path)
 				USBSerialWrite("\033[33m"); // Yellow
 			if (isexe!=NULL)
 				USBSerialWrite("\033[32m"); // Green
-			USBSerialWrite(finf.fname);
+
+			// Make sure we're always aligned to max 32 characters
+			int count = 0;
+			while(finf.fname[count]!=0) { count++; }
+			count = count>32 ? 32 : count;
+			USBSerialWriteN(finf.fname, count);
+			if (count<32)
+				USBSerialWriteN(blankspace, 32-count);
+
 			if (isdir)
-				USBSerialWrite("\t\t<dir>");
+				USBSerialWrite(" <dir>");
 			else
 			{
-				USBSerialWrite("\t\t");
-				USBSerialWriteDecimal((int32_t)finf.fsize);
-				USBSerialWrite(" bytes");
+				USBSerialWrite(" ");
+
+				uint32_t inkbytes = (uint32_t)finf.fsize/1024;
+				uint32_t inmbytes = inkbytes/1024;
+
+				if (inmbytes!=0)
+				{
+					USBSerialWriteDecimal(inmbytes);
+					USBSerialWrite("Mb");
+				}
+				else if (inkbytes!=0)
+				{
+					USBSerialWriteDecimal(inkbytes);
+					USBSerialWrite("Kb");
+				}
+				else
+				{
+					USBSerialWriteDecimal((uint32_t)finf.fsize);
+					USBSerialWrite("b");
+				}
 			}
 			USBSerialWrite("\033[0m\n");
 		} while(1);

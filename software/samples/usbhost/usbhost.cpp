@@ -1,4 +1,5 @@
 #include "basesystem.h"
+#include "max3421e.h"
 #include "usbhost.h"
 #include "ringbuffer.h"
 #include <malloc.h>
@@ -22,7 +23,7 @@ EUSBDeviceState devState = DEVS_UNKNOWN;
 static uint32_t s_devicePollInterval = 15;
 
 static uint8_t s_deviceAddress = 0;
-static uint8_t s_deviceEndpoint = 0;
+static uint8_t s_controlEndpoint = 0;
 static uint8_t s_currentkeymap[256];
 static uint8_t s_prevkeymap[256];
 static uint8_t s_devicecontrol[8];
@@ -38,7 +39,7 @@ int main(int argc, char *argv[])
 	uint64_t nextPoll = 0;
 	printf("\nUSB Host sample\n");
 
-	struct SUSBContext s_usbhostctx;
+	struct SUSBHostContext s_usbhostctx;
     USBHostSetContext(&s_usbhostctx);
 
 	if (argc>1)
@@ -185,16 +186,16 @@ int main(int argc, char *argv[])
 
 					case DEVS_ADDRESSING:
 					{
-						uint8_t rcode = USBAttach(&s_deviceAddress, &s_deviceEndpoint);
+						uint8_t rcode = USBAttach(&s_deviceAddress, &s_controlEndpoint);
 						uint64_t currentTime = E32ReadTime();
 						nextPoll = currentTime + s_devicePollInterval*ONE_MILLISECOND_IN_TICKS;
 
 						if (rcode == 0)// && s_deviceClass == HID)
 						{
-							rcode = USBConfigHID(s_deviceAddress, s_deviceEndpoint);
+							rcode = USBConfigHID(s_deviceAddress, s_controlEndpoint);
 							if (rcode == 0)
 							{
-								rcode = USBGetHIDDescriptor(s_deviceAddress, s_deviceEndpoint, &s_deviceProtocol);
+								rcode = USBGetHIDDescriptor(s_deviceAddress, s_controlEndpoint, &s_deviceProtocol);
 								if (rcode != 0)
 									USBErrorString(rcode);
 							}
@@ -225,7 +226,7 @@ int main(int argc, char *argv[])
 
 							if (s_deviceProtocol == HID_PROTOCOL_KEYBOARD)
 							{
-								uint8_t rcode = USBReadHIDData(s_deviceAddress, s_deviceEndpoint, 8, keydata, 0x0, HID_REPORTTYPE_INPUT);
+								uint8_t rcode = USBReadHIDData(s_deviceAddress, s_controlEndpoint, 8, keydata, 0x0, HID_REPORTTYPE_INPUT);
 								if (rcode == 0)
 								{
 									// Reflect into current keymap
@@ -284,7 +285,7 @@ int main(int argc, char *argv[])
 										// Toggle previous state
 										s_devicecontrol[0] ^= lockstate;
 										// Reflect to device
-										rcode = USBWriteHIDData(s_deviceAddress, s_deviceEndpoint, s_devicecontrol);
+										rcode = USBWriteHIDData(s_deviceAddress, s_controlEndpoint, s_devicecontrol);
 										if (rcode)
 											devState = DEVS_ERROR;
 									}
@@ -295,18 +296,18 @@ int main(int argc, char *argv[])
 									USBErrorString(rcode);
 									devState = DEVS_ERROR;
 									// TEST: Does refreshing the LED state work?
-									//rcode = USBWriteHIDData(s_deviceAddress, s_deviceEndpoint, s_devicecontrol);
+									//rcode = USBWriteHIDData(s_deviceAddress, s_controlEndpoint, s_devicecontrol);
 								}
 							}
 							else if (s_deviceProtocol == HID_PROTOCOL_MOUSE)
 							{
 								// X/Y/Wheel/Button
-								uint8_t rcode = USBReadHIDData(s_deviceAddress, s_deviceEndpoint, 4, keydata, 0x0, HID_REPORTTYPE_INPUT);
+								uint8_t rcode = USBReadHIDData(s_deviceAddress, s_controlEndpoint, 4, keydata, 0x0, HID_REPORTTYPE_INPUT);
 
 								if (rcode == hrSTALL)
 								{
 									uint16_t epAddress = 0x81;	// TODO: get it from device->endpoints[_ep]->epAddress
-									rcode = USBControlRequest(s_deviceAddress, s_deviceEndpoint, bmREQ_CLEAR_FEATURE, USB_REQUEST_CLEAR_FEATURE, USB_FEATURE_ENDPOINT_HALT, 0, epAddress, 0, NULL, 64);
+									rcode = USBControlRequest(s_deviceAddress, s_controlEndpoint, bmREQ_CLEAR_FEATURE, USB_REQUEST_CLEAR_FEATURE, USB_FEATURE_ENDPOINT_HALT, 0, epAddress, 0, NULL, 64);
 									if (rcode == hrSTALL)
 										devState = DEVS_ERROR;
 								}

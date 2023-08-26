@@ -20,9 +20,11 @@
 // General purpose ring buffer data (1K) and state
 #define RINGBUFFER_BASE					0x00000200
 #define RINGBUFFER_STATE				0x00000600
-// Keyboard input map
+// Keyboard input map (512 bytes)
 #define KEYBOARD_KEYSTATE_BASE			0x00000800
 #define KEYBOARD_KEYSTATE_END			0x00000A00
+// USB host status
+#define USB_HOST_STATE					0x00000A20
 // Executable
 #define HEAP_START_APPMEM_END			0x02000000 // Executable space above this (32MBytes)
 // Heap

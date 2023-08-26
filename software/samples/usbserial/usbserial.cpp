@@ -1,5 +1,6 @@
 #include "basesystem.h"
 #include "usbserial.h"
+#include "max3420e.h"
 #include "leds.h"
 #include <malloc.h>
 
@@ -60,7 +61,7 @@ void send_descriptor(uint8_t *SUD)
 	reqlen = SUD[wLengthL] + 256*SUD[wLengthH];	// 16-bit
 
 	// Access descriptor from usb utils
-	struct SUSBContext *uctx = USBSerialGetContext();
+	struct SUSBSerialContext *uctx = USBSerialGetContext();
 
 	uint8_t desctype = SUD[wValueH];
 
