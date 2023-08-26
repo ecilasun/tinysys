@@ -204,6 +204,7 @@ always @(posedge aclk) begin
 		end
 		2'b10: begin
 			if (s_axi.rready) begin
+				s_axi.rdata[127:32] <= 0;
 				// Some values such as timers and h/w states are dynamic and never end up in the CSR file, so make up a dynamic version for those
 				unique case (csrraddr)
 					`CSR_MHARTID:	s_axi.rdata[31:0] <= 0;//HARTID; // Immutable TODO: Pass HARTID comes from the current CSR address (i.e. hartid = addrs%4096; )

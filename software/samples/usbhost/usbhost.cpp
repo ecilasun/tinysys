@@ -13,7 +13,8 @@
 // https://github.com/felis/USB_Host_Shield_2.0/blob/59cc3d287dd1afe8d89856a8d4de0ad8fe9ef3c7/usbhid.h
 
 EBusState old_probe_result = BUSUNKNOWN;
-EBusState probe_result = BUSUNKNOWN;
+// This is populated by ISR in ROM when bus state has a significant change
+static uint32_t *s_probe_result = (uint32_t*)USB_HOST_STATE;
 
 EUSBDeviceState olddevState = DEVS_UNKNOWN;
 EUSBDeviceState devState = DEVS_UNKNOWN;
@@ -48,71 +49,28 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		probe_result = USBHostInit(0);
 		uint16_t* keystates = (uint16_t*)KEYBOARD_KEYSTATE_BASE;
 
+		// Key map
 		for (int i=0; i<256; ++i)
 		{
 			s_currentkeymap[i] = 0;
 			s_prevkeymap[i] = 0;
 		}
+
+		// LED output
 		for (int i=0; i<8; ++i)
 			s_devicecontrol[i] = 0;
-
-		uint8_t m3421rev = MAX3421ReadByte(rREVISION);
-		if (m3421rev != 0xFF)
-			printf("MAX3421(host) rev# %d\n",m3421rev);
-		else
-			printf("MAX3421(host) disabled\n");
 
 		// This imitates the interrupt work
 		do
 		{
-			uint8_t hirq_sendback = 0;
-
-			uint8_t irq = MAX3421ReadByte(rHIRQ);
-
-			if (irq&bmCONDETIRQ)
-			{
-				probe_result = USBBusProbe();
-				hirq_sendback |= bmCONDETIRQ;
-			}
-			else if (irq&bmFRAMEIRQ)
-			{
-				//printf()
-				hirq_sendback |= bmFRAMEIRQ;
-			}
-			else if (irq&bmSNDBAVIRQ)
-			{
-				// Ignore send buffer available interrupt for now
-				hirq_sendback |= bmSNDBAVIRQ;
-			}
-			else if (irq&bmHXFRDNIRQ)
-			{
-				// TODO: response to our SETUP package
-				printf("bmHXFRDNIRQ\n");
-				hirq_sendback |= bmHXFRDNIRQ;
-			}
-			else if (irq&bmBUSEVENTIRQ)
-			{
-				// bus reset complete, or bus resume signalled
-				printf("bmBUSEVENTIRQ\n");
-				hirq_sendback |= bmHXFRDNIRQ;
-			}
-			else
-			{
-				printf("irq(unknown):%x\n", irq);
-			}
-
-			if (hirq_sendback)
-				MAX3421WriteByte(rHIRQ, hirq_sendback);
-
-			uint32_t state_changed = probe_result != old_probe_result;
+			uint32_t state_changed = (enum EBusState)*s_probe_result != old_probe_result;
 
 			if (state_changed)
 			{
-				old_probe_result = probe_result;
-				switch(probe_result)
+				old_probe_result = (enum EBusState)*s_probe_result;
+				switch(old_probe_result)
 				{
 					case SE0:
 						// Regardless of previous state, detach device

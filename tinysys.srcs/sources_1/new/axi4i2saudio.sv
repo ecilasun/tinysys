@@ -95,8 +95,8 @@ always_ff @(posedge aclk) begin
 end
 
 logic [9:0] readcursor = 10'd0;			// Current sample read position
-logic [9:0] readLine;					// Cache line select for reads
-logic [9:0] writeLine;					// Cache line select for writes
+logic [8:0] readLine;					// Cache line select for reads
+logic [8:0] writeLine;					// Cache line select for writes
 always_comb begin
 	readLine = {~writeBufferSelect, readcursor[9:2]};
 	writeLine = {writeBufferSelect, burstcursor};

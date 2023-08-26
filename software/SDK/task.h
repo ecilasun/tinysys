@@ -60,3 +60,6 @@ void TaskExitCurrentTask(struct STaskContext *_ctx);
 
 // Exit a specific task
 void TaskExitTaskWithID(struct STaskContext *_ctx, uint32_t _taskid, uint32_t _signal);
+
+// Yield leftover time back to the next task in chain
+void TaskYield();

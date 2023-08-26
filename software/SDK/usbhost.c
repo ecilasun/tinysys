@@ -76,6 +76,8 @@ enum EBusState USBBusProbe()
 
 enum EBusState USBHostInit(uint32_t enableInterrupts)
 {
+	*s_probe_result = BUSUNKNOWN;
+
 	// Must set context first
 	if (s_usbhost==NULL)
 		return BUSUNKNOWN;

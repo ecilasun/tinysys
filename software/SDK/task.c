@@ -97,6 +97,16 @@ void TaskExitTaskWithID(struct STaskContext *_ctx, uint32_t _taskid, uint32_t _s
 	task->exitCode = _signal;
 }
 
+void TaskYield()
+{
+	// Set up the next task switch interrupt to now
+	// so we can yield as soon as possible.
+	write_csr(mstatus, 0);
+	uint64_t now = E32ReadTime();
+	E32SetTimeCompare(now);
+	write_csr(mstatus, MSTATUS_MIE);
+}
+
 uint32_t TaskSwitchToNext(struct STaskContext *_ctx)
 {
 	// Load current process ID from TP register

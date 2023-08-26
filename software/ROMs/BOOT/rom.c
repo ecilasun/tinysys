@@ -17,7 +17,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define VERSIONSTRING "v1.028"
+#define VERSIONSTRING "v0001"
 
 static struct EVideoContext s_gpuContext;
 static char s_tmpstr[512];
@@ -312,7 +312,7 @@ int main()
 
 	// With current layout, OS takes up a very small slices out of whatever is left from other tasks
 	LEDSetState(0x9);
-	TaskAdd(taskctx, "kernelStub", _stubTask, TS_RUNNING, QUARTER_MILLISECOND_IN_TICKS);
+	TaskAdd(taskctx, "kernelStub", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 
 	// Ready to start, silence LED activity since other systems need it
 	LEDSetState(0x0);
@@ -416,6 +416,9 @@ int main()
 			mini_snprintf(s_tmpstr, 512, "\033[2K\r%s>%s", s_workdir, s_cmdString);
 			USBSerialWrite(s_tmpstr);
 		}
+
+		// We're done, possibly before our 100ms is up. Yield time back.
+		TaskYield();
 	}
 
 	return 0;
