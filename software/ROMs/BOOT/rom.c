@@ -17,16 +17,17 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define VERSIONSTRING "v0001"
+#define VERSIONSTRING "v0002"
 
 static struct EVideoContext s_gpuContext;
 static char s_tmpstr[512];
 
 static char s_execName[64] = "ROM";
-static char s_execParam[64] = "auto";
+static char s_execParam0[64] = "auto";
+static uint32_t s_execParamCount = 1;
+
 static char s_cmdString[128] = "";
 static char s_workdir[64] = "sd:/";
-static uint32_t s_execParamCount = 1;
 static int32_t s_cmdLen = 0;
 static uint32_t s_startAddress = 0;
 static int s_refreshConsoleOut = 1;
@@ -50,20 +51,20 @@ void _stubTask()
 }
 
 // This task is a trampoline to the loaded executable
-void RunExecTask()
+void _runExecTask()
 {
 	// Start the loaded executable
 	asm volatile(
 		"addi sp, sp, -16;"
 		"sw %3, 0(sp);"		// Store argc
 		"sw %1, 4(sp);"		// Store argv[1] (path to exec)
-		"sw %2, 8(sp);"		// Store argv[2] (exec params)
+		"sw %2, 8(sp);"		// Store argv[2] (exec params0)
 		"sw zero, 12(sp);"	// Store argv[3] (nullptr)
 		"lw s0, %0;"		// Target branch address
 		"jalr s0;"			// Branch to the entry point
 		"addi sp, sp, 16;"	// We most likely won't return here
 		: "=m" (s_startAddress)
-		: "r" (s_execName), "r" (s_execParam), "r" (s_execParamCount)
+		: "r" (s_execName), "r" (s_execParam0), "r" (s_execParamCount)
 		// Clobber list
 		: "s0"
 	);
@@ -150,10 +151,10 @@ void ExecuteCmd(char *_cmd)
 			USBSerialWrite("No tasks running\n");
 		else
 		{
-			for (int i=1;i<ctx->numTasks;++i)
+			for (int i=0;i<ctx->numTasks;++i)
 			{
 				struct STask *task = &ctx->tasks[i];
-				mini_snprintf(s_tmpstr, 512, "'%s'\t\tslice:%dus\t\tstate:%s\tPC:0x%x\n", task->name, task->runLength/ONE_MICROSECOND_IN_TICKS, s_taskstates[task->state], task->regs[0]);
+				mini_snprintf(s_tmpstr, 512, "#%d: '%s'\tslice:%dus\tstate:%s\tPC:0x%x\n", i, task->name, task->runLength/ONE_MICROSECOND_IN_TICKS, s_taskstates[task->state], task->regs[0]);
 				USBSerialWrite(s_tmpstr);
 			}
 		}
@@ -226,9 +227,9 @@ void ExecuteCmd(char *_cmd)
 		struct STaskContext* tctx = GetTaskContext();
 		// Temporary measure to avoid loading another executable while the first one is running
 		// until we get a virtual memory device
-		if (tctx->numTasks>1)
+		if (tctx->numTasks>2)
 		{
-			USBSerialWrite("Virtual memory support required to run more than one task.\n");
+			USBSerialWrite("Virtual memory support required to run more than one ELF.\n");
 		}
 		else
 		{
@@ -255,13 +256,111 @@ void ExecuteCmd(char *_cmd)
 					s_execParamCount = 1;
 				else
 				{
-					strncpy(s_execParam, param, 64);
+					strncpy(s_execParam0, param, 64);
 					s_execParamCount = 2;
 				}
 
-				TaskAdd(tctx, command, RunExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+				TaskAdd(tctx, command, _runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 			}
 		}
+	}
+}
+
+void _cliTask()
+{
+	while(1)
+	{
+		struct STaskContext *taskctx = GetTaskContext();
+
+		// Intercept input only when we have no ELF running
+		/*if(taskctx->numTasks<=2)
+		{
+			TaskYield();
+			continue;
+		}*/
+
+		// Echo all of the characters we can find back to the sender
+		uint32_t uartData = 0;
+		int execcmd = 0;
+
+		while (RingBufferRead(&uartData, sizeof(uint32_t)))
+		{
+			uint8_t asciicode = (uint8_t)(uartData&0xFF);
+
+			++s_refreshConsoleOut;
+			switch (asciicode)
+			{
+				case 10:
+				case 13:	// Return / Enter
+				{
+					execcmd++;
+				}
+				break;
+
+				case 3:		// EXT (Ctrl+C)
+				{
+					execcmd++;
+					// TODO: This has to be handled differently and terminate active task not hardcoded one
+					TaskExitTaskWithID(taskctx, 2, 0); // Sig:0, terminate process if no debugger is attached
+				}
+				break;
+
+				case 8:		// Backspace
+				{
+					s_cmdLen--;
+					if (s_cmdLen<0)
+						s_cmdLen = 0;
+				}
+				break;
+
+				case 27:	// ESC
+				{
+					s_cmdLen = 0;
+					// TODO: Erase current line
+				}
+				break;
+
+				default:
+				{
+					s_cmdString[s_cmdLen++] = (char)asciicode;
+					if (s_cmdLen > 127)
+						s_cmdLen = 127;
+				}
+				break;
+			}
+		}
+
+		// Report task termination
+		struct STask *task = &taskctx->tasks[2];
+		if (task->state == TS_TERMINATED)
+		{
+			task->state = TS_UNKNOWN;
+			/*mini_snprintf(s_tmpstr, 512, "\n'%s' terminated (0x%x)\n", task->name, task->exitCode);
+			USBSerialWrite(s_tmpstr);*/
+			++s_refreshConsoleOut;
+			DeviceDefaultState();
+		}
+
+		if (execcmd)
+		{
+			++s_refreshConsoleOut;
+			USBSerialWrite("\n");
+			ExecuteCmd(s_cmdString);
+			// Rewind
+			s_cmdLen = 0;
+			s_cmdString[0] = 0;
+		}
+
+		if (s_refreshConsoleOut)
+		{
+			s_refreshConsoleOut = 0;
+			s_cmdString[s_cmdLen] = 0;
+			// Reset current line and emit the command string
+			mini_snprintf(s_tmpstr, 512, "\033[2K\r%s>%s", s_workdir, s_cmdString);
+			USBSerialWrite(s_tmpstr);
+		}
+
+		TaskYield();
 	}
 }
 
@@ -292,7 +391,7 @@ int main()
 		// to copy itself to the ROM shadow address
 		// and branch to it.
 		// From thereon it can become the replacement OS or RT application
-		RunExecTask();
+		_runExecTask();
 		// Not expecting it to return
 		while(1) {}
 	}
@@ -312,7 +411,9 @@ int main()
 
 	// With current layout, OS takes up a very small slices out of whatever is left from other tasks
 	LEDSetState(0x9);
-	TaskAdd(taskctx, "kernelStub", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+	TaskAdd(taskctx, "idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+	// Command line interpreter task
+	TaskAdd(taskctx, "cmd", _cliTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 
 	// Ready to start, silence LED activity since other systems need it
 	LEDSetState(0x0);
@@ -337,87 +438,8 @@ int main()
 	// Main CLI loop
 	while (1)
 	{
-		// Echo all of the characters we can find back to the sender
-		uint32_t uartData = 0;
-		int execcmd = 0;
+		// High level maintenance tasks
 
-		while (RingBufferRead(&uartData, sizeof(uint32_t)))
-		{
-			uint8_t asciicode = (uint8_t)(uartData&0xFF);
-
-			++s_refreshConsoleOut;
-			switch (asciicode)
-			{
-				case 10:
-				case 13:	// Return / Enter
-				{
-					execcmd++;
-				}
-				break;
-
-				case 3:		// EXT (Ctrl+C)
-				{
-					execcmd++;
-					TaskExitTaskWithID(taskctx, 1, 0); // Sig:0, terminate process if no debugger is attached
-				}
-				break;
-
-				case 8:		// Backspace
-				{
-					s_cmdLen--;
-					if (s_cmdLen<0)
-						s_cmdLen = 0;
-				}
-				break;
-
-				case 27:	// ESC
-				{
-					s_cmdLen = 0;
-					// TODO: Erase current line
-				}
-				break;
-
-				default:
-				{
-					s_cmdString[s_cmdLen++] = (char)asciicode;
-					if (s_cmdLen > 127)
-						s_cmdLen = 127;
-				}
-				break;
-			}
-		}
-
-		// Report task termination
-		struct STask *task = &taskctx->tasks[1];
-		if (task->state == TS_TERMINATED)
-		{
-			task->state = TS_UNKNOWN;
-			/*mini_snprintf(s_tmpstr, 512, "\n'%s' terminated (0x%x)\n", task->name, task->exitCode);
-			USBSerialWrite(s_tmpstr);*/
-			++s_refreshConsoleOut;
-			DeviceDefaultState();
-		}
-
-		if (execcmd)
-		{
-			++s_refreshConsoleOut;
-			USBSerialWrite("\n");
-			ExecuteCmd(s_cmdString);
-			// Rewind
-			s_cmdLen = 0;
-			s_cmdString[0] = 0;
-		}
-
-		if (s_refreshConsoleOut)
-		{
-			s_refreshConsoleOut = 0;
-			s_cmdString[s_cmdLen] = 0;
-			// Reset current line and emit the command string
-			mini_snprintf(s_tmpstr, 512, "\033[2K\r%s>%s", s_workdir, s_cmdString);
-			USBSerialWrite(s_tmpstr);
-		}
-
-		// We're done, possibly before our 100ms is up. Yield time back.
 		TaskYield();
 	}
 
