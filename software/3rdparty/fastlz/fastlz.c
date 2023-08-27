@@ -42,9 +42,9 @@
 /*
  * Specialize custom 64-bit implementation for speed improvements.
  */
-#if defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__)
+/*#if defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__)
 #define FLZ_ARCH64
-#endif
+#endif*/
 
 /*
  * Workaround for DJGPP to find uint8_t, uint16_t, etc.
@@ -175,7 +175,7 @@ static void flz_maxcopy(void* dest, const void* src) {
   *q++ = *p++;
   *q++ = *p++;
 #else
-  fastlz_memcpy(dest, src, MAX_COPY);
+  fastlz_memcpy((uint8_t*)dest, (uint8_t*)src, MAX_COPY);
 #endif
 }
 

@@ -65,12 +65,13 @@ int main(int argc, char *argv[])
 		// This imitates the interrupt work
 		do
 		{
-			uint32_t state_changed = (enum EBusState)*s_probe_result != old_probe_result;
+			enum EBusState probe_result = (enum EBusState)*s_probe_result;
+			uint32_t state_changed = probe_result != old_probe_result;
 
 			if (state_changed)
 			{
-				old_probe_result = (enum EBusState)*s_probe_result;
-				switch(old_probe_result)
+				old_probe_result = probe_result;
+				switch(probe_result)
 				{
 					case SE0:
 						// Regardless of previous state, detach device

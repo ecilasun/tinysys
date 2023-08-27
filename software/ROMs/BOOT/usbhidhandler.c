@@ -9,7 +9,6 @@ static uint32_t* s_probe_result = (uint32_t*)USB_HOST_STATE;
 void HandleUSBHID()
 {
 	uint32_t currLED = LEDGetState();
-	LEDSetState(currLED | 0x4);
 
 	uint8_t hirq_sendback = 0;
 
@@ -17,8 +16,10 @@ void HandleUSBHID()
 
 	if (irq&bmCONDETIRQ)
 	{
+		LEDSetState(currLED | 0x4);
 		*s_probe_result = (uint32_t)USBBusProbe();
 		hirq_sendback |= bmCONDETIRQ;
+		LEDSetState(currLED);
 	}
 	else if (irq&bmFRAMEIRQ)
 	{
@@ -49,6 +50,4 @@ void HandleUSBHID()
 
 	if (hirq_sendback)
 		MAX3421WriteByte(rHIRQ, hirq_sendback);
-
-	LEDSetState(currLED);
 }

@@ -276,7 +276,7 @@ static long play_module( signed char *module )
 			if( samples_remaining <= 0 || result != 0 )
 				playing = 0;
 
-			//DrawWaveform();
+			DrawWaveform();
 		}
 	}
 	else

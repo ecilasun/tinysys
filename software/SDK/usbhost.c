@@ -76,8 +76,6 @@ enum EBusState USBBusProbe()
 
 enum EBusState USBHostInit(uint32_t enableInterrupts)
 {
-	*s_probe_result = BUSUNKNOWN;
-
 	// Must set context first
 	if (s_usbhost==NULL)
 		return BUSUNKNOWN;
@@ -105,7 +103,7 @@ enum EBusState USBHostInit(uint32_t enableInterrupts)
 
 	while(!(MAX3421ReadByte(rHCTL) & bmSAMPLEBUS)) {}; //wait for sample operation to finish
 
-	*s_probe_result = (uint32_t)USBBusProbe();
+	enum EBusState probe_result = USBBusProbe();
 
 	MAX3421WriteByte(rHIRQ, bmCONDETIRQ);
 	if (enableInterrupts)
@@ -117,7 +115,8 @@ enum EBusState USBHostInit(uint32_t enableInterrupts)
 	uint16_t* keystate = (uint16_t*)KEYBOARD_KEYSTATE_BASE;
 	__builtin_memset(keystate, 0x00, 256*sizeof(uint16_t));
 
-	return (enum EBusState)(*s_probe_result);
+	*s_probe_result = probe_result;
+	return probe_result;
 }
 
 uint8_t USBDispatchPacket(uint8_t _token, uint8_t _ep, unsigned int _nak_limit)
