@@ -2,7 +2,7 @@
 #include "basesystem.h"
 
 volatile uint32_t *IO_USBATRX = (volatile uint32_t* )DEVICE_USBA; // Receive fifo
-volatile uint32_t *IO_USBASTA = (volatile uint32_t* )(DEVICE_USBA+4); // Output FIFO state
+volatile uint32_t *IO_USBASTATUS = (volatile uint32_t* )(DEVICE_USBA+4); // Output FIFO state
 
 #define ASSERT_MAX3421_CS *IO_USBATRX = 0x100;
 #define RESET_MAX3421_CS *IO_USBATRX = 0x101;
@@ -10,18 +10,33 @@ volatile uint32_t *IO_USBASTA = (volatile uint32_t* )(DEVICE_USBA+4); // Output 
 static uint32_t statusF = 0;
 static uint32_t sparebyte = 0;
 
-void MAX3421FlushOutputFIFO()
+uint8_t MAX3421GetGPX()
 {
-	while ((*IO_USBASTA)&0x1) {}
+	return (*IO_USBASTATUS)&0x4;
+}
+
+uint8_t MAX3421OutFifoNotEmpty()
+{
+	return (*IO_USBASTATUS)&0x2;
+}
+
+uint8_t MAX3421ReceiveFifoNotEmpty()
+{
+	return (*IO_USBASTATUS)&0x1;
+}
+
+uint8_t MAX3421SPIWrite(const uint8_t outbyte)
+{
+	*IO_USBATRX = outbyte;
+	while(MAX3421OutFifoNotEmpty()){}
+	return *IO_USBATRX;
 }
 
 uint8_t MAX3421ReadByte(uint8_t command)
 {
 	ASSERT_MAX3421_CS
-	*IO_USBATRX = command;   // -> status in read FIFO
-	statusF = *IO_USBATRX;   // unused
-	*IO_USBATRX = 0;		 // -> read value in read FIFO
-	sparebyte = *IO_USBATRX; // output value
+	statusF = MAX3421SPIWrite(command);
+	sparebyte = MAX3421SPIWrite(0x00);
 	RESET_MAX3421_CS
 
 	return sparebyte;
@@ -30,44 +45,27 @@ uint8_t MAX3421ReadByte(uint8_t command)
 void MAX3421WriteByte(uint8_t command, uint8_t data)
 {
 	ASSERT_MAX3421_CS
-	*IO_USBATRX = command | 0x02; // -> zero in read FIFO
-	statusF = *IO_USBATRX;		// unused
-	*IO_USBATRX = data;		   // -> zero in read FIFO
-	sparebyte = *IO_USBATRX;	  // unused
+	statusF = MAX3421SPIWrite(command | 0x02);
+	sparebyte = MAX3421SPIWrite(data);
 	RESET_MAX3421_CS
 }
 
 int MAX3421ReadBytes(uint8_t command, uint8_t length, uint8_t *buffer)
 {
 	ASSERT_MAX3421_CS
-	*IO_USBATRX = command;   // -> status in read FIFO
-	statusF = *IO_USBATRX;   // unused
-	//*IO_USBCTRX = 0;		 // -> read value in read FIFO
-	//sparebyte = *IO_USBCTRX; // output value
-
+	statusF = MAX3421SPIWrite(command);
 	for (int i=0; i<length; i++)
-	{
-		*IO_USBATRX = 0;		  // send one dummy byte per input desired
-		buffer[i] = *IO_USBATRX;  // store data byte
-	}
+		buffer[i] = MAX3421SPIWrite(0x00);
 	RESET_MAX3421_CS
-
 	return 0;
 }
 
 void MAX3421WriteBytes(uint8_t command, uint8_t length, uint8_t *buffer)
 {
 	ASSERT_MAX3421_CS
-	*IO_USBATRX = command | 0x02;   // -> status in read FIFO
-	statusF = *IO_USBATRX;		  // unused
-	//*IO_USBATRX = 0;		 // -> read value in read FIFO
-	//sparebyte = *IO_USBATRX; // output value
-
+	statusF = MAX3421SPIWrite(command | 0x02);
 	for (int i=0; i<length; i++)
-	{
-		*IO_USBATRX = buffer[i];  // send one dummy byte per input desired
-		sparebyte = *IO_USBATRX;  // unused
-	}
+		sparebyte = MAX3421SPIWrite(buffer[i]);
 	RESET_MAX3421_CS
 }
 
@@ -77,7 +75,6 @@ void MAX3421CtlReset()
 	MAX3421WriteByte(rUSBCTL, bmCHIPRES);
 	MAX3421WriteByte(rUSBCTL, 0);
 
-	MAX3421FlushOutputFIFO();
 	E32Sleep(3*ONE_MILLISECOND_IN_TICKS);
 
 	// Wait for oscillator OK interrupt for the 12MHz external clock
