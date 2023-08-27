@@ -17,7 +17,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define VERSIONSTRING "v0002"
+#define VERSIONSTRING "v0004"
 
 static struct EVideoContext s_gpuContext;
 static char s_tmpstr[512];
@@ -33,11 +33,11 @@ static uint32_t s_startAddress = 0;
 static int s_refreshConsoleOut = 1;
 
 static char *s_taskstates[]={
-	"UNKNOWN",
-	"PAUSED",
-	"RUNNING",
+	"UNKNOWN    ",
+	"PAUSED     ",
+	"RUNNING    ",
 	"TERMINATING",
-	"TERMINATED" };
+	"TERMINATED " };
 
 static struct SUSBSerialContext s_usbserialctx;
 static struct SUSBHostContext s_usbhostctx;
@@ -154,7 +154,7 @@ void ExecuteCmd(char *_cmd)
 			for (int i=0;i<ctx->numTasks;++i)
 			{
 				struct STask *task = &ctx->tasks[i];
-				mini_snprintf(s_tmpstr, 512, "#%d: '%s'\tslice:%dus\tstate:%s\tPC:0x%x\n", i, task->name, task->runLength/ONE_MICROSECOND_IN_TICKS, s_taskstates[task->state], task->regs[0]);
+				mini_snprintf(s_tmpstr, 512, "#%d: '%s'\tstate:%s\tPC:0x%x\n", i, task->name, s_taskstates[task->state], task->regs[0]);
 				USBSerialWrite(s_tmpstr);
 			}
 		}
@@ -166,6 +166,15 @@ void ExecuteCmd(char *_cmd)
 			USBSerialWrite("usage: rm fname\n");
 		else
 			remove(path);
+	}
+	else if (!strcmp(command, "ren"))
+	{
+		const char *path = strtok(NULL, " ");
+		const char *newpath = strtok(NULL, " ");
+		if (!path || !newpath)
+			USBSerialWrite("usage: ren oldname newname\n");
+		else
+			rename(path, newpath);
 	}
 	else if (!strcmp(command, "cwd"))
 	{
@@ -211,6 +220,7 @@ void ExecuteCmd(char *_cmd)
 		USBSerialWrite("cwd path: Change working directory\n");
 		USBSerialWrite("ls [path]: Show list of files in cwd or path\n");
 		USBSerialWrite("rm fname: Delete file\n");
+		USBSerialWrite("ren oldname newname: Rename file\n");
 		USBSerialWrite("ps: Show process info\n");
 		USBSerialWrite("mount: Mount drive sd:\n");
 		USBSerialWrite("umount: Unmount drive sd:\n");
@@ -381,6 +391,10 @@ int main()
 	s_startAddress = LoadExecutable("sd:/boot.elf", false);
 	if (s_startAddress != 0x0)
 	{
+		// TODO: Possibly we can get away with a compressed binary
+		// int packedsize = fastlz_compress_level(1, rawdata, rawdatalength, outdata);
+		// int unpackedsize = fastlz_decompress(indata, indatalength, rawdata, rawdatamaxsize);
+
 		// Reset to defaults
 		DeviceDefaultState();
 		// Unmount current drive - the loaded app has to mount on their own
@@ -439,6 +453,8 @@ int main()
 	while (1)
 	{
 		// High level maintenance tasks
+		// 1) ADCGetRawTemperature() to warn about overheat or throttle?
+		// 2) Manage system level maintenance tasks
 
 		TaskYield();
 	}

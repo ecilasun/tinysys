@@ -13,4 +13,5 @@
   (lib (name "AS01508MS-SC11-WP-R")(type "KiCad")(uri "${KIPRJMOD}/AS01508MS-SC11-WP-R/AS01508MS-SC11-WP-R.kicad_sym")(options "")(descr ""))
   (lib (name "LM1117MPX-3.3_NOPB")(type "KiCad")(uri "${KIPRJMOD}/LM1117MPX33NOPB/LM1117MPX-3.3_NOPB.kicad_sym")(options "")(descr ""))
   (lib (name "IS61WV25616EDBLL-10TLI")(type "KiCad")(uri "${KIPRJMOD}/IS61WV25616EDBLL-10TLI/KiCad/IS61WV25616EDBLL-10TLI.kicad_sym")(options "")(descr ""))
+  (lib (name "2023-08-24_23-47-03")(type "KiCad")(uri "${KIPRJMOD}/STM32C011F6P6/2023-08-24_23-47-03.kicad_sym")(options "")(descr ""))
 )

@@ -493,6 +493,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			case CAUSE_MACHINE_ECALL:
 			{
 				// See: https://jborza.com/post/2021-05-11-riscv-linux-syscalls/
+				// Builtin
 				// 0			io_setup	long io_setup(unsigned int nr_events, aio_context_t *ctx_idp);
 				// 17			getcwd		char *getcwd(char *buf, size_t size);
 				// 50			chdir		chdir(const char *path);
@@ -505,8 +506,9 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				// 129			kill		int kill(pid_t pid, int sig);
 				// 214			brk			int brk(void *addr); / void *sbrk(intptr_t increment);
 				// 1024			open		long sys_open(const char __user * filename, int flags, umode_t mode); open/create file
-
-				// NOTE: this is a custom ecall to allow external debugger to access the OS task structures
+				// 1025			rename		int rename(const char *oldpath, const char *newpath);
+				// 1026			remove		remove(const char *fname);
+				// Custom
 				// 0xFFFFFFFF	setdebugger	void *setdebugger(unsigned int flags); // flags: connect/disconnect
 
 				if (value==0) // io_setup()
@@ -819,6 +821,24 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 						// STDIN/STDOUT/STDERR
 						write_csr(0x8AA, 0x0);
 					}
+				}
+				else if (value==1025) // rename()
+				{
+					char* oldname = (char*)read_csr(0x8AA); // A0
+					char* newname = (char*)read_csr(0x8AB); // A1
+					if (oldname && newname)
+					{
+						FRESULT fr = f_rename(oldname, newname);
+						if (fr != FR_OK)
+						{
+							errno = ENOENT;
+							write_csr(0x8AA, 0xFFFFFFFF);
+						}
+						else
+							write_csr(0x8AA, 0x0);
+					}
+					else
+						write_csr(0x8AA, 0xFFFFFFFF);
 				}
 				else if (value==1026) // remove() (unlink)
 				{
