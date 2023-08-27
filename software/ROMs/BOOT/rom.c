@@ -9,6 +9,7 @@
 #include "dma.h"
 #include "usbserial.h"
 #include "usbhost.h"
+#include "usbhidhandler.h"
 #include "max3420e.h"
 #include "max3421e.h"
 #include "mini-printf.h"
@@ -17,7 +18,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define VERSIONSTRING "v0004"
+#define VERSIONSTRING "v0005"
 
 static struct EVideoContext s_gpuContext;
 static char s_tmpstr[512];
@@ -154,7 +155,7 @@ void ExecuteCmd(char *_cmd)
 			for (int i=0;i<ctx->numTasks;++i)
 			{
 				struct STask *task = &ctx->tasks[i];
-				mini_snprintf(s_tmpstr, 512, "#%d: '%s'\tstate:%s\tPC:0x%x\n", i, task->name, s_taskstates[task->state], task->regs[0]);
+				mini_snprintf(s_tmpstr, 512, "#%d:%s PC:0x%x name:'%s'\n", i, s_taskstates[task->state], task->regs[0], task->name);
 				USBSerialWrite(s_tmpstr);
 			}
 		}
@@ -283,8 +284,9 @@ void _cliTask()
 		struct STaskContext *taskctx = GetTaskContext();
 
 		// Intercept input only when we have no ELF running
-		/*if(taskctx->numTasks<=2)
+		/*if(taskctx->numTasks>2)
 		{
+			// In all other cases, it's up to the running ELF to process input
 			TaskYield();
 			continue;
 		}*/
@@ -455,6 +457,8 @@ int main()
 		// High level maintenance tasks
 		// 1) ADCGetRawTemperature() to warn about overheat or throttle?
 		// 2) Manage system level maintenance tasks
+
+		ProcessUSBDevice();
 
 		TaskYield();
 	}

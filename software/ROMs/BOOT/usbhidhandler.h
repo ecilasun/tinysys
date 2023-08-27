@@ -1,1 +1,2 @@
 void HandleUSBHID();
+void ProcessUSBDevice();

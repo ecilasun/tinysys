@@ -205,6 +205,7 @@ uint32_t TaskSwitchToNext(struct STaskContext *_ctx)
 	else
 	{
 		// Switch to next task
+		// TODO: Next task state should not be `TS_PAUSED`
 		currentTask = (_ctx->numTasks <= 1) ? 0 : ((currentTask+1) % _ctx->numTasks);
 	}
 

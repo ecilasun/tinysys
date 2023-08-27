@@ -23,6 +23,9 @@
 // Keyboard input map (512 bytes)
 #define KEYBOARD_KEYSTATE_BASE			0x00000800
 #define KEYBOARD_KEYSTATE_END			0x00000A00
+// Keyboard state tracking data (512 bytes)
+#define KEYBOARD_KEYTRACK_BASE			0x00000A20
+#define KEYBOARD_KEYTRACK_END			0x00000C20
 // USB host status
 #define USB_HOST_STATE					0x00000A20
 // Executable

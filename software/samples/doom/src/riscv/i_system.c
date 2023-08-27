@@ -38,7 +38,7 @@
 #include "basesystem.h"
 #include "core.h"
 #include "console.h"
-#include "xadc.h"
+#include "usbhost.h"
 
 void
 I_Init(void)
@@ -62,87 +62,25 @@ I_GetTime (void)
 	return (ClockToMs(E32ReadTime())*TICRATE)/1000;
 }
 
-
 static void
 I_GetRemoteEvent(void)
 {
-	static uint32_t latch = 0;
-	event_t event;
-
-	// Read the data on ADC port
-	// TODO: This will read individual x/y/button channels
-	uint32_t val = ADCGetAnalogInput(0);
-	if (val < 0x20 && !latch) // 5V and not latched yet
+	// Post event for all pressed / released keys
+	uint16_t *keystates = (uint16_t*)KEYBOARD_KEYSTATE_BASE;
+	for(int i=0;i<255;++i)
 	{
-		// Once only until we release the 'key'
-		latch = 1;
-		event.data1 = KEY_RCTRL; // key_fire
-		D_PostEvent(&event);
-
-		/*{"key_right",&key_right, KEY_RIGHTARROW},
-		{"key_left",&key_left, KEY_LEFTARROW},
-		{"key_up",&key_up, KEY_UPARROW},
-		{"key_down",&key_down, KEY_DOWNARROW},
-		{"key_strafeleft",&key_strafeleft, ','},
-		{"key_straferight",&key_straferight, '.'},
-		{"key_fire",&key_fire, KEY_RCTRL},
-		{"key_use",&key_use, ' '},
-		{"key_strafe",&key_strafe, KEY_RALT},
-		{"key_speed",&key_speed, KEY_RSHIFT},*/
-	}
-
-	// Unlatch when key's released (TODO: can implement auto-repeat by also checking elapsed time)
-	if (val > 0x20)
-		latch = 0;
-
-	/*event_t event;
-
-	// Any pending keyboard events to handle?
-	// NOTE: OS feeds keyboard input to us from an ISR
-	swap_csr(mie, MIP_MSIP | MIP_MTIP);
-	int updown = UARTRead();
-	int R = UARTRead();
-	swap_csr(mie, MIP_MSIP | MIP_MEIP | MIP_MTIP);
-	if (R)
-	{
-		uint32_t key = R&0xFF;
-
-		// Check break/make bit
-		event.type = updown ? ev_keydown : ev_keyup;// TODO: (val & PS2KEYMASK_BREAKCODE) ? ev_keyup : ev_keydown;
-		switch(key)
+		if (keystates[i])
 		{
-			case 0x74: event.data1 = KEY_RIGHTARROW; break;
-			case 0x6B: event.data1 = KEY_LEFTARROW; break;
-			case 0x75: event.data1 = KEY_UPARROW; break;
-			case 0x72: event.data1 = KEY_DOWNARROW; break;
-			case 0x76: event.data1 = KEY_ESCAPE; break;
-			case 0x5A: event.data1 = KEY_ENTER; break;
-			case 0x0D: event.data1 = KEY_TAB; break;
-			case 0x05: event.data1 = KEY_F1; break;
-			case 0x06: event.data1 = KEY_F2; break;
-			case 0x04: event.data1 = KEY_F3; break;
-			case 0x0C: event.data1 = KEY_F4; break;
-			case 0x03: event.data1 = KEY_F5; break;
-			case 0x0B: event.data1 = KEY_F6; break;
-			case 0x83: event.data1 = KEY_F7; break;
-			case 0x0A: event.data1 = KEY_F8; break;
-			case 0x01: event.data1 = KEY_F9; break;
-			case 0x09: event.data1 = KEY_F10; break;
-			case 0x78: event.data1 = KEY_F11; break;
-			case 0x07: event.data1 = KEY_F12; break;
-			case 0x66: event.data1 = KEY_BACKSPACE; break;
-			//case 0x00: event.data1 = KEY_PAUSE; ? break;
-			case 0x55: event.data1 = KEY_EQUALS; break;
-			case 0x4E: event.data1 = KEY_MINUS; break;
-			case 0x59: event.data1 = KEY_RSHIFT; break;
-			case 0x14: event.data1 = KEY_RCTRL; break;
-			//case 0x11: event.data1 = KEY_RALT; break; // 0xE0+0x11
-			case 0x11: event.data1 = KEY_LALT; break;
-			default: event.data1 = key;// TODO: PS2ScanToASCII(key, false); break; // Always lowercase
+			uint16_t updown = keystates[i]&3;
+			if (updown)
+			{
+				event_t event;
+				event.data1 = HIDScanToASCII(i, 0); // always lowercase
+				event.type = updown&1 ? ev_keydown : ev_keyup;
+				D_PostEvent(&event);
+			}
 		}
-
-		D_PostEvent(&event);
-	}*/
+	}
 }
 
 void

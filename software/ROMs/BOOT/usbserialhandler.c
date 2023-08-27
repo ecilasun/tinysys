@@ -319,6 +319,7 @@ void BufferIncomingData()
 	if (cnt)
 	{
 		// Stash incoming data into the ringbuffer
+		// It will drop input if nothing is draining the ringbuffer
 		for (uint8_t i=0; i<cnt; ++i)
 		{
 			uint32_t incoming = MAX3420ReadByte(rEP1OUTFIFO);
