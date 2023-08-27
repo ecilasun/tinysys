@@ -2,6 +2,7 @@
 #include "max3421e.h"
 #include "usbhost.h"
 #include "ringbuffer.h"
+#include "encoding.h"
 #include <malloc.h>
 #include <stdio.h>
 
@@ -40,11 +41,10 @@ int main(int argc, char *argv[])
 	uint64_t nextPoll = 0;
 	printf("\nUSB Host sample\n");
 
-	struct SUSBHostContext s_usbhostctx;
-    USBHostSetContext(&s_usbhostctx);
-
 	if (argc>1)
 	{
+		struct SUSBHostContext s_usbhostctx;
+		USBHostSetContext(&s_usbhostctx);
 		USBHostInit(1);
 	}
 	else
@@ -68,6 +68,7 @@ int main(int argc, char *argv[])
 			enum EBusState probe_result = (enum EBusState)*s_probe_result;
 			uint32_t state_changed = probe_result != old_probe_result;
 
+			write_csr(mstatus, 0);
 			if (state_changed)
 			{
 				old_probe_result = probe_result;
@@ -75,6 +76,7 @@ int main(int argc, char *argv[])
 				{
 					case SE0:
 						// Regardless of previous state, detach device
+						printf("SE0\n");
 						devState = DEVS_DETACHED;
 					break;
 
@@ -85,6 +87,7 @@ int main(int argc, char *argv[])
 
 					case FSHOST:
 					case LSHOST:
+						printf("LSHOST/FSHOST\n");
 						// Full or low speed device attached
 						if (devState < DEVS_ATTACHED || devState >= DEVS_ERROR)
 						{
@@ -105,11 +108,13 @@ int main(int argc, char *argv[])
 				switch(devState)
 				{
 					case DEVS_UNKNOWN:
+						printf("DEVS_UNKNOWN\n");
 						// ?
 					break;
 
 					case DEVS_DETACHED:
 					{
+						printf("DEVS_DETACHED\n");
 						// We're always device #1
 						uint8_t rcode = USBDetach(s_deviceAddress);
 						if (rcode != 0)
@@ -123,7 +128,7 @@ int main(int argc, char *argv[])
 
 					case DEVS_ATTACHED:
 					{
-						printf("attached\n");
+						printf("DEVS_ATTACHED\n");
 						// Wait 200ms on first attach for settle
 						E32Sleep(200*ONE_MILLISECOND_IN_TICKS);
 						// Once settled, reset device, wait for reset
@@ -145,6 +150,7 @@ int main(int argc, char *argv[])
 
 					case DEVS_ADDRESSING:
 					{
+						printf("DEVS_ADDRESSING\n");
 						uint8_t rcode = USBAttach(&s_deviceAddress, &s_controlEndpoint);
 						uint64_t currentTime = E32ReadTime();
 						nextPoll = currentTime + s_devicePollInterval*ONE_MILLISECOND_IN_TICKS;
@@ -169,6 +175,7 @@ int main(int argc, char *argv[])
 
 					case DEVS_RUNNING:
 					{
+						//printf("DEVS_RUNNING\n");
 						// Keep alive
 						olddevState = DEVS_UNKNOWN;
 
@@ -289,17 +296,18 @@ int main(int argc, char *argv[])
 
 					case DEVS_ERROR:
 					{
-						printf("Idling\n");
+						printf("DEVS_ERROR\n");
 						// Report error and stop device
 						devState = DEVS_HALT;
 					}
 					break;
 
 					case DEVS_HALT:
-						//
+						printf("DEVS_HALT\n");
 					break;
 				}
 			}
+			write_csr(mstatus, MSTATUS_MIE);
 
 		} while (1);
 	}
