@@ -311,7 +311,7 @@ void ProcessUSBDevice()
 							if (rcode == hrSTALL)
 								devState = DEVS_ERROR;
 						}
-						else if (rcode == 0)
+						else if (rcode != hrNAK)
 						{
 							for (uint32_t i=0; i<4; ++i)
 								USBSerialWriteHexByte(keydata[i]);

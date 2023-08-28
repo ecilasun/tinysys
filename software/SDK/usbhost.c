@@ -123,7 +123,7 @@ enum EBusState USBHostInit(uint32_t enableInterrupts)
 
 uint8_t USBDispatchPacket(uint8_t _token, uint8_t _ep, unsigned int _nak_limit)
 {
-	unsigned long timeout = E32ReadTime() + 200*ONE_MILLISECOND_IN_TICKS;
+	uint64_t timeout = E32ReadTime() + 200*ONE_MILLISECOND_IN_TICKS;
 	uint8_t tmpdata;
 	uint8_t rcode = 0xFE;
 	unsigned int nak_count = 0;
@@ -235,10 +235,10 @@ uint8_t USBOutTransfer(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _
 	unsigned int bytes_tosend, nak_count;
 	unsigned int bytes_left = _nbytes;
 	uint8_t maxpktsize = s_deviceTable[_addr].endpointInfo[_ep].maxPacketSize;
-	unsigned long timeout = E32ReadTime() + 200*ONE_MILLISECOND_IN_TICKS;
+	uint64_t timeout = E32ReadTime() + 200*ONE_MILLISECOND_IN_TICKS;
 
 	if (!maxpktsize)
-		return 0xFE;
+		return 0xFC;
 
 	MAX3421WriteByte(rHCTL, s_deviceTable[_addr].endpointInfo[_ep].sendToggle);
 	while(bytes_left)
