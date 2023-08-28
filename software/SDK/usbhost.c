@@ -6,16 +6,18 @@
 // Please see:
 // https://www.analog.com/media/en/technical-documentation/user-guides/max3421erevisions-1-and-2-host-out-transfers.pdf
 
+#define MAXDEVICES 2
 static struct USBEndpointRecord dev0controlEP;
-static struct USBDeviceRecord s_deviceTable[8];
+static struct USBDeviceRecord s_deviceTable[MAXDEVICES];
 
 static uint32_t s_protosubclass = 0;
+static uint32_t s_cval = 0;
 
 static struct SUSBHostContext *s_usbhost = NULL;
 static uint8_t s_HIDDescriptorLen = 64;
 
 // EBusState
-static uint32_t* s_probe_result = (uint32_t*)USB_HOST_STATE;
+static uint32_t *s_probe_result = (uint32_t*)USB_HOST_STATE;
 
 void USBHostSetContext(struct SUSBHostContext *ctx)
 {
@@ -80,7 +82,7 @@ enum EBusState USBHostInit(uint32_t enableInterrupts)
 	if (s_usbhost==NULL)
 		return BUSUNKNOWN;
 
-	for(uint8_t i = 0; i<8; i++ )
+	for(uint8_t i = 0; i<MAXDEVICES; i++ )
 	{
 		s_deviceTable[i].endpointInfo = NULL;
 		s_deviceTable[i].deviceClass = 0;
@@ -123,7 +125,7 @@ uint8_t USBDispatchPacket(uint8_t _token, uint8_t _ep, unsigned int _nak_limit)
 {
 	unsigned long timeout = E32ReadTime() + 200*ONE_MILLISECOND_IN_TICKS;
 	uint8_t tmpdata;
-	uint8_t rcode = 0xFF;
+	uint8_t rcode = 0xFE;
 	unsigned int nak_count = 0;
 	char retry_count = 0;
 
@@ -228,7 +230,7 @@ uint8_t USBInTransfer(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _d
 
 uint8_t USBOutTransfer(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _data, unsigned int nak_limit)
 {
-	uint8_t rcode = 0xFF, retry_count;
+	uint8_t rcode = 0xFD, retry_count;
 	char* data_p = _data;
 	unsigned int bytes_tosend, nak_count;
 	unsigned int bytes_left = _nbytes;
@@ -380,8 +382,8 @@ uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_
 
 	if(rcode)
 	{
-		USBSerialWrite("Setup packet error: ");
-		USBErrorString(rcode);
+		/*USBSerialWrite("Setup packet error: ");
+		USBErrorString(rcode);*/
 		return(rcode);
 	}
 
@@ -393,8 +395,9 @@ uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_
 
 	if(rcode)
 	{
-		USBSerialWrite("Data packet error: ");
-		USBErrorString(rcode);
+		/*USBSerialWriteDecimal(direction);
+		USBSerialWrite(" data packet error: ");
+		USBErrorString(rcode);*/
 		return(rcode);
 	}
 
@@ -402,8 +405,8 @@ uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_
 
 	if(rcode)
 	{
-		USBSerialWrite("Control status error: ");
-		USBErrorString(rcode);
+		/*USBSerialWrite("Control status error: ");
+		USBErrorString(rcode);*/
 	}
 
 	return rcode;
@@ -466,6 +469,7 @@ uint8_t USBParseDescriptor(uint8_t *_desc, uint8_t* _dtype, uint8_t* _offset)
 			USBSerialWriteHexByte(desc->bNumInterfaces);
 			USBSerialWrite("\n      cval: 0x");
 			USBSerialWriteHexByte(desc->bConfigurationValue);
+			s_cval = desc->bConfigurationValue;
 			USBSerialWrite("\n     conf$: 0x");
 			USBSerialWriteHexByte(desc->iConfiguration);
 			stringCount += desc->iConfiguration!=0 ? 1:0;
@@ -519,7 +523,7 @@ uint8_t USBParseDescriptor(uint8_t *_desc, uint8_t* _dtype, uint8_t* _offset)
 						break;
 					case 1:
 						USBSerialWrite("boot");
-						//s_protosubclass = 1; // Boot protocol used
+						//s_protosubclass = 1; // Boot protocol allowed
 						break;
 					default:
 						USBSerialWrite("reserved");
@@ -790,7 +794,7 @@ uint8_t USBDetach(uint8_t _addr)
 
 uint8_t USBConfigHID(uint8_t _addr, uint8_t _ep)
 {
-	uint8_t config = 1;
+	uint8_t config = s_cval; // Usually 1
 	uint8_t interface = 0;
 
 	USBSerialWrite("setting configuration\n");
@@ -880,7 +884,8 @@ uint8_t USBReadHIDData(uint8_t _addr, uint8_t _ep, uint8_t _dataLen, uint8_t *_d
 	{
 		// Using interrupt endpoint
 		MAX3421WriteByte(rPERADDR, _addr);
-		rcode = USBControlData(_addr, _ep, _dataLen, (char*)_data, 1, 64);
+		s_deviceTable[_addr].endpointInfo[_ep].receiveToggle = bmRCVTOG1;
+		rcode = USBInTransfer(_addr, _ep, _dataLen, (char*)_data, 64);
 	}
 	else
 	{

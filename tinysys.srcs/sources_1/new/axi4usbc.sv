@@ -28,15 +28,27 @@ logic we = 1'b0;
 (* async_reg = "true" *) logic usbirqcdcA = 1'b1;
 (* async_reg = "true" *) logic usbirqcdcB = 1'b1;
 
+// cdc for outfifoempty line
+(* async_reg = "true" *) logic outfifoemptycdcA = 1'b1;
+(* async_reg = "true" *) logic outfifoemptycdcB = 1'b1;
+
+wire outfifoempty; // Used after this section in output fifo
+
 always @(posedge aclk) begin
 	usbgpxcdcA <= usbcconn.gpx;
 	usbgpxcdcB <= usbgpxcdcA;
 	usbirqcdcA <= usbcconn.irq;
 	usbirqcdcB <= usbirqcdcA;
+	outfifoemptycdcA <= outfifoempty;
+	outfifoemptycdcB <= outfifoemptycdcA;
 
 	if (~aresetn) begin
 		usbgpxcdcA <= 1'b0;
 		usbgpxcdcB <= 1'b0;
+		usbirqcdcA <= 1'b0;
+		usbirqcdcB <= 1'b0;
+		outfifoemptycdcA <= 1'b0;
+		outfifoemptycdcB <= 1'b0;
 	end
 end
 
@@ -102,7 +114,7 @@ always @(posedge spibaseclock) begin
 	end
 end
 
-wire outfifofull, outfifoempty, outfifovalid;
+wire outfifofull, outfifovalid;
 logic outfifowe = 1'b0, outfifore = 1'b0;
 logic [8:0] outfifodin;
 wire [8:0] outfifodout;
@@ -226,7 +238,7 @@ always @(posedge aclk) begin
 		end
 		2'b10: begin
 			if (s_axi.rready) begin
-				s_axi.rdata <= {29'd0, usbgpxcdcB, ~outfifoempty, ~infifoempty};
+				s_axi.rdata <= {29'd0, usbgpxcdcB, ~outfifoemptycdcB, ~infifoempty};
 				s_axi.rvalid <= 1'b1;
 				s_axi.rlast <= 1'b1;
 				raddrstate <= 2'b00;

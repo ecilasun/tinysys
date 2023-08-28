@@ -1,5 +1,6 @@
 #include "usbhidhandler.h"
 #include "usbhost.h"
+#include "usbserial.h"
 #include "encoding.h"
 #include "max3421e.h"
 #include "ringbuffer.h"
@@ -92,7 +93,9 @@ void ProcessUSBDevice()
 	enum EBusState probe_result = (enum EBusState)*s_probe_result;
 	uint32_t state_changed = probe_result != old_probe_result;
 
-	write_csr(mstatus, 0);
+	// Disable MAX3421 interrupts so we don't fall into ISR while processing state
+	MAX3421WriteByte(rCPUCTL, 0);
+
 	if (state_changed)
 	{
 		old_probe_result = probe_result;
@@ -133,7 +136,6 @@ void ProcessUSBDevice()
 		{
 			case DEVS_UNKNOWN:
 				//printf("DEVS_UNKNOWN\n");
-				// ?
 			break;
 
 			case DEVS_DETACHED:
@@ -217,6 +219,7 @@ void ProcessUSBDevice()
 					if (s_deviceProtocol == HID_PROTOCOL_KEYBOARD)
 					{
 						uint8_t rcode = USBReadHIDData(s_deviceAddress, s_controlEndpoint, 8, keydata, 0x0, HID_REPORTTYPE_INPUT);
+
 						if (rcode == 0)
 						{
 							// Reflect into current keymap
@@ -282,11 +285,18 @@ void ProcessUSBDevice()
 						}
 						else
 						{
-							// This appears to happen after a while, but I won't disconnect the device here.
-							USBErrorString(rcode);
-							devState = DEVS_ERROR;
-							// TEST: Does refreshing the LED state work?
-							//rcode = USBWriteHIDData(s_deviceAddress, s_controlEndpoint, s_devicecontrol);
+							if (rcode == hrSTALL)
+							{
+								uint16_t epAddress = 0x81;	// TODO: get it from device->endpoints[_ep]->epAddress
+								rcode = USBControlRequest(s_deviceAddress, s_controlEndpoint, bmREQ_CLEAR_FEATURE, USB_REQUEST_CLEAR_FEATURE, USB_FEATURE_ENDPOINT_HALT, 0, epAddress, 0, 0, 64);
+								if (rcode == hrSTALL)
+									devState = DEVS_ERROR;
+							}
+							else
+							{
+								USBErrorString(rcode);
+								devState = DEVS_ERROR;
+							}
 						}
 					}
 					else if (s_deviceProtocol == HID_PROTOCOL_MOUSE)
@@ -301,12 +311,12 @@ void ProcessUSBDevice()
 							if (rcode == hrSTALL)
 								devState = DEVS_ERROR;
 						}
-						/*else if (rcode == 0)
+						else if (rcode == 0)
 						{
 							for (uint32_t i=0; i<4; ++i)
-								printf("%.2x", keydata[i]);
-							printf("\n");
-						}*/
+								USBSerialWriteHexByte(keydata[i]);
+							USBSerialWrite("\n");
+						}
 					}
 					else
 					{
@@ -331,5 +341,7 @@ void ProcessUSBDevice()
 			break;
 		}
 	}
-	write_csr(mstatus, MSTATUS_MIE);
+
+	// Enable MAX3421 interrupts
+	MAX3421WriteByte(rCPUCTL, bmIE);
 }
