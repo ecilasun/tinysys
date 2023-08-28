@@ -20,15 +20,19 @@ uint8_t MAX3420OutFifoNotEmpty()
 	return (*IO_USBCSTATUS)&0x2;
 }
 
+void MAX3420FlushOutputFIFO()
+{
+	while ((*IO_USBCSTATUS)&0x2) {};
+}
+
 uint8_t MAX3420ReceiveFifoNotEmpty()
 {
 	return (*IO_USBCSTATUS)&0x1;
 }
 
-uint8_t MAX3420SPIWrite(const uint8_t outbyte)
+uint8_t __attribute__ ((noinline)) MAX3420SPIWrite(const uint8_t outbyte)
 {
 	*IO_USBCTRX = outbyte;
-	while(MAX3420OutFifoNotEmpty()){}
 	return *IO_USBCTRX;
 }
 

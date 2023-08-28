@@ -458,7 +458,12 @@ int main()
 		// 1) ADCGetRawTemperature() to warn about overheat or throttle?
 		// 2) Manage system level maintenance tasks
 
+		// Disable machine interrupts
+		write_csr(mstatus, 0);
+		// Deal with USB peripheral setup and data traffic
 		ProcessUSBDevice();
+		// Enable machine interrupts
+		write_csr(mstatus, MSTATUS_MIE);
 
 		TaskYield();
 	}

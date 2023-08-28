@@ -5,6 +5,7 @@
 extern volatile uint32_t *IO_USBCTRX;
 extern volatile uint32_t *IO_USBCSTA;
 
+void MAX3420FlushOutputFIFO();
 uint8_t MAX3420GetGPX();
 uint8_t MAX3420OutFifoEmpty();
 uint8_t MAX3420ReceiveFifoEmpty();

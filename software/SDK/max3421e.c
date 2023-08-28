@@ -25,10 +25,9 @@ uint8_t MAX3421ReceiveFifoNotEmpty()
 	return (*IO_USBASTATUS)&0x1;
 }
 
-uint8_t MAX3421SPIWrite(const uint8_t outbyte)
+uint8_t __attribute__ ((noinline)) MAX3421SPIWrite(const uint8_t outbyte)
 {
 	*IO_USBATRX = outbyte;
-	while(MAX3421OutFifoNotEmpty()){}
 	return *IO_USBATRX;
 }
 

@@ -94,7 +94,7 @@ void ProcessUSBDevice()
 	uint32_t state_changed = probe_result != old_probe_result;
 
 	// Disable MAX3421 interrupts so we don't fall into ISR while processing state
-	MAX3421WriteByte(rCPUCTL, 0);
+	//MAX3421WriteByte(rCPUCTL, 0);
 
 	if (state_changed)
 	{
@@ -343,5 +343,5 @@ void ProcessUSBDevice()
 	}
 
 	// Enable MAX3421 interrupts
-	MAX3421WriteByte(rCPUCTL, bmIE);
+	//MAX3421WriteByte(rCPUCTL, bmIE);
 }
