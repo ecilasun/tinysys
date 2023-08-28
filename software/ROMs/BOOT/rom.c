@@ -18,7 +18,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define VERSIONSTRING "v0005"
+#define VERSIONSTRING "v0006"
 
 static struct EVideoContext s_gpuContext;
 static char s_tmpstr[512];

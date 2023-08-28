@@ -10,6 +10,7 @@ static uint32_t s_initialized = 0;
 
 static uint32_t s_devicePollInterval = 10;
 static uint8_t s_deviceProtocol = HID_PROTOCOL_NONE;
+static uint8_t s_hidClass = 0;
 
 static uint8_t *s_currentkeymap = (uint8_t*)(KEYBOARD_KEYTRACK_BASE);
 static uint8_t *s_prevkeymap = (uint8_t*)(KEYBOARD_KEYTRACK_BASE+256);
@@ -166,7 +167,7 @@ void ProcessUSBDevice()
 				// Wait for first SOF
 				while ((MAX3421ReadByte(rHIRQ)&bmFRAMEIRQ) == 0) { asm volatile ("nop"); }
 				// Get device descriptor from default address and control endpoint
-				uint8_t rcode = USBGetDeviceDescriptor(0, 0);
+				uint8_t rcode = USBGetDeviceDescriptor(0, 0, &s_hidClass);
 				// Assign device address
 				if (rcode != 0)
 					USBErrorString(rcode);
@@ -183,7 +184,7 @@ void ProcessUSBDevice()
 
 				if (rcode == 0)// && s_deviceClass == HID)
 				{
-					rcode = USBConfigHID(s_deviceAddress, s_controlEndpoint);
+					rcode = USBConfigHID(s_hidClass, s_deviceAddress, s_controlEndpoint);
 					if (rcode == 0)
 					{
 						rcode = USBGetHIDDescriptor(s_deviceAddress, s_controlEndpoint, &s_deviceProtocol);
@@ -218,7 +219,7 @@ void ProcessUSBDevice()
 
 					if (s_deviceProtocol == HID_PROTOCOL_KEYBOARD)
 					{
-						uint8_t rcode = USBReadHIDData(s_deviceAddress, s_controlEndpoint, 8, keydata, 0x0, HID_REPORTTYPE_INPUT);
+						uint8_t rcode = USBReadHIDData(s_deviceAddress, s_controlEndpoint, 8, keydata, 0x0, HID_REPORTTYPE_INPUT, 1);
 
 						if (rcode == 0)
 						{
@@ -292,8 +293,9 @@ void ProcessUSBDevice()
 								if (rcode == hrSTALL)
 									devState = DEVS_ERROR;
 							}
-							else
+							else if (rcode != hrNAK)
 							{
+								// Only stop if not NAK
 								USBErrorString(rcode);
 								devState = DEVS_ERROR;
 							}
@@ -302,7 +304,7 @@ void ProcessUSBDevice()
 					else if (s_deviceProtocol == HID_PROTOCOL_MOUSE)
 					{
 						// X/Y/Wheel/Button
-						uint8_t rcode = USBReadHIDData(s_deviceAddress, s_controlEndpoint, 4, keydata, 0x0, HID_REPORTTYPE_INPUT);
+						uint8_t rcode = USBReadHIDData(s_deviceAddress, 1, 4, keydata, 0x0, HID_REPORTTYPE_INPUT, 2);
 
 						if (rcode == hrSTALL)
 						{

@@ -45,23 +45,24 @@ struct USBEndpointRecord
 
 struct USBDeviceRecord
 {
-    struct USBEndpointRecord *endpointInfo;
+    struct USBEndpointRecord endpointInfo[3];
     uint8_t deviceClass;
+	uint8_t connected;
 };
 
 void USBHostSetContext(struct SUSBHostContext *ctx);
 struct SUSBHostContext *USBHostGetContext();
 enum EBusState USBHostInit(uint32_t enableInterrupts);
 enum EBusState USBBusProbe();
-uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep);
+uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass);
 uint8_t USBGetHIDDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_protocol);
 uint8_t USBAttach(uint8_t *_paddr, uint8_t *_pep);
 uint8_t USBDetach(uint8_t _addr);
 uint8_t USBControlData(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _dataptr, uint8_t _direction, unsigned int _nak_limit);
 uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_t _bRequest, uint8_t _wValLo, uint8_t _wValHi, unsigned int _wInd, unsigned int _nbytes, char* _dataptr, unsigned int _nak_limit);
-uint8_t USBConfigHID(uint8_t _addr, uint8_t _ep);
+uint8_t USBConfigHID(uint8_t _hidClass, uint8_t _addr, uint8_t _ep);
 void USBSetAddress(uint8_t _addr, uint8_t _ep);
-uint8_t USBReadHIDData(uint8_t _addr, uint8_t _ep,uint8_t _dataLen, uint8_t *_data, uint8_t _reportIndex, uint8_t _reportType);
+uint8_t USBReadHIDData(uint8_t _addr, uint8_t _ep,uint8_t _dataLen, uint8_t *_data, uint8_t _reportIndex, uint8_t _reportType, uint8_t _hidClass);
 uint8_t USBWriteHIDData(uint8_t _addr, uint8_t _ep, uint8_t *_data);
 char HIDScanToASCII(const uint8_t _code, const uint8_t _uppercase);
 void USBErrorString(uint8_t rcode);
