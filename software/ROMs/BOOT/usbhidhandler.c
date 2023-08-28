@@ -12,6 +12,9 @@ static uint32_t s_devicePollInterval = 10;
 static uint8_t s_deviceProtocol = HID_PROTOCOL_NONE;
 static uint8_t s_hidClass = 0;
 
+static int8_t s_mposx = 0;
+static int8_t s_mposy = 0;
+
 static uint8_t *s_currentkeymap = (uint8_t*)(KEYBOARD_KEYTRACK_BASE);
 static uint8_t *s_prevkeymap = (uint8_t*)(KEYBOARD_KEYTRACK_BASE+256);
 static uint8_t s_devicecontrol[8];
@@ -315,8 +318,14 @@ void ProcessUSBDevice()
 						}
 						else if (rcode != hrNAK)
 						{
-							for (uint32_t i=0; i<4; ++i)
-								USBSerialWriteHexByte(keydata[i]);
+							s_mposx += (int8_t)keydata[1];
+							s_mposy += (int8_t)keydata[2];
+							USBSerialWrite("Mouse X:");
+							USBSerialWriteHexByte(s_mposx);
+							USBSerialWrite(" Y:");
+							USBSerialWriteHexByte(s_mposy);
+							USBSerialWrite(" Buttons:");
+							USBSerialWriteHexByte(keydata[0]);
 							USBSerialWrite("\n");
 						}
 					}

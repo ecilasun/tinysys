@@ -529,25 +529,25 @@ uint8_t USBParseDescriptor(uint8_t _addr, uint8_t *_desc, uint8_t* _dtype, uint8
 				default:
 					USBSerialWriteHexByte(desc->bInterfaceClass);
 				break;
-			}
+			}*/
 			if (desc->bInterfaceClass == USBClass_HID)
 			{
-				USBSerialWrite("\n    subclass: ");
+				//USBSerialWrite("\n    subclass: ");
 				switch (desc->bInterfaceSubClass)
 				{
 					case 0:
-						USBSerialWrite("none");
+						//USBSerialWrite("none");
 						break;
 					case 1:
-						USBSerialWrite("boot");
+						//USBSerialWrite("boot");
 						s_protosubclass = 1; // Boot protocol supported
 						break;
 					default:
-						USBSerialWrite("reserved");
+						//USBSerialWrite("reserved");
 						break;
 				}
 			}
-			else
+			/*else
 			{
 				USBSerialWrite("\n    subclass: 0x");
 				USBSerialWriteHexByte(desc->bInterfaceSubClass);
