@@ -28,6 +28,8 @@
 #define KEYBOARD_KEYTRACK_END			0x00000C20
 // USB host status
 #define USB_HOST_STATE					0x00000A20
+// Mouse x/y and button data
+#define MOUSE_POS_AND_BUTTONS			0x00000A24
 // Executable
 #define HEAP_START_APPMEM_END			0x02000000 // Executable space above this (32MBytes)
 // Heap

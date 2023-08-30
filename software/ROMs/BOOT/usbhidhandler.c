@@ -12,8 +12,7 @@ static uint32_t s_devicePollInterval = 10;
 static uint8_t s_deviceProtocol = HID_PROTOCOL_NONE;
 static uint8_t s_hidClass = 0;
 
-static int8_t s_mposx = 0;
-static int8_t s_mposy = 0;
+static int32_t *s_mposxy_buttons = (int32_t*)MOUSE_POS_AND_BUTTONS;
 
 static uint8_t *s_currentkeymap = (uint8_t*)(KEYBOARD_KEYTRACK_BASE);
 static uint8_t *s_prevkeymap = (uint8_t*)(KEYBOARD_KEYTRACK_BASE+256);
@@ -214,6 +213,7 @@ void ProcessUSBDevice()
 				if (currentTime > nextPoll)
 				{
 					uint8_t keydata[8];
+					int8_t mousedata[4];
 
 					nextPoll = currentTime + s_devicePollInterval*ONE_MICROSECOND_IN_TICKS;
 
@@ -307,7 +307,7 @@ void ProcessUSBDevice()
 					else if (s_deviceProtocol == HID_PROTOCOL_MOUSE)
 					{
 						// X/Y/Wheel/Button
-						uint8_t rcode = USBReadHIDData(s_deviceAddress, 1, 4, keydata, 0x0, HID_REPORTTYPE_INPUT, 2);
+						uint8_t rcode = USBReadHIDData(s_deviceAddress, 1, 4, (uint8_t*)mousedata, 0x0, HID_REPORTTYPE_INPUT, 2);
 
 						if (rcode == hrSTALL)
 						{
@@ -318,15 +318,13 @@ void ProcessUSBDevice()
 						}
 						else if (rcode != hrNAK)
 						{
-							s_mposx += (int8_t)keydata[1];
-							s_mposy += (int8_t)keydata[2];
-							USBSerialWrite("Mouse X:");
-							USBSerialWriteHexByte(s_mposx);
-							USBSerialWrite(" Y:");
-							USBSerialWriteHexByte(s_mposy);
-							USBSerialWrite(" Buttons:");
-							USBSerialWriteHexByte(keydata[0]);
-							USBSerialWrite("\n");
+							s_mposxy_buttons[0] += (int32_t)mousedata[1];
+							s_mposxy_buttons[1] += (int32_t)mousedata[2];
+							s_mposxy_buttons[2] = mousedata[0];
+							if (s_mposxy_buttons[0] < 0) s_mposxy_buttons[0] = 0;
+							if (s_mposxy_buttons[1] < 0) s_mposxy_buttons[1] = 0;
+							if (s_mposxy_buttons[0] > 639) s_mposxy_buttons[0] = 639;
+							if (s_mposxy_buttons[1] > 479) s_mposxy_buttons[1] = 479;
 						}
 					}
 					else
