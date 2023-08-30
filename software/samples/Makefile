@@ -18,12 +18,11 @@ folders = \
 	audio \
 	raster \
 	helloworld \
-	usbserial \
-	usbhost \
 	adc \
 	memtest \
 	syscalltest \
 	dmatest \
+	mouse \
 	tinyrtty \
 	tinyrt \
 	mandelbrot \

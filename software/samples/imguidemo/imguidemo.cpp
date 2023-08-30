@@ -2,6 +2,7 @@
 #include "core.h"
 #include "gpu.h"
 #include "xadc.h"
+#include "task.h"
 #include "basesystem.h"
 
 #include "imgui/imgui.h"
@@ -167,6 +168,9 @@ int main()
 
 			// Swap to next page
 			++cycle;
+
+			// Back to OS
+			TaskYield();
 		}
 	} while (1);
 
