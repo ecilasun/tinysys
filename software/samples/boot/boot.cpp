@@ -1,38 +1,29 @@
 #include "basesystem.h"
 #include "leds.h"
 #include "encoding.h"
-
-// When started at boot time, this code will have
-// no access to base facilities therefore it'll
-// have raw access to all of the available hardware.
-// This also means no runtime library, to syscalls
-// and absolutely nothing to hold your hand.
-//
-// If started as a regular executable, the only
-// way to detect that we have an active ROM is
-// by querying the interrupt states since ROM
-// enables some for hardware events and to run
-// its scheduler.
+#include <stdio.h>
 
 int main()
 {
-    int counter = 0;
+	// Check hardware interrupt state
+	uint32_t state = read_csr(mie);
 
-    // Check hardware interrupt state
-    uint32_t state = read_csr(mie);
+	if ((state & (MIP_MSIP | MIP_MEIP | MIP_MTIP)) != 0)
+	{
+		// Launched from ROM? Abort
+		return 0;
+	}
+	else
+	{
+		// Direct access to hardware? Copy ROM image and branch to it
+		/*for (uint32_t i=0;i<sizeof(payload);++i)
+		{
+			// Copy to ROM starting at 0x0ffe0000
+		}*/
 
-    if ((state & (MIP_MSIP | MIP_MEIP | MIP_MTIP)) != 0)
-    {
-        // Launched from ROM? Abort
-        return 0;
-    }
-    else
-    {
-        // Direct access to hardware? Spin
-        *LEDSTATE = counter++;
-    }
-
-    while(1){
-        asm volatile("nop;");
-    }
+		// TODO: So that we don't go into an endless loop, we need to write something
+		// special to a memory location or CSR register that will stop a second load
+		// of the ROM from storage, until a hard reset occurs.
+		asm volatile("call 0x0ffe0000;");
+	}
 }

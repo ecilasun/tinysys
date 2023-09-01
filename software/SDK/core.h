@@ -11,7 +11,6 @@
 uint32_t core_brk(uint32_t brkptr);
 uint32_t core_memavail();
 void set_elf_heap(uint32_t heaptop);
-void *kalloc(uint32_t size);
 
 #else // Non-ROM
 

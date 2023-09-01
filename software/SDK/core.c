@@ -48,13 +48,6 @@ uint32_t core_brk(uint32_t brkptr)
 	return 0;
 }
 
-void *kalloc(uint32_t size)
-{
-	uint8_t *old_heapstart = (uint8_t *)core_brk(0);
-	uint32_t res = core_brk((uint32_t)(old_heapstart + size));
-	return res != 0xFFFFFFFF ? old_heapstart : NULL;
-}
-
 #else
 
 #endif

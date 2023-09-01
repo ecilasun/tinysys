@@ -110,10 +110,10 @@ set_property -dict {PACKAGE_PIN AB2 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[0]
 ## addout pin U2:42 [Y21]
 ## adclk  pin U2:44 [T21]
 
-set_property -dict {PACKAGE_PIN T21 IOSTANDARD LVCMOS33} [get_ports adclk]
-set_property -dict {PACKAGE_PIN Y21 IOSTANDARD LVCMOS33} [get_ports addout]
-set_property -dict {PACKAGE_PIN R18 IOSTANDARD LVCMOS33} [get_ports addin]
-set_property -dict {PACKAGE_PIN N17 IOSTANDARD LVCMOS33} [get_ports adcs]
+#set_property -dict {PACKAGE_PIN T21 IOSTANDARD LVCMOS33} [get_ports adclk]
+#set_property -dict {PACKAGE_PIN Y21 IOSTANDARD LVCMOS33} [get_ports addout]
+#set_property -dict {PACKAGE_PIN R18 IOSTANDARD LVCMOS33} [get_ports addin]
+#set_property -dict {PACKAGE_PIN N17 IOSTANDARD LVCMOS33} [get_ports adcs]
 
 ## ------------------------------------------------------------------------------------------------------
 ## I2C bus

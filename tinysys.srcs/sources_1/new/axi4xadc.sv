@@ -5,7 +5,6 @@ module axi4xadc(
 	input wire clk10,
 	input wire aresetn,
 	axi4if.slave s_axi,
-	adcwires.def adcconn, // Also ties to our off-chip ADC device
 	output wire [11:0] device_temp);
 
 // --------------------------------------------------
@@ -61,139 +60,6 @@ always @(posedge aclk) begin
 end
 
 // --------------------------------------------------
-// Off-chip ADC for on-board analog input
-// --------------------------------------------------
-
-// MCP3008T-I/SL
-// Initiate comm by bringing cs high then low
-// din high + first clock is start bit
-// sgl/diff bit follows (single ended or differential mode select)
-// next 3 bits select d0/d1/d2 input configuration (select CH0 to CH7 when sgl/diff is high)
-// sample period ends on falling edge of 5th clock following start bit
-// 
-// CLK  xxx...............................................
-// DIN  xxx11DDDxxxxxxxxxxxxxxxxxxxx11DDDxxxxxxxxxxxxxxxxx
-// DOUT zzzzzzzzz?9876543210zzzzzzzzzzzzzz?9876543210zzzzz
-// NOTE: min clock speed is about 1.2ms which is pretty slow
-
-logic adccmdbit = 1'b0;
-logic adccs = 1'b1;
-logic adcclk = 1'b0;
-
-assign adcconn.adclk = clk10;
-assign adcconn.addin = adccmdbit;
-assign adcconn.adcs = adccs;
-assign adcbit = adcconn.addout;
-
-logic [9:0] chdat = 10'd0;
-logic [9:0] chstash[0:7];
-logic [2:0] chcurr = 3'b000;
-
-logic [4:0] adcstate = 5'd0;
-always @(negedge clk10) begin	// TODO: 125ns is 'high' and datasheet doesn't show a 'low', so... 10ns?
-	if (~aresetn) begin
-		//
-	end else begin
-		adccs <= 1'b0;
-		adccmdbit <= 1'b0;
-		case (adcstate)
-			5'b00000: begin
-				chcurr <= chcurr + 3'd1; // Next channel to read (first run, it's 001)
-				adccmdbit <= 1'b1; // start
-				adcstate <= 5'b00001;
-			end
-			5'b00001: begin
-				adccmdbit <= 1'b1; // single
-				adcstate <= 5'b00010;
-			end
-			5'b00010: begin
-				// D2
-				adccmdbit <= chcurr[2];
-				adcstate <= 5'b00011;
-			end
-			5'b00011: begin
-				// D1
-				adccmdbit <= chcurr[1];
-				adcstate <= 5'b00100;
-			end
-			5'b00100: begin
-				// D0 : CH0 selected
-				adccmdbit <= chcurr[0];
-				adcstate <= 5'b00101;
-			end
-			5'b00101: begin
-				// gap
-				adcstate <= 5'b00110;
-			end
-			5'b00110: begin
-				// null bit arrives
-				adcstate <= 5'b00111;
-			end
-			5'b00111: begin
-				// TODO: On each pass, sample the next channel and stash
-				chdat[9] <= adcbit;
-				adcstate <= 5'b01000;
-			end
-			5'b01000: begin
-				chdat[8] <= adcbit;
-				adcstate <= 5'b01001;
-			end
-			5'b01001: begin
-				chdat[7] <= adcbit;
-				adcstate <= 5'b01010;
-			end
-			5'b01010: begin
-				chdat[6] <= adcbit;
-				adcstate <= 5'b01011;
-			end
-			5'b01011: begin
-				chdat[5] <= adcbit;
-				adcstate <= 5'b01100;
-			end
-			5'b01100: begin
-				chdat[4] <= adcbit;
-				adcstate <= 5'b01101;
-			end
-			5'b01101: begin
-				chdat[3] <= adcbit;
-				adcstate <= 5'b01110;
-			end
-			5'b01110: begin
-				chdat[2] <= adcbit;
-				adcstate <= 5'b01111;
-			end
-			5'b01111: begin
-				chdat[1] <= adcbit;
-				adcstate <= 5'b10000;
-			end
-			5'b10000: begin
-				chdat[0] <= adcbit;
-				adcstate <= 5'b10001;
-			end
-			5'b10001: begin
-				// gap
-				adccs <= 1'b1;	// end
-				adcstate <= 5'b00000;
-			end
-		endcase 
-	end
-end
-
-always @(posedge aclk) begin
-	// When adcstate is at start, copy out the last known value
-	unique case ({(|adcstate), chcurr})
-		6'b0_000: chstash[0] <= chdat;
-		6'b0_001: chstash[1] <= chdat;
-		6'b0_010: chstash[2] <= chdat;
-		6'b0_011: chstash[3] <= chdat;
-		6'b0_100: chstash[4] <= chdat;
-		6'b0_101: chstash[5] <= chdat;
-		6'b0_110: chstash[6] <= chdat;
-		6'b0_111: chstash[7] <= chdat;
-	endcase
-end
-
-// --------------------------------------------------
 // AXI interface for ADC
 // --------------------------------------------------
 
@@ -231,24 +97,12 @@ always @(posedge aclk) begin
 				//1_000_00 0x20 TMP
 
 				chsel <= s_axi.araddr[4:2];
-
-				unique case(s_axi.araddr[5:2])
-					4'b1_000: raddrstate <= 2'b01;	// 0x20 onwards: Temperature
-					default: raddrstate <= 2'b10;	// 0x00..0x18: CH0..CH7 analog samples
-				endcase
+				raddrstate <= 2'b01;
 			end
 		end
 		2'b01: begin
 			if (s_axi.rready) begin
 				s_axi.rdata <= {116'd0, devicetemperature};
-				s_axi.rlast <= 1'b1;
-				s_axi.rvalid <= 1'b1;
-				raddrstate <= 2'b00;
-			end
-		end
-		2'b10: begin
-			if (s_axi.rready) begin
-				s_axi.rdata <= {118'd0, chstash[chsel]};
 				s_axi.rlast <= 1'b1;
 				s_axi.rvalid <= 1'b1;
 				raddrstate <= 2'b00;

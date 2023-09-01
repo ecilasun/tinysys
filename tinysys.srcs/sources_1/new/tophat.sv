@@ -48,11 +48,6 @@ module tophat(
 	,output wire usba_mosi
 	,output wire usba_resn
 	,input wire usba_int
-	// ADC
-	,output wire adclk
-	,input wire addout
-	,output wire addin
-	,output wire adcs
 	// Audio out
 	,output wire au_sdin
 	,output wire au_sclk
@@ -143,16 +138,6 @@ max3420wires usbaconn(
 	.gpx(1'b0));
 
 // --------------------------------------------------
-// ADC wires
-// --------------------------------------------------
-
-adcwires adcconn(
-	.adclk(adclk),
-	.addout(addout),
-	.addin(addin),
-	.adcs(adcs));
-
-// --------------------------------------------------
 // Audio wires
 // --------------------------------------------------
 
@@ -185,7 +170,6 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.gpuvideoout(gpuvideoout),
 	.sdconn(sdconn),
 	.usbcconn(usbcconn),
-	.usbaconn(usbaconn),
-	.adcconn(adcconn));
+	.usbaconn(usbaconn) );
 
 endmodule

@@ -20,8 +20,7 @@ module tinysoc #(
 	audiowires.def i2sconn,
 	sdcardwires.def sdconn,
 	max3420wires.def usbcconn,
-	max3420wires.def usbaconn,
-	adcwires.def adcconn);
+	max3420wires.def usbaconn );
 
 // --------------------------------------------------
 // Bus lines
@@ -409,7 +408,6 @@ axi4xadc xadcinst(
 	.clk10(clk10),
 	.aresetn(aresetn),
 	.s_axi(xadcif),
-	.adcconn(adcconn),
 	.device_temp(device_temp) );
 
 // DMA command queue
