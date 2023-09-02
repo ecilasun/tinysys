@@ -18,16 +18,14 @@ For software, visit https://github.com/ecilasun/riscvtool and check the tinysys 
 
 # Device manual:
 - Populating the board
-    - USB-C power
-    - Debug port
-    - SD Card reader
-    - HDMI port
-    - A/D converter
-    - USB-C client
+    - USB-C power and serial
+    - SD card reader
+    - Video output
     - USB-A host
+	- SRAM
     - Board carrier headers
-    - Fan connection
-    - Audio
+    - Fan connector
+    - Audio circuit
     - QMTECH A7-200T core board
 - Installing tinysys SoC bitware
 - Compiling and running demo software on the board
@@ -38,11 +36,15 @@ For software, visit https://github.com/ecilasun/riscvtool and check the tinysys 
     - Memory layout
     - Operating principles
     - Debugging
+	- Replacement ROM on SD card
 - Device manuals:
+    - Device memory map
     - Raw audio
     - OPL2 audio
     - GPU
     - DMA
-    - A/D converter
+	- Rasterizer
+    - Temperature sensor
     - Interrupt handling
     - Task system
+	- Implementing a custom ROM
