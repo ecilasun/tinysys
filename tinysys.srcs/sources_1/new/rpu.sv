@@ -333,7 +333,7 @@ always_ff @(posedge aclk) begin
 				// For each tile, the corresponding memory address is base address (16byte aligned)
 				// plus tile index times 16(bytes) in indexed color mode. For 16bit color mode the tile
 				// width is reduced by half (i.e. to 2 pixels of 16bits each from 4 pixels of 8bits each)
-				raddr <= rasterbaseaddr + {(cx + cy*80), 4'd0};
+				raddr <= {(cx + cy*80), 4'd0};
 
 				// Step one line down if we're at the last column
 				if (cx >= maxx[15:2]) begin
@@ -355,7 +355,7 @@ always_ff @(posedge aclk) begin
 		WRITEBACKTILE: begin
 			if (~pendingwrite) begin
 				// Write the 4x4 tile using coverage mask as byte strobe for transparent writes
-				addr <= raddr;
+				addr <= rasterbaseaddr + raddr;
 				wstrb <= tilecoverage;
 				din <= outdata;
 				pendingwrite <= 1'b1;

@@ -233,7 +233,7 @@ assign m_axi.wlast = 0;
 assign m_axi.wdata = 'd0;
 assign m_axi.bready = 0;
 
-typedef enum logic [2:0] {SINIT, DETECTSCANLINEEND, STARTLOAD, TRIGGERBURST, DATABURST} scanstatetype;
+typedef enum logic [2:0] {SINIT, DETECTSCANLINEEND, STARTLOAD, TRIGGERBURST, DATABURST, ADVANCESCANLINEADDRESS} scanstatetype;
 scanstatetype scanstate = SINIT;
 
 logic [6:0] rdata_cnt = 'd0;
@@ -369,10 +369,9 @@ always_ff @(posedge aclk) begin
 		end
 
 		DETECTSCANLINEEND: begin
-			if (scanenable && scanpixel == 638 && scanline < 480 && (~scanline[0] || scanwidth)) begin
-				scanoffset <= scanoffset + (colormode ? scaninc : {1'b0,scaninc[31:1]});
-				if (scanline == 0)
-					scanoffset <= scanaddr;
+			if (scanline == 0)
+				scanoffset <= scanaddr;
+			if (scanenable && scanpixel == 640 && scanline < 480 && (~scanline[0] || scanwidth)) begin
 				scanstate <= STARTLOAD;
 			end else
 				scanstate <= DETECTSCANLINEEND;
@@ -405,10 +404,15 @@ always_ff @(posedge aclk) begin
 				scanlinecache[rdata_cnt] <= m_axi.rdata;
 				rdata_cnt <= rdata_cnt + 'd1;
 				m_axi.rready <= ~m_axi.rlast;
-				scanstate <= m_axi.rlast ? DETECTSCANLINEEND : DATABURST;
+				scanstate <= m_axi.rlast ? ADVANCESCANLINEADDRESS : DATABURST;
 			end else begin
 				scanstate <= DATABURST;
 			end
+		end
+		
+		ADVANCESCANLINEADDRESS: begin
+			scanoffset <= scanoffset + (colormode ? scaninc : {1'b0,scaninc[31:1]});
+			scanstate <= DETECTSCANLINEEND;
 		end
 
 	endcase
