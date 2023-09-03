@@ -39,10 +39,21 @@ int main(int argc, char *argv[])
 		uint8_t *readpage = (cycle%2) ? bufferA : bufferB;
 		uint8_t *writepage = (cycle%2) ? bufferB : bufferA;
 
+		// Wait for vsync
+		uint32_t prevvsync = GPUReadVBlankCounter();
+		uint32_t currentvsync;
+		do {
+			currentvsync = GPUReadVBlankCounter();
+		} while (currentvsync == prevvsync);
+
+		// Swap
+		GPUSetWriteAddress(&vx, (uint32_t)writepage);
+		GPUSetScanoutAddress(&vx, (uint32_t)readpage);
+
 		// Clear screen
 		{
-			uint32_t *vramBaseAsWord = (uint32_t*)vx.m_cpuWriteAddressCacheAligned;
-			uint32_t W = vx.m_graphicsHeight * vx.m_strideInWords;
+			uint32_t *vramBaseAsWord = (uint32_t*)writepage;
+			uint32_t W = 480*80;
 			for (uint32_t i=0; i<W; ++i)
 				vramBaseAsWord[i] = 0x00000000;
 		}
@@ -60,17 +71,6 @@ int main(int argc, char *argv[])
 
 		// Complete writes
 		CFLUSH_D_L1;
-
-		// Wait for vsync
-		uint32_t prevvsync = GPUReadVBlankCounter();
-		uint32_t currentvsync;
-		do {
-			currentvsync = GPUReadVBlankCounter();
-		} while (currentvsync == prevvsync);
-
-		// Swap
-		GPUSetWriteAddress(&vx, (uint32_t)writepage);
-		GPUSetScanoutAddress(&vx, (uint32_t)readpage);
 
 		// Next frame
 		++cycle;

@@ -29,8 +29,8 @@ module gpucore(
 // Scanline and scan pixel cdc registers
 // --------------------------------------------------
 
-(* async_reg = "true" *) logic [8:0] scanlinepre = 'd0;
-(* async_reg = "true" *) logic [8:0] scanline = 'd0;
+(* async_reg = "true" *) logic [9:0] scanlinepre = 'd0;
+(* async_reg = "true" *) logic [9:0] scanline = 'd0;
 (* async_reg = "true" *) logic [9:0] scanpixelpre = 'd0;
 (* async_reg = "true" *) logic [9:0] scanpixel = 'd0;
 
@@ -341,21 +341,29 @@ end
 
 // Vertical blanking counter
 logic [31:0] blankcounter = 32'd0;
-
+logic smode = 1'b0;
 always_ff @(posedge aclk) begin
-	scanlinepre <= video_y[8:0];
-	scanline <= scanlinepre;
-	scanpixelpre <= video_x[9:0];
-	scanpixel <= scanpixelpre;
-	// Increment vertical blank counter (mapped to word reads from gpu fifo address)
-	blankcounter <= blankcounter + (scanline == 480 ? 32'd1 : 32'd0);
+    case (smode)
+        1'b0: begin
+			scanline <= 10'd0;
+			scanlinepre <= 10'd0;
+			scanpixelpre <= 10'd0;
+			scanpixel <= 10'd0;
+			blankcounter <= 32'd0;
+			smode <= 1'b1;
+        end
+        1'b1: begin
+			scanlinepre <= video_y[9:0];
+			scanline <= scanlinepre;
+			scanpixelpre <= video_x[9:0];
+			scanpixel <= scanpixelpre;
+			// Increment vertical blank counter (mapped to word reads from gpu fifo address)
+			blankcounter <= blankcounter + (scanline == 524 ? 32'd1 : 32'd0); // TOTAL==525
+        end
+    endcase
 
 	if (~aresetn) begin
-		//scanline <= 9'd0;
-		scanlinepre <= 9'd0;
-		scanpixelpre <= 9'd0;
-		scanpixel <= 9'd0;
-		blankcounter <= 32'd0;
+	   smode <= 1'b0;
 	end
 end
 assign vblankcount = blankcounter;
@@ -409,7 +417,7 @@ always_ff @(posedge aclk) begin
 				scanstate <= DATABURST;
 			end
 		end
-		
+
 		ADVANCESCANLINEADDRESS: begin
 			scanoffset <= scanoffset + (colormode ? scaninc : {1'b0,scaninc[31:1]});
 			scanstate <= DETECTSCANLINEEND;
