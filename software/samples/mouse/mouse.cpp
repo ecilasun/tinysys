@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
 		uint32_t currentvsync;
 		do {
 			currentvsync = GPUReadVBlankCounter();
+			TaskYield();
 		} while (currentvsync == prevvsync);
 
 		// Swap
@@ -74,9 +75,6 @@ int main(int argc, char *argv[])
 
 		// Next frame
 		++cycle;
-
-		// Back to OS
-		TaskYield();
 	}
 
 	return 0;

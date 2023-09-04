@@ -327,7 +327,6 @@ always_ff @(posedge aclk) begin
 		FINALIZE: begin
 			cmdmode <= WCMD;
 		end
-
 	endcase
 
 	if (~aresetn) begin
@@ -339,31 +338,49 @@ end
 // Scan-out logic
 // --------------------------------------------------
 
+wire startofrowp = video_x[9:0] == 10'd0;
+wire endofcolumnp = video_y[9:0] == 10'd490;
+wire vsyncnow = startofrowp && endofcolumnp;
+
+logic [31:0] blankcnt = 32'd0;
+
+always_ff @(posedge clk25) begin
+	// Increment vertical blank counter (mapped to word reads from gpu fifo address)
+	blankcnt <= blankcnt + (vsyncnow ? 32'd1 : 32'd0);
+	if (~aresetn) begin
+		blankcnt <= 0;
+	end
+end
+
+(* async_reg = "true" *) logic [31:0] blankcounterpre = 32'd0;
+(* async_reg = "true" *) logic [31:0] blankcounter = 32'd0;
+
 // Vertical blanking counter
-logic [31:0] blankcounter = 32'd0;
 logic smode = 1'b0;
 always_ff @(posedge aclk) begin
-    case (smode)
-        1'b0: begin
+
+	smode <= 1'b1;
+
+	case (smode)
+		1'b0: begin
 			scanline <= 10'd0;
 			scanlinepre <= 10'd0;
 			scanpixelpre <= 10'd0;
 			scanpixel <= 10'd0;
 			blankcounter <= 32'd0;
-			smode <= 1'b1;
         end
         1'b1: begin
 			scanlinepre <= video_y[9:0];
 			scanline <= scanlinepre;
 			scanpixelpre <= video_x[9:0];
 			scanpixel <= scanpixelpre;
-			// Increment vertical blank counter (mapped to word reads from gpu fifo address)
-			blankcounter <= blankcounter + (scanline == 524 ? 32'd1 : 32'd0); // TOTAL==525
+			blankcounterpre <= blankcnt;
+			blankcounter <= blankcounterpre;
         end
     endcase
 
 	if (~aresetn) begin
-	   smode <= 1'b0;
+        smode <= 1'b0;
 	end
 end
 assign vblankcount = blankcounter;
