@@ -82,7 +82,7 @@ logic [6:0] colorblock;
 
 always_comb begin
 	unique case ({scanwidth, colormode})
-		2'b00: begin colorpixel = video_x[4:1];			colorblock = {1'b0,video_x[10:5]}; end	// 320*240 8bpp
+		2'b00: begin colorpixel = video_x[4:1];			colorblock = {1'b0, video_x[10:5]}; end	// 320*240 8bpp
 		2'b01: begin colorpixel = {1'b0,video_x[3:1]};	colorblock = video_x[10:4]; end			// 320*240 16bpp
 		2'b10: begin colorpixel = video_x[3:0];			colorblock = {1'b0, video_x[9:4]}; end	// 640*480 8bpp
 		2'b11: begin colorpixel = {1'b0,video_x[2:0]};	colorblock = video_x[9:3]; end			// 640*480 16bpp
@@ -233,7 +233,7 @@ assign m_axi.wlast = 0;
 assign m_axi.wdata = 'd0;
 assign m_axi.bready = 0;
 
-typedef enum logic [2:0] {SINIT, DETECTSCANLINEEND, STARTLOAD, TRIGGERBURST, DATABURST, ADVANCESCANLINEADDRESS} scanstatetype;
+typedef enum logic [2:0] {SINIT, DETECTFRAMESTART, STARTLOAD, TRIGGERBURST, DATABURST, ADVANCESCANLINEADDRESS} scanstatetype;
 scanstatetype scanstate = SINIT;
 
 logic [6:0] rdata_cnt = 'd0;
@@ -390,25 +390,32 @@ always_ff @(posedge aclk) begin
 		SINIT: begin
 			m_axi.arvalid <= 0;
 			m_axi.rready <= 0;
-			scanstate <= DETECTSCANLINEEND;
+			scanstate <= DETECTFRAMESTART;
 		end
 
-		DETECTSCANLINEEND: begin
-			if (scanline == 0)
+		DETECTFRAMESTART: begin
+			// When we reach the very last scanline, start loading the cache
+			if (scanenable && scanline == 524) begin
 				scanoffset <= scanaddr;
-			if (scanenable && scanpixel == 640 && scanline < 480 && (~scanline[0] || scanwidth)) begin
 				scanstate <= STARTLOAD;
-			end else
-				scanstate <= DETECTSCANLINEEND;
+			end else begin
+				scanstate <= DETECTFRAMESTART;
+			end
 		end
 
 		STARTLOAD: begin
-			// This has to be a 64 byte cache aligned address to match cache burst reads we're running
-			// Each scanline is a multiple of 64 bytes, so no need to further align here unless we have an odd output size (320 and 640 work just fine)
-			m_axi.arlen <= burstlen;
-			m_axi.araddr <= scanoffset;
-			m_axi.arvalid <= 1;
-			scanstate <= TRIGGERBURST;
+			// TODO: Only read on even lines in 320-wide, or every other line in 640-wide mode
+			if (scanpixel == 640 && (~scanline[0] || scanwidth)) begin
+				// This has to be a 64 byte cache aligned address to match cache burst reads we're running
+				// Each scanline is a multiple of 64 bytes, so no need to further align here unless we have an odd output size (320 and 640 work just fine)
+				m_axi.arlen <= burstlen;
+				m_axi.araddr <= scanoffset;
+				m_axi.arvalid <= (scanline == 480) ? 1'b0 : 1'b1;
+				// Keep reading as long as we're not on last line
+				scanstate <= scanline == 480 ? DETECTFRAMESTART : TRIGGERBURST;
+			end else begin
+				scanstate <= STARTLOAD;
+			end
 		end
 
 		TRIGGERBURST: begin
@@ -436,8 +443,9 @@ always_ff @(posedge aclk) begin
 		end
 
 		ADVANCESCANLINEADDRESS: begin
+			// Wait for and load next scanline
 			scanoffset <= scanoffset + (colormode ? scaninc : {1'b0,scaninc[31:1]});
-			scanstate <= DETECTSCANLINEEND;
+			scanstate <= STARTLOAD;
 		end
 
 	endcase
