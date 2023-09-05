@@ -404,7 +404,7 @@ always_ff @(posedge aclk) begin
 		end
 
 		STARTLOAD: begin
-			// TODO: Only read on even lines in 320-wide, or every other line in 640-wide mode
+			// Only read on even lines in 320-wide, or every other line in 640-wide mode
 			if (scanpixel == 640 && (~scanline[0] || scanwidth)) begin
 				// This has to be a 64 byte cache aligned address to match cache burst reads we're running
 				// Each scanline is a multiple of 64 bytes, so no need to further align here unless we have an odd output size (320 and 640 work just fine)
