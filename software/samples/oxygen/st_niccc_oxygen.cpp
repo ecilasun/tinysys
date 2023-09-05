@@ -220,10 +220,14 @@ int main(int argc, char** argv)
 	s_vctx.m_vmode = EVM_320_Wide;
 	s_vctx.m_cmode = ECM_8bit_Indexed;
 	GPUSetVMode(&s_vctx, EVS_Enable);
-	GPUSetWriteAddress(&s_vctx, (uint32_t)s_framebufferA);
-	GPUSetScanoutAddress(&s_vctx, (uint32_t)s_framebufferB);
 	GPUSetDefaultPalette(&s_vctx);
 	RPUSetTileBuffer((uint32_t)s_rasterBuffer);
+
+	struct EVideoSwapContext sc;
+	sc.cycle = 0;
+	sc.framebufferA = s_framebufferA;
+	sc.framebufferB = s_framebufferB;
+	GPUSwapPages(&s_vctx, &sc);
 
 	while(1)
 	{
@@ -248,40 +252,29 @@ int main(int argc, char** argv)
 			fclose(s_fp);
 		}
 
-		uint32_t cycle = 0;
 		int res = 0;
 		do
 		{
-			uint8_t *readpage = (cycle%2) ? s_framebufferA : s_framebufferB;
-			uint8_t *writepage = (cycle%2) ? s_framebufferB : s_framebufferA;
-
 			// See unresolved output
 			if (argc>1)
-				RPUSetTileBuffer((uint32_t)writepage);
+				RPUSetTileBuffer((uint32_t)sc.writepage);
 
 			res = read_frame();
 
 			// Make sure to flush rasterizer cache to raster memory before it's read
 			RPUFlushCache();
-
-			uint32_t prevvsync = GPUReadVBlankCounter();
-			uint32_t currentvsync;
-			do {
-				currentvsync = GPUReadVBlankCounter();
-			} while (currentvsync == prevvsync);
-
-			// Swap buffers
-			GPUSetWriteAddress(&s_vctx, (uint32_t)writepage);
-			GPUSetScanoutAddress(&s_vctx, (uint32_t)readpage);
+			RPUInvalidateCache();
 
 			// Wait for all raster work to finish
+			RPUBarrier();
 			RPUWait();
 
 			// Get the DMA unit to resolve and write output onto the current GPU write page
 			if (argc<=1)
-				DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)writepage);
+				DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)sc.writepage);
 
-			++cycle;
+			GPUWaitVSync();
+			GPUSwapPages(&s_vctx, &sc);
 		} while(res);
 	}
 }

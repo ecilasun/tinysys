@@ -12,6 +12,7 @@ module rastercache(
 	input wire [15:0] wstrb,
 	input wire ren,
 	input wire flush,
+	input wire invalidate,
 	output logic rready,
 	output logic wready,
 	axi4if.master a4buscached);
@@ -98,7 +99,8 @@ typedef enum logic [3:0] {
 	CWRITE, CREAD,
 	CWBACK, CWBACKWAIT,
 	CPOPULATE, CPOPULATEWAIT, CUPDATE, CUPDATEDELAY,
-	CDATAFLUSHBEGIN, CDATAFLUSHWAITCREAD, CDATAFLUSH, CDATAFLUSHSKIP, CDATAFLUSHWAIT } cachestatetype;
+	CDATAFLUSHBEGIN, CDATAFLUSHWAITCREAD, CDATAFLUSH, CDATAFLUSHSKIP, CDATAFLUSHWAIT,
+	CDATANOFLUSHBEGIN, CDATANOFLUSHSTEP } cachestatetype;
 cachestatetype cachestate = IDLE;
 
 always_ff @(posedge aclk) begin
@@ -118,13 +120,32 @@ always_ff @(posedge aclk) begin
 			ptag <= cachelinetags[line];	// Previous cache tag
 			inputdata <= din;
 			valid <= cachelinevalid[line];
+			dccount <= 8'd0;
 
-			casex ({flush, ren, |wstrb})
-				3'b001: cachestate <= CWRITE;
-				3'b01x: cachestate <= CREAD;
-				3'b1xx: cachestate <= CDATAFLUSHBEGIN;
+			casex ({invalidate, flush, ren, |wstrb})
+				4'b0001: cachestate <= CWRITE;
+				4'b001x: cachestate <= CREAD;
+				4'b01xx: cachestate <= CDATAFLUSHBEGIN;     // Flush
+				4'b1xxx: cachestate <= CDATANOFLUSHBEGIN;   // Invalidate
 				default: cachestate <= IDLE;
 			endcase
+		end
+		
+		CDATANOFLUSHBEGIN: begin
+			// Clear and invalidate cache line
+			cachelinewb[dccount] <= 1'b0;
+			cachelinevalid[dccount] <= 1'b0;
+			cachelinetags[dccount] <= 'd0;
+			cachestate <= CDATANOFLUSHSTEP;
+		end
+
+		CDATANOFLUSHSTEP: begin
+			// Go to next line (wraps around to 0 at 255)
+			dccount <= dccount + 8'd1;
+			// Finish our mock 'write' operation
+			wready <= dccount == 8'hFF;
+			// Repeat until we process line 0xFF and go back to idle state
+			cachestate <= dccount == 8'hFF ? IDLE : CDATANOFLUSHBEGIN;
 		end
 
 		CDATAFLUSHBEGIN: begin

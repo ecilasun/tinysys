@@ -12,6 +12,7 @@
 #include "micromod/micromod.h"
 
 static struct EVideoContext s_vx;
+static struct EVideoSwapContext s_sc;
 static uint8_t *s_framebufferA;
 static uint8_t *s_framebufferB;
 static uint8_t *s_rasterBuffer;
@@ -126,8 +127,6 @@ static long read_module_length( const char *filename ) {
 
 void DrawWaveform()
 {
-	static uint32_t cycle = 0;
-
 	int16_t *src = (int16_t *)apubuffer;
 
 	RPUSetColor(0x00); // Black
@@ -189,28 +188,12 @@ void DrawWaveform()
 	}
 
 	RPUFlushCache();
-
-	/*
-	// Can't wait for vsync in middle of audio playback,
-	// this function should ideally be on another thread
-	uint32_t prevvsync = GPUReadVBlankCounter();
-	uint32_t currentvsync;
-	do {
-		currentvsync = GPUReadVBlankCounter();
-	} while (currentvsync == prevvsync);*/
-
-	// Video scan-out page
-	uint8_t *readpage = (cycle%2) ? s_framebufferA : s_framebufferB;
-	// Video write page
-	uint8_t *writepage = (cycle%2) ? s_framebufferB : s_framebufferA;
-
-	GPUSetWriteAddress(&s_vx, (uint32_t)writepage);
-	GPUSetScanoutAddress(&s_vx, (uint32_t)readpage);
-
+	RPUInvalidateCache();
+	RPUBarrier();
 	RPUWait();
-	DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)writepage);
+	DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)s_sc.writepage);
 
-	++cycle;
+	GPUSwapPages(&s_vx, &s_sc);
 }
 
 static long play_module( signed char *module )
@@ -318,10 +301,13 @@ int main(int argc, char *argv[])
 	s_vx.m_cmode = ECM_8bit_Indexed;
 	s_vx.m_vmode = EVM_320_Wide;
 	GPUSetVMode(&s_vx, EVS_Enable);
-	GPUSetWriteAddress(&s_vx, (uint32_t)s_framebufferA);
-	GPUSetScanoutAddress(&s_vx, (uint32_t)s_framebufferB);
 	GPUSetDefaultPalette(&s_vx);
 	RPUSetTileBuffer((uint32_t)s_rasterBuffer);
+
+	s_sc.cycle = 0;
+	s_sc.framebufferA = s_framebufferA;
+	s_sc.framebufferB = s_framebufferB;
+	GPUSwapPages(&s_vx, &s_sc);
 
 	CFLUSH_D_L1;
 

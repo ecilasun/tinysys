@@ -125,110 +125,62 @@ int main(int argc, char *argv[])
 	vx.m_vmode = EVM_320_Wide;
 	vx.m_cmode = ECM_8bit_Indexed;
 	GPUSetVMode(&vx, EVS_Enable);
-	GPUSetWriteAddress(&vx, (uint32_t)s_framebufferA);
-	GPUSetScanoutAddress(&vx, (uint32_t)s_framebufferB);
 	GPUSetDefaultPalette(&vx);
 
-	if (argc > 1)
+	s_rasterBuffer = GPUAllocateBuffer(80*60*16); // Tile buffer
+
+	// Rasterizer output buffer
+	// Ideally this is not the current write page,
+	// and gets DMA-untiled onto it once all output is done
+	RPUSetTileBuffer((uint32_t)s_rasterBuffer);
+
+	memset(s_framebufferA, 0x00, 320*240); // Clear to black
+	memset(s_framebufferB, 0x00, 320*240);
+
+	// Make sure CPU writes are visible in memory
+	CFLUSH_D_L1;
+
+	float R = 0.f;
+
+	struct EVideoSwapContext sc;
+	sc.cycle = 0;
+	sc.framebufferA = s_framebufferA;
+	sc.framebufferB = s_framebufferB;
+	GPUSwapPages(&vx, &sc);
+
+	while (1)
 	{
-		uint32_t cycle = 0;
-		while (1)
+		if (argc > 1)
 		{
-			uint8_t *readpage = (cycle%2) ? s_framebufferA : s_framebufferB;
-			uint8_t *writepage = (cycle%2) ? s_framebufferB : s_framebufferA;
-
-			GPUSetWriteAddress(&vx, (uint32_t)writepage);
-			GPUSetScanoutAddress(&vx, (uint32_t)readpage);
-
-			GPUClearScreen(&vx, 0x07070707); // Gray for visibility
-
-			uint64_t starttime = E32ReadTime();
-			for (int i=0; i<512; ++i)
-			{
-				SPrimitive prim;
-				prim.x0 = rand()%320;
-				prim.y0 = rand()%240;
-				prim.x1 = rand()%320;
-				prim.y1 = rand()%240;
-				prim.x2 = rand()%320;
-				prim.y2 = rand()%240;
-				uint8_t V = rand()%256;
-				uint32_t wV = (V<<24)|(V<<16)|(V<<8)|(V);
-
-				int32_t minx = min(prim.x0, min(prim.x1, prim.x2))/4;
-				int32_t miny = min(prim.y0, min(prim.y1, prim.y2))/4;
-				int32_t maxx = max(prim.x0, max(prim.x1, prim.x2))/4;
-				int32_t maxy = max(prim.y0, max(prim.y1, prim.y2))/4;
-
-				for (int32_t j = miny; j < maxy; ++j)
-				{
-					for (int32_t i = minx; i < maxx; ++i)
-					{
-						// 128bit aligned address for 16 pixels' worth of output
-						// Hardware generates 4x4 pixel masks but the output is
-						// linear in memory so it's going to be 16 pixels, packed side by side
-						// on the same scanline if viewed as raw output.
-						// Here we rewind and start each triangle from offset zero
-						// for debug purposes.
-						uint32_t tileIndex = i+j*80;
-						uint32_t tileAddress = tileIndex*16;
-						uint32_t *rasterout = (uint32_t*)(writepage + tileAddress);
-
-						uint32_t mask0[4], mask1[4], mask2[4];
-						edgeMask(prim.x1, prim.y1, prim.x0, prim.y0, i*4, j*4, mask0);
-						edgeMask(prim.x2, prim.y2, prim.x1, prim.y1, i*4, j*4, mask1);
-						edgeMask(prim.x0, prim.y0, prim.x2, prim.y2, i*4, j*4, mask2);
-
-						uint32_t m0 = mask0[0] & mask1[0] & mask2[0];
-						uint32_t m1 = mask0[1] & mask1[1] & mask2[1];
-						uint32_t m2 = mask0[2] & mask1[2] & mask2[2];
-						uint32_t m3 = mask0[3] & mask1[3] & mask2[3];
-
-						// Imitate byte write mask + 128bit write in hardware
-						// One problem here is that we don't have a true write mask
-						// so we have to resort to read-write
-						if (m0|m1|m2|m3)
-						{
-							rasterout[0] = ((~m0)&rasterout[0]) | (m0&wV);
-							rasterout[1] = ((~m1)&rasterout[1]) | (m1&wV);
-							rasterout[2] = ((~m2)&rasterout[2]) | (m2&wV);
-							rasterout[3] = ((~m3)&rasterout[3]) | (m3&wV);
-						}
-					}
-				}
-			}
-			uint64_t endtime = E32ReadTime();
-
-			printf("Raster time: %ld ms\n", ClockToMs(endtime-starttime));
-
-			// Make sure CPU writes are visible
+			memset(s_rasterBuffer, 0x07, 80*60*16); // Clear to gray
 			CFLUSH_D_L1;
 
-			++cycle;
+			// Single rotating primitive
+			SPrimitive prim;
+
+			float X0 = cosf(R)*180.f;
+			float Y0 = sinf(R)*180.f;
+			float X1 = cosf(R+1.57079633f)*180.f; // 90 degrees
+			float Y1 = sinf(R+1.57079633f)*180.f;
+			float X2 = cosf(R+3.92699082f)*180.f; // 225 degrees
+			float Y2 = sinf(R+3.92699082f)*180.f;
+
+			prim.x0 = 160 + X0;
+			prim.y0 = 120 + Y0;
+			prim.x1 = 160 + X1;
+			prim.y1 = 120 + Y1;
+			prim.x2 = 160 + X2;
+			prim.y2 = 120 + Y2;
+
+			RPUPushPrimitive(&prim);
+			RPUSetColor(0x00); // Black triangle
+			RPURasterizePrimitive();
+
+			R += 0.01f;
 		}
-	}
-	else
-	{
-		s_rasterBuffer = GPUAllocateBuffer(80*60*16); // Tile buffer
-
-		// Rasterizer output buffer
-		// Ideally this is not the current write page,
-		// and gets DMA-untiled onto it once all output is done
-		RPUSetTileBuffer((uint32_t)s_rasterBuffer);
-		memset(s_rasterBuffer, 0x00, 80*60*16); // Black
-
-		uint32_t cycle = 0;
-		memset(s_framebufferA, 0x07, 320*240); // Gray
-		memset(s_framebufferB, 0x07, 320*240);
-
-		// Make sure CPU writes are visible in memory
-		CFLUSH_D_L1;
-
-		while (1)
+		else
 		{
-			// Produce raw raster output
-			uint64_t starttime = E32ReadTime();
-			for (int i=0; i<8192; ++i)
+			for (int i=0; i<4096; ++i)
 			{
 				// Enforce primitives larger than the screen size to test clipping
 				SPrimitive prim;
@@ -244,30 +196,21 @@ int main(int argc, char *argv[])
 				RPUSetColor(V);
 				RPURasterizePrimitive();
 			}
-
-			// Make sure to flush rasterizer cache to raster memory before it's read
-			RPUFlushCache();
-
-			uint64_t endtime = E32ReadTime();
-
-			printf("Raster time: %ld ms\n", ClockToMs(endtime-starttime));
-
-			// Set up output / scanout pages
-
-			uint8_t *readpage = (cycle%2) ? s_framebufferA : s_framebufferB;
-			uint8_t *writepage = (cycle%2) ? s_framebufferB : s_framebufferA;
-
-			GPUSetWriteAddress(&vx, (uint32_t)writepage);
-			GPUSetScanoutAddress(&vx, (uint32_t)readpage);
-
-			// Wait for all raster work to finish
-			RPUWait();
-
-			// Get the DMA unit to resolve and write output onto the current GPU write page
-			DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)writepage);
-
-			++cycle;
 		}
+
+		// Make sure to flush rasterizer cache to raster memory before it's read
+		RPUFlushCache();
+		RPUInvalidateCache();
+
+		// Wait for all raster work to finish
+		RPUBarrier();
+		RPUWait();
+
+		// Get the DMA unit to resolve and write output onto the current GPU write page
+		DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)sc.writepage);
+
+		GPUWaitVSync();
+		GPUSwapPages(&vx, &sc);
 	}
 
 	return 0;

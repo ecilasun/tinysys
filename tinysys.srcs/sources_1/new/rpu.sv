@@ -23,6 +23,7 @@ logic [127:0] din = 128'd0;
 logic [15:0] wstrb = 0;
 logic ren = 1'b0;
 logic cflush = 1'b0;
+logic cinvalidate = 1'b0;
 wire [127:0] dout;
 wire rready, wready;
 
@@ -35,6 +36,7 @@ rastercache rcache(
 	.wstrb(wstrb),
 	.ren(ren),
 	.flush(cflush),
+	.invalidate(cinvalidate),
 	.rready(rready),
 	.wready(wready),
 	.a4buscached(m_axi));
@@ -222,7 +224,7 @@ typedef enum logic [3:0] {
 	BEGINSWEEP, RASTERIZETILE, EMITTILE,
 	WRITEBACKTILE,
 	NEXTTILE,
-	CACHESTROBE} rasterizermodetype;
+	CACHEFLUSHSTROBE, CACHEINVALIDATESTROBE} rasterizermodetype;
 rasterizermodetype rastermode = RINIT;
 
 logic signed [15:0] minx;
@@ -247,6 +249,7 @@ always_ff @(posedge aclk) begin
 	rena <= 1'b0;
 	wstrb <= 16'h0000;
 	cflush <= 1'b0;
+	cinvalidate <= 1'b0;
 
 	if (wready) pendingwrite <= 1'b0;
 
@@ -274,19 +277,34 @@ always_ff @(posedge aclk) begin
 			miny <= ry0 < ry1 ? ry0 : ry1;
 			maxx <= rx0 >= rx1 ? rx0 : rx1;
 			maxy <= ry0 >= ry1 ? ry0 : ry1;
-			rastermode <= (rcommand == 4'h1) ? CACHESTROBE : ENDSETUPBOUNDS;
+			unique case (rcommand)
+				4'h0: rastermode <= ENDSETUPBOUNDS;
+				4'h1: rastermode <= CACHEFLUSHSTROBE;
+				4'h2: rastermode <= CACHEINVALIDATESTROBE;
+				default: rastermode <= RWCMD;
+			endcase
 		end
 
-		CACHESTROBE: begin
+		CACHEFLUSHSTROBE: begin
 			if (~pendingwrite) begin
 				cflush <= 1'b1;
 				pendingwrite <= 1'b1;
 				rastermode <= RWCMD;
 			end else begin
-				rastermode <= CACHESTROBE;
+				rastermode <= CACHEFLUSHSTROBE;
 			end
 		end
-		
+
+		CACHEINVALIDATESTROBE: begin
+			if (~pendingwrite) begin
+				cinvalidate <= 1'b1;
+				pendingwrite <= 1'b1;
+				rastermode <= RWCMD;
+			end else begin
+				rastermode <= CACHEINVALIDATESTROBE;
+			end
+		end
+
 		ENDSETUPBOUNDS: begin
 			minx <= minx < rx2 ? minx : rx2;
 			miny <= miny < ry2 ? miny : ry2;

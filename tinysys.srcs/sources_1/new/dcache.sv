@@ -146,6 +146,7 @@ always_ff @(posedge aclk) begin
 			ptag <= cachelinetags[line];	// Previous cache tag
 			inputdata <= din;
 			valid <= cachelinevalid[line];
+			dccount <= 8'd0;
 
 			casex ({dcacheop[0], isuncached, ren, |wstrb})
 				4'b0001: cachestate <= CWRITE;

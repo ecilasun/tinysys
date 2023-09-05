@@ -212,6 +212,24 @@ uint32_t GPUReadVBlankCounter()
 	return *GPUIO;
 }
 
+void GPUSwapPages(struct EVideoContext* _vx, struct EVideoSwapContext *_sc)
+{
+	_sc->readpage = ((_sc->cycle)%2) ? _sc->framebufferA : _sc->framebufferB;
+	_sc->writepage = ((_sc->cycle)%2) ? _sc->framebufferB : _sc->framebufferA;
+	GPUSetWriteAddress(_vx, (uint32_t)_sc->writepage);
+	GPUSetScanoutAddress(_vx, (uint32_t)_sc->readpage);
+	_sc->cycle = _sc->cycle+1;
+}
+
+void GPUWaitVSync()
+{
+	uint32_t prevvsync = GPUReadVBlankCounter();
+	uint32_t currentvsync;
+	do {
+		currentvsync = GPUReadVBlankCounter();
+	} while (currentvsync == prevvsync);
+}
+
 void RPUSetTileBuffer(const uint32_t _rpuWriteAddress16ByteAligned)
 {
 	*RPUIO = RASTERCMD_OUTADDRS;
@@ -221,11 +239,11 @@ void RPUSetTileBuffer(const uint32_t _rpuWriteAddress16ByteAligned)
 void RPUPushPrimitive(struct SPrimitive* _primitive)
 {
 	*RPUIO = RASTERCMD_PUSHVERTEX0;
-	*RPUIO = (_primitive->y0<<16) | _primitive->x0;
+	*RPUIO = (uint32_t)(_primitive->y0<<16) | (((uint32_t)_primitive->x0)&0xFFFF);
 	*RPUIO = RASTERCMD_PUSHVERTEX1;
-	*RPUIO = (_primitive->y1<<16) | _primitive->x1;
+	*RPUIO = (uint32_t)(_primitive->y1<<16) | (((uint32_t)_primitive->x1)&0xFFFF);
 	*RPUIO = RASTERCMD_PUSHVERTEX2;
-	*RPUIO = (_primitive->y2<<16) | _primitive->x2;
+	*RPUIO = (uint32_t)(_primitive->y2<<16) | (((uint32_t)_primitive->x2)&0xFFFF);
 }
 
 void RPURasterizePrimitive()
@@ -242,6 +260,16 @@ void RPUSetColor(const uint8_t _colorIndex)
 void RPUFlushCache()
 {
 	*RPUIO = RASTERCMD_FLUSHCACHE;
+}
+
+void RPUInvalidateCache()
+{
+	*RPUIO = RASTERCMD_INVALIDATECACHE;
+}
+
+void RPUBarrier()
+{
+	*RPUIO = RASTERCMD_BARRIER;
 }
 
 uint32_t RPUPending()

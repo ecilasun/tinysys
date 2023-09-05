@@ -100,7 +100,10 @@ void DeviceDefaultState()
 	LEDSetState(0x0);
 
 	// Wait for any pending raster ops to complete
-	RPUWait();
+	RPUFlushCache();		// Complete writes
+	RPUInvalidateCache();	// Invalidate cache
+	RPUBarrier();
+	RPUWait();				// Complete all RPU ops
 
 	// Wait for any pending DMA to complete
 	DMAWait();
@@ -499,7 +502,7 @@ int main()
 		ProcessUSBDevice();
 		// Enable machine interrupts
 		write_csr(mstatus, MSTATUS_MIE);
-
+		// Yield time as soon as we're done here
 		TaskYield();
 	}
 
