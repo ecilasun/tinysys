@@ -482,6 +482,7 @@ int main()
 	/*s_usbserialenabled =*/ USBSerialInit(1);
 
 	// Set up kernel side usb host context
+	InitializeUSBHIDData();
 	USBHostSetContext(&s_usbhostctx);
 	USBHostInit(1);
 

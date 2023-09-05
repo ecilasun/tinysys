@@ -78,13 +78,13 @@ int main(int argc, char *argv[])
 		DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)sc.writepage);
 
 		// Cursor overlay
-		// TODO: Use masked DMA list for this
+		// TODO: Use masked DMA hardware for this to be more efficient
 		{
 			int32_t mx = s_mposxy_buttons[0];
 			int32_t my = s_mposxy_buttons[1];
 			for (uint32_t y=0;y<8;++y)
 				for (uint32_t x=0;x<8;++x)
-					if (s_cursor[x+y*8])
+					if (s_cursor[x+y*8] && (x+mx < 320) && (y+my < 240))
 						sc.writepage[(x+mx)+(y+my)*320] = s_cursor[x+y*8];
 		}
 

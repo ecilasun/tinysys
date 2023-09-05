@@ -7,11 +7,10 @@
 #include "leds.h"
 #include "rombase.h"
 
-static uint32_t s_initialized = 0;
-
 static uint32_t s_devicePollInterval = 10;
 static uint8_t s_deviceProtocol = HID_PROTOCOL_NONE;
 static uint8_t s_hidClass = 0;
+static uint64_t s_nextPoll = 0;
 
 static int32_t *s_mposxy_buttons = (int32_t*)MOUSE_POS_AND_BUTTONS;
 
@@ -71,25 +70,23 @@ void HandleUSBHID()
 		MAX3421WriteByte(rHIRQ, hirq_sendback);
 }
 
+void InitializeUSBHIDData()
+{
+	// Key map
+	for (int i=0; i<256; ++i)
+	{
+		s_currentkeymap[i] = 0;
+		s_prevkeymap[i] = 0;
+	}
+
+	// LED output
+	for (int i=0; i<8; ++i)
+		s_devicecontrol[i] = 0;
+}
+
 void ProcessUSBDevice()
 {
-	uint64_t nextPoll = 0;
 	uint16_t* keystates = (uint16_t*)KEYBOARD_KEYSTATE_BASE;
-
-	if (s_initialized == 0)
-	{
-		s_initialized = 1;
-		// Key map
-		for (int i=0; i<256; ++i)
-		{
-			s_currentkeymap[i] = 0;
-			s_prevkeymap[i] = 0;
-		}
-
-		// LED output
-		for (int i=0; i<8; ++i)
-			s_devicecontrol[i] = 0;
-	}
 
 	enum EBusState probe_result = (enum EBusState)*s_probe_result;
 	uint32_t state_changed = probe_result != old_probe_result;
@@ -176,7 +173,7 @@ void ProcessUSBDevice()
 			{
 				uint8_t rcode = USBAttach(&s_deviceAddress, &s_controlEndpoint);
 				uint64_t currentTime = E32ReadTime();
-				nextPoll = currentTime + s_devicePollInterval*ONE_MILLISECOND_IN_TICKS;
+				s_nextPoll = currentTime + s_devicePollInterval*ONE_MILLISECOND_IN_TICKS;
 
 				if (rcode == 0)// && s_deviceClass == HID)
 				{
@@ -203,12 +200,12 @@ void ProcessUSBDevice()
 
 				// TODO: Driver should handle this according to device type
 				uint64_t currentTime = E32ReadTime();
-				if (currentTime > nextPoll)
+				if (currentTime > s_nextPoll)
 				{
 					uint8_t keydata[8];
 					int8_t mousedata[4];
 
-					nextPoll = currentTime + s_devicePollInterval*ONE_MICROSECOND_IN_TICKS;
+					s_nextPoll = currentTime + s_devicePollInterval*ONE_MICROSECOND_IN_TICKS;
 
 					// TODO: Keyboard state should go to kernel memory from which applications can poll.
 					// That mechanism should ultimately replace the ringbuffer approach used for UART input.

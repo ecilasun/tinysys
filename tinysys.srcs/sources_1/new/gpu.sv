@@ -69,6 +69,7 @@ assign gpufifore = cmdre;
 logic [7:0] burstlen = 'd20;	// 20 reads for 320*240, 40 reads for 640*480 in paletted mode (each read is 128bits)
 logic scanwidth = 1'b0;			// 0:320 pixel wide, 1:640 pixel wide
 logic colormode = 1'b0;			// 0:indexed color, 1:16bit color
+logic [9:0] lastscanline = 10'd0;
 
 // --------------------------------------------------
 // Scanline cache and output address selection
@@ -306,6 +307,7 @@ always_ff @(posedge aclk) begin
 				scanenable <= gpufifodout[0];	// 0:video output disabled, 1:video output enabled
 				scanwidth <= gpufifodout[1];	// 0:320-wide, 1:640-wide
 				colormode <= gpufifodout[2];	// 0:8bit indexed, 1:16bit rgb
+				lastscanline <= gpufifodout[1] ? 10'd524 : 10'd523;
 				// ? <= gpufifodout[31:3] unused for now
 				// Set up burst count to 20 / 40 / 80 depending on video mode
 				unique case ({gpufifodout[1], gpufifodout[2]})
@@ -394,8 +396,8 @@ always_ff @(posedge aclk) begin
 		end
 
 		DETECTFRAMESTART: begin
-			// When we reach the very last scanline, start loading the cache
-			if (scanenable && scanline == 524) begin
+			// When we reach the last odd scanline, start loading the cache
+			if (scanenable && (scanline == lastscanline)) begin
 				scanoffset <= scanaddr;
 				scanstate <= STARTLOAD;
 			end else begin
@@ -404,15 +406,17 @@ always_ff @(posedge aclk) begin
 		end
 
 		STARTLOAD: begin
-			// Only read on even lines in 320-wide, or every other line in 640-wide mode
-			if (scanpixel == 640 && (~scanline[0] || scanwidth)) begin
+			// Only read on odd lines in 320-wide, or every other line in 640-wide mode
+			// The trick here: we'll initially hit odd-even-even-odd sequence which means
+			// the cache line we loaded on line 523 will only reload on line 1 after it's been displayed twice in 320 mode
+			if ((scanpixel == 640) && (scanline[0] || scanwidth)) begin
 				// This has to be a 64 byte cache aligned address to match cache burst reads we're running
 				// Each scanline is a multiple of 64 bytes, so no need to further align here unless we have an odd output size (320 and 640 work just fine)
 				m_axi.arlen <= burstlen;
 				m_axi.araddr <= scanoffset;
-				m_axi.arvalid <= (scanline == 480) ? 1'b0 : 1'b1;
+				m_axi.arvalid <= (scanline == 10'd479) ? 1'b0 : 1'b1;
 				// Keep reading as long as we're not on last line
-				scanstate <= scanline == 480 ? DETECTFRAMESTART : TRIGGERBURST;
+				scanstate <= scanline == 10'd479 ? DETECTFRAMESTART : TRIGGERBURST;
 			end else begin
 				scanstate <= STARTLOAD;
 			end
