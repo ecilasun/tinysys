@@ -180,16 +180,18 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
-			for (int i=0; i<4096; ++i)
+			for (int i=0; i<512; ++i)
 			{
 				// Enforce primitives larger than the screen size to test clipping
 				SPrimitive prim;
-				prim.x0 = 160 + (rand()%200) - (rand()%200);
-				prim.y0 = 120 + (rand()%200) - (rand()%200);
-				prim.x1 = 160 + (rand()%200) - (rand()%200);
-				prim.y1 = 120 + (rand()%200) - (rand()%200);
-				prim.x2 = 160 + (rand()%200) - (rand()%200);
-				prim.y2 = 120 + (rand()%200) - (rand()%200);
+				int16_t x = rand()%320;
+				int16_t y = rand()%240;
+				prim.x0 = x+(rand()%16);
+				prim.y0 = y+(rand()%16);
+				prim.x1 = x+(rand()%16);
+				prim.y1 = y+(rand()%16);
+				prim.x2 = x+(rand()%16);
+				prim.y2 = y+(rand()%16);
 				uint8_t V = rand()%255;
 
 				RPUPushPrimitive(&prim);

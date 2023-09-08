@@ -476,12 +476,11 @@ int main()
 	// This is where all task switching and other interrupt handling occurs
 	InstallISR();
 
-	// Set up kernel side usb serial context
+	// Start USB serial peripheral
 	USBSerialSetContext(&s_usbserialctx);
-	// Start USB serial
-	/*s_usbserialenabled =*/ USBSerialInit(1);
+	USBSerialInit(1);
 
-	// Set up kernel side usb host context
+	// Start USB host
 	InitializeUSBHIDData();
 	USBHostSetContext(&s_usbhostctx);
 	USBHostInit(1);

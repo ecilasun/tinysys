@@ -49,26 +49,26 @@ static uint16_t next_word(void)
 
 static inline void map_vertex(int16_t* X, int16_t* Y)
 {
-	*X = *X << 1; // for a larger picture (but too slow)
-	*Y = *Y << 1;
+	*X = (*X*125)/100;
+	*Y = (*Y*120)/100;
 }
 
 static void clear(void) {
 	SPrimitive prim;
 	prim.x0 = 0;
 	prim.y0 = 0;
-	prim.x1 = 256;
+	prim.x1 = 320;
 	prim.y1 = 0;
-	prim.x2 = 256;
-	prim.y2 = 200;
+	prim.x2 = 320;
+	prim.y2 = 240;
 	RPUPushPrimitive(&prim);
 	RPUSetColor(0);
 	RPURasterizePrimitive();
 
-	prim.x0 = 256;
-	prim.y0 = 200;
+	prim.x0 = 320;
+	prim.y0 = 240;
 	prim.x1 = 0;
-	prim.y1 = 200;
+	prim.y1 = 240;
 	prim.x2 = 0;
 	prim.y2 = 0;
 	RPUPushPrimitive(&prim);
@@ -140,7 +140,7 @@ static int read_frame(void)
 		{
 			X[v] = next_byte();
 			Y[v] = next_byte();
-			//map_vertex(&X[v],&Y[v]);
+			map_vertex(&X[v],&Y[v]);
 		}
 	}
 
@@ -182,7 +182,7 @@ static int read_frame(void)
 				int16_t x,y;
 				x = next_byte();
 				y = next_byte();
-				//map_vertex(&x,&y);
+				map_vertex(&x,&y);
 				poly[2*i]   = x;
 				poly[2*i+1] = y;
 			}
