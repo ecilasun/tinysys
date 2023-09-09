@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define VERSIONSTRING "v0007"
+#define VERSIONSTRING "v0008"
 
 static struct EVideoContext s_gpuContext;
 static char s_tmpstr[512];
@@ -321,14 +321,6 @@ void _cliTask()
 	{
 		struct STaskContext *taskctx = GetTaskContext();
 
-		// Intercept input only when we have no ELF running
-		/*if(taskctx->numTasks>2)
-		{
-			// In all other cases, it's up to the running ELF to process input
-			TaskYield();
-			continue;
-		}*/
-
 		// Echo all of the characters we can find back to the sender
 		uint32_t uartData = 0;
 		int execcmd = 0;
@@ -372,9 +364,13 @@ void _cliTask()
 
 				default:
 				{
-					s_cmdString[s_cmdLen++] = (char)asciicode;
-					if (s_cmdLen > 127)
-						s_cmdLen = 127;
+					// Do not enqueue characters into command string if we're running some app
+					if(taskctx->numTasks <= 2)
+					{
+						s_cmdString[s_cmdLen++] = (char)asciicode;
+						if (s_cmdLen > 127)
+							s_cmdLen = 127;
+					}
 				}
 				break;
 			}
@@ -391,23 +387,27 @@ void _cliTask()
 			DeviceDefaultState();
 		}
 
-		if (execcmd)
+		// Process or echo input only when we have no ELF running
+		if(taskctx->numTasks <= 2)
 		{
-			++s_refreshConsoleOut;
-			USBSerialWrite("\n");
-			ExecuteCmd(s_cmdString);
-			// Rewind
-			s_cmdLen = 0;
-			s_cmdString[0] = 0;
-		}
+			if (execcmd)
+			{
+				++s_refreshConsoleOut;
+				USBSerialWrite("\n");
+				ExecuteCmd(s_cmdString);
+				// Rewind
+				s_cmdLen = 0;
+				s_cmdString[0] = 0;
+			}
 
-		if (s_refreshConsoleOut)
-		{
-			s_refreshConsoleOut = 0;
-			s_cmdString[s_cmdLen] = 0;
-			// Reset current line and emit the command string
-			mini_snprintf(s_tmpstr, 512, "\033[2K\r%s>%s", s_workdir, s_cmdString);
-			USBSerialWrite(s_tmpstr);
+			if (s_refreshConsoleOut)
+			{
+				s_refreshConsoleOut = 0;
+				s_cmdString[s_cmdLen] = 0;
+				// Reset current line and emit the command string
+				mini_snprintf(s_tmpstr, 512, "\033[2K\r%s>%s", s_workdir, s_cmdString);
+				USBSerialWrite(s_tmpstr);
+			}
 		}
 
 		TaskYield();
@@ -485,10 +485,6 @@ int main()
 	USBHostSetContext(&s_usbhostctx);
 	USBHostInit(1);
 
-	// // Splash - we drop to embedded OS if there's no boot image (boot.elf)
-	// USBSerialWrite("\033[H\033[0m\033[2J\033[96;40mtinysys embedded OS " VERSIONSTRING "\033[0m\n\n");
-	// USBSerialWrite("Use 'help' a list of available commands\n");
-
 	// Main CLI loop
 	while (1)
 	{
@@ -502,6 +498,7 @@ int main()
 		ProcessUSBDevice();
 		// Enable machine interrupts
 		write_csr(mstatus, MSTATUS_MIE);
+
 		// Yield time as soon as we're done here
 		TaskYield();
 	}
