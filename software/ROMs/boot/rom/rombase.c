@@ -14,47 +14,6 @@ static FATFS Fs;
 
 static char k_tmpstr[64];
 
-void ReportError(const uint32_t _width, const char *_error, uint32_t _cause, uint32_t _value, uint32_t _PC)
-{
-	USBSerialWrite("\033[0m\n\n\033[31m\033[40m");
-
-	USBSerialWrite("┌");
-	for (uint32_t w=0;w<_width-2;++w)
-		USBSerialWrite("─");
-	USBSerialWrite("┐\n│");
-
-	// Message
-	int W = strlen(_error);
-	W = (_width-2) - W;
-	USBSerialWrite(_error);
-	for (int w=0;w<W;++w)
-		USBSerialWrite(" ");
-	USBSerialWrite("│\n|");
-
-	// Cause
-	USBSerialWrite("cause:");
-	USBSerialWriteHex(_cause);
-	for (uint32_t w=0;w<_width-16;++w)
-		USBSerialWrite(" ");
-
-	// Value
-	USBSerialWrite("│\n|value:");
-	USBSerialWriteHex(_value);
-	for (uint32_t w=0;w<_width-16;++w)
-		USBSerialWrite(" ");
-
-	// PC
-	USBSerialWrite("│\n|PC:");
-	USBSerialWriteHex(_PC);
-	for (uint32_t w=0;w<_width-13;++w)
-		USBSerialWrite(" ");
-
-	USBSerialWrite("│\n└");
-	for (uint32_t w=0;w<_width-2;++w)
-		USBSerialWrite("─");
-	USBSerialWrite("┘\n\033[0m\n");
-}
-
 uint32_t MountDrive()
 {
 	// Delayed mount the volume
@@ -74,7 +33,7 @@ void UnmountDrive()
 {
 	/*FRESULT unmountattempt =*/ f_mount(NULL, "sd:", 1);
 	/*if (unmountattempt != FR_OK)
-		ReportError(32, "File system error (unmount)", unmountattempt, 0, 0);
+		USBSerialWrite("File system error (unmount)");
 	else*/
 		USBSerialWrite("Device sd: unmounted\n");
 }
@@ -138,7 +97,7 @@ void ListFiles(const char *path)
 		f_closedir(&dir);
 	}
 	else
-		ReportError(32, "File system error (unmount)", re, 0, 0);
+		USBSerialWrite("File system error (unmount)\n");
 }
 
 uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader, uint32_t* jumptarget)
@@ -146,7 +105,7 @@ uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader
 	uint32_t heap_start = 0;
 	if (fheader->m_Magic != 0x464C457F)
 	{
-		ReportError(32, "ELF header error", fheader->m_Magic, 0, 0);
+		USBSerialWrite("ELF header error\n");
 		return heap_start;
 	}
 
@@ -167,7 +126,7 @@ uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader
 			// Check illegal range
 			if ((uint32_t)memaddr>=HEAP_END_CONSOLEMEM_START || ((uint32_t)memaddr)+pheader.m_MemSz>=HEAP_END_CONSOLEMEM_START)
 			{
-				ReportError(32, "ELF section in illegal memory", (uint32_t)memaddr, pheader.m_MemSz, 0);
+				USBSerialWrite("ELF section in illegal memory region\n");
 				return 0;
 			}
 			else
@@ -222,7 +181,7 @@ uint32_t LoadExecutable(const char *filename, const bool reportError)
 	else
 	{
 		if (reportError)
-			ReportError(32, "Executable not found", 0, 0, 0);
+			USBSerialWrite("Executable not found\n");
 	}
 
 	return 0;
@@ -332,7 +291,7 @@ uint32_t IsFileHandleAllocated(const uint32_t _bitIndex, const uint32_t  _input)
 
 void HandleSoftReset(const uint32_t _PC)
 {
-	ReportError(34, "Soft reset handler not installed", 0, 0, _PC);
+	USBSerialWrite("Soft reset handler not installed\n");
 }
 
 //void __attribute__((aligned(16))) __attribute__((interrupt("machine"))) interrupt_service_routine() // Auto-saves registers
@@ -414,7 +373,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				else if (hwid&8) HandleSoftReset(PC);
 				else // No familiar bit set, unknown device
 				{
-					ReportError(32, "Unknown hardware device, core halted", code, hwid, PC);
+					USBSerialWrite("Unknown hardware device, core halted\n");
 					// Put core to endless sleep
 					while(1) { asm volatile("wfi;"); }
 					break;
@@ -425,7 +384,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 
 			default:
 			{
-				ReportError(32, "Unknown interrupt type, core halted", code, 0, PC);
+				USBSerialWrite("Unknown interrupt type, core halted\n");
 
 				// Put core to endless sleep
 				while(1) { asm volatile("wfi;"); }
@@ -440,7 +399,11 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			case CAUSE_ILLEGAL_INSTRUCTION:
 			{
 				uint32_t instruction = *((uint32_t*)PC);
-				ReportError(32, "Illegal instruction", code, instruction, PC);
+				USBSerialWrite("Illegal instruction 0x");
+				USBSerialWriteHex(instruction);
+				USBSerialWrite(" at 0x");
+				USBSerialWriteHex(PC);
+				USBSerialWrite(", terminating\n");
 
 				// Terminate task on first chance and remove from list of running tasks
 				TaskExitCurrentTask(&g_taskctx);
@@ -457,7 +420,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				// TODO: call debugger breakpoint handler if one's loaded and stop the task
 
 				// Where there's no debugger loaded, simply exit since we're not supposed to run past ebreak commands
-				ReportError(32, "No debugger present, ignoring breakpoint", code, 0x0, PC);
+				USBSerialWrite("No debugger present, ignoring breakpoint\n");
 
 				// Exit task in non-debug mode
 				TaskExitCurrentTask(&g_taskctx);
@@ -493,7 +456,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				if (value==0) // io_setup()
 				{
 					//sys_io_setup(unsigned nr_reqs, aio_context_t __user *ctx);
-					ReportError(32, "unimpl: io_setup()", code, value, PC);
+					USBSerialWrite("unimpl: io_setup()\n");
 					write_csr(0x8AA, 0xFFFFFFFF);
 				}
 				else if (value==17) // getcwd()
@@ -721,7 +684,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				{
 					// Wait for child process status change - unused
 					// pid_t wait(int *wstatus);
-					ReportError(32, "unimpl: wait()", code, value, PC);
+					USBSerialWrite("unimpl: wait()\n");
 					errno = ECHILD;
 					write_csr(0x8AA, 0xFFFFFFFF);
 				}
@@ -833,12 +796,14 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				}
 				else if (value==0xFFFFFFFF) // setdebugger()
 				{
-					ReportError(32, "Unimplemented debugger interface", code, value, PC);
+					USBSerialWrite("Unimplemented debugger interface\n");
 					write_csr(0x8AA, 0xFFFFFFFF);
 				}
 				else // Unimplemented syscalls drop here
 				{
-					ReportError(32, "unimplemented ECALL", code, value, PC);
+					USBSerialWrite("unimplemented ECALL: ");
+					USBSerialWriteDecimal(value);
+					USBSerialWrite("\n");
 					errno = EIO;
 					write_csr(0x8AA, 0xFFFFFFFF);
 				}
@@ -860,7 +825,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			default:
 			{
 				// Code contains the CAUSE_ code
-				ReportError(32, "Guru meditation, core halted", code, value, PC);
+				USBSerialWrite("Guru meditation, core halted\n");
 
 				// Put core to endless sleep
 				while(1) { asm volatile("wfi;"); }

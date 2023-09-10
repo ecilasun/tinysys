@@ -205,7 +205,7 @@ void ProcessUSBDevice()
 				{
 					uint8_t keydata[8];
 					int8_t mousedata[4];
-					uint8_t joystickdata[8];
+					uint8_t joystickdata[12];
 
 					s_nextPoll = currentTime + s_devicePollInterval*ONE_MICROSECOND_IN_TICKS;
 
@@ -335,6 +335,25 @@ void ProcessUSBDevice()
 							s_jposxy_buttons[1] = (int32_t)joystickdata[4]; // Y
 							s_jposxy_buttons[2] = joystickdata[5]; // Buttons #0
 							s_jposxy_buttons[3] = joystickdata[6]; // Buttons #1
+						}
+					}
+					else if (s_deviceProtocol == HID_PROTOCOL_GAMEPAD)
+					{
+						uint8_t rcode = USBReadHIDData(s_deviceAddress, 1, 11, (uint8_t*)joystickdata, 0x0, HID_REPORTTYPE_INPUT, 4);
+						if (rcode == hrSTALL)
+						{
+							uint16_t epAddress = 0x81;	// TODO: get it from device->endpoints[_ep]->epAddress
+							rcode = USBControlRequest(s_deviceAddress, s_controlEndpoint, bmREQ_CLEAR_FEATURE, USB_REQUEST_CLEAR_FEATURE, USB_FEATURE_ENDPOINT_HALT, 0, epAddress, 0, 0, 64);
+							if (rcode == hrSTALL)
+								devState = DEVS_ERROR;
+						}
+						else if (rcode != hrNAK)
+						{
+							// Assuming PS4 controller 11 wide report here
+							s_jposxy_buttons[0] = (int32_t)joystickdata[2]; // left X (4 for right)
+							s_jposxy_buttons[1] = (int32_t)joystickdata[3]; // left Y (5 for right)
+							s_jposxy_buttons[2] = joystickdata[6]; // Buttons #0
+							s_jposxy_buttons[3] = joystickdata[7]; // Buttons #1 (one more in 8)
 						}
 					}
 					else

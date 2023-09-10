@@ -741,8 +741,8 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass)
 			return rcode;
 
 		// re-request config descriptor with actual data size (cdef.wTotalLength)
-		char rawdata[256];
-		rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, c, USB_DESCRIPTOR_CONFIGURATION, 0x0000, cdef.wTotalLength, rawdata, 64);
+		char *tmpdata = (char*)(HEAP_START_APPMEM_END-1024);
+		rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, c, USB_DESCRIPTOR_CONFIGURATION, 0x0000, cdef.wTotalLength, tmpdata, 64);
 
 		if (rcode != 0)
 			return rcode;
@@ -754,7 +754,7 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass)
 		while (offset < cdef.wTotalLength)
 		{
 			uint8_t descsize = 0;
-			stringCount += USBParseDescriptor(_addr, (uint8_t*)&rawdata[offset], &dtype, &descsize, _hidclass);
+			stringCount += USBParseDescriptor(_addr, (uint8_t*)&tmpdata[offset], &dtype, &descsize, _hidclass);
 			if (descsize == 0xFF)
 				break;
 			offset += descsize;
@@ -925,7 +925,8 @@ uint8_t USBGetHIDDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_protocol)
 	USBSerialWrite("getting HID descriptor\n");
 #endif
 
-	char tmpdata[96];
+	// TODO: We need kalloc() for this kind of unknown data pool
+	char *tmpdata = (char*)(HEAP_START_APPMEM_END-1024);
     uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_HIDREPORT, USB_REQUEST_GET_DESCRIPTOR, 0x00, HID_DESCRIPTOR_REPORT, 0x0000, s_HIDDescriptorLen, tmpdata, 64);
 
 	if (rcode != 0)
@@ -946,6 +947,11 @@ uint8_t USBGetHIDDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_protocol)
 	{
 		*_protocol = HID_PROTOCOL_JOYSTICK;
 		USBSerialWrite("Joystick connected\n");
+	}
+	else if (tmpdata[3] == 0x05) 
+	{
+		*_protocol = HID_PROTOCOL_GAMEPAD;
+		USBSerialWrite("Gamepad connected\n");
 	}
 	else if (tmpdata[3] == 0x06)
 	{

@@ -48,6 +48,17 @@ module tophat(
 	,output wire usba_mosi
 	,output wire usba_resn
 	,input wire usba_int
+	// SRAM
+	//,output wire [17:0] sraddr
+	//,inout wire [15:0] srdata
+	//,output wire srlb
+	//,output wire srub
+	//,output wire sroe
+	//,output wire srwe
+	//,output wire srcen
+	// DEBUG UART
+	//,input wire debugrx
+	//,output wire debugtx
 	// Audio out
 	,output wire au_sdin
 	,output wire au_sclk

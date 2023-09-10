@@ -34,9 +34,8 @@ axi4if romcopybus();		// Bus for boot ROM copy (TODO: switch between ROM types?)
 axi4if audiobus();			// Bus for audio device output
 axi4if rasterbus();			// Bus for rasterizer memory access
 
-axi4if memorybus();			// Main memory
-
-axi4if devicebus();			// Arbitrated, to devices
+axi4if memorybus();			// Arbitrated access to main memory
+axi4if devicebus();			// Direct access to devices from data unit
 
 axi4if rpucmdif();			// Sub bus: RPU command fifo
 axi4if ledif();				// Sub bus: LED contol device
@@ -50,7 +49,30 @@ axi4if audioif();			// Sub bus: APU i2s audio output unit
 axi4if opl2if();			// Sub bus: OPL2 interface
 axi4if usbaif();			// Sub bus: USB-A controller (host)
 
-ibusif ibus();				// Internal bus between units
+ibusif internaldatabus();	// Internal bus from control unit to data unit
+
+// --------------------------------------------------
+// Wall clock
+// --------------------------------------------------
+
+logic [63:0] wallclockcounter = 64'd0;
+
+always @(posedge clk10) begin
+	if (~aresetn) begin
+		wallclockcounter <= 64'd0;
+	end else begin
+		wallclockcounter <= wallclockcounter + 64'd1;
+	end
+end
+
+// CDC for wall clock
+(* async_reg = "true" *) logic [63:0] wallclocktimeA = 64'd0;
+(* async_reg = "true" *) logic [63:0] wallclocktime = 64'd0;
+
+always @(posedge aclk) begin
+	wallclocktimeA <= wallclockcounter;
+	wallclocktime <= wallclocktimeA;
+end
 
 // --------------------------------------------------
 // Fetch unit
@@ -93,32 +115,9 @@ fetchunit #(.RESETVECTOR(RESETVECTOR)) fetchdecodeinst (
 dataunit dataunitinst (
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.s_ibus(ibus),
-	.databus(databus),
-	.devicebus(devicebus) );
-
-// --------------------------------------------------
-// Wall clock
-// --------------------------------------------------
-
-logic [63:0] wallclockcounter = 64'd0;
-
-always @(posedge clk10) begin
-	if (~aresetn) begin
-		wallclockcounter <= 64'd0;
-	end else begin
-		wallclockcounter <= wallclockcounter + 64'd1;
-	end
-end
-
-// CDC for wall clock
-(* async_reg = "true" *) logic [63:0] wallclocktimeA = 64'd0;
-(* async_reg = "true" *) logic [63:0] wallclocktime = 64'd0;
-
-always @(posedge aclk) begin
-	wallclocktimeA <= wallclockcounter;
-	wallclocktime <= wallclocktimeA;
-end
+	.s_ibus(internaldatabus), 	// CPU access for r/w
+	.databus(databus),			// Access to memory
+	.devicebus(devicebus) );	// Access to devices
 
 // --------------------------------------------------
 // Control unit
@@ -138,7 +137,7 @@ controlunit #(.CID(32'h00000000)) controlunitinst (
 	.ififord_en(ififord_en), 
 	.cpuclocktime(cpuclocktime),
 	.retired(retired),
-	.m_ibus(ibus));
+	.m_ibus(internaldatabus));
 
 // --------------------------------------------------
 // Graphics unit
