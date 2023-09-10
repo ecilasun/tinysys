@@ -12,6 +12,7 @@
 		"memory": "cpp",
 		"optional": "cpp",
 		"xhash": "cpp",
-		"xlocbuf": "cpp"
+		"xlocbuf": "cpp",
+		"xstring": "cpp"
 	}
 }

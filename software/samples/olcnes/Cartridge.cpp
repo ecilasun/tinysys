@@ -130,6 +130,8 @@ Cartridge::Cartridge(const std::string& sFileName)
 			ifs.read((char*)vCHRMemory.data(), vCHRMemory.size());
 		}
 
+		bImageValid = true;
+
 		// Load appropriate mapper
 		switch (nMapperID)
 		{
@@ -139,13 +141,11 @@ Cartridge::Cartridge(const std::string& sFileName)
 		case   3: pMapper = std::make_shared<Mapper_003>(nPRGBanks, nCHRBanks); break;
 		case   4: pMapper = std::make_shared<Mapper_004>(nPRGBanks, nCHRBanks); break;
 		case  66: pMapper = std::make_shared<Mapper_066>(nPRGBanks, nCHRBanks); break;
-
+		default:  bImageValid = false; break; // Unknown mapper
 		}
 
-		bImageValid = true;
 		ifs.close();
 	}
-
 }
 
 

@@ -68,7 +68,7 @@
 
 	Author
 	~~~~~~
-	David Barr, aka javidx9, ©OneLoneCoder 2019
+	David Barr, aka javidx9, ï¿½OneLoneCoder 2019
 */
 
 #include "olc6502.h"
@@ -162,6 +162,7 @@ void olc6502::reset()
 
 	// Set it
 	pc = (hi << 8) | lo;
+	printf("reset vector: %.2X\n", pc);
 
 	// Reset internal registers
 	a = 0;
@@ -274,14 +275,16 @@ void olc6502::clock()
 		
 		// Always set the unused status flag bit to 1
 		SetFlag(U, true);
-		
+
+		//printf("fromPC: %.4X opcode:%.x(%s) ", pc, opcode, lookup[opcode].name.c_str());
+
 		// Increment program counter, we read the opcode byte
 		pc++;
 
 		// Get Starting number of cycles
 		cycles = lookup[opcode].cycles;
 
-		// Perform fetch of intermmediate data using the
+		// Perform fetch of intermediate data using the
 		// required addressing mode
 		uint8_t additional_cycle1 = (this->*lookup[opcode].addrmode)();
 
@@ -291,6 +294,8 @@ void olc6502::clock()
 		// The addressmode and opcode may have altered the number
 		// of cycles this instruction requires before its completed
 		cycles += (additional_cycle1 & additional_cycle2);
+
+		//printf("cycles: %d\n", cycles);
 
 		// Always set the unused status flag bit to 1
 		SetFlag(U, true);

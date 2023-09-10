@@ -81,7 +81,10 @@ int main(int argc, char *argv[])
 	while(1)
 	{
 		printf("frame %d\n", F++);
-		do { nes.clock(); } while (!nes.ppu.frame_complete);
+
+		do {
+			/*bAudioSampleReady =*/ nes.clock();
+		} while (!nes.ppu.frame_complete);
 		nes.ppu.frame_complete = false;
 
 		/*float fElapsedTime = 1.f/60.f;
