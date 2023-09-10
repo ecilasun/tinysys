@@ -75,8 +75,23 @@ I_GetRemoteEvent(void)
 			if (updown)
 			{
 				event_t event;
-				event.data1 = HIDScanToASCII(i, 0); // always lowercase
-				event.type = updown&1 ? ev_keydown : ev_keyup;
+				if (i==0x4F) // right arrow
+					event.data1 = KEY_RIGHTARROW;
+				else if (i==0x50) // left arrow
+					event.data1 = KEY_LEFTARROW;
+				else if (i==0x51) // down arrow
+					event.data1 = KEY_DOWNARROW;
+				else if (i==0x52) // up arrow
+					event.data1 = KEY_UPARROW;
+				else if (i==0xE1 || i==0xE5) // left shift / right shift
+					event.data1 = KEY_RSHIFT;
+				else if (i==0xE2 || i==0xE6) // left alt / right alt
+					event.data1 = KEY_RALT;
+				else if (i==0xE0 || i==0xE4) // left ctrl / right ctrl
+					event.data1 = KEY_RCTRL;
+				else
+					event.data1 = HIDScanToASCII(i, 0); // always lowercase
+				event.type = (updown&1) ? ev_keydown : ev_keyup;
 				D_PostEvent(&event);
 			}
 		}
