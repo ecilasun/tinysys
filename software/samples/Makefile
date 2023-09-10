@@ -14,23 +14,24 @@ nanojpeg_libs = ../3rdparty/nanojpeg
 # Executable folders
 
 folders = \
-	oxygen \
-	audio \
-	raster \
-	helloworld \
 	adc \
-	memtest \
-	syscalltest \
+	audio \
 	dmatest \
-	mouse \
-	tinyrtty \
-	tinyrt \
-	mandelbrot \
+	dump \
+	helloworld \
+	joystick \
 	jpegview \
 	led \
-	vgmplayer \
-	dump \
+	mandelbrot \
+	memtest \
 	more \
+	mouse \
+	oxygen \
+	raster \
+	syscalltest \
+	tinyrt \
+	tinyrtty \
+	vgmplayer \
 
 # Rules
 

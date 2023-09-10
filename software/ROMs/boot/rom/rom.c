@@ -22,7 +22,7 @@
 #define VERSIONSTRING "v0008"
 
 static struct EVideoContext s_gpuContext;
-static char s_tmpstr[512];
+static char s_tmpstr[256];
 
 static char s_execName[64] = "ROM";
 static char s_execParam0[64] = "auto";

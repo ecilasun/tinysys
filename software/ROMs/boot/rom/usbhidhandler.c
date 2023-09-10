@@ -13,6 +13,7 @@ static uint8_t s_hidClass = 0;
 static uint64_t s_nextPoll = 0;
 
 static int32_t *s_mposxy_buttons = (int32_t*)MOUSE_POS_AND_BUTTONS;
+static int32_t *s_jposxy_buttons = (int32_t*)JOYSTICK_POS_AND_BUTTONS;
 
 static uint8_t *s_currentkeymap = (uint8_t*)(KEYBOARD_KEYTRACK_BASE);
 static uint8_t *s_prevkeymap = (uint8_t*)(KEYBOARD_KEYTRACK_BASE+256);
@@ -204,6 +205,7 @@ void ProcessUSBDevice()
 				{
 					uint8_t keydata[8];
 					int8_t mousedata[4];
+					uint8_t joystickdata[8];
 
 					s_nextPoll = currentTime + s_devicePollInterval*ONE_MICROSECOND_IN_TICKS;
 
@@ -308,13 +310,31 @@ void ProcessUSBDevice()
 						}
 						else if (rcode != hrNAK)
 						{
-							s_mposxy_buttons[0] += (int32_t)mousedata[1];
-							s_mposxy_buttons[1] += (int32_t)mousedata[2];
-							s_mposxy_buttons[2] = mousedata[0];
+							s_mposxy_buttons[0] += (int32_t)mousedata[1]; // X
+							s_mposxy_buttons[1] += (int32_t)mousedata[2]; // Y
+							s_mposxy_buttons[2] = mousedata[0]; // Button
 							if (s_mposxy_buttons[0] < 0) s_mposxy_buttons[0] = 0;
 							if (s_mposxy_buttons[1] < 0) s_mposxy_buttons[1] = 0;
 							if (s_mposxy_buttons[0] > 639) s_mposxy_buttons[0] = 639;
 							if (s_mposxy_buttons[1] > 479) s_mposxy_buttons[1] = 479;
+						}
+					}
+					else if (s_deviceProtocol == HID_PROTOCOL_JOYSTICK)
+					{
+						uint8_t rcode = USBReadHIDData(s_deviceAddress, 1, 8, (uint8_t*)joystickdata, 0x0, HID_REPORTTYPE_INPUT, 4);
+						if (rcode == hrSTALL)
+						{
+							uint16_t epAddress = 0x81;	// TODO: get it from device->endpoints[_ep]->epAddress
+							rcode = USBControlRequest(s_deviceAddress, s_controlEndpoint, bmREQ_CLEAR_FEATURE, USB_REQUEST_CLEAR_FEATURE, USB_FEATURE_ENDPOINT_HALT, 0, epAddress, 0, 0, 64);
+							if (rcode == hrSTALL)
+								devState = DEVS_ERROR;
+						}
+						else if (rcode != hrNAK)
+						{
+							s_jposxy_buttons[0] = (int32_t)joystickdata[3]; // X
+							s_jposxy_buttons[1] = (int32_t)joystickdata[4]; // Y
+							s_jposxy_buttons[2] = joystickdata[5]; // Buttons #0
+							s_jposxy_buttons[3] = joystickdata[6]; // Buttons #1
 						}
 					}
 					else

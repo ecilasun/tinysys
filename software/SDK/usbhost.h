@@ -124,6 +124,7 @@ void USBErrorString(uint8_t rcode);
 #define HID_PROTOCOL_NONE				0x00
 #define HID_PROTOCOL_KEYBOARD			0x01
 #define HID_PROTOCOL_MOUSE				0x02
+#define HID_PROTOCOL_JOYSTICK			0x00
 
 // Report Types
 #define HID_REPORTTYPE_INPUT			0x01
