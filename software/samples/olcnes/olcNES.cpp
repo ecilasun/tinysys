@@ -24,7 +24,7 @@ void DrawScreen(olc::Sprite* sprite)
 		for (uint32_t x = 0; x<256; ++x)
 		{
 			uint16_t *buffer = (uint16_t*)(framebuffer + (x+y*320)*2);
-			*buffer = sprite->data[x+y*256];
+			*buffer = sprite->data[x+y*(sprite->width)];
 		}
 	}
 }
