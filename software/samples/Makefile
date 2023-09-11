@@ -18,6 +18,7 @@ folders = \
 	audio \
 	dmatest \
 	dump \
+	gamepad \
 	helloworld \
 	joystick \
 	jpegview \

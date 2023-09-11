@@ -53,13 +53,13 @@ always @(posedge clk) begin
 		end
  
 		RWCMD: begin
+			// Sign extend tile and edge vertices
 			x0 <= {v0x[15],v0x[15],v0x};
 			y0 <= {v0y[15],v0y[15],v0y};
 			x1 <= {v1x[15],v1x[15],v1x};
 			y1 <= {v1y[15],v1y[15],v1y};
-
-			tilex <= {2'b00,tx};
-			tiley <= {2'b00,ty};
+			tilex <= {tx[15],tx[15],tx};
+			tiley <= {ty[15],ty[15],ty};
 
 			rstate <= ena ? SETUPRASTER : RWCMD;
 		end
@@ -99,16 +99,16 @@ always @(posedge clk) begin
 		end
 
 		GENMASKA: begin
-			result[0] <= partialA[0] + partialB[0];
-			result[1] <= partialA[0] + partialB[1];
-			result[2] <= partialA[0] + partialB[2];
-			result[3] <= partialA[0] + partialB[3];
-			result[4] <= partialA[1] + partialB[0];
-			result[5] <= partialA[1] + partialB[1];
-			result[6] <= partialA[1] + partialB[2];
-			result[7] <= partialA[1] + partialB[3];
-			result[8] <= partialA[2] + partialB[0];
-			result[9] <= partialA[2] + partialB[1];
+			result[0]  <= partialA[0] + partialB[0];
+			result[1]  <= partialA[0] + partialB[1];
+			result[2]  <= partialA[0] + partialB[2];
+			result[3]  <= partialA[0] + partialB[3];
+			result[4]  <= partialA[1] + partialB[0];
+			result[5]  <= partialA[1] + partialB[1];
+			result[6]  <= partialA[1] + partialB[2];
+			result[7]  <= partialA[1] + partialB[3];
+			result[8]  <= partialA[2] + partialB[0];
+			result[9]  <= partialA[2] + partialB[1];
 			result[10] <= partialA[2] + partialB[2];
 			result[11] <= partialA[2] + partialB[3];
 			result[12] <= partialA[3] + partialB[0];
