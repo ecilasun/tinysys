@@ -3,12 +3,13 @@
 module clockandreset(
 	input wire sys_clock_i,
 	input wire init_calib_complete,
-	output wire aclk,
 	output wire clk10,
 	output wire clk12,
 	output wire clk25,
 	output wire clk50,
 	output wire clk125,
+	output wire clk133,
+	output wire clk150,
 	output wire clk166,
 	output wire clk200,
 	output wire aresetn,
@@ -22,7 +23,7 @@ wire centralclocklocked, peripheralclocklocked;
 
 centralclock centralclockinst(
 	.clk_in1(sys_clock_i),
-	.aclk(aclk),
+	.clk133(clk133),
 	.clk10(clk10),
 	.clk25(clk25),
 	.clk50(clk50),
@@ -34,6 +35,7 @@ centralclock centralclockinst(
 peripheralclocks peripheralclkinst(
 	.clk_in1(sys_clock_i),
 	.clk12(clk12),
+	.clk150(clk150),
 	.locked(peripheralclocklocked) );
 
 
@@ -44,7 +46,7 @@ wire clocksready = centralclocklocked && peripheralclocklocked;
 // --------------------------------------------------
 
 logic [1:0] ddr3ready = 2'b00;
-always @(posedge aclk) begin
+always @(posedge clk150) begin
 	ddr3ready <= {ddr3ready[0], init_calib_complete};
 end
 
@@ -55,7 +57,7 @@ end
 (* async_reg = "true" *) logic clkRdyA = 1'b0;
 (* async_reg = "true" *) logic clkRdyB = 1'b0;
 
-always @(posedge aclk) begin
+always @(posedge clk150) begin
 	clkRdyA <= clocksready;
 	clkRdyB <= clkRdyA;
 end
@@ -67,7 +69,7 @@ end
 logic [31:0] resetcountdown = 32'd0;
 logic regaresetn = 1'b0;
 
-always @(posedge aclk) begin
+always @(posedge clk150) begin
 	resetcountdown <= {resetcountdown[30:0], clkRdyB};
 	regaresetn <= resetcountdown[31] && ddr3ready[1];
 end

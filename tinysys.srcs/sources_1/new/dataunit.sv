@@ -37,8 +37,8 @@ datacache datacacheinst(
 	.a4buscached(databus),
 	.a4busuncached(devicebus) );
 
-typedef enum logic [1:0] {FETCH, READ, CACHEOP, WRITE} dataunitmode;
-dataunitmode datamode = FETCH;
+typedef enum logic [1:0] {WCMD, WREAD, WCACHEOP, WWRITE} dataunitmode;
+dataunitmode datamode = WCMD;
 
 always @(posedge aclk) begin
 	s_ibus.rdone <= 1'b0;
@@ -50,31 +50,31 @@ always @(posedge aclk) begin
 	dcacheop <= 2'b00;
 
 	unique case(datamode)
-		FETCH: begin
+		WCMD: begin
 			addrs <= s_ibus.rstrobe ? s_ibus.raddr : s_ibus.waddr;
 			datain <= s_ibus.wdata;
 			datare <= s_ibus.rstrobe;
 			datawe <= s_ibus.wstrobe;
 			dcacheop <= s_ibus.cstrobe ? s_ibus.dcacheop : 2'b00;
-			datamode <= s_ibus.cstrobe ? CACHEOP : (s_ibus.rstrobe ? READ : (s_ibus.wstrobe ? WRITE : FETCH));
+			datamode <= s_ibus.cstrobe ? WCACHEOP : (s_ibus.rstrobe ? WREAD : (s_ibus.wstrobe ? WWRITE : WCMD));
 		end
-		READ: begin
+		WREAD: begin
 			s_ibus.rdone <= rready;
 			s_ibus.rdata <= dataout;
-			datamode <= rready ? FETCH : READ;
+			datamode <= rready ? WCMD : WREAD;
 		end
-		WRITE: begin
+		WWRITE: begin
 			s_ibus.wdone <= wready;
-			datamode <= wready ? FETCH : WRITE;
+			datamode <= wready ? WCMD : WWRITE;
 		end
-		CACHEOP: begin
+		WCACHEOP: begin
 			s_ibus.cdone <= wready;
-			datamode <= wready ? FETCH : CACHEOP;
+			datamode <= wready ? WCMD : WCACHEOP;
 		end
 	endcase
 
 	if (~aresetn) begin
-		datamode <= FETCH;
+		datamode <= WCMD;
 	end
 end
 

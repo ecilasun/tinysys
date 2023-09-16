@@ -176,8 +176,9 @@ always @(posedge aclk) begin
 	end
 end
 
+logic retiredstrobe;
 always @(posedge aclk) begin
-	retiredcount <= retiredcount + (ctlmode==READREG ? 64'd1 : 64'd0);
+	retiredcount <= retiredcount + (retiredstrobe ? 64'd1 : 64'd0);
 
 	if (~aresetn) begin
 		retiredcount <= 64'd0;
@@ -187,6 +188,7 @@ end
 // WBACK
 wire pendingwback = rwen;
 logic pendingload = 1'b0;
+logic pendingwrite = 1'b0;
 
 always_comb begin
 	if (m_ibus.rdone) begin
@@ -231,7 +233,6 @@ always_comb begin
 end
 
 // EXEC
-logic pendingwrite = 1'b0;
 always @(posedge aclk) begin
 	btready <= 1'b0;	// Stop branch target ready strobe
 	ififore <= 1'b0;	// Stop instruction fifo read enable strobe
@@ -243,6 +244,8 @@ always @(posedge aclk) begin
 
 	mulstrobe <= 1'b0;	// Stop integer mul strobe 
 	divstrobe <= 1'b0;	// Stop integer div/rem strobe
+	
+	retiredstrobe <= 1'b0;
 
 	wbdin <= 32'd0;
 
@@ -271,6 +274,7 @@ always @(posedge aclk) begin
 			PC[0] <= 1'b0; // NOTE: Since we don't do byte addressing, lowest bit is always set to zero
 			// HAZARD#0: Wait for fetch fifo to populate
 			ififore <= (ififovalid && ~ififoempty);
+			retiredstrobe <= (ififovalid && ~ififoempty);
 			ctlmode <= (ififovalid && ~ififoempty) ? READREG : READINSTR;
 		end
 
@@ -289,10 +293,29 @@ always @(posedge aclk) begin
 				rwaddress <= rval1 + immed;
 				offsetPC <= PC + immed;
 				adjacentPC <= PC + (stepsize ? 32'd4 : 32'd2);
-				mulstrobe <= (aluop==`ALU_MUL);
-				divstrobe <= (aluop==`ALU_DIV || aluop==`ALU_REM);				
 				mathop <= {aluop==`ALU_MUL, aluop==`ALU_DIV, aluop==`ALU_REM};
-				ctlmode <= instrOneHotOut[`O_H_STORE] ? WRITE : (instrOneHotOut[`O_H_LOAD] ? READ : DISPATCH);
+
+				unique case (1'b1)
+					instrOneHotOut[`O_H_STORE]: begin
+						ctlmode <= WRITE;
+					end
+					instrOneHotOut[`O_H_LOAD]: begin
+						ctlmode <= READ;
+					end
+					(aluop==`ALU_MUL): begin
+						mulstrobe <= 1'b1;
+						ctlmode <= MATHWAIT;
+					end
+					(aluop==`ALU_DIV),
+					(aluop==`ALU_REM): begin
+						divstrobe <= 1'b1;
+						ctlmode <= MATHWAIT;
+					end
+					default: begin
+						ctlmode <= DISPATCH;
+					end
+				endcase
+				
 			end
 		end
 
@@ -309,7 +332,7 @@ always @(posedge aclk) begin
 					default: m_ibus.wdata <= B;
 				endcase
 				unique case(func3)
-					3'b000:  m_ibus.wstrobe <= {rwaddress[1]&rwaddress[0], rwaddress[1]&(~rwaddress[0]), (~rwaddress[1])&rwaddress[0], (~rwaddress[1])&(~rwaddress[0])};
+					3'b000:  m_ibus.wstrobe <= {rwaddress[1], rwaddress[1], ~rwaddress[1], ~rwaddress[1]} & {rwaddress[0], ~rwaddress[0], rwaddress[0], ~rwaddress[0]};
 					3'b001:  m_ibus.wstrobe <= {rwaddress[1], rwaddress[1], ~rwaddress[1], ~rwaddress[1]};
 					default: m_ibus.wstrobe <= 4'b1111;
 				endcase
@@ -356,9 +379,9 @@ always @(posedge aclk) begin
 					btready <= 1'b1;
 				end
 			endcase
-
+			
 			// sys, math, store and load require wait states
-			ctlmode <=	(mulstrobe || divstrobe) ? MATHWAIT : (instrOneHotOut[`O_H_SYSTEM] ? SYSOP : READINSTR);
+			ctlmode <=	instrOneHotOut[`O_H_SYSTEM] ? SYSOP : READINSTR;
 		end
 
 		MATHWAIT: begin
@@ -386,7 +409,7 @@ always @(posedge aclk) begin
 
 		SYSCDISCARD: begin
 			if (pendingwrite) begin
-				// HAZARD#3: Wait for pending write before cache op
+				// HAZARD#3: Wait for pending read or write before cache discard
 				ctlmode <= SYSCDISCARD;
 			end else begin
 				m_ibus.dcacheop <= 2'b01; // {nowb,iscachecmd}
@@ -397,7 +420,7 @@ always @(posedge aclk) begin
 
 		SYSCFLUSH: begin
 			if (pendingwrite) begin
-				// HAZARD#3: Wait for pending write before cache op
+				// HAZARD#3: Wait for pending read or write before cache flush
 				ctlmode <= SYSCFLUSH;
 			end else begin
 				m_ibus.dcacheop <= 2'b11; // {wb,iscachecmd}
@@ -415,7 +438,7 @@ always @(posedge aclk) begin
 
 		CSROPS: begin
 			if (pendingwrite) begin
-				// HAZARD#3: Wait for pending write before CSR operation
+				// HAZARD#3: Wait for pending write before CSR read
 				ctlmode <= CSROPS;
 			end else begin
 				m_ibus.raddr <= {20'h80004, csroffset}; // TODO: 0x8000?+(CID<<12) but make sure CSR address space is at the end
@@ -433,7 +456,7 @@ always @(posedge aclk) begin
 
 		SYSWBACK: begin
 			if (pendingwrite) begin
-				// HAZARD#3: Wait for pending write before CSR writeback
+				// HAZARD#3: Wait for pending write before CSR write
 				ctlmode <= SYSWBACK;
 			end else begin
 				// Update CSR register with read value
@@ -458,7 +481,7 @@ always @(posedge aclk) begin
 					3'b111: begin // CSRRCI
 						m_ibus.wdata <= csrprevval & (~D);
 					end
-					default: begin // Unknown
+					default: begin // Unknown - keep previous value
 						m_ibus.wdata <= csrprevval;
 					end
 				endcase
@@ -469,12 +492,12 @@ always @(posedge aclk) begin
 		end
 
 		SYSWAIT: begin
-			ctlmode <= m_ibus.wdone ? READINSTR : SYSWAIT;
-
 			// Store old CSR value in wbdest
 			wbdin <= csrprevval;
 			wback <= m_ibus.wdone;
+			ctlmode <= m_ibus.wdone ? READINSTR : SYSWAIT;
 		end
+
 	endcase
 
 	if (~aresetn) begin

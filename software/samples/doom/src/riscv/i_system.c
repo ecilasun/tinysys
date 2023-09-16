@@ -67,7 +67,8 @@ I_GetRemoteEvent(void)
 {
 	// Post event for all pressed / released keys
 	uint16_t *keystates = (uint16_t*)KEYBOARD_KEYSTATE_BASE;
-	for(int i=0;i<255;++i)
+
+	for(int i=0; i<255; ++i)
 	{
 		if (keystates[i])
 		{
@@ -96,6 +97,9 @@ I_GetRemoteEvent(void)
 			}
 		}
 	}
+
+	// TODO: Joystick support
+	//int32_t *s_jposxy_buttons = (int32_t*)JOYSTICK_POS_AND_BUTTONS;
 }
 
 void
