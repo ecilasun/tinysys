@@ -92,7 +92,6 @@ end
 
 logic [7:0] palettewa;
 logic palettewe = 1'b0;
-logic [7:0] palettera;
 logic [15:0] rgbcolor;
 logic [23:0] palettedin = 24'h000000;
 
@@ -101,50 +100,19 @@ always_comb begin
 	newblock = scanlinecache[colorblock];
 end
 
-// Generate palette read address from current pixel's color index
-always_ff @(posedge clk25) begin
-	// Color index
-	unique case (colorpixel)
-		4'b0000: palettera <= newblock[7 : 0];
-		4'b0001: palettera <= newblock[15 : 8];
-		4'b0010: palettera <= newblock[23 : 16];
-		4'b0011: palettera <= newblock[31 : 24];
-		4'b0100: palettera <= newblock[39 : 32];
-		4'b0101: palettera <= newblock[47 : 40];
-		4'b0110: palettera <= newblock[55 : 48];
-		4'b0111: palettera <= newblock[63 : 56];
-		4'b1000: palettera <= newblock[71 : 64];
-		4'b1001: palettera <= newblock[79 : 72];
-		4'b1010: palettera <= newblock[87 : 80];
-		4'b1011: palettera <= newblock[95 : 88];
-		4'b1100: palettera <= newblock[103 : 96];
-		4'b1101: palettera <= newblock[111 : 104];
-		4'b1110: palettera <= newblock[119 : 112];
-		4'b1111: palettera <= newblock[127 : 120];
-	endcase
-
-	if (~aresetn) begin
-		palettera <= 8'd0;
-	end
-end
-
 // Generate actual RGB color for 16bit mode
-always_ff @(posedge clk25) begin
+always_comb begin
 	// Color index
 	unique case (colorpixel[2:0])
-		3'b000: rgbcolor <= newblock[15 : 0];
-		3'b001: rgbcolor <= newblock[31 : 16];
-		3'b010: rgbcolor <= newblock[47 : 32];
-		3'b011: rgbcolor <= newblock[63 : 48];
-		3'b100: rgbcolor <= newblock[79 : 64];
-		3'b101: rgbcolor <= newblock[95 : 80];
-		3'b110: rgbcolor <= newblock[111 : 96];
-		3'b111: rgbcolor <= newblock[127 : 112];
+		3'b000: rgbcolor = newblock[15 : 0];
+		3'b001: rgbcolor = newblock[31 : 16];
+		3'b010: rgbcolor = newblock[47 : 32];
+		3'b011: rgbcolor = newblock[63 : 48];
+		3'b100: rgbcolor = newblock[79 : 64];
+		3'b101: rgbcolor = newblock[95 : 80];
+		3'b110: rgbcolor = newblock[111 : 96];
+		3'b111: rgbcolor = newblock[127 : 112];
 	endcase
-
-	if (~aresetn) begin
-		rgbcolor <= 16'd0;
-	end
 end
 
 // --------------------------------------------------
@@ -170,7 +138,26 @@ always @(posedge clk25) begin // Tied to GPU clock
 	// All possible modes:
 	// MASK / MAX / REPLACE / BLEND
 	unique case ({scanenable && (scanline < 480), colormode})
-		2'b10: paletteout <= paletteentries[palettera];
+		2'b10: begin
+			unique case (colorpixel)
+				4'b0000: paletteout <= paletteentries[newblock[7 : 0]];
+				4'b0001: paletteout <= paletteentries[newblock[15 : 8]];
+				4'b0010: paletteout <= paletteentries[newblock[23 : 16]];
+				4'b0011: paletteout <= paletteentries[newblock[31 : 24]];
+				4'b0100: paletteout <= paletteentries[newblock[39 : 32]];
+				4'b0101: paletteout <= paletteentries[newblock[47 : 40]];
+				4'b0110: paletteout <= paletteentries[newblock[55 : 48]];
+				4'b0111: paletteout <= paletteentries[newblock[63 : 56]];
+				4'b1000: paletteout <= paletteentries[newblock[71 : 64]];
+				4'b1001: paletteout <= paletteentries[newblock[79 : 72]];
+				4'b1010: paletteout <= paletteentries[newblock[87 : 80]];
+				4'b1011: paletteout <= paletteentries[newblock[95 : 88]];
+				4'b1100: paletteout <= paletteentries[newblock[103 : 96]];
+				4'b1101: paletteout <= paletteentries[newblock[111 : 104]];
+				4'b1110: paletteout <= paletteentries[newblock[119 : 112]];
+				4'b1111: paletteout <= paletteentries[newblock[127 : 120]];
+			endcase
+		end
 		2'b11: paletteout <= {
 			rgbcolor[5:0],2'd0,		// G
 			rgbcolor[10:6],3'd0,	// R
