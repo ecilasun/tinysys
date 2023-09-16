@@ -6,6 +6,7 @@
 #include "ringbuffer.h"
 #include "leds.h"
 #include "rombase.h"
+#include "keyboard.h"
 
 static uint32_t s_devicePollInterval = 10;
 static uint8_t s_deviceProtocol = HID_PROTOCOL_NONE;
@@ -14,6 +15,7 @@ static uint64_t s_nextPoll = 0;
 
 static int32_t *s_mposxy_buttons = (int32_t*)MOUSE_POS_AND_BUTTONS;
 static int32_t *s_jposxy_buttons = (int32_t*)JOYSTICK_POS_AND_BUTTONS;
+static uint16_t* s_keystates = (uint16_t*)KEYBOARD_KEYSTATE_BASE;
 
 static uint8_t *s_currentkeymap = (uint8_t*)(KEYBOARD_KEYTRACK_BASE);
 static uint8_t *s_prevkeymap = (uint8_t*)(KEYBOARD_KEYTRACK_BASE+256);
@@ -87,8 +89,6 @@ void InitializeUSBHIDData()
 
 void ProcessUSBDevice()
 {
-	uint16_t* keystates = (uint16_t*)KEYBOARD_KEYSTATE_BASE;
-
 	enum EBusState probe_result = (enum EBusState)*s_probe_result;
 	uint32_t state_changed = probe_result != old_probe_result;
 
@@ -245,14 +245,14 @@ void ProcessUSBDevice()
 								//if (prevstate && currentstate) keystate |= 4; // repeat
 
 								// Update up/down state map alongside current modifier state
-								keystates[i] = keystate | modifierState;
+								s_keystates[i] = keystate | modifierState;
 
 								// Insert down keys into input fifo in scan order
 								// NOTE: Could be moved out of here
 								if (keystate&1)
 								{
 									// Insert capital/lowercase ASCII code into input fifo
-									uint32_t incoming = HIDScanToASCII(i, isCaps);
+									uint32_t incoming = KeyScanCodeToASCII(i, isCaps);
 									RingBufferWrite(&incoming, sizeof(uint32_t));
 								}
 							}
@@ -260,7 +260,7 @@ void ProcessUSBDevice()
 							// Remember current state
 							__builtin_memcpy(s_prevkeymap, s_currentkeymap, 256);
 
-							// Reset only after key repeat rate (~200 ms)
+							// TODO: Reset only after key repeat rate (~200 ms)
 							__builtin_memset(s_currentkeymap, 0, 256);
 
 							// Toggle LEDs based on locked key state change
@@ -268,7 +268,7 @@ void ProcessUSBDevice()
 							// caps:0x02
 							// scrolllock:0x04
 							// Any of the lock keys down?
-							uint8_t lockstate = ((keystates[0x39]&1)?0x02:0x00) | ((keystates[0x53]&1)?0x01:0x00) | ((keystates[0x47]&1)?0x04:0x00);
+							uint8_t lockstate = ((s_keystates[0x39]&1)?0x02:0x00) | ((s_keystates[0x53]&1)?0x01:0x00) | ((s_keystates[0x47]&1)?0x04:0x00);
 							if (lockstate)
 							{
 								// Toggle previous state

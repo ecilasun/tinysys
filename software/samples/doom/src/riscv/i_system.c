@@ -38,7 +38,7 @@
 #include "basesystem.h"
 #include "core.h"
 #include "console.h"
-#include "usbhost.h"
+#include "keyboard.h"
 
 void
 I_Init(void)
@@ -66,40 +66,41 @@ static void
 I_GetRemoteEvent(void)
 {
 	// Post event for all pressed / released keys
-	uint16_t *keystates = (uint16_t*)KEYBOARD_KEYSTATE_BASE;
+	uint16_t *keystates = GetKeyStateTable();
 
-	for(int i=0; i<255; ++i)
+	event_t event;
+	int key = HKEY_RESERVED;
+	uint16_t updown = 0;
+	if ((updown = keystates[HKEY_ENTER]&3)!=0)			{ event.data1 = KEY_ENTER; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_ENTER; }
+	if ((updown = keystates[HKEY_RETURN]&3)!=0)			{ event.data1 = KEY_ENTER; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_RETURN; }
+	if ((updown = keystates[HKEY_RIGHTARROW]&3)!=0)		{ event.data1 = KEY_RIGHTARROW; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_RIGHTARROW; }
+	if ((updown = keystates[HKEY_LEFTARROW]&3)!=0)		{ event.data1 = KEY_LEFTARROW; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_LEFTARROW; }
+	if ((updown = keystates[HKEY_DOWNARROW]&3)!=0)		{ event.data1 = KEY_DOWNARROW; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_DOWNARROW; }
+	if ((updown = keystates[HKEY_UPARROW]&3)!=0)		{ event.data1 = KEY_UPARROW; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_UPARROW; }
+	if ((updown = keystates[HKEY_RIGHTSHIFT]&3)!=0)		{ event.data1 = KEY_RSHIFT; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_RIGHTSHIFT; }
+	if ((updown = keystates[HKEY_LEFTSHIFT]&3)!=0)		{ event.data1 = KEY_RSHIFT; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_LEFTSHIFT; }
+	if ((updown = keystates[HKEY_RIGHTALT]&3)!=0)		{ event.data1 = KEY_RALT; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_RIGHTALT; }
+	if ((updown = keystates[HKEY_LEFTALT]&3)!=0)		{ event.data1 = KEY_RALT; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_LEFTALT; }
+	if ((updown = keystates[HKEY_RIGHTCONTROL]&3)!=0)	{ event.data1 = KEY_RCTRL; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_RIGHTCONTROL; }
+	if ((updown = keystates[HKEY_LEFTCONTROL]&3)!=0)	{ event.data1 = KEY_RCTRL; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_LEFTCONTROL; }
+
+	// None of the above, check for characters
+	if (key == HKEY_RESERVED)
 	{
-		if (keystates[i])
+		for(int i=0; i<255; ++i)
 		{
-			uint16_t updown = keystates[i]&3;
-			if (updown)
+			if (keystates[i])
 			{
-				event_t event;
-				if (i==0x4F) // right arrow
-					event.data1 = KEY_RIGHTARROW;
-				else if (i==0x50) // left arrow
-					event.data1 = KEY_LEFTARROW;
-				else if (i==0x51) // down arrow
-					event.data1 = KEY_DOWNARROW;
-				else if (i==0x52) // up arrow
-					event.data1 = KEY_UPARROW;
-				else if (i==0xE1 || i==0xE5) // left shift / right shift
-					event.data1 = KEY_RSHIFT;
-				else if (i==0xE2 || i==0xE6) // left alt / right alt
-					event.data1 = KEY_RALT;
-				else if (i==0xE0 || i==0xE4) // left ctrl / right ctrl
-					event.data1 = KEY_RCTRL;
-				else
-					event.data1 = HIDScanToASCII(i, 0); // always lowercase
+				updown = keystates[i]&3;
+				event.data1 = KeyScanCodeToASCII(i, 0); // always lowercase
 				event.type = (updown&1) ? ev_keydown : ev_keyup;
-				D_PostEvent(&event);
+				key = i;
 			}
 		}
 	}
 
-	// TODO: Joystick support
-	//int32_t *s_jposxy_buttons = (int32_t*)JOYSTICK_POS_AND_BUTTONS;
+	if (key != HKEY_RESERVED)
+		D_PostEvent(&event);
 }
 
 void

@@ -26,6 +26,7 @@ SOURCES_doom_arch := \
 	../../../../SDK/gpu.c \
 	../../../../SDK/dma.c \
 	../../../../SDK/usbhost.c \
+	../../../../SDK/keyboard.c \
 	mini-printf.c \
 	d_main.c \
 	i_main.c \
