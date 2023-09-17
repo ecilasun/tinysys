@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
     s_vx.m_vmode = EVM_320_Wide;
     s_vx.m_cmode = ECM_8bit_Indexed;
 	GPUSetVMode(&s_vx, EVS_Enable);
-	GPUClearScreen(&s_vx, 0x0A0A0A0A);
+	GPUClearScreen(&s_vx, 0xFFFFFFFF);
 
 	// Apply the NES color palette
 	agnes_color_t *palette = agnes_get_palette(agnes);
@@ -97,6 +97,7 @@ static void get_input(agnes_input_t *out_input)
 {
     memset(out_input, 0, sizeof(agnes_input_t));
 
+	// Read input from the USB joystick data region
 	int32_t *jposxy_buttons = (int32_t*)JOYSTICK_POS_AND_BUTTONS;
 
     if (jposxy_buttons[2]&0x20)		out_input->a = true;
