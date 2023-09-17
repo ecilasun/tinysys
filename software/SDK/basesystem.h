@@ -26,12 +26,13 @@
 // Keyboard state tracking data (512 bytes)
 #define KEYBOARD_KEYTRACK_BASE			0x00000A20
 #define KEYBOARD_KEYTRACK_END			0x00000C20
+#define KEYBOARD_INPUT_GENERATION		0x00000C24
 // USB host status
-#define USB_HOST_STATE					0x00000A20
+#define USB_HOST_STATE					0x00000D20
 // Mouse x/y and button data - 12 bytes
-#define MOUSE_POS_AND_BUTTONS			0x00000A24
+#define MOUSE_POS_AND_BUTTONS			0x00000D24
 // Joystick x/y and buttons - 16 bytes
-#define JOYSTICK_POS_AND_BUTTONS		0x00000A30
+#define JOYSTICK_POS_AND_BUTTONS		0x00000D30
 // Executable
 #define HEAP_START_APPMEM_END			0x02000000 // Executable space above this (32MBytes)
 // Heap

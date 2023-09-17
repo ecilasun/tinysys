@@ -48,14 +48,6 @@ int main()
 	memset(imguiframebuffer, 0x0, vx.m_graphicsWidth * vx.m_graphicsHeight * 4);
 
 	static float temps[] = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };
-	static float ch0[] = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };
-	static float ch1[] = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };
-	static float ch2[] = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };
-	static float ch3[] = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };
-	static float ch4[] = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };
-	static float ch5[] = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };
-	static float ch6[] = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };
-	static float ch7[] = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };
 
 	uint32_t cycle = 0;
 	//uint32_t prevvblankcount = GPUReadVBlankCounter();
@@ -72,14 +64,6 @@ int main()
 			//prevvblankcount = vblankcount;
 
 			uint32_t ADCcode = ADCGetRawTemperature();
-			uint32_t channel0data = ADCGetAnalogInput(0);
-			uint32_t channel1data = ADCGetAnalogInput(1);
-			uint32_t channel2data = ADCGetAnalogInput(2);
-			uint32_t channel3data = ADCGetAnalogInput(3);
-			uint32_t channel4data = ADCGetAnalogInput(4);
-			uint32_t channel5data = ADCGetAnalogInput(5);
-			uint32_t channel6data = ADCGetAnalogInput(6);
-			uint32_t channel7data = ADCGetAnalogInput(7);
 			float temp_centigrates = (ADCcode*503.975f)/4096.f-273.15f;
 
 			// Clear write buffer
@@ -102,43 +86,11 @@ int main()
 			ImGui::Begin("Stats");
 			ImGui::Text("Frame: %d", (int)cycle);
             ImGui::PlotLines("Temp", temps, IM_ARRAYSIZE(temps));
-			ImGui::PlotLines("CH0", ch0, IM_ARRAYSIZE(ch0));
-			ImGui::PlotLines("CH1", ch1, IM_ARRAYSIZE(ch1));
-			ImGui::PlotLines("CH2", ch2, IM_ARRAYSIZE(ch2));
-			ImGui::PlotLines("CH3", ch3, IM_ARRAYSIZE(ch3));
-			ImGui::PlotLines("CH4", ch4, IM_ARRAYSIZE(ch4));
-			ImGui::PlotLines("CH5", ch5, IM_ARRAYSIZE(ch5));
-			ImGui::PlotLines("CH6", ch6, IM_ARRAYSIZE(ch6));
-			ImGui::PlotLines("CH7", ch7, IM_ARRAYSIZE(ch7));
 			ImGui::End();
 
 			for (int i=0;i<9;++i)
 				temps[i] = temps[i+1];
-			for (int i=0;i<9;++i)
-				ch0[i] = ch0[i+1];
-			for (int i=0;i<9;++i)
-				ch1[i] = ch1[i+1];
-			for (int i=0;i<9;++i)
-				ch2[i] = ch2[i+1];
-			for (int i=0;i<9;++i)
-				ch3[i] = ch3[i+1];
-			for (int i=0;i<9;++i)
-				ch4[i] = ch4[i+1];
-			for (int i=0;i<9;++i)
-				ch5[i] = ch5[i+1];
-			for (int i=0;i<9;++i)
-				ch6[i] = ch6[i+1];
-			for (int i=0;i<9;++i)
-				ch7[i] = ch7[i+1];
 			temps[9] = temp_centigrates;
-			ch0[9] = float(channel0data)/1024.f;
-			ch1[9] = float(channel1data)/1024.f;
-			ch2[9] = float(channel2data)/1024.f;
-			ch3[9] = float(channel3data)/1024.f;
-			ch4[9] = float(channel4data)/1024.f;
-			ch5[9] = float(channel5data)/1024.f;
-			ch6[9] = float(channel6data)/1024.f;
-			ch7[9] = float(channel7data)/1024.f;
 
 			ImGui::Render();
 			imgui_sw::paint_imgui((uint32_t*)imguiframebuffer, vx.m_graphicsWidth, vx.m_graphicsHeight);

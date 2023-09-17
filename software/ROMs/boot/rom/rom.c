@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define VERSIONSTRING "v0008"
+#define VERSIONSTRING "v0009"
 
 static struct EVideoContext s_gpuContext;
 static char s_tmpstr[192];
@@ -227,24 +227,26 @@ void ExecuteCmd(char *_cmd)
 	else if (!strcmp(command, "ver"))
 	{
 		USBSerialWrite("tinysys " VERSIONSTRING "\n");
+		USBSerialWrite("CPU:            : 166.67MHz\n");
 		uint8_t m3420rev = MAX3420ReadByte(rREVISION);
 		if (m3420rev != 0xFF)
 		{
-			USBSerialWrite("MAX3420(serial) rev# 0x");
+			USBSerialWrite("MAX3420(serial) : 0x");
 			USBSerialWriteHexByte(m3420rev);
 			USBSerialWrite("\n");
 		}
 		else
-			USBSerialWrite("MAX3420(serial) disabled\n");
+			USBSerialWrite("MAX3420(serial) : n/a\n");
 		uint8_t m3421rev = MAX3421ReadByte(rREVISION);
 		if (m3421rev != 0xFF)
 		{
-			USBSerialWrite("MAX3421(host) rev# 0x");
+			USBSerialWrite("MAX3421(host)   : 0x");
 			USBSerialWriteHexByte(m3421rev);
 			USBSerialWrite("\n");
 		}
 		else
-			USBSerialWrite("MAX3421(host) disabled\n");
+			USBSerialWrite("MAX3421(host)   : n/a\n");
+		USBSerialWrite("\n");
 	}
 	else if (!strcmp(command, "help"))
 	{

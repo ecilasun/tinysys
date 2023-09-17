@@ -65,6 +65,13 @@ I_GetTime (void)
 static void
 I_GetRemoteEvent(void)
 {
+	// Do not read same input twice
+	static uint32_t prevGen = 0xFFFFFFFF;
+	uint32_t keyGen = GetKeyStateGeneration();
+	if (keyGen == prevGen)
+		return;
+	prevGen = keyGen;
+
 	// Post event for all pressed / released keys
 	uint16_t *keystates = GetKeyStateTable();
 

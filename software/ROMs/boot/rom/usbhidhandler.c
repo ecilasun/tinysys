@@ -19,6 +19,7 @@ static uint16_t* s_keystates = (uint16_t*)KEYBOARD_KEYSTATE_BASE;
 
 static uint8_t *s_currentkeymap = (uint8_t*)(KEYBOARD_KEYTRACK_BASE);
 static uint8_t *s_prevkeymap = (uint8_t*)(KEYBOARD_KEYTRACK_BASE+256);
+static uint32_t *s_keyinputgeneration = (uint32_t*)KEYBOARD_INPUT_GENERATION;
 static uint8_t s_devicecontrol[8];
 static uint8_t s_deviceAddress = 0;
 static uint8_t s_controlEndpoint = 0;
@@ -81,6 +82,7 @@ void InitializeUSBHIDData()
 		s_currentkeymap[i] = 0;
 		s_prevkeymap[i] = 0;
 	}
+	*s_keyinputgeneration = 0x0;
 
 	// LED output
 	for (int i=0; i<8; ++i)
@@ -218,6 +220,9 @@ void ProcessUSBDevice()
 
 						if (rcode == 0)
 						{
+							// Increment generation counter
+							*s_keyinputgeneration = (*s_keyinputgeneration)+1;
+
 							// Reflect into current keymap
 							for (uint32_t i=2; i<8; ++i)
 							{
@@ -233,7 +238,7 @@ void ProcessUSBDevice()
 							//uint8_t isGraphics = modifierState&0x8800 ? 1:0;
 							//uint8_t isAlt = modifierState&0x4400 ? 1:0;
 							uint8_t isShift = modifierState&0x2200 ? 1:0;
-							//uint8_t isControl = modifierState&0x1100 ? 1:0;
+							uint8_t isControl = modifierState&0x1100 ? 1:0;
 							uint8_t isCaps = isShift | (s_devicecontrol[0]&0x02);
 							for (uint32_t i=0; i<256; ++i)
 							{
@@ -251,8 +256,11 @@ void ProcessUSBDevice()
 								// NOTE: Could be moved out of here
 								if (keystate&1)
 								{
-									// Insert capital/lowercase ASCII code into input fifo
-									uint32_t incoming = KeyScanCodeToASCII(i, isCaps);
+									uint32_t incoming;
+									if ((i==HKEY_C) && isControl)
+										incoming = 3; // EXT (CTRL+C)
+									else
+										incoming = KeyScanCodeToASCII(i, isCaps);
 									RingBufferWrite(&incoming, sizeof(uint32_t));
 								}
 							}

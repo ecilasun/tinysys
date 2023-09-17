@@ -35,4 +35,4 @@ all: modplayer.elf
 # Clean
 
 clean:
-	rm -rf $(objs) $(junk)
+	del $(objs) $(junk)

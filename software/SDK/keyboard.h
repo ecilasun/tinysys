@@ -4,6 +4,7 @@
 
 uint16_t *GetKeyStateTable();
 char KeyScanCodeToASCII(const uint8_t _code, const uint8_t _uppercase);
+uint32_t GetKeyStateGeneration();
 uint16_t GetKeyState(uint8_t _key);
 
 // Key states
