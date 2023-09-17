@@ -107,10 +107,15 @@ spimasterinfifo usbspiinputfifo(
 
 always @(posedge spibaseclock) begin
 	infifowe <= 1'b0;
+
 	if (hasvaliddata & (~infifofull)) begin // make sure to drain the fifo!
 		// stash incoming byte in fifo
 		infifowe <= 1'b1;
 		infifodin <= spiincomingdata;
+	end
+
+	if (~aresetn) begin
+		infifowe <= 1'b0;
 	end
 end
 

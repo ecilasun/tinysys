@@ -204,7 +204,7 @@ axi4dma DMA(
 // Boot ROM copy unit
 // --------------------------------------------------
 
-axi4romcopy #(.RESETVECTOR(RESETVECTOR)) ROMCopy(
+axi4romcopy #(.RESETVECTOR(RESETVECTOR)) COPYROM(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.m_axi(romcopybus),
