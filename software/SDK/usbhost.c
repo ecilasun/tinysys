@@ -42,12 +42,10 @@ enum EBusState USBBusProbe()
 	{
 		case bmJSTATUS:
 			if((MAX3421ReadByte(rMODE) & bmLOWSPEED) == 0 ) {
-				//USBSerialWrite("full speed host - jstatus\n");
 				MAX3421WriteByte(rMODE, MODE_FS_HOST);       //start full-speed host
 				return FSHOST;
 			}
 			else {
-				//USBSerialWrite("low speed host - jstatus\n");
 				MAX3421WriteByte(rMODE, MODE_LS_HOST);        //start low-speed host
 				return LSHOST;
 			}
@@ -55,13 +53,11 @@ enum EBusState USBBusProbe()
 		case bmKSTATUS:
 			if(( MAX3421ReadByte(rMODE) & bmLOWSPEED) == 0 )
 			{
-				//USBSerialWrite("low speed host - kstatus\n");
 				MAX3421WriteByte(rMODE, MODE_LS_HOST);       //start low-speed host
 				return LSHOST;
 			}
 			else
 			{
-				//USBSerialWrite("full speed host - kstatus\n");
 				MAX3421WriteByte(rMODE, MODE_FS_HOST);       //start full-speed host
 				return FSHOST;
 			}

@@ -263,8 +263,8 @@ enum EUSBDeviceState HandleJoystick(enum EUSBDeviceState _currentState)
 		// DEBUG: Dump report
 		// Assuming PS4 controller report with header == 0x01
 		for (uint32_t i=0;i<40;++i)
-			USBSerialWriteHexByte(gamepaddata[i]);
-		USBSerialWrite("\n");
+			kprintf("%x",gamepaddata[i]);
+		kprintf("\n");
 
 		//s_jposxy_buttons[0] = (int32_t)gamepaddata[2]; // left X (4 for right)
 		//s_jposxy_buttons[1] = (int32_t)gamepaddata[3]; // left Y (5 for right)
