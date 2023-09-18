@@ -244,7 +244,7 @@ enum EUSBDeviceState HandleJoystick(enum EUSBDeviceState _currentState)
 }
 
 // NOTE: Only works for PS4 controller for now
-enum EUSBDeviceState HandleGamepad(enum EUSBDeviceState _currentState)
+/*enum EUSBDeviceState HandleGamepad(enum EUSBDeviceState _currentState)
 {
 	enum EUSBDeviceState returnState = _currentState;
 
@@ -266,14 +266,14 @@ enum EUSBDeviceState HandleGamepad(enum EUSBDeviceState _currentState)
 			USBSerialWriteHexByte(gamepaddata[i]);
 		USBSerialWrite("\n");
 
-		/*s_jposxy_buttons[0] = (int32_t)gamepaddata[2]; // left X (4 for right)
-		s_jposxy_buttons[1] = (int32_t)gamepaddata[3]; // left Y (5 for right)
-		s_jposxy_buttons[2] = gamepaddata[6]; // Buttons #0
-		s_jposxy_buttons[3] = gamepaddata[7]; // Buttons #1 (one more in 8)*/
+		//s_jposxy_buttons[0] = (int32_t)gamepaddata[2]; // left X (4 for right)
+		//s_jposxy_buttons[1] = (int32_t)gamepaddata[3]; // left Y (5 for right)
+		//s_jposxy_buttons[2] = gamepaddata[6]; // Buttons #0
+		//s_jposxy_buttons[3] = gamepaddata[7]; // Buttons #1 (one more in 8)
 	}
 
 	return returnState;
-}
+}*/
 
 void ProcessUSBDevice()
 {
@@ -398,8 +398,8 @@ void ProcessUSBDevice()
 						devState = HandleMouse(devState);
 					else if (s_deviceProtocol == HID_PROTOCOL_JOYSTICK)
 						devState = HandleJoystick(devState);
-					else if (s_deviceProtocol == HID_PROTOCOL_GAMEPAD)
-						devState = HandleGamepad(devState);
+					/*else if (s_deviceProtocol == HID_PROTOCOL_GAMEPAD)
+						devState = HandleGamepad(devState);*/
 					else
 						devState = DEVS_ERROR;
 				}

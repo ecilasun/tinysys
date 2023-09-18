@@ -21,9 +21,7 @@
 
 #define VERSIONSTRING "v000A"
 
-static struct EVideoContext s_gpuContext;
-static char s_tmpstr[192];
-
+const uint32_t s_consolebgcolor = 0x36363636;
 static char s_execName[64] = "ROM";
 static char s_execParam0[64] = "auto";
 static uint32_t s_execParamCount = 1;
@@ -86,7 +84,7 @@ void _runExecTask()
 	// execution pool.
 }
 
-void DeviceDefaultState()
+void DeviceDefaultState(int _bootTime)
 {
 	// Clear both audio output buffers to stop raw sound output
 	APUStop();
@@ -109,10 +107,20 @@ void DeviceDefaultState()
 	// Wait for any pending DMA to complete
 	DMAWait();
 
-	// Shut down display
-	s_gpuContext.m_vmode = EVM_320_Wide;
-	s_gpuContext.m_cmode = ECM_8bit_Indexed;
-	GPUSetVMode(&s_gpuContext, EVS_Disable);
+	// Set up console view
+	struct EVideoContext *kernelgfx = GetKernelGfxContext();
+	GPUSetWriteAddress(kernelgfx, CONSOLE_BUFFER_START);
+	GPUSetScanoutAddress(kernelgfx, CONSOLE_BUFFER_START);
+	GPUSetDefaultPalette(kernelgfx);
+	kernelgfx->m_vmode = EVM_640_Wide;
+	kernelgfx->m_cmode = ECM_8bit_Indexed;
+	GPUSetVMode(kernelgfx, EVS_Enable);
+	// Preserve contents for non-boot
+	if (_bootTime == 1)
+	{
+		GPUClearScreen(kernelgfx, s_consolebgcolor);
+		ksetcursor(0,0);
+	}
 }
 
 void ExecuteCmd(char *_cmd)
@@ -122,6 +130,7 @@ void ExecuteCmd(char *_cmd)
 		return;
 
 	uint32_t loadELF = 0;
+	struct EVideoContext *kernelgfx = GetKernelGfxContext();
 
 	if (!strcmp(command, "ls"))
 	{
@@ -141,14 +150,15 @@ void ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "clear"))
 	{
-		USBSerialWrite("\033[H\033[0m\033[2J");
+		GPUClearScreen(kernelgfx, s_consolebgcolor);
+		ksetcursor(0,0);
 	}
 	else if (!strcmp(command, "reloc"))
 	{
 		const char *offset = strtok(NULL, " ");
 		if (!offset)
 		{
-			USBSerialWrite("Relocation offset reset\n");
+			kprintf("Relocation offset reset\n");
 			s_relocOffset = 0;
 		}
 		else
@@ -158,32 +168,25 @@ void ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "mem"))
 	{
-		USBSerialWrite("Available memory:");
+		kprintf("Available memory:");
 		uint32_t inkbytes = core_memavail()/1024;
 		uint32_t inmbytes = inkbytes/1024;
 		if (inmbytes!=0)
-		{
-			USBSerialWriteDecimal(inmbytes);
-			USBSerialWrite(" Mbytes\n");
-		}
+			kprintf("%d Mbytes\n", inmbytes);
 		else
-		{
-			USBSerialWriteDecimal(inkbytes);
-			USBSerialWrite(" Kbytes\n");
-		}
+			kprintf("%d Kbytes\n", inkbytes);
 	}
 	else if (!strcmp(command, "ps"))
 	{
 		struct STaskContext *ctx = GetTaskContext();
 		if (ctx->numTasks==1)
-			USBSerialWrite("No tasks running\n");
+			kprintf("No tasks running\n");
 		else
 		{
 			for (int i=0;i<ctx->numTasks;++i)
 			{
 				struct STask *task = &ctx->tasks[i];
-				mini_snprintf(s_tmpstr, 512, "#%d:%s PC:0x%x name:'%s'\n", i, s_taskstates[task->state], task->regs[0], task->name);
-				USBSerialWrite(s_tmpstr);
+				kprintf("#%d:%s PC:0x%x name:'%s'\n", i, s_taskstates[task->state], task->regs[0], task->name);
 			}
 		}
 	}
@@ -191,7 +194,7 @@ void ExecuteCmd(char *_cmd)
 	{
 		const char *path = strtok(NULL, " ");
 		if (!path)
-			USBSerialWrite("usage: rm fname\n");
+			kprintf("usage: rm fname\n");
 		else
 			remove(path);
 	}
@@ -199,7 +202,7 @@ void ExecuteCmd(char *_cmd)
 	{
 		const char *processid = strtok(NULL, " ");
 		if (!processid)
-			USBSerialWrite("usage: kill processid\n");
+			kprintf("usage: kill processid\n");
 		else
 		{
 			// Warning! This can also kill PID(1) which is the CLI
@@ -211,18 +214,14 @@ void ExecuteCmd(char *_cmd)
 	else if (!strcmp(command, "usb"))
 	{
 		int state = GetUSBDeviceState();
-		USBSerialWrite("Device state: ");
-		USBSerialWriteDecimal(state);
-		USBSerialWrite("(");
-		USBSerialWrite(s_usbdevstates[state]);
-		USBSerialWrite(")\n");
+		kprintf("Device state: %d(%s)\n", state, s_usbdevstates[state]);
 	}
 	else if (!strcmp(command, "ren"))
 	{
 		const char *path = strtok(NULL, " ");
 		const char *newpath = strtok(NULL, " ");
 		if (!path || !newpath)
-			USBSerialWrite("usage: ren oldname newname\n");
+			kprintf("usage: ren oldname newname\n");
 		else
 			rename(path, newpath);
 	}
@@ -231,7 +230,7 @@ void ExecuteCmd(char *_cmd)
 		const char *path = strtok(NULL, " ");
 		// Change working directory
 		if (!path)
-			USBSerialWrite("usage: cwd path\n");
+			kprintf("usage: cwd path\n");
 		else
 		{
 			f_chdir(path);
@@ -240,52 +239,44 @@ void ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "ver"))
 	{
-		USBSerialWrite("tinysys         : " VERSIONSTRING "\n");
-		USBSerialWrite("Board:          : revision 1K\n");	// TODO: need to read board and CPU data form system config
-		USBSerialWrite("CPU:            : 166.67MHz\n");
+		kprintf("tinysys         : " VERSIONSTRING "\n");
+		kprintf("Board:          : revision 1K\n");	// TODO: need to read board and CPU data form system config
+		kprintf("CPU:            : 166.67MHz\n");
 
 		// Report USB device die versions
+
 		uint8_t m3420rev = MAX3420ReadByte(rREVISION);
 		if (m3420rev != 0xFF)
-		{
-			USBSerialWrite("MAX3420(serial) : 0x");
-			USBSerialWriteHexByte(m3420rev);
-			USBSerialWrite("\n");
-		}
+			kprintf("MAX3420(serial) : 0x%X\n", m3420rev);
 		else
-			USBSerialWrite("MAX3420(serial) : n/a\n");
+			kprintf("MAX3420(serial) : n/a\n");
+
 		uint8_t m3421rev = MAX3421ReadByte(rREVISION);
 		if (m3421rev != 0xFF)
-		{
-			USBSerialWrite("MAX3421(host)   : 0x");
-			USBSerialWriteHexByte(m3421rev);
-			USBSerialWrite("\n");
-		}
+			kprintf("MAX3421(host)   : 0x%X\n", m3421rev);
 		else
-			USBSerialWrite("MAX3421(host)   : n/a\n");
-		USBSerialWrite("\n");
+			kprintf("MAX3421(host)   : n/a\n");
 	}
 	else if (!strcmp(command, "help"))
 	{
 		// Bright blue
-		USBSerialWrite("\033[0m\n\033[94m");
-		USBSerialWrite("Available commands\n");
-		USBSerialWrite("ver: Show version info\n");
-		USBSerialWrite("clear: Clear terminal\n");
-		USBSerialWrite("cwd path: Change working directory\n");
-		USBSerialWrite("ls [path]: Show list of files in cwd or path\n");
-		USBSerialWrite("rm fname: Delete file\n");
-		USBSerialWrite("ren oldname newname: Rename file\n");
-		USBSerialWrite("ps: Show process info\n");
-		USBSerialWrite("kill pid: Kill process with id pid\n");
-		USBSerialWrite("usb: Show current USB peripheral state\n");
-		USBSerialWrite("mount: Mount drive sd:\n");
-		USBSerialWrite("umount: Unmount drive sd:\n");
-		USBSerialWrite("reloc: Set ELF relocation offset\n");
-		USBSerialWrite("mem: Show available memory\n");
-		USBSerialWrite("Any other input will load a file from sd: with matching name\n");
-		USBSerialWrite("CTRL+C terminates current program\n");
-		USBSerialWrite("\033[0m\n");
+		kprintf("Available commands\n");
+		kprintf("ver: Show version info\n");
+		kprintf("clear: Clear terminal\n");
+		kprintf("cwd path: Change working directory\n");
+		kprintf("ls [path]: Show list of files in cwd or path\n");
+		kprintf("rm fname: Delete file\n");
+		kprintf("ren oldname newname: Rename file\n");
+		kprintf("ps: Show process info\n");
+		kprintf("kill pid: Kill process with id pid\n");
+		kprintf("usb: Show current USB peripheral state\n");
+		kprintf("mount: Mount drive sd:\n");
+		kprintf("umount: Unmount drive sd:\n");
+		kprintf("reloc: Set ELF relocation offset\n");
+		kprintf("mem: Show available memory\n");
+		kprintf("Any other input will load a file from sd: with matching name\n");
+		kprintf("CTRL+C terminates current program\n");
+		kprintf("\n");
 	}
 	else // Anything else defers to being a command on storage
 		loadELF = 1;
@@ -297,7 +288,7 @@ void ExecuteCmd(char *_cmd)
 		// until we get a virtual memory device
 		if (tctx->numTasks>2)
 		{
-			USBSerialWrite("Virtual memory support required to run more than one ELF.\n");
+			kprintf("Virtual memory support required to run more than one ELF.\n");
 		}
 		else
 		{
@@ -401,10 +392,9 @@ void _cliTask()
 		if (task->state == TS_TERMINATED)
 		{
 			task->state = TS_UNKNOWN;
-			/*mini_snprintf(s_tmpstr, 512, "\n'%s' terminated (0x%x)\n", task->name, task->exitCode);
-			USBSerialWrite(s_tmpstr);*/
+			//kprintf("\n'%s' terminated (0x%x)\n", task->name, task->exitCode);
 			++s_refreshConsoleOut;
-			DeviceDefaultState();
+			DeviceDefaultState(0);
 		}
 
 		// Process or echo input only when we have no ELF running
@@ -413,7 +403,7 @@ void _cliTask()
 			if (execcmd)
 			{
 				++s_refreshConsoleOut;
-				USBSerialWrite("\n");
+				kprintf("\n");
 				ExecuteCmd(s_cmdString);
 				// Rewind
 				s_cmdLen = 0;
@@ -425,8 +415,10 @@ void _cliTask()
 				s_refreshConsoleOut = 0;
 				s_cmdString[s_cmdLen] = 0;
 				// Reset current line and emit the command string
-				mini_snprintf(s_tmpstr, 512, "\033[2K\r%s>%s", s_workdir, s_cmdString);
-				USBSerialWrite(s_tmpstr);
+				int cx,cy;
+				kgetcursor(&cx, &cy);
+				ksetcursor(0,cy);
+				kprintf("%s>%s_ ", s_workdir, s_cmdString);
 			}
 		}
 
@@ -456,7 +448,7 @@ int main()
 		// int unpackedsize = fastlz_decompress(indata, indatalength, rawdata, rawdatamaxsize);
 
 		// Reset to defaults
-		DeviceDefaultState();
+		DeviceDefaultState(1);
 		// Unmount current drive - the loaded app has to mount on their own
 		UnmountDrive();
 		// At this point there are no ISR, debug aid or any facilities
@@ -473,7 +465,8 @@ int main()
 	// NOTE: Since we'll loop around here again if we receive a soft reset,
 	// we need to make sure all things are stopped and reset to default states
 	LEDSetState(0xC);
-	DeviceDefaultState();
+	DeviceDefaultState(1);
+	kprintf("tinysys " VERSIONSTRING "\n");
 
 	// Set up internals
 	LEDSetState(0xB);

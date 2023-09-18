@@ -101,7 +101,8 @@ int main(int argc, char** argv )
 	GPUSetScanoutAddress(&vx, (uint32_t)image);
 	GPUClearScreen(&vx, 0x03030303);
 
-    GPUPrintString(&vx, 0, 16, "loading...", 0x7FFFFFFF);
+	int cx = 0, cy = 16;
+    GPUPrintString(&vx, &cx, &cy, "loading...", 0x7FFFFFFF);
     CFLUSH_D_L1;
 
 	if (argc<=1)

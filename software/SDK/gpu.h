@@ -88,7 +88,7 @@ void GPUSwapPages(struct EVideoContext* _vx, struct EVideoSwapContext *_sc);
 void GPUWaitVSync();
 
 // Software emulated
-void GPUPrintString(struct EVideoContext *_context, const int _col, const int _row, const char *_message, int _length);
+void GPUPrintString(struct EVideoContext *_context, int *_col, int *_row, const char *_message, int _length);
 void GPUClearScreen(struct EVideoContext *_context, const uint32_t _colorWord);
 
 // Hardware rasterizer

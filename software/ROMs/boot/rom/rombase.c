@@ -10,9 +10,56 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+static struct EVideoContext s_kernelgfxcontext;
 static FATFS Fs;
+static char *k_tmpstr = (char*)CONSOLE_TEXT_START;
 
-static char k_tmpstr[64];
+static int s_col = 0;
+static int s_row = 0;
+int kprintfn(const int count, const char *fmt, ...)
+{
+	va_list va;
+	int l;
+
+	va_start(va, fmt);
+	l = mini_vsnprintf(k_tmpstr, 128, fmt, va);
+	va_end(va);
+	l = count < l ? count : l;
+
+	struct EVideoContext *kernelgfx = GetKernelGfxContext();
+	GPUPrintString(kernelgfx, &s_col, &s_row, k_tmpstr, count);
+	CFLUSH_D_L1;
+
+	return l;
+}
+
+int kprintf(const char *fmt, ...)
+{
+	va_list va;
+	int l;
+
+	va_start(va, fmt);
+	l = mini_vsnprintf(k_tmpstr, 128, fmt, va);
+	va_end(va);
+
+	struct EVideoContext *kernelgfx = GetKernelGfxContext();
+	GPUPrintString(kernelgfx, &s_col, &s_row, k_tmpstr, 65536);
+	CFLUSH_D_L1;
+
+	return l;
+}
+
+void kgetcursor(int *_x, int *_y)
+{
+	*_x = s_col;
+	*_y = s_row;
+}
+
+void ksetcursor(const int _x, const int _y)
+{
+	s_col = _x;
+	s_row = _y;
+}
 
 uint32_t MountDrive()
 {
@@ -25,7 +72,7 @@ uint32_t MountDrive()
 			return 0;
 	}
 
-	USBSerialWrite("Device sd: mounted\n");
+	kprintf("Device sd: mounted\n");
 	return 1;
 }
 
@@ -33,9 +80,9 @@ void UnmountDrive()
 {
 	/*FRESULT unmountattempt =*/ f_mount(NULL, "sd:", 1);
 	/*if (unmountattempt != FR_OK)
-		USBSerialWrite("File system error (unmount)");
+		kprintf("File system error (unmount)");
 	else*/
-		USBSerialWrite("Device sd: unmounted\n");
+		kprintf("Device sd: unmounted\n");
 }
 
 void ListFiles(const char *path)
@@ -51,53 +98,44 @@ void ListFiles(const char *path)
 			if (re != FR_OK || finf.fname[0] == 0) // Done scanning dir, or error encountered
 				break;
 
-			char *isexe = strstr(finf.fname, ".elf");
 			int isdir = finf.fattrib&AM_DIR;
+			/*char *isexe = strstr(finf.fname, ".elf");
 			if (isdir)
-				USBSerialWrite("\033[33m"); // Yellow
+				set color to yellow
 			if (isexe!=NULL)
-				USBSerialWrite("\033[32m"); // Green
+				set color to green*/
 
 			// Make sure we're always aligned to max 32 characters
 			int count = 0;
 			while(finf.fname[count]!=0) { count++; }
 			count = count>32 ? 32 : count;
-			USBSerialWriteN(finf.fname, count);
+			kprintfn(count, finf.fname);
 			if (count<32)
-				USBSerialWriteN(blankspace, 32-count);
+				kprintfn(32-count, blankspace);
 
 			if (isdir)
-				USBSerialWrite(" <dir>");
+				kprintf(" <dir>");
 			else
 			{
-				USBSerialWrite(" ");
+				kprintf(" ");
 
 				uint32_t inkbytes = (uint32_t)finf.fsize/1024;
 				uint32_t inmbytes = inkbytes/1024;
 
 				if (inmbytes!=0)
-				{
-					USBSerialWriteDecimal(inmbytes);
-					USBSerialWrite("Mb");
-				}
+					kprintf("%d Mb", inmbytes);
 				else if (inkbytes!=0)
-				{
-					USBSerialWriteDecimal(inkbytes);
-					USBSerialWrite("Kb");
-				}
+					kprintf("%d Kb", inkbytes);
 				else
-				{
-					USBSerialWriteDecimal((uint32_t)finf.fsize);
-					USBSerialWrite("b");
-				}
+					kprintf("%d b", (uint32_t)finf.fsize);
 			}
-			USBSerialWrite("\033[0m\n");
+			kprintf("\n");
 		} while(1);
 
 		f_closedir(&dir);
 	}
 	else
-		USBSerialWrite("File system error (unmount)\n");
+		kprintf("File system error (unmount)\n");
 }
 
 uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader, uint32_t* jumptarget, int _relocOffset)
@@ -105,7 +143,7 @@ uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader
 	uint32_t heap_start = 0;
 	if (fheader->m_Magic != 0x464C457F)
 	{
-		USBSerialWrite("ELF header error\n");
+		kprintf("ELF header error\n");
 		return heap_start;
 	}
 
@@ -126,7 +164,7 @@ uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader
 			// Check illegal range
 			if ((uint32_t)memaddr>=HEAP_END_CONSOLEMEM_START || ((uint32_t)memaddr)+pheader.m_MemSz>=HEAP_END_CONSOLEMEM_START)
 			{
-				USBSerialWrite("ELF section in illegal memory region\n");
+				kprintf("ELF section in illegal memory region\n");
 				return 0;
 			}
 			else
@@ -181,13 +219,13 @@ uint32_t LoadExecutable(const char *filename, int _relocOffset, const bool repor
 	else
 	{
 		if (reportError)
-			USBSerialWrite("Executable not found\n");
+			kprintf("Executable not found\n");
 	}
 
 	return 0;
 }
 
-#define MAX_HANDLES 32
+#define MAX_HANDLES 16
 #define MAXFILENAMELEN 32
 
 // Handle allocation mask, positions 0,1 and 2 are reserved
@@ -212,23 +250,7 @@ static char s_fileNames[MAX_HANDLES][MAXFILENAMELEN+1] = {
 	{"                                "},
 	{"                                "},
 	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "}};
+	{"                                "},};
 
 static struct STaskContext g_taskctx;
 static UINT tmpresult = 0;
@@ -249,8 +271,6 @@ struct STaskContext *GetTaskContext()
 void HandleSDCardDetect()
 {
 	uint32_t cardState = *IO_CARDDETECT;
-	/*USBSerialWriteHex(cardState);
-	USBSerialWrite("\n");*/
 
 	if (cardState == 0x0)	// Removed
 		UnmountDrive();
@@ -291,7 +311,7 @@ uint32_t IsFileHandleAllocated(const uint32_t _bitIndex, const uint32_t  _input)
 
 void HandleSoftReset(const uint32_t _PC)
 {
-	USBSerialWrite("Soft reset handler not installed\n");
+	kprintf("Soft reset handler not installed\n");
 }
 
 //void __attribute__((aligned(16))) __attribute__((interrupt("machine"))) interrupt_service_routine() // Auto-saves registers
@@ -373,7 +393,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				else if (hwid&8) HandleSoftReset(PC);
 				else // No familiar bit set, unknown device
 				{
-					USBSerialWrite("Unknown hardware device, core halted\n");
+					kprintf("Unknown hardware device, core halted\n");
 					// Put core to endless sleep
 					while(1) { asm volatile("wfi;"); }
 					break;
@@ -384,7 +404,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 
 			default:
 			{
-				USBSerialWrite("Unknown interrupt type, core halted\n");
+				kprintf("Unknown interrupt type, core halted\n");
 
 				// Put core to endless sleep
 				while(1) { asm volatile("wfi;"); }
@@ -399,12 +419,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			case CAUSE_ILLEGAL_INSTRUCTION:
 			{
 				uint32_t instruction = *((uint32_t*)PC);
-				USBSerialWrite("Illegal instruction 0x");
-				USBSerialWriteHex(instruction);
-				USBSerialWrite(" at 0x");
-				USBSerialWriteHex(PC);
-				USBSerialWrite(", terminating\n");
-
+				kprintf("Illegal instruction 0x%X at 0x%X, terminating\n", instruction, PC);
 				// Terminate task on first chance and remove from list of running tasks
 				TaskExitCurrentTask(&g_taskctx);
 				// Force switch to next task
@@ -420,7 +435,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				// TODO: call debugger breakpoint handler if one's loaded and stop the task
 
 				// Where there's no debugger loaded, simply exit since we're not supposed to run past ebreak commands
-				USBSerialWrite("No debugger present, ignoring breakpoint\n");
+				kprintf("No debugger present, ignoring breakpoint\n");
 
 				// Exit task in non-debug mode
 				TaskExitCurrentTask(&g_taskctx);
@@ -456,7 +471,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				if (value==0) // io_setup()
 				{
 					//sys_io_setup(unsigned nr_reqs, aio_context_t __user *ctx);
-					USBSerialWrite("unimpl: io_setup()\n");
+					kprintf("unimpl: io_setup()\n");
 					write_csr(0x8AA, 0xFFFFFFFF);
 				}
 				else if (value==17) // getcwd()
@@ -585,7 +600,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 
 					if (file == STDOUT_FILENO || file == STDERR_FILENO)
 					{
-						int outcount = USBSerialWriteN((const char*)ptr, count);
+						int outcount = kprintfn(count, (const char*)ptr);
 						write_csr(0x8AA, outcount);
 					}
 					else
@@ -684,7 +699,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				{
 					// Wait for child process status change - unused
 					// pid_t wait(int *wstatus);
-					USBSerialWrite("unimpl: wait()\n");
+					kprintf("unimpl: wait()\n");
 					errno = ECHILD;
 					write_csr(0x8AA, 0xFFFFFFFF);
 				}
@@ -694,8 +709,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					uint32_t pid = read_csr(0x8AA); // A0
 					uint32_t sig = read_csr(0x8AB); // A1
 					TaskExitTaskWithID(&g_taskctx, pid, sig);
-					mini_snprintf(k_tmpstr, 64, "\nSIG:0x%x PID:0x%x\n", sig, pid);
-					USBSerialWrite(k_tmpstr);
+					kprintf("\nSIG:0x%x PID:0x%x\n", sig, pid);
 					write_csr(0x8AA, sig);
 				}
 				else if (value==214) // brk()
@@ -796,14 +810,12 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				}
 				else if (value==0xFFFFFFFF) // setdebugger()
 				{
-					USBSerialWrite("Unimplemented debugger interface\n");
+					kprintf("Unimplemented debugger interface\n");
 					write_csr(0x8AA, 0xFFFFFFFF);
 				}
 				else // Unimplemented syscalls drop here
 				{
-					USBSerialWrite("unimplemented ECALL: ");
-					USBSerialWriteDecimal(value);
-					USBSerialWrite("\n");
+					kprintf("unimplemented ECALL: %d\b", value);
 					errno = EIO;
 					write_csr(0x8AA, 0xFFFFFFFF);
 				}
@@ -825,7 +837,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			default:
 			{
 				// Code contains the CAUSE_ code
-				USBSerialWrite("Guru meditation, core halted\n");
+				kprintf("Guru meditation, core halted\n");
 
 				// Put core to endless sleep
 				while(1) { asm volatile("wfi;"); }
@@ -891,4 +903,9 @@ void InstallISR()
 
 	// Allow all machine interrupts to trigger (thus also enabling task system)
 	write_csr(mstatus, MSTATUS_MIE);
+}
+
+struct EVideoContext *GetKernelGfxContext()
+{
+	return &s_kernelgfxcontext;
 }

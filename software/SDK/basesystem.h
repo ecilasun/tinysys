@@ -33,8 +33,11 @@
 #define MOUSE_POS_AND_BUTTONS			0x00000D24
 // Joystick x/y and buttons - 16 bytes
 #define JOYSTICK_POS_AND_BUTTONS		0x00000D30
+// Console buffer
+#define CONSOLE_BUFFER_START			0x02000000 // 640x480x8bpp
+#define CONSOLE_TEXT_START				0x0204B000 // Character store
 // Executable
-#define HEAP_START_APPMEM_END			0x02000000 // Executable space above this (32MBytes)
+#define HEAP_START_APPMEM_END			0x02050000 // Executable space above this (32MBytes)
 // Heap
 #define HEAP_END_CONSOLEMEM_START		0x0FF00000 // Heap space above this (223MBytes)
 // Kernel console text+attrib/scratch

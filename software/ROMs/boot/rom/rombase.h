@@ -8,6 +8,7 @@
 #include "leds.h"
 #include "elf.h"
 #include "ringbuffer.h"
+#include "gpu.h"
 
 #include <inttypes.h>
 #include <stdbool.h>
@@ -20,3 +21,7 @@ uint32_t MountDrive();
 void UnmountDrive();
 void ListFiles(const char *path);
 uint32_t LoadExecutable(const char *filename, int _relocOffset, const bool reportError);
+struct EVideoContext *GetKernelGfxContext();
+int kprintf(const char *fmt, ...);
+void kgetcursor(int *_x, int *_y);
+void ksetcursor(const int _x, const int _y);
