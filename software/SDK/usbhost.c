@@ -109,6 +109,20 @@ enum EBusState USBHostInit(uint32_t enableInterrupts)
 		s_deviceTable[i].endpointInfo[2].receiveToggle = bmRCVTOG0;
 		s_deviceTable[i].endpointInfo[2].sendToggle = bmSNDTOG0;
 
+		s_deviceTable[i].endpointInfo[3].epAddr = 0x83;
+		s_deviceTable[i].endpointInfo[3].epTransferType = 0;
+		s_deviceTable[i].endpointInfo[3].maxPacketSize = 8;
+		s_deviceTable[i].endpointInfo[3].pollInterval = 0;
+		s_deviceTable[i].endpointInfo[3].receiveToggle = bmRCVTOG0;
+		s_deviceTable[i].endpointInfo[3].sendToggle = bmSNDTOG0;
+
+		s_deviceTable[i].endpointInfo[4].epAddr = 0x84;
+		s_deviceTable[i].endpointInfo[4].epTransferType = 0;
+		s_deviceTable[i].endpointInfo[4].maxPacketSize = 8;
+		s_deviceTable[i].endpointInfo[4].pollInterval = 0;
+		s_deviceTable[i].endpointInfo[4].receiveToggle = bmRCVTOG0;
+		s_deviceTable[i].endpointInfo[4].sendToggle = bmSNDTOG0;
+
 		s_deviceTable[i].deviceClass = 0;
 		s_deviceTable[i].connected = 0;
 	}
@@ -620,7 +634,11 @@ uint8_t USBParseDescriptor(uint8_t _addr, uint8_t *_desc, uint8_t* _dtype, uint8
 			*_offset = sizeof(struct USBEndpointDescriptor);
 			struct USBEndpointDescriptor *desc = (struct USBEndpointDescriptor*)_desc;
 
-			s_deviceTable[_addr].endpointInfo[desc->bEndpointAddress&0x7F].maxPacketSize = desc->bEndpointAddress;
+			uint8_t eaddr = desc->bEndpointAddress&0x7F;
+			s_deviceTable[_addr].endpointInfo[eaddr].epAddr = desc->bEndpointAddress;
+			s_deviceTable[_addr].endpointInfo[eaddr].maxPacketSize = desc->wMaxPacketSize;
+			s_deviceTable[_addr].endpointInfo[eaddr].pollInterval = desc->bInterval;
+			s_deviceTable[_addr].endpointInfo[eaddr].epTransferType = desc->bEndpointAddress&0x80 ? 0 : 1;
 
 #if defined(USB_HOST_DEBUG_DETAILED)
 			USBSerialWrite("\n         dtype: endpoint");
@@ -863,6 +881,10 @@ uint8_t USBDetach(uint8_t _addr)
 		s_deviceTable[_addr].endpointInfo[1].receiveToggle = bmRCVTOG0;
 		s_deviceTable[_addr].endpointInfo[2].sendToggle = bmSNDTOG0;
 		s_deviceTable[_addr].endpointInfo[2].receiveToggle = bmRCVTOG0;
+		s_deviceTable[_addr].endpointInfo[3].sendToggle = bmSNDTOG0;
+		s_deviceTable[_addr].endpointInfo[3].receiveToggle = bmRCVTOG0;
+		s_deviceTable[_addr].endpointInfo[4].sendToggle = bmSNDTOG0;
+		s_deviceTable[_addr].endpointInfo[4].receiveToggle = bmRCVTOG0;
 	}
 
 	return 0;

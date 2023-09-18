@@ -45,7 +45,7 @@ struct USBEndpointRecord
 
 struct USBDeviceRecord
 {
-    struct USBEndpointRecord endpointInfo[3];
+    struct USBEndpointRecord endpointInfo[5];
     uint8_t deviceClass;
 	uint8_t connected;
 };

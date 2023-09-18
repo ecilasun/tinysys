@@ -243,6 +243,7 @@ enum EUSBDeviceState HandleJoystick(enum EUSBDeviceState _currentState)
 	return returnState;
 }
 
+// NOTE: Only works for PS4 controller for now
 enum EUSBDeviceState HandleGamepad(enum EUSBDeviceState _currentState)
 {
 	enum EUSBDeviceState returnState = _currentState;
@@ -259,11 +260,16 @@ enum EUSBDeviceState HandleGamepad(enum EUSBDeviceState _currentState)
 	}
 	else if (rcode != hrNAK)
 	{
-		// Assuming PS4 controller 11 wide report here
-		s_jposxy_buttons[0] = (int32_t)gamepaddata[2]; // left X (4 for right)
+		// DEBUG: Dump report
+		// Assuming PS4 controller report with header == 0x01
+		for (uint32_t i=0;i<40;++i)
+			USBSerialWriteHexByte(gamepaddata[i]);
+		USBSerialWrite("\n");
+
+		/*s_jposxy_buttons[0] = (int32_t)gamepaddata[2]; // left X (4 for right)
 		s_jposxy_buttons[1] = (int32_t)gamepaddata[3]; // left Y (5 for right)
 		s_jposxy_buttons[2] = gamepaddata[6]; // Buttons #0
-		s_jposxy_buttons[3] = gamepaddata[7]; // Buttons #1 (one more in 8)
+		s_jposxy_buttons[3] = gamepaddata[7]; // Buttons #1 (one more in 8)*/
 	}
 
 	return returnState;
