@@ -93,21 +93,23 @@ enum EUSBDeviceState HandleKeyboard(enum EUSBDeviceState _currentState)
 {
 	enum EUSBDeviceState returnState = _currentState;
 
-	uint8_t keydata[8];
-	uint8_t rcode = USBReadHIDData(s_deviceAddress, s_controlEndpoint, 8, keydata, 0x0, HID_REPORTTYPE_INPUT, 1);
+	uint8_t *keyboarddata = (uint8_t*)(HEAP_START_APPMEM_END-1024);
+
+	// Key report
+	uint8_t rcode = USBReadHIDData(s_deviceAddress, s_controlEndpoint, 8, keyboarddata, 0x0, HID_REPORTTYPE_INPUT, 1);
 
 	if (rcode == 0)
 	{
 		// Reflect into current keymap
 		for (uint32_t i=2; i<8; ++i)
 		{
-			uint8_t keyIndex = keydata[i];
+			uint8_t keyIndex = keyboarddata[i];
 			if (keyIndex != 0)
 				s_currentkeymap[keyIndex] = 1;
 		}
 
 		// Generate keyup / keydown flags
-		uint16_t modifierState = keydata[0]<<8;
+		uint16_t modifierState = keyboarddata[0]<<8;
 		// 7  6  5  4  3  2  1  0
 		// RG RA RS RC LG LA LS LC
 		//uint8_t isGraphics = modifierState&0x8800 ? 1:0;
@@ -190,10 +192,10 @@ enum EUSBDeviceState HandleMouse(enum EUSBDeviceState _currentState)
 {
 	enum EUSBDeviceState returnState = _currentState;
 
-	int8_t mousedata[4];
+	uint8_t *mousedata = (uint8_t*)(HEAP_START_APPMEM_END-1024);
 
 	// X/Y/Wheel/Button
-	uint8_t rcode = USBReadHIDData(s_deviceAddress, 1, 4, (uint8_t*)mousedata, 0x0, HID_REPORTTYPE_INPUT, 2);
+	uint8_t rcode = USBReadHIDData(s_deviceAddress, 1, 4, mousedata, 0x0, HID_REPORTTYPE_INPUT, 2);
 
 	if (rcode == hrSTALL)
 	{
@@ -220,9 +222,9 @@ enum EUSBDeviceState HandleJoystick(enum EUSBDeviceState _currentState)
 {
 	enum EUSBDeviceState returnState = _currentState;
 
-	uint8_t joystickdata[12];
+	uint8_t *joystickdata = (uint8_t*)(HEAP_START_APPMEM_END-1024);
 
-	uint8_t rcode = USBReadHIDData(s_deviceAddress, 1, 8, (uint8_t*)joystickdata, 0x0, HID_REPORTTYPE_INPUT, 4);
+	uint8_t rcode = USBReadHIDData(s_deviceAddress, 1, 8, joystickdata, 0x0, HID_REPORTTYPE_INPUT, 4);
 	if (rcode == hrSTALL)
 	{
 		uint16_t epAddress = 0x81;	// TODO: get it from device->endpoints[_ep]->epAddress
@@ -245,9 +247,9 @@ enum EUSBDeviceState HandleGamepad(enum EUSBDeviceState _currentState)
 {
 	enum EUSBDeviceState returnState = _currentState;
 
-	uint8_t gamepaddata[63];
+	uint8_t *gamepaddata = (uint8_t*)(HEAP_START_APPMEM_END-1024);
 
-	uint8_t rcode = USBReadHIDData(s_deviceAddress, 1, 63, (uint8_t*)gamepaddata, 0x0, HID_REPORTTYPE_INPUT, 4);
+	uint8_t rcode = USBReadHIDData(s_deviceAddress, 1, 40, gamepaddata, 0x0, HID_REPORTTYPE_INPUT, 4);
 	if (rcode == hrSTALL)
 	{
 		uint16_t epAddress = 0x81;	// TODO: get it from device->endpoints[_ep]->epAddress

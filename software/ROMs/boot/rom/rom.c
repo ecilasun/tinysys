@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define VERSIONSTRING "v0009"
+#define VERSIONSTRING "v000A"
 
 static struct EVideoContext s_gpuContext;
 static char s_tmpstr[192];
@@ -33,6 +33,7 @@ static char s_workdir[64] = "sd:/";
 static int32_t s_cmdLen = 0;
 static uint32_t s_startAddress = 0;
 static int s_refreshConsoleOut = 1;
+static int s_relocOffset = 0;
 
 static char *s_taskstates[]={
 	"UNKNOWN    ",
@@ -142,6 +143,19 @@ void ExecuteCmd(char *_cmd)
 	{
 		USBSerialWrite("\033[H\033[0m\033[2J");
 	}
+	else if (!strcmp(command, "reloc"))
+	{
+		const char *offset = strtok(NULL, " ");
+		if (!offset)
+		{
+			USBSerialWrite("Relocation offset reset\n");
+			s_relocOffset = 0;
+		}
+		else
+		{
+			s_relocOffset = atoi(offset);
+		}
+	}
 	else if (!strcmp(command, "mem"))
 	{
 		USBSerialWrite("Available memory:");
@@ -226,8 +240,11 @@ void ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "ver"))
 	{
-		USBSerialWrite("tinysys " VERSIONSTRING "\n");
+		USBSerialWrite("tinysys         : " VERSIONSTRING "\n");
+		USBSerialWrite("Board:          : revision 1K\n");	// TODO: need to read board and CPU data form system config
 		USBSerialWrite("CPU:            : 166.67MHz\n");
+
+		// Report USB device die versions
 		uint8_t m3420rev = MAX3420ReadByte(rREVISION);
 		if (m3420rev != 0xFF)
 		{
@@ -264,6 +281,7 @@ void ExecuteCmd(char *_cmd)
 		USBSerialWrite("usb: Show current USB peripheral state\n");
 		USBSerialWrite("mount: Mount drive sd:\n");
 		USBSerialWrite("umount: Unmount drive sd:\n");
+		USBSerialWrite("reloc: Set ELF relocation offset\n");
 		USBSerialWrite("mem: Show available memory\n");
 		USBSerialWrite("Any other input will load a file from sd: with matching name\n");
 		USBSerialWrite("CTRL+C terminates current program\n");
@@ -290,7 +308,7 @@ void ExecuteCmd(char *_cmd)
 
 			// First parameter is excutable name
 			// TODO: ELF relocation on load to avoid exec+data+stack overlap
-			s_startAddress = LoadExecutable(filename, true);
+			s_startAddress = LoadExecutable(filename, s_relocOffset, true);
 			// TODO: Scan and push all argv and the correct argc onto stack
 
 			// If we succeeded in loading the executable, the trampoline task can branch into it.
@@ -430,7 +448,7 @@ int main()
 
 	// Attempt to load ROM overlay, if it exists
 	LEDSetState(0xD);
-	s_startAddress = LoadExecutable("sd:/boot.elf", false);
+	s_startAddress = LoadExecutable("sd:/boot.elf", 0, false);
 	if (s_startAddress != 0x0)
 	{
 		// TODO: Possibly we can get away with a compressed binary

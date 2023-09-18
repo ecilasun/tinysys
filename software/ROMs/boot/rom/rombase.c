@@ -100,7 +100,7 @@ void ListFiles(const char *path)
 		USBSerialWrite("File system error (unmount)\n");
 }
 
-uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader, uint32_t* jumptarget)
+uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader, uint32_t* jumptarget, int _relocOffset)
 {
 	uint32_t heap_start = 0;
 	if (fheader->m_Magic != 0x464C457F)
@@ -109,7 +109,7 @@ uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader
 		return heap_start;
 	}
 
-	*jumptarget = fheader->m_Entry;
+	*jumptarget = fheader->m_Entry + _relocOffset;
 	UINT bytesread = 0;
 
 	// Read program headers
@@ -122,7 +122,7 @@ uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader
 		// Something here
 		if (pheader.m_MemSz != 0)
 		{
-			uint8_t *memaddr = (uint8_t *)pheader.m_PAddr;
+			uint8_t *memaddr = (uint8_t *)(pheader.m_PAddr + _relocOffset);
 			// Check illegal range
 			if ((uint32_t)memaddr>=HEAP_END_CONSOLEMEM_START || ((uint32_t)memaddr)+pheader.m_MemSz>=HEAP_END_CONSOLEMEM_START)
 			{
@@ -146,7 +146,7 @@ uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader
 	return E32AlignUp(heap_start, 1024);
 }
 
-uint32_t LoadExecutable(const char *filename, const bool reportError)
+uint32_t LoadExecutable(const char *filename, int _relocOffset, const bool reportError)
 {
 	FIL fp;
 	FRESULT fr = f_open(&fp, filename, FA_READ);
@@ -158,7 +158,7 @@ uint32_t LoadExecutable(const char *filename, const bool reportError)
 		UINT readsize;
 		f_read(&fp, &fheader, sizeof(fheader), &readsize);
 		uint32_t branchaddress;
-		uint32_t heap_start = ParseELFHeaderAndLoadSections(&fp, &fheader, &branchaddress);
+		uint32_t heap_start = ParseELFHeaderAndLoadSections(&fp, &fheader, &branchaddress, _relocOffset);
 		f_close(&fp);
 
 		// Success?

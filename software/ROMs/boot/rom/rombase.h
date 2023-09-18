@@ -19,4 +19,4 @@ void InstallISR();
 uint32_t MountDrive();
 void UnmountDrive();
 void ListFiles(const char *path);
-uint32_t LoadExecutable(const char *filename, const bool reportError);
+uint32_t LoadExecutable(const char *filename, int _relocOffset, const bool reportError);
