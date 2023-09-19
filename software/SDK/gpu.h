@@ -58,9 +58,10 @@ struct EVideoContext
 	uint32_t m_scanoutAddressCacheAligned;
 	uint32_t m_cpuWriteAddressCacheAligned;
 	uint32_t m_graphicsWidth, m_graphicsHeight;
+	uint32_t m_consoleForeground, m_consoleBackground;
 	uint16_t m_consoleWidth, m_consoleHeight;
 	uint16_t m_cursorX, m_cursorY;
-	uint8_t m_consoleForeground, m_consoleBackground, m_consoleUpdated, m_needBGClear;
+	uint16_t m_consoleUpdated, m_needBGClear;
 };
 
 struct EVideoSwapContext

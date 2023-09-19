@@ -21,23 +21,18 @@ module rastercore(
 logic [31:0] addr = 32'd0;
 logic [127:0] din = 128'd0;
 logic [15:0] wstrb = 0;
-logic ren = 1'b0;
 logic cflush = 1'b0;
 logic cinvalidate = 1'b0;
-wire [127:0] dout;
-wire rready, wready;
+wire wready;
 
 rastercache rcache(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.addr(addr),
 	.din(din),
-	.dout(dout),
 	.wstrb(wstrb),
-	.ren(ren),
 	.flush(cflush),
 	.invalidate(cinvalidate),
-	.rready(rready),
 	.wready(wready),
 	.a4buscached(m_axi));
 

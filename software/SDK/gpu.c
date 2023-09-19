@@ -140,6 +140,14 @@ const uint8_t residentfont[] __attribute__((aligned(16))) = {
 0x00, 0x7e, 0x7e, 0x7e, 0x18, 0xd8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3c, 0x00, 0x00, 0x00, 0x00, 
 0x00, 0x00, 0x00, 0x00, 0x18, 0x70, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1c, 0x00, 0x00, 0x00, 0x00};
 
+// Expansion table from 4bit mask to 4byte mask
+const uint32_t quadexpand[] __attribute__((aligned(16))) = {
+	0x00000000, 0x000000FF, 0x0000FF00, 0x0000FFFF,
+	0x00FF0000, 0x00FF00FF, 0x00FFFF00, 0x00FFFFFF,
+	0xFF000000, 0xFF0000FF, 0xFF00FF00, 0xFF00FFFF,
+	0xFFFF0000, 0xFFFF00FF, 0xFFFFFF00, 0xFFFFFFFF,
+};
+
 // Byte order: [_,G,R,B]
 const uint32_t vgapalette[] __attribute__((aligned(16))) = {
 0x00000000, 0x000000AA, 0x00AA0000, 0x00AA00AA,
@@ -278,8 +286,8 @@ void GPUSetPal(const uint8_t _paletteIndex, const uint32_t _red, const uint32_t 
 
 void GPUConsoleSetColors(struct EVideoContext *_context, const uint8_t _foregroundIndex, const uint8_t _backgroundIndex)
 {
-	_context->m_consoleForeground = _foregroundIndex;
-	_context->m_consoleBackground = _backgroundIndex;
+	_context->m_consoleForeground = (_foregroundIndex<<24) | (_foregroundIndex<<16) | (_foregroundIndex<<8) | _foregroundIndex;
+	_context->m_consoleBackground = (_backgroundIndex<<24) | (_backgroundIndex<<16) | (_backgroundIndex<<8) | _backgroundIndex;
 	_context->m_consoleUpdated = 1;
 }
 
@@ -360,12 +368,12 @@ void GPUConsolePrint(struct EVideoContext *_context, const char *_message, int _
 
 void GPUConsoleResolve(struct EVideoContext *_context)
 {
-	uint8_t *vramBase = (uint8_t*)_context->m_cpuWriteAddressCacheAligned;
+	uint32_t *vramBase = (uint32_t*)_context->m_cpuWriteAddressCacheAligned;
 	uint8_t *characterBase = (uint8_t*)CONSOLE_CHARACTERBUFFER_START;
-	uint32_t stride = _context->m_strideInWords*4;
+	uint32_t stride = _context->m_strideInWords;
 	uint32_t charstride = _context->m_consoleWidth;
-	uint8_t FG = _context->m_consoleForeground;
-	uint8_t BG = _context->m_consoleBackground;
+	uint32_t FG = _context->m_consoleForeground;
+	uint32_t BG = _context->m_consoleBackground;
 
 	for (uint16_t cy=0; cy<_context->m_consoleHeight; ++cy)
 	{
@@ -382,11 +390,19 @@ void GPUConsoleResolve(struct EVideoContext *_context)
 				int yoffset = (cy*8+y)*stride;
 				// Expand bit packed character row into individual pixels
 				uint8_t chardata = residentfont[charcol+((charrow+y)*16)];
-				for (int x=0; x<8; ++x)
+				// Output the 2 words (8 pixels) for this row
+				for (int x=0; x<2; ++x)
 				{
-					int xoffset = cx*8 + x;
-					vramBase[xoffset + yoffset] = (chardata&0x80) ? FG : BG;
-					chardata = chardata << 1;
+					// X offset in words
+					int xoffset = cx*2 + x;
+					// Generate foreground / background output via masks
+					uint32_t mask = quadexpand[chardata&0xF0];
+					uint32_t invmask = ~mask;
+					uint32_t fourPixels = (mask & FG) | (invmask & BG);
+					// Output the combined 4-pixel value
+					vramBase[xoffset + yoffset] = fourPixels;
+					// Move to the next set of 4 pixels
+					chardata = chardata << 4;
 				}
 			}
 		}

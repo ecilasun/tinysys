@@ -6,9 +6,6 @@
 // Please see:
 // https://www.analog.com/media/en/technical-documentation/user-guides/max3421erevisions-1-and-2-host-out-transfers.pdf
 
-//#define USB_HOST_DEBUG_DETAILED
-//#define USB_HOST_DEBUG
-
 #define MAXDEVICES 2
 static struct USBDeviceRecord s_deviceTable[MAXDEVICES];
 
@@ -348,7 +345,7 @@ uint8_t USBControlData(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _
 
 void USBErrorString(uint8_t rcode)
 {
-	if (rcode == hrSUCCESS)
+	/*if (rcode == hrSUCCESS)
 		USBSerialWrite("USB:SUCCESS\n");
 	else if (rcode == hrBUSY)
 		USBSerialWrite("USB:BUSY\n");
@@ -385,7 +382,7 @@ void USBErrorString(uint8_t rcode)
 		USBSerialWrite("USB:0x");
 		USBSerialWriteHex(rcode);
 		USBSerialWrite("\n");
-	}
+	}*/
 }
 
 uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_t _bRequest, uint8_t _wValLo, uint8_t _wValHi, unsigned int _wInd, unsigned int _nbytes, char* _dataptr, unsigned int _nak_limit)
@@ -411,11 +408,7 @@ uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_
 	rcode = USBDispatchPacket(tokSETUP, _ep, _nak_limit);
 
 	if(rcode)
-	{
-		/*USBSerialWrite("Setup packet error: ");
-		USBErrorString(rcode);*/
 		return(rcode);
-	}
 
 	if(_dataptr != NULL )
 	{
@@ -424,21 +417,9 @@ uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_
 	}
 
 	if(rcode)
-	{
-		/*USBSerialWriteDecimal(direction);
-		USBSerialWrite(" data packet error: ");
-		USBErrorString(rcode);*/
 		return(rcode);
-	}
 
 	rcode = USBControlStatus(_ep, direction, _nak_limit);
-
-	if(rcode)
-	{
-		/*USBSerialWrite("Control status error: ");
-		USBErrorString(rcode);*/
-	}
-
 	return rcode;
 }
 
@@ -456,37 +437,6 @@ uint8_t USBParseDescriptor(uint8_t _addr, uint8_t *_desc, uint8_t* _dtype, uint8
 			stringCount += desc->iManufacturer!=0 ? 1:0;
 			stringCount += desc->iProduct!=0 ? 1:0;
 			stringCount += desc->iSerialNumber!=0 ? 1:0;
-
-#if defined(USB_HOST_DEBUG)
-			USBSerialWrite("\n   dtype: device");
-			USBSerialWrite("\n  usbver: ");
-			USBSerialWriteDecimal(desc->bcdUSB>>8);
-			USBSerialWrite(".");
-			USBSerialWriteDecimal(desc->bcdUSB & 0xFF);
-			USBSerialWrite("\ndevclass: 0x");
-			USBSerialWriteHexByte(desc->bDeviceClass);
-			USBSerialWrite("\nsubclass: 0x");
-			USBSerialWriteHexByte(desc->bDeviceSubClass);
-			USBSerialWrite("\nprotocol: 0x");
-			USBSerialWriteHexByte(desc->bDeviceProtocol);
-			USBSerialWrite("\nep0maxsz: 0x");
-			USBSerialWriteHexByte(desc->bMaxPacketSizeEP0);
-			USBSerialWrite("\n     VID: 0x");
-			USBSerialWriteHex(desc->idVendor);
-			USBSerialWrite("\n     PID: 0x");
-			USBSerialWriteHex(desc->idProduct);
-			USBSerialWrite("\n     dev: 0x");
-			USBSerialWriteHex(desc->bcdDevice);
-			USBSerialWrite("\n    man$: 0x");
-			USBSerialWriteHexByte(desc->iManufacturer);
-			USBSerialWrite("\n   prod$: 0x");
-			USBSerialWriteHexByte(desc->iProduct);
-			USBSerialWrite("\n   ser#$: 0x");
-			USBSerialWriteHexByte(desc->iSerialNumber);
-			USBSerialWrite("\n configs: 0x");
-			USBSerialWriteHexByte(desc->bNumConfigurations);
-			USBSerialWrite("\n");
-#endif
 		}
 		break;
 
@@ -497,22 +447,6 @@ uint8_t USBParseDescriptor(uint8_t _addr, uint8_t *_desc, uint8_t* _dtype, uint8
 			struct USBConfigurationDescriptor* desc = (struct USBConfigurationDescriptor*)_desc;
 			s_cval = desc->bConfigurationValue;
 			stringCount += desc->iConfiguration!=0 ? 1:0;
-#if defined(USB_HOST_DEBUG)
-			USBSerialWrite("\n     dtype: configuration");
-			USBSerialWrite("\n      tlen: 0x");
-			USBSerialWriteHex(desc->wTotalLength);
-			USBSerialWrite("\ninterfaces: 0x");
-			USBSerialWriteHexByte(desc->bNumInterfaces);
-			USBSerialWrite("\n      cval: 0x");
-			USBSerialWriteHexByte(desc->bConfigurationValue);
-			USBSerialWrite("\n     conf$: 0x");
-			USBSerialWriteHexByte(desc->iConfiguration);
-			USBSerialWrite("\n    attrib: 0x");
-			USBSerialWriteHexByte(desc->bmAttributes);
-			USBSerialWrite("\n  maxpower: 0x");
-			USBSerialWriteHexByte(desc->MaxPower);
-			USBSerialWrite("\n");
-#endif
 		}
 		break;
 
@@ -550,77 +484,6 @@ uint8_t USBParseDescriptor(uint8_t _addr, uint8_t *_desc, uint8_t* _dtype, uint8
 						break;
 				}
 			}
-
-#if defined(USB_HOST_DEBUG_DETAILED)
-			USBSerialWrite("\n       dtype: interface");
-			USBSerialWrite("\n        inum: 0x");
-			USBSerialWriteHexByte(desc->bInterfaceNumber);
-			USBSerialWrite("\n      altset: 0x");
-			USBSerialWriteHexByte(desc->bAlternateSetting);
-			USBSerialWrite("\n       numep: 0x");
-			USBSerialWriteHexByte(desc->bNumEndpoints);
-			USBSerialWrite("\n       class: ");
-			switch(desc->bInterfaceClass)
-			{
-				case USBClass_MassStorage:
-					USBSerialWrite("mass storage");
-				break;
-				case USBClass_HID:
-					USBSerialWrite("HID");
-				break;
-				default:
-					USBSerialWriteHexByte(desc->bInterfaceClass);
-				break;
-			}
-			if (desc->bInterfaceClass == USBClass_HID)
-			{
-				USBSerialWrite("\n    subclass: ");
-				switch (desc->bInterfaceSubClass)
-				{
-					case 0:
-						USBSerialWrite("none");
-						break;
-					case 1:
-						USBSerialWrite("boot");
-						break;
-					default:
-						USBSerialWrite("reserved");
-						break;
-				}
-			}
-			else
-			{
-				USBSerialWrite("\n    subclass: 0x");
-				USBSerialWriteHexByte(desc->bInterfaceSubClass);
-			}
-			if (desc->bInterfaceClass == USBClass_HID)
-			{
-				USBSerialWrite("\n    protocol: ");
-				switch (desc->bInterfaceProtocol)
-				{
-					case 0:
-						USBSerialWrite("none");
-						break;
-					case 1:
-						USBSerialWrite("keyboard");
-						break;
-					case 2:
-						USBSerialWrite("mouse");
-						break;
-					default:
-						USBSerialWrite("reserved");
-						break;
-				}
-			}
-			else
-			{
-				USBSerialWrite("\n    protocol: 0x");
-				USBSerialWriteHexByte(desc->bInterfaceProtocol);
-			}
-			USBSerialWrite("\n      iface$: 0x");
-			USBSerialWriteHexByte(desc->iInterface);
-			USBSerialWrite("\n");
-#endif
 		}
 		break;
 
@@ -635,21 +498,6 @@ uint8_t USBParseDescriptor(uint8_t _addr, uint8_t *_desc, uint8_t* _dtype, uint8
 			s_deviceTable[_addr].endpointInfo[eaddr].maxPacketSize = desc->wMaxPacketSize;
 			s_deviceTable[_addr].endpointInfo[eaddr].pollInterval = desc->bInterval;
 			s_deviceTable[_addr].endpointInfo[eaddr].epTransferType = desc->bEndpointAddress&0x80 ? 0 : 1;
-
-#if defined(USB_HOST_DEBUG_DETAILED)
-			USBSerialWrite("\n         dtype: endpoint");
-			USBSerialWrite("\n       address: 0x");
-			USBSerialWriteHexByte(desc->bEndpointAddress);
-			USBSerialWrite("\n      interval: 0x");
-			USBSerialWriteHexByte(desc->bInterval);
-			USBSerialWrite("\n        length: 0x");
-			USBSerialWriteHexByte(desc->bLength);
-			USBSerialWrite("\n        attrib: 0x");
-			USBSerialWriteHexByte(desc->bmAttributes);
-			USBSerialWrite("\n maxpacketsize: 0x");
-			USBSerialWriteHex(desc->wMaxPacketSize);
-			USBSerialWrite("\n");
-#endif
 		}
 		break;
 
@@ -661,19 +509,6 @@ uint8_t USBParseDescriptor(uint8_t _addr, uint8_t *_desc, uint8_t* _dtype, uint8
 
 			s_HIDDescriptorLen = desc->bNumDescriptors;
 			*_offset = dcom->bLength;
-
-#if defined(USB_HOST_DEBUG)
-			USBSerialWrite("\n         dtype: HID");
-			USBSerialWrite("\n           HID: 0x");
-			USBSerialWriteHexByte(desc->bcdHID);
-			USBSerialWrite("\n  country code: 0x");
-			USBSerialWriteHexByte(desc->bCountryCode);
-			USBSerialWrite("\n     descBytes: 0x");
-			USBSerialWriteHexByte(desc->bNumDescriptors);
-			USBSerialWrite("\n          type: 0x");
-			USBSerialWriteHexByte(desc->bDescrType);
-			USBSerialWrite("\n");
-#endif
 		}
 		break;
 
@@ -695,11 +530,6 @@ uint8_t USBParseDescriptor(uint8_t _addr, uint8_t *_desc, uint8_t* _dtype, uint8
 		{
 			*_dtype = USBDESCTYPE_UNKNOWN;
 			*_offset = dcom->bLength;
-#if defined(USB_HOST_DEBUG_DETAILED)
-			USBSerialWrite("\n   dtype: 0x");
-			USBSerialWriteHexByte(dcom->bDescriptorType);
-			USBSerialWrite("\n");
-#endif
 		}
 		break;
 
@@ -707,11 +537,6 @@ uint8_t USBParseDescriptor(uint8_t _addr, uint8_t *_desc, uint8_t* _dtype, uint8
 		{
 			*_dtype = USBDESCTYPE_UNKNOWN;
 			*_offset = 0xFF;
-#if defined(USB_HOST_DEBUG_DETAILED)
-			USBSerialWrite("\nError: invalid descriptor 0x\n");
-			USBSerialWriteHexByte(dcom->bDescriptorType);
-			USBSerialWrite("\n");
-#endif
 		}
 		break;
 	}
@@ -781,37 +606,13 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass)
 		if (rcode != 0)
 			return rcode;
 
-#if defined(USB_HOST_DEBUG_DETAILED)
-		USBSerialWrite("Language descriptor (string #0):");
-		USBSerialWrite("\n      length: 0x");
-		USBSerialWriteHexByte(lang.bLength);
-		USBSerialWrite("\n    language: 0x");
-		USBSerialWriteHex(lang.wLanguage);
-		USBSerialWrite("\n");
-#endif
-
 		for (int s=0; s<stringCount; ++s)
 		{
 			struct USBStringDescriptor str;
 			// Only length, though I thought we'd have to read the full USBStringDescriptor
 			rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, s+1, USB_DESCRIPTOR_STRING, 0x0000, 1, (char*)&str, 64);
 			if (rcode == 0 && str.bLength != 0)
-			{
 				rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, s+1, USB_DESCRIPTOR_STRING, 0x0000, str.bLength, (char*)&str, 64);
-				if (rcode == 0)
-				{
-#if defined(USB_HOST_DEBUG_DETAILED)
-					USBSerialWrite("str#");
-					USBSerialWriteDecimal(s+1);
-					USBSerialWrite(": \"");
-					USBSerialWriteN((char*)str.bString, str.bLength-2);
-					USBSerialWrite("\"\n");
-#else
-					USBSerialWriteN((char*)str.bString, str.bLength-2);
-					USBSerialWrite("\n");
-#endif
-				}
-			}
 
 			if (rcode)
 			{
@@ -819,11 +620,7 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass)
 				uint16_t epAddress = 0x81;	// TODO: get it from device->endpoints[_ep]->epAddress
 				rcode = USBControlRequest(_addr, _ep, bmREQ_CLEAR_FEATURE, USB_REQUEST_CLEAR_FEATURE, USB_FEATURE_ENDPOINT_HALT, 0, epAddress, 0, NULL, 64);
 				if (rcode == 0)
-				{
-					//USBSerialWrite("stall cleared, won't query strings\n");
-					// Stop requesting strings
 					break;
-				}
 			}
 		}
 	}
@@ -843,11 +640,6 @@ uint8_t USBAttach(uint8_t *_paddr, uint8_t *_pep)
     		uint8_t rcode = USBControlRequest(0, 0, bmREQ_SET, USB_REQUEST_SET_ADDRESS, i, 0x00, 0x0000, 0x0000, NULL, 64);
 			if(rcode == 0)
 			{
-#if defined(USB_HOST_DEBUG_DETAILED)
-				USBSerialWrite("Device attached: \\dev\\usb\\");
-				USBSerialWriteDecimal(i);
-				USBSerialWrite("\n");
-#endif
 				*_paddr = i;
 				*_pep = 0; // TODO: User the real endpoint here
 				return 0;
@@ -865,11 +657,6 @@ uint8_t USBDetach(uint8_t _addr)
 	// Can't detach device at default address (0)
 	if (_addr != 0)
 	{
-#if defined(USB_HOST_DEBUG_DETAILED)
-		USBSerialWrite("Device detached: \\dev\\usb\\");
-		USBSerialWriteDecimal(_addr);
-		USBSerialWrite("\n");
-#endif
 		s_deviceTable[_addr].connected = 0;
 		s_deviceTable[_addr].endpointInfo[0].sendToggle = bmSNDTOG0;
 		s_deviceTable[_addr].endpointInfo[0].receiveToggle = bmRCVTOG0;
@@ -891,16 +678,10 @@ uint8_t USBConfigHID(uint8_t _hidClass, uint8_t _addr, uint8_t _ep)
 	uint8_t config = s_cval; // Usually 1
 	uint8_t interface = 0;
 
-#if defined(USB_HOST_DEBUG_DETAILED)
-	USBSerialWrite("setting configuration\n");
-#endif
 	uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_SET, USB_REQUEST_SET_CONFIGURATION, config, 0x00, 0x0000, 0x0000, NULL, 64);
 
 	if (rcode == 0)
 	{
-#if defined(USB_HOST_DEBUG_DETAILED)
-		USBSerialWrite("setting interface\n");
-#endif
 		rcode = USBControlRequest(_addr, _ep, bmREQ_SET, USB_REQUEST_SET_INTERFACE, interface, 0x00, 0x0000, 0x0000, NULL, 64);
 
 		// Check if interface changes are supported (maybe we only have one default)
@@ -908,18 +689,11 @@ uint8_t USBConfigHID(uint8_t _hidClass, uint8_t _addr, uint8_t _ep)
 		{
 			uint16_t epAddress = 0x81;	// TODO: get it from device->endpoints[_ep]->epAddress
 			rcode = USBControlRequest(_addr, _ep, bmREQ_CLEAR_FEATURE, USB_REQUEST_CLEAR_FEATURE, USB_FEATURE_ENDPOINT_HALT, 0, epAddress, 0, NULL, 64);
-#if defined(USB_HOST_DEBUG_DETAILED)
-			if (rcode == 0)
-				USBSerialWrite("stall cleared\n");
-#endif
 		}
 	}
 
 	if (s_protosubclass == 1 && _hidClass == 2) // Using boot protocol, allowed only for mouse (keyboard and other use report protocol)
 	{
-#if defined(USB_HOST_DEBUG_DETAILED)
-		USBSerialWrite("switching to boot protocol\n");
-#endif
 		// iface is interface number
 		uint8_t iface = 0;
 		// Could also use HID_REPORT_PROTOCOL for report protocol
@@ -939,10 +713,6 @@ uint8_t USBGetHIDDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_protocol)
 	// 0501 (generic keyboard)
 	// 0906 (usage keyboard)
 
-#if defined(USB_HOST_DEBUG_DETAILED)
-	USBSerialWrite("getting HID descriptor\n");
-#endif
-
 	// TODO: We need kalloc() for this kind of unknown data pool
 	char *tmpdata = (char*)KERNEL_TEMP_MEMORY;
     uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_HIDREPORT, USB_REQUEST_GET_DESCRIPTOR, 0x00, HID_DESCRIPTOR_REPORT, 0x0000, s_HIDDescriptorLen, tmpdata, 64);
@@ -950,36 +720,30 @@ uint8_t USBGetHIDDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_protocol)
 	if (rcode != 0)
 		return rcode;
 
-#if defined(USB_HOST_DEBUG)
-	for(int i=0;i<s_HIDDescriptorLen;++i)
-		USBSerialWriteHexByte(tmpdata[i]);
-	USBSerialWrite("\n");
-#endif
-
 	if (tmpdata[3] == 0x02) 
 	{
 		*_protocol = HID_PROTOCOL_MOUSE;
-		USBSerialWrite("Mouse connected\n");
+		//USBSerialWrite("Mouse connected\n");
 	}
 	else if (tmpdata[3] == 0x04) 
 	{
 		*_protocol = HID_PROTOCOL_JOYSTICK;
-		USBSerialWrite("Joystick connected\n");
+		//USBSerialWrite("Joystick connected\n");
 	}
 	else if (tmpdata[3] == 0x05) 
 	{
 		*_protocol = HID_PROTOCOL_GAMEPAD;
-		USBSerialWrite("Gamepad connected\n");
+		//USBSerialWrite("Gamepad connected\n");
 	}
 	else if (tmpdata[3] == 0x06)
 	{
 		*_protocol = HID_PROTOCOL_KEYBOARD;
-		USBSerialWrite("Keyboard connected\n");
+		//USBSerialWrite("Keyboard connected\n");
 	}
 	else
 	{
 		*_protocol = HID_PROTOCOL_NONE;
-		USBSerialWrite("Non-HID device connected\n");
+		//USBSerialWrite("Non-HID device connected\n");
 	}
 
 	return 0;

@@ -298,7 +298,7 @@ always@(posedge audioclock) begin
 	end
 end
 
-always@(count, tx_data_l_shift, tx_data_r_shift, aresetn) begin
+always@(count, tx_data_l_shift, tx_data_r_shift) begin
 	if (count[7:3] <= 5'd24 && count[7:3] >= 4'd1)
 		if (count[8] == 1'b1)
 			tx_sdout = tx_data_r_shift[23];
@@ -306,10 +306,6 @@ always@(count, tx_data_l_shift, tx_data_r_shift, aresetn) begin
 			tx_sdout = tx_data_l_shift[23];
 	else
 		tx_sdout = 1'b0;
-
-	if (~aresetn) begin
-		tx_sdout <= 1'b0;
-	end
 end
 
 endmodule
