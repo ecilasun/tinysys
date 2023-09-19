@@ -21,8 +21,8 @@
 
 #define VERSIONSTRING "v000B"
 
-const uint8_t s_consolefgcolor = 0x29; // Ember
-const uint8_t s_consolebgcolor = 0x01; // Dark gray
+const uint8_t s_consolefgcolor = 0x2A; // Ember
+const uint8_t s_consolebgcolor = 0x11; // Dark gray
 static char s_execName[32] = "ROM";
 static char s_execParam0[32] = "auto";
 static uint32_t s_execParamCount = 1;
