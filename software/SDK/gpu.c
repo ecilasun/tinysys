@@ -396,7 +396,7 @@ void GPUConsoleResolve(struct EVideoContext *_context)
 					// X offset in words
 					int xoffset = cx*2 + x;
 					// Generate foreground / background output via masks
-					uint32_t mask = quadexpand[chardata&0xF0];
+					uint32_t mask = quadexpand[(chardata&0xF0)>>4];
 					uint32_t invmask = ~mask;
 					uint32_t fourPixels = (mask & FG) | (invmask & BG);
 					// Output the combined 4-pixel value
