@@ -21,13 +21,14 @@
 
 #define VERSIONSTRING "v000B"
 
-const uint32_t s_consolebgcolor = 0x36363636;
-static char s_execName[64] = "ROM";
-static char s_execParam0[64] = "auto";
+const uint8_t s_consolefgcolor = 0x29; // Ember
+const uint8_t s_consolebgcolor = 0x01; // Dark gray
+static char s_execName[32] = "ROM";
+static char s_execParam0[32] = "auto";
 static uint32_t s_execParamCount = 1;
 
 static char s_cmdString[64] = "";
-static char s_workdir[64] = "sd:/";
+static char s_workdir[32] = "sd:/";
 static int32_t s_cmdLen = 0;
 static uint32_t s_startAddress = 0;
 static int s_refreshConsoleOut = 1;
@@ -119,7 +120,7 @@ void DeviceDefaultState(int _bootTime)
 	// Preserve contents of screen for non-boot time
 	if (_bootTime == 1)
 	{
-		GPUConsoleSetColors(kernelgfx, 0x0F, 0x36);
+		GPUConsoleSetColors(kernelgfx, s_consolefgcolor, s_consolebgcolor);
 		GPUConsoleClear(kernelgfx);
 	}
 }
@@ -242,7 +243,7 @@ void ExecuteCmd(char *_cmd)
 		else
 		{
 			f_chdir(path);
-			strncpy(s_workdir, path, 64);
+			strncpy(s_workdir, path, 32);
 		}
 	}
 	else if (!strcmp(command, "ver"))
@@ -301,7 +302,7 @@ void ExecuteCmd(char *_cmd)
 		}
 		else
 		{
-			char filename[128];
+			char filename[32];
 			strcpy(filename, s_workdir); // current path already contains trailing slash
 			strcat(filename, command);
 			strcat(filename, ".elf");
@@ -317,7 +318,7 @@ void ExecuteCmd(char *_cmd)
 			// This will cause corruption of the runtime environment.
 			if (s_startAddress != 0x0)
 			{
-				strcpy(s_execName, filename);
+				strncpy(s_execName, filename, 32);
 
 				const char *param = strtok(NULL, " ");
 				// Change working directory
@@ -325,7 +326,7 @@ void ExecuteCmd(char *_cmd)
 					s_execParamCount = 1;
 				else
 				{
-					strncpy(s_execParam0, param, 64);
+					strncpy(s_execParam0, param, 32);
 					s_execParamCount = 2;
 				}
 
@@ -440,7 +441,7 @@ int main()
 	LEDSetState(0xF);
 	// Set default path before we mount any storage devices
 	f_chdir("sd:/");
-	strncpy(s_workdir, "sd:/", 64);
+	strncpy(s_workdir, "sd:/", 32);
 
 	// Attempt to mount the FAT volume on micro sd card
 	// NOTE: Loaded executables do not have to worry about this part
@@ -511,7 +512,9 @@ int main()
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
 	while (1)
 	{
+		// ----------------------------------------------------------------
 		// High level maintenance tasks which should not be interrupted
+		// ----------------------------------------------------------------
 
 		// Disable machine interrupts
 		write_csr(mstatus, 0);
@@ -521,14 +524,15 @@ int main()
 
 		// Enable machine interrupts
 		write_csr(mstatus, MSTATUS_MIE);
+
 		// Yield time as soon as we're done here
 		TaskYield();
 
+		// ----------------------------------------------------------------
 		// Tasks that can be interrupted
+		// ----------------------------------------------------------------
 
 		// Refresh console output
-		if (kernelgfx->m_needBGClear)
-			GPUClear(kernelgfx, s_consolebgcolor);
 		if (kernelgfx->m_consoleUpdated)
 			GPUConsoleResolve(kernelgfx);
 	}

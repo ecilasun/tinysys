@@ -258,7 +258,6 @@ void GPUSetVMode(struct EVideoContext *_context, const enum EVideoScanoutEnable 
 	_context->m_consoleWidth = (uint16_t)(_context->m_graphicsWidth/8);
 	_context->m_consoleHeight = (uint16_t)(_context->m_graphicsHeight/8);
 	_context->m_consoleUpdated = 0;
-	_context->m_needBGClear = 0;
 
 	*GPUIO = GPUCMD_SETVMODE;
 	*GPUIO = MAKEVMODEINFO((uint32_t)_context->m_cmode, (uint32_t)_context->m_vmode, (uint32_t)_scanEnable);
@@ -295,9 +294,9 @@ void GPUConsoleSetColors(struct EVideoContext *_context, const uint8_t _foregrou
 void GPUConsoleClear(struct EVideoContext *_context)
 {
 	uint8_t *characterBase = (uint8_t*)CONSOLE_CHARACTERBUFFER_START;
-	__builtin_memset(characterBase, 0x00, _context->m_consoleWidth*_context->m_consoleHeight);
+	// Fill console with spaces
+	__builtin_memset(characterBase, 0x20, _context->m_consoleWidth*_context->m_consoleHeight);
 	_context->m_consoleUpdated = 1;
-	_context->m_needBGClear = 1;
 	_context->m_cursorX = 0;
 	_context->m_cursorY = 0;
 }
@@ -355,8 +354,8 @@ void GPUConsolePrint(struct EVideoContext *_context, const char *_message, int _
 			uint32_t source = CONSOLE_CHARACTERBUFFER_START + _context->m_consoleWidth;
 			uint32_t lastrow = CONSOLE_CHARACTERBUFFER_START + _context->m_consoleWidth*(_context->m_consoleHeight-1);
 			__builtin_memcpy((void*)target, (void*)source, _context->m_consoleWidth*(_context->m_consoleHeight-1));
-			__builtin_memset((void*)lastrow, 0x00, _context->m_consoleWidth);
-			_context->m_needBGClear = 1;
+			// Fill last row with spaces
+			__builtin_memset((void*)lastrow, 0x20, _context->m_consoleWidth);
 			cy = _context->m_consoleHeight - 1;
 		}
 
@@ -419,7 +418,6 @@ void GPUClear(struct EVideoContext *_context, const uint32_t _colorWord)
 	uint32_t W = _context->m_graphicsHeight * _context->m_strideInWords;
 	for (uint32_t i=0; i<W; ++i)
 		vramBaseAsWord[i] = _colorWord;
-	_context->m_needBGClear = 0;
 	CFLUSH_D_L1;
 }
 
