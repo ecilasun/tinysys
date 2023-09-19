@@ -43,10 +43,8 @@ logic [16:0] ptag;					// previous cache tag (17 bits)
 logic [16:0] ctag;					// current cache tag (17 bits)
 logic [3:0] coffset;				// current word offset 0..15
 logic [7:0] cline;					// current cache line 0..256
-logic valid;						// valid flag for current cache line
 
 logic cachelinewb[0:255];			// cache line needs write back when high
-logic cachelinevalid[0:255];		// cache line state (invalid / valid)
 logic [16:0] cachelinetags[0:255];	// cache line tags (17 bits)
 
 logic [63:0] cachewe = 64'd0;		// byte select for 64 byte cache line
@@ -78,7 +76,6 @@ cachemem CacheMemory512(
 initial begin
 	for (int i=0; i<256; i=i+1) begin	// 256 lines total
 		cachelinewb[i] = 1'b0;			// cache lines do not require write-back for initial cache-miss
-		cachelinevalid[i] = 1'b0;		// this cache line is invalid (contents not associated with a memory location)
 		cachelinetags[i] = 'd0;			// top of memory
 	end
 end
@@ -118,6 +115,7 @@ uncachedmemorycontroller uncachedmemorycontrollerinst(
 	.m_axi(a4busuncached) );
 
 typedef enum logic [4:0] {
+	CRESET,
 	IDLE,
 	CWRITE, CREAD,
 	UCWRITE, UCWRITEDELAY, UCREAD, UCREADDELAY,
@@ -125,7 +123,7 @@ typedef enum logic [4:0] {
 	CPOPULATE, CPOPULATEWAIT, CUPDATE, CUPDATEDELAY,
 	CDATANOFLUSHBEGIN, CDATANOFLUSHSTEP,
 	CDATAFLUSHBEGIN, CDATAFLUSHWAITCREAD, CDATAFLUSH, CDATAFLUSHSKIP, CDATAFLUSHWAIT } cachestatetype;
-cachestatetype cachestate = IDLE;
+cachestatetype cachestate = CRESET;
 
 always_ff @(posedge aclk) begin
 	memwritestrobe <= 1'b0;
@@ -137,6 +135,12 @@ always_ff @(posedge aclk) begin
 	cachewe <= 64'd0;
 
 	unique case(cachestate)
+		CRESET: begin
+			rwmode <= 2'b00;
+			dccount <= 8'd0;
+			cachestate <= IDLE;
+		end
+
 		IDLE : begin
 			rwmode <= {ren, |wstrb};		// Record r/w mode
 			bsel <= wstrb;					// Write byte select
@@ -145,8 +149,6 @@ always_ff @(posedge aclk) begin
 			ctag <= tag;					// Cache tag 00000..1ffff
 			ptag <= cachelinetags[line];	// Previous cache tag
 			inputdata <= din;
-			valid <= cachelinevalid[line];
-			dccount <= 8'd0;
 
 			casex ({dcacheop[0], isuncached, ren, |wstrb})
 				4'b0001: cachestate <= CWRITE;
@@ -161,7 +163,6 @@ always_ff @(posedge aclk) begin
 		CDATANOFLUSHBEGIN: begin
 			// Clear and invalidate cache line
 			cachelinewb[dccount] <= 1'b0;
-			cachelinevalid[dccount] <= 1'b0;
 			cachelinetags[dccount] <= 'd0;
 			cachestate <= CDATANOFLUSHSTEP;
 		end
@@ -192,8 +193,7 @@ always_ff @(posedge aclk) begin
 			// Nothing to write back for next time around
 			cachelinewb[dccount] <= 1'b0;
 			// Either write back to memory or skip
-			// If cache line is valid, we keep it valid
-			if (cachelinewb[dccount] && cachelinevalid[dccount]) begin
+			if (cachelinewb[dccount]) begin
 				// Write current line back to RAM
 				cacheaddress <= {1'b0, flushline, dccount, 6'd0};
 				cachedout <= {cdout[127:0], cdout[255:128], cdout[383:256], cdout[511:384]};
@@ -266,7 +266,7 @@ always_ff @(posedge aclk) begin
 		end
 
 		CWRITE: begin
-			if ((ctag == ptag) && valid) begin
+			if (ctag == ptag) begin
 				cdin <= {	inputdata, inputdata, inputdata, inputdata,
 							inputdata, inputdata, inputdata, inputdata,
 							inputdata, inputdata, inputdata, inputdata,
@@ -299,7 +299,7 @@ always_ff @(posedge aclk) begin
 		end
 
 		CREAD: begin
-			if ((ctag == ptag) && valid) begin
+			if (ctag == ptag) begin
 				// Return word directly from cache
 				unique case(coffset)
 					4'b0000:  dout <= cdout[31:0];
@@ -327,16 +327,11 @@ always_ff @(posedge aclk) begin
 		end
 
 		CWBACK : begin
-			if (valid) begin
-				// Use old memory address with device selector, aligned to cache boundary, top bit ignored (cached address)
-				cacheaddress <= {1'b0, ptag, cline, 6'd0};
-				cachedout <= {cdout[127:0], cdout[255:128], cdout[383:256], cdout[511:384]};
-				memwritestrobe <= 1'b1;
-				cachestate <= CWBACKWAIT;
-			end else begin
-				// Nothing to write back for invalid line, just populate
-				cachestate <= CPOPULATE;
-			end
+			// Use old memory address with device selector, aligned to cache boundary, top bit ignored (cached address)
+			cacheaddress <= {1'b0, ptag, cline, 6'd0};
+			cachedout <= {cdout[127:0], cdout[255:128], cdout[383:256], cdout[511:384]};
+			memwritestrobe <= 1'b1;
+			cachestate <= CWBACKWAIT;
 		end
 
 		CWBACKWAIT: begin
@@ -363,17 +358,14 @@ always_ff @(posedge aclk) begin
 		CUPDATEDELAY: begin
 			ptag <= ctag;
 			cachelinetags[cline] <= ctag;
-			// No need to write back since contents are valid and unmodifed
+			// No need to write back since contents are now valid
 			cachelinewb[cline] <= 1'b0;
-			// Contents are now associated with a memory location
-			cachelinevalid[cline] <= 1'b1;
-			valid <= 1'b1;
 			cachestate <= (rwmode == 2'b01) ? CWRITE : CREAD;
 		end
 	endcase
 
 	if (~aresetn) begin
-		cachestate <= IDLE;
+		cachestate <= CRESET;
 	end
 end
 

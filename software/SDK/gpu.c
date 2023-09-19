@@ -248,6 +248,8 @@ void GPUSetVMode(struct EVideoContext *_context, const enum EVideoScanoutEnable 
 	// NOTE: For the time being console is always running at 640x480 mode
 	_context->m_consoleWidth = (uint16_t)(_context->m_graphicsWidth/8);
 	_context->m_consoleHeight = (uint16_t)(_context->m_graphicsHeight/8);
+	_context->m_consoleUpdated = 0;
+	_context->m_needBGClear = 0;
 
 	*GPUIO = GPUCMD_SETVMODE;
 	*GPUIO = MAKEVMODEINFO((uint32_t)_context->m_cmode, (uint32_t)_context->m_vmode, (uint32_t)_scanEnable);
@@ -274,14 +276,38 @@ void GPUSetPal(const uint8_t _paletteIndex, const uint32_t _red, const uint32_t 
 	*GPUIO = (_paletteIndex<<24) | (MAKECOLORRGB24(_red, _green, _blue)&0x00FFFFFFFF);
 }
 
-void GPUPrintString(struct EVideoContext *_context, int *_col, int *_row, const char *_message, int _length)
+void GPUConsoleSetColors(struct EVideoContext *_context, const uint8_t _foregroundIndex, const uint8_t _backgroundIndex)
 {
-	uint8_t *vramBase = (uint8_t*)_context->m_cpuWriteAddressCacheAligned;
-	uint32_t stride = _context->m_strideInWords*4;
-	int cx = *_col;
-	int cy = *_row;
+	_context->m_consoleForeground = _foregroundIndex;
+	_context->m_consoleBackground = _backgroundIndex;
+	_context->m_consoleUpdated = 1;
+}
+
+void GPUConsoleClear(struct EVideoContext *_context)
+{
+	uint8_t *characterBase = (uint8_t*)CONSOLE_CHARACTERBUFFER_START;
+	__builtin_memset(characterBase, 0x00, _context->m_consoleWidth*_context->m_consoleHeight);
+	_context->m_consoleUpdated = 1;
+	_context->m_needBGClear = 1;
+	_context->m_cursorX = 0;
+	_context->m_cursorY = 0;
+}
+
+void GPUConsoleSetCursor(struct EVideoContext *_context, const uint16_t _x, const uint16_t _y)
+{
+	_context->m_cursorX = _x;
+	_context->m_cursorY = _y;
+}
+
+void GPUConsolePrint(struct EVideoContext *_context, const char *_message, int _length)
+{
+	uint8_t *characterBase = (uint8_t*)CONSOLE_CHARACTERBUFFER_START;
+	uint32_t stride = _context->m_consoleWidth;
+	int cx = _context->m_cursorX;
+	int cy = _context->m_cursorY;
 
 	int i=0;
+	int isNotTab = 1;
 	while (_message[i] != 0 && i<_length)
 	{
 		int currentchar = _message[i];
@@ -291,9 +317,11 @@ void GPUPrintString(struct EVideoContext *_context, int *_col, int *_row, const 
 			cx = 0; // We assume carriage return here as well as line feed
 			cy++;
 		}
-		else if (currentchar == '\r') // Tab
+		else if (currentchar == '\t') // Tab
 		{
-			cx += 4;
+			cx += 4; // Based on DOS console tab width
+			// NOTE: This is not supposed to trigger any behavior except wrap around on same line
+			isNotTab = 0;
 		}
 		/*else if (currentchar == '\r') // Carriage return
 		{
@@ -301,6 +329,52 @@ void GPUPrintString(struct EVideoContext *_context, int *_col, int *_row, const 
 		}*/
 		else
 		{
+			characterBase[cy*stride+cx] = currentchar;
+			cx++;
+		}
+
+		if (cx >= _context->m_consoleWidth)
+		{
+			cx = 0;
+			cy += isNotTab; // TAB won't wrap to next line, it's just walks between tap stops on current line
+		}
+
+		if (cy >= _context->m_consoleHeight)
+		{
+			// We're trying to write past end of console; scroll up the contents of the console
+			uint32_t target = CONSOLE_CHARACTERBUFFER_START;
+			uint32_t source = CONSOLE_CHARACTERBUFFER_START + _context->m_consoleWidth;
+			uint32_t lastrow = CONSOLE_CHARACTERBUFFER_START + _context->m_consoleWidth*(_context->m_consoleHeight-1);
+			__builtin_memcpy((void*)target, (void*)source, _context->m_consoleWidth*(_context->m_consoleHeight-1));
+			__builtin_memset((void*)lastrow, 0x00, _context->m_consoleWidth);
+			_context->m_needBGClear = 1;
+			cy = _context->m_consoleHeight - 1;
+		}
+
+		++i;
+	}
+	_context->m_cursorX = cx;
+	_context->m_cursorY = cy;
+	_context->m_consoleUpdated = 1;
+}
+
+void GPUConsoleResolve(struct EVideoContext *_context)
+{
+	uint8_t *vramBase = (uint8_t*)_context->m_cpuWriteAddressCacheAligned;
+	uint8_t *characterBase = (uint8_t*)CONSOLE_CHARACTERBUFFER_START;
+	uint32_t stride = _context->m_strideInWords*4;
+	uint32_t charstride = _context->m_consoleWidth;
+	uint8_t FG = _context->m_consoleForeground;
+	uint8_t BG = _context->m_consoleBackground;
+
+	for (uint16_t cy=0; cy<_context->m_consoleHeight; ++cy)
+	{
+		for (uint16_t cx=0; cx<_context->m_consoleWidth; ++cx)
+		{
+			int currentchar = characterBase[cx+cy*charstride];
+			if (currentchar<32)
+				continue;
+
 			int charrow = (currentchar>>4)*8;
 			int charcol = (currentchar%16);
 			for (int y=0; y<8; ++y)
@@ -311,37 +385,23 @@ void GPUPrintString(struct EVideoContext *_context, int *_col, int *_row, const 
 				for (int x=0; x<8; ++x)
 				{
 					int xoffset = cx*8 + x;
-					vramBase[xoffset + yoffset] = (chardata&0x80) ? 0x0F : 0x36; // TODO: Use console background/foreground colors
+					vramBase[xoffset + yoffset] = (chardata&0x80) ? FG : BG;
 					chardata = chardata << 1;
 				}
 			}
-			cx++;
 		}
-
-		if (cx >= _context->m_consoleWidth)
-		{
-			cx = 0;
-			++cy;
-		}
-
-		if (cy >= _context->m_consoleHeight)
-		{
-			// TODO: Need to scroll up
-			cy = _context->m_consoleHeight - 1;
-		}
-
-		++i;
 	}
-	*_col = cx;
-	*_row = cy;
+	_context->m_consoleUpdated = 0;
+	CFLUSH_D_L1;
 }
 
-void GPUClearScreen(struct EVideoContext *_context, const uint32_t _colorWord)
+void GPUClear(struct EVideoContext *_context, const uint32_t _colorWord)
 {
 	uint32_t *vramBaseAsWord = (uint32_t*)_context->m_cpuWriteAddressCacheAligned;
 	uint32_t W = _context->m_graphicsHeight * _context->m_strideInWords;
 	for (uint32_t i=0; i<W; ++i)
 		vramBaseAsWord[i] = _colorWord;
+	_context->m_needBGClear = 0;
 	CFLUSH_D_L1;
 }
 

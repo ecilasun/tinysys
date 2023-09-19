@@ -755,7 +755,7 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass)
 			return rcode;
 
 		// re-request config descriptor with actual data size (cdef.wTotalLength)
-		char *tmpdata = (char*)(HEAP_START_APPMEM_END-1024);
+		char *tmpdata = (char*)KERNEL_TEMP_MEMORY;
 		rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, c, USB_DESCRIPTOR_CONFIGURATION, 0x0000, cdef.wTotalLength, tmpdata, 64);
 
 		if (rcode != 0)
@@ -944,7 +944,7 @@ uint8_t USBGetHIDDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_protocol)
 #endif
 
 	// TODO: We need kalloc() for this kind of unknown data pool
-	char *tmpdata = (char*)(HEAP_START_APPMEM_END-1024);
+	char *tmpdata = (char*)KERNEL_TEMP_MEMORY;
     uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_HIDREPORT, USB_REQUEST_GET_DESCRIPTOR, 0x00, HID_DESCRIPTOR_REPORT, 0x0000, s_HIDDescriptorLen, tmpdata, 64);
 
 	if (rcode != 0)

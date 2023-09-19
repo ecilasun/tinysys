@@ -113,10 +113,7 @@ void edgeMask(int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t tx, int32_
 
 int main(int argc, char *argv[])
 {
-	if (argc > 1)
-		printf("Software rasterization test\n");
-	else
-		printf("Hardware rasterization test\n");
+	printf("Hardware rasterization test\n");
 
 	s_framebufferB = GPUAllocateBuffer(320*240); // Or think of it as 1280*64 for tiles
 	s_framebufferA = GPUAllocateBuffer(320*240);

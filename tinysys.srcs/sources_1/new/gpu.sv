@@ -13,7 +13,7 @@ module gpucore(
 	input wire [31:0] gpufifodout,
 	output wire gpufifore,
 	input wire gpufifovalid,
-	output wire [31:0] vblankcount);
+	output wire [31:0] gpustate);
 
 // A simple graphics unit with the following features:
 // - Four video output modes (320x240 or 640x480, indexed or 16bpp)
@@ -354,8 +354,8 @@ always_ff @(posedge clk25) begin
 	end
 end
 
-(* async_reg = "true" *) logic [31:0] blanktogglepre = 32'd0;
-(* async_reg = "true" *) logic [31:0] blanktoggle = 32'd0;
+(* async_reg = "true" *) logic blanktogglepre = 1'b0;
+(* async_reg = "true" *) logic blanktoggle = 1'b0;
 
 // Vertical blanking counter
 logic smode = 1'b0;
@@ -384,7 +384,8 @@ always_ff @(posedge aclk) begin
         smode <= 1'b0;
 	end
 end
-assign vblankcount = blanktoggle;
+
+assign gpustate = {31'd0, blanktoggle};
 
 always_ff @(posedge aclk) begin
 	case (scanstate)

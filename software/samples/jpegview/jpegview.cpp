@@ -16,10 +16,10 @@ uint16_t *image;
 
 // The Bayer matrix for ordered dithering
 const uint8_t dither[4][4] = {
-  { 0, 8, 2,10},
-  {12, 4,14, 6},
-  { 3,11, 1, 9},
-  {15, 7,13, 5}
+{ 0, 8, 2,10},
+{12, 4,14, 6},
+{ 3,11, 1, 9},
+{15, 7,13, 5}
 };
 
 void DecodeJPEG(const char *fname)
@@ -90,20 +90,16 @@ void DecodeJPEG(const char *fname)
 int main(int argc, char** argv )
 {
 	// Set aside space for the decompressed image
-    // NOTE: Video scanout buffer has to be aligned at 64 byte boundary
+	// NOTE: Video scanout buffer has to be aligned at 64 byte boundary
 	image = (uint16_t*)GPUAllocateBuffer(640*480*2);
 
 	struct EVideoContext vx;
-    vx.m_vmode = EVM_640_Wide;
-    vx.m_cmode = ECM_16bit_RGB;
+	vx.m_vmode = EVM_640_Wide;
+	vx.m_cmode = ECM_16bit_RGB;
 	GPUSetVMode(&vx, EVS_Enable);
 	GPUSetWriteAddress(&vx, (uint32_t)image);
 	GPUSetScanoutAddress(&vx, (uint32_t)image);
 	GPUClearScreen(&vx, 0x03030303);
-
-	int cx = 0, cy = 16;
-    GPUPrintString(&vx, &cx, &cy, "loading...", 0x7FFFFFFF);
-    CFLUSH_D_L1;
 
 	if (argc<=1)
 		DecodeJPEG("sd:test.jpg");

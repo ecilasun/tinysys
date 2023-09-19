@@ -93,7 +93,7 @@ enum EUSBDeviceState HandleKeyboard(enum EUSBDeviceState _currentState)
 {
 	enum EUSBDeviceState returnState = _currentState;
 
-	uint8_t *keyboarddata = (uint8_t*)(HEAP_START_APPMEM_END-1024);
+	uint8_t *keyboarddata = (uint8_t*)KERNEL_TEMP_MEMORY;
 
 	// Key report
 	uint8_t rcode = USBReadHIDData(s_deviceAddress, s_controlEndpoint, 8, keyboarddata, 0x0, HID_REPORTTYPE_INPUT, 1);
@@ -135,8 +135,8 @@ enum EUSBDeviceState HandleKeyboard(enum EUSBDeviceState _currentState)
 			if (keystate&1)
 			{
 				uint32_t incoming;
-				if ((i==HKEY_C) && isControl)
-					incoming = 3; // EXT (CTRL+C)
+				if (((i==HKEY_C) && isControl) || (i==HKEY_PAUSE))
+					incoming = 3; // EXT (CTRL+C) or PAUSE key
 				else
 					incoming = KeyScanCodeToASCII(i, isCaps);
 				RingBufferWrite(&incoming, sizeof(uint32_t));
@@ -192,7 +192,7 @@ enum EUSBDeviceState HandleMouse(enum EUSBDeviceState _currentState)
 {
 	enum EUSBDeviceState returnState = _currentState;
 
-	uint8_t *mousedata = (uint8_t*)(HEAP_START_APPMEM_END-1024);
+	uint8_t *mousedata = (uint8_t*)KERNEL_TEMP_MEMORY;
 
 	// X/Y/Wheel/Button
 	uint8_t rcode = USBReadHIDData(s_deviceAddress, 1, 4, mousedata, 0x0, HID_REPORTTYPE_INPUT, 2);
@@ -222,7 +222,7 @@ enum EUSBDeviceState HandleJoystick(enum EUSBDeviceState _currentState)
 {
 	enum EUSBDeviceState returnState = _currentState;
 
-	uint8_t *joystickdata = (uint8_t*)(HEAP_START_APPMEM_END-1024);
+	uint8_t *joystickdata = (uint8_t*)KERNEL_TEMP_MEMORY;
 
 	uint8_t rcode = USBReadHIDData(s_deviceAddress, 1, 8, joystickdata, 0x0, HID_REPORTTYPE_INPUT, 4);
 	if (rcode == hrSTALL)
@@ -248,7 +248,7 @@ enum EUSBDeviceState HandleJoystick(enum EUSBDeviceState _currentState)
 {
 	enum EUSBDeviceState returnState = _currentState;
 
-	uint8_t *gamepaddata = (uint8_t*)(HEAP_START_APPMEM_END-1024);
+	uint8_t *gamepaddata = (uint8_t*)KERNEL_TEMP_MEMORY;
 
 	uint8_t rcode = USBReadHIDData(s_deviceAddress, 1, 40, gamepaddata, 0x0, HID_REPORTTYPE_INPUT, 4);
 	if (rcode == hrSTALL)

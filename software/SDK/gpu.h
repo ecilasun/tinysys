@@ -2,9 +2,9 @@
 
 #include <inttypes.h>
 
-#define GPUCMD_SETVPAGE 0x00000000
-#define GPUCMD_SETPAL   0x00000001
-#define GPUCMD_SETVMODE 0x00000002
+#define GPUCMD_SETVPAGE				0x00000000
+#define GPUCMD_SETPAL				0x00000001
+#define GPUCMD_SETVMODE				0x00000002
 
 #define RASTERCMD_OUTADDRS			0x00000000
 #define RASTERCMD_PUSHVERTEX0		0x00000001
@@ -59,6 +59,8 @@ struct EVideoContext
 	uint32_t m_cpuWriteAddressCacheAligned;
 	uint32_t m_graphicsWidth, m_graphicsHeight;
 	uint16_t m_consoleWidth, m_consoleHeight;
+	uint16_t m_cursorX, m_cursorY;
+	uint8_t m_consoleForeground, m_consoleBackground, m_consoleUpdated, m_needBGClear;
 };
 
 struct EVideoSwapContext
@@ -88,8 +90,12 @@ void GPUSwapPages(struct EVideoContext* _vx, struct EVideoSwapContext *_sc);
 void GPUWaitVSync();
 
 // Software emulated
-void GPUPrintString(struct EVideoContext *_context, int *_col, int *_row, const char *_message, int _length);
-void GPUClearScreen(struct EVideoContext *_context, const uint32_t _colorWord);
+void GPUConsoleSetColors(struct EVideoContext *_context, const uint8_t _foregroundIndex, const uint8_t _backgroundIndex);
+void GPUConsoleClear(struct EVideoContext *_context);
+void GPUConsoleSetCursor(struct EVideoContext *_context, const uint16_t _x, const uint16_t _y);
+void GPUConsolePrint(struct EVideoContext *_context, const char *_message, int _length);
+void GPUConsoleResolve(struct EVideoContext *_context);
+void GPUClear(struct EVideoContext *_context, const uint32_t _colorWord);
 
 // Hardware rasterizer
 void RPUSetTileBuffer(const uint32_t _rpuTileBuffer16ByteAligned);

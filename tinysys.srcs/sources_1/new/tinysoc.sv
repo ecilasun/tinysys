@@ -147,7 +147,7 @@ wire gpufifoempty;
 wire [31:0] gpufifodout;
 wire gpufifore;
 wire gpufifovalid;
-wire [31:0] vblankcount;
+wire [31:0] gpustate;
 gpucore GPU(
 	.aclk(aclk),
 	.clk25(clk25),
@@ -159,7 +159,7 @@ gpucore GPU(
 	.gpufifodout(gpufifodout),
 	.gpufifore(gpufifore),
 	.gpufifovalid(gpufifovalid),
-	.vblankcount(vblankcount));
+	.gpustate(gpustate));
 
 // --------------------------------------------------
 // Rasterizer unit
@@ -340,7 +340,7 @@ commandqueue gpucmdinst(
 	.fifodout(gpufifodout),
 	.fifore(gpufifore),
 	.fifovalid(gpufifovalid),
-	.devicestate(vblankcount));
+	.devicestate(gpustate));
 
 commandqueue rastercmdinst(
 	.aclk(aclk),

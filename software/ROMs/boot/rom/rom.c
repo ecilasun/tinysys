@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define VERSIONSTRING "v000A"
+#define VERSIONSTRING "v000B"
 
 const uint32_t s_consolebgcolor = 0x36363636;
 static char s_execName[64] = "ROM";
@@ -109,17 +109,18 @@ void DeviceDefaultState(int _bootTime)
 
 	// Set up console view
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
-	GPUSetWriteAddress(kernelgfx, CONSOLE_BUFFER_START);
-	GPUSetScanoutAddress(kernelgfx, CONSOLE_BUFFER_START);
+	GPUSetWriteAddress(kernelgfx, CONSOLE_FRAMEBUFFER_START);
+	GPUSetScanoutAddress(kernelgfx, CONSOLE_FRAMEBUFFER_START);
 	GPUSetDefaultPalette(kernelgfx);
 	kernelgfx->m_vmode = EVM_640_Wide;
 	kernelgfx->m_cmode = ECM_8bit_Indexed;
 	GPUSetVMode(kernelgfx, EVS_Enable);
-	// Preserve contents for non-boot
+
+	// Preserve contents of screen for non-boot time
 	if (_bootTime == 1)
 	{
-		GPUClearScreen(kernelgfx, s_consolebgcolor);
-		ksetcursor(0,0);
+		GPUConsoleSetColors(kernelgfx, 0x0F, 0x36);
+		GPUConsoleClear(kernelgfx);
 	}
 }
 
@@ -150,8 +151,7 @@ void ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "clear"))
 	{
-		GPUClearScreen(kernelgfx, s_consolebgcolor);
-		ksetcursor(0,0);
+		GPUConsoleClear(kernelgfx);
 	}
 	else if (!strcmp(command, "reloc"))
 	{
@@ -165,6 +165,14 @@ void ExecuteCmd(char *_cmd)
 		{
 			s_relocOffset = atoi(offset);
 		}
+	}
+	else if (!strcmp(command, "reboot"))
+	{
+		GPUSetVMode(kernelgfx, EVS_Disable);
+		asm volatile(
+			"li s0, 0x0FFE0000;"
+			"jalr s0;"
+		);
 	}
 	else if (!strcmp(command, "mem"))
 	{
@@ -272,8 +280,9 @@ void ExecuteCmd(char *_cmd)
 		kprintf("usb: Show current USB peripheral state\n");
 		kprintf("mount: Mount drive sd:\n");
 		kprintf("umount: Unmount drive sd:\n");
-		kprintf("reloc: Set ELF relocation offset\n");
+		//kprintf("reloc: Set ELF relocation offset\n"); // Hidden - this is not a safe feature
 		kprintf("mem: Show available memory\n");
+		kprintf("reboot: Soft reboot\n");
 		kprintf("Any other input will load a file from sd: with matching name\n");
 		kprintf("CTRL+C terminates current program\n");
 		kprintf("\n");
@@ -418,7 +427,7 @@ void _cliTask()
 				int cx,cy;
 				kgetcursor(&cx, &cy);
 				ksetcursor(0,cy);
-				kprintf("%s>%s_ ", s_workdir, s_cmdString);
+				kprintf("%s>%s ", s_workdir, s_cmdString);
 			}
 		}
 
@@ -499,21 +508,29 @@ int main()
 	USBHostInit(1);
 
 	// Main CLI loop
+	struct EVideoContext *kernelgfx = GetKernelGfxContext();
 	while (1)
 	{
-		// High level maintenance tasks
-		// 1) ADCGetRawTemperature() to warn about overheat or throttle?
-		// 2) Manage system level maintenance tasks
+		// High level maintenance tasks which should not be interrupted
 
 		// Disable machine interrupts
 		write_csr(mstatus, 0);
+
 		// Deal with USB peripheral setup and data traffic
 		ProcessUSBDevice();
+
 		// Enable machine interrupts
 		write_csr(mstatus, MSTATUS_MIE);
-
 		// Yield time as soon as we're done here
 		TaskYield();
+
+		// Tasks that can be interrupted
+
+		// Refresh console output
+		if (kernelgfx->m_needBGClear)
+			GPUClear(kernelgfx, s_consolebgcolor);
+		if (kernelgfx->m_consoleUpdated)
+			GPUConsoleResolve(kernelgfx);
 	}
 
 	return 0;

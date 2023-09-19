@@ -12,10 +12,9 @@
 
 static struct EVideoContext s_kernelgfxcontext;
 static FATFS Fs;
-static char *k_tmpstr = (char*)CONSOLE_TEXT_START;
+// Stay away from other uses by devices etc
+static char *k_tmpstr = (char*)(KERNEL_TEMP_MEMORY + 1024);
 
-static int s_col = 0;
-static int s_row = 0;
 int kprintfn(const int count, const char *fmt, ...)
 {
 	va_list va;
@@ -27,7 +26,7 @@ int kprintfn(const int count, const char *fmt, ...)
 	l = count < l ? count : l;
 
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
-	GPUPrintString(kernelgfx, &s_col, &s_row, k_tmpstr, count);
+	GPUConsolePrint(kernelgfx, k_tmpstr, count);
 	CFLUSH_D_L1;
 
 	return l;
@@ -43,7 +42,7 @@ int kprintf(const char *fmt, ...)
 	va_end(va);
 
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
-	GPUPrintString(kernelgfx, &s_col, &s_row, k_tmpstr, 65536);
+	GPUConsolePrint(kernelgfx, k_tmpstr, 65536);
 	CFLUSH_D_L1;
 
 	return l;
@@ -51,14 +50,15 @@ int kprintf(const char *fmt, ...)
 
 void kgetcursor(int *_x, int *_y)
 {
-	*_x = s_col;
-	*_y = s_row;
+	struct EVideoContext *kernelgfx = GetKernelGfxContext();
+	*_x = kernelgfx->m_cursorX;
+	*_y = kernelgfx->m_cursorY;
 }
 
 void ksetcursor(const int _x, const int _y)
 {
-	s_col = _x;
-	s_row = _y;
+	struct EVideoContext *kernelgfx = GetKernelGfxContext();
+	GPUConsoleSetCursor(kernelgfx, _x, _y);
 }
 
 uint32_t MountDrive()

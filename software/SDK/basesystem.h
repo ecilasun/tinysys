@@ -34,8 +34,10 @@
 // Joystick x/y and buttons - 16 bytes
 #define JOYSTICK_POS_AND_BUTTONS		0x00000D30
 // Console buffer
-#define CONSOLE_BUFFER_START			0x02000000 // 640x480x8bpp
-#define CONSOLE_TEXT_START				0x0204B000 // Character store
+#define CONSOLE_FRAMEBUFFER_START		0x02000000 // Console framebuffer == 0x4B000 bytes max at 640*480 resolution
+#define CONSOLE_CHARACTERBUFFER_START	0x0204B000 // Character store == 80*60 bytes max at 640*480 resolution
+// Temp memory
+#define KERNEL_TEMP_MEMORY				0x0204C2C0 // Temporary kernel memory (~15Kbytes)
 // Executable
 #define HEAP_START_APPMEM_END			0x02050000 // Executable space above this (32MBytes)
 // Heap
