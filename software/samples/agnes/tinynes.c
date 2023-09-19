@@ -19,7 +19,7 @@
 static void get_input(agnes_input_t *out_input);
 static void* read_file(const char *filename, size_t *out_len);
 static struct EVideoContext s_vx;
-static uint8_t *s_framebuffer = NULL;
+static uint32_t *s_framebuffer = NULL;
 
 int main(int argc, char *argv[])
 {
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
     }
 
 	// Start video (single buffered for now)
-	s_framebuffer = GPUAllocateBuffer(320*240);
+	s_framebuffer = (uint32_t*)GPUAllocateBuffer(320*240);
 	GPUSetWriteAddress(&s_vx, (uint32_t)s_framebuffer);
 	GPUSetScanoutAddress(&s_vx, (uint32_t)s_framebuffer);
 	GPUSetDefaultPalette(&s_vx);
@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
     s_vx.m_vmode = EVM_320_Wide;
     s_vx.m_cmode = ECM_8bit_Indexed;
 	GPUSetVMode(&s_vx, EVS_Enable);
-	GPUClearScreen(&s_vx, 0xFFFFFFFF);
+	GPUClear(&s_vx, 0xFFFFFFFF);
 
 	// Apply the NES color palette
 	agnes_color_t *palette = agnes_get_palette(agnes);
@@ -82,8 +82,8 @@ int main(int argc, char *argv[])
 		for (uint32_t y = 0; y<AGNES_SCREEN_HEIGHT; ++y)
 		{
 			int iy = y*320;
-			for (uint32_t x = 0; x<AGNES_SCREEN_WIDTH; ++x)
-				s_framebuffer[iy+x] = agnes_get_raw_screen_pixel(agnes, x, y);
+			for (uint32_t x = 0; x<AGNES_SCREEN_WIDTH/4; ++x)
+				s_framebuffer[(iy>>2) + x] = agnes_get_raw_screen_pixel4(agnes, x*4, y);
 		}
 		CFLUSH_D_L1;
     }

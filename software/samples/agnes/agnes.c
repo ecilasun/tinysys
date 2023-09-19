@@ -640,9 +640,10 @@ agnes_color_t agnes_get_screen_pixel(const agnes_t *agnes, int x, int y) {
     return g_colors[color_ix & 0x3f];
 }
 
-uint8_t agnes_get_raw_screen_pixel(const agnes_t *agnes, int x, int y) {
+uint32_t agnes_get_raw_screen_pixel4(const agnes_t *agnes, int x, int y) {
     int ix = (y * AGNES_SCREEN_WIDTH) + x;
-    return agnes->ppu.screen_buffer[ix] & 0x3f;
+	uint32_t *buf = (uint32_t *)agnes->ppu.screen_buffer;
+    return buf[ix>>2] & 0x3f3f3f3f;
 }
 
 void agnes_destroy(agnes_t *agnes) {

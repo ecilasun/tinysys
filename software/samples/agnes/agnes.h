@@ -79,7 +79,7 @@ bool agnes_next_frame(agnes_t *agnes);
 agnes_color_t* agnes_get_palette(agnes_t *agnes);
 
 agnes_color_t agnes_get_screen_pixel(const agnes_t *agnes, int x, int y);
-uint8_t agnes_get_raw_screen_pixel(const agnes_t *agnes, int x, int y);
+uint32_t agnes_get_raw_screen_pixel4(const agnes_t *agnes, int x, int y);
 
 #ifdef __cplusplus
 }
