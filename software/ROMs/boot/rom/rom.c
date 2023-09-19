@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define VERSIONSTRING "v000B"
+#define VERSIONSTRING "v000D"
 
 const uint8_t s_consolefgcolor = 0x2A; // Ember
 const uint8_t s_consolebgcolor = 0x11; // Dark gray
@@ -169,6 +169,9 @@ void ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "reboot"))
 	{
+		// Blank
+		GPUConsoleClear(kernelgfx);
+		GPUClear(kernelgfx, 0x00000000);
 		GPUSetVMode(kernelgfx, EVS_Disable);
 		asm volatile(
 			"li s0, 0x0FFE0000;"

@@ -39,7 +39,7 @@ int main()
 
 	GPUSetWriteAddress(&vx, (uint32_t)framebufferA);
 	GPUSetScanoutAddress(&vx, (uint32_t)framebufferB);
-	GPUClearScreen(&vx, 0x03030303);
+	GPUClear(&vx, 0x03030303);
 
 	// Set up buffer for 32 bit imgui render output
 	// We try to align it to a cache boundary to support future DMA copies

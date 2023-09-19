@@ -824,7 +824,7 @@ I_InitSound()
   mixbuffer = mixbufferA;
   playbackbuffer = mixbufferB;
   APUSetBufferSize(MIXBUFFERSIZE*SAMPLESIZE);
-  APUSetSampleRate(ASR_11025_Hz);
+  APUSetSampleRate(ASR_11_025_Hz);
 
   fprintf(stderr, " configured audio device\n" );
 

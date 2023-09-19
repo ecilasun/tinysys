@@ -81,7 +81,7 @@ int main()
    GPUSetVMode(&vx, EVS_Enable);
    GPUSetWriteAddress(&vx, (uint32_t)framebuffer);
    GPUSetScanoutAddress(&vx, (uint32_t)framebuffer);
-   GPUClearScreen(&vx, 0x03030303);
+   GPUClear(&vx, 0x03030303);
 
    // Grayscale palette
    for (uint32_t i=0; i<256; ++i)

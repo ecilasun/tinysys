@@ -99,7 +99,7 @@ int main(int argc, char** argv )
 	GPUSetVMode(&vx, EVS_Enable);
 	GPUSetWriteAddress(&vx, (uint32_t)image);
 	GPUSetScanoutAddress(&vx, (uint32_t)image);
-	GPUClearScreen(&vx, 0x03030303);
+	GPUClear(&vx, 0x03030303);
 
 	if (argc<=1)
 		DecodeJPEG("sd:test.jpg");

@@ -10,9 +10,9 @@
 
 enum EAPUSampleRate
 {
-	ASR_44100_Hz = 0,	// 44.1 KHz
-	ASR_22050_Hz = 1,	// 22.05 KHz
-	ASR_11025_Hz = 2	// 11.025 KHz
+	ASR_44_100_Hz = 0,	// 44.1000 KHz
+	ASR_22_050_Hz = 1,	// 22.0500 KHz
+	ASR_11_025_Hz = 2,	// 11.0250 KHz
 };
 
 extern volatile uint32_t *IO_AUDIOOUT;

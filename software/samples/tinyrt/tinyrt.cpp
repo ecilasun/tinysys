@@ -5,8 +5,8 @@
 #include <math.h>
 #include "core.h"
 #include "basesystem.h"
-#include "usbserial.h"
 #include "gpu.h"
+#include <stdio.h>
 
 uint8_t *framebuffer = 0;
 EVideoContext vx;
@@ -62,14 +62,14 @@ static int bench_run = 0;
 
 // Replace with your own stuff to initialize graphics
 static inline void graphics_init() {
-    USBSerialWrite("\033[48;5;16m\033[H\033[2J");
+    //printf("\033[48;5;16m\033[H\033[2J");
 }
 
 // Replace with your own stuff to terminate graphics or leave empty
 // Here I send <ctrl><D> to the UART, to exit the simulation in Verilator,
 // it is captured by special code in RTL/DEVICES/uart.v
 static inline void graphics_terminate() {
-    USBSerialWrite("\033[48;5;16m\033[38;5;15m");
+    //printf("\033[48;5;16m\033[38;5;15m");
 }
 
 // Replace with your own code.
@@ -108,15 +108,14 @@ static inline void stats_end_pixel() {
 static void printk(uint64_t kx) {
     int intpart  = (int)(kx / 1000);
     int fracpart = (int)(kx % 1000);
-    USBSerialWriteDecimal(intpart);
-    USBSerialWrite(".");
+    printf("%d.", intpart);
     if(fracpart<100) {
-	    USBSerialWrite("0");
+	    printf("0");
     }
     if(fracpart<10) {
-	    USBSerialWrite("0");
+	    printf("0");
     }
-    USBSerialWriteDecimal(fracpart);
+    printf("%d", fracpart);
 }
 
 static uint64_t instret_start;
@@ -139,15 +138,12 @@ static inline void stats_end_frame() {
    uint64_t kCPI       = cycles*1000/instret;
    uint64_t pixels     = graphics_width * graphics_height;
    uint64_t kRAYSTONES = (pixels*1000000000)/cycles;
-   USBSerialWrite("\n");
-   USBSerialWriteDecimal(graphics_width);
-   USBSerialWrite("x");
-   USBSerialWriteDecimal(graphics_height);
-   USBSerialWrite("      ");
-   USBSerialWrite(bench_run ? "no gfx output (measurement is accurate)" : "gfx output (measurement is NOT accurate)");
-   USBSerialWrite("CPI="); printk(kCPI); USBSerialWrite("     ");
-   USBSerialWrite("RAYSTONES="); printk(kRAYSTONES);
-   USBSerialWrite("\n");
+   printf("\n%dx%d      %s", graphics_width, graphics_height, bench_run ? "no gfx output (measurement is accurate)" : "gfx output (measurement is NOT accurate)");
+   printf("CPI=");
+   printk(kCPI);
+   printf("     RAYSTONES=");
+   printk(kRAYSTONES);
+   printf("\n");
 }
 
 // Normally you will not need to modify anything beyond that point.
@@ -477,14 +473,14 @@ int main()
   framebuffer = (uint8_t*)GPUAllocateBuffer(graphics_width * graphics_height * 2);
   GPUSetWriteAddress(&vx, (uint32_t)framebuffer);
   GPUSetScanoutAddress(&vx, (uint32_t)framebuffer);
-  GPUClearScreen(&vx, 0x03030303);
+  GPUClear(&vx, 0x03030303);
 
   init_scene();
 
   bench_run = 1;
   graphics_width  = 40;
   graphics_height = 20;
-  USBSerialWrite("Running without graphic output (for accurate measurement)...\n");
+  printf("Running without graphic output (for accurate measurement)...\n");
   render(spheres, nb_spheres, lights, nb_lights);
 
   bench_run = 0;
