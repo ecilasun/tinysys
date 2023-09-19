@@ -26,7 +26,7 @@ static char s_execName[64] = "ROM";
 static char s_execParam0[64] = "auto";
 static uint32_t s_execParamCount = 1;
 
-static char s_cmdString[128] = "";
+static char s_cmdString[64] = "";
 static char s_workdir[64] = "sd:/";
 static int32_t s_cmdLen = 0;
 static uint32_t s_startAddress = 0;
@@ -388,8 +388,8 @@ void _cliTask()
 					if(taskctx->numTasks <= 2)
 					{
 						s_cmdString[s_cmdLen++] = (char)asciicode;
-						if (s_cmdLen > 127)
-							s_cmdLen = 127;
+						if (s_cmdLen > 63)
+							s_cmdLen = 63;
 					}
 				}
 				break;
@@ -426,7 +426,7 @@ void _cliTask()
 				// Reset current line and emit the command string
 				int cx,cy;
 				kgetcursor(&cx, &cy);
-				ksetcursor(0,cy);
+				ksetcursor(0, cy);
 				kprintf("%s>%s ", s_workdir, s_cmdString);
 			}
 		}
