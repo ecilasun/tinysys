@@ -76,38 +76,33 @@ I_GetRemoteEvent(void)
 	uint16_t *keystates = GetKeyStateTable();
 
 	event_t event;
-	int key = HKEY_RESERVED;
 	uint16_t updown = 0;
-	if ((updown = keystates[HKEY_ENTER]&3)!=0)			{ event.data1 = KEY_ENTER; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_ENTER; }
-	if ((updown = keystates[HKEY_RETURN]&3)!=0)			{ event.data1 = KEY_ENTER; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_RETURN; }
-	if ((updown = keystates[HKEY_RIGHTARROW]&3)!=0)		{ event.data1 = KEY_RIGHTARROW; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_RIGHTARROW; }
-	if ((updown = keystates[HKEY_LEFTARROW]&3)!=0)		{ event.data1 = KEY_LEFTARROW; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_LEFTARROW; }
-	if ((updown = keystates[HKEY_DOWNARROW]&3)!=0)		{ event.data1 = KEY_DOWNARROW; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_DOWNARROW; }
-	if ((updown = keystates[HKEY_UPARROW]&3)!=0)		{ event.data1 = KEY_UPARROW; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_UPARROW; }
-	if ((updown = keystates[HKEY_RIGHTSHIFT]&3)!=0)		{ event.data1 = KEY_RSHIFT; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_RIGHTSHIFT; }
-	if ((updown = keystates[HKEY_LEFTSHIFT]&3)!=0)		{ event.data1 = KEY_RSHIFT; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_LEFTSHIFT; }
-	if ((updown = keystates[HKEY_RIGHTALT]&3)!=0)		{ event.data1 = KEY_RALT; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_RIGHTALT; }
-	if ((updown = keystates[HKEY_LEFTALT]&3)!=0)		{ event.data1 = KEY_RALT; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_LEFTALT; }
-	if ((updown = keystates[HKEY_RIGHTCONTROL]&3)!=0)	{ event.data1 = KEY_RCTRL; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_RIGHTCONTROL; }
-	if ((updown = keystates[HKEY_LEFTCONTROL]&3)!=0)	{ event.data1 = KEY_RCTRL; event.type = (updown&1) ? ev_keydown : ev_keyup; key = HKEY_LEFTCONTROL; }
 
-	// None of the above, check for characters
-	if (key == HKEY_RESERVED)
+	for(int i=0; i<255; ++i)
 	{
-		for(int i=0; i<255; ++i)
+		updown = keystates[i]&3;
+		if (updown)
 		{
-			if (keystates[i])
+			switch(i)
 			{
-				updown = keystates[i]&3;
-				event.data1 = KeyScanCodeToASCII(i, 0); // always lowercase
-				event.type = (updown&1) ? ev_keydown : ev_keyup;
-				key = i;
+				case HKEY_ENTER:		{ event.data1 = KEY_ENTER; break; }
+				case HKEY_RETURN:		{ event.data1 = KEY_ENTER; break; }
+				case HKEY_RIGHTARROW:	{ event.data1 = KEY_RIGHTARROW; break; }
+				case HKEY_LEFTARROW:	{ event.data1 = KEY_LEFTARROW; break; }
+				case HKEY_DOWNARROW:	{ event.data1 = KEY_DOWNARROW; break; }
+				case HKEY_UPARROW:		{ event.data1 = KEY_UPARROW; break; }
+				case HKEY_RIGHTSHIFT:	{ event.data1 = KEY_RSHIFT; break; }
+				case HKEY_LEFTSHIFT:	{ event.data1 = KEY_RSHIFT; break; }
+				case HKEY_RIGHTALT:		{ event.data1 = KEY_RALT; break; }
+				case HKEY_LEFTALT:		{ event.data1 = KEY_RALT; break; }
+				case HKEY_RIGHTCONTROL:	{ event.data1 = KEY_RCTRL; break; }
+				case HKEY_LEFTCONTROL:	{ event.data1 = KEY_RCTRL; break; }
+				default:				{ event.data1 = KeyScanCodeToASCII(i, 0); break; }
 			}
+			event.type = (updown&1) ? ev_keydown : ev_keyup;
+			D_PostEvent(&event);
 		}
 	}
-
-	if (key != HKEY_RESERVED)
-		D_PostEvent(&event);
 }
 
 void

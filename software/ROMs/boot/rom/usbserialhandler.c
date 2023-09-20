@@ -347,7 +347,7 @@ void HandleUSBSerial()
 	}
 	else if (epIrq & bmOUT1DAVIRQ)
 	{
-		// Input
+		// Incoming data
 		LEDSetState(currLED | 0x8);
 		BufferIncomingData();
 		MAX3420WriteByte(rEPIRQ, bmOUT1DAVIRQ); // Clear

@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define VERSIONSTRING "v000D"
+#define VERSIONSTRING "000D"
 
 const uint8_t s_consolefgcolor = 0x2A; // Ember
 const uint8_t s_consolebgcolor = 0x11; // Dark gray
@@ -134,7 +134,7 @@ void ExecuteCmd(char *_cmd)
 	uint32_t loadELF = 0;
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
 
-	if (!strcmp(command, "ls"))
+	if (!strcmp(command, "dir"))
 	{
 		const char *path = strtok(NULL, " ");
 		if (!path)
@@ -146,11 +146,11 @@ void ExecuteCmd(char *_cmd)
 	{
 		MountDrive();
 	}
-	else if (!strcmp(command, "umount"))
+	else if (!strcmp(command, "unmount"))
 	{
 		UnmountDrive();
 	}
-	else if (!strcmp(command, "clear"))
+	else if (!strcmp(command, "cls"))
 	{
 		GPUConsoleClear(kernelgfx);
 	}
@@ -188,7 +188,7 @@ void ExecuteCmd(char *_cmd)
 		else
 			kprintf("%d Kbytes\n", inkbytes);
 	}
-	else if (!strcmp(command, "ps"))
+	else if (!strcmp(command, "proc"))
 	{
 		struct STaskContext *ctx = GetTaskContext();
 		if (ctx->numTasks==1)
@@ -202,7 +202,7 @@ void ExecuteCmd(char *_cmd)
 			}
 		}
 	}
-	else if (!strcmp(command, "rm"))
+	else if (!strcmp(command, "del"))
 	{
 		const char *path = strtok(NULL, " ");
 		if (!path)
@@ -227,6 +227,7 @@ void ExecuteCmd(char *_cmd)
 	{
 		int state = GetUSBDeviceState();
 		kprintf("Device state: %d(%s)\n", state, s_usbdevstates[state]);
+		// TODO: Device descriptor dump
 	}
 	else if (!strcmp(command, "ren"))
 	{
@@ -251,7 +252,7 @@ void ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "ver"))
 	{
-		kprintf("tinysys         : " VERSIONSTRING "\n");
+		kprintf("FOOTPRINT       : " VERSIONSTRING "\n");
 		kprintf("Board:          : revision 1K\n");	// TODO: need to read board and CPU data form system config
 		kprintf("CPU:            : 166.67MHz\n");
 
@@ -271,25 +272,22 @@ void ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "help"))
 	{
-		// Bright blue
-		kprintf("Available commands\n");
-		kprintf("ver: Show version info\n");
-		kprintf("clear: Clear terminal\n");
-		kprintf("cwd path: Change working directory\n");
-		kprintf("ls [path]: Show list of files in cwd or path\n");
-		kprintf("rm fname: Delete file\n");
-		kprintf("ren oldname newname: Rename file\n");
-		kprintf("ps: Show process info\n");
-		kprintf("kill pid: Kill process with id pid\n");
-		kprintf("usb: Show current USB peripheral state\n");
-		kprintf("mount: Mount drive sd:\n");
-		kprintf("umount: Unmount drive sd:\n");
-		//kprintf("reloc: Set ELF relocation offset\n"); // Hidden - this is not a safe feature
-		kprintf("mem: Show available memory\n");
-		kprintf("reboot: Soft reboot\n");
-		kprintf("Any other input will load a file from sd: with matching name\n");
-		kprintf("CTRL+C terminates current program\n");
-		kprintf("\n");
+		kprintf(" COMMAND      USAGE\n");
+		kprintf(" cls          Clear terminal                   \n");
+		kprintf(" cwd path     Change working directory         \n");
+		kprintf(" del fname    Delete file                      \n");
+		kprintf(" dir [path]   Show list of files in cwd or path\n");
+		kprintf(" kill pid     Kill process with id pid         \n");
+		kprintf(" mem          Show available memory            \n");
+		kprintf(" mount        Mount drive sd:                  \n");
+		kprintf(" proc         Show process info                \n");
+		kprintf(" reboot       Soft reboot                      \n");
+		kprintf(" ren old new  Rename file from old to new name \n");
+		kprintf(" unmount      Unmount drive sd:                \n");
+		kprintf(" usb          Show current USB peripheral state\n");
+		kprintf(" ver          Show version info                \n");
+		// Hidden commands
+		// reloc       Set ELF relocation offset
 	}
 	else // Anything else defers to being a command on storage
 		loadELF = 1;
@@ -301,7 +299,7 @@ void ExecuteCmd(char *_cmd)
 		// until we get a virtual memory device
 		if (tctx->numTasks>2)
 		{
-			kprintf("Virtual memory support required to run more than one ELF.\n");
+			kprintf("Virtual memory / code relocator not implemented.\n");
 		}
 		else
 		{
@@ -479,7 +477,7 @@ int main()
 	// we need to make sure all things are stopped and reset to default states
 	LEDSetState(0xC);
 	DeviceDefaultState(1);
-	kprintf("tinysys " VERSIONSTRING "\n");
+	kprintf("FOOTPRINT " VERSIONSTRING "\n");
 
 	// Set up internals
 	LEDSetState(0xB);

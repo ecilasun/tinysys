@@ -72,7 +72,7 @@ uint32_t MountDrive()
 			return 0;
 	}
 
-	kprintf("Device sd: mounted\n");
+	//kprintf("Device sd: mounted\n");
 	return 1;
 }
 
@@ -81,8 +81,8 @@ void UnmountDrive()
 	/*FRESULT unmountattempt =*/ f_mount(NULL, "sd:", 1);
 	/*if (unmountattempt != FR_OK)
 		kprintf("File system error (unmount)");
-	else*/
-		kprintf("Device sd: unmounted\n");
+	else
+		kprintf("Device sd: unmounted\n");*/
 }
 
 void ListFiles(const char *path)
