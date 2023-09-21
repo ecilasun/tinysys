@@ -10,6 +10,7 @@
 #include "usbserial.h"
 #include "usbhost.h"
 #include "usbhidhandler.h"
+#include "usbserialhandler.h"
 #include "max3420e.h"
 #include "max3421e.h"
 #include "mini-printf.h"
@@ -19,7 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define VERSIONSTRING "000D"
+#define VERSIONSTRING "000E"
 
 const uint8_t s_consolefgcolor = 0x2A; // Ember
 const uint8_t s_consolebgcolor = 0x11; // Dark gray
@@ -40,15 +41,6 @@ static char *s_taskstates[]={
 	"RUNNING    ",
 	"TERMINATING",
 	"TERMINATED " };
-
-static char *s_usbdevstates[]={
-	"UNKNOWN",
-	"DETACHED",
-	"ATTACHED",
-	"ADDRESSING",
-	"RUNNING",
-	"ERROR",
-	"HALT" };
 
 static struct SUSBSerialContext s_usbserialctx;
 static struct SUSBHostContext s_usbhostctx;
@@ -223,11 +215,10 @@ void ExecuteCmd(char *_cmd)
 			TaskExitTaskWithID(ctx, taskid, 0);
 		}
 	}
-	else if (!strcmp(command, "usb"))
+	else if (!strcmp(command, "test"))
 	{
-		int state = GetUSBDeviceState();
-		kprintf("Device state: %d(%s)\n", state, s_usbdevstates[state]);
-		// TODO: Device descriptor dump
+		// Test USB serial output
+		USBSerialWrite("Hello, world!\n");
 	}
 	else if (!strcmp(command, "ren"))
 	{
@@ -284,7 +275,7 @@ void ExecuteCmd(char *_cmd)
 		kprintf(" reboot       Soft reboot                      \n");
 		kprintf(" ren old new  Rename file from old to new name \n");
 		kprintf(" unmount      Unmount drive sd:                \n");
-		kprintf(" usb          Show current USB peripheral state\n");
+		kprintf(" test         Run some development tests       \n");
 		kprintf(" ver          Show version info                \n");
 		// Hidden commands
 		// reloc       Set ELF relocation offset
@@ -347,6 +338,7 @@ void _cliTask()
 		uint32_t uartData = 0;
 		int execcmd = 0;
 
+		// Keyboard input
 		while (RingBufferRead(&uartData, sizeof(uint32_t)))
 		{
 			uint8_t asciicode = (uint8_t)(uartData&0xFF);
@@ -437,6 +429,29 @@ void _cliTask()
 	}
 }
 
+void ProcessGDBRequest()
+{
+	uint32_t *rcvCount = (uint32_t *)SERIAL_INPUT_BUFFER;
+	uint8_t *rcvData = (uint8_t *)(SERIAL_INPUT_BUFFER+4);
+	uint32_t count = *rcvCount;
+	if (count == 0)
+		return;
+
+	// Debug packages are in the form
+	// $packetdata#checksum
+	// Where $ is the packet header, # is the footer and checksum is a two digit hex checksum
+	// Any data between $ and # is the actual data transmitted by GDB
+
+	// Echo
+	kprintf("Incoming: '");
+	for (uint32_t i=0; i<count; ++i)
+		kprintf("%c", rcvData[i]);
+	kprintf("'\n");
+
+	// Done with all input
+	*rcvCount = 0;
+}
+
 int main()
 {
 	LEDSetState(0xF);
@@ -522,6 +537,12 @@ int main()
 
 		// Deal with USB peripheral setup and data traffic
 		ProcessUSBDevice();
+
+		// Emit outgoing serial data
+		USBEmitBufferedOutput();
+
+		// Handle incoming serial data (debugger)
+		ProcessGDBRequest();
 
 		// Enable machine interrupts
 		write_csr(mstatus, MSTATUS_MIE);

@@ -37,7 +37,6 @@
 
 #include "basesystem.h"
 #include "core.h"
-#include "console.h"
 #include "keyboard.h"
 
 void

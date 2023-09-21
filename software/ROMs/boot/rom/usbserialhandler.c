@@ -15,9 +15,6 @@
 // 115200 baud, 1 stop bit, no parity, 8bit data
 static struct USBCDCLineCoding s_lineCoding = {115200, 0, 0, 8};
 
-//static uint8_t s_outputbuffer[64];
-//static uint32_t s_outputbufferlen = 0;
-
 static uint32_t s_suspended = 0;
 
 static uint8_t devconfig = 0;
@@ -302,29 +299,65 @@ void DoSetup()
 	}
 }
 
-/*void EmitBufferedOutput()
+void USBEmitBufferedOutput()
 {
-	// If we have something pending in the output buffer, stream it out
-	if (s_outputbufferlen != 0)
-		USBWriteBytes(rEP2INFIFO, s_outputbufferlen, s_outputbuffer);
-	USBWriteByte(rEP2INBC, s_outputbufferlen); // Zero or more bytes output
+	uint32_t *sndCount = (uint32_t *)SERIAL_OUTPUT_BUFFER;
+	uint8_t *sndData = (uint8_t *)(SERIAL_OUTPUT_BUFFER+4);
+	uint32_t count = *sndCount;
+
+	if (count == 0)
+		return;
+
+	uint32_t blockCount = count/64;
+	uint32_t leftoverCount = count%64;
+
+	uint32_t currLED = LEDGetState();
+	LEDSetState(currLED | 0x8);
+
+	for(uint32_t i=0; i<blockCount; ++i)
+	{
+		// Wait for buffer available for EP2 fifo
+		while((MAX3420ReadByte(rEPIRQ) & bmIN2BAVIRQ) == 0) { }
+		MAX3420WriteByte(rCPUCTL, 0); // Disable MAX3420 interrupts so we don't fall into ISR for USB
+		MAX3420WriteBytes(rEP2INFIFO, 64, sndData);
+		MAX3420WriteByte(rEP2INBC, 64);
+		MAX3420FlushOutputFIFO();
+		MAX3420WriteByte(rCPUCTL, bmIE); // Enable MAX3420 interrupts
+		sndData += 64;
+	}
+
+	if (leftoverCount)
+	{
+		// Wait for buffer available for EP2 fifo
+		while((MAX3420ReadByte(rEPIRQ) & bmIN2BAVIRQ) == 0) { }
+		MAX3420WriteByte(rCPUCTL, 0); // Disable MAX3420 interrupts so we don't fall into ISR for USB
+		MAX3420WriteBytes(rEP2INFIFO, leftoverCount, sndData);
+		MAX3420WriteByte(rEP2INBC, leftoverCount);
+		MAX3420FlushOutputFIFO();
+		MAX3420WriteByte(rCPUCTL, bmIE); // Enable MAX3420 interrupts
+	}
+
 	// Done sending
-	s_outputbufferlen = 0;
-}*/
+	*sndCount = 0;
+
+	LEDSetState(currLED);
+}
 
 void BufferIncomingData()
 {
+	uint32_t *rcvCount = (uint32_t *)SERIAL_INPUT_BUFFER;
+	uint8_t *rcvData = (uint8_t *)(SERIAL_INPUT_BUFFER+4);
+
 	// Incoming EP1 data package
-	uint8_t cnt = MAX3420ReadByte(rEP1OUTBC) & 63; // Cap size to 0..63
-	if (cnt)
+	uint8_t numBytes = MAX3420ReadByte(rEP1OUTBC) & 63; // Cap size to 0..63
+	if (numBytes)
 	{
 		// Stash incoming data into the ringbuffer
 		// It will drop input if nothing is draining the ringbuffer
-		for (uint8_t i=0; i<cnt; ++i)
-		{
-			uint32_t incoming = MAX3420ReadByte(rEP1OUTFIFO);
-			RingBufferWrite(&incoming, sizeof(uint32_t));
-		}
+		uint32_t count = *rcvCount;
+		for (uint8_t i=0; i<numBytes; ++i)
+			rcvData[count++] = MAX3420ReadByte(rEP1OUTFIFO);
+		*rcvCount = count;
 	}
 }
 

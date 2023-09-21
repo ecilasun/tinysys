@@ -34,7 +34,6 @@ SOURCES_doom_arch := \
 	i_sound.c \
 	i_system.c \
 	i_video.c \
-	console.c  \
 	$(NULL)
 
 all: doom.elf doom.txt

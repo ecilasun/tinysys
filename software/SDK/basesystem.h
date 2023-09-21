@@ -38,10 +38,13 @@
 #define CONSOLE_CHARACTERBUFFER_START	0x0204B000 // Character store == 80*60 bytes max at 640*480 resolution
 // Temp memory
 #define KERNEL_TEMP_MEMORY				0x0204C2C0 // Temporary kernel memory (~15Kbytes)
+// Serial buffers (first words are counters)
+#define SERIAL_INPUT_BUFFER				0x02050000 // 32Kbytes of serial input
+#define SERIAL_OUTPUT_BUFFER			0x02058000 // 32Kbytes of serial output
 // Executable
-#define HEAP_START_APPMEM_END			0x02050000 // Executable space above this (32MBytes)
+#define HEAP_START_APPMEM_END			0x02060000 // Executable space above this
 // Heap
-#define HEAP_END_CONSOLEMEM_START		0x0FF00000 // Heap space above this (223MBytes)
+#define HEAP_END_CONSOLEMEM_START		0x0FF00000 // Heap space above this
 // Kernel console text+attrib/scratch
 #define CONSOLEMEM_END_KERNEL_VRAM_TOP	0x0FF10000 // Console text+attrib+scratch memory above this (64KBytes)
 // Kernel VRAM/scratch

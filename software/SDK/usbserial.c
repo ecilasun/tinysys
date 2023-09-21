@@ -128,6 +128,12 @@ int USBSerialInit(uint32_t enableInterrupts)
 	if (s_usbser==NULL)
 		return 0;
 
+	// Reset input/output buffer counters
+	uint32_t *sndCount = (uint32_t *)SERIAL_OUTPUT_BUFFER;
+	uint32_t *rcvCount = (uint32_t *)SERIAL_INPUT_BUFFER;
+	*sndCount = 0;
+	*rcvCount = 0;
+
 	// Generate descriptor table for a USB serial device
 	MakeCDCDescriptors(s_usbser);
 
@@ -155,38 +161,17 @@ int USBSerialInit(uint32_t enableInterrupts)
 
 int USBSerialWriteN(const char *outstring, uint32_t count)
 {
-	uint8_t *cptr = (uint8_t*)outstring;
-	uint32_t blockCount = count/64;
-	uint32_t leftoverCount = count%64;
+	// Append more outgoing data to the serial output buffer
+	// This will be streamed out by the OS code
+	uint32_t *sndCount = (uint32_t *)SERIAL_OUTPUT_BUFFER;
+	uint8_t *sndData = (uint8_t *)(SERIAL_OUTPUT_BUFFER+4);
 
-	uint32_t currLED = LEDGetState();
-	LEDSetState(currLED | 0x8);
+	uint32_t cursor = *sndCount;
+	uint32_t j = 0;
+	for (uint32_t i=cursor; i<cursor+count; ++i)
+		sndData[i] = outstring[j++];
 
-	for(uint32_t i=0; i<blockCount; ++i)
-	{
-		// Wait for buffer available for EP2 fifo
-		while((MAX3420ReadByte(rEPIRQ) & bmIN2BAVIRQ) == 0) { }
-		MAX3420WriteByte(rCPUCTL, 0); // Disable MAX3420 interrupts so we don't fall into ISR for USB
-		MAX3420WriteBytes(rEP2INFIFO, 64, (uint8_t*)cptr);
-		MAX3420WriteByte(rEP2INBC, 64);
-		MAX3420FlushOutputFIFO();
-		MAX3420WriteByte(rCPUCTL, bmIE); // Enable MAX3420 interrupts
-		cptr += 64;
-	}
-
-	if (leftoverCount)
-	{
-		// Wait for buffer available for EP2 fifo
-		while((MAX3420ReadByte(rEPIRQ) & bmIN2BAVIRQ) == 0) { }
-		MAX3420WriteByte(rCPUCTL, 0); // Disable MAX3420 interrupts so we don't fall into ISR for USB
-		MAX3420WriteBytes(rEP2INFIFO, leftoverCount, (uint8_t*)cptr);
-		MAX3420WriteByte(rEP2INBC, leftoverCount);
-		MAX3420FlushOutputFIFO();
-		MAX3420WriteByte(rCPUCTL, bmIE); // Enable MAX3420 interrupts
-	}
-
-	LEDSetState(currLED);
-
+	*sndCount = cursor + count;
 	return count;
 }
 
