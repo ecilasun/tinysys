@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define VERSIONSTRING "000F"
+#define VERSIONSTRING "0001"
 
 const uint8_t s_consolefgcolor = 0x2A; // Ember
 const uint8_t s_consolebgcolor = 0x11; // Dark gray
@@ -243,9 +243,9 @@ void ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "ver"))
 	{
-		kprintf("FOOTPRINT       : " VERSIONSTRING "\n");
-		kprintf("Board:          : revision 1K\n");	// TODO: need to read board and CPU data form system config
-		kprintf("CPU:            : 166.67MHz\n");
+		kprintf("ROM       : " VERSIONSTRING "\n");
+		kprintf("Board:    : revision 1K\n");	// TODO: need to read board and CPU data form system config
+		kprintf("CPU:      : 166.67MHz\n");
 
 		// Report USB device die versions
 
@@ -436,6 +436,8 @@ void __attribute__((aligned(64))) CopyAndChainOverlay()
 	// load won't be necessary during its execution.
 
 	asm volatile(
+		".word 0xFC000073;"		// Invalidate & Write Back D$ (CFLUSH.D.L1)
+		"fence.i;"				// Invalidate I$
 		"li s0, 0x00010000;"	// Source
 		"li s1, 0x0FFE0000;"	// Target
 		"li s2, 0xFFFF;"		// Count
@@ -459,6 +461,9 @@ uint32_t LoadOverlay(const char *filename)
 	// If the binary blob exists, load it into memory
 	if (fr == FR_OK)
 	{
+		// Reset to overlay time defaults and unmount SDCard
+		DeviceDefaultState(2);
+
 		FSIZE_t fileSize = f_size(&fp);
 		UINT readsize = 0;
 		uint32_t *overlay = (uint32_t *)0x00010000; // Overlay
@@ -466,11 +471,9 @@ uint32_t LoadOverlay(const char *filename)
 		f_close(&fp);
 
 		// Watermark register will retain this value on soft boot
-		// so that when we load the overlay (which is the same code)
-		// we won't attempt to re-load the same binary over and over.
+		// so that when we load the overlay (which is the same code as this)
+		// we won't attempt to re-load the overlay over and over.
 		write_csr(0xFF0, 0xFFFFFFFF);
-		// Reset to overlay time defaults and unmount SDCard
-		DeviceDefaultState(2);
 
 		return 1;
 	}
@@ -494,7 +497,7 @@ int main()
 	LEDSetState(0xD);
 	// Watermark register is zero on hard boot
 	uint32_t waterMark = read_csr(0xFF0);
-	if ((waterMark == 0) && LoadOverlay("sd:/boot.bin"))
+	if ((waterMark == 0) && LoadOverlay("sd:/rom.bin"))
 	{
 		// Point of no return. Literally.
 		CopyAndChainOverlay();
@@ -507,7 +510,7 @@ int main()
 	// we need to make sure all things are stopped and reset to default states
 	LEDSetState(0xC);
 	DeviceDefaultState(1);
-	kprintf("FOOTPRINT " VERSIONSTRING "\n");
+	kprintf("ROM " VERSIONSTRING "\n");
 
 	// Set up internals
 	LEDSetState(0xB);
