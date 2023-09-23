@@ -349,7 +349,7 @@ void BufferIncomingData()
 	uint8_t *rcvData = (uint8_t *)(SERIAL_INPUT_BUFFER+4);
 
 	// Incoming EP1 data package
-	uint8_t numBytes = MAX3420ReadByte(rEP1OUTBC) & 63; // Cap size to 0..63
+	uint8_t numBytes = MAX3420ReadByte(rEP1OUTBC);
 	if (numBytes)
 	{
 		// Stash incoming data into the ringbuffer
@@ -378,25 +378,25 @@ void HandleUSBSerial()
 		DoSetup();
 		MAX3420WriteByte(rEPIRQ, bmSUDAVIRQ); // Clear
 	}
-	else if (epIrq & bmOUT1DAVIRQ)
+	if (epIrq & bmOUT1DAVIRQ)
 	{
 		// Incoming data
 		LEDSetState(currLED | 0x8);
 		BufferIncomingData();
 		MAX3420WriteByte(rEPIRQ, bmOUT1DAVIRQ); // Clear
 	}
-	/*else if (epIrq & bmIN2BAVIRQ)
+	/*if (epIrq & bmIN2BAVIRQ)
 	{
 		LEDSetState(currLED | 0x8);
 		// Application note states we have to clear BAV IRQs by writing count for double-buffering to work
 		MAX3420WriteByte(rEP2INBC, 0);
 		// Or, EmitBufferedOutput(), where 0 length is 'no data' but still counts as IRQ off
 	}*/
-	else if (epIrq & bmIN3BAVIRQ)
+	if (epIrq & bmIN3BAVIRQ)
 	{
 		MAX3420WriteByte(rEPIRQ, bmIN3BAVIRQ); // Clear
 	}
-	else if (epIrq & bmIN0BAVIRQ)
+	if (epIrq & bmIN0BAVIRQ)
 	{
 		MAX3420WriteByte(rEPIRQ, bmIN0BAVIRQ); // Clear
 	}
@@ -406,16 +406,16 @@ void HandleUSBSerial()
 		MAX3420WriteByte(rUSBIRQ, bmSUSPIRQ); // Clear
 		s_suspended = 1;
 	}
-	else if (usbIrq & bmBUSACTIRQ)
+	if (usbIrq & bmBUSACTIRQ)
 	{
 		MAX3420WriteByte(rUSBIRQ, bmBUSACTIRQ); // Clear
 		s_suspended = 0;
 	}
-	else if (usbIrq & bmURESIRQ) // Bus reset
+	if (usbIrq & bmURESIRQ) // Bus reset
 	{
 		MAX3420WriteByte(rUSBIRQ, bmURESIRQ); // Clear
 	}
-	else if (usbIrq & bmURESDNIRQ) // Resume
+	if (usbIrq & bmURESDNIRQ) // Resume
 	{
 		MAX3420WriteByte(rUSBIRQ, bmURESDNIRQ); // Clear
 		s_suspended = 0;
