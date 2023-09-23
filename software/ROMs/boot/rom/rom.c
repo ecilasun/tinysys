@@ -570,7 +570,13 @@ int main()
 		// ----------------------------------------------------------------
 
 		// Handle incoming serial data (debugger)
-		ProcessGDBRequest();
+		uint32_t request = ProcessGDBRequest();
+		if(request==1)
+		{
+			// Break
+			if(taskctx->numTasks > 2)
+				taskctx->tasks[2].state = TS_PAUSED;
+		}
 
 		// Refresh console output
 		if (kernelgfx->m_consoleUpdated)

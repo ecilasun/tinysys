@@ -162,7 +162,7 @@ uint32_t TaskSwitchToNext(struct STaskContext *_ctx)
 		_ctx->tasks[currentTask].ctrlc = 2;
 		_ctx->tasks[currentTask].ctrlcaddress = regs[0];				// Save PC of the instruction on which we stopped
 		_ctx->tasks[currentTask].ctrlcbackup = *(uint32_t*)(regs[0]);	// Save the instruction at this address
-		// TODO: Insert C.EBREAK If previous instruction was compressed
+		// TODO: Insert C.EBREAK If previous instruction was compressed otherwise we'll destroy the executable
 		*(uint32_t*)(regs[0]) = 0x00100073;								// Replace it with EBREAK instruction
 		CFLUSH_D_L1;													// Make sure the write makes it to RAM
 		FENCE_I;														// Make sure I$ is flushed so it can see this write

@@ -1,4 +1,3 @@
-#include <inttypes.h>
 #include <string.h>
 
 #include "basesystem.h"
@@ -45,14 +44,17 @@ void SendDebugPacket(const char *packetString)
 	USBSerialWrite(checksumstr);
 }
 
-void HandlePacket()
+void HandlePacket(uint32_t *request)
 {
 	if (strstr(s_packet, "qSupported"))
 		SendDebugPacket("+qSupported:swbreak+;hwbreak+;multiprocess-;qXfer:threads:read+;PacketSize=255");
 	else if (strstr(s_packet, "vMustReplyEmpty"))
 		SendDebugPacket("");
 	else if (strstr(s_packet, "?")) // Halt reason?
+	{
+		*request = 1; // Stop
 		SendDebugPacket("S05"); // TRAP
+	}
 	else if (strstr(s_packet, "Hg")) // Hg0: operations apply to thread 0 (-1 -> all threads)
 		SendDebugPacket("OK");
 	else if (strstr(s_packet, "qTStatus"))
@@ -102,8 +104,10 @@ void ProcessChar(char input)
 	}
 }
 
-void ProcessGDBRequest()
+uint32_t ProcessGDBRequest()
 {
+	uint32_t request = 0;
+
 	// Append incoming data to fifo
 	uint32_t *rcvCount = (uint32_t *)SERIAL_INPUT_BUFFER;
 	uint8_t *rcvData = (uint8_t *)(SERIAL_INPUT_BUFFER+4);
@@ -125,10 +129,12 @@ void ProcessGDBRequest()
 		ProcessChar(drain);
 		if (s_packetComplete)
 		{
-			HandlePacket();
+			HandlePacket(&request);
 			s_packetComplete = 0;
 		}
 	}
+
+	return request;
 }
 
 // GDB serial packages are in the form:
