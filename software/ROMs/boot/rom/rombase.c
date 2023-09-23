@@ -432,17 +432,20 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 
 			case CAUSE_BREAKPOINT:
 			{
-				// TODO: call debugger breakpoint handler if one's loaded and stop the task
-
 				// Where there's no debugger loaded, simply exit since we're not supposed to run past ebreak commands
-				kprintf("No debugger present, ignoring breakpoint\n");
+				/*if (s_debuggerConnected)
+				{
+					kprintf("No debugger present, ignoring breakpoint\n");
 
-				// Exit task in non-debug mode
-				TaskExitCurrentTask(&g_taskctx);
-				// Force switch to next task
-				TaskSwitchToNext(&g_taskctx);
-
-				// TODO: Drop into debugger if one's loaded
+					// Exit task in non-debug mode
+					TaskExitCurrentTask(&g_taskctx);
+					// Force switch to next task
+					TaskSwitchToNext(&g_taskctx);
+				}
+				else*/
+				{
+					// Do nothing, we'll just cost a task switch and PC won't move
+				}
 
 				break;
 			}

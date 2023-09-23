@@ -113,7 +113,11 @@ void DeviceDefaultState(int _bootTime)
 	// Preserve contents of screen for non-boot time
 	if (_bootTime)
 	{
-		GPUConsoleSetColors(kernelgfx, s_consolefgcolor, s_consolebgcolor);
+		uint32_t waterMark = read_csr(0xFF0);
+		if (waterMark == 0) // On-device ROM
+			GPUConsoleSetColors(kernelgfx, s_consolefgcolor, s_consolebgcolor);
+		else // Overlay ROM (white on blue)
+			GPUConsoleSetColors(kernelgfx, 0x0F, 0x01);
 		GPUConsoleClear(kernelgfx);
 	}
 
@@ -243,7 +247,11 @@ void ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "ver"))
 	{
-		kprintf("ROM       : " VERSIONSTRING "\n");
+		uint32_t waterMark = read_csr(0xFF0);
+		if (waterMark == 0)
+			kprintf("ROM       : " VERSIONSTRING "\n");
+		else
+			kprintf("ROM       : DEVELOPMENT MODE\n");
 		kprintf("Board:    : revision 1K\n");	// TODO: need to read board and CPU data form system config
 		kprintf("CPU:      : 166.67MHz\n");
 
@@ -510,7 +518,10 @@ int main()
 	// we need to make sure all things are stopped and reset to default states
 	LEDSetState(0xC);
 	DeviceDefaultState(1);
-	kprintf("ROM " VERSIONSTRING "\n");
+	if (waterMark == 0)
+		kprintf("ROM: " VERSIONSTRING "\n");
+	else
+		kprintf("ROM: DEVELOPMENT MODE\n");
 
 	// Set up internals
 	LEDSetState(0xB);
@@ -570,13 +581,7 @@ int main()
 		// ----------------------------------------------------------------
 
 		// Handle incoming serial data (debugger)
-		uint32_t request = ProcessGDBRequest();
-		if(request==1)
-		{
-			// Break
-			if(taskctx->numTasks > 2)
-				taskctx->tasks[2].state = TS_PAUSED;
-		}
+		ProcessGDBRequest();
 
 		// Refresh console output
 		if (kernelgfx->m_consoleUpdated)
