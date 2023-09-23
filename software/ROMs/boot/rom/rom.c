@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define VERSIONSTRING "000E"
+#define VERSIONSTRING "000F"
 
 const uint8_t s_consolefgcolor = 0x2A; // Ember
 const uint8_t s_consolebgcolor = 0x11; // Dark gray
@@ -111,11 +111,15 @@ void DeviceDefaultState(int _bootTime)
 	GPUSetVMode(kernelgfx, EVS_Enable);
 
 	// Preserve contents of screen for non-boot time
-	if (_bootTime == 1)
+	if (_bootTime)
 	{
 		GPUConsoleSetColors(kernelgfx, s_consolefgcolor, s_consolebgcolor);
 		GPUConsoleClear(kernelgfx);
 	}
+
+	// Clear screen to overlay loader color
+	if (_bootTime == 2)
+		GPUClear(kernelgfx, 0x09090909);
 }
 
 void ExecuteCmd(char *_cmd)
@@ -424,18 +428,25 @@ void _cliTask()
 	}
 }
 
-// NOTE: This function has to be copied at 0x00000000 after resolve
-// and run from there
-void __attribute__((aligned(16))) __attribute__((flatten, used)) ChainOverlay()
+// Make sure we're aligned to sit at a cache line boundary
+void __attribute__((aligned(64))) CopyAndChainOverlay()
 {
-	uint32_t *overlay = (uint32_t *)0x00010000; // Overlay
-	uint32_t *ROM = (uint32_t *)0x0FFE0000; // Reset vector
-	for (uint32_t i=0;i<0xFFFF;++i)
-		ROM[i] = overlay[i];
+	// Once the instruction cache is loaded with the following short sequence,
+	// we're free to do a copy and branch for our overlay, since a memory
+	// load won't be necessary during its execution.
 
-	// Jump to reset vector to boot the overlay ROM
 	asm volatile(
-		"li s0, 0x0FFE0000;"
+		"li s0, 0x00010000;"	// Source
+		"li s1, 0x0FFE0000;"	// Target
+		"li s2, 0xFFFF;"		// Count
+		"copyloop:"
+		"lw a0, 0(s0);"			// Read source word
+		"sw a0, 0(s1);"			// Store target word
+		"addi s0,s0,4;"
+		"addi s1,s1,4;"
+		"addi s2,s2,-1;"
+		"bne s2, zero, copyloop;"
+		"li s0, 0x0FFE0000;"	// Branch to reset vector
 		"jalr s0;"
 	);
 }
@@ -453,6 +464,14 @@ uint32_t LoadOverlay(const char *filename)
 		uint32_t *overlay = (uint32_t *)0x00010000; // Overlay
 		f_read(&fp, overlay, fileSize, &readsize);
 		f_close(&fp);
+
+		// Watermark register will retain this value on soft boot
+		// so that when we load the overlay (which is the same code)
+		// we won't attempt to re-load the same binary over and over.
+		write_csr(0xFF0, 0xFFFFFFFF);
+		// Reset to overlay time defaults and unmount SDCard
+		DeviceDefaultState(2);
+
 		return 1;
 	}
 
@@ -477,20 +496,9 @@ int main()
 	uint32_t waterMark = read_csr(0xFF0);
 	if ((waterMark == 0) && LoadOverlay("sd:/boot.bin"))
 	{
-		// Watermark register will retain this value on soft boot
-		// so that when we load the overlay (which is the same code)
-		// we won't attempt to re-load the same binary over and over.
-		write_csr(0xFF0, 0xFFFFFFFF);
-		// Reset to defaults and unmount SDCard
-		DeviceDefaultState(1);
-		UnmountDrive();
-		// Move ChainOverlay() to top of SDRAM (hoping 512 bytes suffices here)
-		__builtin_memcpy(&ChainOverlay, 0x0, 512);
-		// Jump to 0x0 which now contains 'ChainOverlay'
-		asm volatile(
-			"li s0, 0x00000000;"
-			"jalr s0;"
-		);
+		// Point of no return. Literally.
+		CopyAndChainOverlay();
+
 		// We should never come back here
 		while(1) {}
 	}
