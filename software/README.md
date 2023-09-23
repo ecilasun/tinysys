@@ -37,9 +37,10 @@ make
 
 Note that some samples have a different path layout, for instance DOOM makefile is placed in 'samples/doom/src/riscv' or 'samples/imguidemo' which is where you'd run make from.
 
-Ordinarily you don't need to build ROM images. But if for some reason you'd like to do that, please note that you'll get two files generated: BOOT.coe and FETCH.coe.
-BOOT.coe file is the actual ROM image itself which is what you'd normally put onto the matching BOOT.coe file on the device.
-The other one is a set of instructions to be used by the fetch unit when it encounters an interrupt or other event, and you should not have to change it in normal cases (and I can't recommend that you do). If you really need to, please make sure to go over the hardware fetch unit and update the device to match the contents of the ROM image, with correct instruction offsets and sizes. Currently there's no automation to provide you with a correct offsetl & length table to aid in this, but is something that's planned for the future.
+Ordinarily you don't need to build ROM images. But if for some reason you'd like to do that, please note that you'll get two files generated: rom.mem and rom.bin.
+rom.mem file is the one to use in the hardware design (to be copied over the contents of the existing romimage.mem file) and the .bin file is the same binary in overlay format, which can be copied to the SDCard and will replace the device ROM.
+
+The rom image generated from the fetch folder is a set of instructions to be used by the fetch unit when it encounters an interrupt or other event, and you should not have to change it in most cases (and I can't recommend that you do). If you really need to, please make sure to go over the hardware fetch unit and update the device to match the contents of the ROM image, with correct instruction offsets and sizes. Currently there's no automation to provide you with a correct offsetl & length table to aid in this, but is something that's planned for the future.
 
 # Adding tinysys as a generic serial device over USB
 
@@ -65,16 +66,7 @@ FFFF 0001
 
 # Uploading executables to the device - WiP
 
-Normally, you'd simply copy the samples onto a FAT32 formatted micro SD card and plug that onto the device itself. However if you haven't installed the SD card reader port, or if you don't want to deal with plugging/unplugging cards, you can simply upload the sample to the device directly via the UART port. To achieve that, first make sure the target device is turned on and connected to the PC via the UART port. Then use the following command on the device terminal:
-```
-rcv mysample.elf
-````
-which will place the device in 'wait' mode. After this, make sure you have built riscvtool and run the following:
-```
-Make sure the tty device name and the executable name match your setup
-../../build/release/riscvtool mysample.elf -sendfile /dev/ttyUSB0
-```
-which will start the upload process. You'll get a notification that the transfer is complete in the end, and now you can run the elf by typing its name on the target device.
+TBD
 
 # Debugging with GDB - WiP
 

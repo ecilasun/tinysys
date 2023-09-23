@@ -14,6 +14,7 @@
 #include "max3420e.h"
 #include "max3421e.h"
 #include "mini-printf.h"
+#include "debugstub.h"
 
 #include <string.h>
 #include <stdbool.h>
@@ -215,11 +216,6 @@ void ExecuteCmd(char *_cmd)
 			TaskExitTaskWithID(ctx, taskid, 0);
 		}
 	}
-	else if (!strcmp(command, "test"))
-	{
-		// Test USB serial output
-		USBSerialWrite("Hello, world!\n");
-	}
 	else if (!strcmp(command, "ren"))
 	{
 		const char *path = strtok(NULL, " ");
@@ -275,7 +271,6 @@ void ExecuteCmd(char *_cmd)
 		kprintf(" reboot       Soft reboot                      \n");
 		kprintf(" ren old new  Rename file from old to new name \n");
 		kprintf(" unmount      Unmount drive sd:                \n");
-		kprintf(" test         Run some development tests       \n");
 		kprintf(" ver          Show version info                \n");
 		// Hidden commands
 		// reloc       Set ELF relocation offset
@@ -429,27 +424,39 @@ void _cliTask()
 	}
 }
 
-void ProcessGDBRequest()
+// NOTE: This function has to be copied at 0x00000000 after resolve
+// and run from there
+void __attribute__((aligned(16))) __attribute__((flatten, used)) ChainOverlay()
 {
-	uint32_t *rcvCount = (uint32_t *)SERIAL_INPUT_BUFFER;
-	uint8_t *rcvData = (uint8_t *)(SERIAL_INPUT_BUFFER+4);
-	uint32_t count = *rcvCount;
-	if (count == 0)
-		return;
+	uint32_t *overlay = (uint32_t *)0x00010000; // Overlay
+	uint32_t *ROM = (uint32_t *)0x0FFE0000; // Reset vector
+	for (uint32_t i=0;i<0xFFFF;++i)
+		ROM[i] = overlay[i];
 
-	// Debug packages are in the form
-	// $packetdata#checksum
-	// Where $ is the packet header, # is the footer and checksum is a two digit hex checksum
-	// Any data between $ and # is the actual data transmitted by GDB
+	// Jump to reset vector to boot the overlay ROM
+	asm volatile(
+		"li s0, 0x0FFE0000;"
+		"jalr s0;"
+	);
+}
 
-	// Echo
-	kprintf("Incoming: '");
-	for (uint32_t i=0; i<count; ++i)
-		kprintf("%c", rcvData[i]);
-	kprintf("'\n");
+uint32_t LoadOverlay(const char *filename)
+{
+	FIL fp;
+	FRESULT fr = f_open(&fp, filename, FA_READ);
 
-	// Done with all input
-	*rcvCount = 0;
+	// If the binary blob exists, load it into memory
+	if (fr == FR_OK)
+	{
+		FSIZE_t fileSize = f_size(&fp);
+		UINT readsize = 0;
+		uint32_t *overlay = (uint32_t *)0x00010000; // Overlay
+		f_read(&fp, overlay, fileSize, &readsize);
+		f_close(&fp);
+		return 1;
+	}
+
+	return 0;
 }
 
 int main()
@@ -466,25 +473,25 @@ int main()
 
 	// Attempt to load ROM overlay, if it exists
 	LEDSetState(0xD);
-	s_startAddress = LoadExecutable("sd:/boot.elf", 0, false);
-	if (s_startAddress != 0x0)
+	// Watermark register is zero on hard boot
+	uint32_t waterMark = read_csr(0xFF0);
+	if ((waterMark == 0) && LoadOverlay("sd:/boot.bin"))
 	{
-		// TODO: Possibly we can get away with a compressed binary
-		// int packedsize = fastlz_compress_level(1, rawdata, rawdatalength, outdata);
-		// int unpackedsize = fastlz_decompress(indata, indatalength, rawdata, rawdatamaxsize);
-
-		// Reset to defaults
+		// Watermark register will retain this value on soft boot
+		// so that when we load the overlay (which is the same code)
+		// we won't attempt to re-load the same binary over and over.
+		write_csr(0xFF0, 0xFFFFFFFF);
+		// Reset to defaults and unmount SDCard
 		DeviceDefaultState(1);
-		// Unmount current drive - the loaded app has to mount on their own
 		UnmountDrive();
-		// At this point there are no ISR, debug aid or any facilities
-		// and the boot app is on its own.
-		// The first thing the boot app has to do is
-		// to copy itself to the ROM shadow address
-		// and branch to it.
-		// From thereon it can become the replacement OS or RT application
-		_runExecTask();
-		// Not expecting it to return
+		// Move ChainOverlay() to top of SDRAM (hoping 512 bytes suffices here)
+		__builtin_memcpy(&ChainOverlay, 0x0, 512);
+		// Jump to 0x0 which now contains 'ChainOverlay'
+		asm volatile(
+			"li s0, 0x00000000;"
+			"jalr s0;"
+		);
+		// We should never come back here
 		while(1) {}
 	}
 

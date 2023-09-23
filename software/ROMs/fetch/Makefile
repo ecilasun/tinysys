@@ -28,7 +28,7 @@ RISCVTOOL ?= ..\..\build\release\riscvtool.exe
 # No filesystem when defined
 # FILESYSTEM ?= -DDISABLE_FILESYSTEM
 FILESYSTEM ?= -DENABLE_FILESYSTEM -DLFS_NO_MALLOC -DLFS_NO_DEBUG
-# The COE file will be using 16 byte (128bit) output width to match the ROM layout
+# The MEM file will be using 16 byte (128bit) output width to match the ROM layout
 # (cache controller reads x4 16byte chunks for each line)
 ROMWORDSIZE ?= 16
 # 512 bit cache lines makes 64 bytes per line
@@ -43,8 +43,8 @@ define compile_ROM
 $(1).elf: $(wildcard $(src_dir)/$(1)/*) $(wildcard $(src_dir)/*)
 	$$(RISCV_GCC) -DBUILDING_ROM $$(FILESYSTEM) $$(incs) $$(RISCV_GCC_OPTS) -o $$@ $(wildcard $(src_dir)/$(1)/*.c) $(wildcard $(corelib_dir)/*.c) $$(libs) -Wl,-T$(1)/rom.lds
 
-$(1).coe: $(wildcard $(src_dir)/$(1).elf)
-	$$(RISCVTOOL) $(src_dir)/$(1).elf -makerom $$(ROMWORDSIZE) 0 >> $(src_dir)/$(1).coe
+$(1).mem: $(wildcard $(src_dir)/$(1).elf)
+	$$(RISCVTOOL) $(src_dir)/$(1).elf -makemem $$(ROMWORDSIZE) $(src_dir)/$(1).mem
 
 $(1).txt: $(wildcard $(src_dir)/$(1).elf)
 	$$(RISCV_OBJDUMP) $(src_dir)/$(1).elf -x -D -S >>  $(src_dir)/$(1).txt
@@ -55,14 +55,14 @@ $(foreach folder,$(folders),$(eval $(call compile_ROM,$(folder))))
 # Build
 
 folders_riscv_bin  = $(addsuffix .elf,  $(folders))
-folders_riscv_coe = $(addsuffix .coe, $(folders))
+folders_riscv_mem = $(addsuffix .mem, $(folders))
 folders_riscv_disasm = $(addsuffix .txt, $(folders))
 
 executables: $(folders_riscv_bin)
-romimages: $(folders_riscv_coe)
+romimages: $(folders_riscv_mem)
 disassembly: $(folders_riscv_disasm)
 
-junk += $(folders_riscv_bin) $(folders_riscv_coe) $(folders_riscv_disasm)
+junk += $(folders_riscv_bin) $(folders_riscv_mem) $(folders_riscv_disasm)
 
 # Default
 
