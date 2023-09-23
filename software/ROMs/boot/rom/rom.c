@@ -581,6 +581,9 @@ int main()
 		// ----------------------------------------------------------------
 
 		// Handle incoming serial data (debugger)
+		// NOTE: This can go into the protected section
+		// above but during development it's placed into
+		// this section to prevent hangs.
 		ProcessGDBRequest();
 
 		// Refresh console output
