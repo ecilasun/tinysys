@@ -149,34 +149,35 @@ uint32_t TaskSwitchToNext(struct STaskContext *_ctx)
 	regs[30] = read_csr(0x8BE);	// t5
 	regs[31] = read_csr(0x8BF);	// t6
 
-	// We're in paused state, auto-enter an EBREAK
-	if (_ctx->tasks[currentTask].state == TS_PAUSED)
-	{
-		_ctx->tasks[currentTask].ctrlc = 1;
-		_ctx->tasks[currentTask].state = TS_RUNNING;
-	}
-
 	// Break
 	if (_ctx->tasks[currentTask].ctrlc == 1)
 	{
-		_ctx->tasks[currentTask].ctrlc = 2;
-		_ctx->tasks[currentTask].ctrlcaddress = regs[0];				// Save PC of the instruction on which we stopped
-		_ctx->tasks[currentTask].ctrlcbackup = *(uint32_t*)(regs[0]);	// Save the instruction at this address
-		// TODO: Insert C.EBREAK If previous instruction was compressed otherwise we'll destroy the executable
-		*(uint32_t*)(regs[0]) = 0x00100073;								// Replace it with EBREAK instruction
-		CFLUSH_D_L1;													// Make sure the write makes it to RAM
-		FENCE_I;														// Make sure I$ is flushed so it can see this write
+		_ctx->tasks[currentTask].state = TS_PAUSED;
+		_ctx->tasks[currentTask].ctrlc = 2;					// Avoid re-entry
+		_ctx->tasks[currentTask].ctrlcaddress = regs[0];	// Save PC of the instruction on which we stopped
+		uint32_t instr = *(uint32_t*)(regs[0]);				// Grab the instruction at this PC
+		_ctx->tasks[currentTask].ctrlcbackup = instr;		// Save it into our backup space
+		if ((instr&3) == 0x2)								// Is it compressed?
+			*(uint16_t*)(regs[0]) = 0x9002;					// Replace it with C.EBREAK instruction
+		else
+			*(uint32_t*)(regs[0]) = 0x00100073;				// Replace it with EBREAK instruction
+		CFLUSH_D_L1;										// Make sure the write makes it to RAM
+		FENCE_I;											// Make sure I$ is flushed so it can see this write
 	}
 
 	// Resume
 	if (_ctx->tasks[currentTask].ctrlc == 8)
 	{
+		_ctx->tasks[currentTask].state = TS_RUNNING;
 		_ctx->tasks[currentTask].breakhit = 0;
-		_ctx->tasks[currentTask].ctrlc = 0;
-		// TODO: If we have a C.EBREAK here replace with old compressed instruction (i.e. write to uint16_t* instead)
-		*(uint32_t*)(_ctx->tasks[currentTask].ctrlcaddress) = _ctx->tasks[currentTask].ctrlcbackup;	// Restore old instruction
-		CFLUSH_D_L1;																				// Make sure the write makes it to RAM
-		FENCE_I;																					// Make sure I$ is flushed so it can see this write
+		_ctx->tasks[currentTask].ctrlc = 0;											// Resuming
+		uint32_t instr = _ctx->tasks[currentTask].ctrlcbackup;						// Grab stored instruction
+		if ((instr&3) == 0x2)															// Is it compressed?
+			*(uint16_t*)(_ctx->tasks[currentTask].ctrlcaddress) = (uint16_t)instr;	// Restore compressed instruction
+		else
+			*(uint32_t*)(_ctx->tasks[currentTask].ctrlcaddress) = instr;			// Restore full instruction
+		CFLUSH_D_L1;																// Make sure the write makes it to RAM
+		FENCE_I;																	// Make sure I$ is flushed so it can see this write
 	}
 
 	// Terminate task and visit OS task

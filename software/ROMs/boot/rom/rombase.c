@@ -4,6 +4,7 @@
 #include "mini-printf.h"
 #include "usbserialhandler.h"
 #include "usbhidhandler.h"
+#include "debugstub.h"
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -418,14 +419,19 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 		{
 			case CAUSE_ILLEGAL_INSTRUCTION:
 			{
-				uint32_t instruction = *((uint32_t*)PC);
-				kprintf("Illegal instruction 0x%X at 0x%X, terminating\n", instruction, PC);
-				// Terminate task on first chance and remove from list of running tasks
-				TaskExitCurrentTask(&g_taskctx);
-				// Force switch to next task
-				TaskSwitchToNext(&g_taskctx);
-
-				// TODO: Drop into debugger if one's loaded
+				if (IsDebuggerConnected())
+				{
+					// TODO: Signal debugger
+				}
+				else
+				{
+					uint32_t instruction = *((uint32_t*)PC);
+					kprintf("Illegal instruction 0x%X at 0x%X, terminating\n", instruction, PC);
+					// Terminate task on first chance and remove from list of running tasks
+					TaskExitCurrentTask(&g_taskctx);
+					// Force switch to next task
+					TaskSwitchToNext(&g_taskctx);
+				}
 
 				break;
 			}
@@ -433,18 +439,18 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			case CAUSE_BREAKPOINT:
 			{
 				// Where there's no debugger loaded, simply exit since we're not supposed to run past ebreak commands
-				/*if (s_debuggerConnected)
+				if (IsDebuggerConnected())
 				{
-					kprintf("No debugger present, ignoring breakpoint\n");
-
+					// Do nothing
+					// Every time we hit the EBREAK / C.EBREAK we'll just cost a task switch and PC won't move
+				}
+				else
+				{
+					kprintf("Encountered breakpoint with no debugger attached\n");
 					// Exit task in non-debug mode
 					TaskExitCurrentTask(&g_taskctx);
 					// Force switch to next task
 					TaskSwitchToNext(&g_taskctx);
-				}
-				else*/
-				{
-					// Do nothing, we'll just cost a task switch and PC won't move
 				}
 
 				break;

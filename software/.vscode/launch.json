@@ -11,7 +11,7 @@
             "name": "C++ Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/samples/doom/src/riscv/doom.elf",
+            "program": "${workspaceFolder}/samples/modplayer/modplayer.elf",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/",

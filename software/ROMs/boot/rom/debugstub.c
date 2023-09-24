@@ -151,7 +151,10 @@ void HandlePacket()
 	else if (strstr(s_packet, "vMustReplyEmpty"))
 		SendDebugPacket("");
 	else if (strstr(s_packet, "qSupported"))
+	{
+		s_debuggerConnected = 1;
 		SendDebugPacket("+qSupported:swbreak+;hwbreak+;multiprocess-;qXfer:threads:read+;PacketSize=255");
+	}
 	else if (strstr(s_packet, "qOffsets")) // segment offsets (grab from ELF header)
 		SendDebugPacket("Text=0;Data=0;Bss=0;"); // No relocation
 	else if (strstr(s_packet, "qfThreadInfo"))
@@ -303,6 +306,7 @@ void HandlePacket()
 	}
 	else if (strstr(s_packet, "D")) // detach
 	{
+		s_debuggerConnected = 0;
 		SendDebugPacket("OK");
 	}
 	else if (strstr(s_packet, "c")) // continue
@@ -357,7 +361,6 @@ void ProcessChar(char input)
 
 	if (input == '$')
 	{
-		s_debuggerConnected = 1;
 		s_idx = 0;
 		s_packetStart = 1;
 	}
@@ -389,6 +392,11 @@ void ProcessGDBRequest()
 			s_packetComplete = 0;
 		}
 	}
+}
+
+uint32_t IsDebuggerConnected()
+{
+	return s_debuggerConnected;
 }
 
 // GDB serial packages are in the form:
