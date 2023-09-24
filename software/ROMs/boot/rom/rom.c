@@ -116,8 +116,8 @@ void DeviceDefaultState(int _bootTime)
 		uint32_t waterMark = read_csr(0xFF0);
 		if (waterMark == 0) // On-device ROM
 			GPUConsoleSetColors(kernelgfx, s_consolefgcolor, s_consolebgcolor);
-		else // Overlay ROM (white on blue)
-			GPUConsoleSetColors(kernelgfx, 0x0F, 0x01);
+		else // Overlay ROM (black on white)
+			GPUConsoleSetColors(kernelgfx, 0x00, 0x0F);
 		GPUConsoleClear(kernelgfx);
 	}
 

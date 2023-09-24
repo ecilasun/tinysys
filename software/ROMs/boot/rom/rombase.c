@@ -443,6 +443,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				{
 					// Do nothing
 					// Every time we hit the EBREAK / C.EBREAK we'll just cost a task switch and PC won't move
+					SendDebugPacket("T 05 swbreak:");
 				}
 				else
 				{

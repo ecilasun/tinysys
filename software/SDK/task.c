@@ -36,6 +36,63 @@ void TaskInitSystem(struct STaskContext *_ctx)
 	}
 }
 
+int TaskInsertBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint32_t _address)
+{
+	struct STask *task = &(_ctx->tasks[_taskid]);
+	uint32_t brk = task->num_breakpoints;
+
+	if (brk == TASK_MAX_BREAKPOINTS-1)
+		return 0;
+
+	task->breakpoints[brk].address = _address;
+	uint32_t instr = *(uint32_t*)_address;
+	task->breakpoints[brk].originalinstruction = instr;
+
+	// Replace it with EBREAK or C.EBREAK instruction depending on comression
+	if ((instr&3) == 0x2)
+		*(uint16_t*)_address = 0x9002;
+	else 
+		*(uint32_t*)_address = 0x00100073;
+
+	// Make sure the write makes it to RAM and also visible to I$
+	CFLUSH_D_L1;
+	FENCE_I;
+
+	return 1;
+}
+
+int TaskRemoveBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint32_t _address)
+{
+	struct STask *task = &(_ctx->tasks[_taskid]);
+	uint32_t brk = task->num_breakpoints;
+
+	for (uint32_t i=0; i<brk; ++i)
+	{
+		if (task->breakpoints[i].address == _address)
+		{
+			uint32_t instr = task->breakpoints[i].originalinstruction;
+
+			// Replace it with EBREAK or C.EBREAK instruction depending on comression
+			if ((instr&3) == 0x2)
+				*(uint16_t*)_address = instr;
+			else 
+				*(uint32_t*)_address = instr;
+
+			// Make sure the write makes it to RAM and also visible to I$
+			CFLUSH_D_L1;
+			FENCE_I;
+
+			// Swap last entry over
+			if (i != brk-1)
+				task->breakpoints[i] = task->breakpoints[brk];
+			task->num_breakpoints--;
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength)
 {
 	int32_t prevcount = _ctx->numTasks;
@@ -153,7 +210,7 @@ uint32_t TaskSwitchToNext(struct STaskContext *_ctx)
 	if (_ctx->tasks[currentTask].ctrlc == 1)
 	{
 		_ctx->tasks[currentTask].state = TS_PAUSED;
-		_ctx->tasks[currentTask].ctrlc = 2;					// Avoid re-entry
+		_ctx->tasks[currentTask].ctrlc = 0;					// Avoid re-entry
 		_ctx->tasks[currentTask].ctrlcaddress = regs[0];	// Save PC of the instruction on which we stopped
 		uint32_t instr = *(uint32_t*)(regs[0]);				// Grab the instruction at this PC
 		_ctx->tasks[currentTask].ctrlcbackup = instr;		// Save it into our backup space

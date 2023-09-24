@@ -5,6 +5,8 @@
 #include "debugstub.h"
 #include "rombase.h"
 
+// https://www.embecosm.com/appnotes/ean4/embecosm-howto-rsp-server-ean4-issue-2.html
+
 static const char s_hexdigits[] = "0123456789ABCDEF";
 static uint32_t s_debuggerConnected = 0;
 static uint32_t s_packetStart = 0;
@@ -12,10 +14,17 @@ static uint32_t s_checksumStart = 0;
 static uint32_t s_packetComplete = 0;
 static uint32_t s_idx = 0;
 static uint32_t s_fifocursor = 0;
-static uint32_t s_currentThread = 1; // CMD
+static uint32_t s_currentThread = 1;
 static char s_chk[2];
 static char s_fifo[512];
 static char s_packet[512];
+
+uint32_t startswith(const char *_source, const char *_token)
+{
+	if (strstr(_source, _token) == _source)
+		return 1;
+	return 0;
+}
 
 void uint2dec(const uint32_t val, char *msg)
 {
@@ -119,7 +128,9 @@ void SendDebugPacket(const char *packetString)
 void HandlePacket()
 {
 	char outstring[512];
-	if (strstr(s_packet, "qXfer:threads:read::")) // qXfer:threads:read::{start,offset}, normally would send l<?xml version=\"1.0\"?>\n<threads> etc
+	struct STaskContext *taskctx = GetTaskContext();
+
+	if (startswith(s_packet, "qXfer:threads:read::")) // qXfer:threads:read::{start,offset}, normally would send l<?xml version=\"1.0\"?>\n<threads> etc
 	{
 		char offsetbuf[12];
 		int a=0, p=20;
@@ -130,9 +141,8 @@ void HandlePacket()
 
 		if (offset == 0)
 		{
-			struct STaskContext *taskctx = GetTaskContext();
 			strcpy(outstring, "l<?xml version=\"1.0\"?>\n<threads>");
-			for (uint32_t i=1; i<taskctx->numTasks; ++i)
+			for (uint32_t i=0; i<taskctx->numTasks; ++i)
 			{
 				char threadid[10];
 				uint2dec(i, threadid);
@@ -148,41 +158,87 @@ void HandlePacket()
 		else
 			SendDebugPacket(""); // ???
 	}
-	else if (strstr(s_packet, "vMustReplyEmpty"))
+	else if (startswith(s_packet, "vMustReplyEmpty"))
 		SendDebugPacket("");
-	else if (strstr(s_packet, "qSupported"))
+	else if (startswith(s_packet, "qSupported"))
 	{
 		s_debuggerConnected = 1;
-		SendDebugPacket("+qSupported:swbreak+;hwbreak+;multiprocess-;qXfer:threads:read+;PacketSize=255");
+		// TODO: hwbreak+
+		SendDebugPacket("+qSupported:swbreak+;multiprocess-;qXfer:threads:read+;qRelocInsn-;exec-events+;vContSupported+;PacketSize=255");
 	}
-	else if (strstr(s_packet, "qOffsets")) // segment offsets (grab from ELF header)
+	else if (startswith(s_packet, "qOffsets")) // segment offsets (grab from ELF header)
 		SendDebugPacket("Text=0;Data=0;Bss=0;"); // No relocation
-	else if (strstr(s_packet, "qfThreadInfo"))
-		SendDebugPacket("m-l"); // all
-	else if (strstr(s_packet, "qsThreadInfo"))
-		SendDebugPacket("l"); // no more info
-	else if (strstr(s_packet, "qTStatus"))
-		SendDebugPacket(""); // not supported
-	else if (strstr(s_packet, "qAttached"))
-		SendDebugPacket("1"); // locally attached (0 for process created)
-	else if (strstr(s_packet, "vCont")) // continue
+	else if (startswith(s_packet, "qfThreadInfo"))
 	{
-		struct STaskContext *taskctx = GetTaskContext();
-		taskctx->tasks[s_currentThread].ctrlc = 8;
-		SendDebugPacket("OK");
-	}
-	else if (strstr(s_packet, "qSymbol")) // continue
-		SendDebugPacket("OK"); // No symtable info required
-	else if (strstr(s_packet, "qC")) // current thread?
-	{
-		int2architectureorderedstring(s_currentThread, outstring);
+		// List of active thread IDs
+		// GDB will stop the first thread listed here,
+		// so it has to be the user thread if available
+		strcpy(outstring, "m ");
+		for (uint32_t i=0; i<taskctx->numTasks; ++i)
+		{
+			char threadid[10];
+			uint2dec(i, threadid);
+			strcat(outstring, threadid);
+			if (i!=taskctx->numTasks-1)
+				strcat(outstring, ",");
+		}
 		SendDebugPacket(outstring);
 	}
-	else if (strstr(s_packet, "H"))
+	else if (startswith(s_packet, "qsThreadInfo"))
+		SendDebugPacket("l");
+	else if (startswith(s_packet, "qTStatus"))
+		SendDebugPacket(""); // No trace state
+	else if (startswith(s_packet, "qAttached"))
+		SendDebugPacket("0"); // Create new process
+	else if (startswith(s_packet, "vCont?"))
 	{
-		// m/M/g/G etc
-		// NOTE: Thread id == -1 means 'all threads'
-		if (s_packet[1]=='g') // select thread
+		// We support continue/step/stop/start actions (not the 'sig' ones)
+		SendDebugPacket("vCont;c;t");
+	}
+	else if (startswith(s_packet, "vCont")) // Continue/step/stop/start
+	{
+		// We're supposed to ignore these actions on running threads
+		if (taskctx->tasks[s_currentThread].state != TS_RUNNING)
+		{
+			if (s_packet[5] == 'c') // continue
+				taskctx->tasks[s_currentThread].ctrlc = 8;
+			/*if (s_packet[5] == 's') // step
+				taskctx->tasks[s_currentThread]. = ;
+			if (s_packet[5] == 'r') // start
+				taskctx->tasks[s_currentThread]. = ;*/
+		}
+		// Also, ignore stops issued on already stopped threads
+		if (taskctx->tasks[s_currentThread].state != TS_PAUSED)
+		{
+			if (s_packet[5] == 't') // stop
+				taskctx->tasks[s_currentThread].ctrlc = 1;
+		}
+		SendDebugPacket("OK");
+	}
+	else if (startswith(s_packet, "qSymbol")) // continue
+		SendDebugPacket("OK"); // No symtable info required
+	else if (startswith(s_packet, "vKill")) // quit process
+	{
+		// Nothing else we can kill, so kill the main user task
+		TaskExitTaskWithID(taskctx, 2, 0);
+		SendDebugPacket("OK");
+	}
+	else if (startswith(s_packet, "qC")) // current thread?
+	{
+		char threadid[10];
+		uint2dec(s_currentThread, threadid);
+		strcpy(outstring, "qC ");
+		strcat(outstring, threadid);
+		SendDebugPacket(outstring);
+	}
+	else if (startswith(s_packet, "H"))
+	{
+		if (s_packet[2] == '-')
+		{
+			// -1 : all threads
+			s_currentThread = 0;
+		}
+		else
 		{
 			char threadbuf[12];
 			int a=0, p=2;
@@ -191,16 +247,21 @@ void HandlePacket()
 			threadbuf[a]=0;
 			uint32_t idx = hex2uint(threadbuf);
 			s_currentThread = idx;
+		}
+
+		// m/M/g/G etc
+		// NOTE: Thread id == -1 means 'all threads'
+		if (s_packet[1]=='g') // select thread
+		{
 			SendDebugPacket("OK");
 		}
 		if (s_packet[1]=='c') // continue
 		{
-			struct STaskContext *taskctx = GetTaskContext();
 			taskctx->tasks[s_currentThread].ctrlc = 8; // resume
 			SendDebugPacket("OK");
 		}
 	}
-	else if (strstr(s_packet, "p")) // print registers
+	else if (startswith(s_packet, "p")) // print registers
 	{
 		char hexbuf[9];
 		int r=0,p=1;
@@ -209,12 +270,11 @@ void HandlePacket()
 		hexbuf[r]=0;
 		r = hex2uint(hexbuf);
 
-		struct STaskContext *taskctx = GetTaskContext();
 		int2architectureorderedstring(r == 0 ? 0 : taskctx->tasks[s_currentThread].regs[r%32], outstring);
 
 		SendDebugPacket(outstring); // Return register data
 	}
-	else if (strstr(s_packet, "T")) // thread status
+	else if (startswith(s_packet, "T")) // thread status
 	{
 		char hexbuf[9];
 		int r=0,p=1;
@@ -225,13 +285,50 @@ void HandlePacket()
 
 		s_currentThread = r;
 
-		struct STaskContext *taskctx = GetTaskContext();
 		if (taskctx->tasks[s_currentThread].state == TS_PAUSED)
 			SendDebugPacket("E05");
 		else
 			SendDebugPacket("OK");
 	}
-	else if (strstr(s_packet, "M")) // Set memory, maddr,count
+	else if (startswith(s_packet, "Z0")) // Insert breakpoint
+	{
+		char offsetbuf[12];
+		int a=0, p=2;
+		while (s_packet[p]!=',' && s_packet[p]!=0)
+			offsetbuf[a++] = s_packet[p++];
+		offsetbuf[a]=0;
+		uint32_t address = dec2uint(offsetbuf);
+		/*a = 0;
+		while (s_packet[p]!=',' && s_packet[p]!=0)
+			offsetbuf[a++] = s_packet[p++];
+		offsetbuf[a]=0;
+		uint32_t type = dec2uint(offsetbuf);*/
+
+		if (TaskInsertBreakpoint(taskctx, s_currentThread, address))
+			SendDebugPacket("OK");
+		else
+			SendDebugPacket("E00");
+	}
+	else if (startswith(s_packet, "z0")) // Remove breakpoint
+	{
+		char offsetbuf[12];
+		int a=0, p=2;
+		while (s_packet[p]!=',' && s_packet[p]!=0)
+			offsetbuf[a++] = s_packet[p++];
+		offsetbuf[a]=0;
+		uint32_t address = dec2uint(offsetbuf);
+		/*a = 0;
+		while (s_packet[p]!=',' && s_packet[p]!=0)
+			offsetbuf[a++] = s_packet[p++];
+		offsetbuf[a]=0;
+		uint32_t type = dec2uint(offsetbuf);*/
+
+		if (TaskRemoveBreakpoint(taskctx, s_currentThread, address))
+			SendDebugPacket("OK");
+		else
+			SendDebugPacket("E00");
+	}
+	else if (startswith(s_packet, "M")) // Set memory, maddr,count
 	{
 		char addrbuf[12], cntbuf[12];
 		int a=0,c=0, p=1;
@@ -259,7 +356,7 @@ void HandlePacket()
 
 		SendDebugPacket("OK");
 	}
-	else if (strstr(s_packet, "m")) // Read memory, maddr,count
+	else if (startswith(s_packet, "m")) // Read memory, maddr,count
 	{
 		char addrbuf[12], cntbuf[12];
 		int a=0,c=0, p=1;
@@ -282,12 +379,15 @@ void HandlePacket()
 			ofst += 2;
 		}
 
+		// Might need to update D$ & I$ if this was a write over instruction memory
+		CFLUSH_D_L1;
+		FENCE_I;
+
 		SendDebugPacket(outstring);
 	}
-	else if (strstr(s_packet, "g")) // dump GPR contents
+	else if (startswith(s_packet, "g")) // dump GPR contents
 	{
 		// All registers sent first
-		struct STaskContext *taskctx = GetTaskContext();
 		int2architectureorderedstring(0x00000000, &outstring[0]); // zero register
 		for(uint32_t i=1;i<32;++i)
 			int2architectureorderedstring(taskctx->tasks[s_currentThread].regs[i], &outstring[i*8]);
@@ -297,29 +397,35 @@ void HandlePacket()
 
 		SendDebugPacket(outstring);
 	}
-	else if (strstr(s_packet, "s")) // single step
+	else if (startswith(s_packet, "s")) // single step
 	{
 		// TODO: need single step support
-		//struct STaskContext *taskctx = GetTaskContext();
 		//taskctx->tasks[s_currentThread].state == TS_SINGLESTEP;
 		SendDebugPacket("");
 	}
-	else if (strstr(s_packet, "D")) // detach
+	else if (startswith(s_packet, "D")) // detach
 	{
 		s_debuggerConnected = 0;
 		SendDebugPacket("OK");
 	}
-	else if (strstr(s_packet, "c")) // continue
+	else if (startswith(s_packet, "c")) // continue
 	{
-		struct STaskContext *taskctx = GetTaskContext();
 		taskctx->tasks[s_currentThread].ctrlc = 8;
 		SendDebugPacket("OK");
 	}
-	else if (strstr(s_packet, "?")) // Halt reason?
+	else if (startswith(s_packet, "!")) // Extended remote mode
+	{
+		SendDebugPacket("OK");
+	}
+	else if (startswith(s_packet, "?")) // Halt reason?
 	{
 		// Does S00 mean we're still running?
 		SendDebugPacket("S00");
 	}
+	/*else if (s_packet[0] == 0) // empty with a +
+	{
+		SendDebugPacket("+");
+	}*/
 	else
 		USBSerialWrite("-");
 }
@@ -329,10 +435,17 @@ void ProcessChar(char input)
 	// Do not queue this one
 	if (input == 0x03) // CTRL+C
 	{
-		// Signal pause
 		struct STaskContext *taskctx = GetTaskContext();
-		taskctx->tasks[s_currentThread].ctrlc = 1;
-		SendDebugPacket("S05");
+
+		// Signal pause
+		// taskctx->currentTask == 2 -> only user thread can be stopped
+		if (s_currentThread == 2)
+		{
+			taskctx->tasks[s_currentThread].ctrlc = 1;
+			SendDebugPacket("OK");
+		}
+		else
+			SendDebugPacket("-");
 		return;
 	}
 
@@ -385,9 +498,11 @@ void ProcessGDBRequest()
 	while (s_fifocursor != 0)
 	{
 		char drain = s_fifo[--s_fifocursor];
+		kprintf("%c", drain);
 		ProcessChar(drain);
 		if (s_packetComplete)
 		{
+			kprintf("\n");
 			HandlePacket();
 			s_packetComplete = 0;
 		}
@@ -403,15 +518,6 @@ uint32_t IsDebuggerConnected()
 // $packetdata#checksum
 // where $ is the packet header, # is the footer and checksum is a two digit hex checksum.
 // Any data between $ and # is the actual data / command transmitted by GDB.
-// Example:
-// $qSupported:multiprocess+;swbreak+;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;QThreadEvents+;no-resumed+#df
-// $Hg0#df
-// $qTStatus#49
-// qXfer:threads:read::0,250
-// Hc-1
-// qC
-// qAttached
-// qOffsets
 
 // NOTE: Should we push incoming ASCII code into the key ringbuffer,
 // if we're not listening to a debug packet?

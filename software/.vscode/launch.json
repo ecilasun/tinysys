@@ -11,13 +11,14 @@
             "name": "C++ Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/samples/modplayer/modplayer.elf",
+            "program": "${workspaceFolder}/samples/hellodebugger/hellodebugger.elf",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
+			"useExtendedRemote": true,
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -26,7 +27,8 @@
                 }
             ],
             "miDebuggerPath": "riscv64-unknown-elf-gdb",
-            "miDebuggerServerAddress": "//.//COM9"
+            "miDebuggerServerAddress": "//.//COM9",
+			"miDebuggerArgs": "run hellodebugger"
         }
     ]
 }

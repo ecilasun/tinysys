@@ -10,9 +10,9 @@ After this step, at command prompt of GDB, use one of the following based on you
 
 ```
 Linux:
-target remote /dev/ttyUSB1
+target extended-remote /dev/ttyUSB1
 Windows:
-target remote //.//COM9
+target extended-remote //.//COM9
 ```
 
 An alternative method is to use gdbgui from the riscvtool/tinysys/samples/** directory:

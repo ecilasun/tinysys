@@ -2,8 +2,8 @@
 
 #include <inttypes.h>
 
-#define TASK_MAX 16
-#define TASK_MAX_BREAKPOINTS 16
+#define TASK_MAX 4
+#define TASK_MAX_BREAKPOINTS 12
 
 typedef void(*taskfunc)();
 
@@ -63,3 +63,6 @@ void TaskExitTaskWithID(struct STaskContext *_ctx, uint32_t _taskid, uint32_t _s
 
 // Yield leftover time back to the next task in chain
 void TaskYield();
+
+int TaskInsertBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint32_t _address);
+int TaskRemoveBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint32_t _address);
