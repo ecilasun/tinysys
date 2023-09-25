@@ -12,9 +12,15 @@ static uint32_t s_debuggerConnected = 0;
 static uint32_t s_packetStart = 0;
 static uint32_t s_checksumStart = 0;
 static uint32_t s_packetComplete = 0;
+static uint32_t s_gatherBinary = 0;
+static uint32_t s_isbinarypacket = 0;
 static uint32_t s_idx = 0;
 static uint32_t s_fifocursor = 0;
-static uint32_t s_currentThread = 1;
+static uint32_t s_currentThread = 1; // SYSIDLE
+static uint32_t s_binaryOffset;
+static uint32_t s_binaryAddrs;
+static uint32_t s_binaryNumbytes;
+static uint32_t s_receivedBytes;
 static char s_chk[2];
 static char s_fifo[512];
 static char s_packet[512];
@@ -145,7 +151,7 @@ void HandlePacket()
 			for (uint32_t i=0; i<taskctx->numTasks; ++i)
 			{
 				char threadid[10];
-				uint2dec(i, threadid);
+				uint2dec(i+1, threadid);
 				strcat(outstring, "<thread id=\"");
 				strcat(outstring, threadid);
 				strcat(outstring, "\" core=\"0\" name=\"");
@@ -164,10 +170,15 @@ void HandlePacket()
 	{
 		s_debuggerConnected = 1;
 		// TODO: hwbreak+
-		SendDebugPacket("+qSupported:swbreak+;multiprocess-;qXfer:threads:read+;qRelocInsn-;exec-events+;vContSupported+;PacketSize=255");
+		SendDebugPacket("+qSupported:swbreak+;multiprocess-;qXfer:threads:read+;qRelocInsn-;exec-events+;vRun+;vContSupported+;PacketSize=255");
 	}
 	else if (startswith(s_packet, "qOffsets")) // segment offsets (grab from ELF header)
 		SendDebugPacket("Text=0;Data=0;Bss=0;"); // No relocation
+	else if (startswith(s_packet, "vRun"))
+	{
+		// TODO:
+		SendDebugPacket("-");
+	}
 	else if (startswith(s_packet, "qfThreadInfo"))
 	{
 		// List of active thread IDs
@@ -198,20 +209,21 @@ void HandlePacket()
 	else if (startswith(s_packet, "vCont")) // Continue/step/stop/start
 	{
 		// We're supposed to ignore these actions on running threads
-		if (taskctx->tasks[s_currentThread].state != TS_RUNNING)
+		uint32_t threadid = s_currentThread - 1;
+		if (taskctx->tasks[threadid].state != TS_RUNNING)
 		{
 			if (s_packet[5] == 'c') // continue
-				taskctx->tasks[s_currentThread].ctrlc = 8;
+				taskctx->tasks[threadid].ctrlc = 8;
 			/*if (s_packet[5] == 's') // step
-				taskctx->tasks[s_currentThread]. = ;
+				taskctx->tasks[threadid]. = ;
 			if (s_packet[5] == 'r') // start
-				taskctx->tasks[s_currentThread]. = ;*/
+				taskctx->tasks[threadid]. = ;*/
 		}
 		// Also, ignore stops issued on already stopped threads
-		if (taskctx->tasks[s_currentThread].state != TS_PAUSED)
+		if (taskctx->tasks[threadid].state != TS_PAUSED)
 		{
 			if (s_packet[5] == 't') // stop
-				taskctx->tasks[s_currentThread].ctrlc = 1;
+				taskctx->tasks[threadid].ctrlc = 1;
 		}
 		SendDebugPacket("OK");
 	}
@@ -249,19 +261,30 @@ void HandlePacket()
 			s_currentThread = idx;
 		}
 
-		// m/M/g/G etc
-		// NOTE: Thread id == -1 means 'all threads'
-		if (s_packet[1]=='g') // select thread
-		{
-			SendDebugPacket("OK");
-		}
-		if (s_packet[1]=='c') // continue
-		{
-			taskctx->tasks[s_currentThread].ctrlc = 8; // resume
-			SendDebugPacket("OK");
-		}
+		SendDebugPacket("OK");
 	}
-	else if (startswith(s_packet, "p")) // print registers
+	else if (startswith(s_packet, "p")) // Write register
+	{
+		char hexbuf[9], valuebuf[12];
+		int a=0, r=0, p=1;
+		while (s_packet[p]!='=' && s_packet[p]!=0)
+			hexbuf[r++] = s_packet[p++];
+		hexbuf[r]=0;
+		r = hex2uint(hexbuf);
+		++p; // Skip = sign
+		while (s_packet[p]!='#' && s_packet[p]!=0)
+			valuebuf[a++] = s_packet[p++];
+		valuebuf[a]=0;
+		uint32_t value = dec2uint(valuebuf);
+
+		uint32_t threadid = s_currentThread - 1;
+
+		if (r!=0)
+			taskctx->tasks[threadid].regs[r%32] = value;
+		else // PC
+			taskctx->tasks[threadid].regs[r] = value;
+	}
+	else if (startswith(s_packet, "p")) // Print registers
 	{
 		char hexbuf[9];
 		int r=0,p=1;
@@ -270,7 +293,8 @@ void HandlePacket()
 		hexbuf[r]=0;
 		r = hex2uint(hexbuf);
 
-		int2architectureorderedstring(r == 0 ? 0 : taskctx->tasks[s_currentThread].regs[r%32], outstring);
+		uint32_t threadid = s_currentThread - 1;
+		int2architectureorderedstring(r == 0 ? 0 : taskctx->tasks[threadid].regs[r%32], outstring);
 
 		SendDebugPacket(outstring); // Return register data
 	}
@@ -285,7 +309,8 @@ void HandlePacket()
 
 		s_currentThread = r;
 
-		if (taskctx->tasks[s_currentThread].state == TS_PAUSED)
+		uint32_t threadid = s_currentThread - 1;
+		if (taskctx->tasks[threadid].state == TS_PAUSED)
 			SendDebugPacket("E05");
 		else
 			SendDebugPacket("OK");
@@ -304,7 +329,8 @@ void HandlePacket()
 		offsetbuf[a]=0;
 		uint32_t type = dec2uint(offsetbuf);*/
 
-		if (TaskInsertBreakpoint(taskctx, s_currentThread, address))
+		uint32_t threadid = s_currentThread - 1;
+		if (TaskInsertBreakpoint(taskctx, threadid, address))
 			SendDebugPacket("OK");
 		else
 			SendDebugPacket("E00");
@@ -323,10 +349,18 @@ void HandlePacket()
 		offsetbuf[a]=0;
 		uint32_t type = dec2uint(offsetbuf);*/
 
-		if (TaskRemoveBreakpoint(taskctx, s_currentThread, address))
+		uint32_t threadid = s_currentThread - 1;
+		if (TaskRemoveBreakpoint(taskctx, threadid, address))
 			SendDebugPacket("OK");
 		else
 			SendDebugPacket("E00");
+	}
+	else if (startswith(s_packet, "X")) // Write binary blob
+	{
+		// NOTE: The header has been pre-processed
+		for (uint32_t i=s_binaryAddrs; i<s_binaryAddrs+s_binaryNumbytes; ++i)
+			*(uint8_t*)(i) = s_packet[s_binaryOffset++];
+		SendDebugPacket("OK");
 	}
 	else if (startswith(s_packet, "M")) // Set memory, maddr,count
 	{
@@ -387,20 +421,22 @@ void HandlePacket()
 	}
 	else if (startswith(s_packet, "g")) // dump GPR contents
 	{
+		uint32_t threadid = s_currentThread - 1;
+
 		// All registers sent first
 		int2architectureorderedstring(0x00000000, &outstring[0]); // zero register
 		for(uint32_t i=1;i<32;++i)
-			int2architectureorderedstring(taskctx->tasks[s_currentThread].regs[i], &outstring[i*8]);
+			int2architectureorderedstring(taskctx->tasks[threadid].regs[i], &outstring[i*8]);
 
 		// PC is sent last
-		int2architectureorderedstring(taskctx->tasks[s_currentThread].regs[0], &outstring[32*8]);
+		int2architectureorderedstring(taskctx->tasks[threadid].regs[0], &outstring[32*8]);
 
 		SendDebugPacket(outstring);
 	}
 	else if (startswith(s_packet, "s")) // single step
 	{
 		// TODO: need single step support
-		//taskctx->tasks[s_currentThread].state == TS_SINGLESTEP;
+		//taskctx->tasks[threadid].state == TS_SINGLESTEP;
 		SendDebugPacket("");
 	}
 	else if (startswith(s_packet, "D")) // detach
@@ -410,7 +446,8 @@ void HandlePacket()
 	}
 	else if (startswith(s_packet, "c")) // continue
 	{
-		taskctx->tasks[s_currentThread].ctrlc = 8;
+		uint32_t threadid = s_currentThread - 1;
+		taskctx->tasks[threadid].ctrlc = 8;
 		SendDebugPacket("OK");
 	}
 	else if (startswith(s_packet, "!")) // Extended remote mode
@@ -430,6 +467,17 @@ void HandlePacket()
 		USBSerialWrite("-");
 }
 
+void ProcessBinaryData(char input)
+{
+	s_packet[s_receivedBytes++] = input;
+
+	if (s_receivedBytes == s_binaryNumbytes)
+	{
+		s_gatherBinary = 0;
+		s_checksumStart = 1;
+	}
+}
+
 void ProcessChar(char input)
 {
 	// Do not queue this one
@@ -437,11 +485,12 @@ void ProcessChar(char input)
 	{
 		struct STaskContext *taskctx = GetTaskContext();
 
+		uint32_t threadid = s_currentThread - 1;
 		// Signal pause
 		// taskctx->currentTask == 2 -> only user thread can be stopped
-		if (s_currentThread == 2)
+		if (threadid == 2)
 		{
-			taskctx->tasks[s_currentThread].ctrlc = 1;
+			taskctx->tasks[threadid].ctrlc = 1;
 			SendDebugPacket("OK");
 		}
 		else
@@ -462,7 +511,52 @@ void ProcessChar(char input)
 
 	if (s_packetStart && input != '#')
 	{
+		// First character is an X, expect binary packet
+		if (input == 'X' && s_idx == 0)
+		{
+			kprintf("gathering binary\n");
+
+			s_isbinarypacket = 1;
+			s_receivedBytes = 0;
+		}
 		s_packet[s_idx++] = input;
+	}
+
+	if (s_isbinarypacket && input == ':')
+	{
+		s_packet[s_idx++] = 0; // Zero terminate
+
+		// Grab length and target address
+		char addrbuf[12], cntbuf[12];
+		int a=0,c=0, p=1;
+		while (s_packet[p]!=',' && s_packet[p]!=0)
+			addrbuf[a++] = s_packet[p++];
+		addrbuf[a]=0;
+		++p; // skip the comma
+		while (s_packet[p]!=':' && s_packet[p]!=0)
+			cntbuf[c++] = s_packet[p++];
+		cntbuf[c]=0;
+		++p; // skip the column
+
+		s_binaryOffset = p;
+		s_binaryAddrs = hex2uint(addrbuf);
+		s_binaryNumbytes = hex2uint(cntbuf);
+		s_isbinarypacket = 0;
+
+		kprintf("@%x for @%x bytes\n", s_binaryAddrs, s_binaryNumbytes);
+
+		if (s_binaryNumbytes != 0)
+		{
+			s_gatherBinary = 1;
+			s_checksumStart = 0;
+		}
+		else
+		{
+			s_checksumStart = 1;
+			SendDebugPacket("OK"); // zero length - notify we support binary data transfer but don't start, just end the packet
+		}
+
+		s_packetStart = 0;
 	}
 
 	if (s_packetStart && input == '#')
@@ -498,8 +592,13 @@ void ProcessGDBRequest()
 	while (s_fifocursor != 0)
 	{
 		char drain = s_fifo[--s_fifocursor];
-		kprintf("%c", drain);
-		ProcessChar(drain);
+		if (s_gatherBinary)
+			ProcessBinaryData(drain);
+		else
+		{
+			kprintf("%c", drain);
+			ProcessChar(drain);
+		}
 		if (s_packetComplete)
 		{
 			kprintf("\n");
