@@ -15,6 +15,9 @@
 #include "max3421e.h"
 #include "mini-printf.h"
 #include "debugstub.h"
+#include "keyringbuffer.h"
+#include "serialinringbuffer.h"
+#include "serialoutringbuffer.h"
 
 #include <string.h>
 #include <stdbool.h>
@@ -116,8 +119,8 @@ void DeviceDefaultState(int _bootTime)
 		uint32_t waterMark = read_csr(0xFF0);
 		if (waterMark == 0) // On-device ROM
 			GPUConsoleSetColors(kernelgfx, s_consolefgcolor, s_consolebgcolor);
-		else // Overlay ROM (black on white)
-			GPUConsoleSetColors(kernelgfx, 0x00, 0x0F);
+		else // Overlay ROM (white on blue)
+			GPUConsoleSetColors(kernelgfx, 0x0F, 0x01);
 		GPUConsoleClear(kernelgfx);
 	}
 
@@ -346,7 +349,7 @@ void _cliTask()
 		int execcmd = 0;
 
 		// Keyboard input
-		while (RingBufferRead(&uartData, sizeof(uint32_t)))
+		while (KeyRingBufferRead(&uartData, sizeof(uint32_t)))
 		{
 			uint8_t asciicode = (uint8_t)(uartData&0xFF);
 
@@ -523,9 +526,11 @@ int main()
 	else
 		kprintf("ROM: DEVELOPMENT MODE\n");
 
-	// Set up internals
+	// Set up ring buffers
 	LEDSetState(0xB);
-	RingBufferReset();
+	KeyRingBufferReset();
+	SerialInRingBufferReset();
+	SerialOutRingBufferReset();
 
 	// Create task context
 	LEDSetState(0xA);

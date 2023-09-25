@@ -1,4 +1,4 @@
-#include "ringbuffer.h"
+#include "keyringbuffer.h"
 #include <string.h>
 
 // Simple ringbuffer
@@ -12,18 +12,18 @@ const static uint32_t c_sizeMask = c_cbBufferSize - 1;
 // These need to persist in same memory location betwen ROM and loaded ELF
 // so that we don't read from wrong space (or not read at all)
 // NOTE: Ring buffer is normally placed at 0x80000200 in the mailbox
-volatile uint32_t *m_readOffset  = (volatile uint32_t*)(RINGBUFFER_STATE+4);
-volatile uint32_t *m_writeOffset = (volatile uint32_t*)(RINGBUFFER_STATE+8);
+volatile uint32_t *m_readOffset  = (volatile uint32_t*)(KEY_RINGBUFFER_STATE+4);
+volatile uint32_t *m_writeOffset = (volatile uint32_t*)(KEY_RINGBUFFER_STATE+8);
 
-void __attribute__ ((noinline)) RingBufferReset()
+void __attribute__ ((noinline)) KeyRingBufferReset()
 {
     *m_readOffset  = 0;
     *m_writeOffset = 0;
 }
 
-uint32_t __attribute__ ((noinline)) RingBufferRead(void* pvDest, const uint32_t cbDest)
+uint32_t __attribute__ ((noinline)) KeyRingBufferRead(void* pvDest, const uint32_t cbDest)
 {
-    uint8_t *ringbuffer = (uint8_t *)RINGBUFFER_BASE;
+    uint8_t *ringbuffer = (uint8_t *)KEY_RINGBUFFER_BASE;
 
     uint32_t readOffset = *m_readOffset;
     const uint32_t writeOffset = *m_writeOffset;
@@ -51,9 +51,9 @@ uint32_t __attribute__ ((noinline)) RingBufferRead(void* pvDest, const uint32_t 
     return 1;
 }
 
-uint32_t __attribute__ ((noinline)) RingBufferWrite( const void* pvSrc, const uint32_t cbSrc)
+uint32_t __attribute__ ((noinline)) KeyRingBufferWrite( const void* pvSrc, const uint32_t cbSrc)
 {
-    uint8_t *ringbuffer = (uint8_t *)RINGBUFFER_BASE;
+    uint8_t *ringbuffer = (uint8_t *)KEY_RINGBUFFER_BASE;
 
     const uint32_t readOffset = *m_readOffset;
     uint32_t writeOffset = *m_writeOffset;

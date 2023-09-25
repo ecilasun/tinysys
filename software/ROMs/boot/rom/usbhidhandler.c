@@ -3,7 +3,7 @@
 #include "usbserial.h"
 #include "encoding.h"
 #include "max3421e.h"
-#include "ringbuffer.h"
+#include "keyringbuffer.h"
 #include "leds.h"
 #include "rombase.h"
 #include "keyboard.h"
@@ -139,7 +139,7 @@ enum EUSBDeviceState HandleKeyboard(enum EUSBDeviceState _currentState)
 					incoming = 3; // EXT (CTRL+C) or PAUSE key
 				else
 					incoming = KeyScanCodeToASCII(i, isCaps);
-				RingBufferWrite(&incoming, sizeof(uint32_t));
+				KeyRingBufferWrite(&incoming, sizeof(uint32_t));
 			}
 		}
 

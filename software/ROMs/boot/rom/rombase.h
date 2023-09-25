@@ -7,7 +7,6 @@
 #include "fat32/ff.h"
 #include "leds.h"
 #include "elf.h"
-#include "ringbuffer.h"
 #include "gpu.h"
 
 #include <inttypes.h>

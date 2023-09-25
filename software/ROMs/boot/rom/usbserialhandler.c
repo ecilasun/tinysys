@@ -2,7 +2,9 @@
 #include "usbserial.h"
 #include "max3420e.h"
 #include "leds.h"
-#include "ringbuffer.h"
+#include "basesystem.h"
+#include "serialoutringbuffer.h"
+#include "serialinringbuffer.h"
 
 // See:
 // https://github.com/MicrochipTech/mla_usb/blob/master/src/usb_device_cdc.c
@@ -301,13 +303,20 @@ void DoSetup()
 
 void USBEmitBufferedOutput()
 {
-	uint32_t *sndCount = (uint32_t *)SERIAL_OUTPUT_BUFFER;
-	uint8_t *sndData = (uint8_t *)(SERIAL_OUTPUT_BUFFER+4);
-	uint32_t count = *sndCount;
+	// Copy out from FIFO to send buffer
+	uint8_t out;
+	uint32_t count = 0;
+	uint8_t* sndData = (uint8_t*)KERNEL_TEMP_MEMORY;
+	while (SerialOutRingBufferRead(&out, 1))
+	{
+		sndData[count++] = out;
+	}
 
+	// If we don't have anything, bail out
 	if (count == 0)
 		return;
 
+	// Send in 64 byte chunks
 	uint32_t blockCount = count/64;
 	uint32_t leftoverCount = count%64;
 
@@ -337,27 +346,20 @@ void USBEmitBufferedOutput()
 		MAX3420WriteByte(rCPUCTL, bmIE); // Enable MAX3420 interrupts
 	}
 
-	// Done sending
-	*sndCount = 0;
-
 	LEDSetState(currLED);
 }
 
 void BufferIncomingData()
 {
-	uint32_t *rcvCount = (uint32_t *)SERIAL_INPUT_BUFFER;
-	uint8_t *rcvData = (uint8_t *)(SERIAL_INPUT_BUFFER+4);
-
 	// Incoming EP1 data package
 	uint8_t numBytes = MAX3420ReadByte(rEP1OUTBC);
 	if (numBytes)
 	{
-		// Stash incoming data into the ringbuffer
-		// It will drop input if nothing is draining the ringbuffer
-		uint32_t count = *rcvCount;
 		for (uint8_t i=0; i<numBytes; ++i)
-			rcvData[count++] = MAX3420ReadByte(rEP1OUTFIFO);
-		*rcvCount = count;
+		{
+			uint8_t rcvData = MAX3420ReadByte(rEP1OUTFIFO);
+			SerialInRingBufferWrite(&rcvData, 1);
+		}
 	}
 }
 

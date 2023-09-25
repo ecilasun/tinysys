@@ -3,6 +3,7 @@
 #include "max3420e.h"
 #include "leds.h"
 #include "encoding.h"
+#include "serialoutringbuffer.h"
 #include <string.h>
 
 // Helper routines to set up the onboard MAX3420 in USB serial mode
@@ -128,12 +129,6 @@ int USBSerialInit(uint32_t enableInterrupts)
 	if (s_usbser==NULL)
 		return 0;
 
-	// Reset input/output buffer counters
-	uint32_t *sndCount = (uint32_t *)SERIAL_OUTPUT_BUFFER;
-	uint32_t *rcvCount = (uint32_t *)SERIAL_INPUT_BUFFER;
-	*sndCount = 0;
-	*rcvCount = 0;
-
 	// Generate descriptor table for a USB serial device
 	MakeCDCDescriptors(s_usbser);
 
@@ -161,17 +156,8 @@ int USBSerialInit(uint32_t enableInterrupts)
 
 int USBSerialWriteN(const char *outstring, uint32_t count)
 {
-	// Append more outgoing data to the serial output buffer
-	// This will be streamed out by the OS code
-	uint32_t *sndCount = (uint32_t *)SERIAL_OUTPUT_BUFFER;
-	uint8_t *sndData = (uint8_t *)(SERIAL_OUTPUT_BUFFER+4);
-
-	uint32_t cursor = *sndCount;
-	uint32_t j = 0;
-	for (uint32_t i=cursor; i<cursor+count; ++i)
-		sndData[i] = outstring[j++];
-
-	*sndCount = cursor + count;
+	for (uint32_t i=0; i<count; ++i)
+		SerialOutRingBufferWrite(&outstring[i], 1);
 	return count;
 }
 

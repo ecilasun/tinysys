@@ -4,6 +4,7 @@
 #include "usbserial.h"
 #include "debugstub.h"
 #include "rombase.h"
+#include "serialinringbuffer.h"
 
 // https://www.embecosm.com/appnotes/ean4/embecosm-howto-rsp-server-ean4-issue-2.html
 
@@ -13,17 +14,15 @@ static uint32_t s_packetStart = 0;
 static uint32_t s_checksumStart = 0;
 static uint32_t s_packetComplete = 0;
 static uint32_t s_gatherBinary = 0;
-static uint32_t s_isbinarypacket = 0;
+static uint32_t s_isBinaryHeader = 0;
 static uint32_t s_idx = 0;
-static uint32_t s_fifocursor = 0;
 static uint32_t s_currentThread = 1; // SYSIDLE
 static uint32_t s_binaryOffset;
 static uint32_t s_binaryAddrs;
 static uint32_t s_binaryNumbytes;
 static uint32_t s_receivedBytes;
 static char s_chk[2];
-static char s_fifo[512];
-static char s_packet[512];
+static char s_packet[768];
 
 uint32_t startswith(const char *_source, const char *_token)
 {
@@ -263,7 +262,7 @@ void HandlePacket()
 
 		SendDebugPacket("OK");
 	}
-	else if (startswith(s_packet, "p")) // Write register
+	else if (startswith(s_packet, "P")) // Write register
 	{
 		char hexbuf[9], valuebuf[12];
 		int a=0, r=0, p=1;
@@ -275,7 +274,7 @@ void HandlePacket()
 		while (s_packet[p]!='#' && s_packet[p]!=0)
 			valuebuf[a++] = s_packet[p++];
 		valuebuf[a]=0;
-		uint32_t value = dec2uint(valuebuf);
+		uint32_t value = hex2uint(valuebuf);
 
 		uint32_t threadid = s_currentThread - 1;
 
@@ -283,8 +282,10 @@ void HandlePacket()
 			taskctx->tasks[threadid].regs[r%32] = value;
 		else // PC
 			taskctx->tasks[threadid].regs[r] = value;
+
+		SendDebugPacket("OK");
 	}
-	else if (startswith(s_packet, "p")) // Print registers
+	else if (startswith(s_packet, "p")) // Print register
 	{
 		char hexbuf[9];
 		int r=0,p=1;
@@ -469,19 +470,17 @@ void HandlePacket()
 
 void ProcessBinaryData(char input)
 {
+	// Append binary data
 	s_packet[s_receivedBytes++] = input;
 
 	if (s_receivedBytes == s_binaryNumbytes)
-	{
 		s_gatherBinary = 0;
-		s_checksumStart = 1;
-	}
 }
 
 void ProcessChar(char input)
 {
 	// Do not queue this one
-	if (input == 0x03) // CTRL+C
+	if (!s_isBinaryHeader && (input == 0x03)) // CTRL+C
 	{
 		struct STaskContext *taskctx = GetTaskContext();
 
@@ -509,20 +508,7 @@ void ProcessChar(char input)
 		}
 	}
 
-	if (s_packetStart && input != '#')
-	{
-		// First character is an X, expect binary packet
-		if (input == 'X' && s_idx == 0)
-		{
-			kprintf("gathering binary\n");
-
-			s_isbinarypacket = 1;
-			s_receivedBytes = 0;
-		}
-		s_packet[s_idx++] = input;
-	}
-
-	if (s_isbinarypacket && input == ':')
+	if (s_isBinaryHeader && input == ':')
 	{
 		s_packet[s_idx++] = 0; // Zero terminate
 
@@ -541,22 +527,24 @@ void ProcessChar(char input)
 		s_binaryOffset = p;
 		s_binaryAddrs = hex2uint(addrbuf);
 		s_binaryNumbytes = hex2uint(cntbuf);
-		s_isbinarypacket = 0;
+		s_isBinaryHeader = 0;
 
-		kprintf("@%x for @%x bytes\n", s_binaryAddrs, s_binaryNumbytes);
+		kprintf("> @0x%x for 0x%x bytes\n", s_binaryAddrs, s_binaryNumbytes);
 
-		if (s_binaryNumbytes != 0)
+		// Do not attempt to read bytes if we don't have any
+		s_gatherBinary = (s_binaryNumbytes == 0) ? 0 : 1;
+	}
+
+	if (s_packetStart && input != '#')
+	{
+		// First character is an X, expect binary packet
+		if (input == 'X' && s_idx == 0)
 		{
-			s_gatherBinary = 1;
-			s_checksumStart = 0;
-		}
-		else
-		{
-			s_checksumStart = 1;
-			SendDebugPacket("OK"); // zero length - notify we support binary data transfer but don't start, just end the packet
+			s_isBinaryHeader = 1;
+			s_receivedBytes = 0;
 		}
 
-		s_packetStart = 0;
+		s_packet[s_idx++] = input;
 	}
 
 	if (s_packetStart && input == '#')
@@ -575,23 +563,10 @@ void ProcessChar(char input)
 
 void ProcessGDBRequest()
 {
-	// Append incoming data to fifo
-	uint32_t *rcvCount = (uint32_t *)SERIAL_INPUT_BUFFER;
-	uint8_t *rcvData = (uint8_t *)(SERIAL_INPUT_BUFFER+4);
-	uint32_t count = *rcvCount;
-	if (count != 0)
-	{
-		// Flip and write to end of fifo
-		for (uint32_t i=0; i<count; ++i)
-			s_fifo[s_fifocursor++] = rcvData[count-1-i];
-		// Make sure to reset for next round
-		*rcvCount = 0;
-	}
-
 	// Pull incoming data
-	while (s_fifocursor != 0)
+	char drain;
+	while (SerialInRingBufferRead(&drain, 1))
 	{
-		char drain = s_fifo[--s_fifocursor];
 		if (s_gatherBinary)
 			ProcessBinaryData(drain);
 		else
@@ -599,9 +574,9 @@ void ProcessGDBRequest()
 			kprintf("%c", drain);
 			ProcessChar(drain);
 		}
+		// Process contents once we get a full packet
 		if (s_packetComplete)
 		{
-			kprintf("\n");
 			HandlePacket();
 			s_packetComplete = 0;
 		}

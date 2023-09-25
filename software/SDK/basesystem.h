@@ -17,9 +17,9 @@
 
 // Physical address map for no-MMU raw mode at boot time
 #define APPMEM_START					0x00000000 // Top of RAM
-// General purpose ring buffer data (1K) and state
-#define RINGBUFFER_BASE					0x00000200
-#define RINGBUFFER_STATE				0x00000600
+// Keyboard ring buffer (1Kbytes)
+#define KEY_RINGBUFFER_BASE				0x00000200
+#define KEY_RINGBUFFER_STATE			0x00000600
 // Keyboard input map (512 bytes)
 #define KEYBOARD_KEYSTATE_BASE			0x00000800
 #define KEYBOARD_KEYSTATE_END			0x00000A00
@@ -39,8 +39,12 @@
 // Temp memory
 #define KERNEL_TEMP_MEMORY				0x0204C2C0 // Temporary kernel memory (~15Kbytes)
 // Serial buffers (first words are counters)
-#define SERIAL_INPUT_BUFFER				0x02050000 // 32Kbytes of serial input
-#define SERIAL_OUTPUT_BUFFER			0x02058000 // 32Kbytes of serial output
+#define SERIN_RINGBUFFER_BASE			0x02050000 // 16Kbytes of serial input
+#define SEROUT_RINGBUFFER_BASE			0x02054000 // 16Kbytes of serial output
+#define SERIN_RINGBUFFER_STATE			0x02058010 // Serial input state
+#define SEROUT_RINGBUFFER_STATE			0x02058020 // Serial output state
+// ETC
+#define KERNEL_EXTRA_SPACE				0x02058030 // Extra empty space
 // Executable
 #define HEAP_START_APPMEM_END			0x02060000 // Executable space above this
 // Heap
