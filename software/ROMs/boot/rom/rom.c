@@ -575,6 +575,9 @@ int main()
 		// Emit outgoing serial data
 		USBEmitBufferedOutput();
 
+		// GDB stub
+		ProcessGDBRequest();
+
 		// Enable machine interrupts
 		write_csr(mstatus, MSTATUS_MIE);
 
@@ -582,14 +585,8 @@ int main()
 		TaskYield();
 
 		// ----------------------------------------------------------------
-		// Tasks that can be interrupted
+		// Tasks which can be interrupted
 		// ----------------------------------------------------------------
-
-		// Handle incoming serial data (debugger)
-		// NOTE: This can go into the protected section
-		// above but during development it's placed into
-		// this section to prevent hangs.
-		ProcessGDBRequest();
 
 		// Refresh console output
 		if (kernelgfx->m_consoleUpdated)

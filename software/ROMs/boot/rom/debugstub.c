@@ -17,12 +17,11 @@ static uint32_t s_gatherBinary = 0;
 static uint32_t s_isBinaryHeader = 0;
 static uint32_t s_idx = 0;
 static uint32_t s_currentThread = 1; // SYSIDLE
-static uint32_t s_binaryOffset;
 static uint32_t s_binaryAddrs;
 static uint32_t s_binaryNumbytes;
 static uint32_t s_receivedBytes;
 static char s_chk[2];
-static char s_packet[768];
+static char s_packet[256];
 
 uint32_t startswith(const char *_source, const char *_token)
 {
@@ -359,8 +358,6 @@ void HandlePacket()
 	else if (startswith(s_packet, "X")) // Write binary blob
 	{
 		// NOTE: The header has been pre-processed
-		for (uint32_t i=s_binaryAddrs; i<s_binaryAddrs+s_binaryNumbytes; ++i)
-			*(uint8_t*)(i) = s_packet[s_binaryOffset++];
 		SendDebugPacket("OK");
 	}
 	else if (startswith(s_packet, "M")) // Set memory, maddr,count
@@ -460,18 +457,24 @@ void HandlePacket()
 		// Halt reason, but we're not halted... :/
 		SendDebugPacket("S05");
 	}
-	/*else if (s_packet[0] == 0) // empty with a +
+	/*else if (s_packet[0] == 0) // empty with a +, debugger seems to send this, wth?
 	{
 		SendDebugPacket("+");
 	}*/
 	else
+	{
+		kprintf("UNKOWN: %s\n", s_packet);
 		USBSerialWrite("-");
+	}
+
+	//kprintf(": %s\n", s_packet);
 }
 
-void ProcessBinaryData(char input)
+void ProcessBinaryData(uint8_t input)
 {
-	// Append binary data
-	s_packet[s_receivedBytes++] = input;
+	// Store directly at target address since this won't fit into packet buffer
+	*(uint8_t*)(s_binaryAddrs+s_receivedBytes) = input;
+	s_receivedBytes++;
 
 	if (s_receivedBytes == s_binaryNumbytes)
 		s_gatherBinary = 0;
@@ -524,12 +527,12 @@ void ProcessChar(char input)
 		cntbuf[c]=0;
 		++p; // skip the column
 
-		s_binaryOffset = p;
 		s_binaryAddrs = hex2uint(addrbuf);
 		s_binaryNumbytes = hex2uint(cntbuf);
+		s_receivedBytes = 0;
 		s_isBinaryHeader = 0;
 
-		kprintf("> @0x%x for 0x%x bytes\n", s_binaryAddrs, s_binaryNumbytes);
+		//kprintf("X @0x%x : 0x%x bytes\n", s_binaryAddrs, s_binaryNumbytes);
 
 		// Do not attempt to read bytes if we don't have any
 		s_gatherBinary = (s_binaryNumbytes == 0) ? 0 : 1;
@@ -539,10 +542,7 @@ void ProcessChar(char input)
 	{
 		// First character is an X, expect binary packet
 		if (input == 'X' && s_idx == 0)
-		{
 			s_isBinaryHeader = 1;
-			s_receivedBytes = 0;
-		}
 
 		s_packet[s_idx++] = input;
 	}
@@ -572,15 +572,19 @@ void ProcessGDBRequest()
 	else
 	{
 		// Pull more incoming data
-		char drain;
+		uint8_t drain;
 		while (SerialInRingBufferRead(&drain, 1))
 		{
 			if (s_gatherBinary)
 				ProcessBinaryData(drain);
 			else
 			{
-				kprintf("%c", drain);
+				// Sometimes we drop here while receiving binary data
+				//kprintf("%c", drain);
 				ProcessChar(drain);
+				// Stop spinning here and process the current packet
+				if (s_packetComplete)
+					break;
 			}
 		}
 	}
