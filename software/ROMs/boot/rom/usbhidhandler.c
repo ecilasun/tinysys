@@ -311,6 +311,10 @@ void ProcessUSBDevice()
 
 			case BUSUNKNOWN:
 			break;
+
+			case CHIPFAILURE:
+				devState = DEVS_ERROR;
+			break;
 		}
 	}
 

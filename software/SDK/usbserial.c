@@ -136,7 +136,9 @@ int USBSerialInit(uint32_t enableInterrupts)
 	MAX3420WriteByte(rPINCTL, bmFDUPSPI | bmINTLEVEL | gpxSOF);
 
 	// Reset the chip and wait for clock to stabilize
-	MAX3420CtlReset();
+	int reset = MAX3420CtlReset();
+	if (reset != 1)
+		return 0; // Failed
 
 	// Turn off GPIO
 	MAX3420WriteByte(rGPIO, 0x0);

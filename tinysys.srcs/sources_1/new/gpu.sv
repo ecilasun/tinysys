@@ -202,6 +202,33 @@ hdmi_device HDMI(
    .out_tmds_blue(out_tmds_blue),
    .out_tmds_clk(out_tmds_clk) );
 
+/*hdmi HDMIAVinst(
+    .clk_pixel_x5(clk125),
+    .clk_pixel(clk25),
+    .clk_audio(clk25),
+    .reset(~aresetn),
+    .rgb(paletteout),
+    .audio_sample_word({16'd0,16'd0}),
+
+    // These outputs go to your HDMI port
+    .tmds({out_tmds_red, out_tmds_green, out_tmds_blue}),
+    .tmds_clock(out_tmds_clk),
+    
+    .cx(video_x),
+    .cy(video_y),
+    .hsync_out(hsync),
+    .vsync_out(vsync),
+
+    .frame_width(),
+    .frame_height(),
+    .screen_width(),
+    .screen_height() );
+
+OBUFDS OBUFDS_clk(.I(out_tmds_clk), .O(gpuvideoout.tmdsclkp), .OB(gpuvideoout.tmdsclkn));
+OBUFDS OBUFDS_red(.I(out_tmds_red), .O(gpuvideoout.tmdsp[2]), .OB(gpuvideoout.tmdsn[2]));
+OBUFDS OBUFDS_green(.I(out_tmds_green), .O(gpuvideoout.tmdsp[1]), .OB(gpuvideoout.tmdsn[1]));
+OBUFDS OBUFDS_blue(.I(out_tmds_blue), .O(gpuvideoout.tmdsp[0]), .OB(gpuvideoout.tmdsn[0]));*/
+
 // DDR DVI output
 wire out_ddr_tmds_clk, out_ddr_tmds_red, out_ddr_tmds_green, out_ddr_tmds_blue;
 

@@ -121,7 +121,14 @@ enum EBusState USBHostInit(uint32_t enableInterrupts)
 	}
 
 	MAX3421WriteByte(rPINCTL, bmFDUPSPI | bmINTLEVEL | gpxSOF);
-	MAX3421CtlReset();
+
+	int reset = MAX3421CtlReset();
+	if (reset != 1)
+	{
+		*s_probe_result = CHIPFAILURE;
+		return CHIPFAILURE; // Failed
+	}
+
 	MAX3421WriteByte(rIOPINS1, 0x0);
 	MAX3421WriteByte(rIOPINS2, 0x0);
 

@@ -8,7 +8,7 @@ extern volatile uint32_t *IO_USBASTA;
 uint8_t MAX3421GetGPX();
 uint8_t MAX3421OutFifoEmpty();
 uint8_t MAX3421ReceiveFifoEmpty();
-void MAX3421CtlReset();
+int MAX3421CtlReset();
 uint8_t MAX3421ReadByte(uint8_t command);
 void MAX3421WriteByte(uint8_t command, uint8_t data);
 int MAX3421ReadBytes(uint8_t command, uint8_t length, uint8_t *buffer);

@@ -457,8 +457,8 @@ void HandlePacket()
 	}
 	else if (startswith(s_packet, "?")) // Halt reason?
 	{
-		// Does S00 mean we're still running?
-		SendDebugPacket("S00");
+		// Halt reason, but we're not halted... :/
+		SendDebugPacket("S05");
 	}
 	/*else if (s_packet[0] == 0) // empty with a +
 	{
@@ -574,12 +574,13 @@ void ProcessGDBRequest()
 			kprintf("%c", drain);
 			ProcessChar(drain);
 		}
-		// Process contents once we get a full packet
-		if (s_packetComplete)
-		{
-			HandlePacket();
-			s_packetComplete = 0;
-		}
+	}
+
+	// Process contents once we get a full packet
+	if (s_packetComplete)
+	{
+		HandlePacket();
+		s_packetComplete = 0;
 	}
 }
 

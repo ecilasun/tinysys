@@ -8,7 +8,7 @@ module clockandreset(
 	output wire clk25,
 	output wire clk50,
 	output wire clk125,
-	output wire clk133,
+	output wire clk100,
 	output wire clk150,
 	output wire clk166,
 	output wire clk200,
@@ -23,7 +23,7 @@ wire centralclocklocked, peripheralclocklocked;
 
 centralclock centralclockinst(
 	.clk_in1(sys_clock_i),
-	.clk133(clk133),
+	.clk100(clk100),
 	.clk10(clk10),
 	.clk25(clk25),
 	.clk50(clk50),

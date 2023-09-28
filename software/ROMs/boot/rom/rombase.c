@@ -136,7 +136,7 @@ void ListFiles(const char *path)
 		f_closedir(&dir);
 	}
 	else
-		kprintf("File system error (unmount)\n");
+		kprintf("File system error (listfiles)\n");
 }
 
 uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader, uint32_t* jumptarget, int _relocOffset)

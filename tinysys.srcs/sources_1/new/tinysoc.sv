@@ -8,6 +8,7 @@ module tinysoc #(
 	input wire clk12,
 	input wire clk25,
 	input wire clk50,
+	input wire clk100,
 	input wire clk125,
 	input wire clk166,
 	input wire clk200,
@@ -26,8 +27,8 @@ module tinysoc #(
 // Bus lines
 // --------------------------------------------------
 
-axi4if instructionbus();	// Fetch unit bus
-axi4if databus();			// Data unit bus
+axi4if instructionbus();	// Fetch bus
+axi4if databus();			// Data bus
 axi4if gpubus();			// Graphics unit bus
 axi4if dmabus();			// Direct memory access bus
 axi4if romcopybus();		// Bus for boot ROM copy (TODO: switch between ROM types?)
@@ -245,7 +246,7 @@ axi4i2saudio APU(
 // Traffic arbiter between master units and memory
 // --------------------------------------------------
 
-arbiter arbiter7x1inst(
+arbiter arbiter7x1instSDRAM(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.axi_s({romcopybus, audiobus, dmabus, rasterbus, gpubus, databus, instructionbus}),
@@ -257,8 +258,8 @@ arbiter arbiter7x1inst(
 
 wire [11:0] device_temp;
 
-// dev   start     end
-// DDR3: 00000000  0FFFFFFF
+// dev   start     end      size
+// DDR3: 00000000  0FFFFFFF (256 Mbytes)
 
 axi4ddr3sdram axi4ddr3sdraminst(
 	.aclk(aclk),

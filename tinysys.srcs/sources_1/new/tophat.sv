@@ -71,7 +71,7 @@ module tophat(
 
 wire aresetn, preresetn;
 wire init_calib_complete;
-wire clk10, clk12, clk25, clk50, clk125, clk133, clk150, clk166, clk200;
+wire clk10, clk12, clk25, clk50, clk125, clk100, clk150, clk166, clk200;
 
 // Clock and reset generator
 clockandreset clockandresetinst(
@@ -82,7 +82,7 @@ clockandreset clockandresetinst(
 	.clk25(clk25),
 	.clk50(clk50),
 	.clk125(clk125),
-	.clk133(clk133),
+	.clk100(clk100),
 	.clk150(clk150),
 	.clk166(clk166),
 	.clk200(clk200),
@@ -90,7 +90,7 @@ clockandreset clockandresetinst(
 	.preresetn(preresetn));
 
 // --------------------------------------------------
-// DDR3 SDRAM wires
+// DDR3 SDRAM and SRAM wires
 // --------------------------------------------------
 
 ddr3sdramwires ddr3conn(
@@ -109,6 +109,15 @@ ddr3sdramwires ddr3conn(
 	.ddr3_dqs_n(ddr3_dqs_n),
 	.ddr3_dq(ddr3_dq),
 	.init_calib_complete(init_calib_complete) );
+
+/*sramwires sramconn(
+	.sram_addr(sraddr),
+	.sram_data_inout(srdata),
+	.sram_oe(sroe),
+	.sram_cen(srcen),
+	.sram_we(srwe),
+	.sram_ub(srub),
+	.sram_lb(srlb) );*/
 
 // --------------------------------------------------
 // Video wires
@@ -169,6 +178,7 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.clk12(clk12),
 	.clk25(clk25),
 	.clk50(clk50),
+	.clk100(clk100),
 	.clk125(clk125),
 	.clk166(clk166),
 	.clk200(clk200),

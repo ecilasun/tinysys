@@ -9,7 +9,8 @@ enum EBusState
 	SE0,
 	SE1,
 	FSHOST,
-	LSHOST
+	LSHOST,
+	CHIPFAILURE
 };
 
 enum EUSBDeviceState

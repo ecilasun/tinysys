@@ -9,7 +9,7 @@ void MAX3420FlushOutputFIFO();
 uint8_t MAX3420GetGPX();
 uint8_t MAX3420OutFifoEmpty();
 uint8_t MAX3420ReceiveFifoEmpty();
-void MAX3420CtlReset();
+int MAX3420CtlReset();
 uint8_t MAX3420ReadByte(uint8_t command);
 void MAX3420WriteByte(uint8_t command, uint8_t data);
 int MAX3420ReadBytes(uint8_t command, uint8_t length, uint8_t *buffer);

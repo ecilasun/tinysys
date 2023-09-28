@@ -68,7 +68,7 @@ void MAX3421WriteBytes(uint8_t command, uint8_t length, uint8_t *buffer)
 	RESET_MAX3421_CS
 }
 
-void MAX3421CtlReset()
+int MAX3421CtlReset()
 {
 	// Reset MAX3421E by setting res high then low
 	MAX3421WriteByte(rUSBCTL, bmCHIPRES);
@@ -77,11 +77,16 @@ void MAX3421CtlReset()
 	E32Sleep(3*ONE_MILLISECOND_IN_TICKS);
 
 	// Wait for oscillator OK interrupt for the 12MHz external clock
-	uint8_t rd = 0;
-	while ((rd & bmOSCOKIRQ) == 0)
+	uint8_t rd = 0, cnt = 0;
+	while ((rd & bmOSCOKIRQ) == 0 && cnt != 512)
 	{
 		rd = MAX3421ReadByte(rUSBIRQ);
 		E32Sleep(3*ONE_MILLISECOND_IN_TICKS);
+		++cnt;
 	}
 	MAX3421WriteByte(rUSBIRQ, bmOSCOKIRQ); // Clear IRQ
+
+	if (cnt==512 && rd != 0)
+		return 0;
+	return 1;
 }
