@@ -421,7 +421,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			{
 				if (IsDebuggerConnected())
 				{
-					// TODO: Signal debugger
+					// TODO: Signal debugger with SIGILL (S03 or T 03 something; ?)
 				}
 				else
 				{
@@ -441,8 +441,6 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				// Where there's no debugger loaded, simply exit since we're not supposed to run past ebreak commands
 				if (IsDebuggerConnected())
 				{
-					// Do nothing
-					// Every time we hit the EBREAK / C.EBREAK we'll just cost a task switch and PC won't move
 					SendDebugPacket("T 05 swbreak:");
 				}
 				else

@@ -563,24 +563,26 @@ void ProcessChar(char input)
 
 void ProcessGDBRequest()
 {
-	// Pull incoming data
-	char drain;
-	while (SerialInRingBufferRead(&drain, 1))
-	{
-		if (s_gatherBinary)
-			ProcessBinaryData(drain);
-		else
-		{
-			kprintf("%c", drain);
-			ProcessChar(drain);
-		}
-	}
-
-	// Process contents once we get a full packet
 	if (s_packetComplete)
 	{
+		// Process pending packet
 		HandlePacket();
 		s_packetComplete = 0;
+	}
+	else
+	{
+		// Pull more incoming data
+		char drain;
+		while (SerialInRingBufferRead(&drain, 1))
+		{
+			if (s_gatherBinary)
+				ProcessBinaryData(drain);
+			else
+			{
+				kprintf("%c", drain);
+				ProcessChar(drain);
+			}
+		}
 	}
 }
 
