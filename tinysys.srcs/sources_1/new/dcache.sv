@@ -17,8 +17,8 @@ module datacache(
 	axi4if.master a4buscached,
 	axi4if.master a4busuncached );
 
-wire [7:0] line = addr[13:6];	// Cache line
-wire [16:0] tag = addr[30:14];	// Cache tag
+wire [8:0] line = addr[14:6];	// Cache line
+wire [15:0] tag = addr[30:15];	// Cache tag
 wire [3:0] offset = addr[5:2];	// Cache word offset
 wire isuncached = addr[31];		// Uncached access
 
@@ -39,23 +39,23 @@ wire ucreaddone;
 
 logic [3:0] bsel = 4'h0;			// copy of wstrobe
 logic [1:0] rwmode = 2'b00;			// r/w mode bits
-logic [16:0] ptag;					// previous cache tag (17 bits)
-logic [16:0] ctag;					// current cache tag (17 bits)
+logic [15:0] ptag;					// previous cache tag (16 bits)
+logic [15:0] ctag;					// current cache tag (16 bits)
 logic [3:0] coffset;				// current word offset 0..15
-logic [7:0] cline;					// current cache line 0..256
+logic [8:0] cline;					// current cache line 0..511
 
-logic cachelinewb[0:255];			// cache line needs write back when high
-logic [16:0] cachelinetags[0:255];	// cache line tags (17 bits)
+logic cachelinewb[0:511];			// cache line needs write back when high
+logic [15:0] cachelinetags[0:511];	// cache line tags (16 bits)
 
 logic [63:0] cachewe = 64'd0;		// byte select for 64 byte cache line
 logic [511:0] cdin = 512'd0;		// input data to write to cache
 wire [511:0] cdout;					// output data read from cache
 
 logic flushing = 1'b0;				// high during cache flush operation
-logic [7:0] dccount = 8'h00;		// line counter for cache flush/invalidate ops
-logic [16:0] flushline = 18'd0;		// contents of line being flushed
+logic [8:0] dccount = 9'd0;			// line counter for cache flush/invalidate ops
+logic [15:0] flushline = 16'd0;		// contents of line being flushed
 
-logic [7:0] cacheaccess;
+logic [8:0] cacheaccess;
 always_comb begin
 	if (flushing)
 		cacheaccess = dccount;
@@ -64,7 +64,7 @@ always_comb begin
 end
 
 wire rsta_busy;
-cachemem CacheMemory512(
+cachemem CacheMemory512Lines(
 	.addra(cacheaccess),		// current cache line
 	.clka(aclk),				// cache clock
 	.dina(cdin),				// updated cache data to write
@@ -74,7 +74,7 @@ cachemem CacheMemory512(
 	.rsta_busy(rsta_busy) );	// Reset busy
 
 initial begin
-	for (int i=0; i<256; i=i+1) begin	// 256 lines total
+	for (int i=0; i<512; i=i+1) begin	// 512 lines total
 		cachelinewb[i] = 1'b0;			// cache lines do not require write-back for initial cache-miss
 		cachelinetags[i] = 'd0;			// top of memory
 	end
@@ -137,7 +137,7 @@ always_ff @(posedge aclk) begin
 	unique case(cachestate)
 		CRESET: begin
 			rwmode <= 2'b00;
-			dccount <= 8'd0;
+			dccount <= 9'd0;
 			cachestate <= IDLE;
 		end
 
@@ -168,12 +168,12 @@ always_ff @(posedge aclk) begin
 		end
 
 		CDATANOFLUSHSTEP: begin
-			// Go to next line (wraps around to 0 at 255)
-			dccount <= dccount + 8'd1;
+			// Go to next line (wraps around to 0 at 511)
+			dccount <= dccount + 9'd1;
 			// Finish our mock 'write' operation
-			wready <= dccount == 8'hFF;
+			wready <= dccount == 9'h1FF;
 			// Repeat until we process line 0xFF and go back to idle state
-			cachestate <= dccount == 8'hFF ? IDLE : CDATANOFLUSHBEGIN;
+			cachestate <= dccount == 9'h1FF ? IDLE : CDATANOFLUSHBEGIN;
 		end
 		
 		CDATAFLUSHBEGIN: begin
@@ -207,26 +207,26 @@ always_ff @(posedge aclk) begin
 		end
 
 		CDATAFLUSHSKIP: begin
-			// Go to next line (wraps around to 0 at 255)
-			dccount <= dccount + 8'd1;
+			// Go to next line (wraps around to 0 at 511)
+			dccount <= dccount + 9'd1;
 			// Stop 'flushing' mode if we're done
-			flushing <= dccount != 8'hFF;
+			flushing <= dccount != 9'h1FF;
 			// Finish our mock 'write' operation if we're done
-			wready <= dccount == 8'hFF;
+			wready <= dccount == 9'h1FF;
 			// Repeat until we process line 0xFF and go back to idle state
-			cachestate <= dccount == 8'hFF ? IDLE : CDATAFLUSHWAITCREAD;
+			cachestate <= dccount == 9'h1FF ? IDLE : CDATAFLUSHWAITCREAD;
 		end
 
 		CDATAFLUSHWAIT: begin
 			if (wdone) begin
-				// Go to next line (wraps around to 0 at 255)
-				dccount <= dccount + 8'd1;
+				// Go to next line (wraps around to 0 at 511)
+				dccount <= dccount + 9'd1;
 				// Stop 'flushing' mode if we're done
-				flushing <= dccount != 8'hFF;
+				flushing <= dccount != 9'h1FF;
 				// Finish our mock 'write' operation if we're done
-				wready <= dccount == 8'hFF;
+				wready <= dccount == 9'h1FF;
 				// Repeat until we process line 0xFF and go back to idle state
-				cachestate <= dccount == 8'hFF ? IDLE : CDATAFLUSHWAITCREAD;
+				cachestate <= dccount == 9'h1FF ? IDLE : CDATAFLUSHWAITCREAD;
 			end else begin
 				// Memory write didn't complete yet
 				cachestate <= CDATAFLUSHWAIT;

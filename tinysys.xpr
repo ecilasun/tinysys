@@ -65,13 +65,13 @@
     <Option Name="WTVcsLaunchSim" Val="0"/>
     <Option Name="WTRivieraLaunchSim" Val="0"/>
     <Option Name="WTActivehdlLaunchSim" Val="0"/>
-    <Option Name="WTXSimExportSim" Val="446"/>
-    <Option Name="WTModelSimExportSim" Val="446"/>
-    <Option Name="WTQuestaExportSim" Val="446"/>
+    <Option Name="WTXSimExportSim" Val="451"/>
+    <Option Name="WTModelSimExportSim" Val="451"/>
+    <Option Name="WTQuestaExportSim" Val="451"/>
     <Option Name="WTIesExportSim" Val="0"/>
-    <Option Name="WTVcsExportSim" Val="446"/>
-    <Option Name="WTRivieraExportSim" Val="446"/>
-    <Option Name="WTActivehdlExportSim" Val="446"/>
+    <Option Name="WTVcsExportSim" Val="451"/>
+    <Option Name="WTRivieraExportSim" Val="451"/>
+    <Option Name="WTActivehdlExportSim" Val="451"/>
     <Option Name="GenerateIPUpgradeLog" Val="TRUE"/>
     <Option Name="XSimRadix" Val="hex"/>
     <Option Name="XSimTimeUnit" Val="ns"/>
@@ -125,6 +125,20 @@
         </FileInfo>
       </File>
       <File Path="$PSRCDIR/sources_1/ip/instructinfifo/instructinfifo.xci">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/ip/cachememhalf.xcix">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/ip/cachememhalf/cachememhalf.xci">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>

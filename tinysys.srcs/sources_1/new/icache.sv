@@ -51,7 +51,7 @@ always_comb begin
 end
 
 wire rsta_busy;
-cachemem CacheMemory512(
+cachememhalf CacheMemory256Lines(
 	.addra(cacheaccess),		// current cache line
 	.clka(aclk),				// cache clock
 	.dina(cdin),				// updated cache data to write
