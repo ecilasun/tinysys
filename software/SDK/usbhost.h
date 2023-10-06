@@ -55,7 +55,7 @@ void USBHostSetContext(struct SUSBHostContext *ctx);
 struct SUSBHostContext *USBHostGetContext();
 enum EBusState USBHostInit(uint32_t enableInterrupts);
 enum EBusState USBBusProbe();
-uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass);
+uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, void* _output, uint32_t *_outlen);
 uint8_t USBGetHIDDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_protocol);
 uint8_t USBAttach(uint8_t *_paddr, uint8_t *_pep);
 uint8_t USBDetach(uint8_t _addr);

@@ -354,7 +354,7 @@ void ProcessUSBDevice()
 				// Wait for first SOF
 				while ((MAX3421ReadByte(rHIRQ)&bmFRAMEIRQ) == 0) { asm volatile ("nop"); }
 				// Get device descriptor from default address and control endpoint
-				uint8_t rcode = USBGetDeviceDescriptor(0, 0, &s_hidClass);
+				uint8_t rcode = USBGetDeviceDescriptor(0, 0, &s_hidClass, NULL, NULL);
 				// Assign device address
 				if (rcode != 0)
 					USBErrorString(rcode);

@@ -551,10 +551,11 @@ uint8_t USBParseDescriptor(uint8_t _addr, uint8_t *_desc, uint8_t* _dtype, uint8
 	return stringCount;
 }
 
-uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass)
+uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, void* _output, uint32_t *_outlen)
 {
 	s_protosubclass = 0;
 	struct USBDeviceDescriptor ddesc;
+	uint8_t *target = (uint8_t*)_output;
 
 	s_deviceTable[_addr].endpointInfo[_ep].maxPacketSize = 8;
     uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, 0x00, USB_DESCRIPTOR_DEVICE, 0x0000, 8, (char*)&ddesc, 64);
@@ -576,12 +577,26 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass)
 	uint8_t dtype = USBDESCTYPE_UNKNOWN;
 	uint8_t offset = 0;
 	stringCount += USBParseDescriptor(_addr, (uint8_t*)&ddesc, &dtype, &offset, _hidclass);
+	if (target)
+	{
+		uint32_t L = sizeof(struct USBDeviceDescriptor);
+		__builtin_memcpy(target, &ddesc, L);
+		target += L;
+		_outlen += L;
+	}
 
 	struct USBConfigurationDescriptor cdef;
 	for (uint8_t c=0; c<ddesc.bNumConfigurations; ++c)
 	{
 		// 9 == USB_CONFIGURATION_DESCRIPTOR_SIZE
 		rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, c, USB_DESCRIPTOR_CONFIGURATION, 0x0000, 9, (char*)&cdef, 64);
+		if (target)
+		{
+			uint32_t L = sizeof(struct USBConfigurationDescriptor);
+			__builtin_memcpy(target, &cdef, L);
+			target += L;
+			_outlen += L;
+		}
 
 		if (rcode != 0)
 			return rcode;
@@ -589,6 +604,13 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass)
 		// re-request config descriptor with actual data size (cdef.wTotalLength)
 		char *tmpdata = (char*)KERNEL_TEMP_MEMORY;
 		rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, c, USB_DESCRIPTOR_CONFIGURATION, 0x0000, cdef.wTotalLength, tmpdata, 64);
+		if (target)
+		{
+			uint32_t L = cdef.wTotalLength;
+			__builtin_memcpy(target, tmpdata, L);
+			target += L;
+			_outlen += L;
+		}
 
 		if (rcode != 0)
 			return rcode;
@@ -609,6 +631,13 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass)
 		// Get language descriptor and strings
 		struct USBStringLanguageDescriptor lang;
 		rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, 0, USB_DESCRIPTOR_STRING, 0x0000, 4, (char*)&lang, 64);
+		if (target)
+		{
+			uint32_t L = sizeof(struct USBStringLanguageDescriptor);
+			__builtin_memcpy(target, &lang, L);
+			target += L;
+			_outlen += L;
+		}
 
 		if (rcode != 0)
 			return rcode;
@@ -620,6 +649,14 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass)
 			rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, s+1, USB_DESCRIPTOR_STRING, 0x0000, 1, (char*)&str, 64);
 			if (rcode == 0 && str.bLength != 0)
 				rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, s+1, USB_DESCRIPTOR_STRING, 0x0000, str.bLength, (char*)&str, 64);
+
+			if (target && rcode == 0)
+			{
+				uint32_t L = 2 + str.bLength; // including the blength+bdescriptortype
+				__builtin_memcpy(target, &str, L);
+				target += L;
+				_outlen += L;
+			}
 
 			if (rcode)
 			{
