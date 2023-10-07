@@ -477,10 +477,11 @@ void HandlePacket()
 	}
 	else if (startswith(s_packet, "?")) // Halt reason?
 	{
-		// Halt and respond
+		// Do we also halt?
 		/*s_currentThread = 3;
 		taskctx->tasks[2].ctrlc = 1;*/
-		SendDebugPacket("T05create:3;");
+		// GDB_SIGNAL_TRAP (5)
+		SendDebugPacket("T05thread:3;");
 	}
 	/*else if (s_packet[0] == 0) // empty with a +, debugger seems to send this, wth?
 	{
