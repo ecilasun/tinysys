@@ -163,19 +163,42 @@ void HandlePacket()
 			SendDebugPacket(""); // ???
 	}
 	else if (startswith(s_packet, "vMustReplyEmpty"))
+	{
 		SendDebugPacket("");
+	}
+	else if (startswith(s_packet, "QNonStop:"))
+	{
+		if (s_packet[9] == '0') // all-stop mode
+		{
+			taskctx->tasks[2].ctrlc = 1; // Stop user thread in all-stop mode
+			SendDebugPacket("OK");
+		}
+		else if (s_packet[9] == '1') // non-stop mode
+		{
+			// In this mode we can push async events that occur on our end
+			SendDebugPacket("OK");
+		}
+		else
+			SendDebugPacket("");
+	}
 	else if (startswith(s_packet, "qSupported"))
 	{
 		s_debuggerConnected = 1;
 		// TODO: hwbreak+
-		SendDebugPacket("+qSupported:swbreak+;multiprocess-;qXfer:threads:read+;qRelocInsn-;exec-events+;vRun+;vContSupported+;PacketSize=255");
+		SendDebugPacket("+qSupported:swbreak+;multiprocess-;qXfer:threads:read+;QNonStop+;qRelocInsn-;exec-events+;vRun+;vStopped+;vContSupported+;PacketSize=255");
 	}
 	else if (startswith(s_packet, "qOffsets")) // segment offsets (grab from ELF header)
 		SendDebugPacket("Text=0;Data=0;Bss=0;"); // No relocation
 	else if (startswith(s_packet, "vRun"))
 	{
+		// vRun;filename;argument
 		// TODO:
 		SendDebugPacket("-");
+	}
+	else if (startswith(s_packet, "vStopped"))
+	{
+		// TODO: stop reason
+		SendDebugPacket("S05");
 	}
 	else if (startswith(s_packet, "qfThreadInfo"))
 	{
@@ -315,7 +338,7 @@ void HandlePacket()
 		else
 			SendDebugPacket("OK");
 	}
-	else if (startswith(s_packet, "Z0")) // Insert breakpoint
+	else if (startswith(s_packet, "Z0")) // Software breakpoint
 	{
 		char offsetbuf[12];
 		int a=0, p=2;
@@ -454,8 +477,10 @@ void HandlePacket()
 	}
 	else if (startswith(s_packet, "?")) // Halt reason?
 	{
-		// Halt reason, but we're not halted... :/
-		SendDebugPacket("S05");
+		// Halt and respond
+		/*s_currentThread = 3;
+		taskctx->tasks[2].ctrlc = 1;*/
+		SendDebugPacket("T05create:3;");
 	}
 	/*else if (s_packet[0] == 0) // empty with a +, debugger seems to send this, wth?
 	{
