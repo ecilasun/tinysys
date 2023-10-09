@@ -137,18 +137,18 @@ void DrawWaveform()
 		prim.x0 = 0;
 		prim.y0 = 0;
 		prim.x1 = 319;
-		prim.y1 = 0;
+		prim.y1 = 239;
 		prim.x2 = 319;
-		prim.y2 = 239;
+		prim.y2 = 0;
 		RPUPushPrimitive(&prim);
 		RPURasterizePrimitive();
 
 		prim.x0 = 319;
 		prim.y0 = 239;
 		prim.x1 = 0;
-		prim.y1 = 239;
+		prim.y1 = 0;
 		prim.x2 = 0;
-		prim.y2 = 0;
+		prim.y2 = 239;
 		RPUPushPrimitive(&prim);
 		RPURasterizePrimitive();
 	}
@@ -161,9 +161,9 @@ void DrawWaveform()
 		SPrimitive prim;
 		prim.x0 = x+1;
 		prim.y0 = 120+L;
-		prim.x1 = x+2;
+		prim.x1 = x;
 		prim.y1 = 120;
-		prim.x2 = x;
+		prim.x2 = x+2;
 		prim.y2 = 120;
 
 		RPUPushPrimitive(&prim);
@@ -178,9 +178,9 @@ void DrawWaveform()
 		SPrimitive prim;
 		prim.x0 = x+1;
 		prim.y0 = 120+R;
-		prim.x1 = x;
+		prim.x1 = x+2;
 		prim.y1 = 120;
-		prim.x2 = x+2;
+		prim.x2 = x;
 		prim.y2 = 120;
 
 		RPUPushPrimitive(&prim);

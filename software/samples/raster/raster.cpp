@@ -154,13 +154,13 @@ int main(int argc, char *argv[])
 
 			// Single rotating primitive
 			SPrimitive prim;
-
-			float X0 = cosf(R)*180.f;
-			float Y0 = sinf(R)*180.f;
-			float X1 = cosf(R+1.57079633f)*180.f; // 90 degrees
-			float Y1 = sinf(R+1.57079633f)*180.f;
-			float X2 = cosf(R+3.92699082f)*180.f; // 225 degrees
-			float Y2 = sinf(R+3.92699082f)*180.f;
+			const float L = 140.f;
+			float X0 = cosf(R)*L;
+			float Y0 = sinf(R)*L;
+			float X1 = cosf(R+3.92699082f)*L; // 225 degrees
+			float Y1 = sinf(R+3.92699082f)*L;
+			float X2 = cosf(R+1.57079633f)*L; // 90 degrees
+			float Y2 = sinf(R+1.57079633f)*L;
 
 			prim.x0 = 160 + X0;
 			prim.y0 = 120 + Y0;

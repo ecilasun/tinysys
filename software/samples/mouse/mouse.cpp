@@ -96,9 +96,9 @@ int main(int argc, char *argv[])
 			prim.x0 = 0;
 			prim.y0 = 0;
 			prim.x1 = 319;
-			prim.y1 = 0;
+			prim.y1 = 239;
 			prim.x2 = 319;
-			prim.y2 = 239;
+			prim.y2 = 0;
 			RPUPushPrimitive(&prim);
 			RPUSetColor(0x0C);
 			RPURasterizePrimitive();
@@ -106,9 +106,9 @@ int main(int argc, char *argv[])
 			prim.x0 = 319;
 			prim.y0 = 239;
 			prim.x1 = 0;
-			prim.y1 = 239;
+			prim.y1 = 0;
 			prim.x2 = 0;
-			prim.y2 = 0;
+			prim.y2 = 239;
 			RPUPushPrimitive(&prim);
 			RPUSetColor(0x0C);
 			RPURasterizePrimitive();

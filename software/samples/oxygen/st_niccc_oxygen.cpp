@@ -58,9 +58,9 @@ static void clear(void) {
 	prim.x0 = 0;
 	prim.y0 = 0;
 	prim.x1 = 320;
-	prim.y1 = 0;
+	prim.y1 = 240;
 	prim.x2 = 320;
-	prim.y2 = 240;
+	prim.y2 = 0;
 	RPUPushPrimitive(&prim);
 	RPUSetColor(0);
 	RPURasterizePrimitive();
@@ -68,9 +68,9 @@ static void clear(void) {
 	prim.x0 = 320;
 	prim.y0 = 240;
 	prim.x1 = 0;
-	prim.y1 = 240;
+	prim.y1 = 0;
 	prim.x2 = 0;
-	prim.y2 = 0;
+	prim.y2 = 240;
 	RPUPushPrimitive(&prim);
 	RPUSetColor(0);
 	RPURasterizePrimitive();
@@ -194,10 +194,10 @@ static int read_frame(void)
 			SPrimitive prim;
 			prim.x0 = poly[2*0];
 			prim.y0 = poly[2*0+1];
-			prim.x1 = poly[2*(i+2)];
-			prim.y1 = poly[2*(i+2)+1];
-			prim.x2 = poly[2*(i+1)];
-			prim.y2 = poly[2*(i+1)+1];
+			prim.x1 = poly[2*(i+1)];
+			prim.y1 = poly[2*(i+1)+1];
+			prim.x2 = poly[2*(i+2)];
+			prim.y2 = poly[2*(i+2)+1];
 
 			RPUPushPrimitive(&prim);
 			RPUSetColor(poly_col);

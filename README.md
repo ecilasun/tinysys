@@ -2,7 +2,7 @@
 
 # System specifications
 
-- RISC-V based CPU
+- RISC-V based CPU (full architecture name with extensions: rv32_imc_Zicsr_Zifencei_Zicntr)
 - 32 GRPs x 32 bits
 - 4096 CSRs x 32 bits (some registers reserved for CPU)
 - Integer multiply / divide

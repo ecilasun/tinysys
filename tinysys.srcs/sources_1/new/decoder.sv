@@ -60,6 +60,16 @@ wire selector = instrOneHot[`O_H_JALR] || instrOneHot[`O_H_OP_IMM] || instrOneHo
 // NOTE: Load _is_ recording form but it's delayed vs where we normaly flag 'recording', so it's omitted from list and handled mamually
 //wire recordingform = ~(instrOneHot[`O_H_BRANCH] || instrOneHot[`O_H_LOAD] || instrOneHot[`O_H_STORE] || isfpuopcode) || (instrOneHot[`O_H_SYSTEM] & (|func3));
 
+// Instruction encodings
+//          31  30  29  28  27  26  25  24  23  22  21  20  19  18  17  16  15  14  13  12  11  10  09  08  07  06  05  04  03  02  01  00  
+// R-type:  |funct7                     |rs2                |rs1                |funct3     |rd                 |opcode
+// I-type:  |i11:0                                          |rs1                |funct3     |rd                 |opcode
+// S-type:  |i11:15                     |rs2                |rs1                |funct3     |i4:0               |opcode
+// B-type:  |i12 |i10:5                 |rs2                |rs1                |funct3     |i4:1           |i11|opcode
+// U-type:  |i31:12                                                                         |rd                 |opcode
+// J-type:  |i20 |i10:1                                 |i11|i19:12                         |rd                 |opcode
+// NOTE: 12 bit branch offset is in multiples of 2 in B-type
+
 // Source/destination register indices
 wire [4:0] src1 = instruction[19:15];
 wire [4:0] src2 = instruction[24:20];
@@ -153,29 +163,38 @@ always_comb begin
 	endcase
 end
 
-// Work out immediate value
+// Immediate encodings (o stands for instruction word)
+//        31  30  29  28  27  26  25  24  23  22  21  20  19  18  17  16  15  14  13  12  11  10  09  08  07  06  05  04  03  02  01  00  
+// I-imm: |o31                                                                                |o30:25                 |o24:21         |o20
+// S-imm: |o31                                                                                |o30:25                 |o11:8          |o7
+// B-imm: |o31                                                                            |o7 |o30:25                 |o11:8          |0
+// U-imm: |o31|o30:20                                     |o19:12                         |0
+// J-imm: |o31                                            |o19:12                         |o20|o30:25                 |o24:21         |0
+// NOTE: All immediate sign bits are at bit 31 for easy sign extension
+
 always_comb begin
 	unique case(1'b1)
-		instrOneHot[`O_H_LUI], instrOneHot[`O_H_AUIPC]: begin	
-			immed = {instruction[31], instruction[30:12], 12'd0};
+		// U-imm
+		instrOneHot[`O_H_LUI], instrOneHot[`O_H_AUIPC]: begin
+			immed = {instruction[31:12], 12'd0};
 		end
-
+		// S-imm
 		instrOneHot[`O_H_FLOAT_STW], instrOneHot[`O_H_STORE]: begin
 			immed = {{21{instruction[31]}}, instruction[30:25], instruction[11:7]};
 		end
-
+		// J-imm
 		instrOneHot[`O_H_JAL]: begin
 			immed = {{12{instruction[31]}}, instruction[19:12], instruction[20], instruction[30:21], 1'b0};
 		end
-
+		// B-imm
 		instrOneHot[`O_H_BRANCH]: begin
 			immed = {{20{instruction[31]}}, instruction[7], instruction[30:25], instruction[11:8], 1'b0};
 		end
-
+		// zero extented 5 bit imm encoding for CSR*I instructions
 		instrOneHot[`O_H_SYSTEM]: begin
 			immed = {27'd0, instruction[19:15]};
 		end
-
+		// I-imm
 		default/*instrOneHot[`O_H_OP_IMM], instrOneHot[`O_H_FLOAT_LDW], instrOneHot[`O_H_LOAD], instrOneHot[`O_H_JALR]*/: begin
 			immed = {{21{instruction[31]}}, instruction[30:20]};
 		end

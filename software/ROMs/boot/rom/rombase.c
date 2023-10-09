@@ -203,11 +203,6 @@ uint32_t LoadExecutable(const char *filename, int _relocOffset, const bool repor
 		// Success?
 		if (heap_start != 0)
 		{
-			asm volatile(
-				".word 0xFC000073;"	// Invalidate & Write Back D$ (CFLUSH.D.L1)
-				"fence.i;"			// Invalidate I$
-			);
-
 			// Set brk() to end of executable's BSS
 			// TODO: MMU should handle address space mapping and we should not have to do this manually
 			set_elf_heap(heap_start);

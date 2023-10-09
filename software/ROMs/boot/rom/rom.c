@@ -67,6 +67,8 @@ void _runExecTask()
 		"sw %1, 4(sp);"		// Store argv[1] (path to exec)
 		"sw %2, 8(sp);"		// Store argv[2] (exec params0)
 		"sw zero, 12(sp);"	// Store argv[3] (nullptr)
+		".word 0xFC000073;"	// Invalidate & Write Back D$ (CFLUSH.D.L1)
+		"fence.i;"			// Invalidate I$
 		"lw s0, %0;"		// Target branch address
 		"jalr s0;"			// Branch to the entry point
 		"addi sp, sp, 16;"	// We most likely won't return here
@@ -447,8 +449,6 @@ void __attribute__((aligned(64))) CopyAndChainOverlay()
 	// load won't be necessary during its execution.
 
 	asm volatile(
-		".word 0xFC000073;"		// Invalidate & Write Back D$ (CFLUSH.D.L1)
-		"fence.i;"				// Invalidate I$
 		"li s0, 0x00010000;"	// Source
 		"li s1, 0x0FFE0000;"	// Target
 		"li s2, 0xFFFF;"		// Count
@@ -459,6 +459,8 @@ void __attribute__((aligned(64))) CopyAndChainOverlay()
 		"addi s1,s1,4;"
 		"addi s2,s2,-1;"
 		"bne s2, zero, copyloop;"
+		".word 0xFC000073;"		// Invalidate & Write Back D$ (CFLUSH.D.L1)
+		"fence.i;"				// Invalidate I$
 		"li s0, 0x0FFE0000;"	// Branch to reset vector
 		"jalr s0;"
 	);

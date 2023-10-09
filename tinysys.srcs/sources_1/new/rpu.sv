@@ -186,40 +186,53 @@ logic [7:0] rcolor;
 logic [3:0] rcommand;
 
 logic rena = 1'b0;
-wire [15:0] emask01;
-wire [15:0] emask12;
-wire [15:0] emask20;
 wire eready01, eready12, eready20;
+
+wire [17:0] A01;
+wire [17:0] B01;
+wire [17:0] W01;
+wire [17:0] A12;
+wire [17:0] B12;
+wire [17:0] W12;
+wire [17:0] A20;
+wire [17:0] B20;
+wire [17:0] W20;
+
+logic [17:0] rA01;
+logic [17:0] rB01;
+logic [17:0] rW01;
+logic [17:0] rA12;
+logic [17:0] rB12;
+logic [17:0] rW12;
+logic [17:0] rA20;
+logic [17:0] rB20;
+logic [17:0] rW20;
 
 edgemaskgen edgeTest01(
     .clk(aclk),
     .rstn(aresetn),
     .tx(rtilex), .ty(rtiley), .v1x(rx0), .v1y(ry0), .v0x(rx1), .v0y(ry1),
-    .ena(rena), .ready(eready01),
-    .rmask(emask01));
+    .ena(rena), .ready(eready01), .A(A01), .B(B01), .W(W01) );
 
 edgemaskgen edgeTest12(
     .clk(aclk),
     .rstn(aresetn),
     .tx(rtilex), .ty(rtiley), .v1x(rx1), .v1y(ry1), .v0x(rx2), .v0y(ry2),
-    .ena(rena), .ready(eready12),
-    .rmask(emask12));
+    .ena(rena), .ready(eready12), .A(A12), .B(B12), .W(W12) );
 
 edgemaskgen edgeTest20(
     .clk(aclk),
     .rstn(aresetn),
     .tx(rtilex), .ty(rtiley), .v1x(rx2), .v1y(ry2), .v0x(rx0), .v0y(ry0),
-    .ena(rena), .ready(eready20),
-    .rmask(emask20));
+    .ena(rena), .ready(eready20), .A(A20), .B(B20), .W(W20) );
 
 typedef enum logic [3:0] {
 	RINIT,
 	RWCMD,
+	CACHEFLUSHSTROBE, CACHEINVALIDATESTROBE,
 	SETUPBOUNDS, ENDSETUPBOUNDS, CLIPBOUNDS,
-	BEGINSWEEP, RASTERIZETILE, EMITTILE,
-	WRITEBACKTILE,
-	NEXTTILE,
-	CACHEFLUSHSTROBE, CACHEINVALIDATESTROBE} rasterizermodetype;
+	BEGINSWEEP, TILESETUP, PRIMITIVESETUP, EMITTILE,
+	WRITEBACKTILE, NEXTTILE, RESUMESWEEP } rasterizermodetype;
 rasterizermodetype rastermode = RINIT;
 
 logic signed [15:0] minx;
@@ -229,7 +242,8 @@ logic signed [15:0] maxy;
 
 logic [13:0] cx;
 logic [13:0] cy;
-logic lasttile;
+logic lasttileonrow;
+logic lastrow;
 
 // Tile coverage mask (byte write enable mask)
 logic [15:0] tilecoverage;
@@ -237,6 +251,14 @@ logic [15:0] tilecoverage;
 // Pending writes
 logic [31:0] raddr;
 logic pendingwrite;
+
+// Write masks for 4x4 pixels
+logic P0;
+always_comb begin : blockName
+	// TODO: Rest of the 15 pixels by accumulating A and B
+	P0 = rW01[17] & rW12[17] & rW20[17];
+	// P1 = (rW01+A)[17] & rW12[17] & rW20[17]; etc
+end
 
 always_ff @(posedge aclk) begin
 
@@ -262,22 +284,13 @@ always_ff @(posedge aclk) begin
 				{rcolor,ry2,rx2,ry1,rx1,ry0,rx0,rcommand} <= rwdout;
 				// Advance FIFO
 				rwren <= 1'b1;
-				rastermode <= SETUPBOUNDS;
+				unique case (rcommand)
+					4'h0: rastermode <= SETUPBOUNDS;			// Rasterize
+					4'h1: rastermode <= CACHEFLUSHSTROBE;		// Cache flush
+					4'h2: rastermode <= CACHEINVALIDATESTROBE;	// Cache invalidate
+					default: rastermode <= RWCMD;				// Idle (invalid command)
+				endcase
 			end
-		end
-
-		SETUPBOUNDS: begin
-			// Find min/max bounds
-			minx <= rx0 < rx1 ? rx0 : rx1;
-			miny <= ry0 < ry1 ? ry0 : ry1;
-			maxx <= rx0 >= rx1 ? rx0 : rx1;
-			maxy <= ry0 >= ry1 ? ry0 : ry1;
-			unique case (rcommand)
-				4'h0: rastermode <= ENDSETUPBOUNDS;
-				4'h1: rastermode <= CACHEFLUSHSTROBE;
-				4'h2: rastermode <= CACHEINVALIDATESTROBE;
-				default: rastermode <= RWCMD;
-			endcase
 		end
 
 		CACHEFLUSHSTROBE: begin
@@ -298,6 +311,15 @@ always_ff @(posedge aclk) begin
 			end else begin
 				rastermode <= CACHEINVALIDATESTROBE;
 			end
+		end
+
+		SETUPBOUNDS: begin
+			// Find min/max bounds
+			minx <= rx0 < rx1 ? rx0 : rx1;
+			miny <= ry0 < ry1 ? ry0 : ry1;
+			maxx <= rx0 >= rx1 ? rx0 : rx1;
+			maxy <= ry0 >= ry1 ? ry0 : ry1;
+			rastermode <= ENDSETUPBOUNDS;
 		end
 
 		ENDSETUPBOUNDS: begin
@@ -324,45 +346,56 @@ always_ff @(posedge aclk) begin
 			cy <= miny[15:2];
 			// Set up output color (expanded to 128 bits from 8 bits)
 			outdata <= {rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor};
-			rastermode <= RASTERIZETILE;
+			rastermode <= TILESETUP;
 		end
 
-		RASTERIZETILE: begin
-			// Rasterize current tile
-			rtilex <= {cx,2'b00}; // Rasterizer requires pixel positions, hence the *4
+		TILESETUP: begin
+			// Kick edge equation calculations for current tile
+			// NOTE: A/B/W are generated only once per primitive
+			rtilex <= {cx,2'b00}; // Rasterizer requires tile corner as a pixel positions, hence the *4
 			rtiley <= {cy,2'b00};
 			rena <= 1'b1;
-			rastermode <= EMITTILE;
+			rastermode <= PRIMITIVESETUP;
+		end
+
+		PRIMITIVESETUP: begin
+			// TODO: Skip backfacing polygons
+
+			// Grab deltas and barycentric at upper left tile
+			rA01 <= A01; rB01 <= B01; rW01 <= W01;
+			rA12 <= A12; rB12 <= B12; rW12 <= W12;
+			rA20 <= A20; rB20 <= B20; rW20 <= W20;
+
+			// Reset coverage mask
+			tilecoverage <= 16'd0;
+
+			// Start sweeping tiles when results are valid
+			rastermode <= (eready01 && eready12 && eready20) ? EMITTILE : PRIMITIVESETUP;
 		end
 
 		EMITTILE: begin
-			if (eready01 & eready12 & eready20) begin
-				// This is the wstrb for a 4x4 tile
-				tilecoverage <= emask01 & emask12 & emask20;
-				// Push to output fifo if the tile mask isn't zero
-				//twe <= |(emask01 & emask12 & emask20);
+			// We have 80 tiles horizontal and 60 tiles vertical for a total of 4800 (0x12C0) tiles
+			// For each tile, the corresponding memory address is base address (16byte aligned)
+			// plus tile index times 16(bytes) in indexed color mode. For 16bit color mode the tile
+			// width is reduced by half (i.e. to 2 pixels of 16bits each from 4 pixels of 8bits each)
+			raddr <= {(cx + cy*80), 4'd0};
 
-				// We have 80 tiles horizontal and 60 tiles vertical for a total of 4800 (0x12C0) tiles
-				// For each tile, the corresponding memory address is base address (16byte aligned)
-				// plus tile index times 16(bytes) in indexed color mode. For 16bit color mode the tile
-				// width is reduced by half (i.e. to 2 pixels of 16bits each from 4 pixels of 8bits each)
-				raddr <= {(cx + cy*80), 4'd0};
+			// wstrb for the 4x4 tile (NOTE: rest of these values have to be generated i.e. P1..P15)
+			tilecoverage <= {P0, 15'd0};
 
-				// Step one line down if we're at the last column
-				if (cx >= maxx[15:2]) begin
-					cx <= minx[15:2];
-					cy <= cy + 1;
-				end else begin
-					// Next tile on this row
-					cx <= cx + 1;
-				end
+			// TODO: Interpolate vertex attributes a/b/c using barycentrics W012
+			// pixelcolor <= rW01*a + rW12*b + rW20*c;
 
-				// High when this is the last tile
-				lasttile <= (cy >= maxy[15:2]) && (cx >= maxx[15:2]);
+			// Step to next tile on same line, for next time around
+			rW01 <= rW01 + {rA01,2'b00};
+			rW12 <= rW12 + {rA12,2'b00};
+			rW20 <= rW20 + {rA20,2'b00}; // x4 pixels to the right
 
-                // Skip tiles which don't contain the primitive
-				rastermode <= |(emask01 & emask12 & emask20) ? WRITEBACKTILE : NEXTTILE;
-			end
+			cx <= cx + 14'd1;
+
+			// Skip tiles which don't contain the primitive
+			//rastermode <= |(emask01 & emask12 & emask20) ? WRITEBACKTILE : NEXTTILE;
+			rastermode <= (P0) ? WRITEBACKTILE : NEXTTILE;
 		end
 
 		WRITEBACKTILE: begin
@@ -372,6 +405,7 @@ always_ff @(posedge aclk) begin
 				wstrb <= tilecoverage;
 				din <= outdata;
 				pendingwrite <= 1'b1;
+
 				rastermode <= NEXTTILE;
 			end else begin
 				rastermode <= WRITEBACKTILE;
@@ -379,8 +413,23 @@ always_ff @(posedge aclk) begin
 		end
 
 		NEXTTILE: begin
-			// Stop if we're at the last tile
-			rastermode <= lasttile ? RWCMD : RASTERIZETILE;
+			// Step one line down if we're at the last column
+			if (cx >= maxx[15:2]) begin
+				cx <= minx[15:2];
+				cy <= cy + 14'd1;
+				// Rewind column and step down to next row
+				rW01 <= W01 + {rB01,2'b00};
+				rW12 <= W12 + {rB12,2'b00};
+				rW20 <= W20 + {rB20,2'b00}; // x4 pixels down
+			end
+			lasttileonrow <= (cx >= maxx[15:2]) ? 1'b1 : 1'b0;
+			lastrow <= (cy >= maxy[15:2]) ? 1'b1 : 1'b0;
+			rastermode <= RESUMESWEEP;
+		end
+
+		RESUMESWEEP: begin
+			// Stop if we're at the last tile, otherwise keep sweeping
+			rastermode <= (lastrow && lasttileonrow) ? RWCMD : EMITTILE;
 		end
 
 	endcase

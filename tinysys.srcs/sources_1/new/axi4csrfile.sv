@@ -64,9 +64,10 @@ initial begin
 	// Start same as timecmpshadow
 	csrmemory[`CSR_TIMECMPLO] = 32'hFFFFFFFF;
 	csrmemory[`CSR_TIMECMPHI] = 32'hFFFFFFFF;
-	// Machine ISA: compressed(bit2) rv32i(bit8), Zmmul(bit12), machine level
-	// NOTE: MISA is a r/w register
-	csrmemory[`CSR_MISA] = 32'h00001102;
+	// Machine ISA: compressed(bit2) rv32i base ISA(bit8), integer mul/div(bit12) machine level
+	csrmemory[`CSR_MISA] = 32'h00001104;
+	// Top bit must be set, can't contain zero
+	csrmemory[`CSR_MARCHID] = 32'h800000EC;
 end
 
 // Read/Write CSR

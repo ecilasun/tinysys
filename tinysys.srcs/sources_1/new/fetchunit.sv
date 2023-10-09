@@ -43,6 +43,14 @@ wire misaligned = PC[1];
 wire isfullinstr = (misaligned && (instruction[17:16] == 2'b11)) || (~misaligned && (instruction[1:0] == 2'b11));
 logic stepsize = 1'b1; // full step by default
 
+logic [31:0] nextPC;
+always_comb begin
+	unique case (stepsize)
+		1'b0: nextPC = prevPC + 32'd2;
+		1'b1: nextPC = prevPC + 32'd4;
+	endcase
+end
+
 // --------------------------------------------------
 // Instruction cache
 // --------------------------------------------------
@@ -250,7 +258,7 @@ always @(posedge aclk) begin
 				irqReq[1],
 				isebreak,
 				isillegalinstruction:					PC <= prevPC;
-				default:								PC <= prevPC + (stepsize ? 32'd4 : 32'd2);
+				default:								PC <= nextPC;
 			endcase
 
 			stepsize <= 1'b0; // Clear
