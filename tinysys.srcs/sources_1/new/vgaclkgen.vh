@@ -14,13 +14,13 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 `define MY_VGA_DEFAULT_PARAMS parameter \
 /* VGA_640_480_60Hz */          \
-     VPOL            = 1,	      \
-     HPOL            = 0,	      \
+     VPOL            = 1,	    \
+     HPOL            = 1,	    \
      FRAME_RATE      = 60,	    \
 /* vertical timing frame */     \
      VBP             = 33,      \
      VFP             = 10,      \
-     VSLEN           = 2,	      \
+     VSLEN           = 2,	    \
      VACTIVE         = 480,	    \
 /* horizontal timing frame */   \
      HBP             = 48,	    \
