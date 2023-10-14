@@ -44,9 +44,9 @@ module hdmi
 
     // Some HDMI sinks will show the source product description below to users (i.e. in a list of inputs instead of HDMI 1, HDMI 2, etc.).
     // If you care about this, change it below.
-    parameter bit [8*8-1:0] VENDOR_NAME = {"Unknown", 8'd0}, // Must be 8 bytes null-padded 7-bit ASCII
-    parameter bit [8*16-1:0] PRODUCT_DESCRIPTION = {"FPGA", 96'd0}, // Must be 16 bytes null-padded 7-bit ASCII
-    parameter bit [7:0] SOURCE_DEVICE_INFORMATION = 8'h00, // See README.md or CTA-861-G for the list of valid codes
+    parameter bit [8*8-1:0] VENDOR_NAME = {"Engin_C", 8'd0}, // Must be 8 bytes null-padded 7-bit ASCII
+    parameter bit [8*16-1:0] PRODUCT_DESCRIPTION = {"TinySys", 72'd0}, // Must be 16 bytes null-padded 7-bit ASCII
+    parameter bit [7:0] SOURCE_DEVICE_INFORMATION = 8'h08, // See README.md or CTA-861-G for the list of valid codes - GAME
 
     // Starting screen coordinate when module comes out of reset.
     //

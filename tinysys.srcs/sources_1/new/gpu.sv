@@ -48,16 +48,16 @@ logic scanenable = 1'b0;
 // Common
 // --------------------------------------------------
 
-wire hsync, vsync, blank;
-wire [10:0] video_x;
-wire [10:0] video_y;
+wire hsync, vsync;//, blank;
+wire [9:0] video_x;
+wire [9:0] video_y;
 
-logic hsync_d, vsync_d, blank_d;
+logic hsync_d, vsync_d;
 
-wire [1:0] out_tmds_red;
-wire [1:0] out_tmds_green;
-wire [1:0] out_tmds_blue;
-wire [1:0] out_tmds_clk;
+wire out_tmds_red;
+wire out_tmds_green;
+wire out_tmds_blue;
+wire out_tmds_clk;
 
 logic cmdre = 1'b0;
 assign gpufifore = cmdre;
@@ -83,8 +83,8 @@ logic [6:0] colorblock;
 
 always_comb begin
 	unique case ({scanwidth, colormode})
-		2'b00: begin colorpixel = video_x[4:1];			colorblock = {1'b0, video_x[10:5]}; end	// 320*240 8bpp
-		2'b01: begin colorpixel = {1'b0,video_x[3:1]};	colorblock = video_x[10:4]; end			// 320*240 16bpp
+		2'b00: begin colorpixel = video_x[4:1];			colorblock = {2'b0, video_x[9:5]}; end	// 320*240 8bpp
+		2'b01: begin colorpixel = {1'b0,video_x[3:1]};	colorblock = {1'b0, video_x[9:4]}; end	// 320*240 16bpp
 		2'b10: begin colorpixel = video_x[3:0];			colorblock = {1'b0, video_x[9:4]}; end	// 640*480 8bpp
 		2'b11: begin colorpixel = {1'b0,video_x[2:0]};	colorblock = video_x[9:3]; end			// 640*480 16bpp
 	endcase
@@ -159,56 +159,24 @@ always @(posedge clk25) begin // Tied to GPU clock
 			endcase
 		end
 		2'b11: paletteout <= {
-			rgbcolor[5:0],2'd0,		// G
-			rgbcolor[10:6],3'd0,	// R
+			rgbcolor[5:0],2'd0,		// R
+			rgbcolor[10:6],3'd0,	// G
 			rgbcolor[15:11],3'd0};	// B
 		default: paletteout <= 0;
 	endcase
 end
 
 // --------------------------------------------------
-// Video signals
+// Video output
 // --------------------------------------------------
 
-my_vga_clk_generator VGAClkGen(
-   .pclk(clk25),
-   .out_hsync(hsync),
-   .out_vsync(vsync),
-   .out_blank(blank),
-   .out_hcnt(video_x),
-   .out_vcnt(video_y),
-   .reset_n(aresetn) );
-
-always @(posedge clk25) begin
-	hsync_d <= hsync;
-	vsync_d <= vsync;
-	blank_d <= blank;
-end
-
-hdmi_device HDMI(
-   .pclk(clk25),
-   .tmds_clk(clk125), // pixel clock x5
-
-   .in_vga_red(paletteout[15:8]),		// TODO: Have other options for console compositing
-   .in_vga_green(paletteout[23:16]),
-   .in_vga_blue(paletteout[7:0]),
-
-   .in_vga_blank(blank_d),
-   .in_vga_vsync(vsync_d),
-   .in_vga_hsync(hsync_d),
-
-   .out_tmds_red(out_tmds_red),
-   .out_tmds_green(out_tmds_green),
-   .out_tmds_blue(out_tmds_blue),
-   .out_tmds_clk(out_tmds_clk) );
-
-/*hdmi HDMIAVinst(
+hdmi HDMIAVinst(
     .clk_pixel_x5(clk125),
     .clk_pixel(clk25),
     .clk_audio(clk25),
     .reset(~aresetn),
     .rgb(paletteout),
-    .audio_sample_word({16'd0,16'd0}),
+    .audio_sample_word({16'd0,16'd0}), // TODO: Audio input
 
     // These outputs go to your HDMI port
     .tmds({out_tmds_red, out_tmds_green, out_tmds_blue}),
@@ -227,22 +195,17 @@ hdmi_device HDMI(
 OBUFDS OBUFDS_clk(.I(out_tmds_clk), .O(gpuvideoout.tmdsclkp), .OB(gpuvideoout.tmdsclkn));
 OBUFDS OBUFDS_red(.I(out_tmds_red), .O(gpuvideoout.tmdsp[2]), .OB(gpuvideoout.tmdsn[2]));
 OBUFDS OBUFDS_green(.I(out_tmds_green), .O(gpuvideoout.tmdsp[1]), .OB(gpuvideoout.tmdsn[1]));
-OBUFDS OBUFDS_blue(.I(out_tmds_blue), .O(gpuvideoout.tmdsp[0]), .OB(gpuvideoout.tmdsn[0]));*/
+OBUFDS OBUFDS_blue(.I(out_tmds_blue), .O(gpuvideoout.tmdsp[0]), .OB(gpuvideoout.tmdsn[0]));
 
-// DDR DVI output
-wire out_ddr_tmds_clk, out_ddr_tmds_red, out_ddr_tmds_green, out_ddr_tmds_blue;
+// Need to delay one clock
+always @(posedge clk25) begin
+	hsync_d <= hsync;
+	vsync_d <= vsync;
+end
 
-ODDR #(.DDR_CLK_EDGE("SAME_EDGE"), .INIT(1'b0), .SRTYPE ("ASYNC")) oddr_clk (.D1(out_tmds_clk[0]), .D2(out_tmds_clk[1]), .C(clk125), .CE(1'b1), .Q(out_ddr_tmds_clk), .R(1'b0), .S(1'b0) );
-OBUFDS OBUFDS_clk(.I(out_ddr_tmds_clk), .O(gpuvideoout.tmdsclkp), .OB(gpuvideoout.tmdsclkn));
-
-ODDR #(.DDR_CLK_EDGE("SAME_EDGE"), .INIT(1'b0), .SRTYPE ("ASYNC")) oddr_red (.D1(out_tmds_red[0]), .D2(out_tmds_red[1]), .C(clk125), .CE(1'b1), .Q(out_ddr_tmds_red), .R(1'b0), .S(1'b0) );
-OBUFDS OBUFDS_red(.I(out_ddr_tmds_red), .O(gpuvideoout.tmdsp[2]), .OB(gpuvideoout.tmdsn[2]));
-
-ODDR #(.DDR_CLK_EDGE("SAME_EDGE"), .INIT(1'b0), .SRTYPE ("ASYNC")) oddr_green (.D1(out_tmds_green[0]), .D2(out_tmds_green[1]), .C(clk125), .CE(1'b1), .Q(out_ddr_tmds_green), .R(1'b0), .S(1'b0) );
-OBUFDS OBUFDS_green(.I(out_ddr_tmds_green), .O(gpuvideoout.tmdsp[1]), .OB(gpuvideoout.tmdsn[1]));
-
-ODDR #(.DDR_CLK_EDGE("SAME_EDGE"), .INIT(1'b0), .SRTYPE ("ASYNC")) oddr_blue (.D1(out_tmds_blue[0]), .D2(out_tmds_blue[1]), .C(clk125), .CE(1'b1), .Q(out_ddr_tmds_blue), .R(1'b0), .S(1'b0) );
-OBUFDS OBUFDS_blue(.I(out_ddr_tmds_blue), .O(gpuvideoout.tmdsp[0]), .OB(gpuvideoout.tmdsn[0]));
+// --------------------------------------------------
+// AXI4 defaults
+// --------------------------------------------------
 
 assign m_axi.arsize = SIZE_16_BYTE; // 128bit read bus
 assign m_axi.arburst = BURST_INCR;
@@ -367,8 +330,8 @@ end
 // Scan-out logic
 // --------------------------------------------------
 
-wire startofrowp = video_x[9:0] == 10'd0;
-wire endofcolumnp = video_y[9:0] == 10'd490;
+wire startofrowp = video_x == 10'd0;
+wire endofcolumnp = video_y == 10'd490;
 wire vsyncnow = startofrowp && endofcolumnp;
 
 logic blankt = 1'b0;
@@ -398,9 +361,9 @@ always_ff @(posedge aclk) begin
 			scanpixel <= 10'd0;
         end
         1'b1: begin
-			scanlinepre <= video_y[9:0];
+			scanlinepre <= video_y;
 			scanline <= scanlinepre;
-			scanpixelpre <= video_x[9:0];
+			scanpixelpre <= video_x;
 			scanpixel <= scanpixelpre;
 			blanktogglepre <= blankt;
 			blanktoggle <= blanktogglepre;

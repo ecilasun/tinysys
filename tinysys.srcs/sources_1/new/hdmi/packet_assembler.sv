@@ -8,16 +8,18 @@ module packet_assembler (
     input logic [23:0] header, // See Table 5-8 Packet Types
     input logic [55:0] sub [3:0],
     output logic [8:0] packet_data, // See Figure 5-4 Data Island Packet and ECC Structure
-    output logic [4:0] counter = 5'd0
-);
+    output wire [4:0] counter);
+
+logic [4:0] counter_reg = 5'd0;
+assign counter = counter_reg;
 
 // 32 pixel wrap-around counter. See Section 5.2.3.4 for further information.
 always_ff @(posedge clk_pixel)
 begin
     if (reset)
-        counter <= 5'd0;
+        counter_reg <= 5'd0;
     else if (data_island_period)
-        counter <= counter + 5'd1;
+        counter_reg <= counter_reg + 5'd1;
 end
 // BCH packets 0 to 3 are transferred two bits at a time, see Section 5.2.3.4 for further information.
 wire [5:0] counter_t2 = {counter, 1'b0};

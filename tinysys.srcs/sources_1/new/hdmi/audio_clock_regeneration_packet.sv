@@ -10,10 +10,13 @@ module audio_clock_regeneration_packet
 (
     input logic clk_pixel,
     input logic clk_audio,
-    output logic clk_audio_counter_wrap = 0,
+    output wire clk_audio_counter_wrap,
     output logic [23:0] header,
     output logic [55:0] sub [3:0]
 );
+
+logic clk_audio_counter_wrap_reg = 0;
+assign clk_audio_counter_wrap = clk_audio_counter_wrap_reg;
 
 // See Section 7.2.3, values derived from "Other" row in Tables 7-1, 7-2, 7-3.
 localparam bit [19:0] N = AUDIO_RATE % 125 == 0 ? 20'(16 * AUDIO_RATE / 125) : AUDIO_RATE % 225 == 0 ? 20'(32 * AUDIO_RATE / 225) : 20'(AUDIO_RATE * 16 / 125);
@@ -48,7 +51,7 @@ begin
     begin
         cycle_time_stamp_counter <= CYCLE_TIME_STAMP_COUNTER_WIDTH'(0);
         cycle_time_stamp <= {(20-CYCLE_TIME_STAMP_COUNTER_WIDTH)'(0), cycle_time_stamp_counter + CYCLE_TIME_STAMP_COUNTER_WIDTH'(1)};
-        clk_audio_counter_wrap <= !clk_audio_counter_wrap;
+        clk_audio_counter_wrap_reg <= !clk_audio_counter_wrap_reg;
     end
     else
         cycle_time_stamp_counter <= cycle_time_stamp_counter + CYCLE_TIME_STAMP_COUNTER_WIDTH'(1);
