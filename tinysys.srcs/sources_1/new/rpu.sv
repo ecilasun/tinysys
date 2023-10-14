@@ -172,8 +172,6 @@ end
 // Rasterizer (mask generator / sweeped / output)
 // --------------------------------------------------
 
-logic [127:0] outdata;
-
 logic signed [15:0] rtilex;
 logic signed [15:0] rtiley;
 logic signed [15:0] rx0;
@@ -236,23 +234,32 @@ logic [15:0] tilecoverage;
 
 // Pending writes
 logic [31:0] raddr;
-logic pendingwrite;
+
+wire rtfull, rtempty, rtvalid;
+logic [57:0] rtdin;
+logic rtwe;
+wire [57:0] rtdout;
+logic rtre;
+rastertilewritefifo tileoutfifoinst(
+	.full(rtfull),
+	.din(rtdin),
+	.wr_en(rtwe),
+	.valid(rtvalid),
+	.empty(rtempty),
+	.dout(rtdout),
+	.rd_en(rtre),
+	.clk(aclk),
+	.rst(~aresetn) );
 
 always_ff @(posedge aclk) begin
 
 	rwren <= 1'b0;
 	rena <= 1'b0;
-	wstrb <= 16'h0000;
-	cflush <= 1'b0;
-	cinvalidate <= 1'b0;
-
-	if (wready) pendingwrite <= 1'b0;
+	rtwe <= 1'b0;
 
 	case (rastermode)
 		RINIT: begin
 			// White color index in default VGA palette
-			outdata <= 128'h0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F;
-			pendingwrite <= 1'b0;
 			rastermode <= RWCMD;
 		end
 
@@ -281,9 +288,9 @@ always_ff @(posedge aclk) begin
 		end
 
 		CACHEFLUSHSTROBE: begin
-			if (~pendingwrite) begin
-				cflush <= 1'b1;
-				pendingwrite <= 1'b1;
+			if (~rtfull) begin
+				rtdin <= {32'd0, 16'd0, 8'd0, 2'b01};
+				rtwe <= 1'b1;
 				rastermode <= RWCMD;
 			end else begin
 				rastermode <= CACHEFLUSHSTROBE;
@@ -291,9 +298,9 @@ always_ff @(posedge aclk) begin
 		end
 
 		CACHEINVALIDATESTROBE: begin
-			if (~pendingwrite) begin
-				cinvalidate <= 1'b1;
-				pendingwrite <= 1'b1;
+			if (~rtfull) begin
+				rtdin <= {32'd0, 16'd0, 8'd0, 2'b10};
+				rtwe <= 1'b1;
 				rastermode <= RWCMD;
 			end else begin
 				rastermode <= CACHEINVALIDATESTROBE;
@@ -323,7 +330,6 @@ always_ff @(posedge aclk) begin
 			cx <= minx[15:2]; // pixel position/4 == tile index
 			cy <= miny[15:2];
 			// Set up output color (expanded to 128 bits from 8 bits)
-			outdata <= {rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor,rcolor};
 			rastermode <= RASTERIZETILE;
 		end
 
@@ -366,12 +372,9 @@ always_ff @(posedge aclk) begin
 		end
 
 		WRITEBACKTILE: begin
-			if (~pendingwrite) begin
-				// Write the 4x4 tile using coverage mask as byte strobe for transparent writes
-				addr <= rasterbaseaddr + raddr;
-				wstrb <= tilecoverage;
-				din <= outdata;
-				pendingwrite <= 1'b1;
+			if (~rtfull) begin
+				rtdin <= {raddr, tilecoverage, rcolor, 2'b00};
+				rtwe <= 1'b1;
 				rastermode <= NEXTTILE;
 			end else begin
 				rastermode <= WRITEBACKTILE;
@@ -391,7 +394,66 @@ always_ff @(posedge aclk) begin
 
 end
 
+typedef enum logic [1:0] {
+	WBINIT,
+	WBCMD, WBWAIT } tilewbmodetype;
+tilewbmodetype wbackmode = WBINIT;
+
+wire [3:0] resetcnt;
+COUNTER_LOAD_MACRO #(
+	.COUNT_BY(48'd1),		// Count by 1
+	.DEVICE("7SERIES"), 
+	.WIDTH_DATA(4) ) counterinst (
+	.Q(resetcnt),
+	.CLK(aclk),
+	.CE(aresetn),
+	.DIRECTION(1'b1),
+	.LOAD(~aresetn),
+	.LOAD_DATA(4'd0),
+	.RST(1'b0) );
+
+always @(posedge aclk) begin
+
+	rtre <= 1'b0;
+	wstrb <= 16'h0000;
+	cinvalidate <= 1'b0;
+	cflush <= 1'b0;
+
+	case (wbackmode)
+		WBINIT: begin
+			wbackmode <= (resetcnt==4'hF) ? WBCMD : WBINIT;
+		end
+
+		WBCMD: begin
+			if ((~rtempty) && rtvalid) begin
+				addr <= rasterbaseaddr + rtdout[57:26];
+				din <= {
+					rtdout[9:2], rtdout[9:2], rtdout[9:2], rtdout[9:2],
+					rtdout[9:2], rtdout[9:2], rtdout[9:2], rtdout[9:2],
+					rtdout[9:2], rtdout[9:2], rtdout[9:2], rtdout[9:2],
+					rtdout[9:2], rtdout[9:2], rtdout[9:2], rtdout[9:2] };
+				wstrb <= rtdout[25:10];
+
+				cinvalidate <= rtdout[1];
+				cflush <= rtdout[0];
+
+				rtre <= 1'b1;
+				wbackmode <= WBWAIT;
+			end
+		end
+
+		WBWAIT: begin
+			wbackmode <= wready ? WBCMD : WBWAIT;
+		end
+
+	endcase
+
+	if (~aresetn) begin
+		wbackmode <= WBINIT;
+	end
+end
+
 // Rasterizer completely idle
-assign rasterstate = ~(rasterfifoempty && rwempty);
+assign rasterstate = ~(rasterfifoempty && rwempty && rtempty);
 
 endmodule

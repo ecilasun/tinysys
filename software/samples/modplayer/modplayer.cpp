@@ -137,23 +137,23 @@ void DrawWaveform()
 		prim.x0 = 0;
 		prim.y0 = 0;
 		prim.x1 = 319;
-		prim.y1 = 239;
+		prim.y1 = 0;
 		prim.x2 = 319;
-		prim.y2 = 0;
+		prim.y2 = 239;
 		RPUPushPrimitive(&prim);
 		RPURasterizePrimitive();
 
 		prim.x0 = 319;
 		prim.y0 = 239;
 		prim.x1 = 0;
-		prim.y1 = 0;
+		prim.y1 = 239;
 		prim.x2 = 0;
-		prim.y2 = 239;
+		prim.y2 = 0;
 		RPUPushPrimitive(&prim);
 		RPURasterizePrimitive();
 	}
 
-	RPUSetColor(0x37); // Blue - Left
+	RPUSetColor(0x37); // Blue - Left channel
 	for (uint32_t x=0; x<320/*BUFFER_SAMPLES/2*/; ++x)
 	{
 		int16_t L = src[x*2+0]/256;
@@ -170,7 +170,7 @@ void DrawWaveform()
 		RPURasterizePrimitive();
 	}
 
-	RPUSetColor(0x28); // Red - Right
+	RPUSetColor(0x28); // Red - Right channel
 	for (uint32_t x=0; x<320/*BUFFER_SAMPLES/2*/; ++x)
 	{
 		int16_t R = src[x*2+1]/256;

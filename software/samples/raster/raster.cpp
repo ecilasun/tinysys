@@ -173,6 +173,17 @@ int main(int argc, char *argv[])
 			RPUSetColor(0x00); // Black triangle
 			RPURasterizePrimitive();
 
+			prim.x0 = 160 + X0;
+			prim.y0 = 120 + Y0;
+			prim.x1 = 160 + X2;
+			prim.y1 = 120 + Y2;
+			prim.x2 = 160 + X1;
+			prim.y2 = 120 + Y1;
+
+			RPUPushPrimitive(&prim);
+			RPUSetColor(0x27); // Red triangle
+			RPURasterizePrimitive();
+
 			R += 0.01f;
 		}
 		else

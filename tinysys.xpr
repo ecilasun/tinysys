@@ -65,13 +65,13 @@
     <Option Name="WTVcsLaunchSim" Val="0"/>
     <Option Name="WTRivieraLaunchSim" Val="0"/>
     <Option Name="WTActivehdlLaunchSim" Val="0"/>
-    <Option Name="WTXSimExportSim" Val="451"/>
-    <Option Name="WTModelSimExportSim" Val="451"/>
-    <Option Name="WTQuestaExportSim" Val="451"/>
+    <Option Name="WTXSimExportSim" Val="458"/>
+    <Option Name="WTModelSimExportSim" Val="458"/>
+    <Option Name="WTQuestaExportSim" Val="458"/>
     <Option Name="WTIesExportSim" Val="0"/>
-    <Option Name="WTVcsExportSim" Val="451"/>
-    <Option Name="WTRivieraExportSim" Val="451"/>
-    <Option Name="WTActivehdlExportSim" Val="451"/>
+    <Option Name="WTVcsExportSim" Val="458"/>
+    <Option Name="WTRivieraExportSim" Val="458"/>
+    <Option Name="WTActivehdlExportSim" Val="458"/>
     <Option Name="GenerateIPUpgradeLog" Val="TRUE"/>
     <Option Name="XSimRadix" Val="hex"/>
     <Option Name="XSimTimeUnit" Val="ns"/>
@@ -97,6 +97,20 @@
         </FileInfo>
       </File>
       <File Path="$PSRCDIR/sources_1/ip/axi4interconnect/axi4interconnect.xci">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/ip/rastertilewritefifo.xcix">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/ip/rastertilewritefifo/rastertilewritefifo.xci">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>

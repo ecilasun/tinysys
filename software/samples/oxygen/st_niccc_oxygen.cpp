@@ -255,10 +255,6 @@ int main(int argc, char** argv)
 		int res = 0;
 		do
 		{
-			// See unresolved output
-			if (argc>1)
-				RPUSetTileBuffer((uint32_t)sc.writepage);
-
 			res = read_frame();
 
 			// Make sure to flush rasterizer cache to raster memory before it's read
@@ -269,11 +265,11 @@ int main(int argc, char** argv)
 			RPUBarrier();
 			RPUWait();
 
-			// Get the DMA unit to resolve and write output onto the current GPU write page
-			if (argc<=1)
-				DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)sc.writepage);
+			// TODO: Get the DMA unit to resolve and write output onto the current GPU write page
+			DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)sc.writepage);
 
-			GPUWaitVSync();
+			if (argc<=1) // no vsync if we have a command line argument
+				GPUWaitVSync();
 			GPUSwapPages(&s_vctx, &sc);
 		} while(res);
 	}
