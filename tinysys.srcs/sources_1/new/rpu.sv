@@ -399,19 +399,6 @@ typedef enum logic [1:0] {
 	WBCMD, WBWAIT } tilewbmodetype;
 tilewbmodetype wbackmode = WBINIT;
 
-wire [3:0] resetcnt;
-COUNTER_LOAD_MACRO #(
-	.COUNT_BY(48'd1),		// Count by 1
-	.DEVICE("7SERIES"), 
-	.WIDTH_DATA(4) ) counterinst (
-	.Q(resetcnt),
-	.CLK(aclk),
-	.CE(aresetn),
-	.DIRECTION(1'b1),
-	.LOAD(~aresetn),
-	.LOAD_DATA(4'd0),
-	.RST(1'b0) );
-
 always @(posedge aclk) begin
 
 	rtre <= 1'b0;
@@ -421,7 +408,7 @@ always @(posedge aclk) begin
 
 	case (wbackmode)
 		WBINIT: begin
-			wbackmode <= (resetcnt==4'hF) ? WBCMD : WBINIT;
+			wbackmode <= WBCMD;
 		end
 
 		WBCMD: begin
