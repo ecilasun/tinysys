@@ -6,7 +6,6 @@ module fetchunit #(
 	parameter int RESETVECTOR = 32'd0
 ) (
 	input wire aclk,
-	input wire clk10,
 	input wire aresetn,
 	// Stall control
 	input wire branchresolved,

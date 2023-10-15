@@ -5,7 +5,7 @@ module tinysoc #(
 ) (
 	input wire aclk,
 	input wire clk10,
-	input wire clk12,
+	input wire clkaudio,
 	input wire clk25,
 	input wire clk50,
 	input wire clk100,
@@ -94,7 +94,6 @@ wire romReady;
 // Reset vector at last 64K of DDR3 SDRAM
 fetchunit #(.RESETVECTOR(RESETVECTOR)) fetchdecodeinst (
 	.aclk(aclk),
-	.clk10(clk10),
 	.aresetn(aresetn),
 	.branchresolved(branchresolved),
 	.branchtarget(branchtarget),
@@ -225,7 +224,7 @@ wire [15:0] opl2sampleout;
 axi4i2saudio APU(
 	.aclk(aclk),				// Bus clock
 	.aresetn(aresetn),
-    .audioclock(clk12),			// 22.591MHz master clock
+    .audioclock(clkaudio),		// 22.591MHz master clock
 
 	.m_axi(audiobus),			// Memory access
 

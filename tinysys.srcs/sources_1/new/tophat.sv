@@ -71,19 +71,19 @@ module tophat(
 
 wire aresetn, preresetn;
 wire init_calib_complete;
-wire clk10, clk12, clk25, clk50, clk125, clk100, clk150, clk166, clk200;
+wire clk10, clkaudio, clk25, clk50, clk125, clk100, clkbus, clk166, clk200;
 
 // Clock and reset generator
 clockandreset clockandresetinst(
 	.sys_clock_i(sys_clk),
 	.init_calib_complete(init_calib_complete),
 	.clk10(clk10),
-	.clk12(clk12),
+	.clkaudio(clkaudio),
 	.clk25(clk25),
 	.clk50(clk50),
 	.clk125(clk125),
 	.clk100(clk100),
-	.clk150(clk150),
+	.clkbus(clkbus),
 	.clk166(clk166),
 	.clk200(clk200),
 	.aresetn(aresetn),
@@ -173,9 +173,9 @@ audiowires i2sconn(
 // --------------------------------------------------
 
 tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
-	.aclk(clk150),
+	.aclk(clkbus),
 	.clk10(clk10),
-	.clk12(clk12),
+	.clkaudio(clkaudio),
 	.clk25(clk25),
 	.clk50(clk50),
 	.clk100(clk100),

@@ -29,36 +29,42 @@ gpucmdring cmdfifoinst(
 	.clk(aclk),
 	.rst(~aresetn) );
 
-logic waddrstate = 1'b0;
-logic [1:0] writestate = 2'b00;
-logic [1:0] raddrstate = 2'b00;
+logic [1:0] waddrstate;
+logic [1:0] writestate;
+logic [1:0] raddrstate;
 
 always @(posedge aclk) begin
-	s_axi.awready <= 1'b0;
+
 	unique case (waddrstate)
-		1'b0: begin
+		2'b00: begin
+			s_axi.awready <= 1'b0;
+			waddrstate <= 2'b01;
+		end
+		2'b01: begin
 			if (s_axi.awvalid) begin
 				s_axi.awready <= 1'b1;
-				waddrstate <= 1'b1;
+				waddrstate <= 2'b10;
 			end
 		end
-		1'b1: begin
+		2'b10: begin
 			s_axi.awready <= 1'b0;
-			waddrstate <= 1'b0;
+			waddrstate <= 2'b01;
 		end
 	endcase
 
 	if (~aresetn) begin
-		waddrstate <= 1'b0;
+		waddrstate <= 2'b00;
 	end
 end
 
 // Writes will queue up a command in the command FIFO the device can read
 
 always @(posedge aclk) begin
+
 	fifowe <= 1'b0;
 	s_axi.wready <= 1'b0;
 	s_axi.bvalid <= 1'b0;
+
 	unique case (writestate)
 		2'b00: begin
 			s_axi.bresp <= 2'b00; // okay

@@ -66,10 +66,10 @@ assign gpufifore = cmdre;
 // Setup
 // --------------------------------------------------
 
-logic [7:0] burstlen = 'd20;	// 20 reads for 320*240, 40 reads for 640*480 in paletted mode (each read is 128bits)
+logic [7:0] burstlen;
 logic scanwidth = 1'b0;			// 0:320 pixel wide, 1:640 pixel wide
 logic colormode = 1'b0;			// 0:indexed color, 1:16bit color
-logic [9:0] lastscanline = 10'd0;
+logic [9:0] lastscanline;
 
 // --------------------------------------------------
 // Scanline cache and output address selection
@@ -90,34 +90,57 @@ always_comb begin
 	endcase
 end
 
-logic [7:0] palettewa;
-logic palettewe = 1'b0;
-logic [15:0] rgbcolor;
-logic [23:0] palettedin = 24'h000000;
-
 logic [127:0] newblock;
 always_comb begin
 	newblock = scanlinecache[colorblock];
 end
 
+logic [23:0] rgbcolor;
+logic [7:0] paletteindex;
+
 // Generate actual RGB color for 16bit mode
 always_comb begin
-	// Color index
 	unique case (colorpixel[2:0])
-		3'b000: rgbcolor = newblock[15 : 0];
-		3'b001: rgbcolor = newblock[31 : 16];
-		3'b010: rgbcolor = newblock[47 : 32];
-		3'b011: rgbcolor = newblock[63 : 48];
-		3'b100: rgbcolor = newblock[79 : 64];
-		3'b101: rgbcolor = newblock[95 : 80];
-		3'b110: rgbcolor = newblock[111 : 96];
-		3'b111: rgbcolor = newblock[127 : 112];
+		//                   B                        G                        R
+		3'b000: rgbcolor = { newblock[4:0],     3'd0, newblock[10:5],    2'd0, newblock[15:11],   3'd0 };
+		3'b001: rgbcolor = { newblock[20:16],   3'd0, newblock[26:21],   2'd0, newblock[31:27],   3'd0 };
+		3'b010: rgbcolor = { newblock[36:32],   3'd0, newblock[42:37],   2'd0, newblock[47:43],   3'd0 };
+		3'b011: rgbcolor = { newblock[52:48],   3'd0, newblock[58:53],   2'd0, newblock[63:59],   3'd0 };
+		3'b100: rgbcolor = { newblock[68:64],   3'd0, newblock[74:69],   2'd0, newblock[79:75],   3'd0 };
+		3'b101: rgbcolor = { newblock[84:80],   3'd0, newblock[90:85],   2'd0, newblock[95:91],   3'd0 };
+		3'b110: rgbcolor = { newblock[100:96],  3'd0, newblock[106:101], 2'd0, newblock[111:107], 3'd0 };
+		3'b111: rgbcolor = { newblock[116:112], 3'd0, newblock[122:117], 2'd0, newblock[127:123], 3'd0 };
+	endcase
+end
+
+always_comb begin
+	unique case (colorpixel)
+		4'b0000: paletteindex = newblock[7:0];
+		4'b0001: paletteindex = newblock[15:8];
+		4'b0010: paletteindex = newblock[23:16];
+		4'b0011: paletteindex = newblock[31:24];
+		4'b0100: paletteindex = newblock[39:32];
+		4'b0101: paletteindex = newblock[47:40];
+		4'b0110: paletteindex = newblock[55:48];
+		4'b0111: paletteindex = newblock[63:56];
+		4'b1000: paletteindex = newblock[71:64];
+		4'b1001: paletteindex = newblock[79:72];
+		4'b1010: paletteindex = newblock[87:80];
+		4'b1011: paletteindex = newblock[95:88];
+		4'b1100: paletteindex = newblock[103:96];
+		4'b1101: paletteindex = newblock[111:104];
+		4'b1110: paletteindex = newblock[119:112];
+		4'b1111: paletteindex = newblock[127:120];
 	endcase
 end
 
 // --------------------------------------------------
 // Palette RAM
 // --------------------------------------------------
+
+logic [7:0] palettewa;
+logic palettewe;
+logic [23:0] palettedin;
 
 logic [23:0] paletteentries[0:255];
 
@@ -137,31 +160,9 @@ always @(posedge clk25) begin // Tied to GPU clock
 	// NOTE: This currently uses MASK mode
 	// All possible modes:
 	// MASK / MAX / REPLACE / BLEND
-	unique case ({scanenable && (scanline < 480), colormode})
-		2'b10: begin
-			unique case (colorpixel)
-				4'b0000: paletteout <= paletteentries[newblock[7 : 0]];
-				4'b0001: paletteout <= paletteentries[newblock[15 : 8]];
-				4'b0010: paletteout <= paletteentries[newblock[23 : 16]];
-				4'b0011: paletteout <= paletteentries[newblock[31 : 24]];
-				4'b0100: paletteout <= paletteentries[newblock[39 : 32]];
-				4'b0101: paletteout <= paletteentries[newblock[47 : 40]];
-				4'b0110: paletteout <= paletteentries[newblock[55 : 48]];
-				4'b0111: paletteout <= paletteentries[newblock[63 : 56]];
-				4'b1000: paletteout <= paletteentries[newblock[71 : 64]];
-				4'b1001: paletteout <= paletteentries[newblock[79 : 72]];
-				4'b1010: paletteout <= paletteentries[newblock[87 : 80]];
-				4'b1011: paletteout <= paletteentries[newblock[95 : 88]];
-				4'b1100: paletteout <= paletteentries[newblock[103 : 96]];
-				4'b1101: paletteout <= paletteentries[newblock[111 : 104]];
-				4'b1110: paletteout <= paletteentries[newblock[119 : 112]];
-				4'b1111: paletteout <= paletteentries[newblock[127 : 120]];
-			endcase
-		end
-		2'b11: paletteout <= {
-			rgbcolor[5:0],2'd0,		// R
-			rgbcolor[10:6],3'd0,	// G
-			rgbcolor[15:11],3'd0};	// B
+	case ({scanenable, colormode})
+		2'b10: paletteout <= paletteentries[paletteindex];
+		2'b11: paletteout <= rgbcolor;
 		default: paletteout <= 0;
 	endcase
 end
@@ -250,6 +251,9 @@ always_ff @(posedge aclk) begin
 
 	case (cmdmode)
 		CINIT: begin
+			burstlen <= 'd19;
+			lastscanline <= 10'd0;
+			palettedin <= 24'd0;
 			cmdmode <= WCMD;
 		end
 
