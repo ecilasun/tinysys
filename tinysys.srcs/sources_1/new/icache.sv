@@ -103,6 +103,9 @@ typedef enum logic [4:0] {
 	INVALIDATEBEGIN, INVALIDATESTEP} cachestatetype;
 cachestatetype cachestate = IDLE;
 
+wire earlyread;
+assign earlyread = (lastline == {1'b0, line}) && (lasttag == {1'b0, tag});
+
 always_ff @(posedge aclk) begin
 	memreadstrobe <= 1'b0;
 	readdone <= 1'b0;
@@ -116,34 +119,32 @@ always_ff @(posedge aclk) begin
 			ctag <= tag;		// Cache tag 00000..1ffff
 			dccount <= 8'h00;
 
-			// Return rapidly if we're still accessing the same
-			// cache line and have the same tag
-			if ((lastline == {1'b0, line}) && (lasttag == {1'b0, tag})) begin
-				unique case(offset)
-					4'b0000:  dataout <= lastcdout[31:0];
-					4'b0001:  dataout <= lastcdout[63:32];
-					4'b0010:  dataout <= lastcdout[95:64];
-					4'b0011:  dataout <= lastcdout[127:96];
-					4'b0100:  dataout <= lastcdout[159:128];
-					4'b0101:  dataout <= lastcdout[191:160];
-					4'b0110:  dataout <= lastcdout[223:192];
-					4'b0111:  dataout <= lastcdout[255:224];
-					4'b1000:  dataout <= lastcdout[287:256];
-					4'b1001:  dataout <= lastcdout[319:288];
-					4'b1010:  dataout <= lastcdout[351:320];
-					4'b1011:  dataout <= lastcdout[383:352];
-					4'b1100:  dataout <= lastcdout[415:384];
-					4'b1101:  dataout <= lastcdout[447:416];
-					4'b1110:  dataout <= lastcdout[479:448];
-					4'b1111:  dataout <= lastcdout[511:480];
-				endcase
-				readdone <= ren;
-			end
+			// Do an early read just in case we are on the same cache tag+line
+			unique case(offset)
+				4'b0000:  dataout <= lastcdout[31:0];
+				4'b0001:  dataout <= lastcdout[63:32];
+				4'b0010:  dataout <= lastcdout[95:64];
+				4'b0011:  dataout <= lastcdout[127:96];
+				4'b0100:  dataout <= lastcdout[159:128];
+				4'b0101:  dataout <= lastcdout[191:160];
+				4'b0110:  dataout <= lastcdout[223:192];
+				4'b0111:  dataout <= lastcdout[255:224];
+				4'b1000:  dataout <= lastcdout[287:256];
+				4'b1001:  dataout <= lastcdout[319:288];
+				4'b1010:  dataout <= lastcdout[351:320];
+				4'b1011:  dataout <= lastcdout[383:352];
+				4'b1100:  dataout <= lastcdout[415:384];
+				4'b1101:  dataout <= lastcdout[447:416];
+				4'b1110:  dataout <= lastcdout[479:448];
+				4'b1111:  dataout <= lastcdout[511:480];
+			endcase
+			readdone <= ren && earlyread;
 
-			unique casex ({icacheflush, ren})
-				2'b1x: cachestate <= INVALIDATEBEGIN;
-				2'b01: cachestate <= ((lastline == {1'b0, line}) && (lasttag == {1'b0, tag})) ? IDLE : CREAD;
-				2'b00: cachestate <= IDLE;
+			casex ({icacheflush, earlyread, ren})
+				3'b1xx: cachestate <= INVALIDATEBEGIN;	// Cache invalidate
+				3'bx01: cachestate <= CREAD;			// Regular read
+				3'bx11: cachestate <= IDLE;				// Early read
+				default: cachestate <= IDLE;			// Others
 			endcase
 		end
 		
