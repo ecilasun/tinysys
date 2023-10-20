@@ -1,5 +1,8 @@
 MT41K128M16JT-125:K
 
+See this link for MIG setup for the 125K part
+https://blog.csdn.net/neufeifatonju/article/details/104915776
+
 non-industrial, commercial part
 128M16-> configured as 128 Meg 16
 JT->96 ball 8mmx14mm FBGA package
