@@ -157,7 +157,7 @@ typedef enum logic [3:0] {
 	INIT,
 	READINSTR, READREG,
 	WRITE, READ, DISPATCH,
-	MATHWAIT,
+	MULWAIT, DIVWAIT,
 	SYSOP, SYSWBACK, SYSWAIT,
 	CSROPS, WCSROP,
 	SYSCDISCARD, SYSCFLUSH, WCACHE} controlunitmode;
@@ -304,12 +304,12 @@ always @(posedge aclk) begin
 					end
 					(aluop==`ALU_MUL): begin
 						mulstrobe <= 1'b1;
-						ctlmode <= MATHWAIT;
+						ctlmode <= MULWAIT;
 					end
 					(aluop==`ALU_DIV),
 					(aluop==`ALU_REM): begin
 						divstrobe <= 1'b1;
-						ctlmode <= MATHWAIT;
+						ctlmode <= DIVWAIT;
 					end
 					default: begin
 						ctlmode <= DISPATCH;
@@ -384,15 +384,22 @@ always @(posedge aclk) begin
 			ctlmode <=	instrOneHotOut[`O_H_SYSTEM] ? SYSOP : READINSTR;
 		end
 
-		MATHWAIT: begin
-			unique case(1'b1)
-				mathop[0]:	wbdin <= (func3 == `F3_REM) ? remainder : remainderu;
-				mathop[1]:	wbdin <= (func3 == `F3_DIV) ? quotient : quotientu;
-				mathop[2]:	wbdin <= product;
+		MULWAIT: begin
+			wbdin <= product;
+			wback <= mulready;
+			ctlmode <= mulready ? READINSTR : MULWAIT;
+		end
+
+		DIVWAIT: begin
+			unique case (func3)
+				`F3_DIV:	wbdin <= quotient;
+				`F3_DIVU:	wbdin <= quotientu;
+				`F3_REM:	wbdin <= remainder;
+				`F3_REMU:	wbdin <= remainderu;
 			endcase
 
-			wback <= (mulready || divready || divuready);
-			ctlmode <= (mulready || divready || divuready) ? READINSTR : MATHWAIT;
+			wback <= (divready || divuready);
+			ctlmode <= (divready || divuready) ? READINSTR : DIVWAIT;
 		end
 
 		SYSOP: begin

@@ -103,6 +103,19 @@ always @(posedge clk) if( write && rst ) begin
     $display("WARNING [JTOPL]: detected write request while in reset.\nThis is likely a glue-logic error in the CPU-FM module.");
     $finish;
 end
+
+integer fdump,line_cnt=0;
+initial begin
+    fdump=$fopen("opl_wr.log","w");
+    if( fdump==0 ) begin
+        $display("Cannot create opl_wr.log");
+        $finish;
+    end
+end
+always @(posedge write) if(addr) begin
+    $fdisplay(fdump,"%d,%X,%X",line_cnt,selreg,din);
+    line_cnt <= line_cnt+1;
+end
 `endif
 
 // this runs at clk speed, no clock gating here
