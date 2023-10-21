@@ -194,10 +194,10 @@ static int read_frame(void)
 			SPrimitive prim;
 			prim.x0 = poly[2*0];
 			prim.y0 = poly[2*0+1];
-			prim.x1 = poly[2*(i+2)];
-			prim.y1 = poly[2*(i+2)+1];
-			prim.x2 = poly[2*(i+1)];
-			prim.y2 = poly[2*(i+1)+1];
+			prim.x1 = poly[2*(i+1)];
+			prim.y1 = poly[2*(i+1)+1];
+			prim.x2 = poly[2*(i+2)];
+			prim.y2 = poly[2*(i+2)+1];
 
 			RPUPushPrimitive(&prim);
 			RPUSetColor(poly_col);
