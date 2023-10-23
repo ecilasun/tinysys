@@ -149,17 +149,14 @@ initial begin
 end
 
 // Write port
-always @(posedge aclk) begin // Tied to GPU clock
+always @(posedge aclk) begin
 	if (palettewe)
 		paletteentries[palettewa] <= palettedin;
 end
 
 // Read port
 logic [23:0] paletteout = 0;
-always @(posedge clk25) begin // Tied to GPU clock
-	// NOTE: This currently uses MASK mode
-	// All possible modes:
-	// MASK / MAX / REPLACE / BLEND
+always @(posedge clk25) begin
 	case ({scanenable, colormode})
 		2'b10: paletteout <= paletteentries[paletteindex];
 		2'b11: paletteout <= rgbcolor;
