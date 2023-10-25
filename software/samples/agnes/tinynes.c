@@ -6,6 +6,8 @@
 #include "basesystem.h"
 #include "core.h"
 #include "gpu.h"
+#include "dma.h"
+#include "leds.h"
 
 #include "agnes.h"
 
@@ -50,7 +52,7 @@ int main(int argc, char *argv[])
     }
 
 	// Start video (single buffered for now)
-	s_framebuffer = (uint32_t*)GPUAllocateBuffer(320*240);
+	s_framebuffer = (uint32_t*)GPUAllocateBuffer(320 * AGNES_SCREEN_HEIGHT);
 	GPUSetWriteAddress(&s_vx, (uint32_t)s_framebuffer);
 	GPUSetScanoutAddress(&s_vx, (uint32_t)s_framebuffer);
 	GPUSetDefaultPalette(&s_vx);
@@ -67,26 +69,20 @@ int main(int argc, char *argv[])
 
     agnes_input_t input;
 
+	uint32_t ledState = 0;
     while (true)
 	{
+		LEDSetState(ledState);
         get_input(&input);
-
         agnes_set_input(agnes, &input, NULL);
+        agnes_next_frame(agnes);
+		ledState ^= 0xFFFFFFFF;
 
-        ok = agnes_next_frame(agnes);
-        if (!ok) {
-            fprintf(stderr, "Getting next frame failed.\n");
-            return 1;
-        }
-
+		uint32_t source = agnes_get_raw_screen_buffer(agnes);
 		for (uint32_t y = 0; y<AGNES_SCREEN_HEIGHT; ++y)
-		{
-			int iy = y*320;
-			for (uint32_t x = 0; x<AGNES_SCREEN_WIDTH/4; ++x)
-				s_framebuffer[(iy>>2) + x] = agnes_get_raw_screen_pixel4(agnes, x*4, y);
-		}
+			__builtin_memcpy(s_framebuffer+80*y, (void*)(source+256*y), 256);
 		CFLUSH_D_L1;
-    }
+	}
 
     agnes_destroy(agnes);
 

@@ -106,7 +106,7 @@ typedef struct ppu {
     uint8_t nametables[4 * 1024];
     uint8_t palette[32];
 
-    uint8_t screen_buffer[AGNES_SCREEN_HEIGHT * AGNES_SCREEN_WIDTH];
+    uint8_t *screen_buffer;
 
     int scanline;
     int dot;
@@ -556,6 +556,8 @@ bool agnes_load_ines_data(agnes_t *agnes, void *data, size_t data_size) {
 
     cpu_init(&agnes->cpu, agnes);
     ppu_init(&agnes->ppu, agnes);
+
+	agnes->ppu.screen_buffer = GPUAllocateBuffer(AGNES_SCREEN_HEIGHT * AGNES_SCREEN_WIDTH);
     
     return true;
 }
@@ -638,6 +640,10 @@ agnes_color_t agnes_get_screen_pixel(const agnes_t *agnes, int x, int y) {
     int ix = (y * AGNES_SCREEN_WIDTH) + x;
     uint8_t color_ix = agnes->ppu.screen_buffer[ix];
     return g_colors[color_ix & 0x3f];
+}
+
+uint32_t agnes_get_raw_screen_buffer(const agnes_t *agnes) {
+	return (uint32_t)agnes->ppu.screen_buffer;
 }
 
 uint32_t agnes_get_raw_screen_pixel4(const agnes_t *agnes, int x, int y) {

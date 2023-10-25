@@ -26,6 +26,9 @@ THE SOFTWARE.
 #ifndef agnes_h
 #define agnes_h
 
+// EnCi: platform includes
+#include "gpu.h"
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -80,6 +83,7 @@ agnes_color_t* agnes_get_palette(agnes_t *agnes);
 
 agnes_color_t agnes_get_screen_pixel(const agnes_t *agnes, int x, int y);
 uint32_t agnes_get_raw_screen_pixel4(const agnes_t *agnes, int x, int y);
+uint32_t agnes_get_raw_screen_buffer(const agnes_t *agnes);
 
 #ifdef __cplusplus
 }
