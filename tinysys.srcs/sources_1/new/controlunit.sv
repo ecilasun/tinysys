@@ -279,7 +279,7 @@ always @(posedge aclk) begin
 		end
 
 		READREG: begin
-			if (pendingwback || pendingload) begin
+			if (pendingwback || (pendingload && ~m_ibus.rdone)) begin
 				// HAZARD#1: Wait for pending register writeback
 				// HAZARD#2: Wait for pending memory load
 				ctlmode <= READREG;
@@ -320,10 +320,7 @@ always @(posedge aclk) begin
 		end
 
 		WRITE: begin
-			if (pendingwrite) begin
-				// HAZARD#3: Wait for pending write before read
-				ctlmode <= WRITE;
-			end else begin
+			if (~pendingwrite || m_ibus.wdone) begin
 				m_ibus.waddr <= rwaddress;
 				pendingwrite <= 1'b1;
 				unique case(func3)
@@ -337,19 +334,22 @@ always @(posedge aclk) begin
 					default: m_ibus.wstrobe <= 4'b1111;
 				endcase
 				ctlmode <= READINSTR;
+			end else begin
+				// HAZARD#3: Wait for pending write before read
+				ctlmode <= WRITE;
 			end
 		end
 
 		READ: begin
-			if (pendingwrite) begin
-				// HAZARD#3: Wait for pending write before write
-				ctlmode <= READ;
-			end else begin
+			if (~pendingwrite || m_ibus.wdone) begin
 				m_ibus.raddr <= rwaddress;
 				m_ibus.rstrobe <= 1'b1;
 				rfunc3 <= func3;
 				pendingload <= 1'b1;
 				ctlmode <= READINSTR;
+			end else begin
+				// HAZARD#3: Wait for pending write before write
+				ctlmode <= READ;
 			end
 		end
 
@@ -415,24 +415,24 @@ always @(posedge aclk) begin
 		end
 
 		SYSCDISCARD: begin
-			if (pendingwrite) begin
-				// HAZARD#3: Wait for pending read or write before cache discard
-				ctlmode <= SYSCDISCARD;
-			end else begin
+			if (~pendingwrite || m_ibus.wdone) begin
 				m_ibus.dcacheop <= 2'b01; // {nowb,iscachecmd}
 				m_ibus.cstrobe <= 1'b1;
 				ctlmode <= WCACHE;
+			end else begin
+				// HAZARD#3: Wait for pending read or write before cache discard
+				ctlmode <= SYSCDISCARD;
 			end
 		end
 
 		SYSCFLUSH: begin
-			if (pendingwrite) begin
-				// HAZARD#3: Wait for pending read or write before cache flush
-				ctlmode <= SYSCFLUSH;
-			end else begin
+			if (~pendingwrite || m_ibus.wdone) begin
 				m_ibus.dcacheop <= 2'b11; // {wb,iscachecmd}
 				m_ibus.cstrobe <= 1'b1;
 				ctlmode <= WCACHE;
+			end else begin
+				// HAZARD#3: Wait for pending read or write before cache flush
+				ctlmode <= SYSCFLUSH;
 			end
 		end
 
@@ -444,13 +444,13 @@ always @(posedge aclk) begin
 		end
 
 		CSROPS: begin
-			if (pendingwrite) begin
-				// HAZARD#3: Wait for pending write before CSR read
-				ctlmode <= CSROPS;
-			end else begin
+			if (~pendingwrite || m_ibus.wdone) begin
 				m_ibus.raddr <= {20'h80004, csroffset}; // TODO: 0x8000?+(CID<<12) but make sure CSR address space is at the end
 				m_ibus.rstrobe <= 1'b1;
 				ctlmode <= WCSROP;
+			end else begin
+				// HAZARD#3: Wait for pending write before CSR read
+				ctlmode <= CSROPS;
 			end
 		end
 
@@ -462,10 +462,7 @@ always @(posedge aclk) begin
 		end
 
 		SYSWBACK: begin
-			if (pendingwrite) begin
-				// HAZARD#3: Wait for pending write before CSR write
-				ctlmode <= SYSWBACK;
-			end else begin
+			if (~pendingwrite || m_ibus.wdone) begin
 				// Update CSR register with read value
 				m_ibus.waddr <= {20'h80004, csroffset}; // TODO: 0x8000?+(CID<<12) but make sure CSR address space is at the end
 				m_ibus.wstrobe <= 4'b1111;
@@ -495,6 +492,9 @@ always @(posedge aclk) begin
 
 				// Wait for CSR writeback
 				ctlmode <= SYSWAIT;
+			end else begin
+				// HAZARD#3: Wait for pending write before CSR write
+				ctlmode <= SYSWBACK;
 			end
 		end
 
