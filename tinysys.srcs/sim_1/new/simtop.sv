@@ -22,11 +22,6 @@ wire usbc_miso = usbc_mosi; // nul device
 wire usba_mosi;
 wire usba_miso = usba_mosi; // nul device
 
-wire adclk = 1'b0;
-wire addout = 1'b0;
-wire addin;
-wire adcs = 1'b0;
-
 // DDR3 simulation model
 wire ddr3_reset_n;
 wire [0:0]   ddr3_cke;
@@ -107,11 +102,6 @@ tophat main(
 	.usba_mosi(usba_mosi),
 	.usba_resn(),
 	.usba_int(1'b0),
-	// ADC
-	.adclk(adclk),
-	.addout(addout),
-	.addin(addin),
-	.adcs(adcs),
 	// Audio out
 	.au_sdin(),
 	.au_sclk(),

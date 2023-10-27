@@ -31,8 +31,8 @@ logic memreadstrobe = 1'b0;
 logic [16:0] ctag;					// current cache tag (17 bits)
 logic [3:0] coffset;				// current word offset 0..15
 logic [7:0] clineaddr = 8'd0;		// current cache line 0..256
-logic [8:0] lastline = 9'h1FF;		// last cache line we've read
-logic [17:0] lasttag = 18'h3FFFF;	// last tag we've encountered
+logic [8:0] lastline = 9'h100;		// last cache line we've read
+logic [17:0] lasttag = 18'h20000;	// last tag we've encountered
 
 logic [17:0] cachelinetags[0:255];	// cache line tags (17 bits) + 1 bit for valid flag
 
@@ -150,8 +150,7 @@ always_ff @(posedge aclk) begin
 		
 		INVALIDATEBEGIN: begin
 			// Invalidate
-			lastline = 9'h1FF;
-			lasttag = 18'h3FFFF;
+			lastline = 9'h100;
 			clineaddr <= dccount;
 			clinedin <= 18'd0; // invalid + zero tag
 			clinewe <= 1'b1;
