@@ -181,7 +181,7 @@ logic signed [15:0] ry1;
 logic signed [15:0] rx2;
 logic signed [15:0] ry2;
 logic [7:0] rcolor;
-logic [3:0] rcommand;
+logic [3:0] rcommandunused;
 
 logic rena = 1'b0;
 wire [15:0] emask01;
@@ -213,7 +213,7 @@ edgemaskgen edgeTest20(
 typedef enum logic [3:0] {
 	RINIT,
 	RWCMD,
-	SETUPBOUNDS, ENDSETUPBOUNDS, CLIPBOUNDS,
+	SETUPBOUNDS, FINDBOUNDS, CLIPBOUNDS,
 	BEGINSWEEP, RASTERIZETILE, EMITTILE,
 	WRITEBACKTILE,
 	NEXTTILE,
@@ -251,6 +251,15 @@ rastertilewritefifo tileoutfifoinst(
 	.clk(aclk),
 	.rst(~aresetn) );
 
+logic signed [15:0] minx0x1;
+logic signed [15:0] minx1x2;
+logic signed [15:0] maxx0x1;
+logic signed [15:0] maxx1x2;
+logic signed [15:0] miny0y1;
+logic signed [15:0] miny1y2;
+logic signed [15:0] maxy0y1;
+logic signed [15:0] maxy1y2;
+
 always_ff @(posedge aclk) begin
 
 	rwren <= 1'b0;
@@ -265,54 +274,40 @@ always_ff @(posedge aclk) begin
 
 		RWCMD: begin
 			if (rwvalid && ~rwempty) begin
-				// TODO: If rcommand != 4'b0000 we need to flush the data cache
-				{rcolor,ry2,rx2,ry1,rx1,ry0,rx0,rcommand} <= rwdout;
+				{rcolor,ry2,rx2,ry1,rx1,ry0,rx0,rcommandunused} <= rwdout;
 				// Advance FIFO
 				rwren <= 1'b1;
-				rastermode <= SETUPBOUNDS;
+
+				unique case (rwdout[3:0])
+					4'h0: rastermode <= SETUPBOUNDS;
+					4'h1: rastermode <= CACHEFLUSHSTROBE;
+					4'h2: rastermode <= CACHEINVALIDATESTROBE;
+					default: rastermode <= RWCMD;
+				endcase
 			end
 		end
 
 		SETUPBOUNDS: begin
+			minx0x1 <= rx0 < rx1 ? rx0 : rx1;
+			minx1x2 <= rx1 < rx2 ? rx1 : rx2;
+			maxx0x1 <= rx0 >= rx1 ? rx0 : rx1;
+			maxx1x2 <= rx1 >= rx2 ? rx1 : rx2;
+			miny0y1 <= ry0 < ry1 ? ry0 : ry1;
+			miny1y2 <= ry1 < ry2 ? ry1 : ry2;
+			maxy0y1 <= ry0 >= ry1 ? ry0 : ry1;
+			maxy1y2 <= ry1 >= ry2 ? ry1 : ry2;
+
+			rastermode <= FINDBOUNDS;
+		end
+
+		FINDBOUNDS: begin
 			// Find min/max bounds
-			minx <= rx0 < rx1 ? rx0 : rx1;
-			miny <= ry0 < ry1 ? ry0 : ry1;
-			maxx <= rx0 >= rx1 ? rx0 : rx1;
-			maxy <= ry0 >= ry1 ? ry0 : ry1;
-			unique case (rcommand)
-				4'h0: rastermode <= ENDSETUPBOUNDS;
-				4'h1: rastermode <= CACHEFLUSHSTROBE;
-				4'h2: rastermode <= CACHEINVALIDATESTROBE;
-				default: rastermode <= RWCMD;
-			endcase
-		end
+			minx <= minx0x1 < minx1x2 ? minx0x1 : minx1x2;
+			miny <= miny0y1 < miny1y2 ? miny0y1 : miny1y2;
+			maxx <= maxx0x1 >= maxx1x2 ? maxx0x1 : maxx1x2;
+			maxy <= maxy0y1 >= maxy1y2 ? maxy0y1 : maxy1y2;
 
-		CACHEFLUSHSTROBE: begin
-			if (~rtfull) begin
-				rtdin <= {32'd0, 16'd0, 8'd0, 2'b01};
-				rtwe <= 1'b1;
-				rastermode <= RWCMD;
-			end else begin
-				rastermode <= CACHEFLUSHSTROBE;
-			end
-		end
-
-		CACHEINVALIDATESTROBE: begin
-			if (~rtfull) begin
-				rtdin <= {32'd0, 16'd0, 8'd0, 2'b10};
-				rtwe <= 1'b1;
-				rastermode <= RWCMD;
-			end else begin
-				rastermode <= CACHEINVALIDATESTROBE;
-			end
-		end
-
-		ENDSETUPBOUNDS: begin
-			minx <= minx < rx2 ? minx : rx2;
-			miny <= miny < ry2 ? miny : ry2;
-			maxx <= maxx >= rx2 ? maxx : rx2;
-			maxy <= maxy >= ry2 ? maxy : ry2;
-			rastermode <= CLIPBOUNDS;    // TODO: Make this optional via view_clip_enable flag
+			rastermode <= CLIPBOUNDS;
 		end
 
 		CLIPBOUNDS: begin
@@ -321,6 +316,7 @@ always_ff @(posedge aclk) begin
 			miny <= miny < 0 ? 0 : miny;
 			maxx <= maxx > 319 ? 319 : maxx;
 			maxy <= maxy > 239 ? 239 : maxy;
+
 			// Do not attempt to rasterize if bounds are offscreen
 			rastermode <= (minx>319 || miny>239 || maxx<0 || maxy<0) ? RWCMD : BEGINSWEEP;
 		end
@@ -329,6 +325,7 @@ always_ff @(posedge aclk) begin
 			// Set up tile cursor
 			cx <= minx[15:2]; // pixel position/4 == tile index
 			cy <= miny[15:2];
+
 			// Set up output color (expanded to 128 bits from 8 bits)
 			rastermode <= RASTERIZETILE;
 		end
@@ -338,11 +335,12 @@ always_ff @(posedge aclk) begin
 			rtilex <= {cx,2'b00}; // Rasterizer requires pixel positions, hence the *4
 			rtiley <= {cy,2'b00};
 			rena <= 1'b1;
+
 			rastermode <= EMITTILE;
 		end
 
 		EMITTILE: begin
-			if (eready01 & eready12 & eready20) begin
+			if (eready01 && eready12 && eready20) begin
 				// This is the wstrb for a 4x4 tile
 				tilecoverage <= emask01 & emask12 & emask20;
 				// Push to output fifo if the tile mask isn't zero
@@ -375,7 +373,7 @@ always_ff @(posedge aclk) begin
 			if (~rtfull) begin
 				rtdin <= {raddr, tilecoverage, rcolor, 2'b00};
 				rtwe <= 1'b1;
-				rastermode <= NEXTTILE;
+				rastermode <= lasttile ? RWCMD : RASTERIZETILE;
 			end else begin
 				rastermode <= WRITEBACKTILE;
 			end
@@ -386,6 +384,25 @@ always_ff @(posedge aclk) begin
 			rastermode <= lasttile ? RWCMD : RASTERIZETILE;
 		end
 
+		CACHEFLUSHSTROBE: begin
+			if (~rtfull) begin
+				rtdin <= {32'd0, 16'd0, 8'd0, 2'b01};
+				rtwe <= 1'b1;
+				rastermode <= RWCMD;
+			end else begin
+				rastermode <= CACHEFLUSHSTROBE;
+			end
+		end
+
+		CACHEINVALIDATESTROBE: begin
+			if (~rtfull) begin
+				rtdin <= {32'd0, 16'd0, 8'd0, 2'b10};
+				rtwe <= 1'b1;
+				rastermode <= RWCMD;
+			end else begin
+				rastermode <= CACHEINVALIDATESTROBE;
+			end
+		end
 	endcase
 
 	if (~aresetn) begin

@@ -1,7 +1,17 @@
 MT41K128M16JT-125:K
 
-See this link for MIG setup for the 125K part
+See these links for MIG setup for the 125K part
 https://blog.csdn.net/neufeifatonju/article/details/104915776
+https://forum.digilent.com/topic/2709-which-memory-chip-on-the-arty/
+
+Max clock period: 3000ps (667Mbps for -1 parts)
+Recomm. input clock: 6000ps (166.6667MHz)
+Voltage: 1.35V
+Data width: 16
+Data mask: enabled
+RZQ/6 - RZQ/6
+Internal vref: enabled
+Internal term. impedance: 50 Ohms
 
 non-industrial, commercial part
 128M16-> configured as 128 Meg 16

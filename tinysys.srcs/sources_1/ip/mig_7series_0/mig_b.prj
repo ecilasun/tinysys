@@ -46,7 +46,7 @@
     <TimePeriod>3000</TimePeriod>
     <VccAuxIO>1.8V</VccAuxIO>
     <PHYRatio>4:1</PHYRatio>
-    <InputClkFreq>166.666</InputClkFreq>
+    <InputClkFreq>800</InputClkFreq>
     <UIExtraClocks>0</UIExtraClocks>
     <MMCM_VCO>666</MMCM_VCO>
     <MMCMClkOut0> 1.000</MMCMClkOut0>
@@ -59,14 +59,14 @@
     <DataMask>1</DataMask>
     <ECC>Disabled</ECC>
     <Ordering>Normal</Ordering>
-    <BankMachineCnt>3</BankMachineCnt>
-    <CustomPart>FALSE</CustomPart>
-    <NewPartName/>
+    <BankMachineCnt>8</BankMachineCnt>
+    <CustomPart>TRUE</CustomPart>
+    <NewPartName>MT41K128M16JT-125</NewPartName>
     <RowAddress>14</RowAddress>
     <ColAddress>10</ColAddress>
     <BankAddress>3</BankAddress>
     <MemoryVoltage>1.35V</MemoryVoltage>
-    <UserMemoryAddressMap>BANK_ROW_COLUMN</UserMemoryAddressMap>
+    <UserMemoryAddressMap>ROW_BANK_COLUMN</UserMemoryAddressMap>
     <PinSelection>
       <Pin IN_TERM="" IOSTANDARD="" PADName="A15" SLEW="" VCCAUX_IO="" name="ddr3_addr[0]"/>
       <Pin IN_TERM="" IOSTANDARD="" PADName="C17" SLEW="" VCCAUX_IO="" name="ddr3_addr[10]"/>
@@ -122,7 +122,7 @@
       <Pin Bank="Select Bank" PADName="No connect" name="tg_compare_error"/>
     </System_Control>
     <TimingParameters>
-      <Parameters tcke="5.625" tfaw="45" tras="36" trcd="13.5" trefi="7.8" trfc="160" trp="13.5" trrd="7.5" trtp="7.5" twtr="7.5"/>
+      <Parameters tcke="5.0" tfaw="40.0" tras="35.0" trcd="13.75" trefi="7.8" trfc="160" trp="13.75" trrd="7.5" trtp="7.5" twtr="7.5"/>
     </TimingParameters>
     <mrBurstLength name="Burst Length">8 - Fixed</mrBurstLength>
     <mrBurstType name="Read Burst Type and Length">Sequential</mrBurstType>
