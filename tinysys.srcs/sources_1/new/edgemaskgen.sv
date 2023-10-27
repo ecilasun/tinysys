@@ -19,8 +19,9 @@ module edgemaskgen(
 
 typedef enum logic [2:0] {
 	RINIT, RWCMD,
-	SETUPRASTER, STARTRASTER,
-	GENMASKB, GENMASKA,
+	SETUPRASTERA, SETUPRASTERB,
+	STARTRASTER,
+	GENMASKA, GENMASKB,
 	ENDRASTER } rasterstatetype;
 rasterstatetype rstate = RINIT;
 
@@ -32,10 +33,12 @@ logic signed [17:0] x1;
 logic signed [17:0] y1;
 logic signed [17:0] dx;
 logic signed [17:0] dy;
+logic signed [17:0] dx2;
+logic signed [17:0] dy2;
+logic signed [17:0] dx3;
+logic signed [17:0] dy3;
 logic signed [17:0] A[0:3];
 logic signed [17:0] B[0:3];
-logic signed [17:0] partialA[0:3];
-logic signed [17:0] partialB[0:3];
 logic signed [17:0] result[0:15];
 logic bready;
 
@@ -61,63 +64,64 @@ always @(posedge clk) begin
 			tilex <= {tx[15],tx[15],tx};
 			tiley <= {ty[15],ty[15],ty};
 
-			rstate <= ena ? SETUPRASTER : RWCMD;
+			rstate <= ena ? SETUPRASTERA : RWCMD;
 		end
 		
-		SETUPRASTER: begin
+		SETUPRASTERA: begin
 			dx <= x0-x1;
 			dy <= y1-y0;
+			rstate <= SETUPRASTERB;
+		end
 
-			A[0] <= tiley-y0;
-			B[0] <= tilex-x0;
+		SETUPRASTERB: begin
+			A[0] <= (tiley-y0)*dx;
+			B[0] <= (tilex-x0)*dy;
+
+			dx2 <= dx+dx;
+			dx3 <= dx+dx+dx;
+
+			dy2 <= dy+dy;
+			dy3 <= dy+dy+dy;
 
 			rstate <= STARTRASTER;
 		end
  
 		STARTRASTER: begin
-			B[1] <= B[0]+1;
-			B[2] <= B[0]+2;
-			B[3] <= B[0]+3;
+			B[1] <= B[0] + dy;
+			B[2] <= B[0] + dy2;
+			B[3] <= B[0] + dy3;
 
-			A[1] <= A[0]+1;
-			A[2] <= A[0]+2;
-			A[3] <= A[0]+3;
+			A[1] <= A[0] + dx;
+			A[2] <= A[0] + dx2;
+			A[3] <= A[0] + dx3;
 
-			rstate <= GENMASKB;
-		end
-		
-		GENMASKB: begin
-			partialA[0] <= A[0]*dx;
-			partialA[1] <= A[1]*dx;
-			partialA[2] <= A[2]*dx;
-			partialA[3] <= A[3]*dx;
-			partialB[0] <= B[0]*dy;
-			partialB[1] <= B[1]*dy;
-			partialB[2] <= B[2]*dy;
-			partialB[3] <= B[3]*dy;
 			rstate <= GENMASKA;
 		end
 
 		GENMASKA: begin
-			result[0]  <= partialA[0] + partialB[0];
-			result[1]  <= partialA[0] + partialB[1];
-			result[2]  <= partialA[0] + partialB[2];
-			result[3]  <= partialA[0] + partialB[3];
-			result[4]  <= partialA[1] + partialB[0];
-			result[5]  <= partialA[1] + partialB[1];
-			result[6]  <= partialA[1] + partialB[2];
-			result[7]  <= partialA[1] + partialB[3];
-			result[8]  <= partialA[2] + partialB[0];
-			result[9]  <= partialA[2] + partialB[1];
-			result[10] <= partialA[2] + partialB[2];
-			result[11] <= partialA[2] + partialB[3];
-			result[12] <= partialA[3] + partialB[0];
-			result[13] <= partialA[3] + partialB[1];
-			result[14] <= partialA[3] + partialB[2];
-			result[15] <= partialA[3] + partialB[3];
+			result[0]  <= A[0] + B[0];
+			result[1]  <= A[0] + B[1];
+			result[2]  <= A[0] + B[2];
+			result[3]  <= A[0] + B[3];
+			result[4]  <= A[1] + B[0];
+			result[5]  <= A[1] + B[1];
+			result[6]  <= A[1] + B[2];
+			result[7]  <= A[1] + B[3];
+			rstate <= GENMASKB;
+		end
+
+		GENMASKB: begin
+			result[8]  <= A[2] + B[0];
+			result[9]  <= A[2] + B[1];
+			result[10] <= A[2] + B[2];
+			result[11] <= A[2] + B[3];
+			result[12] <= A[3] + B[0];
+			result[13] <= A[3] + B[1];
+			result[14] <= A[3] + B[2];
+			result[15] <= A[3] + B[3];
 			rstate <= ENDRASTER;
 		end
- 
+
 		ENDRASTER: begin
 			// Gather sign bits into edge mask
 			rmask <= {

@@ -23,8 +23,8 @@ module controlunit #(
 logic ififore = 1'b0;
 assign ififord_en = ififore;
 
-logic [63:0] cyclecount = 64'd0;
-logic [63:0] retiredcount = 64'd0;
+(* extract_reset = "no" *) logic [63:0] cyclecount = 64'd0;
+(* extract_reset = "no" *) logic [63:0] retiredcount = 64'd0;
 assign cpuclocktime = cyclecount;
 assign retired = retiredcount;
 
