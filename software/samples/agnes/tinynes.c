@@ -8,6 +8,7 @@
 #include "gpu.h"
 #include "dma.h"
 #include "leds.h"
+#include "task.h"
 
 #include "agnes.h"
 
@@ -73,9 +74,12 @@ int main(int argc, char *argv[])
     while (true)
 	{
 		LEDSetState(ledState);
+
         get_input(&input);
         agnes_set_input(agnes, &input, NULL);
         agnes_next_frame(agnes);
+		TaskYield();
+
 		ledState ^= 0xFFFFFFFF;
 
 		uint32_t source = agnes_get_raw_screen_buffer(agnes);

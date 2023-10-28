@@ -52,8 +52,6 @@ wire hsync, vsync;//, blank;
 wire [9:0] video_x;
 wire [9:0] video_y;
 
-logic hsync_d, vsync_d;
-
 wire out_tmds_red;
 wire out_tmds_green;
 wire out_tmds_blue;
@@ -194,12 +192,6 @@ OBUFDS OBUFDS_clk(.I(out_tmds_clk), .O(gpuvideoout.tmdsclkp), .OB(gpuvideoout.tm
 OBUFDS OBUFDS_red(.I(out_tmds_red), .O(gpuvideoout.tmdsp[2]), .OB(gpuvideoout.tmdsn[2]));
 OBUFDS OBUFDS_green(.I(out_tmds_green), .O(gpuvideoout.tmdsp[1]), .OB(gpuvideoout.tmdsn[1]));
 OBUFDS OBUFDS_blue(.I(out_tmds_blue), .O(gpuvideoout.tmdsp[0]), .OB(gpuvideoout.tmdsn[0]));
-
-// Need to delay one clock
-always @(posedge clk25) begin
-	hsync_d <= hsync;
-	vsync_d <= vsync;
-end
 
 // --------------------------------------------------
 // AXI4 defaults

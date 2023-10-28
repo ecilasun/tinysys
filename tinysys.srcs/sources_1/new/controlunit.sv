@@ -12,7 +12,7 @@ module controlunit #(
 	// Instruction FIFO control
 	input wire ififoempty,
 	input wire ififovalid,
-	input wire [143:0] ififodout,
+	input wire [131:0] ififodout,
 	output wire ififord_en,
 	// CPU cycle / retired instruction counts
 	output wire [63:0] cpuclocktime,
@@ -35,11 +35,11 @@ logic [3:0] aluop;
 logic [2:0] bluop;
 logic [2:0] func3;
 logic [2:0] rfunc3;
-logic [6:0] func7;
+//logic [6:0] func7;
 logic [11:0] func12;
 logic [4:0] rs1;
 logic [4:0] rs2;
-logic [4:0] rs3;
+//logic [4:0] rs3;
 logic [4:0] rd;
 logic [11:0] csroffset;
 logic [31:0] immed;
@@ -265,7 +265,7 @@ always @(posedge aclk) begin
 
 		READINSTR: begin
 			// Grab next decoded instruction if there's something in the FIFO
-			{	rs3, func7, csroffset,
+			{	/*rs3, func7,*/ csroffset,
 				func12, func3,
 				instrOneHotOut, selectimmedasrval2,
 				bluop, aluop,

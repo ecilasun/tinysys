@@ -13,7 +13,7 @@ module fetchunit #(
 	// Output FIFO control
 	output wire ififoempty,
 	output wire ififovalid,
-	output wire [143:0] ififodout,
+	output wire [131:0] ififodout,
 	input wire ififord_en,
 	// IRQ lines from CSR unit
 	input wire [1:0] irqReq,
@@ -142,7 +142,7 @@ wire [31:0] injectInstruction = injectionROM[injectAddr];
 // Instruction output FIFO
 // --------------------------------------------------
 
-logic [143:0] ififodin;
+logic [131:0] ififodin;
 logic ififowr_en = 1'b0;
 wire ififofull;
 
@@ -244,7 +244,7 @@ always @(posedge aclk) begin
 
 			ififowr_en <= (~isfence) && (~irqReq[0]) && (~irqReq[1]) && (~isillegalinstruction) && (~isecall) && (~isebreak) && (~ismret) && (~iswfi);
 			ififodin <= {
-				rs3, func7, csroffset,
+				/*rs3, func7,*/ csroffset,
 				func12, func3,
 				instrOneHotOut, selectimmedasrval2,
 				bluop, aluop,
@@ -377,7 +377,7 @@ always @(posedge aclk) begin
 		INJECT: begin
 			ififowr_en <= ~ififofull;
 			ififodin <= {
-				rs3, func7, csroffset,
+				/*rs3, func7,*/ csroffset,
 				func12, func3,
 				instrOneHotOut, selectimmedasrval2,
 				bluop, aluop,

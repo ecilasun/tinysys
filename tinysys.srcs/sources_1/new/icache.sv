@@ -106,6 +106,27 @@ cachestatetype cachestate = IDLE;
 wire earlyread;
 assign earlyread = (lastline == {1'b0, line}) && (lasttag == {1'b0, tag});
 
+always_comb begin
+	unique case(offset)
+		4'b0000:  dataout = lastcdout[31:0];
+		4'b0001:  dataout = lastcdout[63:32];
+		4'b0010:  dataout = lastcdout[95:64];
+		4'b0011:  dataout = lastcdout[127:96];
+		4'b0100:  dataout = lastcdout[159:128];
+		4'b0101:  dataout = lastcdout[191:160];
+		4'b0110:  dataout = lastcdout[223:192];
+		4'b0111:  dataout = lastcdout[255:224];
+		4'b1000:  dataout = lastcdout[287:256];
+		4'b1001:  dataout = lastcdout[319:288];
+		4'b1010:  dataout = lastcdout[351:320];
+		4'b1011:  dataout = lastcdout[383:352];
+		4'b1100:  dataout = lastcdout[415:384];
+		4'b1101:  dataout = lastcdout[447:416];
+		4'b1110:  dataout = lastcdout[479:448];
+		4'b1111:  dataout = lastcdout[511:480];
+	endcase
+end
+
 always_ff @(posedge aclk) begin
 	memreadstrobe <= 1'b0;
 	readdone <= 1'b0;
@@ -120,24 +141,6 @@ always_ff @(posedge aclk) begin
 			dccount <= 8'h00;
 
 			// Do an early read just in case we are on the same cache tag+line
-			unique case(offset)
-				4'b0000:  dataout <= lastcdout[31:0];
-				4'b0001:  dataout <= lastcdout[63:32];
-				4'b0010:  dataout <= lastcdout[95:64];
-				4'b0011:  dataout <= lastcdout[127:96];
-				4'b0100:  dataout <= lastcdout[159:128];
-				4'b0101:  dataout <= lastcdout[191:160];
-				4'b0110:  dataout <= lastcdout[223:192];
-				4'b0111:  dataout <= lastcdout[255:224];
-				4'b1000:  dataout <= lastcdout[287:256];
-				4'b1001:  dataout <= lastcdout[319:288];
-				4'b1010:  dataout <= lastcdout[351:320];
-				4'b1011:  dataout <= lastcdout[383:352];
-				4'b1100:  dataout <= lastcdout[415:384];
-				4'b1101:  dataout <= lastcdout[447:416];
-				4'b1110:  dataout <= lastcdout[479:448];
-				4'b1111:  dataout <= lastcdout[511:480];
-			endcase
 			readdone <= ren && earlyread;
 
 			casex ({icacheflush, earlyread, ren})
@@ -165,28 +168,11 @@ always_ff @(posedge aclk) begin
 
 		CREAD: begin
 			if ({1'b1, ctag} == clinedout) begin // Hit
-				unique case(coffset)
-					4'b0000:  dataout <= cdout[31:0];
-					4'b0001:  dataout <= cdout[63:32];
-					4'b0010:  dataout <= cdout[95:64];
-					4'b0011:  dataout <= cdout[127:96];
-					4'b0100:  dataout <= cdout[159:128];
-					4'b0101:  dataout <= cdout[191:160];
-					4'b0110:  dataout <= cdout[223:192];
-					4'b0111:  dataout <= cdout[255:224];
-					4'b1000:  dataout <= cdout[287:256];
-					4'b1001:  dataout <= cdout[319:288];
-					4'b1010:  dataout <= cdout[351:320];
-					4'b1011:  dataout <= cdout[383:352];
-					4'b1100:  dataout <= cdout[415:384];
-					4'b1101:  dataout <= cdout[447:416];
-					4'b1110:  dataout <= cdout[479:448];
-					4'b1111:  dataout <= cdout[511:480];
-				endcase
 				// Remember for next time in case we hit the same line again
 				lastcdout <= cdout;
 				lastline <= {1'b0, clineaddr};
 				lasttag <= {1'b0, ctag};
+				// Mark as 'done' since the comb unit will yield the value in lastcdout
 				readdone <= 1'b1;
 				cachestate <= IDLE;
 			end else begin // Miss

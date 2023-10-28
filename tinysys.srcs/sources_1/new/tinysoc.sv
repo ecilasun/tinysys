@@ -83,7 +83,7 @@ wire branchresolved;
 wire [31:0] branchtarget;
 wire ififoempty;
 wire ififovalid;
-wire [143:0] ififodout;
+wire [131:0] ififodout;
 wire ififord_en;
 wire [1:0] irqReq;
 wire [31:0] mepc;

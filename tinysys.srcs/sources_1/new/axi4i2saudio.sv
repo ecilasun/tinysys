@@ -23,12 +23,17 @@ module axi4i2saudio(
 // Counter for generating other divided clocks
 logic [8:0] count;
 
-always @(posedge audioclock) begin
-	count <= count + 1;
-	if (~aresetn) begin
-		count <= 9'd0;
-	end
-end
+COUNTER_LOAD_MACRO #(
+	.COUNT_BY(48'd1),		// Count by 1
+	.DEVICE("7SERIES"), 
+	.WIDTH_DATA(9) ) counterinst (
+	.Q(count),
+	.CLK(audioclock),
+	.CE(~aresetn),
+	.DIRECTION(1'b1),
+	.LOAD(~aresetn),
+	.LOAD_DATA(8'd0),
+	.RST(1'b0) );
 
 wire lrck = count[8];
 wire sclk = count[2];

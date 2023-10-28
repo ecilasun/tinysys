@@ -67,7 +67,7 @@ end
 // --------------------------------------------------
 
 logic [31:0] resetcountdown = 32'd0;
-logic regaresetn = 1'b0;
+logic regaresetn;
 
 always @(posedge clkbus) begin
 	resetcountdown <= {resetcountdown[30:0], clkRdyB};
