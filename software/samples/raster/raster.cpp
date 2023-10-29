@@ -98,6 +98,10 @@ int main(int argc, char *argv[])
 		int32_t w1_row = edgeFunction(v2, v0, a20, b20, p);
 		int32_t w2_row = edgeFunction(v0, v1, a01, b01, p);
 
+		int32_t c0 = 0x00;
+		int32_t c1 = 0xFF;
+		int32_t c2 = 0xC0;
+
 		// Sweep and fill pixels
 		for (int32_t y = miny; y<=maxy; ++y)
 		{
@@ -106,8 +110,9 @@ int main(int argc, char *argv[])
 			int32_t w2 = w2_row;
 			for (int32_t x = minx; x<=maxx; ++x)
 			{
+				int32_t bary = w0*c0 + w1*c1 + w2*c2;
 				if (w0<0 && w1<0 && w2<0)
-					sc.writepage[x+y*320] = 0x0F;
+					sc.writepage[x+y*320] = bary;
 				else
 					sc.writepage[x+y*320] = 0x0C;
 				w0 += a12;
