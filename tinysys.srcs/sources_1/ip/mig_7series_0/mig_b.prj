@@ -46,7 +46,7 @@
     <TimePeriod>3000</TimePeriod>
     <VccAuxIO>1.8V</VccAuxIO>
     <PHYRatio>4:1</PHYRatio>
-    <InputClkFreq>800</InputClkFreq>
+    <InputClkFreq>166.666</InputClkFreq>
     <UIExtraClocks>0</UIExtraClocks>
     <MMCM_VCO>666</MMCM_VCO>
     <MMCMClkOut0> 1.000</MMCMClkOut0>
@@ -59,7 +59,7 @@
     <DataMask>1</DataMask>
     <ECC>Disabled</ECC>
     <Ordering>Normal</Ordering>
-    <BankMachineCnt>8</BankMachineCnt>
+    <BankMachineCnt>4</BankMachineCnt>
     <CustomPart>TRUE</CustomPart>
     <NewPartName>MT41K128M16JT-125</NewPartName>
     <RowAddress>14</RowAddress>
