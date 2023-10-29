@@ -32,7 +32,7 @@ COUNTER_LOAD_MACRO #(
 	.CE(~aresetn),
 	.DIRECTION(1'b1),
 	.LOAD(~aresetn),
-	.LOAD_DATA(8'd0),
+	.LOAD_DATA(9'd0),
 	.RST(1'b0) );
 
 wire lrck = count[8];

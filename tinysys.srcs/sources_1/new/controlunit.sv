@@ -359,22 +359,31 @@ always @(posedge aclk) begin
 			unique case(1'b1)
 				instrOneHotOut[`O_H_OP],
 				instrOneHotOut[`O_H_OP_IMM]: begin
+					// Store ALU output in target register
 					wbdin <= aluout;
 					wback <= 1'b1;
 				end
-				instrOneHotOut[`O_H_AUIPC],
+				instrOneHotOut[`O_H_AUIPC]: begin
+					// Store PC relative offset in target register
+					wbdin <= offsetPC;
+					wback <= 1'b1;
+				end
 				instrOneHotOut[`O_H_LUI]: begin
-					wbdin <= instrOneHotOut[`O_H_AUIPC] ? offsetPC : D;
+					// Store the immed in target register
+					wbdin <= D;
 					wback <= 1'b1;
 				end
 				instrOneHotOut[`O_H_JAL],
 				instrOneHotOut[`O_H_JALR]: begin
+					// Save return address
 					wbdin <= adjacentPC;
 					wback <= 1'b1;
+					// Notify fetch to resume
 					btarget <= instrOneHotOut[`O_H_JAL] ? offsetPC : rwaddress;
 					btready <= 1'b1;
 				end
 				instrOneHotOut[`O_H_BRANCH]: begin
+					// Take or skip branch and notify fetch to resume
 					btarget <= branchout ? offsetPC : adjacentPC;
 					btready <= 1'b1;
 				end

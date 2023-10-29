@@ -242,9 +242,11 @@ always @(posedge aclk) begin
 			// - HWIRQs will ignore the current instruction and branch to ISR here after injection of a prologue
 			// - EBREAK will repeatedly jump back to the same instruction site until the EBREAK is replaced
 
+			// General interrupt handling rule is that interrupts must be processed before branches to avoid deadlocks in 1-instruction loops (jump-to-self)
+
 			ififowr_en <= (~isfence) && (~irqReq[0]) && (~irqReq[1]) && (~isillegalinstruction) && (~isecall) && (~isebreak) && (~ismret) && (~iswfi);
 			ififodin <= {
-				/*rs3, func7,*/ csroffset,
+				csroffset,
 				func12, func3,
 				instrOneHotOut, selectimmedasrval2,
 				bluop, aluop,
@@ -252,11 +254,13 @@ always @(posedge aclk) begin
 				immed, PC[31:1], stepsize};
 
 			unique case (1'b1)
-				// IRQ/EBREAK/ILLEGAL don't step the PC and do not submit the current instruction
+				// IRQ/EBREAK/ILLEGAL don't step the PC (since we need the PC intact during those operations)
 				irqReq[0],
 				irqReq[1],
 				isebreak,
 				isillegalinstruction:					PC <= prevPC;
+				// Rest of the instructions will step to the adjacent address depending on instruction length
+				// NOTE: ECALL will need next PC so that MRET can act like a return to the following instruction
 				default:								PC <= nextPC;
 			endcase
 
@@ -377,7 +381,7 @@ always @(posedge aclk) begin
 		INJECT: begin
 			ififowr_en <= ~ififofull;
 			ififodin <= {
-				/*rs3, func7,*/ csroffset,
+				csroffset,
 				func12, func3,
 				instrOneHotOut, selectimmedasrval2,
 				bluop, aluop,

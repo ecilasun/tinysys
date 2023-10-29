@@ -57,6 +57,10 @@ always_ff @(posedge aclk) begin
                     a <= {1'b0, multiplicand};
                     b <= {1'b0, multiplier};
                 end
+				default: begin
+					a <= 33'dz;
+					b <= 33'dz;
+				end
             endcase
             count <= 5; // Match this to the latency of the DSP multiplier
             mulce <= start;
