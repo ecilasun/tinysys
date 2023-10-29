@@ -35,11 +35,9 @@ logic [3:0] aluop;
 logic [2:0] bluop;
 logic [2:0] func3;
 logic [2:0] rfunc3;
-//logic [6:0] func7;
 logic [11:0] func12;
 logic [4:0] rs1;
 logic [4:0] rs2;
-//logic [4:0] rs3;
 logic [4:0] rd;
 logic [11:0] csroffset;
 logic [31:0] immed;
@@ -265,7 +263,7 @@ always @(posedge aclk) begin
 
 		READINSTR: begin
 			// Grab next decoded instruction if there's something in the FIFO
-			{	/*rs3, func7,*/ csroffset,
+			{	csroffset,
 				func12, func3,
 				instrOneHotOut, selectimmedasrval2,
 				bluop, aluop,
@@ -301,6 +299,9 @@ always @(posedge aclk) begin
 					end
 					instrOneHotOut[`O_H_LOAD]: begin
 						ctlmode <= READ;
+					end
+					instrOneHotOut[`O_H_SYSTEM]: begin
+						ctlmode <= SYSOP;
 					end
 					(aluop==`ALU_MUL): begin
 						mulstrobe <= 1'b1;
@@ -373,13 +374,20 @@ always @(posedge aclk) begin
 					wbdin <= D;
 					wback <= 1'b1;
 				end
-				instrOneHotOut[`O_H_JAL],
+				instrOneHotOut[`O_H_JAL]: begin
+					// Save return address
+					wbdin <= adjacentPC;
+					wback <= 1'b1;
+					// Notify fetch to resume
+					btarget <= offsetPC;
+					btready <= 1'b1;
+				end
 				instrOneHotOut[`O_H_JALR]: begin
 					// Save return address
 					wbdin <= adjacentPC;
 					wback <= 1'b1;
 					// Notify fetch to resume
-					btarget <= instrOneHotOut[`O_H_JAL] ? offsetPC : rwaddress;
+					btarget <= rwaddress;
 					btready <= 1'b1;
 				end
 				instrOneHotOut[`O_H_BRANCH]: begin
@@ -389,8 +397,7 @@ always @(posedge aclk) begin
 				end
 			endcase
 			
-			// sys, math, store and load require wait states
-			ctlmode <=	instrOneHotOut[`O_H_SYSTEM] ? SYSOP : READINSTR;
+			ctlmode <= READINSTR;
 		end
 
 		MULWAIT: begin
