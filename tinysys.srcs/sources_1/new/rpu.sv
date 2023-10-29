@@ -18,7 +18,7 @@ module rastercore(
 // Raster cache
 // --------------------------------------------------
 
-logic [31:0] addr = 32'd0;
+/*logic [31:0] addr = 32'd0;
 logic [127:0] din = 128'd0;
 logic [15:0] wstrb = 0;
 logic cflush = 1'b0;
@@ -34,7 +34,7 @@ rastercache rcache(
 	.flush(cflush),
 	.invalidate(cinvalidate),
 	.wready(wready),
-	.a4buscached(m_axi));
+	.a4buscached(m_axi));*/
 
 // --------------------------------------------------
 // Rasterizer input fifo
@@ -140,13 +140,6 @@ always_ff @(posedge aclk) begin
 			end
 		end
 		
-		RASTERQUEUE: begin
-			// Push to rasterizer coarse tiling fifo
-			rwdin <= {rastercolor,y2,x2,y1,x1,y0,x0, rastercmd[15:12]};
-			rwwen <= ~rwfull;
-			cmdmode <= ~rwfull ? FINALIZE : RASTERQUEUE;
-		end
-
 		SETRASTERCOLOR: begin
 			if (rasterfifovalid && ~rasterfifoempty) begin
 				//outdata <= {rasterfifodout, rasterfifodout, rasterfifodout, rasterfifodout};
@@ -155,6 +148,13 @@ always_ff @(posedge aclk) begin
 				cmdre <= 1'b1;
 				cmdmode <= FINALIZE;
 			end
+		end
+
+		RASTERQUEUE: begin
+			// Push to rasterizer queue
+			rwdin <= {rastercolor,y2,x2,y1,x1,y0,x0, rastercmd[15:12]};
+			rwwen <= ~rwfull;
+			cmdmode <= ~rwfull ? FINALIZE : RASTERQUEUE;
 		end
 
 		FINALIZE: begin
@@ -172,99 +172,15 @@ end
 // Rasterizer (mask generator / sweeped / output)
 // --------------------------------------------------
 
-logic signed [15:0] rtilex;
-logic signed [15:0] rtiley;
-logic signed [15:0] rx0;
-logic signed [15:0] ry0;
-logic signed [15:0] rx1;
-logic signed [15:0] ry1;
-logic signed [15:0] rx2;
-logic signed [15:0] ry2;
-logic [7:0] rcolor;
-logic [3:0] rcommandunused;
-
-logic rena = 1'b0;
-wire [15:0] emask01;
-wire [15:0] emask12;
-wire [15:0] emask20;
-wire eready01, eready12, eready20;
-
-edgemaskgen edgeTest01(
-    .clk(aclk),
-    .rstn(aresetn),
-    .tx(rtilex), .ty(rtiley), .v1x(rx0), .v1y(ry0), .v0x(rx1), .v0y(ry1),
-    .ena(rena), .ready(eready01),
-    .rmask(emask01));
-
-edgemaskgen edgeTest12(
-    .clk(aclk),
-    .rstn(aresetn),
-    .tx(rtilex), .ty(rtiley), .v1x(rx1), .v1y(ry1), .v0x(rx2), .v0y(ry2),
-    .ena(rena), .ready(eready12),
-    .rmask(emask12));
-
-edgemaskgen edgeTest20(
-    .clk(aclk),
-    .rstn(aresetn),
-    .tx(rtilex), .ty(rtiley), .v1x(rx2), .v1y(ry2), .v0x(rx0), .v0y(ry0),
-    .ena(rena), .ready(eready20),
-    .rmask(emask20));
-
-typedef enum logic [3:0] {
+typedef enum logic [1:0] {
 	RINIT,
 	RWCMD,
-	SETUPBOUNDS, FINDBOUNDS, CLIPBOUNDS,
-	BEGINSWEEP, RASTERIZETILE, EMITTILE,
-	WRITEBACKTILE,
-	NEXTTILE,
-	CACHEFLUSHSTROBE, CACHEINVALIDATESTROBE} rasterizermodetype;
+	RFINALIZE } rasterizermodetype;
 rasterizermodetype rastermode = RINIT;
-
-logic signed [15:0] minx;
-logic signed [15:0] miny;
-logic signed [15:0] maxx;
-logic signed [15:0] maxy;
-
-logic [13:0] cx;
-logic [13:0] cy;
-logic lasttile;
-
-// Tile coverage mask (byte write enable mask)
-logic [15:0] tilecoverage;
-
-// Pending writes
-logic [31:0] raddr;
-
-wire rtfull, rtempty, rtvalid;
-logic [57:0] rtdin;
-logic rtwe;
-wire [57:0] rtdout;
-logic rtre;
-rastertilewritefifo tileoutfifoinst(
-	.full(rtfull),
-	.din(rtdin),
-	.wr_en(rtwe),
-	.valid(rtvalid),
-	.empty(rtempty),
-	.dout(rtdout),
-	.rd_en(rtre),
-	.clk(aclk),
-	.rst(~aresetn) );
-
-logic signed [15:0] minx0x1;
-logic signed [15:0] minx1x2;
-logic signed [15:0] maxx0x1;
-logic signed [15:0] maxx1x2;
-logic signed [15:0] miny0y1;
-logic signed [15:0] miny1y2;
-logic signed [15:0] maxy0y1;
-logic signed [15:0] maxy1y2;
 
 always_ff @(posedge aclk) begin
 
 	rwren <= 1'b0;
-	rena <= 1'b0;
-	rtwe <= 1'b0;
 
 	case (rastermode)
 		RINIT: begin
@@ -274,135 +190,20 @@ always_ff @(posedge aclk) begin
 
 		RWCMD: begin
 			if (rwvalid && ~rwempty) begin
-				{rcolor,ry2,rx2,ry1,rx1,ry0,rx0,rcommandunused} <= rwdout;
+				//{rcolor,ry2,rx2,ry1,rx1,ry0,rx0,rcommandunused} <= rwdout;
+
 				// Advance FIFO
 				rwren <= 1'b1;
 
-				unique case (rwdout[3:0])
-					4'h0: rastermode <= SETUPBOUNDS;
-					4'h1: rastermode <= CACHEFLUSHSTROBE;
-					4'h2: rastermode <= CACHEINVALIDATESTROBE;
-					default: rastermode <= RWCMD;
-				endcase
+				// TODO: Dispatch
+				rastermode <= RFINALIZE;
 			end
 		end
 
-		SETUPBOUNDS: begin
-			minx0x1 <= rx0 < rx1 ? rx0 : rx1;
-			minx1x2 <= rx1 < rx2 ? rx1 : rx2;
-			maxx0x1 <= rx0 >= rx1 ? rx0 : rx1;
-			maxx1x2 <= rx1 >= rx2 ? rx1 : rx2;
-			miny0y1 <= ry0 < ry1 ? ry0 : ry1;
-			miny1y2 <= ry1 < ry2 ? ry1 : ry2;
-			maxy0y1 <= ry0 >= ry1 ? ry0 : ry1;
-			maxy1y2 <= ry1 >= ry2 ? ry1 : ry2;
-
-			rastermode <= FINDBOUNDS;
+		RFINALIZE: begin
+			rastermode <= RWCMD;
 		end
 
-		FINDBOUNDS: begin
-			// Find min/max bounds
-			minx <= minx0x1 < minx1x2 ? minx0x1 : minx1x2;
-			miny <= miny0y1 < miny1y2 ? miny0y1 : miny1y2;
-			maxx <= maxx0x1 >= maxx1x2 ? maxx0x1 : maxx1x2;
-			maxy <= maxy0y1 >= maxy1y2 ? maxy0y1 : maxy1y2;
-
-			rastermode <= CLIPBOUNDS;
-		end
-
-		CLIPBOUNDS: begin
-			// Clamp to viewport
-			minx <= minx < 0 ? 0 : minx;
-			miny <= miny < 0 ? 0 : miny;
-			maxx <= maxx > 319 ? 319 : maxx;
-			maxy <= maxy > 239 ? 239 : maxy;
-
-			// Do not attempt to rasterize if bounds are offscreen
-			rastermode <= (minx>319 || miny>239 || maxx<0 || maxy<0) ? RWCMD : BEGINSWEEP;
-		end
-
-		BEGINSWEEP: begin
-			// Set up tile cursor
-			cx <= minx[15:2]; // pixel position/4 == tile index
-			cy <= miny[15:2];
-
-			// Set up output color (expanded to 128 bits from 8 bits)
-			rastermode <= RASTERIZETILE;
-		end
-
-		RASTERIZETILE: begin
-			// Rasterize current tile
-			rtilex <= {cx,2'b00}; // Rasterizer requires pixel positions, hence the *4
-			rtiley <= {cy,2'b00};
-			rena <= 1'b1;
-
-			rastermode <= EMITTILE;
-		end
-
-		EMITTILE: begin
-			if (eready01 && eready12 && eready20) begin
-				// This is the wstrb for a 4x4 tile
-				tilecoverage <= emask01 & emask12 & emask20;
-				// Push to output fifo if the tile mask isn't zero
-				//twe <= |(emask01 & emask12 & emask20);
-
-				// We have 80 tiles horizontal and 60 tiles vertical for a total of 4800 (0x12C0) tiles
-				// For each tile, the corresponding memory address is base address (16byte aligned)
-				// plus tile index times 16(bytes) in indexed color mode. For 16bit color mode the tile
-				// width is reduced by half (i.e. to 2 pixels of 16bits each from 4 pixels of 8bits each)
-				raddr <= {(cx + cy*80), 4'd0};
-
-				// Step one line down if we're at the last column
-				if (cx >= maxx[15:2]) begin
-					cx <= minx[15:2];
-					cy <= cy + 1;
-				end else begin
-					// Next tile on this row
-					cx <= cx + 1;
-				end
-
-				// High when this is the last tile
-				lasttile <= (cy >= maxy[15:2]) && (cx >= maxx[15:2]);
-
-                // Skip tiles which don't contain the primitive
-				rastermode <= |(emask01 & emask12 & emask20) ? WRITEBACKTILE : NEXTTILE;
-			end
-		end
-
-		WRITEBACKTILE: begin
-			if (~rtfull) begin
-				rtdin <= {raddr, tilecoverage, rcolor, 2'b00};
-				rtwe <= 1'b1;
-				rastermode <= lasttile ? RWCMD : RASTERIZETILE;
-			end else begin
-				rastermode <= WRITEBACKTILE;
-			end
-		end
-
-		NEXTTILE: begin
-			// Stop if we're at the last tile
-			rastermode <= lasttile ? RWCMD : RASTERIZETILE;
-		end
-
-		CACHEFLUSHSTROBE: begin
-			if (~rtfull) begin
-				rtdin <= {32'd0, 16'd0, 8'd0, 2'b01};
-				rtwe <= 1'b1;
-				rastermode <= RWCMD;
-			end else begin
-				rastermode <= CACHEFLUSHSTROBE;
-			end
-		end
-
-		CACHEINVALIDATESTROBE: begin
-			if (~rtfull) begin
-				rtdin <= {32'd0, 16'd0, 8'd0, 2'b10};
-				rtwe <= 1'b1;
-				rastermode <= RWCMD;
-			end else begin
-				rastermode <= CACHEINVALIDATESTROBE;
-			end
-		end
 	endcase
 
 	if (~aresetn) begin
@@ -411,53 +212,7 @@ always_ff @(posedge aclk) begin
 
 end
 
-typedef enum logic [1:0] {
-	WBINIT,
-	WBCMD, WBWAIT } tilewbmodetype;
-tilewbmodetype wbackmode = WBINIT;
-
-always @(posedge aclk) begin
-
-	rtre <= 1'b0;
-	wstrb <= 16'h0000;
-	cinvalidate <= 1'b0;
-	cflush <= 1'b0;
-
-	case (wbackmode)
-		WBINIT: begin
-			wbackmode <= WBCMD;
-		end
-
-		WBCMD: begin
-			if ((~rtempty) && rtvalid) begin
-				addr <= rasterbaseaddr + rtdout[57:26];
-				din <= {
-					rtdout[9:2], rtdout[9:2], rtdout[9:2], rtdout[9:2],
-					rtdout[9:2], rtdout[9:2], rtdout[9:2], rtdout[9:2],
-					rtdout[9:2], rtdout[9:2], rtdout[9:2], rtdout[9:2],
-					rtdout[9:2], rtdout[9:2], rtdout[9:2], rtdout[9:2] };
-				wstrb <= rtdout[25:10];
-
-				cinvalidate <= rtdout[1];
-				cflush <= rtdout[0];
-
-				rtre <= 1'b1;
-				wbackmode <= WBWAIT;
-			end
-		end
-
-		WBWAIT: begin
-			wbackmode <= wready ? WBCMD : WBWAIT;
-		end
-
-	endcase
-
-	if (~aresetn) begin
-		wbackmode <= WBINIT;
-	end
-end
-
 // Rasterizer completely idle
-assign rasterstate = ~(rasterfifoempty && rwempty && rtempty);
+assign rasterstate = ~(rasterfifoempty && rwempty);
 
 endmodule
