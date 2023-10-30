@@ -54,5 +54,5 @@ Future revisions of the board will include this chip directly onboard so that'll
 RASTERIZER:
 
 Input Assembler (IA): Reads triangles, rejects or generates AABB, calculates edge A/B/C at min corner and also x and y gradients, pushes work to pool of sweep rasterizers
-Sweep Rasterizer (RAS): Grabs work from input fifo, sweep-scans and emits a write mask + output color data + target tile address to output fifo for output merger
+Sweep Rasterizer (RS): Grabs work from input fifo, sweep-scans and emits a write mask + output color data + target tile address to output fifo for output merger
 Output Merger (OM): Gathers sweep rasterizer outputs and combines + writes them to raster out caches (one per tile)

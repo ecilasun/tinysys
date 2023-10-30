@@ -77,6 +77,10 @@ int main(int argc, char *argv[])
 		v2.x = 160 + X2;
 		v2.y = 120 + Y2;
 
+// Input assembler (IA)
+// Input: v0,v1,v2
+// Output: a12,b12,a20,b20,a01,b01,bounds to multiple RS units
+
 		// Generate AABB
 		int32_t minx = min(v0.x, min(v1.x, v2.x));
 		int32_t miny = min(v0.y, min(v1.y, v2.y));
@@ -94,9 +98,16 @@ int main(int argc, char *argv[])
 		p.y = miny;
 		int32_t a01, a12, a20;
 		int32_t b01, b12, b20;
+		// OPTIMIZATION: If we subtract minx/miny from all vertices,
+		// we can use 0/0 for the initial value for p which
+		// means we could avoid the extra 2 multiplies in the wN_row terms
 		int32_t w0_row = edgeFunction(v1, v2, a12, b12, p);
 		int32_t w1_row = edgeFunction(v2, v0, a20, b20, p);
 		int32_t w2_row = edgeFunction(v0, v1, a01, b01, p);
+
+// Sweep Rasterizer (RS)
+// Input: a12,b12,a20,b20,a01,b01,bounds
+// Output: barycentric interpolated color fragment
 
 		int32_t c0 = 0x00;
 		int32_t c1 = 0xFF;
@@ -123,6 +134,10 @@ int main(int argc, char *argv[])
 			w1_row += b20;
 			w2_row += b01;
 		}
+
+// Output merger (OM)
+// Input: color fragments from RS units
+// Output: final color values per tile
 
 		CFLUSH_D_L1;
 

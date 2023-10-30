@@ -34,7 +34,7 @@ logic [7:0] clineaddr = 8'd0;		// current cache line 0..256
 
 logic [17:0] cachelinetags[0:255];	// cache line tags (17 bits) + 1 bit for valid flag
 
-logic [63:0] cachewe = 64'd0;		// byte select for 64 byte cache line
+logic cachewe = 1'b0;				// write control
 logic [511:0] cdin;					// input data to write to cache
 wire [511:0] cdout;					// output data read from cache
 logic [511:0] lastcdout;			// last cache line contents we've read
@@ -51,15 +51,13 @@ always_comb begin
 		cacheaccess = line;
 end
 
-wire rsta_busy;
 cachememhalf CacheMemory256Lines(
 	.addra(cacheaccess),		// current cache line
 	.clka(aclk),				// cache clock
 	.dina(cdin),				// updated cache data to write
 	.wea(cachewe),				// write strobe for current cache line
 	.douta(cdout),				// output of currently selected cache line
-	.rsta(~aresetn),			// Reset
-	.rsta_busy(rsta_busy) );	// Reset busy
+	.rsta(~aresetn));			// Reset
 
 initial begin
 	for (int i=0; i<256; i=i+1) begin	// 256 lines total
@@ -67,13 +65,13 @@ initial begin
 	end
 end
 
-logic clinewe = 1'b0;
+logic ctagwe = 1'b0;
 logic [17:0] clinedin;
 always @(posedge aclk) begin
-	if (clinewe)
+	if (ctagwe)
 		cachelinetags[clineaddr] <= clinedin;
 end
-wire [17:0] clinedout = cachelinetags[clineaddr];
+wire [17:0] ctagdout = cachelinetags[clineaddr];
 
 // ----------------------------------------------------------------------------
 // cached/uncached memory controllers
@@ -94,18 +92,18 @@ cachedmemorycontroller instructioncachectlinst(
 	// To memory
 	.m_axi(m_axi) );
 
-typedef enum logic [4:0] {
+typedef enum logic [2:0] {
 	IDLE,
 	CREAD,
-	CPOPULATE, CUPDATE, CUPDATEDELAY,
+	CPOPULATE, CUPDATE, CWRITEDELAY,
 	INVALIDATEBEGIN, INVALIDATESTEP} cachestatetype;
 cachestatetype cachestate = IDLE;
 
 always_ff @(posedge aclk) begin
 	memreadstrobe <= 1'b0;
 	readdone <= 1'b0;
-	cachewe <= 64'd0;
-	clinewe <= 1'b0;
+	cachewe <= 1'b0;
+	ctagwe <= 1'b0;
 
 	unique case(cachestate)
 		IDLE : begin
@@ -125,7 +123,7 @@ always_ff @(posedge aclk) begin
 			// Invalidate
 			clineaddr <= dccount;
 			clinedin <= 18'd0; // invalid + zero tag
-			clinewe <= 1'b1;
+			ctagwe <= 1'b1;
 			cachestate <= INVALIDATESTEP;
 		end
 
@@ -136,7 +134,7 @@ always_ff @(posedge aclk) begin
 		end
 
 		CREAD: begin
-			if ({1'b1, ctag} == clinedout) begin // Hit
+			if ({1'b1, ctag} == ctagdout) begin // Hit
 				unique case(coffset)
 					4'b0000:  dataout <= cdout[31:0];
 					4'b0001:  dataout <= cdout[63:32];
@@ -167,19 +165,18 @@ always_ff @(posedge aclk) begin
 			// Same as current memory address with device selector, aligned to cache boundary, top bit ignored (cached address)
 			cacheaddress <= {1'b0, ctag, clineaddr, 6'd0};
 			memreadstrobe <= 1'b1;
+			clinedin <= {1'b1, ctag}; // update valid + tag
+			ctagwe <= 1'b1;
 			cachestate <= CUPDATE;
 		end
 
 		CUPDATE: begin
-			cachewe <= 64'hFFFFFFFFFFFFFFFF; // All entries
 			cdin <= {cachedin[3], cachedin[2], cachedin[1], cachedin[0]}; // Data from memory
-			clinedin <= {1'b1, ctag}; // valid + tag
-			clinewe <= rdone;
-			cachestate <= CUPDATEDELAY;
-			cachestate <= rdone ? CUPDATEDELAY : CUPDATE;
+			cachewe <= rdone;
+			cachestate <= rdone ? CWRITEDELAY : CUPDATE;
 		end
 
-		CUPDATEDELAY: begin
+		CWRITEDELAY: begin
 			// Delay state for tag write completion
 			cachestate <= CREAD;
 		end
