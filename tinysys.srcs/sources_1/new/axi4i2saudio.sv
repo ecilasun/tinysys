@@ -29,7 +29,7 @@ COUNTER_LOAD_MACRO #(
 	.WIDTH_DATA(9) ) counterinst (
 	.Q(count),
 	.CLK(audioclock),
-	.CE(~aresetn),
+	.CE(aresetn),
 	.DIRECTION(1'b1),
 	.LOAD(~aresetn),
 	.LOAD_DATA(9'd0),

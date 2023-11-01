@@ -5,17 +5,8 @@
 
 #include "core.h"
 #include "apu.h"
-#include "gpu.h"
-#include "dma.h"
-#include "leds.h"
 
 #include "micromod/micromod.h"
-
-static struct EVideoContext s_vx;
-static struct EVideoSwapContext s_sc;
-static uint8_t *s_framebufferA;
-static uint8_t *s_framebufferB;
-static uint8_t *s_rasterBuffer;
 
 #define SAMPLING_FREQ  44100	// 44.1khz
 #define REVERB_BUF_LEN 4110		// 100ms
@@ -125,77 +116,6 @@ static long read_module_length( const char *filename ) {
 	return length;
 }
 
-void DrawWaveform()
-{
-	int16_t *src = (int16_t *)apubuffer;
-
-	RPUSetColor(0x00); // Black
-	{
-		// Clear raster surface
-		// TODO: Fix precision so we can do just one triangle here
-		SPrimitive prim;
-		prim.x0 = 0;
-		prim.y0 = 0;
-		prim.x1 = 319;
-		prim.y1 = 0;
-		prim.x2 = 319;
-		prim.y2 = 239;
-		RPUPushPrimitive(&prim);
-		RPURasterizePrimitive();
-
-		prim.x0 = 319;
-		prim.y0 = 239;
-		prim.x1 = 0;
-		prim.y1 = 239;
-		prim.x2 = 0;
-		prim.y2 = 0;
-		RPUPushPrimitive(&prim);
-		RPURasterizePrimitive();
-	}
-
-	RPUSetColor(0x37); // Blue - Left channel
-	for (uint32_t x=0; x<320/*BUFFER_SAMPLES/2*/; ++x)
-	{
-		int16_t L = src[x*2+0]/256;
-
-		SPrimitive prim;
-		prim.x0 = x+1;
-		prim.y0 = 120+L;
-		prim.x1 = x;
-		prim.y1 = 120;
-		prim.x2 = x+2;
-		prim.y2 = 120;
-
-		RPUPushPrimitive(&prim);
-		RPURasterizePrimitive();
-	}
-
-	RPUSetColor(0x28); // Red - Right channel
-	for (uint32_t x=0; x<320/*BUFFER_SAMPLES/2*/; ++x)
-	{
-		int16_t R = src[x*2+1]/256;
-
-		SPrimitive prim;
-		prim.x0 = x+1;
-		prim.y0 = 120+R;
-		prim.x1 = x+2;
-		prim.y1 = 120;
-		prim.x2 = x;
-		prim.y2 = 120;
-
-		RPUPushPrimitive(&prim);
-		RPURasterizePrimitive();
-	}
-
-	RPUFlushCache();
-	RPUInvalidateCache();
-	RPUBarrier();
-	RPUWait();
-	DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)s_sc.writepage);
-
-	GPUSwapPages(&s_vx, &s_sc);
-}
-
 static long play_module( signed char *module )
 {
 	long result;
@@ -258,8 +178,6 @@ static long play_module( signed char *module )
 
 			if( samples_remaining <= 0 || result != 0 )
 				playing = 0;
-
-			DrawWaveform();
 		}
 	}
 	else
@@ -292,25 +210,6 @@ void PlayMODFile(const char *fname)
 
 int main(int argc, char *argv[])
 {
-	s_framebufferB = GPUAllocateBuffer(320*240);
-	s_framebufferA = GPUAllocateBuffer(320*240);
-	s_rasterBuffer = GPUAllocateBuffer(80*60*16); // Tile buffer
-	memset(s_rasterBuffer, 0, 80*60*16);
-	memset(s_framebufferA, 0, 320*240);
-	memset(s_framebufferB, 0, 320*240);
-	s_vx.m_cmode = ECM_8bit_Indexed;
-	s_vx.m_vmode = EVM_320_Wide;
-	GPUSetVMode(&s_vx, EVS_Enable);
-	GPUSetDefaultPalette(&s_vx);
-	RPUSetTileBuffer((uint32_t)s_rasterBuffer);
-
-	s_sc.cycle = 0;
-	s_sc.framebufferA = s_framebufferA;
-	s_sc.framebufferB = s_framebufferB;
-	GPUSwapPages(&s_vx, &s_sc);
-
-	CFLUSH_D_L1;
-
 	apubuffer = (short*)APUAllocateBuffer(BUFFER_SAMPLES*NUM_CHANNELS*sizeof(short));
 	printf("\nAPU mix buffer: 0x%.8x\n", (unsigned int)apubuffer);
 
