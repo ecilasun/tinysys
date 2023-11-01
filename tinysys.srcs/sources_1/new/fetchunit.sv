@@ -162,7 +162,8 @@ instructinfifo instructionfifoinst (
 // --------------------------------------------------
 
 // Reasons to stall fetch activity until control unit executes current instruction and flags branchresolved
-wire isbranch = instrOneHotOut[`O_H_JAL] || instrOneHotOut[`O_H_JALR] || instrOneHotOut[`O_H_BRANCH];
+wire isjal = instrOneHotOut[`O_H_JAL];
+wire isbranch = instrOneHotOut[`O_H_JALR] || instrOneHotOut[`O_H_BRANCH];
 wire isfence = instrOneHotOut[`O_H_FENCE];
 wire isdiscard = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CDISCARD);
 wire isflush = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_CFLUSH);
@@ -261,7 +262,7 @@ always @(posedge aclk) begin
 				isillegalinstruction:					PC <= prevPC;
 				// Rest of the instructions will step to the adjacent address depending on instruction length
 				// NOTE: ECALL will need next PC so that MRET can act like a return to the following instruction
-				default:								PC <= nextPC;
+				default:								PC <= isjal ? (prevPC + immed) : nextPC;
 			endcase
 
 			stepsize <= 1'b0; // Clear
@@ -280,6 +281,7 @@ always @(posedge aclk) begin
 				isfence:				begin fetchmode <= WAITIFENCE;			fetchena <= 1'b0; end
 				ismret:					begin fetchmode <= EXITISR;				fetchena <= 1'b0; end
 				iswfi:					begin fetchmode <= WFI;					fetchena <= 1'b0; end
+				isjal:					begin fetchmode <= FETCH;				fetchena <= 1'b1; end
 				isbranch,
 				isdiscard, 
 				isflush:				begin fetchmode <= WAITNEWBRANCHTARGET;	fetchena <= 1'b0; end

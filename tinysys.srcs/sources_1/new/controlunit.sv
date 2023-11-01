@@ -394,9 +394,7 @@ always @(posedge aclk) begin
 					// Save return address
 					wbdin <= adjacentPC;
 					wback <= 1'b1;
-					// Notify fetch to resume
-					btarget <= offsetPC;
-					btready <= 1'b1;
+					// NOTE: Fetch unit takes the branch before we get here
 				end
 				instrOneHotOut[`O_H_JALR]: begin
 					// Save return address
