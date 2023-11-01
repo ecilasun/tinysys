@@ -113,12 +113,13 @@ logic [2:0] mathop = 3'b000;
 
 wire mulready;
 wire [31:0] product;
+logic [2:0] mfunc3;
 integermultiplier IMULSU(
     .aclk(aclk),
     .aresetn(aresetn),
     .start(mulstrobe),
     .ready(mulready),
-    .func3(func3),
+    .func3(mfunc3),
     .multiplicand(A),
     .multiplier(B),
     .product(product) );
@@ -155,7 +156,6 @@ typedef enum logic [3:0] {
 	INIT,
 	READINSTR, READREG,
 	WRITE, READ, DISPATCH,
-	MULWAIT, DIVWAIT,
 	SYSOP, SYSWBACK, SYSWAIT,
 	CSROPS, WCSROP,
 	SYSCDISCARD, SYSCFLUSH, WCACHE} controlunitmode;
@@ -185,6 +185,8 @@ end
 
 // WBACK
 wire pendingwback = rwen;
+logic pendingmul = 1'b0;
+logic pendingdiv = 1'b0;
 logic pendingload = 1'b0;
 logic pendingwrite = 1'b0;
 
@@ -223,11 +225,19 @@ always_comb begin
 				rdin = m_ibus.rdata;
 			end
 		endcase
-		rwen = m_ibus.rdone;
+	end else if (mulready) begin
+		rdin = product;
+	end else if (divready || divuready) begin
+		unique case (mfunc3)
+			`F3_DIV:	rdin = quotient;
+			`F3_DIVU:	rdin = quotientu;
+			`F3_REM:	rdin = remainder;
+			`F3_REMU:	rdin = remainderu;
+		endcase
 	end else begin
 		rdin = wbdin;
-		rwen = wback;
 	end
+	rwen = m_ibus.rdone || mulready || divready || divuready || wback;
 end
 
 // EXEC
@@ -249,6 +259,8 @@ always @(posedge aclk) begin
 
 	if (m_ibus.wdone) pendingwrite <= 1'b0;
 	if (m_ibus.rdone) pendingload <= 1'b0;
+	if (mulready) pendingmul <= 1'b0;
+	if (divready || divuready) pendingdiv <= 1'b0;
 
 	unique case(ctlmode)
 		INIT: begin
@@ -277,7 +289,7 @@ always @(posedge aclk) begin
 		end
 
 		READREG: begin
-			if (pendingwback || (pendingload && ~m_ibus.rdone)) begin
+			if (pendingwback || pendingmul || pendingdiv || (pendingload && ~m_ibus.rdone)) begin
 				// HAZARD#1: Wait for pending register writeback
 				// HAZARD#2: Wait for pending memory load
 				ctlmode <= READREG;
@@ -304,13 +316,17 @@ always @(posedge aclk) begin
 						ctlmode <= SYSOP;
 					end
 					(aluop==`ALU_MUL): begin
+						mfunc3 <= func3;
 						mulstrobe <= 1'b1;
-						ctlmode <= MULWAIT;
+						pendingmul <= 1'b1;
+						ctlmode <= READINSTR;
 					end
 					(aluop==`ALU_DIV),
 					(aluop==`ALU_REM): begin
+						mfunc3 <= func3;
 						divstrobe <= 1'b1;
-						ctlmode <= DIVWAIT;
+						pendingdiv <= 1'b1;
+						ctlmode <= READINSTR;
 					end
 					default: begin
 						ctlmode <= DISPATCH;
@@ -398,24 +414,6 @@ always @(posedge aclk) begin
 			endcase
 			
 			ctlmode <= READINSTR;
-		end
-
-		MULWAIT: begin
-			wbdin <= product;
-			wback <= mulready;
-			ctlmode <= mulready ? READINSTR : MULWAIT;
-		end
-
-		DIVWAIT: begin
-			unique case (func3)
-				`F3_DIV:	wbdin <= quotient;
-				`F3_DIVU:	wbdin <= quotientu;
-				`F3_REM:	wbdin <= remainder;
-				`F3_REMU:	wbdin <= remainderu;
-			endcase
-
-			wback <= (divready || divuready);
-			ctlmode <= (divready || divuready) ? READINSTR : DIVWAIT;
 		end
 
 		SYSOP: begin
