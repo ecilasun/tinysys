@@ -14,42 +14,57 @@ logic [15:0] sramdout;
 assign sramconn.sram_data_inout = sramwe ? sramdin : 16'bz;
 
 // ----------------------------------------------------------------------------
+// Retimer to 100MHz SRAM clock
+// ----------------------------------------------------------------------------
+
+wire aresetm;
+axi4if m_axi();
+axi4retimer axi4retimerinst(
+	.aresetn(aresetn),
+	.srcclk(aclk),
+	.srcbus(s_axi),
+	.destclk(clk100),
+	.destbus(m_axi),
+	.destrst(aresetm) );
+
+// ----------------------------------------------------------------------------
 // Main state machine
 // ----------------------------------------------------------------------------
 
-always @(posedge aclk) begin
+always @(posedge clk100) begin
 
-	s_axi.awready <= 1'b0;
+	m_axi.awready <= 1'b0;
 
-	if (s_axi.awvalid) begin
-		s_axi.awready <= 1'b1;
+	if (m_axi.awvalid) begin
+		m_axi.awready <= 1'b1;
 	end
 
 	if (~aresetn) begin
-		s_axi.awready <= 1'b0;
+		m_axi.awready <= 1'b0;
 	end
 end
 
-always @(posedge aclk) begin
+always @(posedge clk100) begin
 
 	sramwe <= 1'b0;
-	s_axi.wready <= 1'b0;
-	s_axi.bvalid <= 1'b0;
-	s_axi.bresp <= 2'b00;
+	m_axi.wready <= 1'b0;
+	m_axi.bvalid <= 1'b0;
+	m_axi.bresp <= 2'b00;
 
 	unique case (writestate)
 		1'b0: begin
-			if (s_axi.wvalid) begin
-				sramwaddr <= s_axi.awaddr[17:0];
-				sramdin <= s_axi.wdata[15:0];
+			if (m_axi.wvalid) begin
+				sramwaddr <= m_axi.awaddr[17:0];
+				sramdin <= m_axi.wdata[15:0];
+				//m_axi.wstrb[1:0] or always 16bits?
 				sramwe <= 1'b1;
-				s_axi.wready <= 1'b1;
+				m_axi.wready <= 1'b1;
 				writestate <= 1'b1;
 			end
 		end
 		1'b1: begin
-			if(s_axi.bready) begin
-				s_axi.bvalid <= 1'b1;
+			if(m_axi.bready) begin
+				m_axi.bvalid <= 1'b1;
 				writestate <= 1'b0;
 			end
 		end
@@ -60,29 +75,29 @@ always @(posedge aclk) begin
 	end
 end
 
-always @(posedge aclk) begin
+always @(posedge clk100) begin
 
 	sramre <= 1'b0;
-	s_axi.arready <= 1'b0;
-	s_axi.rvalid <= 1'b0;
-	s_axi.rlast <= 1'b0;
-	s_axi.rresp <= 2'b00;
+	m_axi.arready <= 1'b0;
+	m_axi.rvalid <= 1'b0;
+	m_axi.rlast <= 1'b0;
+	m_axi.rresp <= 2'b00;
 
 	// read address
 	unique case (raddrstate)
 		2'b00: begin
-			if (s_axi.arvalid) begin
-				sramraddr <= s_axi.araddr[17:0];
+			if (m_axi.arvalid) begin
+				sramraddr <= m_axi.araddr[17:0];
 				sramre <= 1'b1;
-				s_axi.arready <= 1'b1;
+				m_axi.arready <= 1'b1;
 				raddrstate <= 2'b01;
 			end
 		end
 		2'b01: begin
-			if (s_axi.rready) begin
-				s_axi.rdata <= {16'd0, sramdout};
-				s_axi.rvalid <= 1'b1;
-				s_axi.rlast <= 1'b1;
+			if (m_axi.rready) begin
+				m_axi.rdata <= {16'd0, sramdout};
+				m_axi.rvalid <= 1'b1;
+				m_axi.rlast <= 1'b1;
 				raddrstate <= 2'b00;
 			end
 		end
