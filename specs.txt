@@ -14,10 +14,9 @@ Cached access from CPU and direct access from other devices on the bus, in 128bi
 
 Devices:
 Memory mapped access to the following devices:
-- Single color triangle rasterizer
+- !!! Single color triangle rasterizer in hardware NOTE: This module is removed to be re-built
 - 16bit stereo audio output (44/22/11KHz selectable)
 - OPL2 device (clone of YM3812, mono output, mixed together with 16bit stereo audio)
-- A polygon rasterizer implemented in hardware
 - Device temperature monitor, accessible from user software
 - DMA (currently handles 16-byte aligned block transfers within the 256Mbyte SDRAM region only)
 - DVI signal over HDMI port (640x480 or 320x240 modes with 8bpp indexed or 16bpp truecolor for a total of 4 modes)
@@ -51,6 +50,7 @@ The board is designed to carry a QMTECH A7-200T FPGA core board (i.e. it has not
 Future revisions of the board will include this chip directly onboard so that'll cut the requirement for an daughterboard, but for this version that's one thing that limits number of devices that can be made (I currently have only two of those QMTECH core boards available)
 
 
+NOTE: THIS MODULE IS REMOVED TO BE RE-WORKED AS IT WAS CONSUMING TOO MANY RESOURCES AND CAUSING CLOCKING ISSUES
 RASTERIZER:
 
 Input Assembler (IA): Reads triangles, rejects or generates AABB, calculates edge A/B/C at min corner and also x and y gradients, pushes work to pool of sweep rasterizers
