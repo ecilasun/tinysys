@@ -13,3 +13,6 @@ min/max op V: 0.95 - 1.05
 
 fpga programming memory device is:
 is25lp128f-spi-x1_x2_x4
+
+
+see https://github.com/antmicro/artix-dc-scm for an a7100t board design
