@@ -95,9 +95,9 @@ void MakeCDCDescriptors(struct SUSBSerialContext *ctx)
 	ctx->strings[0].bLength = sizeof(struct USBStringLanguageDescriptor); // 4
 	ctx->strings[0].bDescriptorType = USBDesc_String;
 #ifdef __cplusplus
-	ctx->strings[0].bString[0] = 0x0409; // English-United Sates
+	ctx->strings[0].bString[0] = 0x0409; // English-United States
 #else
-	ctx->strings[0].bString[0] = 0x09; // English-United Sates
+	ctx->strings[0].bString[0] = 0x09; // English-United States
 	ctx->strings[0].bString[1] = 0x04;
 #endif
 	ctx->strings[1].bLength = sizeof(struct USBCommonDescriptor) + 5*2; // 10
