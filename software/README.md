@@ -11,13 +11,15 @@ There's a convenience script in this directory that will automate this task for 
 ./buildrisctoolchain.sh
 ```
 
+Please see the last section for risc-v compiler toolchain on Windows.
+
 # Build riscvtool
 
 For this purpose, you may first want to open the 'software' directory in Visual Studio Code so that the root path is now /tinysys/software.
 Before you can build the riscvtool itself, use the ctrl+shift+b shortcut in Visual Studio Code and select 'configure'. After this initial step you can use the same shortcut and select 'build'.
 Alternatively, you can use the following command sequences:
 ```
-# To configure (required only once:
+# To configure (required only once):
 python waf --out='build/release' configure
 
 # To build after code changes:
@@ -26,10 +28,11 @@ python waf build -v
 # To 'clean' the output binaries
 python waf clean
 ```
+PS: The build process for riscvtool is the same on Linux and Windows.
 
 # Build samples (and optionally the ROM image)
 
-To build the ROM file and the samples, either switch to the 'ROMs' or 'samples' directory and use this on the command line:
+To build the ROM file and the samples, either switch to the 'ROMs/boot' or 'samples' directory and use this on the command line:
 
 ```
 make
@@ -38,11 +41,11 @@ make
 Note that some samples have a different path layout, for instance DOOM makefile is placed in 'samples/doom/src/riscv' or 'samples/imguidemo' which is where you'd run make from.
 
 Ordinarily you don't need to build ROM images. But if for some reason you'd like to do that, please note that you'll get two files generated: rom.mem and rom.bin.
-rom.mem file is the one to use in the hardware design (to be copied over the contents of the existing romimage.mem file) and the .bin file is the same binary in overlay format, which can be copied to the SDCard and will replace the device ROM.
+rom.mem file is the one to use in the hardware design (to be copied over the contents of the existing romimage.mem file) and the .bin file is the same binary in overlay format, which can be copied to the root folder of the SDCard and will replace the device ROM at device boot time.
 
-The rom image generated from the fetch folder is a set of instructions to be used by the fetch unit when it encounters an interrupt or other event, and you should not have to change it in most cases (and I can't recommend that you do). If you really need to, please make sure to go over the hardware fetch unit and update the device to match the contents of the ROM image, with correct instruction offsets and sizes. Currently there's no automation to provide you with a correct offsetl & length table to aid in this, but is something that's planned for the future.
+The rom image generated from the fetch folder is a set of instructions to be used by the fetch unit when it encounters an interrupt or other event, and you should not have to change it in most cases (and I can't recommend that you do). If you really need to, please make sure to go over the hardware fetch unit and update the device to match the contents of the ROM image, with correct instruction offsets and sizes. Currently there's no automation to provide you with a correct offset & length table to aid in this, but is something that's planned for the future.
 
-# Adding tinysys as a generic serial device over USB
+# Adding tinysys as a generic serial device over USB - Linux
 
 Until an actual driver is built for this device, it can happily work as a generic serial device using the built-in generic USB serial driver. The device has no VID/PID assigned to it at this point, and currently uses VID:FFFF and PID:0001 for testing purposes, thus Linux won't pick a driver for it automatically.
 
@@ -64,9 +67,13 @@ FFFF 0001
 ```
 - You can now start PuTTY or another serial terminal program, connect to ttyUSB port provided above, and send commands and receive responses from the device.
 
+# Adding tinysys as a generic serial device over USB - Windows
+
+TBD: We use generic USB serial driver on Windows, provide instructions
+
 # Uploading executables to the device - WiP
 
-TBD
+TBD: Normally device uses SDCard, USB bulk storage is possible to implement, investigate
 
 # Debugging with GDB - WiP
 
@@ -91,9 +98,9 @@ https://www.gdbgui.com/gettingstarted/
 # More details on RISC-V compiler toolchain
 
 NOTE: If the RISC-V compiler binaries (riscv64-unknown-elf-gcc or riscv64-unknown-elf-g++) are missing from your system, please follow the instructions at https://github.com/riscv/riscv-gnu-toolchain
-It is advised to build the rv32i / rv32if / rv32imf / rv32imaf libraries
+It is advised to build the rv32i / rv32im / rv32imc libraries
 
-If you want to work on Windows and don't want to compile the toolchain, you could use the following link and download the latest riscv-v-gcc installer executable (risc-v-gcc10.1.0.exe at the time of writing this)
+If you want to work on Windows and don't want to compile the toolchain, you can use the following link and download the latest riscv-v-gcc installer executable (risc-v-gcc10.1.0.exe at the time of writing this)
 
 https://gnutoolchains.com/risc-v/
 
