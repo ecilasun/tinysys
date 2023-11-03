@@ -109,7 +109,6 @@ arithmeticlogic ALU(
 
 logic mulstrobe = 1'b0;
 logic divstrobe = 1'b0;
-logic [2:0] mathop = 3'b000;
 
 wire mulready;
 wire [31:0] product;
@@ -303,7 +302,6 @@ always @(posedge aclk) begin
 				rwaddress <= rval1 + immed;
 				offsetPC <= PC + immed;
 				adjacentPC <= PC + (stepsize ? 32'd4 : 32'd2);
-				mathop <= {aluop==`ALU_MUL, aluop==`ALU_DIV, aluop==`ALU_REM};
 
 				unique case (1'b1)
 					instrOneHotOut[`O_H_STORE]: begin

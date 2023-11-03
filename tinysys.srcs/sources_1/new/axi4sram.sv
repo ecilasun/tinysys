@@ -10,7 +10,13 @@ logic sramre = 1'b0;
 logic [17:0] sramwaddr;
 logic [17:0] sramraddr;
 logic [15:0] sramdin;
-logic [15:0] sramdout;
+
+assign sramconn.sram_we = sramwe ? 1'b0 : 1'b1;
+assign sramconn.sram_oe = sramre ? 1'b0 : 1'b1;
+assign sramconn.sram_ce = (sramwe || sramre) ? 1'b0 : 1'b1;
+assign sramconn.sram_ub = (sramwe || sramre) ? 1'b0 : 1'b1;
+assign sramconn.sram_lb = (sramwe || sramre) ? 1'b0 : 1'b1;
+assign sramconn.sram_addr = sramwe ? sramwaddr : sramraddr;
 assign sramconn.sram_data_inout = sramwe ? sramdin : 16'bz;
 
 // ----------------------------------------------------------------------------
@@ -31,6 +37,9 @@ axi4retimer axi4retimerinst(
 // Main state machine
 // ----------------------------------------------------------------------------
 
+logic writestate = 1'b0;
+logic [1:0] raddrstate = 2'b00;
+
 always @(posedge clk100) begin
 
 	m_axi.awready <= 1'b0;
@@ -46,17 +55,16 @@ end
 
 always @(posedge clk100) begin
 
-	sramwe <= 1'b0;
 	m_axi.wready <= 1'b0;
 	m_axi.bvalid <= 1'b0;
 	m_axi.bresp <= 2'b00;
+	sramwe <= 1'b0;
 
 	unique case (writestate)
 		1'b0: begin
 			if (m_axi.wvalid) begin
-				sramwaddr <= m_axi.awaddr[17:0];
-				sramdin <= m_axi.wdata[15:0];
-				//m_axi.wstrb[1:0] or always 16bits?
+				sramwaddr <= m_axi.awaddr[18:1]; // 2 byte aligned
+				sramdin <= m_axi.wdata[15:0]; // always assume 16bits (don't use m_axi.wstrb[1:0])
 				sramwe <= 1'b1;
 				m_axi.wready <= 1'b1;
 				writestate <= 1'b1;
@@ -70,24 +78,30 @@ always @(posedge clk100) begin
 		end
 	endcase
 
-	if (~aresetn) begin
+	if (~aresetm) begin
 		writestate <= 1'b0;
 	end
 end
 
+// Captured data out on clock following request
+logic [15:0] datacap;
+
 always @(posedge clk100) begin
 
-	sramre <= 1'b0;
 	m_axi.arready <= 1'b0;
 	m_axi.rvalid <= 1'b0;
 	m_axi.rlast <= 1'b0;
 	m_axi.rresp <= 2'b00;
+	sramre <= 1'b0;
+
+	if (sramre)
+		datacap <= sramconn.sram_data_inout;
 
 	// read address
 	unique case (raddrstate)
 		2'b00: begin
 			if (m_axi.arvalid) begin
-				sramraddr <= m_axi.araddr[17:0];
+				sramraddr <= m_axi.araddr[18:1]; // 2 byte aligned
 				sramre <= 1'b1;
 				m_axi.arready <= 1'b1;
 				raddrstate <= 2'b01;
@@ -95,7 +109,7 @@ always @(posedge clk100) begin
 		end
 		2'b01: begin
 			if (m_axi.rready) begin
-				m_axi.rdata <= {16'd0, sramdout};
+				m_axi.rdata <= {16'd0, datacap};
 				m_axi.rvalid <= 1'b1;
 				m_axi.rlast <= 1'b1;
 				raddrstate <= 2'b00;
@@ -103,54 +117,9 @@ always @(posedge clk100) begin
 		end
 	endcase
 
-	if (~aresetn) begin
+	if (~aresetm) begin
 		raddrstate <= 2'b00;
 	end
 end
 
 endmodule
-
-
-// --------------------------------------------------
-// --------------------------------------------------
-
-/*sramwires.def sramconn,
-
-logic sramwe = 1'b0;
-logic [15:0] sramout;
-assign sramconn.sram_data_inout = sramwe ? sramout : 16'bz;
-
-logic [1:0] sramstate = 2'b00;
-logic [23:0] sramdout;
-
-always @(posedge clk100) begin
-	case (sramstate)
-		2'b00: begin
-			sramconn.sram_oe <= 1'b1;
-			sramconn.sram_cen <= 1'b1;
-			sramconn.sram_we <= 1'b1;
-			{sramconn.sram_ub, sramconn.sram_lb} <= 2'b11;
-			sramout <= 16'h0000;
-			sramstate <= 2'b01;
-		end
-		2'b01: begin
-			sramconn.sram_addr <= scanaddr[17:0] + scanoffset[17:0] + {8'd0, scanpixel};
-			sramconn.sram_oe <= 1'b0;
-			sramconn.sram_cen <= 1'b0;
-			{sramconn.sram_ub, sramconn.sram_lb} <= 2'b00;
-			sramstate <= 2'b10;
-		end
-		2'b10: begin
-			sramconn.sram_oe <= 1'b1;
-			sramconn.sram_cen <= 1'b1;
-			{sramconn.sram_ub, sramconn.sram_lb} <= 2'b11;
-			sramdout[15:0] <= sramconn.sram_data_inout;
-			sramdout[23:16] <= 0;
-			sramstate <= 2'b01;
-		end
-	endcase
-
-	if (~aresetn) begin
-		sramstate <= 2'b00;
-	end
-end*/

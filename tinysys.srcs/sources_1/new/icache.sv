@@ -13,7 +13,7 @@ module instructioncache(
 	output wire rready,
 	axi4if.master m_axi);
 
-wire [16:0] tag = addr[30:14];	// Cache tag
+wire [13:0] tag = addr[27:14];	// Cache tag
 wire [7:0] line = addr[13:6];	// Cache line
 wire [3:0] offset = addr[5:2];	// Cache word offset
 
@@ -28,11 +28,11 @@ data_t cachedin[0:3];
 logic memwritestrobe = 1'b0;
 logic memreadstrobe = 1'b0;
 
-logic [16:0] ctag;					// current cache tag (17 bits)
+logic [13:0] ctag;					// current cache tag (14 bits)
 logic [3:0] coffset;				// current word offset 0..15
 logic [7:0] clineaddr = 8'd0;		// current cache line 0..256
 
-logic [17:0] cachelinetags[0:255];	// cache line tags (17 bits) + 1 bit for valid flag
+logic [14:0] cachelinetags[0:255];	// cache line tags (14 bits) + 1 bit for valid flag
 
 logic cachewe = 1'b0;				// write control
 logic [511:0] cdin;					// input data to write to cache
@@ -41,7 +41,7 @@ logic [511:0] lastcdout;			// last cache line contents we've read
 
 logic flushing = 1'b0;				// high during cache flush operation
 logic [7:0] dccount = 8'h00;		// line counter for cache flush/invalidate ops
-logic [16:0] flushline = 18'd0;		// contents of line being flushed
+logic [13:0] flushline = 14'd0;		// contents of line being flushed
 
 logic [7:0] cacheaccess;
 always_comb begin
@@ -66,7 +66,7 @@ initial begin
 end
 
 logic ctagwe = 1'b0;
-logic [17:0] clinedin;
+logic [14:0] clinedin;
 always @(posedge aclk) begin
 	if (ctagwe)
 		cachelinetags[clineaddr] <= clinedin;
@@ -109,7 +109,7 @@ always_ff @(posedge aclk) begin
 		IDLE : begin
 			coffset <= offset;	// Cache offset 0..15
 			clineaddr <= line;	// Cache line
-			ctag <= tag;		// Cache tag 00000..1ffff
+			ctag <= tag;		// Cache tag 0000..3fff
 			dccount <= 8'h00;
 
 			casex ({icacheflush, ren})
@@ -122,7 +122,7 @@ always_ff @(posedge aclk) begin
 		INVALIDATEBEGIN: begin
 			// Invalidate
 			clineaddr <= dccount;
-			clinedin <= 18'd0; // invalid + zero tag
+			clinedin <= 15'd0; // invalid + zero tag
 			ctagwe <= 1'b1;
 			cachestate <= INVALIDATESTEP;
 		end
@@ -163,7 +163,7 @@ always_ff @(posedge aclk) begin
 
 		CPOPULATE : begin
 			// Same as current memory address with device selector, aligned to cache boundary, top bit ignored (cached address)
-			cacheaddress <= {1'b0, ctag, clineaddr, 6'd0};
+			cacheaddress <= {4'b0, ctag, clineaddr, 6'd0};
 			memreadstrobe <= 1'b1;
 			clinedin <= {1'b1, ctag}; // update valid + tag
 			ctagwe <= 1'b1;

@@ -29,6 +29,7 @@ folders = \
 	mouse \
 	oxygen \
 	raster \
+	sramtest \
 	syscalltest \
 	tinyrt \
 	tinyrtty \

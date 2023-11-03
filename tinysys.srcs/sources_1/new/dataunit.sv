@@ -10,7 +10,9 @@ module dataunit(
 	// To memory
 	axi4if.master databus,
 	// To memory mapped devices
-	axi4if.master devicebus);
+	axi4if.master devicebus,
+	// To SRAM
+	axi4if.master srambus);
 
 logic datare = 1'b0;
 logic [3:0] datawe = 4'h0;
@@ -35,7 +37,8 @@ datacache datacacheinst(
 	.rready(rready),
 	.wready(wready),
 	.a4buscached(databus),
-	.a4busuncached(devicebus) );
+	.a4busuncached(devicebus),
+	.a4sramuncached(srambus) );
 
 typedef enum logic [1:0] {WCMD, WREAD, WCACHEOP, WWRITE} dataunitmode;
 dataunitmode datamode = WCMD;

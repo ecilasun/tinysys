@@ -15,10 +15,12 @@ module datacache(
 	output logic rready,
 	output logic wready,
 	axi4if.master a4buscached,
-	axi4if.master a4busuncached );
+	axi4if.master a4busuncached,
+	axi4if.master a4sramuncached);
 
 wire isuncached = addr[31];		// Uncached access
-wire [15:0] tag = addr[30:15];	// Cache tag
+wire issram = addr[28];			// SRAM access
+wire [12:0] tag = addr[27:15];	// Cache tag
 wire [8:0] line = addr[14:6];	// Cache line
 wire [3:0] offset = addr[5:2];	// Cache word offset
 
@@ -37,23 +39,31 @@ logic ucre = 1'b0;
 wire ucwritedone;
 wire ucreaddone;
 
+logic [31:0] sraddrs;
+logic [31:0] srdout;
+wire [31:0] srdin;
+logic [3:0] srwstrb = 4'h0;
+logic srre = 1'b0;
+wire srwritedone;
+wire srreaddone;
+
 logic [3:0] bsel = 4'h0;			// copy of wstrobe
 logic [1:0] rwmode = 2'b00;			// r/w mode bits
 
-logic [15:0] ptag;					// previous cache tag (16 bits)
-logic [15:0] ctag;					// current cache tag (16 bits)
+logic [12:0] ptag;					// previous cache tag (13 bits)
+logic [12:0] ctag;					// current cache tag (13 bits)
 logic [8:0] cline;					// current cache line 0..511
 logic [3:0] coffset;				// current word offset 0..15
 
 logic cachelinewb[0:511];			// cache line needs write back when high
-logic [15:0] cachelinetags[0:511];	// cache line tags (16 bits)
+logic [12:0] cachelinetags[0:511];	// cache line tags (13 bits)
 
 logic [63:0] cachewe = 64'd0;		// byte select for 64 byte cache line
 logic [511:0] cdin = 512'd0;		// input data to write to cache
 wire [511:0] cdout;					// output data read from cache
 
 logic flushing = 1'b0;				// high during cache flush operation
-logic [15:0] flushline = 16'd0;		// contents of line being flushed
+logic [12:0] flushtag = 13'd0;		// contents of line being flushed
 logic [8:0] dccount = 9'd0;			// line counter for cache flush/invalidate ops
 
 logic [8:0] cacheaccess;
@@ -115,11 +125,26 @@ uncachedmemorycontroller uncachedmemorycontrollerinst(
 	// To memory mapped devices
 	.m_axi(a4busuncached) );
 
+uncachedmemorycontroller uncachedSRAMcontrollerinst(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	// From cache
+	.addr(sraddrs),
+	.din(srdout),
+	.dout(srdin),
+	.re(srre),
+	.wstrb(srwstrb),
+	.wdone(srwritedone),
+	.rdone(srreaddone),
+	// To SRAM
+	.m_axi(a4sramuncached) );
+
 typedef enum logic [4:0] {
 	CRESET,
 	IDLE,
 	CWRITE, CREAD,
 	UCWRITE, UCWRITEDELAY, UCREAD, UCREADDELAY,
+	SRWRITE, SRWRITEDELAY, SRREAD, SRREADDELAY,
 	CWBACK, CWBACKWAIT,
 	CPOPULATE, CPOPULATEWAIT, CUPDATE, CUPDATEDELAY,
 	CDATANOFLUSHBEGIN, CDATANOFLUSHSTEP,
@@ -147,16 +172,18 @@ always_ff @(posedge aclk) begin
 			bsel <= wstrb;					// Write byte select
 			coffset <= offset;				// Cache offset 0..15
 			cline <= line;					// Cache line
-			ctag <= tag;					// Cache tag 00000..1ffff
+			ctag <= tag;					// Cache tag 0000..1fff
 			ptag <= cachelinetags[line];	// Previous cache tag
 			inputdata <= din;
 
-			casex ({dcacheop[0], isuncached, ren, |wstrb})
-				4'b0001: cachestate <= CWRITE;
-				4'b0010: cachestate <= CREAD;
-				4'b0101: cachestate <= UCWRITE;
-				4'b0110: cachestate <= UCREAD;
-				4'b1xxx: cachestate <= dcacheop[1] ? CDATAFLUSHBEGIN : CDATANOFLUSHBEGIN;
+			casex ({dcacheop[0], issram, isuncached, ren, |wstrb})
+				5'b00001: cachestate <= CWRITE;
+				5'b00010: cachestate <= CREAD;
+				5'b00101: cachestate <= UCWRITE;
+				5'b00110: cachestate <= UCREAD;
+				5'b01001: cachestate <= SRWRITE;
+				5'b01010: cachestate <= SRREAD;
+				5'b1xxxx: cachestate <= dcacheop[1] ? CDATAFLUSHBEGIN : CDATANOFLUSHBEGIN;
 				default: cachestate <= IDLE;
 			endcase
 		end
@@ -185,7 +212,7 @@ always_ff @(posedge aclk) begin
 
 		CDATAFLUSHWAITCREAD: begin
 			// We keep the tag same, since we only want to make sure data is written back, not evicted
-			flushline <= cachelinetags[dccount];
+			flushtag <= cachelinetags[dccount];
 			// One clock delay to read cache value at {dccount}
 			cachestate <= CDATAFLUSH;
 		end
@@ -196,7 +223,7 @@ always_ff @(posedge aclk) begin
 			// Either write back to memory or skip
 			if (cachelinewb[dccount]) begin
 				// Write current line back to RAM
-				cacheaddress <= {1'b0, flushline, dccount, 6'd0};
+				cacheaddress <= {4'd0, flushtag, dccount, 6'd0};
 				cachedout <= {cdout[127:0], cdout[255:128], cdout[383:256], cdout[511:384]};
 				memwritestrobe <= 1'b1;
 				// We're done if this was the last write
@@ -266,6 +293,38 @@ always_ff @(posedge aclk) begin
 			end
 		end
 
+		SRWRITE: begin
+			sraddrs <= addr;
+			srdout <= inputdata;
+			srwstrb <= bsel;
+			cachestate <= SRWRITEDELAY;
+		end
+
+		SRWRITEDELAY: begin
+			if (srwritedone) begin
+				wready <= 1'b1;
+				cachestate <= IDLE;
+			end else begin
+				cachestate <= SRWRITEDELAY;
+			end
+		end
+
+		SRREAD: begin
+			sraddrs <= addr;
+			srre <= 1'b1;
+			cachestate <= SRREADDELAY;
+		end
+
+		SRREADDELAY: begin
+			if (srreaddone) begin
+				dout <= srdin;
+				rready <= 1'b1;
+				cachestate <= IDLE;
+			end else begin
+				cachestate <= SRREADDELAY;
+			end
+		end
+
 		CWRITE: begin
 			if (ctag == ptag) begin
 				cdin <= {	inputdata, inputdata, inputdata, inputdata,
@@ -329,7 +388,7 @@ always_ff @(posedge aclk) begin
 
 		CWBACK : begin
 			// Use old memory address with device selector, aligned to cache boundary, top bit ignored (cached address)
-			cacheaddress <= {1'b0, ptag, cline, 6'd0};
+			cacheaddress <= {4'd0, ptag, cline, 6'd0};
 			cachedout <= {cdout[127:0], cdout[255:128], cdout[383:256], cdout[511:384]};
 			memwritestrobe <= 1'b1;
 			cachestate <= CWBACKWAIT;
@@ -341,7 +400,7 @@ always_ff @(posedge aclk) begin
 
 		CPOPULATE : begin
 			// Same as current memory address with device selector, aligned to cache boundary, top bit ignored (cached address)
-			cacheaddress <= {1'b0, ctag, cline, 6'd0};
+			cacheaddress <= {4'd0, ctag, cline, 6'd0};
 			memreadstrobe <= 1'b1;
 			cachestate <= CPOPULATEWAIT;
 		end

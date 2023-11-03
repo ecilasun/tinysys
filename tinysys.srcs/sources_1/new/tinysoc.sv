@@ -21,7 +21,8 @@ module tinysoc #(
 	audiowires.def i2sconn,
 	sdcardwires.def sdconn,
 	max3420wires.def usbcconn,
-	max3420wires.def usbaconn );
+	max3420wires.def usbaconn,
+	sramwires.def sramconn);
 
 // --------------------------------------------------
 // Bus lines
@@ -36,6 +37,7 @@ axi4if audiobus();			// Bus for audio device output
 
 axi4if memorybus();			// Arbitrated access to main memory
 axi4if devicebus();			// Direct access to devices from data unit
+axi4if srambus();			// SRAM access from data unit
 
 axi4if ledif();				// Sub bus: LED contol device
 axi4if gpucmdif();			// Sub bus: GPU command fifo
@@ -115,7 +117,8 @@ dataunit dataunitinst (
 	.aresetn(aresetn),
 	.s_ibus(internaldatabus), 	// CPU access for r/w
 	.databus(databus),			// Access to memory
-	.devicebus(devicebus) );	// Access to devices
+	.devicebus(devicebus),		// Access to devices
+	.srambus(srambus) );		// Access to SRAM
 
 // --------------------------------------------------
 // Control unit
@@ -237,7 +240,7 @@ arbiter arbiter6x1instSDRAM(
 wire [11:0] device_temp;
 
 // dev   start     end      size
-// DDR3: 00000000  0FFFFFFF (256 Mbytes)
+// DDR3: 00000000  0FFFFFFF (256 Mbytes, 16 byte r/w only)
 
 axi4ddr3sdram axi4ddr3sdraminst(
 	.aclk(aclk),
@@ -248,6 +251,16 @@ axi4ddr3sdram axi4ddr3sdraminst(
 	.m_axi(memorybus),
 	.ddr3conn(ddr3conn),
 	.device_temp(device_temp) );
+
+// dev   start     end      size
+// DDR3: 10000000  0007FFFF (512 Kbytes, 16 bit r/w only)
+
+axi4sram axi4sraminst(
+	.aclk(aclk),
+	.clk100(clk100),
+	.aresetn(aresetn),
+	.s_axi(srambus),
+	.sramconn(sramconn));
 
 // --------------------------------------------------
 // Memory mapped device router

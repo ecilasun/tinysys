@@ -13,3 +13,5 @@ software/**/*.elf
 software/**/*.coe
 software/.lock*
 board/expansionboardA-backups/**.zip
+vivado_*.backup.jou
+vivado_*.backup.log
