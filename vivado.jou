@@ -1,0 +1,14 @@
+#-----------------------------------------------------------
+# Vivado v2023.1 (64-bit)
+# SW Build 3865809 on Sun May  7 15:05:29 MDT 2023
+# IP Build 3864474 on Sun May  7 20:36:21 MDT 2023
+# SharedData Build 3865790 on Sun May 07 13:33:03 MDT 2023
+# Start of session at: Fri Nov  3 00:07:06 2023
+# Process ID: 12500
+# Current directory: C:/repos/tinysys
+# Command line: vivado.exe -mode batch -source program.tcl
+# Log file: C:/repos/tinysys/vivado.log
+# Journal file: C:/repos/tinysys\vivado.jou
+# Running On: fastturtle, OS: Windows, CPU Frequency: 3400 MHz, CPU Physical cores: 16, Host memory: 34279 MB
+#-----------------------------------------------------------
+source program.tcl

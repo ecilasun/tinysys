@@ -1,0 +1,56 @@
+#-----------------------------------------------------------
+# Vivado v2023.1 (64-bit)
+# SW Build 3865809 on Sun May  7 15:05:29 MDT 2023
+# IP Build 3864474 on Sun May  7 20:36:21 MDT 2023
+# SharedData Build 3865790 on Sun May 07 13:33:03 MDT 2023
+# Start of session at: Fri Nov  3 00:07:06 2023
+# Process ID: 12500
+# Current directory: C:/repos/tinysys
+# Command line: vivado.exe -mode batch -source program.tcl
+# Log file: C:/repos/tinysys/vivado.log
+# Journal file: C:/repos/tinysys\vivado.jou
+# Running On: fastturtle, OS: Windows, CPU Frequency: 3400 MHz, CPU Physical cores: 16, Host memory: 34279 MB
+#-----------------------------------------------------------
+source program.tcl
+# open_hw_manager
+open_hw_manager: Time (s): cpu = 00:00:06 ; elapsed = 00:00:07 . Memory (MB): peak = 456.594 ; gain = 161.199
+# connect_hw_server -allow_non_jtag
+INFO: [Labtools 27-2285] Connecting to hw_server url TCP:localhost:3121
+INFO: [Labtools 27-2222] Launching hw_server...
+INFO: [Labtools 27-2221] Launch Output:
+ECHO is off.
+ECHO is off.
+
+****** Xilinx hw_server v2023.1
+  **** Build date : May  7 2023 at 15:26:57
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+
+
+INFO: [Labtools 27-3415] Connecting to cs_server url TCP:localhost:0
+INFO: [Labtools 27-3417] Launching cs_server...
+INFO: [Labtools 27-2221] Launch Output:
+ECHO is off.
+ECHO is off.
+
+
+******** Xilinx cs_server v2023.1.0
+  ****** Build date   : Apr 10 2023-08:59:24
+    **** Build number : 2023.1.1681142364
+      ** Copyright 2017-2022 Xilinx, Inc. All Rights Reserved.
+      ** Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
+
+
+
+# open_hw_target
+INFO: [Labtoolstcl 44-466] Opening hw_target localhost:3121/xilinx_tcf/Digilent/210251A08870
+# set_property PROGRAM.FILE {./tinysys.runs/impl_1/tophat.bit} [get_hw_devices xc7a200t_0]
+# current_hw_device [get_hw_devices xc7a200t_0]
+# refresh_hw_device -update_hw_probes false [lindex [get_hw_devices xc7a200t_0] 0]
+INFO: [Labtools 27-1434] Device xc7a200t (JTAG device index = 0) is programmed with a design that has no supported debug core(s) in it.
+# create_hw_cfgmem -hw_device [get_hw_devices xc7a200t_0] -mem_dev [lindex [get_cfgmem_parts {is25lp128f-spi-x1_x2_x4}] 0]
+# set_property PROBES.FILE {} [get_hw_devices xc7a200t_0]
+# set_property FULL_PROBES.FILE {} [get_hw_devices xc7a200t_0]
+# set_property PROGRAM.FILE {./tinysys.runs/impl_1/tophat.bit} [get_hw_devices xc7a200t_0]
+# program_hw_devices [get_hw_devices xc7a200t_0]
+INFO: [Labtools 27-3164] End of startup status: HIGH
+INFO: [Common 17-206] Exiting Vivado at Fri Nov  3 00:07:22 2023...

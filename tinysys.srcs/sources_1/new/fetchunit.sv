@@ -252,7 +252,7 @@ always @(posedge aclk) begin
 				instrOneHotOut, selectimmedasrval2,
 				bluop, aluop,
 				rs1, rs2, rd,
-				immed, PC[31:1], stepsize};
+				immed, prevPC[31:1], stepsize};
 
 			unique case (1'b1)
 				// IRQ/EBREAK/ILLEGAL don't step the PC (since we need the PC intact during those operations)
