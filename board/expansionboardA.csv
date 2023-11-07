@@ -11,7 +11,7 @@
 10;"R2,R11,R14";"R_0603_1608Metric_Pad0.98x0.95mm_HandSolder";3;"10KOhm";;;
 11;"J3";"CUI_HD02-19-M-MSMT-TR";1;"HDMI_A";;;
 12;"R13,R12";"R_0603_1608Metric_Pad0.98x0.95mm_HandSolder";2;"470Ohm";;;
-13;"IC1";"SOP80P1176X120-44N";1;"IS61WV25616EDBLL-10TLI";;;
+13;"JP1";"SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm";1;"Jumper_2_Open";;;
 14;"J2";"USB_A_Molex_67643_Horizontal";1;"USB_A_Stacked";;;
 15;"J4";"PinHeader_1x02_P2.54mm_Vertical";1;"FAN";;;
 16;"U1";"QFP80P900X900X160-32N";1;"MAX3420EECJ";;;

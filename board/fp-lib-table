@@ -14,4 +14,5 @@
   (lib (name "LM1117MPX33NOPB")(type "KiCad")(uri "${KIPRJMOD}/LM1117MPX33NOPB")(options "")(descr ""))
   (lib (name "KiCad")(type "KiCad")(uri "${KIPRJMOD}/IS61WV25616EDBLL-10TLI/KiCad")(options "")(descr ""))
   (lib (name "STM32C011F6P6")(type "KiCad")(uri "${KIPRJMOD}/STM32C011F6P6")(options "")(descr ""))
+  (lib (name "SI164CTG64")(type "KiCad")(uri "${KIPRJMOD}/SI164CTG64")(options "")(descr ""))
 )
