@@ -292,8 +292,10 @@ module serializer
                         tmds_clock <= tmds_shift_clk_pixel[0];
                         tmds_clock_negedge_temp <= tmds_shift_clk_pixel[1];
                     end
+/*
                     always_ff @(negedge clk_pixel_x5)
                         tmds_clock <= tmds_shift_negedge_temp;
+*/
 
                 `endif
         `endif

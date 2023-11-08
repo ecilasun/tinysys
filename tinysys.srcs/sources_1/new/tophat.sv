@@ -48,14 +48,6 @@ module tophat(
 	,output wire usba_mosi
 	,output wire usba_resn
 	,input wire usba_int
-	// SRAM
-	,output wire [17:0] sraddr
-	,inout wire [15:0] srdata
-	,output wire srlb
-	,output wire srub
-	,output wire sroe
-	,output wire srwe
-	,output wire srce
 	// DEBUG UART
 	//,input wire debugrx
 	//,output wire debugtx
@@ -90,7 +82,7 @@ clockandreset clockandresetinst(
 	.preresetn(preresetn));
 
 // --------------------------------------------------
-// DDR3 SDRAM and SRAM wires
+// DDR3 SDRAM wires
 // --------------------------------------------------
 
 ddr3sdramwires ddr3conn(
@@ -109,15 +101,6 @@ ddr3sdramwires ddr3conn(
 	.ddr3_dqs_n(ddr3_dqs_n),
 	.ddr3_dq(ddr3_dq),
 	.init_calib_complete(init_calib_complete) );
-
-sramwires sramconn(
-	.sram_addr(sraddr),
-	.sram_data_inout(srdata),
-	.sram_oe(sroe),
-	.sram_ce(srce),
-	.sram_we(srwe),
-	.sram_ub(srub),
-	.sram_lb(srlb) );
 
 // --------------------------------------------------
 // Video wires
@@ -192,7 +175,6 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.gpuvideoout(gpuvideoout),
 	.sdconn(sdconn),
 	.usbcconn(usbcconn),
-	.usbaconn(usbaconn),
-	.sramconn(sramconn) );
+	.usbaconn(usbaconn) );
 
 endmodule

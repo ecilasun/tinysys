@@ -15,11 +15,9 @@ module datacache(
 	output logic rready,
 	output logic wready,
 	axi4if.master a4buscached,
-	axi4if.master a4busuncached,
-	axi4if.master a4sramuncached);
+	axi4if.master a4busuncached );
 
-wire isuncached = addr[31];		// Uncached access
-wire issram = addr[28];			// SRAM access
+wire iscached = ~addr[31];		// Cached access when high
 wire [12:0] tag = addr[27:15];	// Cache tag
 wire [8:0] line = addr[14:6];	// Cache line
 wire [3:0] offset = addr[5:2];	// Cache word offset
@@ -38,14 +36,6 @@ logic [3:0] ucwstrb = 4'h0;
 logic ucre = 1'b0;
 wire ucwritedone;
 wire ucreaddone;
-
-logic [31:0] sraddrs;
-logic [31:0] srdout;
-wire [31:0] srdin;
-logic [3:0] srwstrb = 4'h0;
-logic srre = 1'b0;
-wire srwritedone;
-wire srreaddone;
 
 logic [3:0] bsel = 4'h0;			// copy of wstrobe
 logic [1:0] rwmode = 2'b00;			// r/w mode bits
@@ -125,26 +115,11 @@ uncachedmemorycontroller uncachedmemorycontrollerinst(
 	// To memory mapped devices
 	.m_axi(a4busuncached) );
 
-uncachedmemorycontroller uncachedSRAMcontrollerinst(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	// From cache
-	.addr(sraddrs),
-	.din(srdout),
-	.dout(srdin),
-	.re(srre),
-	.wstrb(srwstrb),
-	.wdone(srwritedone),
-	.rdone(srreaddone),
-	// To SRAM
-	.m_axi(a4sramuncached) );
-
 typedef enum logic [4:0] {
 	CRESET,
 	IDLE,
 	CWRITE, CREAD,
 	UCWRITE, UCWRITEDELAY, UCREAD, UCREADDELAY,
-	SRWRITE, SRWRITEDELAY, SRREAD, SRREADDELAY,
 	CWBACK, CWBACKWAIT,
 	CPOPULATE, CPOPULATEWAIT, CUPDATE, CUPDATEDELAY,
 	CDATANOFLUSHBEGIN, CDATANOFLUSHSTEP,
@@ -176,14 +151,12 @@ always_ff @(posedge aclk) begin
 			ptag <= cachelinetags[line];	// Previous cache tag
 			inputdata <= din;
 
-			casex ({dcacheop[0], issram, isuncached, ren, |wstrb})
-				5'b00001: cachestate <= CWRITE;
-				5'b00010: cachestate <= CREAD;
-				5'b00101: cachestate <= UCWRITE;
-				5'b00110: cachestate <= UCREAD;
-				5'b01001: cachestate <= SRWRITE;
-				5'b01010: cachestate <= SRREAD;
-				5'b1xxxx: cachestate <= dcacheop[1] ? CDATAFLUSHBEGIN : CDATANOFLUSHBEGIN;
+			casex ({dcacheop[0], iscached, ren, |wstrb})
+				4'b0101: cachestate <= CWRITE;
+				4'b0110: cachestate <= CREAD;
+				4'b0001: cachestate <= UCWRITE;
+				4'b0010: cachestate <= UCREAD;
+				4'b1xxx: cachestate <= dcacheop[1] ? CDATAFLUSHBEGIN : CDATANOFLUSHBEGIN;
 				default: cachestate <= IDLE;
 			endcase
 		end
@@ -290,38 +263,6 @@ always_ff @(posedge aclk) begin
 				cachestate <= IDLE;
 			end else begin
 				cachestate <= UCREADDELAY;
-			end
-		end
-
-		SRWRITE: begin
-			sraddrs <= addr;
-			srdout <= inputdata;
-			srwstrb <= bsel;
-			cachestate <= SRWRITEDELAY;
-		end
-
-		SRWRITEDELAY: begin
-			if (srwritedone) begin
-				wready <= 1'b1;
-				cachestate <= IDLE;
-			end else begin
-				cachestate <= SRWRITEDELAY;
-			end
-		end
-
-		SRREAD: begin
-			sraddrs <= addr;
-			srre <= 1'b1;
-			cachestate <= SRREADDELAY;
-		end
-
-		SRREADDELAY: begin
-			if (srreaddone) begin
-				dout <= srdin;
-				rready <= 1'b1;
-				cachestate <= IDLE;
-			end else begin
-				cachestate <= SRREADDELAY;
 			end
 		end
 
