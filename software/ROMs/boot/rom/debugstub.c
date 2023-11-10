@@ -118,12 +118,22 @@ void StrChecksum(const char *str, char *checksumstr)
 	checksumstr[2] = 0;
 }
 
+void SendAck()
+{
+	USBSerialWrite("+");
+}
+
+void SendNack()
+{
+	USBSerialWrite("-");
+}
+
 void SendDebugPacket(const char *packetString)
 {
 	char checksumstr[3];
 	StrChecksum(packetString, checksumstr);
 
-	USBSerialWrite("+$");
+	USBSerialWrite("$");
 	USBSerialWrite(packetString);
 	USBSerialWrite("#");
 	USBSerialWrite(checksumstr);
@@ -143,6 +153,8 @@ void HandlePacket()
 		offsetbuf[a]=0;
 		uint32_t offset = dec2uint(offsetbuf);
 
+		SendAck();
+
 		if (offset == 0)
 		{
 			strcpy(outstring, "l<?xml version=\"1.0\"?>\n<threads>");
@@ -157,6 +169,7 @@ void HandlePacket()
 				strcat(outstring, "\"></thread>\n");
 			}
 			strcat(outstring, "</threads>\n");
+
 			SendDebugPacket(outstring);
 		}
 		else
@@ -164,10 +177,12 @@ void HandlePacket()
 	}
 	else if (startswith(s_packet, "vMustReplyEmpty"))
 	{
+		SendAck(); // Does 'empty' include an ack?
 		SendDebugPacket("");
 	}
 	else if (startswith(s_packet, "QNonStop:"))
 	{
+		SendAck();
 		if (s_packet[9] == '0') // all-stop mode
 		{
 			taskctx->tasks[2].ctrlc = 1; // Stop user thread in all-stop mode
@@ -185,19 +200,25 @@ void HandlePacket()
 	{
 		s_debuggerConnected = 1;
 		// TODO: hwbreak+
-		SendDebugPacket("+qSupported:swbreak+;multiprocess-;qXfer:threads:read+;QNonStop+;qRelocInsn-;exec-events+;vRun+;vStopped+;vContSupported+;PacketSize=255");
+
+		SendAck();
+		SendDebugPacket("qSupported:swbreak+;multiprocess-;qXfer:threads:read+;QNonStop+;qRelocInsn-;exec-events+;vRun+;vStopped+;vContSupported+;PacketSize=255");
 	}
 	else if (startswith(s_packet, "qOffsets")) // segment offsets (grab from ELF header)
+	{
+		SendAck();
 		SendDebugPacket("Text=0;Data=0;Bss=0;"); // No relocation
+	}
 	else if (startswith(s_packet, "vRun"))
 	{
 		// vRun;filename;argument
 		// TODO:
-		SendDebugPacket("-");
+		SendNack();
 	}
 	else if (startswith(s_packet, "vStopped"))
 	{
 		// TODO: stop reason
+		SendAck();
 		SendDebugPacket("S05");
 	}
 	else if (startswith(s_packet, "qfThreadInfo"))
@@ -214,17 +235,29 @@ void HandlePacket()
 			if (i!=taskctx->numTasks-1)
 				strcat(outstring, ",");
 		}
+
+		SendAck();
 		SendDebugPacket(outstring);
 	}
 	else if (startswith(s_packet, "qsThreadInfo"))
+	{
+		SendAck();
 		SendDebugPacket("l");
+	}
 	else if (startswith(s_packet, "qTStatus"))
+	{
+		SendAck();
 		SendDebugPacket(""); // No trace state
+	}
 	else if (startswith(s_packet, "qAttached"))
+	{
+		SendAck();
 		SendDebugPacket("0"); // Create new process
+	}
 	else if (startswith(s_packet, "vCont?"))
 	{
 		// We support continue/step/stop/start actions (not the 'sig' ones)
+		SendAck();
 		SendDebugPacket("vCont;c;t");
 	}
 	else if (startswith(s_packet, "vCont")) // Continue/step/stop/start
@@ -246,14 +279,21 @@ void HandlePacket()
 			if (s_packet[5] == 't') // stop
 				taskctx->tasks[threadid].ctrlc = 1;
 		}
+
+		SendAck();
 		SendDebugPacket("OK");
 	}
 	else if (startswith(s_packet, "qSymbol")) // continue
+	{
+		SendAck();
 		SendDebugPacket("OK"); // No symtable info required
+	}
 	else if (startswith(s_packet, "vKill")) // quit process
 	{
 		// Nothing else we can kill, so kill the main user task
 		TaskExitTaskWithID(taskctx, 2, 0);
+
+		SendAck();
 		SendDebugPacket("OK");
 	}
 	else if (startswith(s_packet, "qC")) // current thread?
@@ -262,6 +302,8 @@ void HandlePacket()
 		uint2dec(s_currentThread, threadid);
 		strcpy(outstring, "qC ");
 		strcat(outstring, threadid);
+
+		SendAck();
 		SendDebugPacket(outstring);
 	}
 	else if (startswith(s_packet, "H"))
@@ -282,6 +324,7 @@ void HandlePacket()
 			s_currentThread = idx;
 		}
 
+		SendAck();
 		SendDebugPacket("OK");
 	}
 	else if (startswith(s_packet, "P")) // Write register
@@ -305,6 +348,7 @@ void HandlePacket()
 		else // PC
 			taskctx->tasks[threadid].regs[r] = value;
 
+		SendAck();
 		SendDebugPacket("OK");
 	}
 	else if (startswith(s_packet, "p")) // Print register
@@ -319,6 +363,7 @@ void HandlePacket()
 		uint32_t threadid = s_currentThread - 1;
 		int2architectureorderedstring(r == 0 ? 0 : taskctx->tasks[threadid].regs[r%32], outstring);
 
+		SendAck();
 		SendDebugPacket(outstring); // Return register data
 	}
 	else if (startswith(s_packet, "T")) // thread status
@@ -331,6 +376,8 @@ void HandlePacket()
 		r = hex2uint(hexbuf);
 
 		s_currentThread = r;
+
+		SendAck();
 
 		uint32_t threadid = s_currentThread - 1;
 		if (taskctx->tasks[threadid].state == TS_PAUSED)
@@ -352,6 +399,8 @@ void HandlePacket()
 		offsetbuf[a]=0;
 		uint32_t type = dec2uint(offsetbuf);*/
 
+		SendAck();
+
 		uint32_t threadid = s_currentThread - 1;
 		if (TaskInsertBreakpoint(taskctx, threadid, address))
 			SendDebugPacket("OK");
@@ -372,6 +421,8 @@ void HandlePacket()
 		offsetbuf[a]=0;
 		uint32_t type = dec2uint(offsetbuf);*/
 
+		SendAck();
+
 		uint32_t threadid = s_currentThread - 1;
 		if (TaskRemoveBreakpoint(taskctx, threadid, address))
 			SendDebugPacket("OK");
@@ -381,6 +432,8 @@ void HandlePacket()
 	else if (startswith(s_packet, "X")) // Write binary blob
 	{
 		// NOTE: The header has been pre-processed
+
+		SendAck();
 		SendDebugPacket("OK");
 	}
 	else if (startswith(s_packet, "M")) // Set memory, maddr,count
@@ -409,6 +462,7 @@ void HandlePacket()
 			*(uint8_t*)(addrs+i) = (uint8_t)byteval;
 		}
 
+		SendAck();
 		SendDebugPacket("OK");
 	}
 	else if (startswith(s_packet, "m")) // Read memory, maddr,count
@@ -438,6 +492,7 @@ void HandlePacket()
 		CFLUSH_D_L1;
 		FENCE_I;
 
+		SendAck();
 		SendDebugPacket(outstring);
 	}
 	else if (startswith(s_packet, "g")) // dump GPR contents
@@ -452,27 +507,35 @@ void HandlePacket()
 		// PC is sent last
 		int2architectureorderedstring(taskctx->tasks[threadid].regs[0], &outstring[32*8]);
 
+		SendAck();
 		SendDebugPacket(outstring);
 	}
 	else if (startswith(s_packet, "s")) // single step
 	{
 		// TODO: need single step support
 		//taskctx->tasks[threadid].state == TS_SINGLESTEP;
+
+		SendAck();
 		SendDebugPacket("");
 	}
 	else if (startswith(s_packet, "D")) // detach
 	{
 		s_debuggerConnected = 0;
+
+		SendAck();
 		SendDebugPacket("OK");
 	}
 	else if (startswith(s_packet, "c")) // continue
 	{
 		uint32_t threadid = s_currentThread - 1;
 		taskctx->tasks[threadid].ctrlc = 8;
+
+		SendAck();
 		SendDebugPacket("OK");
 	}
 	else if (startswith(s_packet, "!")) // Extended remote mode
 	{
+		SendAck();
 		SendDebugPacket("OK");
 	}
 	else if (startswith(s_packet, "?")) // Halt reason?
@@ -481,16 +544,19 @@ void HandlePacket()
 		/*s_currentThread = 3;
 		taskctx->tasks[2].ctrlc = 1;*/
 		// GDB_SIGNAL_TRAP (5)
+
+		SendAck();
 		SendDebugPacket("T05thread:3;");
 	}
 	/*else if (s_packet[0] == 0) // empty with a +, debugger seems to send this, wth?
 	{
+		SendAck();
 		SendDebugPacket("+");
 	}*/
 	else
 	{
 		kprintf("UNKOWN: %s\n", s_packet);
-		USBSerialWrite("-");
+		SendNack();
 	}
 
 	//kprintf(": %s\n", s_packet);
@@ -519,10 +585,11 @@ void ProcessChar(char input)
 		if (threadid == 2)
 		{
 			taskctx->tasks[threadid].ctrlc = 1;
+			SendAck();
 			SendDebugPacket("OK");
 		}
 		else
-			SendDebugPacket("-");
+			SendNack();
 		return;
 	}
 

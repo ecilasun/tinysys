@@ -11,6 +11,12 @@ extern "C"
 	{
 		asm volatile (
 
+		// NOTE: This MUST be the first instruction executed.
+		// If we're loaded from storage as a ROM overlay,
+		// this ensures that the instruction cache now sees
+		// the new set of instructions.
+		"fence.i;"					// Invalidate I$
+
 		// Set up global pointer - NOTE: ROM does not use GP
 		/*".option push;"
 		".option norelax;"

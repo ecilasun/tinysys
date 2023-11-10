@@ -24,10 +24,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define VERSIONSTRING "0001"
+#define VERSIONSTRING "R002"
+#define DEVVERSIONSTRING "D003"
 
+// For ROM image residing on the device:
 const uint8_t s_consolefgcolor = 0x2A; // Ember
 const uint8_t s_consolebgcolor = 0x11; // Dark gray
+
+// For ROM image loaded from storage:
+const uint8_t s_devfgcolor = 0x0F; // While
+const uint8_t s_devbgcolor = 0x37; // Light blue
+
 static char s_execName[32] = "ROM";
 static char s_execParam0[32] = "auto";
 static uint32_t s_execParamCount = 1;
@@ -122,7 +129,7 @@ void DeviceDefaultState(int _bootTime)
 		if (waterMark == 0) // On-device ROM
 			GPUConsoleSetColors(kernelgfx, s_consolefgcolor, s_consolebgcolor);
 		else // Overlay ROM (white on blue)
-			GPUConsoleSetColors(kernelgfx, 0x0F, 0x01);
+			GPUConsoleSetColors(kernelgfx, s_devfgcolor, s_devbgcolor);
 		GPUConsoleClear(kernelgfx);
 	}
 
@@ -256,18 +263,20 @@ void ExecuteCmd(char *_cmd)
 		if (waterMark == 0)
 			kprintf("ROM       : " VERSIONSTRING "\n");
 		else
-			kprintf("ROM       : DEVELOPMENT MODE\n");
-		kprintf("Board:    : revision 1K\n");	// TODO: need to read board and CPU data form system config
+			kprintf("ROM       : " DEVVERSIONSTRING "\n");
+		// TODO: These two values need to come from a CSR,
+		// pointing at a memory location with device config data (machineconfig?)
+		kprintf("Board:    : revision 1M\n");
 		kprintf("CPU:      : 166.67MHz\n");
 
-		// Report USB device die versions
-
+		// Report USB serial chip version
 		uint8_t m3420rev = MAX3420ReadByte(rREVISION);
 		if (m3420rev != 0xFF)
 			kprintf("MAX3420(serial) : 0x%X\n", m3420rev);
 		else
 			kprintf("MAX3420(serial) : n/a\n");
 
+		// Report USB host chip version
 		uint8_t m3421rev = MAX3421ReadByte(rREVISION);
 		if (m3421rev != 0xFF)
 			kprintf("MAX3421(host)   : 0x%X\n", m3421rev);
@@ -289,8 +298,13 @@ void ExecuteCmd(char *_cmd)
 		kprintf(" ren old new  Rename file from old to new name \n");
 		kprintf(" unmount      Unmount drive sd:                \n");
 		kprintf(" ver          Show version info                \n");
-		// Hidden commands
-		// reloc       Set ELF relocation offset
+		// Hidden commands for dev mode
+		uint32_t waterMark = read_csr(0xFF0);
+		if (waterMark != 0)
+		{
+			kprintf("DEV MODE COMMANDS\n");
+			kprintf(" reloc        Set ELF relocation offset (test) \n");
+		}
 	}
 	else // Anything else defers to being a command on storage
 		loadELF = 1;
@@ -449,9 +463,10 @@ void __attribute__((aligned(64))) CopyAndChainOverlay()
 	// load won't be necessary during its execution.
 
 	asm volatile(
-		"li s0, 0x00010000;"	// Source
-		"li s1, 0x0FFE0000;"	// Target
-		"li s2, 0xFFFF;"		// Count
+		"lui s0, 0x00010;"		// Source: 0x00010000
+		"lui s1, 0x0FFE0;"		// Target: 0x0FFE0000
+		"lui s2, 0x04000;"		// Count:  65536/4 (0x4000)
+		"srl s2, s2, 12;"
 		"copyloop:"
 		"lw a0, 0(s0);"			// Read source word
 		"sw a0, 0(s1);"			// Store target word
@@ -460,9 +475,8 @@ void __attribute__((aligned(64))) CopyAndChainOverlay()
 		"addi s2,s2,-1;"
 		"bne s2, zero, copyloop;"
 		".word 0xFC000073;"		// Invalidate & Write Back D$ (CFLUSH.D.L1)
-		"fence.i;"				// Invalidate I$
-		"li s0, 0x0FFE0000;"	// Branch to reset vector
-		"jalr s0;"
+		"lui s0, 0x0FFE0;"		// Branch to reset vector: 0x0FFE0000
+		"jalr s0;"				// NOTE: ROM must invalidate I$ on entry
 	);
 }
 
@@ -526,7 +540,7 @@ int main()
 	if (waterMark == 0)
 		kprintf("ROM: " VERSIONSTRING "\n");
 	else
-		kprintf("ROM: DEVELOPMENT MODE\n");
+		kprintf("ROM: " DEVVERSIONSTRING "\n");
 
 	// Set up ring buffers
 	LEDSetState(0xB);
