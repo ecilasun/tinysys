@@ -23,8 +23,6 @@ void TaskInitSystem(struct STaskContext *_ctx)
 		task->regs[0] = 0x0;			// Initial PC
 		task->regs[2] = 0x0;			// Initial stack pointer
 		task->regs[8] = 0x0;			// Frame pointer
-		task->ctrlc = 0;
-		task->breakhit = 0;
 		task->state = TS_UNKNOWN;
 		task->name[0] = 0; // No name
 		task->num_breakpoints = 0;
@@ -41,18 +39,29 @@ int TaskInsertBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint
 	struct STask *task = &(_ctx->tasks[_taskid]);
 	uint32_t brk = task->num_breakpoints;
 
+	// Too many breakpoints
 	if (brk == TASK_MAX_BREAKPOINTS-1)
 		return 0;
 
+	for (uint32_t i=0; i<brk; ++i)
+	{
+		if (task->breakpoints[i].address == _address)
+		{
+			// Already have a breakpoint here
+			return 0;
+		}
+	}
+
+	// New breakpoint
 	task->breakpoints[brk].address = _address;
 	uint32_t instr = *(uint32_t*)_address;
 	task->breakpoints[brk].originalinstruction = instr;
 
-	// Replace it with EBREAK or C.EBREAK instruction depending on comression
+	// Replace current instruction with EBREAK or C.EBREAK instruction depending on compression
 	if ((instr&3) == 0x2)
-		*(uint16_t*)_address = 0x9002;
+		*(uint16_t*)_address = 0x9002;		// C.EBREAK
 	else 
-		*(uint32_t*)_address = 0x00100073;
+		*(uint32_t*)_address = 0x00100073;	// EBREAK
 
 	// Make sure the write makes it to RAM and also visible to I$
 	CFLUSH_D_L1;
@@ -70,9 +79,10 @@ int TaskRemoveBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint
 	{
 		if (task->breakpoints[i].address == _address)
 		{
+			// Found breakpoint
 			uint32_t instr = task->breakpoints[i].originalinstruction;
 
-			// Replace it with EBREAK or C.EBREAK instruction depending on comression
+			// Replace it with EBREAK or C.EBREAK instruction depending on compression
 			if ((instr&3) == 0x2)
 				*(uint16_t*)_address = instr;
 			else 
@@ -91,6 +101,21 @@ int TaskRemoveBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint
 	}
 
 	return 0;
+}
+
+void TaskSetState(struct STaskContext *_ctx, const uint32_t _taskid, enum ETaskState _state)
+{
+	_ctx->tasks[_taskid].state = _state;
+}
+
+enum ETaskState TaskGetState(struct STaskContext *_ctx, const uint32_t _taskid)
+{
+	return _ctx->tasks[_taskid].state;
+}
+
+uint32_t TaskGetPC(struct STaskContext *_ctx, const uint32_t _taskid)
+{
+	return _ctx->tasks[_taskid].regs[0];
 }
 
 int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength)
@@ -205,37 +230,6 @@ uint32_t TaskSwitchToNext(struct STaskContext *_ctx)
 	regs[29] = read_csr(0x8BD);	// t4
 	regs[30] = read_csr(0x8BE);	// t5
 	regs[31] = read_csr(0x8BF);	// t6
-
-	// Break
-	if (_ctx->tasks[currentTask].ctrlc == 1)
-	{
-		_ctx->tasks[currentTask].state = TS_PAUSED;
-		_ctx->tasks[currentTask].ctrlc = 0;					// Avoid re-entry
-		_ctx->tasks[currentTask].ctrlcaddress = regs[0];	// Save PC of the instruction on which we stopped
-		uint32_t instr = *(uint32_t*)(regs[0]);				// Grab the instruction at this PC
-		_ctx->tasks[currentTask].ctrlcbackup = instr;		// Save it into our backup space
-		if ((instr&3) == 0x2)								// Is it compressed?
-			*(uint16_t*)(regs[0]) = 0x9002;					// Replace it with C.EBREAK instruction
-		else
-			*(uint32_t*)(regs[0]) = 0x00100073;				// Replace it with EBREAK instruction
-		CFLUSH_D_L1;										// Make sure the write makes it to RAM
-		FENCE_I;											// Make sure I$ is flushed so it can see this write
-	}
-
-	// Resume
-	if (_ctx->tasks[currentTask].ctrlc == 8)
-	{
-		_ctx->tasks[currentTask].state = TS_RUNNING;
-		_ctx->tasks[currentTask].breakhit = 0;
-		_ctx->tasks[currentTask].ctrlc = 0;											// Resuming
-		uint32_t instr = _ctx->tasks[currentTask].ctrlcbackup;						// Grab stored instruction
-		if ((instr&3) == 0x2)															// Is it compressed?
-			*(uint16_t*)(_ctx->tasks[currentTask].ctrlcaddress) = (uint16_t)instr;	// Restore compressed instruction
-		else
-			*(uint32_t*)(_ctx->tasks[currentTask].ctrlcaddress) = instr;			// Restore full instruction
-		CFLUSH_D_L1;																// Make sure the write makes it to RAM
-		FENCE_I;																	// Make sure I$ is flushed so it can see this write
-	}
 
 	// Terminate task and visit OS task
 	// NOTE: Task #0 cannot be terminated

@@ -436,7 +436,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				// Where there's no debugger loaded, simply exit since we're not supposed to run past ebreak commands
 				if (IsDebuggerConnected())
 				{
-					//SendDebugPacket("T 05 swbreak:");
+					//TaskSetState(g_taskctx, TS_PAUSED);
 				}
 				else
 				{

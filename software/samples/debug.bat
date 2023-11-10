@@ -1,0 +1,1 @@
+riscv64-unknown-elf-gdb  -iex "set auto-load safe-path ." -b 115200 hellodebugger/hellodebugger.elf

@@ -180,12 +180,13 @@ void HandlePacket()
 		SendAck(); // Does 'empty' include an ack?
 		SendDebugPacket("");
 	}
-	else if (startswith(s_packet, "QNonStop:"))
+	/*else if (startswith(s_packet, "QNonStop:"))
 	{
 		SendAck();
 		if (s_packet[9] == '0') // all-stop mode
 		{
-			taskctx->tasks[2].ctrlc = 1; // Stop user thread in all-stop mode
+			uint32_t PC = TaskGetPC(taskctx, threadid);
+			TaskInsertBreakpoint(taskctx, threadid, PC);
 			SendDebugPacket("OK");
 		}
 		else if (s_packet[9] == '1') // non-stop mode
@@ -195,14 +196,14 @@ void HandlePacket()
 		}
 		else
 			SendDebugPacket("");
-	}
+	}*/
 	else if (startswith(s_packet, "qSupported"))
 	{
 		s_debuggerConnected = 1;
 		// TODO: hwbreak+
 
 		SendAck();
-		SendDebugPacket("qSupported:swbreak+;multiprocess-;qXfer:threads:read+;QNonStop+;qRelocInsn-;exec-events+;vRun+;vStopped+;vContSupported+;PacketSize=255");
+		SendDebugPacket("qSupported:swbreak+;multiprocess-;qXfer:threads:read+;qRelocInsn-;exec-events+;vRun+;vStopped+;vContSupported+;PacketSize=255");
 	}
 	else if (startswith(s_packet, "qOffsets")) // segment offsets (grab from ELF header)
 	{
@@ -249,10 +250,29 @@ void HandlePacket()
 		SendAck();
 		SendDebugPacket(""); // No trace state
 	}
+	else if (startswith(s_packet, "vCtrlC"))
+	{
+		uint32_t threadid = s_currentThread - 1;
+		// Signal pause
+		// taskctx->currentTask == 2 -> only user thread can be stopped
+		if (threadid == 2)
+		{
+			uint32_t PC = TaskGetPC(taskctx, threadid);
+			TaskInsertBreakpoint(taskctx, threadid, PC);
+
+			SendAck();
+			SendDebugPacket("OK");
+		}
+		else
+			SendNack();
+	}
 	else if (startswith(s_packet, "qAttached"))
 	{
 		SendAck();
-		SendDebugPacket("0"); // Create new process
+		if (taskctx->numTasks == 3)
+			SendDebugPacket("1"); // Attached to existing process
+		else
+			SendDebugPacket("0"); // Created new process
 	}
 	else if (startswith(s_packet, "vCont?"))
 	{
@@ -267,7 +287,10 @@ void HandlePacket()
 		if (taskctx->tasks[threadid].state != TS_RUNNING)
 		{
 			if (s_packet[5] == 'c') // continue
-				taskctx->tasks[threadid].ctrlc = 8;
+			{
+				uint32_t PC = TaskGetPC(taskctx, threadid);
+				TaskRemoveBreakpoint(taskctx, threadid, PC);
+			}
 			/*if (s_packet[5] == 's') // step
 				taskctx->tasks[threadid]. = ;
 			if (s_packet[5] == 'r') // start
@@ -277,7 +300,10 @@ void HandlePacket()
 		if (taskctx->tasks[threadid].state != TS_PAUSED)
 		{
 			if (s_packet[5] == 't') // stop
-				taskctx->tasks[threadid].ctrlc = 1;
+			{
+				uint32_t PC = TaskGetPC(taskctx, threadid);
+				TaskInsertBreakpoint(taskctx, threadid, PC);
+			}
 		}
 
 		SendAck();
@@ -310,8 +336,8 @@ void HandlePacket()
 	{
 		if (s_packet[2] == '-')
 		{
-			// -1 : all threads
-			s_currentThread = 0;
+			// -1 : all threads, we default to 'running user process'
+			s_currentThread = 3;
 		}
 		else
 		{
@@ -321,7 +347,7 @@ void HandlePacket()
 				threadbuf[a++] = s_packet[p++];
 			threadbuf[a]=0;
 			uint32_t idx = hex2uint(threadbuf);
-			s_currentThread = idx;
+			s_currentThread = idx == 0 ? 2 : idx;
 		}
 
 		SendAck();
@@ -381,7 +407,7 @@ void HandlePacket()
 
 		uint32_t threadid = s_currentThread - 1;
 		if (taskctx->tasks[threadid].state == TS_PAUSED)
-			SendDebugPacket("E05");
+			SendDebugPacket("E05"); // NOT correct!
 		else
 			SendDebugPacket("OK");
 	}
@@ -501,10 +527,10 @@ void HandlePacket()
 
 		// All registers sent first
 		int2architectureorderedstring(0x00000000, &outstring[0]); // zero register
-		for(uint32_t i=1;i<32;++i)
+		for(uint32_t i=1; i<32; ++i)
 			int2architectureorderedstring(taskctx->tasks[threadid].regs[i], &outstring[i*8]);
 
-		// PC is sent last
+		// PC is sent last (we use the space for zero register for PC)
 		int2architectureorderedstring(taskctx->tasks[threadid].regs[0], &outstring[32*8]);
 
 		SendAck();
@@ -522,13 +548,21 @@ void HandlePacket()
 	{
 		s_debuggerConnected = 0;
 
+		// Resume current thread since we're detaching
+		uint32_t threadid = s_currentThread - 1;
+
+		uint32_t PC = TaskGetPC(taskctx, threadid);
+		TaskRemoveBreakpoint(taskctx, threadid, PC);
+
 		SendAck();
 		SendDebugPacket("OK");
 	}
 	else if (startswith(s_packet, "c")) // continue
 	{
 		uint32_t threadid = s_currentThread - 1;
-		taskctx->tasks[threadid].ctrlc = 8;
+
+		uint32_t PC = TaskGetPC(taskctx, threadid);
+		TaskRemoveBreakpoint(taskctx, threadid, PC);
 
 		SendAck();
 		SendDebugPacket("OK");
@@ -540,13 +574,15 @@ void HandlePacket()
 	}
 	else if (startswith(s_packet, "?")) // Halt reason?
 	{
-		// Do we also halt?
-		/*s_currentThread = 3;
-		taskctx->tasks[2].ctrlc = 1;*/
-		// GDB_SIGNAL_TRAP (5)
+		// We need to halt the user thread to report the 'stop' reason
+		s_currentThread = 3;
+		uint32_t threadid = s_currentThread - 1;
+
+		uint32_t PC = TaskGetPC(taskctx, threadid);
+		TaskInsertBreakpoint(taskctx, threadid, PC);
 
 		SendAck();
-		SendDebugPacket("T05thread:3;");
+		SendDebugPacket("T05thread:3;"); // GDB_SIGNAL_TRAP (5)
 	}
 	/*else if (s_packet[0] == 0) // empty with a +, debugger seems to send this, wth?
 	{
@@ -584,7 +620,9 @@ void ProcessChar(char input)
 		// taskctx->currentTask == 2 -> only user thread can be stopped
 		if (threadid == 2)
 		{
-			taskctx->tasks[threadid].ctrlc = 1;
+			uint32_t PC = TaskGetPC(taskctx, threadid);
+			TaskInsertBreakpoint(taskctx, threadid, PC);
+
 			SendAck();
 			SendDebugPacket("OK");
 		}

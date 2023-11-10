@@ -13,7 +13,14 @@ To run without an initial executable:
 riscv64-unknown-elf-gdb -b 115200
 ```
 
-After this step, at command prompt of GDB, use one of the following based on your platform (please remember to replace the ttyUSB or COM port name to the one you've set up on the development machine):
+Now we should land in the command prompt of GDB.
+
+NOTE: If (and only if) you wish to see the serial traffic between the GDB server and client, use the following command:
+```
+set debug remote 1
+```
+
+After this step, use one of the following based on your platform (please remember to replace the ttyUSB or COM port name to the one you've set up on the development machine):
 
 ```
 Windows:
@@ -36,11 +43,6 @@ An alternative method is to use gdbgui from the riscvtool/tinysys/samples/** dir
 
 ```
 ../../../gdbgui/gdbgui.pex --gdb-cmd="riscv64-unknown-elf-gdb -b 115200 doom.elf"
-```
-
-NOTE: If things do not go as planned, use the following before the 'remote' command to observe the packet traffic between GDB and the debug stub:
-```
-set debug remote 1
 ```
 
 

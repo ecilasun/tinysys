@@ -31,10 +31,6 @@ struct STask {
 
 	// Debug support - this will probably move somewhere else
 	char name[16];				// Name of this task
-	uint32_t ctrlc;				// Stop on first chance
-	uint32_t ctrlcaddress;
-	uint32_t ctrlcbackup;
-	uint32_t breakhit;			// We've stopped due to a breakpoint
 	uint32_t num_breakpoints;	// Breakpoint count
 	struct STaskBreakpoint breakpoints[TASK_MAX_BREAKPOINTS];	// List of breakpoints
 };
@@ -66,3 +62,6 @@ void TaskYield();
 
 int TaskInsertBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint32_t _address);
 int TaskRemoveBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint32_t _address);
+void TaskSetState(struct STaskContext *_ctx, const uint32_t _taskid, enum ETaskState _state);
+enum ETaskState TaskGetState(struct STaskContext *_ctx, const uint32_t _taskid);
+uint32_t TaskGetPC(struct STaskContext *_ctx, const uint32_t _taskid);
