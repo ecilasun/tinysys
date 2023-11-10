@@ -3,9 +3,9 @@
     "GenerationSoftware": {
       "Vendor": "KiCad",
       "Application": "Pcbnew",
-      "Version": "7.0.1"
+      "Version": "7.0.8"
     },
-    "CreationDate": "2023-11-06T19:54:22-08:00"
+    "CreationDate": "2023-11-10T01:37:46-08:00"
   },
   "GeneralSpecs": {
     "ProjectId": {
@@ -14,7 +14,7 @@
       "Revision": "3"
     },
     "Size": {
-      "X": 111.008,
+      "X": 131.008,
       "Y": 83.7799
     },
     "LayerNumber": 2,
@@ -29,8 +29,8 @@
       "PadToTrack": 0.0,
       "TrackToTrack": 0.2,
       "MinLineWidth": 0.2,
-      "TrackToRegion": 0.35,
-      "RegionToRegion": 0.35
+      "TrackToRegion": 0.2,
+      "RegionToRegion": 0.2
     }
   ],
   "FilesAttributes": [
@@ -92,7 +92,7 @@
     },
     {
       "Type": "SolderMask",
-      "Color": "Red",
+      "Color": "Green",
       "Thickness": 0.01,
       "Name": "Top Solder Mask"
     },
@@ -117,7 +117,7 @@
     },
     {
       "Type": "SolderMask",
-      "Color": "Red",
+      "Color": "Green",
       "Thickness": 0.01,
       "Name": "Bottom Solder Mask"
     },
