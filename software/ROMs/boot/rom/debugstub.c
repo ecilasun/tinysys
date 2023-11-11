@@ -220,7 +220,7 @@ void HandlePacket()
 	{
 		// TODO: stop reason
 		SendAck();
-		SendDebugPacket("S05");
+		SendDebugPacket("T05thread:3;");
 	}
 	else if (startswith(s_packet, "qfThreadInfo"))
 	{
@@ -261,7 +261,7 @@ void HandlePacket()
 			TaskInsertBreakpoint(taskctx, threadid, PC);
 
 			SendAck();
-			SendDebugPacket("OK");
+			SendDebugPacket("T05thread:3;");
 		}
 		else
 			SendNack();
@@ -278,7 +278,7 @@ void HandlePacket()
 	{
 		// We support continue/step/stop/start actions (not the 'sig' ones)
 		SendAck();
-		SendDebugPacket("OK");
+		SendDebugPacket("vCont;c;C");
 	}
 	else if (startswith(s_packet, "vCont")) // Continue/step/stop/start
 	{
@@ -637,7 +637,7 @@ void ProcessChar(char input)
 			TaskInsertBreakpoint(taskctx, threadid, PC);
 
 			SendAck();
-			SendDebugPacket("OK");
+			SendDebugPacket("T05thread:3;");
 		}
 		else
 			SendNack();
