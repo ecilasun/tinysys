@@ -92,12 +92,16 @@ int TaskRemoveBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint
 				*(uint32_t*)_address = instr;
 			else
 				*(uint16_t*)_address = instr;
+			
+			// Nullify the address and instruction
+			task->breakpoints[i].address = 0x00000000;
+			task->breakpoints[i].originalinstruction = 0x00000000;
 
 			// Make sure the write makes it to RAM and also visible to I$
 			CFLUSH_D_L1;
 			FENCE_I;
 
-			// Swap last entry over deleted one
+			// Swap last entry over deleted one if we're not at the end of the list
 			if (i != brk-1)
 				task->breakpoints[i] = task->breakpoints[brk-1];
 			task->num_breakpoints--;

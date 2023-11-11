@@ -611,8 +611,6 @@ void HandlePacket()
 		kprintf("UNKOWN: %s\n", s_packet);
 		SendNack();
 	}
-
-	//kprintf(": %s\n", s_packet);
 }
 
 void ProcessBinaryData(uint8_t input)
@@ -723,12 +721,13 @@ void ProcessGDBRequest()
 		uint8_t drain;
 		while (SerialInRingBufferRead(&drain, 1))
 		{
+			// Debug output for incoming packet
+			kprintf("%c", drain);
+
 			if (s_gatherBinary)
 				ProcessBinaryData(drain);
 			else
 			{
-				// Sometimes we drop here while receiving binary data
-				kprintf("%c", drain);
 				ProcessChar(drain);
 				// Stop spinning here and process the current packet
 				if (s_packetComplete)
