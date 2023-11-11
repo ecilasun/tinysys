@@ -519,6 +519,10 @@ void HandlePacket()
 		uint32_t addrs = hex2uint(addrbuf);
 		uint32_t numbytes = dec2uint(cntbuf);
 
+		// NOTE: When reading program memory, we need to
+		// send across the 'saved' instruction bytes for the
+		// breakpoints and not the 'ebreak' instructions.
+
 		uint32_t ofst = 0;
 		for (uint32_t i=0; i<numbytes; ++i)
 		{
@@ -724,7 +728,7 @@ void ProcessGDBRequest()
 			else
 			{
 				// Sometimes we drop here while receiving binary data
-				//kprintf("%c", drain);
+				kprintf("%c", drain);
 				ProcessChar(drain);
 				// Stop spinning here and process the current packet
 				if (s_packetComplete)
