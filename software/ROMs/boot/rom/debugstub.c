@@ -16,7 +16,7 @@ static uint32_t s_packetComplete = 0;
 static uint32_t s_gatherBinary = 0;
 static uint32_t s_isBinaryHeader = 0;
 static uint32_t s_idx = 0;
-static uint32_t s_currentThread = 1; // SYSIDLE
+static uint32_t s_currentThread = 3; // SYSIDLE
 static uint32_t s_binaryAddrs;
 static uint32_t s_binaryNumbytes;
 static uint32_t s_receivedBytes;
@@ -278,32 +278,45 @@ void HandlePacket()
 	{
 		// We support continue/step/stop/start actions (not the 'sig' ones)
 		SendAck();
-		SendDebugPacket("vCont;c;t");
+		SendDebugPacket("OK");
 	}
 	else if (startswith(s_packet, "vCont")) // Continue/step/stop/start
 	{
-		// We're supposed to ignore these actions on running threads
 		uint32_t threadid = s_currentThread - 1;
-		if (taskctx->tasks[threadid].state != TS_RUNNING)
+
+		if (s_packet[6] == 'c') // continue
 		{
-			if (s_packet[5] == 'c') // continue
-			{
-				uint32_t PC = TaskGetPC(taskctx, threadid);
-				TaskRemoveBreakpoint(taskctx, threadid, PC);
-			}
-			/*if (s_packet[5] == 's') // step
-				taskctx->tasks[threadid]. = ;
-			if (s_packet[5] == 'r') // start
-				taskctx->tasks[threadid]. = ;*/
+			uint32_t PC = TaskGetPC(taskctx, threadid);
+			TaskRemoveBreakpoint(taskctx, threadid, PC);
 		}
-		// Also, ignore stops issued on already stopped threads
-		if (taskctx->tasks[threadid].state != TS_PAUSED)
+		if (s_packet[6] == 's') // step
 		{
-			if (s_packet[5] == 't') // stop
-			{
-				uint32_t PC = TaskGetPC(taskctx, threadid);
-				TaskInsertBreakpoint(taskctx, threadid, PC);
-			}
+			uint32_t PC = TaskGetPC(taskctx, threadid);
+
+			// NOTE: For multicore mode, we need to add a new
+			// breakpoint before we restore the old one so that
+			// the core doesn't run ahead and skip past the
+			// next breakpoint before we can add it.
+			// On a single core machine this is not a problem.
+
+			// Step the PC
+			uint32_t instr = *(uint32_t*)PC;
+			uint32_t newPC;
+			if ((instr&3) == 0x3) // Uncompressed?
+				newPC = PC+4;
+			else // Compressed?
+				newPC = PC+2;
+			// Add breakpoint at next instuction
+			TaskInsertBreakpoint(taskctx, threadid, newPC);
+			// Restore old instruction
+			TaskRemoveBreakpoint(taskctx, threadid, PC);
+		}
+		/*if (s_packet[6] == 'r') // (re?)start
+			taskctx->tasks[threadid]. = ;*/
+		if (s_packet[6] == 't') // stop
+		{
+			uint32_t PC = TaskGetPC(taskctx, threadid);
+			TaskInsertBreakpoint(taskctx, threadid, PC);
 		}
 
 		SendAck();

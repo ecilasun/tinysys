@@ -2,6 +2,7 @@
 #include "basesystem.h"
 #include "task.h"
 #include "leds.h"
+#include "rombase.h"
 
 #include <stdlib.h>
 
@@ -58,10 +59,18 @@ int TaskInsertBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint
 	task->breakpoints[brk].originalinstruction = instr;
 
 	// Replace current instruction with EBREAK or C.EBREAK instruction depending on compression
-	if ((instr&3) == 0x2)
-		*(uint16_t*)_address = 0x9002;		// C.EBREAK
-	else 
+	if ((instr&3) == 0x3)
+	{
+		kprintf("brk(4):%x\n", _address);
 		*(uint32_t*)_address = 0x00100073;	// EBREAK
+	}
+	else
+	{
+		kprintf("brk(2):%x\n", _address);
+		*(uint16_t*)_address = 0x9002;		// C.EBREAK
+	}
+
+	++task->num_breakpoints;
 
 	// Make sure the write makes it to RAM and also visible to I$
 	CFLUSH_D_L1;
@@ -83,22 +92,31 @@ int TaskRemoveBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint
 			uint32_t instr = task->breakpoints[i].originalinstruction;
 
 			// Replace it with EBREAK or C.EBREAK instruction depending on compression
-			if ((instr&3) == 0x2)
-				*(uint16_t*)_address = instr;
-			else 
+			if ((instr&3) == 0x3)
+			{
+				kprintf("cont(4):%x\n", _address);
 				*(uint32_t*)_address = instr;
+			}
+			else
+			{
+				kprintf("cont(2):%x\n", _address);
+				*(uint16_t*)_address = instr;
+			}
 
 			// Make sure the write makes it to RAM and also visible to I$
 			CFLUSH_D_L1;
 			FENCE_I;
 
-			// Swap last entry over
+			// Swap last entry over deleted one
 			if (i != brk-1)
 				task->breakpoints[i] = task->breakpoints[brk];
 			task->num_breakpoints--;
+
 			return 1;
 		}
 	}
+
+	kprintf("brk %x not found\n", _address);
 
 	return 0;
 }
