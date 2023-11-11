@@ -722,7 +722,7 @@ void ProcessGDBRequest()
 		while (SerialInRingBufferRead(&drain, 1))
 		{
 			// Debug output for incoming packet
-			kprintf("%c", drain);
+			//kprintf("%c", drain);
 
 			if (s_gatherBinary)
 				ProcessBinaryData(drain);
