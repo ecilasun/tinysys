@@ -239,6 +239,7 @@ uint32_t TaskSwitchToNext(struct STaskContext *_ctx)
 		{
 			// Mark as 'terminated'
 			_ctx->tasks[currentTask].state = TS_TERMINATED;
+			_ctx->tasks[currentTask].num_breakpoints = 0;
 			// Replace with task at end of list, if we're not the end of list
 			if (currentTask != _ctx->numTasks-1)
 				__builtin_memcpy(&_ctx->tasks[currentTask], &_ctx->tasks[_ctx->numTasks-1], sizeof(struct STask));

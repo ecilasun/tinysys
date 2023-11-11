@@ -1,4 +1,5 @@
 #define _GNU_SOURCE 1
+#define _POSIX_TIMERS 1
 
 #include <inttypes.h>
 #include <unistd.h>
@@ -9,6 +10,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
 
 typedef struct
 {
@@ -25,10 +27,16 @@ int main()
 	getcwd(pathbuffer, 512);
 	printf("Current work directory:%s\n", pathbuffer);
 
-	printf("Changing it to sd:/\n");
+	printf("Changing work directory to sd:/\n");
 	chdir("sd:/");
 
-	FILE *fp = fopen("sd:test.jpg", "rb");
+	printf("Attempting to nanosleep(1sec), might run longer than intended\n");
+	timespec req;
+	req.tv_nsec = 0;
+	req.tv_sec = 1;
+	nanosleep(&req, nullptr);
+
+	FILE *fp = fopen("sd:/test.jpg", "rb");
 	if (fp)
 	{
 		printf("File's there, doing seek/read check.\n");
