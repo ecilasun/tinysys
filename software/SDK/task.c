@@ -60,8 +60,10 @@ int TaskInsertBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint
 	if ((instr&3) == 0x3)
 		*(uint32_t*)_address = 0x00100073;	// EBREAK
 	else
+	{
 		instr = *(uint16_t*)_address;
 		*(uint16_t*)_address = 0x9002;		// C.EBREAK
+	}
 
 	task->breakpoints[brk].originalinstruction = instr;
 	++task->num_breakpoints;
@@ -97,14 +99,12 @@ int TaskRemoveBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint
 
 			// Swap last entry over deleted one
 			if (i != brk-1)
-				task->breakpoints[i] = task->breakpoints[brk];
+				task->breakpoints[i] = task->breakpoints[brk-1];
 			task->num_breakpoints--;
 
 			return 1;
 		}
 	}
-
-	kprintf("brk %x not found\n", _address);
 
 	return 0;
 }
