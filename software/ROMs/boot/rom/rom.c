@@ -25,7 +25,7 @@
 #include <stdlib.h>
 
 #define VERSIONSTRING "R002"
-#define DEVVERSIONSTRING "D003"
+#define DEVVERSIONSTRING "D004"
 
 // For ROM image residing on the device:
 const uint8_t s_consolefgcolor = 0x2A; // Ember
