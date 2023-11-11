@@ -232,10 +232,13 @@ int main(int argc, char** argv)
 	while(1)
 	{
 		cur_byte_address = 0;
-		s_fp = fopen("sd:/scene1.dat", "rb");
+		if (argc<=1)
+			s_fp = fopen("scene1.dat", "rb");
+		else
+			s_fp = fopen(argv[1], "rb");
 		if (!s_fp)
 		{
-			printf("Could not open scene1.dat\n");
+			printf("Could not open scene data\n");
 			return -1;
 		}
 

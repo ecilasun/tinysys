@@ -213,12 +213,13 @@ int main(int argc, char *argv[])
 	apubuffer = (short*)APUAllocateBuffer(BUFFER_SAMPLES*NUM_CHANNELS*sizeof(short));
 	printf("\nAPU mix buffer: 0x%.8x\n", (unsigned int)apubuffer);
 
-	char currpath[48] = "sd:";
+	char currpath[48] = "sd:/";
 	if (getcwd(currpath, 48))
 		printf("Working directory:%s\n", currpath);
 
 	char fullpath[128];
 	strcpy(fullpath, currpath);
+	strcat(fullpath, "/");
 
 	if (argc<=1)
 		strcat(fullpath, "test.mod");

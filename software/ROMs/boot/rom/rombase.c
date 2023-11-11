@@ -222,7 +222,7 @@ uint32_t LoadExecutable(const char *filename, int _relocOffset, const bool repor
 }
 
 #define MAX_HANDLES 16
-#define MAXFILENAMELEN 32
+#define MAXFILENAMELEN 48
 
 // Handle allocation mask, positions 0,1 and 2 are reserved
 //0	Standard input	STDIN_FILENO	stdin
@@ -234,19 +234,19 @@ static char s_fileNames[MAX_HANDLES][MAXFILENAMELEN+1] = {
 	{"stdin"},
 	{"stdout"},
 	{"stderr"},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},
-	{"                                "},};
+	{"                                                "},
+	{"                                                "},
+	{"                                                "},
+	{"                                                "},
+	{"                                                "},
+	{"                                                "},
+	{"                                                "},
+	{"                                                "},
+	{"                                                "},
+	{"                                                "},
+	{"                                                "},
+	{"                                                "},
+	{"                                                "},};
 
 static struct STaskContext g_taskctx;
 static UINT tmpresult = 0;
@@ -482,16 +482,12 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					//char *getcwd(char *buf, size_t size);
 					char* targetbuffer = (char*)read_csr(0x8AA); // A0
 					uint32_t targetsize = read_csr(0x8AB); // A1
-					if (targetsize >= MAXFILENAMELEN)
-						write_csr(0x8AA, 0x0); // nullptr
+					targetsize = targetsize > (MAXFILENAMELEN-1) ? (MAXFILENAMELEN-1) : targetsize;
+					FRESULT cwdattempt = f_getcwd(targetbuffer, targetsize);
+					if (cwdattempt == FR_OK)
+						write_csr(0x8AA, targetbuffer);
 					else
-					{
-						FRESULT cwdattempt = f_getcwd(targetbuffer, targetsize);
-						if (cwdattempt == FR_OK)
-							write_csr(0x8AA, targetbuffer);
-						else
-							write_csr(0x8AA, 0x0); // nullptr
-					}
+						write_csr(0x8AA, 0x0); // nullptr
 				}
 				else if (value==50) // chdir
 				{

@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define VERSIONSTRING "R002"
+#define VERSIONSTRING "R003"
 #define DEVVERSIONSTRING "D004"
 
 // For ROM image residing on the device:
@@ -32,8 +32,8 @@ const uint8_t s_consolefgcolor = 0x2A; // Ember
 const uint8_t s_consolebgcolor = 0x11; // Dark gray
 
 // For ROM image loaded from storage:
-const uint8_t s_devfgcolor = 0x0F; // While
-const uint8_t s_devbgcolor = 0x37; // Light blue
+const uint8_t s_devfgcolor = 0x00; // Black
+const uint8_t s_devbgcolor = 0x4E; // Light blue
 
 static char s_execName[32] = "ROM";
 static char s_execParam0[32] = "auto";
