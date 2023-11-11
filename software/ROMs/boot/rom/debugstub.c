@@ -360,6 +360,7 @@ void HandlePacket()
 				threadbuf[a++] = s_packet[p++];
 			threadbuf[a]=0;
 			uint32_t idx = hex2uint(threadbuf);
+			// 0 means 'any thread'
 			s_currentThread = idx == 0 ? 2 : idx;
 		}
 
@@ -555,11 +556,29 @@ void HandlePacket()
 	}
 	else if (startswith(s_packet, "s")) // single step
 	{
-		// TODO: need single step support
-		//taskctx->tasks[threadid].state == TS_SINGLESTEP;
+		uint32_t threadid = s_currentThread - 1;
+		uint32_t PC = TaskGetPC(taskctx, threadid);
+
+		// NOTE: For multicore mode, we need to add a new
+		// breakpoint before we restore the old one so that
+		// the core doesn't run ahead and skip past the
+		// next breakpoint before we can add it.
+		// On a single core machine this is not a problem.
+
+		// Step the PC
+		uint32_t instr = *(uint32_t*)PC;
+		uint32_t newPC;
+		if ((instr&3) == 0x3) // Uncompressed?
+			newPC = PC+4;
+		else // Compressed?
+			newPC = PC+2;
+		// Add breakpoint at next instuction
+		TaskInsertBreakpoint(taskctx, threadid, newPC);
+		// Restore old instruction
+		TaskRemoveBreakpoint(taskctx, threadid, PC);
 
 		SendAck();
-		SendDebugPacket("");
+		SendDebugPacket("S05");
 	}
 	else if (startswith(s_packet, "D")) // detach
 	{
@@ -568,8 +587,8 @@ void HandlePacket()
 		// Resume current thread since we're detaching
 		uint32_t threadid = s_currentThread - 1;
 
-		uint32_t PC = TaskGetPC(taskctx, threadid);
-		TaskRemoveBreakpoint(taskctx, threadid, PC);
+		// Remove all task breakpoints
+		TaskRemoveAllBreakpoints(taskctx, threadid);
 
 		SendAck();
 		SendDebugPacket("OK");

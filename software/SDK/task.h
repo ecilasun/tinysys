@@ -62,6 +62,7 @@ void TaskYield();
 
 int TaskInsertBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint32_t _address);
 int TaskRemoveBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint32_t _address);
+void TaskRemoveAllBreakpoints(struct STaskContext *_ctx, const uint32_t _taskid);
 void TaskSetState(struct STaskContext *_ctx, const uint32_t _taskid, enum ETaskState _state);
 enum ETaskState TaskGetState(struct STaskContext *_ctx, const uint32_t _taskid);
 uint32_t TaskGetPC(struct STaskContext *_ctx, const uint32_t _taskid);

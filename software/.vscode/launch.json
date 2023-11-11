@@ -21,12 +21,11 @@
                 {
                     "description": "Enable pretty-printing for gdb",
                     "text": "-enable-pretty-printing",
-                    "ignoreFailures": false
+                    "ignoreFailures": true
                 }
             ],
             "miDebuggerPath": "riscv64-unknown-elf-gdb",
-            "miDebuggerServerAddress": "//.//COM9",
-			"miDebuggerArgs": "run hellodebugger"
+            "miDebuggerServerAddress": "//.//COM9"
         }
     ]
 }

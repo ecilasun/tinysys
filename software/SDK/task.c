@@ -87,7 +87,7 @@ int TaskRemoveBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint
 			// Found breakpoint
 			uint32_t instr = task->breakpoints[i].originalinstruction;
 
-			// Replace it with EBREAK or C.EBREAK instruction depending on compression
+			// Replace it with the original instruction
 			if ((instr&3) == 0x3)
 				*(uint32_t*)_address = instr;
 			else
@@ -111,6 +111,37 @@ int TaskRemoveBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint
 	}
 
 	return 0;
+}
+
+void TaskRemoveAllBreakpoints(struct STaskContext *_ctx, const uint32_t _taskid)
+{
+	struct STask *task = &(_ctx->tasks[_taskid]);
+	uint32_t brk = task->num_breakpoints;
+
+	for (uint32_t i=0; i<brk; ++i)
+	{
+		if (task->breakpoints[i].address != 0)
+		{
+			uint32_t address = task->breakpoints[i].address;
+
+			// Restore original instruction
+			uint32_t instr = task->breakpoints[i].originalinstruction;
+			if ((instr&3) == 0x3)
+				*(uint32_t*)address = instr;
+			else
+				*(uint16_t*)address = instr;
+			
+			// Nullify the address and instruction
+			task->breakpoints[i].address = 0x00000000;
+			task->breakpoints[i].originalinstruction = 0x00000000;
+		}
+	}
+
+	// Make sure the write makes it to RAM and also visible to I$
+	CFLUSH_D_L1;
+	FENCE_I;
+
+	task->num_breakpoints = 0;
 }
 
 void TaskSetState(struct STaskContext *_ctx, const uint32_t _taskid, enum ETaskState _state)
