@@ -320,12 +320,12 @@ void HandlePacket()
 		}
 
 		SendAck();
-		SendDebugPacket("OK");
+		//SendDebugPacket("OK");
 	}
 	else if (startswith(s_packet, "qSymbol")) // continue
 	{
 		SendAck();
-		SendDebugPacket("OK"); // No symtable info required
+		SendDebugPacket(""); // No symtable info support
 	}
 	else if (startswith(s_packet, "vKill")) // quit process
 	{

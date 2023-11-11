@@ -2,7 +2,6 @@
 #include "basesystem.h"
 #include "task.h"
 #include "leds.h"
-#include "rombase.h"
 
 #include <stdlib.h>
 
@@ -56,20 +55,15 @@ int TaskInsertBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint
 	// New breakpoint
 	task->breakpoints[brk].address = _address;
 	uint32_t instr = *(uint32_t*)_address;
-	task->breakpoints[brk].originalinstruction = instr;
 
 	// Replace current instruction with EBREAK or C.EBREAK instruction depending on compression
 	if ((instr&3) == 0x3)
-	{
-		kprintf("brk(4):%x\n", _address);
 		*(uint32_t*)_address = 0x00100073;	// EBREAK
-	}
 	else
-	{
-		kprintf("brk(2):%x\n", _address);
+		instr = *(uint16_t*)_address;
 		*(uint16_t*)_address = 0x9002;		// C.EBREAK
-	}
 
+	task->breakpoints[brk].originalinstruction = instr;
 	++task->num_breakpoints;
 
 	// Make sure the write makes it to RAM and also visible to I$
@@ -93,15 +87,9 @@ int TaskRemoveBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint
 
 			// Replace it with EBREAK or C.EBREAK instruction depending on compression
 			if ((instr&3) == 0x3)
-			{
-				kprintf("cont(4):%x\n", _address);
 				*(uint32_t*)_address = instr;
-			}
 			else
-			{
-				kprintf("cont(2):%x\n", _address);
 				*(uint16_t*)_address = instr;
-			}
 
 			// Make sure the write makes it to RAM and also visible to I$
 			CFLUSH_D_L1;
