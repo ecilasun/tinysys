@@ -213,28 +213,20 @@ int main(int argc, char *argv[])
 	apubuffer = (short*)APUAllocateBuffer(BUFFER_SAMPLES*NUM_CHANNELS*sizeof(short));
 	printf("\nAPU mix buffer: 0x%.8x\n", (unsigned int)apubuffer);
 
-	char currpath[30] = "sd:";
-	if (getcwd(currpath, 30))
+	char currpath[48] = "sd:";
+	if (getcwd(currpath, 48))
 		printf("Working directory:%s\n", currpath);
-	else
-	{
-		strcpy(currpath, "sd:/");
-		printf("Using default working directory\n");
-	}
+
+	char fullpath[128];
+	strcpy(fullpath, currpath);
 
 	if (argc<=1)
-	{
-		printf("Loading and playing module test.mod\n");
-		PlayMODFile("sd:/test.mod");
-	}
+		strcat(fullpath, "test.mod");
 	else
-	{
-		char fullpath[128];
-		strcpy(fullpath, currpath);
 		strcat(fullpath, argv[1]);
-		printf("Loading and playing module %s\n", fullpath);
-		PlayMODFile(fullpath);
-	}
+
+	printf("Loading and playing module %s\n", fullpath);
+	PlayMODFile(fullpath);
 
 	printf("Playback complete\n");
 
