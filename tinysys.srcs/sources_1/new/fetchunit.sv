@@ -33,6 +33,7 @@ logic fetchena = 1'b0;
 logic [31:0] prevPC = RESETVECTOR;
 logic [31:0] PC = RESETVECTOR;
 logic [31:0] adjacentPC = RESETVECTOR;
+logic [31:0] emitPC = RESETVECTOR;
 logic [31:0] IR;
 wire rready;
 wire [31:0] instruction;
@@ -336,6 +337,8 @@ always @(posedge aclk) begin
 			// Save states for exit time
 			entryState <= {irqReq[0], irqReq[1], isecall, isebreak, isillegalinstruction};
 
+			emitPC <= {PC[31:1], 1'b1};
+
 			fetchmode <= STARTINJECT;
 			postInject <= POSTENTER;
 		end
@@ -369,6 +372,8 @@ always @(posedge aclk) begin
 				end
 			endcase
 
+			emitPC <= {PC[31:1], 1'b1};
+
 			fetchmode <= STARTINJECT;
 			postInject <= POSTEXIT;
 		end
@@ -388,7 +393,7 @@ always @(posedge aclk) begin
 				instrOneHotOut, selectimmedasrval2,
 				bluop, aluop,
 				rs1, rs2, rd,
-				immed, PC[31:1], 1'b1}; // Always full instruction
+				immed, emitPC};
 
 			// WARNING: Injection ignores all instruction handling and never advances the PC
 			// NOTE: We will spin here if instruction fifo is full
