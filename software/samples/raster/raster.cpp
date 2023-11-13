@@ -114,18 +114,20 @@ int main(int argc, char *argv[])
 		int32_t c2 = 0xC0;
 
 		// Sweep and fill pixels
+		uint8_t *rasterOut = sc.writepage;
 		for (int32_t y = miny; y<=maxy; ++y)
 		{
 			int32_t w0 = w0_row;
 			int32_t w1 = w1_row;
 			int32_t w2 = w2_row;
+			rasterOut = sc.writepage + y*320;
 			for (int32_t x = minx; x<=maxx; ++x)
 			{
 				int32_t bary = w0*c0 + w1*c1 + w2*c2;
-				if (w0<0 && w1<0 && w2<0)
-					sc.writepage[x+y*320] = bary;
-				else
-					sc.writepage[x+y*320] = 0x0C;
+				if (w0<0 && w1<0 && w2<0) // on edge or inside primitive
+					rasterOut[x] = bary;
+				else // outside primitive
+					rasterOut[x] = 0x0C;
 				w0 += a12;
 				w1 += a20;
 				w2 += a01;

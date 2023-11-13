@@ -226,7 +226,11 @@ secs_ret time_in_secs(CORE_TICKS ticks)
 }
 #endif /* SAMPLE_TIME_IMPLEMENTATION */
 
+#if (MULTITHREAD==0)
+ee_u32 default_num_contexts = 1;
+#else
 ee_u32 default_num_contexts = MULTITHREAD;
+#endif
 
 /* Function: portable_init
         Target specific initialization code
