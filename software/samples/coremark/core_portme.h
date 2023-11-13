@@ -142,7 +142,7 @@ typedef size_t         ee_size_t;
         MEM_STACK - to allocate the data block on the stack (NYI).
 */
 #ifndef MEM_METHOD
-#define MEM_METHOD MEM_MALLOC
+#define MEM_METHOD MEM_STATIC
 #endif
 
 /* Configuration: MULTITHREAD
@@ -163,7 +163,7 @@ typedef size_t         ee_size_t;
    and <core_end_parallel> in <core_portme.c>, to fit a particular architecture.
 */
 #ifndef MULTITHREAD
-#define MULTITHREAD 0
+#define MULTITHREAD 1
 #endif
 
 /* Configuration: USE_PTHREAD
