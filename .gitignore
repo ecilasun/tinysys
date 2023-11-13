@@ -13,6 +13,7 @@ software/**/*.elf
 software/**/*.coe
 software/.lock*
 board/expansionboardA-backups/**.zip
+board/expansionboardA**.lck
 vivado_*.backup.jou
 vivado_*.backup.log
 software/samples/doom/src/riscv/*.txt
