@@ -6,6 +6,19 @@
 #include <string.h>
 #include <random>
 
+// NOTE: The algorithms here are aimed at hardware an will not make
+// sense for a CPU, so please do not read too much into how the code looks.
+// In hardware, most flow control is gone, writes are 128bit wide with a 16bit byte write mask.
+// Zero bits of the write mask essentially means leave existing memory contents at that byte intact
+// so we don't need any special read-write loop.
+// Another neat thing is that we can do all of this entirely asynchronous to the CPU,
+// and if all goes well, deliver one 16 byte write queued up per clock cycle on average.
+
+// The tile layout is 16x1 (1 row of 16 adjacent 8 bit pixels) since that is the easiest
+// format we can use for straightforward scan-out, without having to 'resolve' for instance a 4x4 tile
+// written in a complicated pattern in memory to make access linear.
+// This means the screen is divided horizontally into 16 pixel columns as a work unit.
+
 static uint8_t *s_framebufferA;
 static uint8_t *s_framebufferB;
  
@@ -30,7 +43,7 @@ int32_t edgeFunction(const sVec2 &v0, const sVec2 &v1, int32_t &A, int32_t &B, c
 
 int main(int argc, char *argv[])
 {
-	printf("Hardware rasterization test\n");
+	printf("Hardware rasterization prototype in software\n");
 
 	s_framebufferB = GPUAllocateBuffer(320*240); // Or think of it as 1280*64 for tiles
 	s_framebufferA = GPUAllocateBuffer(320*240);
@@ -40,9 +53,6 @@ int main(int argc, char *argv[])
 	vx.m_cmode = ECM_8bit_Indexed;
 	GPUSetVMode(&vx, EVS_Enable);
 	GPUSetDefaultPalette(&vx);
-
-	memset(s_framebufferA, 0x00, 320*240); // Clear to black
-	memset(s_framebufferB, 0x00, 320*240);
 
 	// Make sure CPU writes are visible in memory
 	CFLUSH_D_L1;
@@ -58,7 +68,7 @@ int main(int argc, char *argv[])
 	while (1)
 	{
 		sVec2 v0, v1, v2, p;
-		memset(sc.writepage, 0x07, 320*240); // Clear to gray
+		memset(sc.writepage, 0x13, 320*240); // Clear to dark gray (so that we can see the tile edges)
 
 		// Generate a rotating primitive
 		const float L = 140.f;
@@ -93,6 +103,10 @@ int main(int argc, char *argv[])
 		maxx = max(0,min(319, maxx));
 		maxy = max(0,min(239, maxy));
 
+		// Round x to multiples of 4 pixels
+		minx = minx&0xFFFFFFFFC;
+		maxx = (maxx+3)&0xFFFFFFFFC;
+
 		// Generate edge functions for min AABB corner
 		p.x = minx;
 		p.y = miny;
@@ -114,24 +128,63 @@ int main(int argc, char *argv[])
 		int32_t c2 = 0xC0;
 
 		// Sweep and fill pixels
-		uint8_t *rasterOut = sc.writepage;
+		uint32_t *rasterOut = (uint32_t*)sc.writepage;
 		for (int32_t y = miny; y<=maxy; ++y)
 		{
+			// Top of row
 			int32_t w0 = w0_row;
 			int32_t w1 = w1_row;
 			int32_t w2 = w2_row;
-			rasterOut = sc.writepage + y*320;
-			for (int32_t x = minx; x<=maxx; ++x)
+			rasterOut = (uint32_t*)(sc.writepage + y*320);
+
+			// Assume 4 pixel combined writes
+			// For hardware the following is 16-wide instead of 4-wide
+			// and all barycentrics + masks are calculated in parallel
+			// for the 16x1 pixel tile.
+			for (int32_t x = minx; x<=maxx; x+=4)
 			{
-				int32_t bary = w0*c0 + w1*c1 + w2*c2;
-				if (w0<0 && w1<0 && w2<0) // on edge or inside primitive
-					rasterOut[x] = bary;
-				else // outside primitive
-					rasterOut[x] = 0x0C;
+				int32_t bval = 0;
+				int32_t bary;
+
+				// This is one pixel's worth of processing
+				// In hardware we'll replicate this 16 times for a 16x1 tile
+				bary = w0*c0 + w1*c1 + w2*c2;
+				uint32_t val0 = (w0&w1&w2)<0 ? 0x000000FF : 0x00000000; // Output in hardware is a single bit (sign bit of w0&w1&w2)
+				bval |= bary&0xFF;
+				w0 += a12; // We don't need to do this addition in hardware to pass to the next unit
+				w1 += a20; // since each unit has its own scaled multiple of a12/a20/a01 (mul by pixel index)
+				w2 += a01;
+
+				bary = w0*c0 + w1*c1 + w2*c2;
+				uint32_t val1 = (w0&w1&w2)<0 ? 0x0000FF00 : 0x00000000;
+				bval |= (bary&0xFF)<<8;
 				w0 += a12;
 				w1 += a20;
 				w2 += a01;
+
+				bary = w0*c0 + w1*c1 + w2*c2;
+				uint32_t val2 = (w0&w1&w2)<0 ? 0x00FF0000 : 0x00000000;
+				bval |= (bary&0xFF)<<16;
+				w0 += a12;
+				w1 += a20;
+				w2 += a01;
+
+				bary = w0*c0 + w1*c1 + w2*c2;
+				uint32_t val3 = (w0&w1&w2)<0 ? 0xFF000000 : 0x00000000;
+				bval |= (bary&0xFF)<<24;
+				w0 += a12;
+				w1 += a20;
+				w2 += a01;
+
+				// In hardware this will be a 16 bit write strobe for 128bit SDRAM writes
+				uint32_t wmask = (val0 | val1 | val2 | val3);
+
+				// Hardware can write 16 pixels at once, so this'll be wider
+				if (wmask != 0) // This is not necessary in hardware. Instead we'll shift direction when we encounter an edge and try to skip zero masks
+					rasterOut[x/4] = bval & wmask;
 			}
+
+			// Next row
 			w0_row += b12;
 			w1_row += b20;
 			w2_row += b01;
