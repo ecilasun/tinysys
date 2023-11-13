@@ -3,7 +3,7 @@
 ## ------------------------------------------------------------------------------------------------------
 
 ## (C) 2023 Engin Cilasun
-## Applies to expansion board ISSUE-1L
+## Applies to expansion board ISSUE-1M
 ## Please do not change/remove the Clock Groups or False Paths regardless of the warnings during synth
 ## Also note that changing any of the pin positions will change the timing closure of the device
 ## due to changes in placing and routing
@@ -22,68 +22,13 @@ create_clock -period 20.000 -name sys_clk_pin -waveform {0.000 10.000} -add [get
 ## set_property -dict {PACKAGE_PIN Y6 IOSTANDARD LVCMOS33} [get_ports sys_rst_n]
 
 ## ------------------------------------------------------------------------------------------------------
-## LEDs
+## Debug LEDs
 ## ------------------------------------------------------------------------------------------------------
-
-## LED[0]: pin U2:59 [AB18]
-## LED[1]: pin U2:57 [Y19]
-## LED[2]: pin U2:55 [AB20]
-## LED[3]: pin U2:53 [AA21]
 
 set_property -dict {PACKAGE_PIN AB18 IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
 set_property -dict {PACKAGE_PIN Y19  IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
 set_property -dict {PACKAGE_PIN AB20 IOSTANDARD LVCMOS33} [get_ports {leds[2]}]
 set_property -dict {PACKAGE_PIN AA21 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
-
-## ------------------------------------------------------------------------------------------------------
-## SRAM - IS61WV25616EDBLL-10TLI (512KBytes)
-## ------------------------------------------------------------------------------------------------------
-
-## address
-## set_property -dict {PACKAGE_PIN L14 IOSTANDARD LVCMOS33} [get_ports {sraddr[0]}]
-## set_property -dict {PACKAGE_PIN L15 IOSTANDARD LVCMOS33} [get_ports {sraddr[1]}]
-## set_property -dict {PACKAGE_PIN N22 IOSTANDARD LVCMOS33} [get_ports {sraddr[2]}]
-## set_property -dict {PACKAGE_PIN M22 IOSTANDARD LVCMOS33} [get_ports {sraddr[3]}]
-## set_property -dict {PACKAGE_PIN N20 IOSTANDARD LVCMOS33} [get_ports {sraddr[4]}]
-## set_property -dict {PACKAGE_PIN J17 IOSTANDARD LVCMOS33} [get_ports {sraddr[5]}]
-## set_property -dict {PACKAGE_PIN J20 IOSTANDARD LVCMOS33} [get_ports {sraddr[6]}]
-## set_property -dict {PACKAGE_PIN J21 IOSTANDARD LVCMOS33} [get_ports {sraddr[7]}]
-## set_property -dict {PACKAGE_PIN J19 IOSTANDARD LVCMOS33} [get_ports {sraddr[8]}]
-## set_property -dict {PACKAGE_PIN H19 IOSTANDARD LVCMOS33} [get_ports {sraddr[9]}]
-## set_property -dict {PACKAGE_PIN B2 IOSTANDARD LVCMOS33} [get_ports {sraddr[10]}]
-## set_property -dict {PACKAGE_PIN C2 IOSTANDARD LVCMOS33} [get_ports {sraddr[11]}]
-## set_property -dict {PACKAGE_PIN D1 IOSTANDARD LVCMOS33} [get_ports {sraddr[12]}]
-## set_property -dict {PACKAGE_PIN E1 IOSTANDARD LVCMOS33} [get_ports {sraddr[13]}]
-## set_property -dict {PACKAGE_PIN D2 IOSTANDARD LVCMOS33} [get_ports {sraddr[14]}]
-## set_property -dict {PACKAGE_PIN J4 IOSTANDARD LVCMOS33} [get_ports {sraddr[15]}]
-## set_property -dict {PACKAGE_PIN K4 IOSTANDARD LVCMOS33} [get_ports {sraddr[16]}]
-## set_property -dict {PACKAGE_PIN K3 IOSTANDARD LVCMOS33} [get_ports {sraddr[17]}]
-
-## data
-## set_property -dict {PACKAGE_PIN M15 IOSTANDARD LVCMOS33} [get_ports {srdata[0]}]
-## set_property -dict {PACKAGE_PIN M16 IOSTANDARD LVCMOS33} [get_ports {srdata[1]}]
-## set_property -dict {PACKAGE_PIN K13 IOSTANDARD LVCMOS33} [get_ports {srdata[2]}]
-## set_property -dict {PACKAGE_PIN K14 IOSTANDARD LVCMOS33} [get_ports {srdata[3]}]
-## set_property -dict {PACKAGE_PIN J14 IOSTANDARD LVCMOS33} [get_ports {srdata[4]}]
-## set_property -dict {PACKAGE_PIN H14 IOSTANDARD LVCMOS33} [get_ports {srdata[5]}]
-## set_property -dict {PACKAGE_PIN L19 IOSTANDARD LVCMOS33} [get_ports {srdata[6]}]
-## set_property -dict {PACKAGE_PIN L20 IOSTANDARD LVCMOS33} [get_ports {srdata[7]}]
-## set_property -dict {PACKAGE_PIN E2 IOSTANDARD LVCMOS33} [get_ports {srdata[8]}]
-## set_property -dict {PACKAGE_PIN F1 IOSTANDARD LVCMOS33} [get_ports {srdata[9]}]
-## set_property -dict {PACKAGE_PIN G1 IOSTANDARD LVCMOS33} [get_ports {srdata[10]}]
-## set_property -dict {PACKAGE_PIN G2 IOSTANDARD LVCMOS33} [get_ports {srdata[11]}]
-## set_property -dict {PACKAGE_PIN H2 IOSTANDARD LVCMOS33} [get_ports {srdata[12]}]
-## set_property -dict {PACKAGE_PIN J1 IOSTANDARD LVCMOS33} [get_ports {srdata[13]}]
-## set_property -dict {PACKAGE_PIN K1 IOSTANDARD LVCMOS33} [get_ports {srdata[14]}]
-## set_property -dict {PACKAGE_PIN J2 IOSTANDARD LVCMOS33} [get_ports {srdata[15]}]
-
-## control
-## set_property -dict {PACKAGE_PIN K2 IOSTANDARD LVCMOS33} [get_ports {srlb}]
-## set_property -dict {PACKAGE_PIN L1 IOSTANDARD LVCMOS33} [get_ports {srub}]
-## set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports {sroe}]
-## set_property -dict {PACKAGE_PIN K17 IOSTANDARD LVCMOS33} [get_ports {srwe}]
-## set_property -dict {PACKAGE_PIN M20 IOSTANDARD LVCMOS33} [get_ports {srce}]
-
 
 ## ------------------------------------------------------------------------------------------------------
 ## UART Tx/Rx debug port (tie to an external USB-UART cable or other device)
@@ -129,32 +74,18 @@ set_property PULLUP true [get_ports sdcard_swtch]
 ## DVI output over HDMI
 ## ------------------------------------------------------------------------------------------------------
 
-## hdmi_tx_clk_p pin U4:41 [T1]
-## hdmi_tx_clk_n pin U4:42 [U1]
-## hdmi_tx_p[1]  pin U4:43 [W1]
-## hdmi_tx_n[1]  pin U4:44 [Y1]
-## hdmi_tx_p[2]  pin U4:45 [AA1]
-## hdmi_tx_n[2]  pin U4:46 [AB1]
-## hdmi_tx_p[0]  pin U4:47 [AB3]
-## hdmi_tx_n[0]  pin U4:48 [AB2]
-
-set_property -dict {PACKAGE_PIN T1 IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_p]
-set_property -dict {PACKAGE_PIN U1 IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_n]
-set_property -dict {PACKAGE_PIN W1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[1]}]
-set_property -dict {PACKAGE_PIN Y1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[1]}]
+set_property -dict {PACKAGE_PIN Y3  IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[0]}]
+set_property -dict {PACKAGE_PIN AA3 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[0]}]
+set_property -dict {PACKAGE_PIN V4  IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_p]
+set_property -dict {PACKAGE_PIN W4  IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_n]
+set_property -dict {PACKAGE_PIN AB3 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[1]}]
+set_property -dict {PACKAGE_PIN AB2 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[1]}]
 set_property -dict {PACKAGE_PIN AA1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[2]}]
 set_property -dict {PACKAGE_PIN AB1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[2]}]
-set_property -dict {PACKAGE_PIN AB3 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[0]}]
-set_property -dict {PACKAGE_PIN AB2 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[0]}]
 
 ## ------------------------------------------------------------------------------------------------------
 ## Audio output - CS4344-CZZR
 ## ------------------------------------------------------------------------------------------------------
-
-## au_sdin  pin U2:37  [P17]
-## au_sclk  pin U2:39  [T18]
-## au_lrclk pin U2:41  [Y22]
-## au_mclk  pin U2:43  [U21]
 
 set_property -dict {PACKAGE_PIN P17 IOSTANDARD LVCMOS33} [get_ports au_sdin]
 set_property -dict {PACKAGE_PIN T18 IOSTANDARD LVCMOS33} [get_ports au_sclk]
@@ -164,15 +95,6 @@ set_property -dict {PACKAGE_PIN U21 IOSTANDARD LVCMOS33} [get_ports au_mclk]
 ## ------------------------------------------------------------------------------------------------------
 ## USB-C - MAX3420EECJ over SPI interface, USB Device
 ## ------------------------------------------------------------------------------------------------------
-
-## usbres_n   pin U2:14  [H20] -> hold low to reset the chip
-## usbgpi     pin U2:13  [G20] -> GPI, suggested to keep grounded in MAX3420E errata
-## usbbss_n   pin U2:12  [K21] -> slave select input, active low (required to send spi commands)
-## usbclk     pin U2:11  [K22] -> up to 26MHz
-## usbmosi    pin U2:10  [H17] -> spi mosi
-## usbmiso    pin U2:9   [H18] -> spi miso
-## usbint     pin U2:8   [J22] -> set the IE bit(bit#0) in the CPUCTL(r16) register to enable interrupts
-## usbgpx     pin U2:7   [H22] -> operate / vbus_det / busact or start-of-frame indicator depending on gpxa/gpxb register contents
 
 set_property -dict {PACKAGE_PIN H20 IOSTANDARD LVCMOS33} [get_ports usbc_resn]
 # set_property -dict {PACKAGE_PIN G20 IOSTANDARD LVCMOS33} [get_ports usbc_gpi]
@@ -189,15 +111,7 @@ set_property PULLUP true [get_ports usbc_resn]
 ## USB-A - MAX3421EECJ over SPI interface, USB Host
 ## ------------------------------------------------------------------------------------------------------
 
-## usbres_n   pin U4:39  [T5] -> hold low to reset the chip
-## usbbss_n   pin U4:56  [AB5] -> slave select input, active low (required to send spi commands)
-## usbclk     pin U4:55  [AA5] -> up to 26MHz
-## usbmosi    pin U4:58  [AB6] -> spi mosi
-## usbmiso    pin U4:57  [AB7] -> spi miso
-## usbint     pin U4:60  [AB8] -> set the IE bit(bit#0) in the CPUCTL(r16) register to enable interrupts
-## usbgpx     pin U4:59  [AA8] -> unused
-
-set_property -dict {PACKAGE_PIN T5 IOSTANDARD LVCMOS33} [get_ports usba_resn]
+set_property -dict {PACKAGE_PIN AA4 IOSTANDARD LVCMOS33} [get_ports usba_resn]
 set_property -dict {PACKAGE_PIN AB5 IOSTANDARD LVCMOS33} [get_ports usba_ss_n]
 set_property -dict {PACKAGE_PIN AA5 IOSTANDARD LVCMOS33} [get_ports usba_clk]
 set_property -dict {PACKAGE_PIN AB6 IOSTANDARD LVCMOS33} [get_ports usba_mosi]
@@ -211,9 +125,7 @@ set_property PULLUP true [get_ports usba_resn]
 ## NMI switch
 ## ------------------------------------------------------------------------------------------------------
 
-## sysresetn     pin U4:51  [Y3]
-
-set_property -dict {PACKAGE_PIN Y3 IOSTANDARD LVCMOS33} [get_ports sysresetn]
+set_property -dict {PACKAGE_PIN Y4 IOSTANDARD LVCMOS33} [get_ports sysresetn]
 set_property PULLUP true [get_ports sysresetn]
 
 ## ------------------------------------------------------------------------------------------------------
