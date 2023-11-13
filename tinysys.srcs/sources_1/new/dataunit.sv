@@ -40,11 +40,14 @@ datacache datacacheinst(
 typedef enum logic [1:0] {WCMD, WREAD, WCACHEOP, WWRITE} dataunitmode;
 dataunitmode datamode = WCMD;
 
-always @(posedge aclk) begin
-	s_ibus.rdone <= 1'b0;
-	s_ibus.wdone <= 1'b0;
-	s_ibus.cdone <= 1'b0;
+always_comb begin
+	s_ibus.rdone = rready;
+	s_ibus.rdata = dataout;
+	s_ibus.wdone = wready;
+	s_ibus.cdone = wready;
+end
 
+always @(posedge aclk) begin
 	datare <= 1'b0;
 	datawe <= 1'b0;
 	dcacheop <= 2'b00;
@@ -59,16 +62,12 @@ always @(posedge aclk) begin
 			datamode <= s_ibus.cstrobe ? WCACHEOP : (s_ibus.rstrobe ? WREAD : (s_ibus.wstrobe ? WWRITE : WCMD));
 		end
 		WREAD: begin
-			s_ibus.rdone <= rready;
-			s_ibus.rdata <= dataout;
 			datamode <= rready ? WCMD : WREAD;
 		end
 		WWRITE: begin
-			s_ibus.wdone <= wready;
 			datamode <= wready ? WCMD : WWRITE;
 		end
 		WCACHEOP: begin
-			s_ibus.cdone <= wready;
 			datamode <= wready ? WCMD : WCACHEOP;
 		end
 	endcase
