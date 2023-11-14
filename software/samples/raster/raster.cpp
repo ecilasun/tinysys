@@ -32,7 +32,7 @@ static uint8_t s_texture[] = {
 	0x00, 0x00, 0x30, 0x00, 0x00, 0x00, 0x00, 0x28,
 	0x00, 0x00, 0x00, 0x30, 0x00, 0x00, 0x00, 0x28,
 	0x00, 0x00, 0x00, 0x00, 0x30, 0x00, 0x00, 0x28,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0x00, 0x28,
+	0x00, 0x0F, 0x00, 0x00, 0x00, 0x30, 0x00, 0x28,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0x28 };
 
 struct sVec2
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 	while (1)
 	{
 		sVec2 v0, v1, v2, p;
-		memset(sc.writepage, 0x13, 320*240); // Clear to dark gray (so that we can see the tile edges)
+		memset(sc.writepage, 0x11, 320*240); // Clear to dark gray (so that we can see the tile edges)
 
 		// Generate a rotating primitive
 		const float L = 140.f;
@@ -158,33 +158,33 @@ int main(int argc, char *argv[])
 
 				// This is one pixel's worth of processing
 				// In hardware we'll replicate this 16 times for a 16x1 tile
+				uint32_t val0 = (w0&w1&w2)<0 ? 0x000000FF : 0x00000000; // Output in hardware is a single bit (sign bit of w0&w1&w2)
 				baryu = abs(w0*au0 + w1*au1 + w2*au2)>>18;
 				baryv = abs(w0*av0 + w1*av1 + w2*av2)>>18;
-				uint32_t val0 = (w0&w1&w2)<0 ? 0x000000FF : 0x00000000; // Output in hardware is a single bit (sign bit of w0&w1&w2)
 				w0 += a12; // We don't need to do this addition in hardware to pass to the next unit
 				w1 += a20; // since each unit has its own scaled multiple of a12/a20/a01 (mul by pixel index)
 				w2 += a01;
 				bval |= s_texture[(baryu%8)+8*(baryv%8)];
 
+				uint32_t val1 = (w0&w1&w2)<0 ? 0x0000FF00 : 0x00000000;
 				baryu = abs(w0*au0 + w1*au1 + w2*au2)>>18;
 				baryv = abs(w0*av0 + w1*av1 + w2*av2)>>18;
-				uint32_t val1 = (w0&w1&w2)<0 ? 0x0000FF00 : 0x00000000;
 				w0 += a12;
 				w1 += a20;
 				w2 += a01;
 				bval |= s_texture[(baryu%8)+8*(baryv%8)]<<8;
 
+				uint32_t val2 = (w0&w1&w2)<0 ? 0x00FF0000 : 0x00000000;
 				baryu = abs(w0*au0 + w1*au1 + w2*au2)>>18;
 				baryv = abs(w0*av0 + w1*av1 + w2*av2)>>18;
-				uint32_t val2 = (w0&w1&w2)<0 ? 0x00FF0000 : 0x00000000;
 				w0 += a12;
 				w1 += a20;
 				w2 += a01;
 				bval |= s_texture[(baryu%8)+8*(baryv%8)]<<16;
 
+				uint32_t val3 = (w0&w1&w2)<0 ? 0xFF000000 : 0x00000000;
 				baryu = abs(w0*au0 + w1*au1 + w2*au2)>>18;
 				baryv = abs(w0*av0 + w1*av1 + w2*av2)>>18;
-				uint32_t val3 = (w0&w1&w2)<0 ? 0xFF000000 : 0x00000000;
 				w0 += a12;
 				w1 += a20;
 				w2 += a01;

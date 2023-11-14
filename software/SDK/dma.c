@@ -37,6 +37,9 @@ void DMATag(const uint32_t _tag)
 
 void DMAResolveTiles(const uint32_t _rpuTileBuffer16ByteAligned, const uint32_t _gpuWritePage16ByteAligned)
 {
+	// NOTE: 4x1 tile software version is a straigth memcpy
+	__builtin_memcpy((void*)_gpuWritePage16ByteAligned, (void*)_rpuTileBuffer16ByteAligned, 240*320);
+
 	// TODO: Let hardware handle this
 	/*
 	*DMAIO = DMACMD_SETSOURCE;
@@ -46,7 +49,7 @@ void DMAResolveTiles(const uint32_t _rpuTileBuffer16ByteAligned, const uint32_t 
 	*DMAIO = DMACMD_RESOLVETILES;*/
 
 	// Software emulation
-	for (uint32_t ty=0; ty<60; ++ty) // 240/4
+	/*for (uint32_t ty=0; ty<60; ++ty) // 240/4
 	{
 		uint32_t Y = _rpuTileBuffer16ByteAligned + ty*80*16;
 		uint32_t U = _gpuWritePage16ByteAligned + ty*4*320;
@@ -66,7 +69,7 @@ void DMAResolveTiles(const uint32_t _rpuTileBuffer16ByteAligned, const uint32_t 
 			writepageasword[160] = T2;
 			writepageasword[240] = T3;
 		}
-	}
+	}*/
 	CFLUSH_D_L1;
 }
 

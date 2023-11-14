@@ -78,8 +78,10 @@ int main(int argc, char *argv[])
     vx.m_cmode = ECM_8bit_Indexed;
 	GPUSetVMode(&vx, EVS_Enable);
 
+	struct ERasterizerContext rc;
+
 	GPUSetDefaultPalette(&vx);
-	RPUSetTileBuffer((uint32_t)s_rasterBuffer);
+	RPUSetTileBuffer(&rc, (uint32_t)s_rasterBuffer);
 
 	sc.cycle = 0;
 	sc.framebufferA = bufferA;
@@ -99,9 +101,9 @@ int main(int argc, char *argv[])
 			prim.y1 = 239;
 			prim.x2 = 319;
 			prim.y2 = 0;
-			RPUPushPrimitive(&prim);
-			RPUSetColor(0x0C);
-			RPURasterizePrimitive();
+			RPUPushPrimitive(&rc, &prim);
+			RPUSetColor(&rc, 0x0C);
+			RPURasterizePrimitive(&rc);
 
 			prim.x0 = 319;
 			prim.y0 = 239;
@@ -109,16 +111,16 @@ int main(int argc, char *argv[])
 			prim.y1 = 0;
 			prim.x2 = 0;
 			prim.y2 = 239;
-			RPUPushPrimitive(&prim);
-			RPUSetColor(0x0C);
-			RPURasterizePrimitive();
+			RPUPushPrimitive(&rc, &prim);
+			RPUSetColor(&rc, 0x0C);
+			RPURasterizePrimitive(&rc);
 		}
 
 		// Queue up a flush, wait for all raster work to finish, and resolve onto write page
-		RPUFlushCache();
-		RPUInvalidateCache();
-		RPUBarrier();
-		RPUWait();
+		RPUFlushCache(&rc);
+		RPUInvalidateCache(&rc);
+		RPUBarrier(&rc);
+		RPUWait(&rc);
 		DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)sc.writepage);
 
 		// Cursor overlay

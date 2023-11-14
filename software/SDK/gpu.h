@@ -76,6 +76,25 @@ struct EVideoSwapContext
 	uint8_t *framebufferB;
 };
 
+struct RPUVec2
+{
+	int32_t x, y;
+};
+
+struct ERasterizerContext
+{
+	uint32_t m_rasterOutAddrressCacheAligned;
+	uint32_t m_color;
+	int32_t m_minx, m_maxx;
+	int32_t m_miny, m_maxy;
+	int32_t a01, a12, a20;
+	int32_t b01, b12, b20;
+	int32_t w0_row;
+	int32_t w1_row;
+	int32_t w2_row;
+	struct RPUVec2 v0, v1, v2;
+};
+
 // Utilities
 uint8_t *GPUAllocateBuffer(const uint32_t _size);
 void GPUGetDimensions(const enum EVideoMode _mode, uint32_t *_width, uint32_t *_height);
@@ -99,12 +118,12 @@ void GPUConsoleResolve(struct EVideoContext *_context);
 void GPUClear(struct EVideoContext *_context, const uint32_t _colorWord);
 
 // Hardware rasterizer
-void RPUSetTileBuffer(const uint32_t _rpuTileBuffer16ByteAligned);
-void RPUPushPrimitive(struct SPrimitive* _primitive);
-void RPURasterizePrimitive();
-void RPUSetColor(const uint8_t _colorIndex);
-void RPUFlushCache();
-void RPUInvalidateCache();
-void RPUBarrier();
-uint32_t RPUPending();
-void RPUWait();
+void RPUSetTileBuffer(struct ERasterizerContext *_rc, const uint32_t _rpuTileBuffer16ByteAligned);
+void RPUPushPrimitive(struct ERasterizerContext *_rc, struct SPrimitive* _primitive);
+void RPURasterizePrimitive(struct ERasterizerContext *_rc);
+void RPUSetColor(struct ERasterizerContext *_rc, const uint8_t _colorIndex);
+void RPUFlushCache(struct ERasterizerContext *_rc);
+void RPUInvalidateCache(struct ERasterizerContext *_rc);
+void RPUBarrier(struct ERasterizerContext *_rc);
+uint32_t RPUPending(struct ERasterizerContext *_rc);
+void RPUWait(struct ERasterizerContext *_rc);

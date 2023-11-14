@@ -23,6 +23,7 @@ int cur_byte_address = 0;
 FILE *s_fp;
 uint8_t *filedata;
 EVideoContext s_vctx;
+ERasterizerContext s_rctx;
 uint8_t *s_framebufferB;
 uint8_t *s_framebufferA;
 uint8_t *s_rasterBuffer;
@@ -57,23 +58,23 @@ static void clear(void) {
 	SPrimitive prim;
 	prim.x0 = 0;
 	prim.y0 = 0;
-	prim.x1 = 320;
-	prim.y1 = 0;
-	prim.x2 = 320;
-	prim.y2 = 240;
-	RPUPushPrimitive(&prim);
-	RPUSetColor(0);
-	RPURasterizePrimitive();
-
-	prim.x0 = 320;
-	prim.y0 = 240;
-	prim.x1 = 0;
-	prim.y1 = 240;
-	prim.x2 = 0;
+	prim.x1 = 319;
+	prim.y1 = 239;
+	prim.x2 = 319;
 	prim.y2 = 0;
-	RPUPushPrimitive(&prim);
-	RPUSetColor(0);
-	RPURasterizePrimitive();
+	RPUPushPrimitive(&s_rctx, &prim);
+	RPUSetColor(&s_rctx, 0);
+	RPURasterizePrimitive(&s_rctx);
+
+	prim.x0 = 319;
+	prim.y0 = 239;
+	prim.x1 = 0;
+	prim.y1 = 0;
+	prim.x2 = 0;
+	prim.y2 = 239;
+	RPUPushPrimitive(&s_rctx, &prim);
+	RPUSetColor(&s_rctx, 0);
+	RPURasterizePrimitive(&s_rctx);
 }
 
 /*
@@ -199,9 +200,9 @@ static int read_frame(void)
 			prim.x2 = poly[2*(i+2)];
 			prim.y2 = poly[2*(i+2)+1];
 
-			RPUPushPrimitive(&prim);
-			RPUSetColor(poly_col);
-			RPURasterizePrimitive();
+			RPUPushPrimitive(&s_rctx, &prim);
+			RPUSetColor(&s_rctx, poly_col);
+			RPURasterizePrimitive(&s_rctx);
 		}
 	}
 	return 1; 
@@ -221,7 +222,8 @@ int main(int argc, char** argv)
 	s_vctx.m_cmode = ECM_8bit_Indexed;
 	GPUSetVMode(&s_vctx, EVS_Enable);
 	GPUSetDefaultPalette(&s_vctx);
-	RPUSetTileBuffer((uint32_t)s_rasterBuffer);
+
+	RPUSetTileBuffer(&s_rctx, (uint32_t)s_rasterBuffer);
 
 	struct EVideoSwapContext sc;
 	sc.cycle = 0;
@@ -261,12 +263,12 @@ int main(int argc, char** argv)
 			res = read_frame();
 
 			// Make sure to flush rasterizer cache to raster memory before it's read
-			RPUFlushCache();
-			RPUInvalidateCache();
+			RPUFlushCache(&s_rctx);
+			RPUInvalidateCache(&s_rctx);
 
 			// Wait for all raster work to finish
-			RPUBarrier();
-			RPUWait();
+			RPUBarrier(&s_rctx);
+			RPUWait(&s_rctx);
 
 			// TODO: Get the DMA unit to resolve and write output onto the current GPU write page
 			DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)sc.writepage);
