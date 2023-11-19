@@ -15,4 +15,5 @@
   (lib (name "KiCad")(type "KiCad")(uri "${KIPRJMOD}/IS61WV25616EDBLL-10TLI/KiCad")(options "")(descr ""))
   (lib (name "STM32C011F6P6")(type "KiCad")(uri "${KIPRJMOD}/STM32C011F6P6")(options "")(descr ""))
   (lib (name "SI164CTG64")(type "KiCad")(uri "${KIPRJMOD}/SI164CTG64")(options "")(descr ""))
+  (lib (name "403C35D12M00000")(type "KiCad")(uri "${KIPRJMOD}/403C35D12M00000")(options "")(descr ""))
 )

@@ -1,7 +1,7 @@
 M48
-; DRILL file {KiCad 7.0.8} date Fri Nov 10 01:37:42 2023
+; DRILL file {KiCad 7.0.8} date Fri Nov 17 18:43:44 2023
 ; FORMAT={-:-/ absolute / inch / decimal}
-; #@! TF.CreationDate,2023-11-10T01:37:42-08:00
+; #@! TF.CreationDate,2023-11-17T18:43:44-08:00
 ; #@! TF.GenerationSoftware,Kicad,Pcbnew,7.0.8
 ; #@! TF.FileFunction,Plated,1,2,PTH
 FMAT,2
@@ -13,23 +13,21 @@ T2C0.0157
 ; #@! TA.AperFunction,Plated,PTH,ComponentDrill
 T3C0.0157
 ; #@! TA.AperFunction,Plated,PTH,ComponentDrill
-T4C0.0197
+T4C0.0217
 ; #@! TA.AperFunction,Plated,PTH,ComponentDrill
-T5C0.0217
+T5C0.0236
 ; #@! TA.AperFunction,Plated,PTH,ComponentDrill
-T6C0.0236
+T6C0.0315
 ; #@! TA.AperFunction,Plated,PTH,ComponentDrill
-T7C0.0315
+T7C0.0374
 ; #@! TA.AperFunction,Plated,PTH,ComponentDrill
-T8C0.0374
+T8C0.0390
 ; #@! TA.AperFunction,Plated,PTH,ComponentDrill
-T9C0.0390
+T9C0.0394
 ; #@! TA.AperFunction,Plated,PTH,ComponentDrill
-T10C0.0394
+T10C0.0512
 ; #@! TA.AperFunction,Plated,PTH,ComponentDrill
-T11C0.0512
-; #@! TA.AperFunction,Plated,PTH,ComponentDrill
-T12C0.0906
+T11C0.0906
 %
 G90
 G05
@@ -61,8 +59,8 @@ X2.691Y-4.698
 X2.7254Y-3.6378
 X2.772Y-4.516
 X2.843Y-4.31
-X2.876Y-2.632
-X2.971Y-4.413
+X2.9213Y-2.6378
+X2.9528Y-4.4094
 X3.018Y-2.749
 X3.161Y-1.927
 X3.2661Y-2.861
@@ -124,11 +122,6 @@ X5.8379Y-4.5499
 X5.8379Y-4.5834
 X5.8379Y-4.6169
 T4
-X2.9114Y-4.3721
-X2.9114Y-4.4721
-X2.9357Y-2.5818
-X2.9357Y-2.6818
-T5
 X5.6445Y-2.6118
 X5.6445Y-2.6512
 X5.6445Y-2.6906
@@ -148,15 +141,15 @@ X5.7055Y-2.8283
 X5.7055Y-2.8677
 X5.7055Y-2.9071
 X5.7055Y-2.9465
-T8
+T7
 X3.0992Y-2.076
 X3.1976Y-2.076
 X3.2764Y-2.076
 X3.3748Y-2.076
-T9
+T8
 X5.7028Y-1.944
 X5.8799Y-1.944
-T10
+T9
 X1.4575Y-2.7539
 X1.4575Y-2.8539
 X1.4575Y-2.9539
@@ -289,13 +282,13 @@ X4.3Y-4.7
 X4.3Y-4.8
 X5.3616Y-1.74
 X5.4616Y-1.74
-T11
+T10
 X5.6533Y-2.042
 X5.9293Y-2.042
-T12
+T11
 X2.9783Y-1.9693
 X3.4957Y-1.9693
-T6
+T5
 G00X5.8529Y-4.3294
 M15
 G01X5.7938Y-4.3294
@@ -316,7 +309,7 @@ M15
 G01X5.9407Y-4.67
 M16
 G05
-T7
+T6
 G00X5.6122Y-2.4091
 M15
 G01X5.6634Y-2.4091
