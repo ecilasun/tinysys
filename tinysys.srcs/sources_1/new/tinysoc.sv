@@ -16,6 +16,7 @@ module tinysoc #(
 	input wire sysresetn,
 	input wire preresetn,
 	output wire [3:0] leds,
+	//debugbusif.slave s_dbg,
 	gpuwires.def gpuvideoout,
 	ddr3sdramwires.def ddr3conn,
 	audiowires.def i2sconn,

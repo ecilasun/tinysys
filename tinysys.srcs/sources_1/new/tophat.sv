@@ -152,6 +152,20 @@ audiowires i2sconn(
 	.mclk(au_mclk));
 
 // --------------------------------------------------
+// Hardware debug device
+// --------------------------------------------------
+
+/*debugbusif dbgbus();
+
+hwdebug hwdebuginst(
+	.aresetn(aresetn),
+	.aclk(clkbus),
+	.clk100(clk100),
+	.m_dbg(dbgbus),
+	.rx(debugrx),
+	.tx(debugtx) );*/
+
+// --------------------------------------------------
 // SoC device
 // --------------------------------------------------
 
@@ -168,6 +182,8 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.aresetn(aresetn),
 	.sysresetn(sysresetn), // Soft reboot
 	.preresetn(preresetn),
+	// Debug bus
+	//.s_dbg(dbgbus),
 	// Device wires
 	.leds(leds),
 	.ddr3conn(ddr3conn),
