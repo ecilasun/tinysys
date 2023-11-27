@@ -90,7 +90,7 @@ void ListFiles(const char *path)
 {
 	DIR dir;
 	FRESULT re = f_opendir(&dir, path);
-	static const char blankspace[32] = "                                ";
+	static const char blankspace[33] = "                                ";
 	if (re == FR_OK)
 	{
 		FILINFO finf;

@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define VERSIONSTRING "R003"
-#define DEVVERSIONSTRING "D005"
+#define VERSIONSTRING "R004"
+#define DEVVERSIONSTRING "D006"
 
 // For ROM image residing on the device:
 const uint8_t s_consolefgcolor = 0x2A; // Ember
@@ -47,7 +47,7 @@ static uint32_t s_startAddress = 0;
 static int s_refreshConsoleOut = 1;
 static int s_relocOffset = 0;
 
-static char *s_taskstates[]={
+static const char *s_taskstates[]={
 	"UNKNOWN    ",
 	"PAUSED     ",
 	"RUNNING    ",
@@ -106,10 +106,10 @@ void DeviceDefaultState(int _bootTime)
 	LEDSetState(0x0);
 
 	// Wait for any pending raster ops to complete
-	RPUFlushCache();		// Complete writes
-	RPUInvalidateCache();	// Invalidate cache
-	RPUBarrier();
-	RPUWait();				// Complete all RPU ops
+	//RPUFlushCache();		// Complete writes
+	//RPUInvalidateCache();	// Invalidate cache
+	//RPUBarrier();
+	//RPUWait();				// Complete all RPU ops
 
 	// Wait for any pending DMA to complete
 	DMAWait();
@@ -283,15 +283,18 @@ void ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "ver"))
 	{
+		kprintf("tinysys (c)2024 Engin Cilasun\n");
+
 		uint32_t waterMark = read_csr(0xFF0);
 		if (waterMark == 0)
-			kprintf("ROM       : " VERSIONSTRING "\n");
+			kprintf("ROM             : " VERSIONSTRING "\n");
 		else
-			kprintf("ROM       : " DEVVERSIONSTRING "\n");
+			kprintf("ROM             : " DEVVERSIONSTRING "\n");
+
 		// TODO: These two values need to come from a CSR,
 		// pointing at a memory location with device config data (machineconfig?)
-		kprintf("Board:    : revision 1M\n");
-		kprintf("CPU:      : 166.67MHz\n");
+		kprintf("Board:          : revision 1M\n");
+		kprintf("CPU:            : 166.67MHz\n");
 
 		// Report USB serial chip version
 		uint8_t m3420rev = MAX3420ReadByte(rREVISION);
@@ -363,6 +366,10 @@ void ExecuteCmd(char *_cmd)
 			// This will cause corruption of the runtime environment.
 			if (s_startAddress != 0x0)
 			{
+				// Make sure everything is flushed to RAM and the instruction cache is invalidated
+				CFLUSH_D_L1;
+				FENCE_I;
+
 				strncpy(s_execName, filename, 32);
 
 				const char *param = strtok(NULL, " ");
@@ -492,8 +499,8 @@ void __attribute__((aligned(64))) CopyAndChainOverlay()
 	asm volatile(
 		"lui s0, 0x00010;"		// Source: 0x00010000
 		"lui s1, 0x0FFE0;"		// Target: 0x0FFE0000
-		"lui s2, 0x04000;"		// Count:  65536/4 (0x4000)
-		"srl s2, s2, 12;"
+		"lui s2, 0x04000;"
+		"srl s2, s2, 12;"		// Count:  65536/4 (0x4000)
 		"copyloop:"
 		"lw a0, 0(s0);"			// Read source word
 		"sw a0, 0(s1);"			// Store target word

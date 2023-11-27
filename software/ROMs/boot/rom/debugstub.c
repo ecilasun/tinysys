@@ -158,7 +158,7 @@ void HandlePacket()
 		if (offset == 0)
 		{
 			strcpy(outstring, "l<?xml version=\"1.0\"?>\n<threads>");
-			for (uint32_t i=0; i<taskctx->numTasks; ++i)
+			for (int32_t i=0; i<taskctx->numTasks; ++i)
 			{
 				char threadid[10];
 				uint2dec(i+1, threadid);
@@ -228,7 +228,7 @@ void HandlePacket()
 		// GDB will stop the first thread listed here,
 		// so it has to be the user thread if available
 		strcpy(outstring, "m ");
-		for (uint32_t i=0; i<taskctx->numTasks; ++i)
+		for (int32_t i=0; i<taskctx->numTasks; ++i)
 		{
 			char threadid[10];
 			uint2dec(i, threadid);
