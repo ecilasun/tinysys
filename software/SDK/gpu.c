@@ -510,20 +510,19 @@ void RPUPushPrimitive(struct ERasterizerContext *_rc, struct SPrimitive* _primit
 
 void RPURasterizePrimitive(struct ERasterizerContext *_rc)
 {
-	int32_t w0_row = _rc->w0_row;
-	int32_t w1_row = _rc->w1_row;
-	int32_t w2_row = _rc->w2_row;
-	for (int32_t y = _rc->m_miny; y<=_rc->m_maxy; ++y)
+	int32_t left = _rc->m_minx;
+	int32_t right = _rc->m_maxx;
+
+	int32_t w0 = _rc->w0_row;
+	int32_t w1 = _rc->w1_row;
+	int32_t w2 = _rc->w2_row;
+
+	uint32_t *rasterOut = (uint32_t*)(_rc->m_rasterOutAddrressCacheAligned + _rc->m_miny*320);
+	for (int32_t y = _rc->m_miny; y<=_rc->m_maxy; y+=2)
 	{
-		// Top of row
-		int32_t w0 = w0_row;
-		int32_t w1 = w1_row;
-		int32_t w2 = w2_row;
-
-		uint32_t *rasterOut = (uint32_t*)(_rc->m_rasterOutAddrressCacheAligned + y*320);
-
-		// 4 adjacent pixels
-		for (int32_t x = _rc->m_minx; x<=_rc->m_maxx; x+=4)
+		// Scan to right
+		uint32_t prevMaskAcc = 0;
+		for (int32_t x = left; x<=_rc->m_maxx; x+=4)
 		{
 			uint32_t val0 = (w0&w1&w2)<0 ? 0x000000FF : 0x00000000;
 			w0 += _rc->a12;
@@ -546,15 +545,66 @@ void RPURasterizePrimitive(struct ERasterizerContext *_rc)
 			w2 += _rc->a01;
 
 			uint32_t wmask = (val0 | val1 | val2 | val3);
+			right = x;
+			if (!wmask && prevMaskAcc)
+				break;
+			prevMaskAcc |= wmask;
 
 			if (wmask != 0)
 				rasterOut[x/4] = _rc->m_color & wmask;
 		}
 
 		// Next row
-		w0_row += _rc->b12;
-		w1_row += _rc->b20;
-		w2_row += _rc->b01;
+		w0 -= _rc->a12; // back one pixel
+		w1 -= _rc->a20;
+		w2 -= _rc->a01;
+		w0 += _rc->b12; // down one pixel
+		w1 += _rc->b20;
+		w2 += _rc->b01;
+		rasterOut += 80;
+
+		// Scan to left
+		prevMaskAcc = 0;
+		for (int32_t x = right; x>=_rc->m_minx; x-=4)
+		{
+			uint32_t val0 = (w0&w1&w2)<0 ? 0xFF000000 : 0x00000000;
+			w0 -= _rc->a12;
+			w1 -= _rc->a20;
+			w2 -= _rc->a01;
+
+			uint32_t val1 = (w0&w1&w2)<0 ? 0x00FF0000 : 0x00000000;
+			w0 -= _rc->a12;
+			w1 -= _rc->a20;
+			w2 -= _rc->a01;
+
+			uint32_t val2 = (w0&w1&w2)<0 ? 0x0000FF00 : 0x00000000;
+			w0 -= _rc->a12;
+			w1 -= _rc->a20;
+			w2 -= _rc->a01;
+
+			uint32_t val3 = (w0&w1&w2)<0 ? 0x000000FF : 0x00000000;
+			w0 -= _rc->a12;
+			w1 -= _rc->a20;
+			w2 -= _rc->a01;
+
+			uint32_t wmask = (val0 | val1 | val2 | val3);
+			left = x;
+			if (!wmask && prevMaskAcc)
+				break;
+			prevMaskAcc |= wmask;
+
+			if (wmask != 0)
+				rasterOut[x/4] = _rc->m_color & wmask;
+		}
+
+		// Next row
+		w0 += _rc->a12; // back one pixel
+		w1 += _rc->a20;
+		w2 += _rc->a01;
+		w0 += _rc->b12; // down one pixel
+		w1 += _rc->b20;
+		w2 += _rc->b01;
+		rasterOut += 80;
 	}
 
 	//*RPUIO = RASTERCMD_RASTERIZEPRIM;

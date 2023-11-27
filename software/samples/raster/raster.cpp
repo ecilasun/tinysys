@@ -147,6 +147,9 @@ int main(int argc, char *argv[])
 			int32_t w2 = w2_row;
 			rasterOut = (uint32_t*)(sc.writepage + y*320);
 
+			// Accumulated mask for row
+			uint32_t prevMaskAcc = 0;
+
 			// Assume 4 pixel combined writes
 			// For hardware the following is 16-wide instead of 4-wide
 			// and all barycentrics + masks are calculated in parallel
@@ -192,6 +195,11 @@ int main(int argc, char *argv[])
 
 				// In hardware this will be a 16 bit write strobe for 128bit SDRAM writes
 				uint32_t wmask = (val0 | val1 | val2 | val3);
+
+				//Next row as soon as we exit the right edge of the primitive
+				if (wmask == 0 && prevMaskAcc != 0)
+					break;
+				prevMaskAcc |= wmask;
 
 				// Hardware can write 16 pixels at once, so this'll be wider
 				if (wmask != 0) // This is not necessary in hardware. Instead we'll shift direction when we encounter an edge and try to skip zero masks

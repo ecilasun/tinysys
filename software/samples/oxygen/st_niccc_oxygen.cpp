@@ -26,7 +26,7 @@ EVideoContext s_vctx;
 ERasterizerContext s_rctx;
 uint8_t *s_framebufferB;
 uint8_t *s_framebufferA;
-uint8_t *s_rasterBuffer;
+//uint8_t *s_rasterBuffer; // For hardware
 
 static uint8_t next_byte(void)
 {
@@ -208,13 +208,115 @@ static int read_frame(void)
 	return 1; 
 }
 
+static int read_frame_flip(void)
+{
+	uint8_t frame_flags = next_byte();
+
+	// Update palette data.
+	if(frame_flags & PALETTE_BIT)
+	{
+		uint16_t colors = next_word();
+		for(int b=15; b>=0; --b)
+		{
+			if(colors & (1 << b))
+			{
+				int rgb = next_word();
+				// Get the three 3-bits per component R,G,B
+				int b3 = (rgb & 0x007);
+				int g3 = (rgb & 0x070) >> 4;
+				int r3 = (rgb & 0x700) >> 8;
+
+				// Set the actual hardware color register
+				GPUSetPal(15-b, r3*36,g3*36,b3*36);
+			}
+		}
+	}
+
+	if(frame_flags & CLEAR_BIT)
+		clear(); 
+
+	// Update vertices
+	if(frame_flags & INDEXED_BIT)
+	{
+		uint8_t nb_vertices = next_byte();
+		for(int v=0; v<nb_vertices; ++v)
+		{
+			X[v] = next_byte();
+			Y[v] = next_byte();
+			map_vertex(&X[v],&Y[v]);
+		}
+	}
+
+	// Draw frame's polygons
+	for(;;)
+	{
+		uint8_t poly_desc = next_byte();
+
+		// Special polygon codes (end of frame,
+		// seek next block, end of stream)
+
+		if(poly_desc == 0xff)
+			break; // end of frame
+
+		if(poly_desc == 0xfe)
+		{
+			// Go to next 64kb block
+			// (TODO: with fseek !)
+			while(cur_byte_address & 65535)
+				next_byte();
+			return 1; 
+		}
+
+		if(poly_desc == 0xfd)
+			return 0; // end of stream
+
+		uint8_t nvrtx = poly_desc & 15;
+		uint8_t poly_col = poly_desc >> 4;
+		for(int i=0; i<nvrtx; ++i)
+		{
+			if(frame_flags & INDEXED_BIT)
+			{
+				uint8_t index = next_byte();
+				poly[2*i]   = X[index];
+				poly[2*i+1] = Y[index];
+			}
+			else
+			{
+				int16_t x,y;
+				x = next_byte();
+				y = next_byte();
+				map_vertex(&x,&y);
+				poly[2*i]   = x;
+				poly[2*i+1] = y;
+			}
+		}
+
+		// Decompose into a triangle fan and rasterize
+		for (int i=0;i<nvrtx-2;++i)
+		{
+			SPrimitive prim;
+			prim.x0 = poly[2*0];
+			prim.y0 = poly[2*0+1];
+			prim.x2 = poly[2*(i+1)];
+			prim.y2 = poly[2*(i+1)+1];
+			prim.x1 = poly[2*(i+2)];
+			prim.y1 = poly[2*(i+2)+1];
+
+			RPUPushPrimitive(&s_rctx, &prim);
+			RPUSetColor(&s_rctx, poly_col);
+			RPURasterizePrimitive(&s_rctx);
+		}
+	}
+	return 1; 
+}
+
 int main(int argc, char** argv)
 {
 	s_framebufferB = GPUAllocateBuffer(320*240); // Or think of it as 1280*64 for tiles
 	s_framebufferA = GPUAllocateBuffer(320*240);
-	s_rasterBuffer = GPUAllocateBuffer(80*60*16); // Rasterizer tile buffer
+	//s_rasterBuffer = GPUAllocateBuffer(80*60*16); // Rasterizer tile buffer
 
-	memset(s_rasterBuffer, 0x07, 80*60*16);
+	//memset(s_rasterBuffer, 0x07, 80*60*16);
 	memset(s_framebufferA, 0x07, 320*240);
 	memset(s_framebufferB, 0x07, 320*240);
 
@@ -223,13 +325,14 @@ int main(int argc, char** argv)
 	GPUSetVMode(&s_vctx, EVS_Enable);
 	GPUSetDefaultPalette(&s_vctx);
 
-	RPUSetTileBuffer(&s_rctx, (uint32_t)s_rasterBuffer);
-
 	struct EVideoSwapContext sc;
 	sc.cycle = 0;
 	sc.framebufferA = s_framebufferA;
 	sc.framebufferB = s_framebufferB;
 	GPUSwapPages(&s_vctx, &sc);
+
+	//RPUSetTileBuffer(&s_rctx, (uint32_t)s_rasterBuffer); // For hardware
+	RPUSetTileBuffer(&s_rctx, (uint32_t)sc.writepage);
 
 	while(1)
 	{
@@ -258,24 +361,51 @@ int main(int argc, char** argv)
 		}
 
 		int res = 0;
-		do
+		if (argc<=1)
 		{
-			res = read_frame();
+			do
+			{
+				res = read_frame();
 
-			// Make sure to flush rasterizer cache to raster memory before it's read
-			RPUFlushCache(&s_rctx);
-			RPUInvalidateCache(&s_rctx);
+				// Make sure to flush rasterizer cache to raster memory before it's read
+				RPUFlushCache(&s_rctx);
+				RPUInvalidateCache(&s_rctx);
 
-			// Wait for all raster work to finish
-			RPUBarrier(&s_rctx);
-			RPUWait(&s_rctx);
+				// Wait for all raster work to finish
+				RPUBarrier(&s_rctx);
+				RPUWait(&s_rctx);
 
-			// TODO: Get the DMA unit to resolve and write output onto the current GPU write page
-			DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)sc.writepage);
+				// TODO: Get the DMA unit to resolve and write output onto the current GPU write page
+				//DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)sc.writepage);
 
-			if (argc<=1) // no vsync if we have a command line argument
-				GPUWaitVSync();
-			GPUSwapPages(&s_vctx, &sc);
-		} while(res);
+				if (argc<=1) // no vsync if we have a command line argument
+					GPUWaitVSync();
+				GPUSwapPages(&s_vctx, &sc);
+				RPUSetTileBuffer(&s_rctx, (uint32_t)sc.writepage);
+			} while(res);
+		}
+		else
+		{
+			do
+			{
+				res = read_frame_flip();
+
+				// Make sure to flush rasterizer cache to raster memory before it's read
+				RPUFlushCache(&s_rctx);
+				RPUInvalidateCache(&s_rctx);
+
+				// Wait for all raster work to finish
+				RPUBarrier(&s_rctx);
+				RPUWait(&s_rctx);
+
+				// TODO: Get the DMA unit to resolve and write output onto the current GPU write page
+				//DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)sc.writepage);
+
+				if (argc<=1) // no vsync if we have a command line argument
+					GPUWaitVSync();
+				GPUSwapPages(&s_vctx, &sc);
+				RPUSetTileBuffer(&s_rctx, (uint32_t)sc.writepage);
+			} while(res);
+		}
 	}
 }
