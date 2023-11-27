@@ -133,9 +133,9 @@ int main(int argc, char *argv[])
 // Input: a12,b12,a20,b20,a01,b01,bounds
 // Output: barycentric interpolated color fragment
 
-		int32_t au0 = 0x00, av0 = 0x00;
-		int32_t au1 = 0xFF, av1 = 0x00;
-		int32_t au2 = 0xFF, av2 = 0xFF;
+		int32_t au0 = 0x000, av0 = 0x000;
+		int32_t au1 = 0x3FF, av1 = 0x000;
+		int32_t au2 = 0x3FF, av2 = 0x3FF;
 
 		int32_t w0 = w0_row;
 		int32_t w1 = w1_row;
@@ -147,7 +147,6 @@ int main(int argc, char *argv[])
 		uint32_t *rasterOut = (uint32_t*)(sc.writepage + miny*320);
 		for (int32_t y = miny; y<=maxy; ++y)
 		{
-
 			// Scan right
 			uint32_t prevMaskAcc = 0;
 			for (int32_t x = left; x<=maxx; x+=4)
