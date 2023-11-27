@@ -13,7 +13,7 @@ thirdparty_libs = ../../3rdparty
 RISCV_PREFIX ?= riscv64-unknown-elf-
 RISCV_GCC ?= $(RISCV_PREFIX)g++
 # RELEASE
-RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++14 -Wall -Ofast -march=rv32imc -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
+RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++14 -Wall -Ofast -march=rv32imc -mabi=ilp32 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
 # DEBUG
 #RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++14 -Wall -O0 -ggdb -march=rv32imc -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
 
