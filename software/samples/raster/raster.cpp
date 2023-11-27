@@ -137,24 +137,20 @@ int main(int argc, char *argv[])
 		int32_t au1 = 0xFF, av1 = 0x00;
 		int32_t au2 = 0xFF, av2 = 0xFF;
 
+		int32_t w0 = w0_row;
+		int32_t w1 = w1_row;
+		int32_t w2 = w2_row;
+		int32_t left = minx;
+		int32_t right = maxx;
+
 		// Sweep and fill pixels
-		uint32_t *rasterOut = (uint32_t*)sc.writepage;
+		uint32_t *rasterOut = (uint32_t*)(sc.writepage + miny*320);
 		for (int32_t y = miny; y<=maxy; ++y)
 		{
-			// Top of row
-			int32_t w0 = w0_row;
-			int32_t w1 = w1_row;
-			int32_t w2 = w2_row;
-			rasterOut = (uint32_t*)(sc.writepage + y*320);
 
-			// Accumulated mask for row
+			// Scan right
 			uint32_t prevMaskAcc = 0;
-
-			// Assume 4 pixel combined writes
-			// For hardware the following is 16-wide instead of 4-wide
-			// and all barycentrics + masks are calculated in parallel
-			// for the 16x1 pixel tile.
-			for (int32_t x = minx; x<=maxx; x+=4)
+			for (int32_t x = left; x<=maxx; x+=4)
 			{
 				int32_t bval = 0;
 				int32_t baryu, baryv;
@@ -195,9 +191,8 @@ int main(int argc, char *argv[])
 
 				// In hardware this will be a 16 bit write strobe for 128bit SDRAM writes
 				uint32_t wmask = (val0 | val1 | val2 | val3);
-
-				//Next row as soon as we exit the right edge of the primitive
-				if (wmask == 0 && prevMaskAcc != 0)
+				right = x;
+				if (!wmask && prevMaskAcc)
 					break;
 				prevMaskAcc |= wmask;
 
@@ -207,9 +202,75 @@ int main(int argc, char *argv[])
 			}
 
 			// Next row
-			w0_row += b12;
-			w1_row += b20;
-			w2_row += b01;
+			w0 -= a12; // back one pixel
+			w1 -= a20;
+			w2 -= a01;
+			w0 += b12; // down one pixel
+			w1 += b20;
+			w2 += b01;
+			rasterOut += 80;
+
+			// Scan left
+			prevMaskAcc = 0;
+			for (int32_t x = right; x>=minx; x-=4)
+			{
+				int32_t bval = 0;
+				int32_t baryu, baryv;
+
+				// This is one pixel's worth of processing
+				// In hardware we'll replicate this 16 times for a 16x1 tile
+				uint32_t val0 = (w0&w1&w2)<0 ? 0xFF000000 : 0x00000000; // Output in hardware is a single bit (sign bit of w0&w1&w2)
+				baryu = abs(w0*au0 + w1*au1 + w2*au2)>>18;
+				baryv = abs(w0*av0 + w1*av1 + w2*av2)>>18;
+				w0 -= a12; // We don't need to do this addition in hardware to pass to the next unit
+				w1 -= a20; // since each unit has its own scaled multiple of a12/a20/a01 (mul by pixel index)
+				w2 -= a01;
+				bval |= s_texture[(baryu%8)+8*(baryv%8)]<<24;
+
+				uint32_t val1 = (w0&w1&w2)<0 ? 0x00FF0000 : 0x00000000;
+				baryu = abs(w0*au0 + w1*au1 + w2*au2)>>18;
+				baryv = abs(w0*av0 + w1*av1 + w2*av2)>>18;
+				w0 -= a12;
+				w1 -= a20;
+				w2 -= a01;
+				bval |= s_texture[(baryu%8)+8*(baryv%8)]<<16;
+
+				uint32_t val2 = (w0&w1&w2)<0 ? 0x0000FF00 : 0x00000000;
+				baryu = abs(w0*au0 + w1*au1 + w2*au2)>>18;
+				baryv = abs(w0*av0 + w1*av1 + w2*av2)>>18;
+				w0 -= a12;
+				w1 -= a20;
+				w2 -= a01;
+				bval |= s_texture[(baryu%8)+8*(baryv%8)]<<8;
+
+				uint32_t val3 = (w0&w1&w2)<0 ? 0x000000FF : 0x00000000;
+				baryu = abs(w0*au0 + w1*au1 + w2*au2)>>18;
+				baryv = abs(w0*av0 + w1*av1 + w2*av2)>>18;
+				w0 -= a12;
+				w1 -= a20;
+				w2 -= a01;
+				bval |= s_texture[(baryu%8)+8*(baryv%8)];
+
+				// In hardware this will be a 16 bit write strobe for 128bit SDRAM writes
+				uint32_t wmask = (val0 | val1 | val2 | val3);
+				left = x;
+				if (!wmask && prevMaskAcc)
+					break;
+				prevMaskAcc |= wmask;
+
+				// Hardware can write 16 pixels at once, so this'll be wider
+				if (wmask != 0) // This is not necessary in hardware. Instead we'll shift direction when we encounter an edge and try to skip zero masks
+					rasterOut[x/4] = bval & wmask;
+			}
+
+			// Next row
+			w0 += a12; // back one pixel
+			w1 += a20;
+			w2 += a01;
+			w0 += b12; // down one pixel
+			w1 += b20;
+			w2 += b01;
+			rasterOut += 80;
 		}
 
 // Output merger (OM)
