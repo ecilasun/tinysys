@@ -114,8 +114,8 @@ int main(int argc, char *argv[])
 		maxy = max(0,min(239, maxy));
 
 		// Round x to multiples of 4 pixels
-		minx = minx&0xFFFFFFFFC;
-		maxx = (maxx+3)&0xFFFFFFFFC;
+		minx = minx&0xFFFFFFFFC;		// Round down
+		maxx = (maxx+3)&0xFFFFFFFFC;	// Round up
 
 		// Generate edge functions for min AABB corner
 		p.x = minx;
@@ -145,14 +145,14 @@ int main(int argc, char *argv[])
 
 		int32_t U = w0*au0 + w1*au1 + w2*au2;
 		int32_t V = w0*av0 + w1*av1 + w2*av2;
-		int32_t ddxU = ((w0+a12)*au0 + (w1+a20)*au1 + (w2+a01)*au2) - U;
-		int32_t ddxV = ((w0+a12)*av0 + (w1+a20)*av1 + (w2+a01)*av2) - V;
-		int32_t ddyU = ((w0+b12)*au0 + (w1+b20)*au1 + (w2+b01)*au2) - U;
-		int32_t ddyV = ((w0+b12)*av0 + (w1+b20)*av1 + (w2+b01)*av2) - V;
+		int32_t ddxU = a12*au0 + a20*au1 + a01*au2;
+		int32_t ddxV = a12*av0 + a20*av1 + a01*av2;
+		int32_t ddyU = b12*au0 + b20*au1 + b01*au2;
+		int32_t ddyV = b12*av0 + b20*av1 + b01*av2;
 
 		// Sweep and fill pixels
 		uint32_t *rasterOut = (uint32_t*)(sc.writepage + miny*320);
-		for (int32_t y = miny; y<=maxy; ++y)
+		for (int32_t y = miny; y<=maxy; y+=2)
 		{
 			// Scan right
 			uint32_t prevMaskAcc = 0;
