@@ -490,24 +490,48 @@ void _cliTask()
 }
 
 // Make sure we're aligned to sit at a cache line boundary
-void __attribute__((aligned(64))) CopyAndChainOverlay()
+void __attribute__((aligned(64))) CopyPayloadAndChainOverlay(void *source)
 {
-	// Once the instruction cache is loaded with the following short sequence,
-	// we're free to do a copy and branch for our overlay, since a memory
-	// load won't be necessary during its execution.
+	// Copy this code outside ROM area
+	asm volatile(
+		"mv s0, %0;"			// Payload address: @payload
+		"lui s1, 0x0;"			// Target: 0x00000000
+		"addi s2, zero, 0x10;"	// Count:  64/4 (0x10)
+		"movepayload:"
+		"lw a0, 0(s0);"			// Read source word
+		"sw a0, 0(s1);"			// Store target word
+		"addi s0,s0,4;"
+		"addi s1,s1,4;"
+		"addi s2,s2,-1;"
+		"bnez s2, movepayload;"
+		".word 0xFC000073;"		// Invalidate D$ and I$
+		"fence.i;"
+		"lui s0, 0x0;"			// Branch to copy of payload at 0x00000000 which will then load the ROM overlay from storage
+		"jalr s0;"
+		:
+		// Return values
+		:
+		// Input parameters
+		"r" (source)
+		:
+		// Clobber list
+	);
+}
 
+// This is the payload to copy (34 bytes but we can copy 64 to cover both compressed and uncompressed variants)
+void __attribute__((aligned(64))) Payload()
+{
 	asm volatile(
 		"lui s0, 0x00010;"		// Source: 0x00010000
 		"lui s1, 0x0FFE0;"		// Target: 0x0FFE0000
-		"lui s2, 0x04000;"
-		"srl s2, s2, 12;"		// Count:  65536/4 (0x4000)
+		"lui s2, 0x4;"			// Count:  65536/4 (0x4000)
 		"copyloop:"
 		"lw a0, 0(s0);"			// Read source word
 		"sw a0, 0(s1);"			// Store target word
 		"addi s0,s0,4;"
 		"addi s1,s1,4;"
 		"addi s2,s2,-1;"
-		"bne s2, zero, copyloop;"
+		"bnez s2, copyloop;"
 		".word 0xFC000073;"		// Invalidate & Write Back D$ (CFLUSH.D.L1)
 		"lui s0, 0x0FFE0;"		// Branch to reset vector: 0x0FFE0000
 		"jalr s0;"				// NOTE: ROM must invalidate I$ on entry
@@ -561,7 +585,7 @@ int main()
 	if ((waterMark == 0) && LoadOverlay("sd:/rom.bin"))
 	{
 		// Point of no return. Literally.
-		CopyAndChainOverlay();
+		CopyPayloadAndChainOverlay(Payload);
 
 		// We should never come back here
 		while(1) {}
