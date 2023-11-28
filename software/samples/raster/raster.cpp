@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 	while (1)
 	{
 		sVec2 v0, v1, v2, p;
-		memset(sc.writepage, 0x11, 320*240); // Clear to dark gray (so that we can see the tile edges)
+		memset(sc.writepage, 0x36, 320*240); // Clear to blue
 
 		// Generate a rotating primitive
 		const float L = 140.f;
@@ -143,6 +143,13 @@ int main(int argc, char *argv[])
 		int32_t left = minx;
 		int32_t right = maxx;
 
+		int32_t U = w0*au0 + w1*au1 + w2*au2;
+		int32_t V = w0*av0 + w1*av1 + w2*av2;
+		int32_t ddxU = ((w0+a12)*au0 + (w1+a20)*au1 + (w2+a01)*au2) - U;
+		int32_t ddxV = ((w0+a12)*av0 + (w1+a20)*av1 + (w2+a01)*av2) - V;
+		int32_t ddyU = ((w0+b12)*au0 + (w1+b20)*au1 + (w2+b01)*au2) - U;
+		int32_t ddyV = ((w0+b12)*av0 + (w1+b20)*av1 + (w2+b01)*av2) - V;
+
 		// Sweep and fill pixels
 		uint32_t *rasterOut = (uint32_t*)(sc.writepage + miny*320);
 		for (int32_t y = miny; y<=maxy; ++y)
@@ -157,35 +164,43 @@ int main(int argc, char *argv[])
 				// This is one pixel's worth of processing
 				// In hardware we'll replicate this 16 times for a 16x1 tile
 				uint32_t val0 = (w0&w1&w2)<0 ? 0x000000FF : 0x00000000; // Output in hardware is a single bit (sign bit of w0&w1&w2)
-				baryu = abs(w0*au0 + w1*au1 + w2*au2)>>18;
-				baryv = abs(w0*av0 + w1*av1 + w2*av2)>>18;
+				baryu = abs(U)>>18;
+				baryv = abs(V)>>18;
 				w0 += a12; // We don't need to do this addition in hardware to pass to the next unit
 				w1 += a20; // since each unit has its own scaled multiple of a12/a20/a01 (mul by pixel index)
 				w2 += a01;
+				U += ddxU;
+				V += ddxV;
 				bval |= s_texture[(baryu%8)+8*(baryv%8)];
 
 				uint32_t val1 = (w0&w1&w2)<0 ? 0x0000FF00 : 0x00000000;
-				baryu = abs(w0*au0 + w1*au1 + w2*au2)>>18;
-				baryv = abs(w0*av0 + w1*av1 + w2*av2)>>18;
+				baryu = abs(U)>>18;
+				baryv = abs(V)>>18;
 				w0 += a12;
 				w1 += a20;
 				w2 += a01;
+				U += ddxU;
+				V += ddxV;
 				bval |= s_texture[(baryu%8)+8*(baryv%8)]<<8;
 
 				uint32_t val2 = (w0&w1&w2)<0 ? 0x00FF0000 : 0x00000000;
-				baryu = abs(w0*au0 + w1*au1 + w2*au2)>>18;
-				baryv = abs(w0*av0 + w1*av1 + w2*av2)>>18;
+				baryu = abs(U)>>18;
+				baryv = abs(V)>>18;
 				w0 += a12;
 				w1 += a20;
 				w2 += a01;
+				U += ddxU;
+				V += ddxV;
 				bval |= s_texture[(baryu%8)+8*(baryv%8)]<<16;
 
 				uint32_t val3 = (w0&w1&w2)<0 ? 0xFF000000 : 0x00000000;
-				baryu = abs(w0*au0 + w1*au1 + w2*au2)>>18;
-				baryv = abs(w0*av0 + w1*av1 + w2*av2)>>18;
+				baryu = abs(U)>>18;
+				baryv = abs(V)>>18;
 				w0 += a12;
 				w1 += a20;
 				w2 += a01;
+				U += ddxU;
+				V += ddxV;
 				bval |= s_texture[(baryu%8)+8*(baryv%8)]<<24;
 
 				// In hardware this will be a 16 bit write strobe for 128bit SDRAM writes
@@ -204,9 +219,13 @@ int main(int argc, char *argv[])
 			w0 -= a12; // back one pixel
 			w1 -= a20;
 			w2 -= a01;
+			U -= ddxU;
+			V -= ddxV;
 			w0 += b12; // down one pixel
 			w1 += b20;
 			w2 += b01;
+			U += ddyU;
+			V += ddyV;
 			rasterOut += 80;
 
 			// Scan left
@@ -219,35 +238,43 @@ int main(int argc, char *argv[])
 				// This is one pixel's worth of processing
 				// In hardware we'll replicate this 16 times for a 16x1 tile
 				uint32_t val0 = (w0&w1&w2)<0 ? 0xFF000000 : 0x00000000; // Output in hardware is a single bit (sign bit of w0&w1&w2)
-				baryu = abs(w0*au0 + w1*au1 + w2*au2)>>18;
-				baryv = abs(w0*av0 + w1*av1 + w2*av2)>>18;
+				baryu = abs(U)>>18;
+				baryv = abs(V)>>18;
 				w0 -= a12; // We don't need to do this addition in hardware to pass to the next unit
 				w1 -= a20; // since each unit has its own scaled multiple of a12/a20/a01 (mul by pixel index)
 				w2 -= a01;
+				U -= ddxU;
+				V -= ddxV;
 				bval |= s_texture[(baryu%8)+8*(baryv%8)]<<24;
 
 				uint32_t val1 = (w0&w1&w2)<0 ? 0x00FF0000 : 0x00000000;
-				baryu = abs(w0*au0 + w1*au1 + w2*au2)>>18;
-				baryv = abs(w0*av0 + w1*av1 + w2*av2)>>18;
+				baryu = abs(U)>>18;
+				baryv = abs(V)>>18;
 				w0 -= a12;
 				w1 -= a20;
 				w2 -= a01;
+				U -= ddxU;
+				V -= ddxV;
 				bval |= s_texture[(baryu%8)+8*(baryv%8)]<<16;
 
 				uint32_t val2 = (w0&w1&w2)<0 ? 0x0000FF00 : 0x00000000;
-				baryu = abs(w0*au0 + w1*au1 + w2*au2)>>18;
-				baryv = abs(w0*av0 + w1*av1 + w2*av2)>>18;
+				baryu = abs(U)>>18;
+				baryv = abs(V)>>18;
 				w0 -= a12;
 				w1 -= a20;
 				w2 -= a01;
+				U -= ddxU;
+				V -= ddxV;
 				bval |= s_texture[(baryu%8)+8*(baryv%8)]<<8;
 
 				uint32_t val3 = (w0&w1&w2)<0 ? 0x000000FF : 0x00000000;
-				baryu = abs(w0*au0 + w1*au1 + w2*au2)>>18;
-				baryv = abs(w0*av0 + w1*av1 + w2*av2)>>18;
+				baryu = abs(U)>>18;
+				baryv = abs(V)>>18;
 				w0 -= a12;
 				w1 -= a20;
 				w2 -= a01;
+				U -= ddxU;
+				V -= ddxV;
 				bval |= s_texture[(baryu%8)+8*(baryv%8)];
 
 				// In hardware this will be a 16 bit write strobe for 128bit SDRAM writes
@@ -266,9 +293,13 @@ int main(int argc, char *argv[])
 			w0 += a12; // back one pixel
 			w1 += a20;
 			w2 += a01;
+			U += ddxU;
+			V += ddxV;
 			w0 += b12; // down one pixel
 			w1 += b20;
 			w2 += b01;
+			U += ddyU;
+			V += ddyV;
 			rasterOut += 80;
 		}
 
