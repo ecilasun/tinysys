@@ -22,11 +22,12 @@ module tophat(
 	,inout wire [1:0] ddr3_dqs_p
 	,inout wire [1:0] ddr3_dqs_n
 	,inout wire [15:0] ddr3_dq
-	// DVI -> HDMI
-	,output wire [2:0] hdmi_tx_p
-	,output wire [2:0] hdmi_tx_n
-	,output wire hdmi_tx_clk_p
-	,output wire hdmi_tx_clk_n
+	// To video scanout chip
+	,output wire vvsync
+	,output wire vhsync
+	,output wire vclk
+	,output wire vde
+	,output wire [23:0] vdat
 	// Micro SD Card
 	,input wire sdcard_miso
 	,output wire sdcard_cs_n
@@ -101,16 +102,6 @@ ddr3sdramwires ddr3conn(
 	.ddr3_dqs_n(ddr3_dqs_n),
 	.ddr3_dq(ddr3_dq),
 	.init_calib_complete(init_calib_complete) );
-
-// --------------------------------------------------
-// Video wires
-// --------------------------------------------------
-
-gpuwires gpuvideoout(
-	.tmdsp(hdmi_tx_p),
-	.tmdsn(hdmi_tx_n),
-	.tmdsclkp(hdmi_tx_clk_p ),
-	.tmdsclkn(hdmi_tx_clk_n) );
 
 // --------------------------------------------------
 // SPI wires
@@ -188,7 +179,11 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.leds(leds),
 	.ddr3conn(ddr3conn),
 	.i2sconn(i2sconn),
-	.gpuvideoout(gpuvideoout),
+	.vvsync(vvsync),
+	.vhsync(vhsync),
+	.vclk(vclk),
+	.vde(vde),
+	.vdat(vdat),
 	.sdconn(sdconn),
 	.usbcconn(usbcconn),
 	.usbaconn(usbaconn) );

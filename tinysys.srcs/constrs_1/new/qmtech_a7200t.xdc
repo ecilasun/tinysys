@@ -3,7 +3,7 @@
 ## ------------------------------------------------------------------------------------------------------
 
 ## (C) 2023 Engin Cilasun
-## Applies to expansion board ISSUE-1M
+## Applies to expansion board ISSUE-2B
 ## Please do not change/remove the Clock Groups or False Paths regardless of the warnings during synth
 ## Also note that changing any of the pin positions will change the timing closure of the device
 ## due to changes in placing and routing
@@ -25,10 +25,10 @@ create_clock -period 20.000 -name sys_clk_pin -waveform {0.000 10.000} -add [get
 ## Debug LEDs
 ## ------------------------------------------------------------------------------------------------------
 
-set_property -dict {PACKAGE_PIN AB18 IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
-set_property -dict {PACKAGE_PIN Y19  IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
-set_property -dict {PACKAGE_PIN AB20 IOSTANDARD LVCMOS33} [get_ports {leds[2]}]
-set_property -dict {PACKAGE_PIN AA21 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
+set_property -dict {PACKAGE_PIN N18 IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
+set_property -dict {PACKAGE_PIN L14 IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
+set_property -dict {PACKAGE_PIN N22 IOSTANDARD LVCMOS33} [get_ports {leds[2]}]
+set_property -dict {PACKAGE_PIN N20 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
 
 ## ------------------------------------------------------------------------------------------------------
 ## UART Tx/Rx debug port (tie to an external USB-UART cable or other device)
@@ -74,23 +74,56 @@ set_property PULLUP true [get_ports sdcard_swtch]
 ## DVI output over HDMI
 ## ------------------------------------------------------------------------------------------------------
 
-set_property -dict {PACKAGE_PIN Y3  IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[0]}]
-set_property -dict {PACKAGE_PIN AA3 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[0]}]
-set_property -dict {PACKAGE_PIN V4  IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_p]
-set_property -dict {PACKAGE_PIN W4  IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_n]
-set_property -dict {PACKAGE_PIN AB3 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[1]}]
-set_property -dict {PACKAGE_PIN AB2 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[1]}]
-set_property -dict {PACKAGE_PIN AA1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[2]}]
-set_property -dict {PACKAGE_PIN AB1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[2]}]
+## set_property -dict {PACKAGE_PIN AB3 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[0]}]
+## set_property -dict {PACKAGE_PIN AB2 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[0]}]
+## set_property -dict {PACKAGE_PIN V4  IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_p]
+## set_property -dict {PACKAGE_PIN W4  IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_n]
+## set_property -dict {PACKAGE_PIN AA1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[1]}]
+## set_property -dict {PACKAGE_PIN AB1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[1]}]
+## set_property -dict {PACKAGE_PIN W1  IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[2]}]
+## set_property -dict {PACKAGE_PIN Y1  IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[2]}]
+
+## ------------------------------------------------------------------------------------------------------
+## Video output - SII164CTG64
+## ------------------------------------------------------------------------------------------------------
+
+set_property -dict {PACKAGE_PIN AA3 IOSTANDARD LVCMOS33} [get_ports {vvsync}]
+set_property -dict {PACKAGE_PIN Y3  IOSTANDARD LVCMOS33} [get_ports {vhsync}]
+set_property -dict {PACKAGE_PIN W4  IOSTANDARD LVCMOS33} [get_ports {vde}]
+set_property -dict {PACKAGE_PIN V4  IOSTANDARD LVCMOS33} [get_ports {vclk}]
+set_property -dict {PACKAGE_PIN AB2 IOSTANDARD LVCMOS33} [get_ports {vdat[0]}]
+set_property -dict {PACKAGE_PIN AB3 IOSTANDARD LVCMOS33} [get_ports {vdat[1]}]
+set_property -dict {PACKAGE_PIN AB1 IOSTANDARD LVCMOS33} [get_ports {vdat[2]}]
+set_property -dict {PACKAGE_PIN AA1 IOSTANDARD LVCMOS33} [get_ports {vdat[3]}]
+set_property -dict {PACKAGE_PIN Y1  IOSTANDARD LVCMOS33} [get_ports {vdat[4]}]
+set_property -dict {PACKAGE_PIN W1  IOSTANDARD LVCMOS33} [get_ports {vdat[5]}]
+set_property -dict {PACKAGE_PIN U1  IOSTANDARD LVCMOS33} [get_ports {vdat[6]}]
+set_property -dict {PACKAGE_PIN T1  IOSTANDARD LVCMOS33} [get_ports {vdat[7]}]
+set_property -dict {PACKAGE_PIN U5  IOSTANDARD LVCMOS33} [get_ports {vdat[8]}]
+set_property -dict {PACKAGE_PIN T5  IOSTANDARD LVCMOS33} [get_ports {vdat[9]}]
+set_property -dict {PACKAGE_PIN T4  IOSTANDARD LVCMOS33} [get_ports {vdat[10]}]
+set_property -dict {PACKAGE_PIN R4  IOSTANDARD LVCMOS33} [get_ports {vdat[11]}]
+set_property -dict {PACKAGE_PIN P4  IOSTANDARD LVCMOS33} [get_ports {vdat[12]}]
+set_property -dict {PACKAGE_PIN P5  IOSTANDARD LVCMOS33} [get_ports {vdat[13]}]
+set_property -dict {PACKAGE_PIN P1  IOSTANDARD LVCMOS33} [get_ports {vdat[14]}]
+set_property -dict {PACKAGE_PIN R1  IOSTANDARD LVCMOS33} [get_ports {vdat[15]}]
+set_property -dict {PACKAGE_PIN N2  IOSTANDARD LVCMOS33} [get_ports {vdat[16]}]
+set_property -dict {PACKAGE_PIN P2  IOSTANDARD LVCMOS33} [get_ports {vdat[17]}]
+set_property -dict {PACKAGE_PIN M2  IOSTANDARD LVCMOS33} [get_ports {vdat[18]}]
+set_property -dict {PACKAGE_PIN M3  IOSTANDARD LVCMOS33} [get_ports {vdat[19]}]
+set_property -dict {PACKAGE_PIN K3  IOSTANDARD LVCMOS33} [get_ports {vdat[20]}]
+set_property -dict {PACKAGE_PIN L3  IOSTANDARD LVCMOS33} [get_ports {vdat[21]}]
+set_property -dict {PACKAGE_PIN J4  IOSTANDARD LVCMOS33} [get_ports {vdat[22]}]
+set_property -dict {PACKAGE_PIN K4  IOSTANDARD LVCMOS33} [get_ports {vdat[23]}]
 
 ## ------------------------------------------------------------------------------------------------------
 ## Audio output - CS4344-CZZR
 ## ------------------------------------------------------------------------------------------------------
 
-set_property -dict {PACKAGE_PIN P17 IOSTANDARD LVCMOS33} [get_ports au_sdin]
-set_property -dict {PACKAGE_PIN T18 IOSTANDARD LVCMOS33} [get_ports au_sclk]
-set_property -dict {PACKAGE_PIN Y22 IOSTANDARD LVCMOS33} [get_ports au_lrclk]
-set_property -dict {PACKAGE_PIN U21 IOSTANDARD LVCMOS33} [get_ports au_mclk]
+set_property -dict {PACKAGE_PIN H2 IOSTANDARD LVCMOS33} [get_ports au_sdin]
+set_property -dict {PACKAGE_PIN K1 IOSTANDARD LVCMOS33} [get_ports au_sclk]
+set_property -dict {PACKAGE_PIN K2 IOSTANDARD LVCMOS33} [get_ports au_lrclk]
+set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports au_mclk]
 
 ## ------------------------------------------------------------------------------------------------------
 ## USB-C - MAX3420EECJ over SPI interface, USB Device

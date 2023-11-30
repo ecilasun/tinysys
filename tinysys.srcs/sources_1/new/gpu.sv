@@ -8,7 +8,11 @@ module gpucore(
 	input wire clk125,
 	input wire aresetn,
 	axi4if.master m_axi,
-	gpuwires.def gpuvideoout,
+	output wire vvsync,
+	output wire vhsync,
+	output wire vclk,
+	output wire vde,
+	output wire [23:0] vdat,
 	input wire gpufifoempty,
 	input wire [31:0] gpufifodout,
 	output wire gpufifore,
@@ -48,14 +52,9 @@ logic scanenable = 1'b0;
 // Common
 // --------------------------------------------------
 
-wire hsync, vsync;//, blank;
-wire [9:0] video_x;
-wire [9:0] video_y;
-
-wire out_tmds_red;
-wire out_tmds_green;
-wire out_tmds_blue;
-wire out_tmds_clk;
+wire hsync, vsync;
+wire [11:0] video_x;
+wire [11:0] video_y;
 
 logic cmdre = 1'b0;
 assign gpufifore = cmdre;
@@ -163,35 +162,26 @@ always @(posedge clk25) begin
 end
 
 // --------------------------------------------------
-// Video output
+// Video signal
 // --------------------------------------------------
 
-hdmi HDMIAVinst(
-    .clk_pixel_x5(clk125),
-    .clk_pixel(clk25),
-    .clk_audio(clk25),
-    .reset(~aresetn),
-    .rgb(paletteout),
-    .audio_sample_word({16'd0,16'd0}), // TODO: Audio input
+vgatimer VideoScanout(
+	.rst_i(~aresetn),
+	.clk_i(clk25),
+	.hsync_o(vhsync),
+	.vsync_o(vvsync),
+	.counter_x(video_x),
+	.counter_y(video_y),
+	.vsynctrigger_o(),
+	.vsynccounter() );
 
-    // These outputs go to your HDMI port
-    .tmds({out_tmds_red, out_tmds_green, out_tmds_blue}),
-    .tmds_clock(out_tmds_clk),
-    
-    .cx(video_x),
-    .cy(video_y),
-    .hsync_out(hsync),
-    .vsync_out(vsync),
+wire [3:0] vidG = paletteout[7:4];
+wire [3:0] vidB = paletteout[15:12];
+wire [3:0] vidR = paletteout[23:20];
 
-    .frame_width(),
-    .frame_height(),
-    .screen_width(),
-    .screen_height() );
-
-OBUFDS OBUFDS_clk(.I(out_tmds_clk), .O(gpuvideoout.tmdsclkp), .OB(gpuvideoout.tmdsclkn));
-OBUFDS OBUFDS_red(.I(out_tmds_red), .O(gpuvideoout.tmdsp[2]), .OB(gpuvideoout.tmdsn[2]));
-OBUFDS OBUFDS_green(.I(out_tmds_green), .O(gpuvideoout.tmdsp[1]), .OB(gpuvideoout.tmdsn[1]));
-OBUFDS OBUFDS_blue(.I(out_tmds_blue), .O(gpuvideoout.tmdsp[0]), .OB(gpuvideoout.tmdsn[0]));
+assign vde = (video_x < 12'd640) && (video_y < 12'd480);
+assign vdat = vde ? {12'd0, vidR, vidG, vidB} : 24'd0;
+assign vclk = clk25;
 
 // --------------------------------------------------
 // AXI4 defaults
@@ -323,8 +313,8 @@ end
 // Scan-out logic
 // --------------------------------------------------
 
-wire startofrowp = video_x == 10'd0;
-wire endofcolumnp = video_y == 10'd490;
+wire startofrowp = video_x == 12'd0;
+wire endofcolumnp = video_y == 12'd490;
 wire vsyncnow = startofrowp && endofcolumnp;
 
 logic blankt = 1'b0;

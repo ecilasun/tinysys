@@ -27,13 +27,13 @@ static inline int32_t min(int32_t x, int32_t y) { return x<=y?x:y; }
 
 static uint8_t s_texture[] = {
 	0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x28,
-	0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x28,
-	0x00, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x28,
-	0x00, 0x00, 0x30, 0x00, 0x00, 0x00, 0x00, 0x28,
-	0x00, 0x00, 0x00, 0x30, 0x00, 0x00, 0x00, 0x28,
-	0x00, 0x00, 0x00, 0x00, 0x30, 0x00, 0x00, 0x28,
-	0x00, 0x0F, 0x00, 0x00, 0x00, 0x30, 0x00, 0x28,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0x28 };
+	0x30, 0x2C, 0x2C, 0x2C, 0x2C, 0x2C, 0x2C, 0x28,
+	0x2C, 0x30, 0x2C, 0x2C, 0x2C, 0x2C, 0x2C, 0x28,
+	0x2C, 0x2C, 0x30, 0x2C, 0x2C, 0x2C, 0x2C, 0x28,
+	0x2C, 0x2C, 0x2C, 0x30, 0x2C, 0x2C, 0x2C, 0x28,
+	0x2C, 0x2C, 0x2C, 0x2C, 0x30, 0x2C, 0x2C, 0x28,
+	0x2C, 0x0F, 0x2C, 0x2C, 0x2C, 0x30, 0x2C, 0x28,
+	0x2C, 0x2C, 0x2C, 0x2C, 0x2C, 0x2C, 0x30, 0x28 };
 
 struct sVec2
 {
@@ -133,9 +133,9 @@ int main(int argc, char *argv[])
 // Input: a12,b12,a20,b20,a01,b01,bounds
 // Output: barycentric interpolated color fragment
 
-		int32_t au0 = 0x000, av0 = 0x000;
-		int32_t au1 = 0x3FF, av1 = 0x000;
-		int32_t au2 = 0x3FF, av2 = 0x3FF;
+		int32_t au0 = 0x0000, av0 = 0x0000;
+		int32_t au1 = 0xFFFF, av1 = 0x0000;
+		int32_t au2 = 0xFFFF, av2 = 0xFFFF;
 
 		int32_t w0 = w0_row;
 		int32_t w1 = w1_row;
@@ -143,12 +143,18 @@ int main(int argc, char *argv[])
 		int32_t left = minx;
 		int32_t right = maxx;
 
-		int32_t U = w0*au0 + w1*au1 + w2*au2;
-		int32_t V = w0*av0 + w1*av1 + w2*av2;
-		int32_t ddxU = a12*au0 + a20*au1 + a01*au2;
-		int32_t ddxV = a12*av0 + a20*av1 + a01*av2;
-		int32_t ddyU = b12*au0 + b20*au1 + b01*au2;
-		int32_t ddyV = b12*av0 + b20*av1 + b01*av2;
+		int32_t d0x = v1.x-v0.x;
+		int32_t d0y = v1.y-v0.y;
+		int32_t d1x = v2.x-v0.x;
+		int32_t d1y = v2.y-v0.y;
+		int32_t A2 = (d0x*d1y) - (d0y*d1x);
+
+		int32_t U = (w0*au0 + w1*au1 + w2*au2)/A2;
+		int32_t V = (w0*av0 + w1*av1 + w2*av2)/A2;
+		int32_t ddxU = (a12*au0 + a20*au1 + a01*au2)/A2;
+		int32_t ddxV = (a12*av0 + a20*av1 + a01*av2)/A2;
+		int32_t ddyU = (b12*au0 + b20*au1 + b01*au2)/A2;
+		int32_t ddyV = (b12*av0 + b20*av1 + b01*av2)/A2;
 
 		// Sweep and fill pixels
 		uint32_t *rasterOut = (uint32_t*)(sc.writepage + miny*320);
@@ -164,8 +170,8 @@ int main(int argc, char *argv[])
 				// This is one pixel's worth of processing
 				// In hardware we'll replicate this 16 times for a 16x1 tile
 				uint32_t val0 = (w0&w1&w2)<0 ? 0x000000FF : 0x00000000; // Output in hardware is a single bit (sign bit of w0&w1&w2)
-				baryu = abs(U)>>18;
-				baryv = abs(V)>>18;
+				baryu = abs(U)>>8;
+				baryv = abs(V)>>8;
 				w0 += a12; // We don't need to do this addition in hardware to pass to the next unit
 				w1 += a20; // since each unit has its own scaled multiple of a12/a20/a01 (mul by pixel index)
 				w2 += a01;
@@ -174,8 +180,8 @@ int main(int argc, char *argv[])
 				bval |= s_texture[(baryu%8)+8*(baryv%8)];
 
 				uint32_t val1 = (w0&w1&w2)<0 ? 0x0000FF00 : 0x00000000;
-				baryu = abs(U)>>18;
-				baryv = abs(V)>>18;
+				baryu = abs(U)>>8;
+				baryv = abs(V)>>8;
 				w0 += a12;
 				w1 += a20;
 				w2 += a01;
@@ -184,8 +190,8 @@ int main(int argc, char *argv[])
 				bval |= s_texture[(baryu%8)+8*(baryv%8)]<<8;
 
 				uint32_t val2 = (w0&w1&w2)<0 ? 0x00FF0000 : 0x00000000;
-				baryu = abs(U)>>18;
-				baryv = abs(V)>>18;
+				baryu = abs(U)>>8;
+				baryv = abs(V)>>8;
 				w0 += a12;
 				w1 += a20;
 				w2 += a01;
@@ -194,8 +200,8 @@ int main(int argc, char *argv[])
 				bval |= s_texture[(baryu%8)+8*(baryv%8)]<<16;
 
 				uint32_t val3 = (w0&w1&w2)<0 ? 0xFF000000 : 0x00000000;
-				baryu = abs(U)>>18;
-				baryv = abs(V)>>18;
+				baryu = abs(U)>>8;
+				baryv = abs(V)>>8;
 				w0 += a12;
 				w1 += a20;
 				w2 += a01;
@@ -238,8 +244,8 @@ int main(int argc, char *argv[])
 				// This is one pixel's worth of processing
 				// In hardware we'll replicate this 16 times for a 16x1 tile
 				uint32_t val0 = (w0&w1&w2)<0 ? 0xFF000000 : 0x00000000; // Output in hardware is a single bit (sign bit of w0&w1&w2)
-				baryu = abs(U)>>18;
-				baryv = abs(V)>>18;
+				baryu = abs(U)>>8;
+				baryv = abs(V)>>8;
 				w0 -= a12; // We don't need to do this addition in hardware to pass to the next unit
 				w1 -= a20; // since each unit has its own scaled multiple of a12/a20/a01 (mul by pixel index)
 				w2 -= a01;
@@ -248,8 +254,8 @@ int main(int argc, char *argv[])
 				bval |= s_texture[(baryu%8)+8*(baryv%8)]<<24;
 
 				uint32_t val1 = (w0&w1&w2)<0 ? 0x00FF0000 : 0x00000000;
-				baryu = abs(U)>>18;
-				baryv = abs(V)>>18;
+				baryu = abs(U)>>8;
+				baryv = abs(V)>>8;
 				w0 -= a12;
 				w1 -= a20;
 				w2 -= a01;
@@ -258,8 +264,8 @@ int main(int argc, char *argv[])
 				bval |= s_texture[(baryu%8)+8*(baryv%8)]<<16;
 
 				uint32_t val2 = (w0&w1&w2)<0 ? 0x0000FF00 : 0x00000000;
-				baryu = abs(U)>>18;
-				baryv = abs(V)>>18;
+				baryu = abs(U)>>8;
+				baryv = abs(V)>>8;
 				w0 -= a12;
 				w1 -= a20;
 				w2 -= a01;
@@ -268,8 +274,8 @@ int main(int argc, char *argv[])
 				bval |= s_texture[(baryu%8)+8*(baryv%8)]<<8;
 
 				uint32_t val3 = (w0&w1&w2)<0 ? 0x000000FF : 0x00000000;
-				baryu = abs(U)>>18;
-				baryv = abs(V)>>18;
+				baryu = abs(U)>>8;
+				baryv = abs(V)>>8;
 				w0 -= a12;
 				w1 -= a20;
 				w2 -= a01;
