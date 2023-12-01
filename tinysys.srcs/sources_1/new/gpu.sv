@@ -52,7 +52,6 @@ logic scanenable = 1'b0;
 // Common
 // --------------------------------------------------
 
-wire hsync, vsync;
 wire [11:0] video_x;
 wire [11:0] video_y;
 
@@ -165,11 +164,12 @@ end
 // Video signal
 // --------------------------------------------------
 
+wire hsync, vsync;
 vgatimer VideoScanout(
 	.rst_i(~aresetn),
 	.clk_i(clk25),
-	.hsync_o(vhsync),
-	.vsync_o(vvsync),
+	.hsync_o(hsync),
+	.vsync_o(vsync),
 	.counter_x(video_x),
 	.counter_y(video_y),
 	.vsynctrigger_o(),
@@ -179,8 +179,20 @@ wire [3:0] vidG = paletteout[7:4];
 wire [3:0] vidB = paletteout[15:12];
 wire [3:0] vidR = paletteout[23:20];
 
-assign vde = (video_x < 12'd640) && (video_y < 12'd480);
-assign vdat = vde ? {12'd0, vidR, vidG, vidB} : 24'd0;
+logic hsync_d, vsync_d, vde_d;
+logic [23:0] paletteout_d;
+wire notblank = (video_x < 12'd640) && (video_y < 12'd480);
+always @(posedge clk25) begin
+	hsync_d <= hsync;
+	vsync_d <= vsync;
+	vde_d <= notblank;
+	paletteout_d <= notblank ? {12'd0, vidR, vidG, vidB} : 24'd0;
+end
+
+assign vhsync = hsync_d;
+assign vvsync = vsync_d;
+assign vde = vde_d;
+assign vdat = paletteout_d;
 assign vclk = clk25;
 
 // --------------------------------------------------
