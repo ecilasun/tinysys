@@ -173,9 +173,14 @@ uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader
 				// Initialize the memory range at target physical address
 				// This can be larger than the loaded size
 				memset(memaddr, 0x0, pheader.m_MemSz);
-				// Load the binary
-				f_lseek(fp, pheader.m_Offset);
-				f_read(fp, memaddr, pheader.m_FileSz, &bytesread);
+
+				// Load the binary section depending on 'load' flag
+				if (pheader.m_Type == PT_LOAD)
+				{
+					f_lseek(fp, pheader.m_Offset);
+					f_read(fp, memaddr, pheader.m_FileSz, &bytesread);
+				}
+
 				uint32_t blockEnd = (uint32_t)memaddr + pheader.m_MemSz;
 				heap_start = heap_start < blockEnd ? blockEnd : heap_start;
 			}

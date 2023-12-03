@@ -1,5 +1,18 @@
 #pragma once
 
+#define PT_NULL		0		/* Program header table entry unused */
+#define PT_LOAD		1		/* Loadable program segment */
+#define PT_DYNAMIC	2		/* Dynamic linking information */
+#define PT_INTERP	3		/* Program interpreter */
+#define PT_NOTE		4		/* Auxiliary information */
+#define PT_SHLIB	5		/* Reserved, unspecified semantics */
+#define PT_PHDR		6		/* Entry for header table itself */
+#define PT_TLS		7		/* Thread local storage segment */
+#define PT_LOOS		0x60000000	/* OS-specific */
+#define PT_HIOS		0x6fffffff	/* OS-specific */
+#define PT_LOPROC	0x70000000	/* Processor-specific */
+#define PT_HIPROC	0x7FFFFFFF	/* Processor-specific */
+
 #pragma pack(push,1)
 struct SElfFileHeader32
 {
