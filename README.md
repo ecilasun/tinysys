@@ -53,3 +53,12 @@ Direct memory access unit. Used to copy blocks of memory within memory address s
 
 ## AXI4 bus
 The AXI4 bus, running at 166.67MHz, connects all of the processing units to memory or devices. In the case of memory, access is cached per perhipheral if needed. Device access is always uncached.
+
+# Custom instructions
+
+## Store mask (smask)
+
+This instruction sets the following 32bit write to memory to use a 4 bit byte mask so that only the bytes corresponding to high bits of the mask end up being written to memory.
+As soon as any following store instruction gets executed, subsequent stores revert back to regular behavior.
+
+```smask addressregister, maskimmed, sourceregister```

@@ -5,7 +5,6 @@ import axi4pkg::*;
 module gpucore(
 	input wire aclk,
 	input wire clk25,
-	input wire clk125,
 	input wire aresetn,
 	axi4if.master m_axi,
 	output wire vvsync,

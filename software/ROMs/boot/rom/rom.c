@@ -293,7 +293,7 @@ void ExecuteCmd(char *_cmd)
 
 		// TODO: These two values need to come from a CSR,
 		// pointing at a memory location with device config data (machineconfig?)
-		kprintf("Board:          : revision 1M\n");
+		kprintf("Board:          : revision 2B\n");
 		kprintf("CPU:            : 166.67MHz\n");
 
 		// Report USB serial chip version
@@ -309,6 +309,9 @@ void ExecuteCmd(char *_cmd)
 			kprintf("MAX3421(host)   : 0x%X\n", m3421rev);
 		else
 			kprintf("MAX3421(host)   : n/a\n");
+
+		// Video circuit on 2B has no info we can read
+		kprintf("SII164(video)   : 12bpp DVI\n");
 	}
 	else if (!strcmp(command, "help"))
 	{

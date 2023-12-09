@@ -9,7 +9,6 @@ module tinysoc #(
 	input wire clk25,
 	input wire clk50,
 	input wire clk100,
-	input wire clk125,
 	input wire clk166,
 	input wire clk200,
 	input wire aresetn,
@@ -154,7 +153,6 @@ wire [31:0] gpustate;
 gpucore GPU(
 	.aclk(aclk),
 	.clk25(clk25),
-	.clk125(clk125),
 	.aresetn(aresetn),
 	.m_axi(gpubus),
 	.vvsync(vvsync),

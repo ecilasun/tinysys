@@ -7,7 +7,6 @@ module clockandreset(
 	output wire clkaudio,
 	output wire clk25,
 	output wire clk50,
-	output wire clk125,
 	output wire clk100,
 	output wire clkbus,
 	output wire clk166,
@@ -27,7 +26,6 @@ centralclock centralclockinst(
 	.clk10(clk10),
 	.clk25(clk25),
 	.clk50(clk50),
-	.clk125(clk125),
 	.clk166(clk166),
 	.clk200(clk200),
 	.locked(centralclocklocked) );
