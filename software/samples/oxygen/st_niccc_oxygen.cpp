@@ -125,7 +125,7 @@ static int read_frame(void)
 				int r3 = (rgb & 0x700) >> 8;
 
 				// Set the actual hardware color register
-				GPUSetPal(15-b, r3*36,g3*36,b3*36);
+				GPUSetPal(15-b, r3*2,g3*2,b3*2);
 			}
 		}
 	}
@@ -227,7 +227,7 @@ static int read_frame_flip(void)
 				int r3 = (rgb & 0x700) >> 8;
 
 				// Set the actual hardware color register
-				GPUSetPal(15-b, r3*36,g3*36,b3*36);
+				GPUSetPal(15-b, r3*2,g3*2,b3*2);
 			}
 		}
 	}

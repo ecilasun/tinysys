@@ -51,7 +51,7 @@ uint32_t __attribute__ ((noinline)) SerialOutRingBufferRead(void* pvDest, const 
     return 1;
 }
 
-uint32_t __attribute__ ((noinline)) SerialOutRingBufferWrite( const void* pvSrc, const uint32_t cbSrc)
+uint32_t __attribute__ ((noinline)) SerialOutRingBufferWrite(const void* pvSrc, const uint32_t cbSrc)
 {
     uint8_t *ringbuffer = (uint8_t *)SEROUT_RINGBUFFER_BASE;
 
@@ -79,4 +79,11 @@ uint32_t __attribute__ ((noinline)) SerialOutRingBufferWrite( const void* pvSrc,
     *m_so_writeOffset = writeOffset;
 
     return 1;
+}
+
+uint32_t __attribute__ ((noinline)) SerialOutRingBufferAvailable()
+{
+    const uint32_t readOffset = *m_so_readOffset;
+    uint32_t writeOffset = *m_so_writeOffset;
+    return c_cbBufferSize - ( writeOffset - readOffset );
 }

@@ -111,7 +111,7 @@ int main()
 					uint8_t G = ((img>>8)&0x000000FF)>>2;
 					uint8_t R = ((img)&0x000000FF)>>3;
 
-					writepage[x+W] = MAKECOLORRGB16(R,G,B);
+					writepage[x+W] = MAKECOLORRGB12(R,G,B);
 				}
 			}
 

@@ -86,7 +86,7 @@ int main()
    // Grayscale palette
    for (uint32_t i=0; i<256; ++i)
    {
-      int j = 255-i;
+      int j = (255-i)>>4;
       GPUSetPal(i, j, j, j);
    }
 

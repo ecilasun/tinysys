@@ -11,7 +11,7 @@ module gpucore(
 	output wire vhsync,
 	output wire vclk,
 	output wire vde,
-	output wire [23:0] vdat,
+	output wire [11:0] vdat,
 	input wire gpufifoempty,
 	input wire [31:0] gpufifodout,
 	output wire gpufifore,
@@ -90,21 +90,22 @@ always_comb begin
 	newblock = scanlinecache[colorblock];
 end
 
-logic [23:0] rgbcolor;
+logic [11:0] rgbcolor;
 logic [7:0] paletteindex;
 
 // Generate actual RGB color for 16bit mode
 always_comb begin
+	// Pixel data is 12 bits but stored as 16 bits (the spare 4 bits are unused for now, could be utilized as alpha etc
 	unique case (colorpixel[2:0])
-		//                   B                        G                        R
-		3'b000: rgbcolor = { newblock[4:0],     3'd0, newblock[10:5],    2'd0, newblock[15:11],   3'd0 };
-		3'b001: rgbcolor = { newblock[20:16],   3'd0, newblock[26:21],   2'd0, newblock[31:27],   3'd0 };
-		3'b010: rgbcolor = { newblock[36:32],   3'd0, newblock[42:37],   2'd0, newblock[47:43],   3'd0 };
-		3'b011: rgbcolor = { newblock[52:48],   3'd0, newblock[58:53],   2'd0, newblock[63:59],   3'd0 };
-		3'b100: rgbcolor = { newblock[68:64],   3'd0, newblock[74:69],   2'd0, newblock[79:75],   3'd0 };
-		3'b101: rgbcolor = { newblock[84:80],   3'd0, newblock[90:85],   2'd0, newblock[95:91],   3'd0 };
-		3'b110: rgbcolor = { newblock[100:96],  3'd0, newblock[106:101], 2'd0, newblock[111:107], 3'd0 };
-		3'b111: rgbcolor = { newblock[116:112], 3'd0, newblock[122:117], 2'd0, newblock[127:123], 3'd0 };
+		//                   R:G:B                    UNUSED
+		3'b000: rgbcolor = { newblock[11:0]     }; // newblock[15:12]
+		3'b001: rgbcolor = { newblock[27:16]    }; // newblock[31:28]
+		3'b010: rgbcolor = { newblock[43:32]    }; // newblock[47:44]
+		3'b011: rgbcolor = { newblock[59:48]    }; // newblock[63:60] 
+		3'b100: rgbcolor = { newblock[75:64]    }; // newblock[79:76]
+		3'b101: rgbcolor = { newblock[91:80]    }; // newblock[95:92]
+		3'b110: rgbcolor = { newblock[107:96]   }; // newblock[111:108]
+		3'b111: rgbcolor = { newblock[123:112]  }; // newblock[127:124]
 	endcase
 end
 
@@ -135,9 +136,9 @@ end
 
 logic [7:0] palettewa;
 logic palettewe;
-logic [23:0] palettedin;
+logic [11:0] palettedin;
 
-logic [23:0] paletteentries[0:255];
+logic [11:0] paletteentries[0:255];
 
 initial begin
 	$readmemh("colorpalette.mem", paletteentries);
@@ -150,7 +151,7 @@ always @(posedge aclk) begin
 end
 
 // Read port
-logic [23:0] paletteout = 0;
+logic [11:0] paletteout = 0;
 always @(posedge clk25) begin
 	case ({scanenable, colormode})
 		2'b10: paletteout <= paletteentries[paletteindex];
@@ -174,18 +175,14 @@ vgatimer VideoScanout(
 	.vsynctrigger_o(),
 	.vsynccounter() );
 
-wire [3:0] vidG = paletteout[7:4];
-wire [3:0] vidB = paletteout[15:12];
-wire [3:0] vidR = paletteout[23:20];
-
 logic hsync_d, vsync_d, vde_d;
-logic [23:0] paletteout_d;
+logic [11:0] paletteout_d;
 wire notblank = (video_x < 12'd640) && (video_y < 12'd480);
 always @(posedge clk25) begin
 	hsync_d <= hsync;
 	vsync_d <= vsync;
 	vde_d <= notblank;
-	paletteout_d <= notblank ? {12'd0, vidR, vidG, vidB} : 24'd0;
+	paletteout_d <= notblank ? paletteout : 12'd0;
 end
 
 assign vhsync = hsync_d;
@@ -279,7 +276,9 @@ always_ff @(posedge aclk) begin
 			if (gpufifovalid && ~gpufifoempty) begin
 				palettewe <= 1'b1;
 				palettewa <= gpufifodout[31:24];	// 8 bit palette index
-				palettedin <= gpufifodout[23:0];	// 24 bit color
+				//??? <= gpufifodout[23:16];		// 8 bit extra data, unused
+				//??? <= gpufifodout[15:11];		// 4 bit extra data, alpha perhaps?
+				palettedin <= gpufifodout[11:0];	// 12 bit color
 				// Advance FIFO
 				cmdre <= 1'b1;
 				cmdmode <= FINALIZE;

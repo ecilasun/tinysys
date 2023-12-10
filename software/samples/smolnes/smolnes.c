@@ -274,7 +274,7 @@ int main(int argc, char **argv) {
   GPUClear(&s_vx, 0xFFFFFFFF);
 
 	for (uint32_t i=0; i<64; ++i)
-		GPUSetPal(i, g_palette[i*3+0], g_palette[i*3+1], g_palette[i*3+2]);
+		GPUSetPal(i, g_palette[i*3+0]>>4, g_palette[i*3+1]>>4, g_palette[i*3+2]>>4);
 
   for (;;) {
     cycles = nomem = 0;

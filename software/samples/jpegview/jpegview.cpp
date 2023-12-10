@@ -61,10 +61,10 @@ void DecodeJPEG(const char *fname)
 				{
 					for (int x=0;x<iW;++x)
 					{
-						uint8_t R = img[(x+y*W)*3+0]>>3;
-						uint8_t G = img[(x+y*W)*3+1]>>2;
-						uint8_t B = img[(x+y*W)*3+2]>>3;
-						image[x+y*640] = MAKECOLORRGB16(R,G,B);
+						uint8_t R = img[(x+y*W)*3+0]>>4;
+						uint8_t G = img[(x+y*W)*3+1]>>4;
+						uint8_t B = img[(x+y*W)*3+2]>>4;
+						image[x+y*640] = MAKECOLORRGB12(R,G,B);
 					}
 				}
 			}
@@ -75,7 +75,7 @@ void DecodeJPEG(const char *fname)
 					for (int i=0;i<iW;++i)
 					{
 						uint8_t V = img[i+j*W];
-						image[i+j*640] = MAKECOLORRGB16(V,V,V);
+						image[i+j*640] = MAKECOLORRGB12(V,V,V);
 					}
 			}
 			// Finish memory writes to display buffer

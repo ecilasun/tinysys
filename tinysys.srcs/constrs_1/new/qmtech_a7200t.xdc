@@ -84,7 +84,7 @@ set_property PULLUP true [get_ports sdcard_swtch]
 ## set_property -dict {PACKAGE_PIN Y1  IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[2]}]
 
 ## ------------------------------------------------------------------------------------------------------
-## Video output - SII164CTG64
+## 12bpp (4:4:4) Video output - SII164CTG64
 ## ------------------------------------------------------------------------------------------------------
 
 set_property -dict {PACKAGE_PIN AA3 IOSTANDARD LVCMOS33} [get_ports {vvsync}]
@@ -103,18 +103,18 @@ set_property -dict {PACKAGE_PIN U5  IOSTANDARD LVCMOS33} [get_ports {vdat[8]}]
 set_property -dict {PACKAGE_PIN T5  IOSTANDARD LVCMOS33} [get_ports {vdat[9]}]
 set_property -dict {PACKAGE_PIN T4  IOSTANDARD LVCMOS33} [get_ports {vdat[10]}]
 set_property -dict {PACKAGE_PIN R4  IOSTANDARD LVCMOS33} [get_ports {vdat[11]}]
-set_property -dict {PACKAGE_PIN P4  IOSTANDARD LVCMOS33} [get_ports {vdat[12]}]
-set_property -dict {PACKAGE_PIN P5  IOSTANDARD LVCMOS33} [get_ports {vdat[13]}]
-set_property -dict {PACKAGE_PIN P1  IOSTANDARD LVCMOS33} [get_ports {vdat[14]}]
-set_property -dict {PACKAGE_PIN R1  IOSTANDARD LVCMOS33} [get_ports {vdat[15]}]
-set_property -dict {PACKAGE_PIN N2  IOSTANDARD LVCMOS33} [get_ports {vdat[16]}]
-set_property -dict {PACKAGE_PIN P2  IOSTANDARD LVCMOS33} [get_ports {vdat[17]}]
-set_property -dict {PACKAGE_PIN M2  IOSTANDARD LVCMOS33} [get_ports {vdat[18]}]
-set_property -dict {PACKAGE_PIN M3  IOSTANDARD LVCMOS33} [get_ports {vdat[19]}]
-set_property -dict {PACKAGE_PIN K3  IOSTANDARD LVCMOS33} [get_ports {vdat[20]}]
-set_property -dict {PACKAGE_PIN L3  IOSTANDARD LVCMOS33} [get_ports {vdat[21]}]
-set_property -dict {PACKAGE_PIN J4  IOSTANDARD LVCMOS33} [get_ports {vdat[22]}]
-set_property -dict {PACKAGE_PIN K4  IOSTANDARD LVCMOS33} [get_ports {vdat[23]}]
+## set_property -dict {PACKAGE_PIN P4  IOSTANDARD LVCMOS33} [get_ports {vdat[12]}]
+## set_property -dict {PACKAGE_PIN P5  IOSTANDARD LVCMOS33} [get_ports {vdat[13]}]
+## set_property -dict {PACKAGE_PIN P1  IOSTANDARD LVCMOS33} [get_ports {vdat[14]}]
+## set_property -dict {PACKAGE_PIN R1  IOSTANDARD LVCMOS33} [get_ports {vdat[15]}]
+## set_property -dict {PACKAGE_PIN N2  IOSTANDARD LVCMOS33} [get_ports {vdat[16]}]
+## set_property -dict {PACKAGE_PIN P2  IOSTANDARD LVCMOS33} [get_ports {vdat[17]}]
+## set_property -dict {PACKAGE_PIN M2  IOSTANDARD LVCMOS33} [get_ports {vdat[18]}]
+## set_property -dict {PACKAGE_PIN M3  IOSTANDARD LVCMOS33} [get_ports {vdat[19]}]
+## set_property -dict {PACKAGE_PIN K3  IOSTANDARD LVCMOS33} [get_ports {vdat[20]}]
+## set_property -dict {PACKAGE_PIN L3  IOSTANDARD LVCMOS33} [get_ports {vdat[21]}]
+## set_property -dict {PACKAGE_PIN J4  IOSTANDARD LVCMOS33} [get_ports {vdat[22]}]
+## set_property -dict {PACKAGE_PIN K4  IOSTANDARD LVCMOS33} [get_ports {vdat[23]}]
 
 ## ------------------------------------------------------------------------------------------------------
 ## Audio output - CS4344-CZZR

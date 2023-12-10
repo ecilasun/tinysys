@@ -27,7 +27,7 @@ module tophat(
 	,output wire vhsync
 	,output wire vclk
 	,output wire vde
-	,output wire [23:0] vdat
+	,output wire [11:0] vdat
 	// Micro SD Card
 	,input wire sdcard_miso
 	,output wire sdcard_cs_n

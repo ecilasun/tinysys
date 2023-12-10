@@ -20,7 +20,7 @@ module tinysoc #(
 	output wire vhsync,
 	output wire vclk,
 	output wire vde,
-	output wire [23:0] vdat,
+	output wire [11:0] vdat,
 	ddr3sdramwires.def ddr3conn,
 	audiowires.def i2sconn,
 	sdcardwires.def sdconn,

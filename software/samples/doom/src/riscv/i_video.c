@@ -66,9 +66,9 @@ I_SetPalette(byte* palette)
 	// Copy palette to G-RAM
 	byte r, g, b;
 	for (int i=0 ; i<256 ; i++) {
-		r = gammatable[usegamma][*palette++];
-		g = gammatable[usegamma][*palette++];
-		b = gammatable[usegamma][*palette++];
+		r = gammatable[usegamma][*palette++]>>4;
+		g = gammatable[usegamma][*palette++]>>4;
+		b = gammatable[usegamma][*palette++]>>4;
 		GPUSetPal(i, r, g, b);
 	}
 }

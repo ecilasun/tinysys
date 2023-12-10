@@ -158,8 +158,12 @@ int USBSerialInit(uint32_t enableInterrupts)
 
 int USBSerialWriteN(const char *outstring, uint32_t count)
 {
-	for (uint32_t i=0; i<count; ++i)
-		SerialOutRingBufferWrite(&outstring[i], 1);
+	uint32_t i = 0;
+	do
+	{
+		uint32_t written = SerialOutRingBufferWrite(&outstring[i], 1);
+		i += written ? 1 : 0;
+	} while (i<count);
 	return count;
 }
 

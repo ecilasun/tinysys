@@ -25,8 +25,8 @@ struct SPrimitive
 };
 #pragma pack(pop)
 
-// Scanout hardware format is: 16bit B:G:R
-#define MAKECOLORRGB16(_r, _g, _b) ((_b<<11) | (_g<<5) | _r)
+// Hardware format is: 12bit R:B:G
+#define MAKECOLORRGB12(_r, _g, _b) ((((_r&0xF)<<8) | (_b&0xF)<<4) | (_g&0xF))
 
 enum EVideoMode
 {

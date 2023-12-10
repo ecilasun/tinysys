@@ -63,10 +63,10 @@ int main(int argc, char *argv[])
 	GPUSetVMode(&s_vx, EVS_Enable);
 	GPUClear(&s_vx, 0xFFFFFFFF);
 
-	// Apply the NES color palette
+	// Apply the NES color palette to our 12bit device
 	agnes_color_t *palette = agnes_get_palette(agnes);
 	for (uint32_t i=0; i<256; ++i)
-		GPUSetPal(i, palette[i].r, palette[i].g, palette[i].b);
+		GPUSetPal(i, palette[i].r>>4, palette[i].g>>4, palette[i].b>>4);
 
     agnes_input_t input;
 

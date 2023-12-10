@@ -81,12 +81,12 @@ inline void graphics_set_pixel(int x, int y, float r, float g, float b) {
    g = max(0.0f, min(1.0f, g));
    b = max(0.0f, min(1.0f, b));
   
-   uint16_t G = (uint16_t)(g*255.0f)>>2;
-   uint16_t R = (uint16_t)(r*255.0f)>>3;
-   uint16_t B = (uint16_t)(b*255.0f)>>3;
+   uint16_t G = (uint16_t)(g*255.0f)>>4;
+   uint16_t R = (uint16_t)(r*255.0f)>>4;
+   uint16_t B = (uint16_t)(b*255.0f)>>4;
 
    uint16_t *pixel = (uint16_t*)(framebuffer + (x+y*vx.m_graphicsWidth)*2);
-   *pixel = MAKECOLORRGB16(R,G,B);
+   *pixel = MAKECOLORRGB12(R,G,B);
 }
 
 
