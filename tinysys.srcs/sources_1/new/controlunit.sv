@@ -29,6 +29,7 @@ assign cpuclocktime = cyclecount;
 assign retired = retiredcount;
 
 logic [31:0] PC;
+logic [31:0] PCincrement;
 logic stepsize;
 logic [17:0] instrOneHotOut;
 logic [3:0] aluop;
@@ -239,6 +240,10 @@ always_comb begin
 	rwen = m_ibus.rdone || mulready || divready || divuready || wback;
 end
 
+always_comb begin
+	adjacentPC = PC + PCincrement;
+end
+
 // EXEC
 always @(posedge aclk) begin
 	btready <= 1'b0;	// Stop branch target ready strobe
@@ -301,7 +306,10 @@ always @(posedge aclk) begin
 				wbdest <= rd;
 				rwaddress <= rval1 + immed;
 				offsetPC <= PC + immed;
-				adjacentPC <= PC + (stepsize ? 32'd4 : 32'd2);
+				unique case (stepsize)
+					1'b0: PCincrement <= 32'd2;
+					1'b1: PCincrement <= 32'd4;
+				endcase
 
 				unique case (1'b1)
 					instrOneHotOut[`O_H_STORE]: begin

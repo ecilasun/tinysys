@@ -4,7 +4,7 @@
 #include "rombase.h"
 #include "xadc.h"
 #include "apu.h"
-#include "gpu.h"
+#include "vpu.h"
 #include "opl2.h"
 #include "dma.h"
 #include "usbserial.h"
@@ -116,27 +116,27 @@ void DeviceDefaultState(int _bootTime)
 
 	// Set up console view
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
-	GPUSetWriteAddress(kernelgfx, CONSOLE_FRAMEBUFFER_START);
-	GPUSetScanoutAddress(kernelgfx, CONSOLE_FRAMEBUFFER_START);
-	GPUSetDefaultPalette(kernelgfx);
+	VPUSetWriteAddress(kernelgfx, CONSOLE_FRAMEBUFFER_START);
+	VPUSetScanoutAddress(kernelgfx, CONSOLE_FRAMEBUFFER_START);
+	VPUSetDefaultPalette(kernelgfx);
 	kernelgfx->m_vmode = EVM_640_Wide;
 	kernelgfx->m_cmode = ECM_8bit_Indexed;
-	GPUSetVMode(kernelgfx, EVS_Enable);
+	VPUSetVMode(kernelgfx, EVS_Enable);
 
 	// Preserve contents of screen for non-boot time
 	if (_bootTime)
 	{
 		uint32_t waterMark = read_csr(0xFF0);
 		if (waterMark == 0) // On-device ROM
-			GPUConsoleSetColors(kernelgfx, s_consolefgcolor, s_consolebgcolor);
+			VPUConsoleSetColors(kernelgfx, s_consolefgcolor, s_consolebgcolor);
 		else // Overlay ROM (white on blue)
-			GPUConsoleSetColors(kernelgfx, s_devfgcolor, s_devbgcolor);
-		GPUConsoleClear(kernelgfx);
+			VPUConsoleSetColors(kernelgfx, s_devfgcolor, s_devbgcolor);
+		VPUConsoleClear(kernelgfx);
 	}
 
 	// Clear screen to overlay loader color
 	if (_bootTime == 2)
-		GPUClear(kernelgfx, 0x09090909);
+		VPUClear(kernelgfx, 0x09090909);
 }
 
 void ExecuteCmd(char *_cmd)
@@ -166,7 +166,7 @@ void ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "cls"))
 	{
-		GPUConsoleClear(kernelgfx);
+		VPUConsoleClear(kernelgfx);
 	}
 	else if (!strcmp(command, "reloc"))
 	{
@@ -184,9 +184,9 @@ void ExecuteCmd(char *_cmd)
 	else if (!strcmp(command, "reboot"))
 	{
 		// Blank
-		GPUConsoleClear(kernelgfx);
-		GPUClear(kernelgfx, 0x00000000);
-		GPUSetVMode(kernelgfx, EVS_Disable);
+		VPUConsoleClear(kernelgfx);
+		VPUClear(kernelgfx, 0x00000000);
+		VPUSetVMode(kernelgfx, EVS_Disable);
 		asm volatile(
 			"li s0, 0x0FFE0000;"
 			"jalr s0;"
@@ -667,7 +667,7 @@ int main()
 
 		// Refresh console output
 		if (kernelgfx->m_consoleUpdated)
-			GPUConsoleResolve(kernelgfx);
+			VPUConsoleResolve(kernelgfx);
 	}
 
 	return 0;

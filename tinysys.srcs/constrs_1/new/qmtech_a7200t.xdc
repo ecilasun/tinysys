@@ -228,8 +228,8 @@ set_clock_groups -name grpJ -asynchronous -group [get_clocks -of_objects [get_pi
 ## False paths
 ## ------------------------------------------------------------------------------------------------------
 
-## There is no path from GPU to I$, only appears so because we're connected to the same bus
-## set_false_path -from [get_pins {socinstance/GPU/m_axi\\.araddr_reg/CLK}] -to [get_pins socinstance/fetchdecodeinst/instructioncacheinst/instructioncachectlinst/dout_reg*/CE]
+## There is no path from VPU to I$, only appears so because we're connected to the same bus
+## set_false_path -from [get_pins {socinstance/VPU/m_axi\\.araddr_reg/CLK}] -to [get_pins socinstance/fetchdecodeinst/instructioncacheinst/instructioncachectlinst/dout_reg*/CE]
 
 ## Human input
 ## set_input_delay -clock [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT0]] 0.000 [get_ports sysresetn]

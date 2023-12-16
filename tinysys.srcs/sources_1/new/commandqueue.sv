@@ -18,7 +18,7 @@ logic [31:0] fifodin = 'd0;
 
 // Device command FIFO
 
-gpucmdring cmdfifoinst(
+commandring cmdfifoinst(
 	.full(fifofull),
 	.din(fifodin),
 	.wr_en(fifowe),

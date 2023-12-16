@@ -7,7 +7,7 @@
 #include "fat32/ff.h"
 #include "leds.h"
 #include "elf.h"
-#include "gpu.h"
+#include "vpu.h"
 
 #include <inttypes.h>
 #include <stdbool.h>

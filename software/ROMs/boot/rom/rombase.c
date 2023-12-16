@@ -27,7 +27,7 @@ int kprintfn(const int count, const char *fmt, ...)
 	l = count < l ? count : l;
 
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
-	GPUConsolePrint(kernelgfx, k_tmpstr, count);
+	VPUConsolePrint(kernelgfx, k_tmpstr, count);
 	CFLUSH_D_L1;
 
 	return l;
@@ -43,7 +43,7 @@ int kprintf(const char *fmt, ...)
 	va_end(va);
 
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
-	GPUConsolePrint(kernelgfx, k_tmpstr, 65536);
+	VPUConsolePrint(kernelgfx, k_tmpstr, 65536);
 	CFLUSH_D_L1;
 
 	return l;
@@ -59,7 +59,7 @@ void kgetcursor(int *_x, int *_y)
 void ksetcursor(const int _x, const int _y)
 {
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
-	GPUConsoleSetCursor(kernelgfx, _x, _y);
+	VPUConsoleSetCursor(kernelgfx, _x, _y);
 }
 
 uint32_t MountDrive()

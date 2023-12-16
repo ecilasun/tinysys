@@ -1,6 +1,6 @@
 #include <math.h>
 #include "core.h"
-#include "gpu.h"
+#include "vpu.h"
 #include "xadc.h"
 #include "task.h"
 #include "basesystem.h"
@@ -28,37 +28,37 @@ int main()
 	struct EVideoContext vx;
 	vx.m_vmode = EVM_640_Wide;
 	vx.m_cmode = ECM_16bit_RGB;
-	GPUSetVMode(&vx, EVS_Enable);
+	VPUSetVMode(&vx, EVS_Enable);
 
 	// Set up frame buffers
-	uint16_t *framebufferA = (uint16_t*)GPUAllocateBuffer(vx.m_graphicsWidth * vx.m_graphicsHeight * 2);
-	uint16_t *framebufferB = (uint16_t*)GPUAllocateBuffer(vx.m_graphicsWidth * vx.m_graphicsHeight * 2);
+	uint16_t *framebufferA = (uint16_t*)VPUAllocateBuffer(vx.m_graphicsWidth * vx.m_graphicsHeight * 2);
+	uint16_t *framebufferB = (uint16_t*)VPUAllocateBuffer(vx.m_graphicsWidth * vx.m_graphicsHeight * 2);
 
 	memset(framebufferA, 0x0, vx.m_graphicsWidth * vx.m_graphicsHeight * 2);
 	memset(framebufferB, 0x0, vx.m_graphicsWidth * vx.m_graphicsHeight * 2);
 
-	GPUSetWriteAddress(&vx, (uint32_t)framebufferA);
-	GPUSetScanoutAddress(&vx, (uint32_t)framebufferB);
-	GPUClear(&vx, 0x03030303);
+	VPUSetWriteAddress(&vx, (uint32_t)framebufferA);
+	VPUSetScanoutAddress(&vx, (uint32_t)framebufferB);
+	VPUClear(&vx, 0x03030303);
 
 	// Set up buffer for 32 bit imgui render output
 	// We try to align it to a cache boundary to support future DMA copies
-	uint32_t *imguiframebuffer = (uint32_t*)GPUAllocateBuffer(vx.m_graphicsWidth * vx.m_graphicsHeight * 4);
+	uint32_t *imguiframebuffer = (uint32_t*)VPUAllocateBuffer(vx.m_graphicsWidth * vx.m_graphicsHeight * 4);
 
 	memset(imguiframebuffer, 0x0, vx.m_graphicsWidth * vx.m_graphicsHeight * 4);
 
 	static float temps[] = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };
 
 	uint32_t cycle = 0;
-	//uint32_t prevvblankcount = GPUReadVBlankCounter();
+	//uint32_t prevvblankcount = VPUReadVBlankCounter();
 	do {
 		// Select next r/w pair
 		uint16_t *readpage = (cycle%2) ? framebufferA : framebufferB;
 		uint16_t *writepage = (cycle%2) ? framebufferB : framebufferA;
-		GPUSetWriteAddress(&vx, (uint32_t)writepage);
-		GPUSetScanoutAddress(&vx, (uint32_t)readpage);
+		VPUSetWriteAddress(&vx, (uint32_t)writepage);
+		VPUSetScanoutAddress(&vx, (uint32_t)readpage);
 
-		//uint32_t vblankcount = GPUReadVBlankCounter();
+		//uint32_t vblankcount = VPUReadVBlankCounter();
 		//if (vblankcount > prevvblankcount)
 		{
 			//prevvblankcount = vblankcount;
@@ -67,7 +67,7 @@ int main()
 			float temp_centigrates = (ADCcode*503.975f)/4096.f-273.15f;
 
 			// Clear write buffer
-			//GPUClearScreen((uint8_t*)imguiframebuffer, VIDEOMODE_640PALETTED, 0x0F0F0F0F);
+			//VPUClearScreen((uint8_t*)imguiframebuffer, VIDEOMODE_640PALETTED, 0x0F0F0F0F);
 
 			// Demo
 			io.DisplaySize = ImVec2(vx.m_graphicsWidth, vx.m_graphicsHeight);
@@ -97,7 +97,7 @@ int main()
 
 			// Convert to a coherent image for our 8bpp display
 			// NOTE: This will not be necessary when we support RGB frame buffers
-			// or one could add a GPU function to do this in hardware
+			// or one could add a VPU function to do this in hardware
 			// TODO: Could this not be a DMA feature? (i.e. convert-blit?)
 			for (uint32_t y=0;y<vx.m_graphicsHeight;++y)
 			{

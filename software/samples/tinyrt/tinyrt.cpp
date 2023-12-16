@@ -5,7 +5,7 @@
 #include <math.h>
 #include "core.h"
 #include "basesystem.h"
-#include "gpu.h"
+#include "vpu.h"
 #include <stdio.h>
 
 uint8_t *framebuffer = 0;
@@ -468,12 +468,12 @@ int main()
   // Enable video output
   vx.m_vmode = EVM_320_Wide;
   vx.m_cmode = ECM_16bit_RGB;
-  GPUSetVMode(&vx, EVS_Enable);
+  VPUSetVMode(&vx, EVS_Enable);
 
-  framebuffer = (uint8_t*)GPUAllocateBuffer(graphics_width * graphics_height * 2);
-  GPUSetWriteAddress(&vx, (uint32_t)framebuffer);
-  GPUSetScanoutAddress(&vx, (uint32_t)framebuffer);
-  GPUClear(&vx, 0x03030303);
+  framebuffer = (uint8_t*)VPUAllocateBuffer(graphics_width * graphics_height * 2);
+  VPUSetWriteAddress(&vx, (uint32_t)framebuffer);
+  VPUSetScanoutAddress(&vx, (uint32_t)framebuffer);
+  VPUClear(&vx, 0x03030303);
 
   init_scene();
 
@@ -489,7 +489,7 @@ int main()
   render(spheres, nb_spheres, lights, nb_lights);
 
   // Finalize all writes.
-  // GPU does not see CPU cache contents, so it needs
+  // VPU does not see CPU cache contents, so it needs
   // all data to be present in memory to show an intact image.
   CFLUSH_D_L1;
 

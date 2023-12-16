@@ -12,7 +12,8 @@
 
 #include "basesystem.h"
 #include "core.h"
-#include "gpu.h"
+#include "vpu.h"
+#include "rpu.h"
 #include "dma.h"
 #include <stdio.h>
 #include <string.h>
@@ -125,7 +126,7 @@ static int read_frame(void)
 				int r3 = (rgb & 0x700) >> 8;
 
 				// Set the actual hardware color register
-				GPUSetPal(15-b, r3*2,g3*2,b3*2);
+				VPUSetPal(15-b, r3*2,g3*2,b3*2);
 			}
 		}
 	}
@@ -227,7 +228,7 @@ static int read_frame_flip(void)
 				int r3 = (rgb & 0x700) >> 8;
 
 				// Set the actual hardware color register
-				GPUSetPal(15-b, r3*2,g3*2,b3*2);
+				VPUSetPal(15-b, r3*2,g3*2,b3*2);
 			}
 		}
 	}
@@ -312,9 +313,9 @@ static int read_frame_flip(void)
 
 int main(int argc, char** argv)
 {
-	s_framebufferB = GPUAllocateBuffer(320*240); // Or think of it as 1280*64 for tiles
-	s_framebufferA = GPUAllocateBuffer(320*240);
-	//s_rasterBuffer = GPUAllocateBuffer(80*60*16); // Rasterizer tile buffer
+	s_framebufferB = VPUAllocateBuffer(320*240); // Or think of it as 1280*64 for tiles
+	s_framebufferA = VPUAllocateBuffer(320*240);
+	//s_rasterBuffer = VPUAllocateBuffer(80*60*16); // Rasterizer tile buffer
 
 	//memset(s_rasterBuffer, 0x07, 80*60*16);
 	memset(s_framebufferA, 0x07, 320*240);
@@ -322,14 +323,14 @@ int main(int argc, char** argv)
 
 	s_vctx.m_vmode = EVM_320_Wide;
 	s_vctx.m_cmode = ECM_8bit_Indexed;
-	GPUSetVMode(&s_vctx, EVS_Enable);
-	GPUSetDefaultPalette(&s_vctx);
+	VPUSetVMode(&s_vctx, EVS_Enable);
+	VPUSetDefaultPalette(&s_vctx);
 
 	struct EVideoSwapContext sc;
 	sc.cycle = 0;
 	sc.framebufferA = s_framebufferA;
 	sc.framebufferB = s_framebufferB;
-	GPUSwapPages(&s_vctx, &sc);
+	VPUSwapPages(&s_vctx, &sc);
 
 	//RPUSetTileBuffer(&s_rctx, (uint32_t)s_rasterBuffer); // For hardware
 	RPUSetTileBuffer(&s_rctx, (uint32_t)sc.writepage);
@@ -375,12 +376,12 @@ int main(int argc, char** argv)
 				RPUBarrier(&s_rctx);
 				RPUWait(&s_rctx);
 
-				// TODO: Get the DMA unit to resolve and write output onto the current GPU write page
+				// TODO: Get the DMA unit to resolve and write output onto the current VPU write page
 				//DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)sc.writepage);
 
 				if (argc<=1) // no vsync if we have a command line argument
-					GPUWaitVSync();
-				GPUSwapPages(&s_vctx, &sc);
+					VPUWaitVSync();
+				VPUSwapPages(&s_vctx, &sc);
 				RPUSetTileBuffer(&s_rctx, (uint32_t)sc.writepage);
 			} while(res);
 		}
@@ -398,12 +399,12 @@ int main(int argc, char** argv)
 				RPUBarrier(&s_rctx);
 				RPUWait(&s_rctx);
 
-				// TODO: Get the DMA unit to resolve and write output onto the current GPU write page
+				// TODO: Get the DMA unit to resolve and write output onto the current VPU write page
 				//DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)sc.writepage);
 
 				if (argc<=1) // no vsync if we have a command line argument
-					GPUWaitVSync();
-				GPUSwapPages(&s_vctx, &sc);
+					VPUWaitVSync();
+				VPUSwapPages(&s_vctx, &sc);
 				RPUSetTileBuffer(&s_rctx, (uint32_t)sc.writepage);
 			} while(res);
 		}

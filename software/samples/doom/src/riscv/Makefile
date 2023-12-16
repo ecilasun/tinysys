@@ -22,7 +22,7 @@ SOURCES_doom_arch := \
 	../../../../SDK/core.c \
 	../../../../SDK/basesystem.c \
 	../../../../SDK/apu.c \
-	../../../../SDK/gpu.c \
+	../../../../SDK/vpu.c \
 	../../../../SDK/dma.c \
 	../../../../SDK/usbhost.c \
 	../../../../SDK/keyboard.c \

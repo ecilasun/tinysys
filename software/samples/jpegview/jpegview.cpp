@@ -1,5 +1,5 @@
 #include "core.h"
-#include "gpu.h"
+#include "vpu.h"
 #include "sdcard.h"
 
 #include <stdio.h>
@@ -91,15 +91,15 @@ int main(int argc, char** argv )
 {
 	// Set aside space for the decompressed image
 	// NOTE: Video scanout buffer has to be aligned at 64 byte boundary
-	image = (uint16_t*)GPUAllocateBuffer(640*480*2);
+	image = (uint16_t*)VPUAllocateBuffer(640*480*2);
 
 	struct EVideoContext vx;
 	vx.m_vmode = EVM_640_Wide;
 	vx.m_cmode = ECM_16bit_RGB;
-	GPUSetVMode(&vx, EVS_Enable);
-	GPUSetWriteAddress(&vx, (uint32_t)image);
-	GPUSetScanoutAddress(&vx, (uint32_t)image);
-	GPUClear(&vx, 0x03030303);
+	VPUSetVMode(&vx, EVS_Enable);
+	VPUSetWriteAddress(&vx, (uint32_t)image);
+	VPUSetScanoutAddress(&vx, (uint32_t)image);
+	VPUClear(&vx, 0x03030303);
 
 	if (argc<=1)
 		DecodeJPEG("sd:test.jpg");

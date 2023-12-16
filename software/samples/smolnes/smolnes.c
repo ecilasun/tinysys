@@ -4,7 +4,7 @@
 // tinysys SDK files
 #include "basesystem.h"
 #include "core.h"
-#include "gpu.h"
+#include "vpu.h"
 #include "dma.h"
 #include "leds.h"
 #include "task.h"
@@ -264,17 +264,17 @@ int main(int argc, char **argv) {
   PCL = mem(~3, ~0, 0, 0);
   PCH = mem(~2, ~0, 0, 0);
 
-  s_backbuffer = (uint32_t*)GPUAllocateBuffer(320 * 240);
-  GPUSetWriteAddress(&s_vx, (uint32_t)s_backbuffer);
-  GPUSetScanoutAddress(&s_vx, (uint32_t)s_backbuffer);
-  GPUSetDefaultPalette(&s_vx);
+  s_backbuffer = (uint32_t*)VPUAllocateBuffer(320 * 240);
+  VPUSetWriteAddress(&s_vx, (uint32_t)s_backbuffer);
+  VPUSetScanoutAddress(&s_vx, (uint32_t)s_backbuffer);
+  VPUSetDefaultPalette(&s_vx);
   s_vx.m_vmode = EVM_320_Wide;
   s_vx.m_cmode = ECM_8bit_Indexed;
-  GPUSetVMode(&s_vx, EVS_Enable);
-  GPUClear(&s_vx, 0xFFFFFFFF);
+  VPUSetVMode(&s_vx, EVS_Enable);
+  VPUClear(&s_vx, 0xFFFFFFFF);
 
 	for (uint32_t i=0; i<64; ++i)
-		GPUSetPal(i, g_palette[i*3+0]>>4, g_palette[i*3+1]>>4, g_palette[i*3+2]>>4);
+		VPUSetPal(i, g_palette[i*3+0]>>4, g_palette[i*3+1]>>4, g_palette[i*3+2]>>4);
 
   for (;;) {
     cycles = nomem = 0;

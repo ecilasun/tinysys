@@ -68,7 +68,7 @@
 // Each device has 4 Kbytes of continous, uncached memory region mapped to it
 #define DEVICE_RPUC (DEVICE_BASE+0x0000)
 #define DEVICE_LEDS (DEVICE_BASE+0x1000)
-#define DEVICE_GPUC (DEVICE_BASE+0x2000)
+#define DEVICE_VPUC (DEVICE_BASE+0x2000)
 #define DEVICE_SPIC (DEVICE_BASE+0x3000)
 #define DEVICE_CSRF (DEVICE_BASE+0x4000)
 #define DEVICE_XADC (DEVICE_BASE+0x5000)

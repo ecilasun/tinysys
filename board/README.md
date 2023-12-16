@@ -41,7 +41,7 @@ For software, visit https://github.com/ecilasun/riscvtool and check the tinysys 
     - Device memory map
     - Raw audio
     - OPL2 audio
-    - GPU
+    - VPU (video processing unit)
     - DMA
 	- Rasterizer
     - Temperature sensor

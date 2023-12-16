@@ -7,7 +7,7 @@
 
 #include "basesystem.h"
 #include "core.h"
-#include "gpu.h"
+#include "vpu.h"
 
 uint8_t *framebuffer;
 
@@ -74,20 +74,20 @@ int main()
 {
    // Set up frame buffer
    // NOTE: Video scanout buffer has to be aligned at 64 byte boundary
-   framebuffer = GPUAllocateBuffer(320*240);
+   framebuffer = VPUAllocateBuffer(320*240);
    struct EVideoContext vx;
    vx.m_vmode = EVM_320_Wide;
    vx.m_cmode = ECM_8bit_Indexed;
-   GPUSetVMode(&vx, EVS_Enable);
-   GPUSetWriteAddress(&vx, (uint32_t)framebuffer);
-   GPUSetScanoutAddress(&vx, (uint32_t)framebuffer);
-   GPUClear(&vx, 0x03030303);
+   VPUSetVMode(&vx, EVS_Enable);
+   VPUSetWriteAddress(&vx, (uint32_t)framebuffer);
+   VPUSetScanoutAddress(&vx, (uint32_t)framebuffer);
+   VPUClear(&vx, 0x03030303);
 
    // Grayscale palette
    for (uint32_t i=0; i<256; ++i)
    {
       int j = (255-i)>>4;
-      GPUSetPal(i, j, j, j);
+      VPUSetPal(i, j, j, j);
    }
 
    float R = 4.0E-5f + 0.01f; // Step once to see some detail due to adaptive code
@@ -99,7 +99,7 @@ int main()
    while(1)
    {
       // Generate one line of mandelbrot into offscreen buffer
-      // NOTE: It is unlikely that CPU write speeds can catch up with GPU DMA transfer speed, should not see a flicker
+      // NOTE: It is unlikely that CPU write speeds can catch up with VPU DMA transfer speed, should not see a flicker
       mandelbrotFloat(X,Y,R);
 
       tilex++;

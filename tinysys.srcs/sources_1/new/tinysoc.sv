@@ -31,28 +31,27 @@ module tinysoc #(
 // Bus lines
 // --------------------------------------------------
 
-axi4if instructionbus();	// Fetch bus
-axi4if databus();			// Data bus
-axi4if gpubus();			// Graphics unit bus
-axi4if dmabus();			// Direct memory access bus
-axi4if romcopybus();		// Bus for boot ROM copy (TODO: switch between ROM types?)
-axi4if audiobus();			// Bus for audio device output
+axi4if instructionbusHart0();	// Fetch bus for HART#0
+axi4if databusHart0();			// Data bus for HART#0
+axi4if devicebusHart0();		// Direct access to devices from data unit of HART#0
 
-axi4if memorybus();			// Arbitrated access to main memory
-axi4if devicebus();			// Direct access to devices from data unit
+axi4if videobus();				// Video output unit bus
+axi4if dmabus();				// Direct memory access bus
+axi4if romcopybus();			// Bus for boot ROM copy (TODO: switch between ROM types?)
+axi4if audiobus();				// Bus for audio device output
 
-axi4if ledif();				// Sub bus: LED contol device
-axi4if gpucmdif();			// Sub bus: GPU command fifo
-axi4if spiif();				// Sub bus: SPI control device
-axi4if csrif();				// Sub bus: CSR file device
-axi4if xadcif();			// Sub bus: ADC controller
-axi4if dmaif();				// Sub bus: DMA controller
-axi4if usbcif();			// Sub bus: USB-C controller (device)
-axi4if audioif();			// Sub bus: APU i2s audio output unit
-axi4if opl2if();			// Sub bus: OPL2 interface
-axi4if usbaif();			// Sub bus: USB-A controller (host)
+axi4if memorybus();				// Arbitrated access to main memory
 
-ibusif internaldatabus();	// Internal bus from control unit to data unit
+axi4if ledif();					// Sub bus: LED contol device
+axi4if vpucmdif();				// Sub bus: VPU command fifo
+axi4if spiif();					// Sub bus: SPI control device
+axi4if csrif();					// Sub bus: CSR file device
+axi4if xadcif();				// Sub bus: ADC controller
+axi4if dmaif();					// Sub bus: DMA controller
+axi4if usbcif();				// Sub bus: USB-C controller (device)
+axi4if audioif();				// Sub bus: APU i2s audio output unit
+axi4if opl2if();				// Sub bus: OPL2 interface
+axi4if usbaif();				// Sub bus: USB-A controller (host)
 
 // --------------------------------------------------
 // Wall clock
@@ -78,93 +77,54 @@ always @(posedge aclk) begin
 end
 
 // --------------------------------------------------
-// Fetch unit
+// HART#0
 // --------------------------------------------------
 
-wire branchresolved;
-wire [31:0] branchtarget;
-wire ififoempty;
-wire ififovalid;
-wire [131:0] ififodout;
-wire ififord_en;
-wire [1:0] irqReq;
-wire [31:0] mepc;
-wire [31:0] mtvec;
-wire sie;
-wire romReady;
+wire romReady, sieHart0;
+wire [63:0] cpuclocktimeHart0;
+wire [63:0] retiredHart0;
+wire [31:0] mepcHart0;
+wire [31:0] mtvecHart0;
+wire [1:0] irqReqHart0;
 
-// Reset vector at last 64K of DDR3 SDRAM
-fetchunit #(.RESETVECTOR(RESETVECTOR)) fetchdecodeinst (
+riscv #(.RESETVECTOR(RESETVECTOR)) hart0(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.branchresolved(branchresolved),
-	.branchtarget(branchtarget),
-	.ififoempty(ififoempty),
-	.ififovalid(ififovalid),
-	.ififodout(ififodout),
-	.ififord_en(ififord_en),
-	.irqReq(irqReq),
-	.mepc(mepc),
-	.mtvec(mtvec),
-	.sie(sie),
 	.romReady(romReady),
-	.m_axi(instructionbus) );
-
-// --------------------------------------------------
-// Data unit
-// --------------------------------------------------
-
-dataunit dataunitinst (
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.s_ibus(internaldatabus), 	// CPU access for r/w
-	.databus(databus),			// Access to memory
-	.devicebus(devicebus) );	// Access to devices
-
-// --------------------------------------------------
-// Control unit
-// --------------------------------------------------
-
-wire [63:0] cpuclocktime;
-wire [63:0] retired;
-
-controlunit #(.CID(32'h00000000)) controlunitinst (
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.branchresolved(branchresolved),
-	.branchtarget(branchtarget),
-	.ififoempty(ififoempty),
-	.ififovalid(ififovalid),
-	.ififodout(ififodout),
-	.ififord_en(ififord_en), 
-	.cpuclocktime(cpuclocktime),
-	.retired(retired),
-	.m_ibus(internaldatabus));
+	.sie(sieHart0),
+	.mepc(mepcHart0),
+	.mtvec(mtvecHart0),
+	.irqReq(irqReqHart0),
+	.instructionbus(instructionbusHart0),
+	.databus(databusHart0),
+	.devicebus(devicebusHart0),
+	.cpuclocktime(cpuclocktimeHart0),
+	.retired(retiredHart0));
 
 // --------------------------------------------------
 // Graphics unit
 // --------------------------------------------------
 
-wire gpufifoempty;
-wire [31:0] gpufifodout;
-wire gpufifore;
-wire gpufifovalid;
-wire [31:0] gpustate;
-gpucore GPU(
+wire vpufifoempty;
+wire [31:0] vpufifodout;
+wire vpufifore;
+wire vpufifovalid;
+wire [31:0] vpustate;
+videocore VPU(
 	.aclk(aclk),
 	.clk25(clk25),
 	.aresetn(aresetn),
-	.m_axi(gpubus),
+	.m_axi(videobus),
 	.vvsync(vvsync),
 	.vhsync(vhsync),
 	.vclk(vclk),
 	.vde(vde),
 	.vdat(vdat),
-	.gpufifoempty(gpufifoempty),
-	.gpufifodout(gpufifodout),
-	.gpufifore(gpufifore),
-	.gpufifovalid(gpufifovalid),
-	.gpustate(gpustate));
+	.vpufifoempty(vpufifoempty),
+	.vpufifodout(vpufifodout),
+	.vpufifore(vpufifore),
+	.vpufifovalid(vpufifovalid),
+	.vpustate(vpustate));
 
 // --------------------------------------------------
 // DMA unit
@@ -234,7 +194,7 @@ axi4i2saudio APU(
 arbiter arbiter6x1instSDRAM(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.axi_s({romcopybus, audiobus, dmabus, gpubus, databus, instructionbus}),
+	.axi_s({romcopybus, audiobus, dmabus, videobus, databusHart0, instructionbusHart0}),
 	.axi_m(memorybus) );
 
 // --------------------------------------------------
@@ -268,7 +228,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // dev   start     end       addrs[30:12]                 size  notes
 // ----: 80000000  80000FFF  19'b000_0000_0000_0000_0000  4KB
 // LEDS: 80001000  80001FFF  19'b000_0000_0000_0000_0001  4KB
-// GPUC: 80002000  80002FFF  19'b000_0000_0000_0000_0010  4KB
+// VPUC: 80002000  80002FFF  19'b000_0000_0000_0000_0010  4KB
 // SDCC: 80003000  80003FFF  19'b000_0000_0000_0000_0011  4KB
 // CSRF: 80004000  80004FFF  19'b000_0000_0000_0000_0100  4KB	HART#0
 // XADC: 80005000  80005FFF  19'b000_0000_0000_0000_0101  4KB
@@ -286,7 +246,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 devicerouter devicerouterinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
-    .axi_s(devicebus),
+    .axi_s(devicebusHart0),				// TODO: Will need this to come from a bus arbiter
     .addressmask({
     	19'b000_0000_0000_0000_1010,	// USBA USB-A access via SPI
     	19'b000_0000_0000_0000_1001,	// OPL2	OPL2(YM8312) Command and Register Ports
@@ -296,9 +256,9 @@ devicerouter devicerouterinst(
     	19'b000_0000_0000_0000_0101,	// XADC Analog / Digital Converter Interface
 		19'b000_0000_0000_0000_0100,	// CSRF Control and Status Register File for HART#0
 		19'b000_0000_0000_0000_0011,	// SDCC SDCard access via SPI
-		19'b000_0000_0000_0000_0010,	// GPUC Graphics Processing Unit Command Fifo
+		19'b000_0000_0000_0000_0010,	// VPUC Graphics Processing Unit Command Fifo
 		19'b000_0000_0000_0000_0001}),	// LEDS Debug / Status LED interface
-    .axi_m({usbaif, opl2if, audioif, usbcif, dmaif, xadcif, csrif, spiif, gpucmdif, ledif}));
+    .axi_m({usbaif, opl2if, audioif, usbcif, dmaif, xadcif, csrif, spiif, vpucmdif, ledif}));
 
 // --------------------------------------------------
 // Interrupt wires
@@ -317,15 +277,15 @@ axi4led leddevice(
 	.s_axi(ledif),
 	.led(leds) );
 
-commandqueue gpucmdinst(
+commandqueue vpucmdinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.s_axi(gpucmdif),
-	.fifoempty(gpufifoempty),
-	.fifodout(gpufifodout),
-	.fifore(gpufifore),
-	.fifovalid(gpufifovalid),
-	.devicestate(gpustate));
+	.s_axi(vpucmdif),
+	.fifoempty(vpufifoempty),
+	.fifodout(vpufifodout),
+	.fifore(vpufifore),
+	.fifovalid(vpufifovalid),
+	.devicestate(vpustate));
 
 axi4sdcard sdcardinst(
 	.aclk(aclk),
@@ -356,23 +316,23 @@ axi4usbc usbhostport(
 // Access to register indices get mapped to LOAD/STORE
 // and addresses get mapped starting at 0x80004000 + csroffset
 // CSR module also acts as the interrupt generator
-axi4CSRFile csrfileinst(
+axi4CSRFile csrfileinstHart0(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.cpuclocktime(cpuclocktime),
+	.cpuclocktime(cpuclocktimeHart0),
 	.wallclocktime(wallclocktime),
-	.retired(retired),
+	.retired(retiredHart0),
 	// IRQ tracking
-	.irqReq(irqReq),
+	.irqReq(irqReqHart0),
 	// External interrupt wires
 	.keyfifoempty(keyfifoempty),
 	.usbirq({usbairq, usbcirq}),
 	// Soft reset
 	.sysresetn(sysresetn),
 	// Shadow registers
-	.mepc(mepc),
-	.mtvec(mtvec),
-	.sie(sie),
+	.mepc(mepcHart0),
+	.mtvec(mtvecHart0),
+	.sie(sieHart0),
 	// Bus
 	.s_axi(csrif) );
 

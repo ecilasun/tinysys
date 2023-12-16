@@ -1,6 +1,6 @@
 #include "basesystem.h"
 #include "core.h"
-#include "gpu.h"
+#include "vpu.h"
 #include "dma.h"
 #include <stdio.h>
 #include <string.h>
@@ -55,14 +55,14 @@ int main(int argc, char *argv[])
 {
 	printf("Hardware rasterization prototype in software\n");
 
-	s_framebufferB = GPUAllocateBuffer(320*240); // Or think of it as 1280*64 for tiles
-	s_framebufferA = GPUAllocateBuffer(320*240);
+	s_framebufferB = VPUAllocateBuffer(320*240); // Or think of it as 1280*64 for tiles
+	s_framebufferA = VPUAllocateBuffer(320*240);
 
 	struct EVideoContext vx;
 	vx.m_vmode = EVM_320_Wide;
 	vx.m_cmode = ECM_8bit_Indexed;
-	GPUSetVMode(&vx, EVS_Enable);
-	GPUSetDefaultPalette(&vx);
+	VPUSetVMode(&vx, EVS_Enable);
+	VPUSetDefaultPalette(&vx);
 
 	// Make sure CPU writes are visible in memory
 	CFLUSH_D_L1;
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
 	sc.cycle = 0;
 	sc.framebufferA = s_framebufferA;
 	sc.framebufferB = s_framebufferB;
-	GPUSwapPages(&vx, &sc);
+	VPUSwapPages(&vx, &sc);
 
 	while (1)
 	{
@@ -317,8 +317,8 @@ int main(int argc, char *argv[])
 
 		R += 0.01f;
 
-		GPUWaitVSync();
-		GPUSwapPages(&vx, &sc);
+		VPUWaitVSync();
+		VPUSwapPages(&vx, &sc);
 	}
 
 	return 0;

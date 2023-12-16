@@ -557,7 +557,7 @@ bool agnes_load_ines_data(agnes_t *agnes, void *data, size_t data_size) {
     cpu_init(&agnes->cpu, agnes);
     ppu_init(&agnes->ppu, agnes);
 
-	agnes->ppu.screen_buffer = GPUAllocateBuffer(AGNES_SCREEN_HEIGHT * AGNES_SCREEN_WIDTH);
+	agnes->ppu.screen_buffer = VPUAllocateBuffer(AGNES_SCREEN_HEIGHT * AGNES_SCREEN_WIDTH);
     
     return true;
 }

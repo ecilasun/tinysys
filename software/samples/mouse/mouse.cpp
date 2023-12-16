@@ -1,6 +1,7 @@
 #include "basesystem.h"
 #include "core.h"
-#include "gpu.h"
+#include "vpu.h"
+#include "rpu.h"
 #include "task.h"
 #include "dma.h"
 #include <stdio.h>
@@ -66,27 +67,27 @@ int main(int argc, char *argv[])
 	int16_t prevX = -1;
 	int16_t prevY = -1;
 
-	uint8_t *bufferB = GPUAllocateBuffer(W*H);
-	uint8_t *bufferA = GPUAllocateBuffer(W*H);
-	uint8_t *s_rasterBuffer = GPUAllocateBuffer(80*60*16); // Tile buffer
+	uint8_t *bufferB = VPUAllocateBuffer(W*H);
+	uint8_t *bufferA = VPUAllocateBuffer(W*H);
+	uint8_t *s_rasterBuffer = VPUAllocateBuffer(80*60*16); // Tile buffer
 	memset(s_rasterBuffer, 0x00, 80*60*16); // Black
 
 	// Draw surface
-	SDrawPoints *drawBuffer = (SDrawPoints*)GPUAllocateBuffer(W*H);
+	SDrawPoints *drawBuffer = (SDrawPoints*)VPUAllocateBuffer(W*H);
 
     vx.m_vmode = EVM_320_Wide;
     vx.m_cmode = ECM_8bit_Indexed;
-	GPUSetVMode(&vx, EVS_Enable);
+	VPUSetVMode(&vx, EVS_Enable);
 
 	struct ERasterizerContext rc;
 
-	GPUSetDefaultPalette(&vx);
+	VPUSetDefaultPalette(&vx);
 	RPUSetTileBuffer(&rc, (uint32_t)s_rasterBuffer);
 
 	sc.cycle = 0;
 	sc.framebufferA = bufferA;
 	sc.framebufferB = bufferB;
-	GPUSwapPages(&vx, &sc);
+	VPUSwapPages(&vx, &sc);
 
 	while (1)
 	{
@@ -152,8 +153,8 @@ int main(int argc, char *argv[])
 		// Complete memory writes from CPU side
 		CFLUSH_D_L1;
 
-		GPUWaitVSync();
-		GPUSwapPages(&vx, &sc);
+		VPUWaitVSync();
+		VPUSwapPages(&vx, &sc);
 	}
 
 	return 0;

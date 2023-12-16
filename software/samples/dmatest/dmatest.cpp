@@ -1,6 +1,6 @@
 #include "basesystem.h"
 #include "core.h"
-#include "gpu.h"
+#include "vpu.h"
 #include "dma.h"
 #include <stdio.h>
 
@@ -13,19 +13,19 @@ int main(int argc, char *argv[])
 
 	printf("Preparing buffers\n");
 
-	// Create source and target buffers (using GPU functions to get aligned buffer addresses)
-	uint8_t *bufferB = GPUAllocateBuffer(W*H);
-	uint8_t *bufferA = GPUAllocateBuffer(W*H*3);
+	// Create source and target buffers (using VPU functions to get aligned buffer addresses)
+	uint8_t *bufferB = VPUAllocateBuffer(W*H);
+	uint8_t *bufferA = VPUAllocateBuffer(W*H*3);
 
 	struct EVideoContext vx;
     vx.m_vmode = EVM_320_Wide;
     vx.m_cmode = ECM_8bit_Indexed;
-	GPUSetVMode(&vx, EVS_Enable);
+	VPUSetVMode(&vx, EVS_Enable);
 
 	// Set buffer B as output
-	GPUSetWriteAddress(&vx, (uint32_t)bufferA);
-	GPUSetScanoutAddress(&vx, (uint32_t)bufferB);
-	GPUSetDefaultPalette(&vx);
+	VPUSetWriteAddress(&vx, (uint32_t)bufferA);
+	VPUSetScanoutAddress(&vx, (uint32_t)bufferB);
+	VPUSetDefaultPalette(&vx);
 
 	// Fill buffer A with some data
 	for (uint32_t y=0;y<H*3;++y)
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 	int32_t averagetime = 131072;
 	int32_t outstats = 0;
 	uint64_t starttime = E32ReadTime();
-	uint32_t prevvsync = GPUReadVBlankCounter();
+	uint32_t prevvsync = VPUReadVBlankCounter();
 	while (1)
 	{
 		// Wait until there are no more DMA operations in flight
@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 		{
 			uint32_t currentvsync;
 			do {
-				currentvsync = GPUReadVBlankCounter();
+				currentvsync = VPUReadVBlankCounter();
 			} while (currentvsync == prevvsync);
 			prevvsync = currentvsync;
 		}

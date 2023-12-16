@@ -37,8 +37,8 @@ This unit reads an instruction at PC, decodes it and outputs it (together with i
 ### Execute/Load/Store
 This unit will read an instruction from the IFIFO if available, load registers with values, execute (ALU/BLU/CSR/SYS) and decide on new branch target if there's a branch involved. After deciding on the branch address, fetch unit is notified so it can resume instruction fetches. Where possible, load or store operations will overlap with fetch and execution.
 
-## GPU
-Graphics processing unit. Handles scan-out of various video sizes (320x240 and 640x480) and bit depths (8bpp index color or 16bpp RGB color)
+## VPU
+Video processing unit. Handles scan-out of various video sizes (320x240 and 640x480) and bit depths (8bpp index color or 16bpp RGB color)
 
 ## APU
 Audio processing unit. Handles mixing the OPL2/RAW audio outputs, and also manages 44/22/11KHz playback and buffer handling of RAW audio.

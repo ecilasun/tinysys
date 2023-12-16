@@ -35,24 +35,24 @@ void DMATag(const uint32_t _tag)
 	*DMAIO = _tag;
 }
 
-void DMAResolveTiles(const uint32_t _rpuTileBuffer16ByteAligned, const uint32_t _gpuWritePage16ByteAligned)
+void DMAResolveTiles(const uint32_t _rpuTileBuffer16ByteAligned, const uint32_t _vpuWritePage16ByteAligned)
 {
 	// NOTE: 4x1 tile software version is a straigth memcpy
-	__builtin_memcpy((void*)_gpuWritePage16ByteAligned, (void*)_rpuTileBuffer16ByteAligned, 240*320);
+	__builtin_memcpy((void*)_vpuWritePage16ByteAligned, (void*)_rpuTileBuffer16ByteAligned, 240*320);
 
 	// TODO: Let hardware handle this
 	/*
 	*DMAIO = DMACMD_SETSOURCE;
 	*DMAIO = _rpuTileBuffer16ByteAligned;
 	*DMAIO = DMACMD_SETTARGET;
-	*DMAIO = _gpuWritePage16ByteAligned;
+	*DMAIO = _vpuWritePage16ByteAligned;
 	*DMAIO = DMACMD_RESOLVETILES;*/
 
 	// Software emulation
 	/*for (uint32_t ty=0; ty<60; ++ty) // 240/4
 	{
 		uint32_t Y = _rpuTileBuffer16ByteAligned + ty*80*16;
-		uint32_t U = _gpuWritePage16ByteAligned + ty*4*320;
+		uint32_t U = _vpuWritePage16ByteAligned + ty*4*320;
 		for (uint32_t tx=0;tx<80;++tx) // 320/4
 		{
 			// Read 16 byte source

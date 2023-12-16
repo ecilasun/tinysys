@@ -40,7 +40,7 @@ rcsid[] = "$Id: v_video.c,v 1.5 1997/02/03 22:45:13 b1 Exp $";
 #include "v_video.h"
 
 #include "core.h"
-#include "gpu.h"
+#include "vpu.h"
 
 // Each screen is [SCREENWIDTH*SCREENHEIGHT];
 byte*                           screens[5];

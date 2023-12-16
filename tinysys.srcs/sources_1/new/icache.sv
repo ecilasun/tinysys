@@ -37,7 +37,6 @@ logic [14:0] cachelinetags[0:255];	// cache line tags (14 bits) + 1 bit for vali
 logic cachewe = 1'b0;				// write control
 logic [511:0] cdin;					// input data to write to cache
 wire [511:0] cdout;					// output data read from cache
-logic [511:0] lastcdout;			// last cache line contents we've read
 
 logic flushing = 1'b0;				// high during cache flush operation
 logic [7:0] dccount = 8'h00;		// line counter for cache flush/invalidate ops
@@ -71,7 +70,7 @@ always @(posedge aclk) begin
 	if (ctagwe)
 		cachelinetags[clineaddr] <= clinedin;
 end
-wire [17:0] ctagdout = cachelinetags[clineaddr];
+wire [14:0] ctagdout = cachelinetags[clineaddr];
 
 // ----------------------------------------------------------------------------
 // cached/uncached memory controllers

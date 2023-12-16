@@ -2,7 +2,7 @@
 #include <cstdlib>
 
 #include "core.h"
-#include "gpu.h"
+#include "vpu.h"
 #include "xadc.h"
 
 int main( int argc, char **argv )
@@ -11,18 +11,18 @@ int main( int argc, char **argv )
 
 	uint32_t temperaturebuffer[320];
 
-	uint8_t *framebufferB = GPUAllocateBuffer(320*240);
-	uint8_t *framebufferA = GPUAllocateBuffer(320*240);
+	uint8_t *framebufferB = VPUAllocateBuffer(320*240);
+	uint8_t *framebufferA = VPUAllocateBuffer(320*240);
 
 	struct EVideoContext vx;
 	vx.m_vmode = EVM_320_Wide;
 	vx.m_cmode = ECM_8bit_Indexed;
-	GPUSetVMode(&vx, EVS_Enable);
+	VPUSetVMode(&vx, EVS_Enable);
 
 	// Set buffer B as output
-	GPUSetWriteAddress(&vx, (uint32_t)framebufferA);
-	GPUSetScanoutAddress(&vx, (uint32_t)framebufferB);
-	GPUSetDefaultPalette(&vx);
+	VPUSetWriteAddress(&vx, (uint32_t)framebufferA);
+	VPUSetScanoutAddress(&vx, (uint32_t)framebufferB);
+	VPUSetDefaultPalette(&vx);
 
 	int cycle = 0;
 	while (1)
@@ -43,8 +43,8 @@ int main( int argc, char **argv )
 			// Write page as words for faster block copy
 			uint32_t *writepageword = (uint32_t*)writepage;
 			// flip the read and write pages
-			GPUSetWriteAddress(&vx, (uint32_t)writepage);
-			GPUSetScanoutAddress(&vx, (uint32_t)readpage);
+			VPUSetWriteAddress(&vx, (uint32_t)writepage);
+			VPUSetScanoutAddress(&vx, (uint32_t)readpage);
 
 			// Clear screen to white
 			for (uint32_t i=0;i<80*240;++i)

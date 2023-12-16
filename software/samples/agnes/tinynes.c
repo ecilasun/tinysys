@@ -5,7 +5,7 @@
 
 #include "basesystem.h"
 #include "core.h"
-#include "gpu.h"
+#include "vpu.h"
 #include "dma.h"
 #include "leds.h"
 #include "task.h"
@@ -53,20 +53,20 @@ int main(int argc, char *argv[])
     }
 
 	// Start video (single buffered for now)
-	s_framebuffer = (uint32_t*)GPUAllocateBuffer(320 * AGNES_SCREEN_HEIGHT);
-	GPUSetWriteAddress(&s_vx, (uint32_t)s_framebuffer);
-	GPUSetScanoutAddress(&s_vx, (uint32_t)s_framebuffer);
-	GPUSetDefaultPalette(&s_vx);
+	s_framebuffer = (uint32_t*)VPUAllocateBuffer(320 * AGNES_SCREEN_HEIGHT);
+	VPUSetWriteAddress(&s_vx, (uint32_t)s_framebuffer);
+	VPUSetScanoutAddress(&s_vx, (uint32_t)s_framebuffer);
+	VPUSetDefaultPalette(&s_vx);
 
     s_vx.m_vmode = EVM_320_Wide;
     s_vx.m_cmode = ECM_8bit_Indexed;
-	GPUSetVMode(&s_vx, EVS_Enable);
-	GPUClear(&s_vx, 0xFFFFFFFF);
+	VPUSetVMode(&s_vx, EVS_Enable);
+	VPUClear(&s_vx, 0xFFFFFFFF);
 
 	// Apply the NES color palette to our 12bit device
 	agnes_color_t *palette = agnes_get_palette(agnes);
 	for (uint32_t i=0; i<256; ++i)
-		GPUSetPal(i, palette[i].r>>4, palette[i].g>>4, palette[i].b>>4);
+		VPUSetPal(i, palette[i].r>>4, palette[i].g>>4, palette[i].b>>4);
 
     agnes_input_t input;
 

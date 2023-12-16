@@ -27,7 +27,7 @@ THE SOFTWARE.
 #define agnes_h
 
 // EnCi: platform includes
-#include "gpu.h"
+#include "vpu.h"
 
 #ifdef __cplusplus
 extern "C"

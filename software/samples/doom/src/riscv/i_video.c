@@ -29,7 +29,7 @@
 
 #include "basesystem.h"
 #include "core.h"
-#include "gpu.h"
+#include "vpu.h"
 
 uint8_t *framebuffer;
 #include "dma.h"
@@ -42,22 +42,22 @@ I_InitGraphics(void)
 	usegamma = 1;
 
 	// Allocate 40 pixel more since out video output is 240 vs the default 200 pixels here
-	framebuffer = GPUAllocateBuffer(SCREENWIDTH*(SCREENHEIGHT+40));
+	framebuffer = VPUAllocateBuffer(SCREENWIDTH*(SCREENHEIGHT+40));
 	memset(framebuffer, 0x0, SCREENWIDTH*(SCREENHEIGHT+40));
 
 	g_vctx.m_cmode = ECM_8bit_Indexed;
 	g_vctx.m_vmode = EVM_320_Wide;
-	GPUSetVMode(&g_vctx, EVS_Enable);
-	GPUSetWriteAddress(&g_vctx, (uint32_t)framebuffer);
-	GPUSetScanoutAddress(&g_vctx, (uint32_t)framebuffer);
+	VPUSetVMode(&g_vctx, EVS_Enable);
+	VPUSetWriteAddress(&g_vctx, (uint32_t)framebuffer);
+	VPUSetScanoutAddress(&g_vctx, (uint32_t)framebuffer);
 
-	prevvblankcount = GPUReadVBlankCounter();
+	prevvblankcount = VPUReadVBlankCounter();
 }
 
 void
 I_ShutdownGraphics(void)
 {
-	GPUSetVMode(&g_vctx, EVS_Disable);
+	VPUSetVMode(&g_vctx, EVS_Disable);
 }
 
 void
@@ -69,7 +69,7 @@ I_SetPalette(byte* palette)
 		r = gammatable[usegamma][*palette++]>>4;
 		g = gammatable[usegamma][*palette++]>>4;
 		b = gammatable[usegamma][*palette++]>>4;
-		GPUSetPal(i, r, g, b);
+		VPUSetPal(i, r, g, b);
 	}
 }
 
@@ -122,8 +122,8 @@ void
 I_WaitVBL(int count)
 {
 	// Wait until we exit current frame's vbcounter and enter the next one
-	while (prevvblankcount == GPUReadVBlankCounter()) { }
-	prevvblankcount = GPUReadVBlankCounter();
+	while (prevvblankcount == VPUReadVBlankCounter()) { }
+	prevvblankcount = VPUReadVBlankCounter();
 }
 
 void
