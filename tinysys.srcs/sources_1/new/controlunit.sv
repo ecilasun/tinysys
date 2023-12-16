@@ -285,7 +285,15 @@ always @(posedge aclk) begin
 				bluop, aluop,
 				rs1, rs2, rd,
 				immed, PC[31:1], stepsize} <= ififodout;
-			PC[0] <= 1'b0; // NOTE: Since we don't do byte addressing, lowest bit is always set to zero
+
+			unique case (ififodout[0])
+				1'b0: PCincrement <= 32'd2;
+				1'b1: PCincrement <= 32'd4;
+			endcase
+
+			// NOTE: Since we don't do 8 bit addressing (only 32 or 16), lowest bit is always set to zero
+			PC[0] <= 1'b0;
+
 			// HAZARD#0: Wait for fetch fifo to populate
 			ififore <= (ififovalid && ~ififoempty);
 			retiredstrobe <= (ififovalid && ~ififoempty);
@@ -306,10 +314,6 @@ always @(posedge aclk) begin
 				wbdest <= rd;
 				rwaddress <= rval1 + immed;
 				offsetPC <= PC + immed;
-				unique case (stepsize)
-					1'b0: PCincrement <= 32'd2;
-					1'b1: PCincrement <= 32'd4;
-				endcase
 
 				unique case (1'b1)
 					instrOneHotOut[`O_H_STORE]: begin
