@@ -9,6 +9,7 @@
 #include "dma.h"
 #include "leds.h"
 #include "task.h"
+#include "keyboard.h"
 
 #include "agnes.h"
 
@@ -100,14 +101,23 @@ static void get_input(agnes_input_t *out_input)
 	// Read input from the USB joystick data region
 	int32_t *jposxy_buttons = (int32_t*)JOYSTICK_POS_AND_BUTTONS;
 
-    if (jposxy_buttons[2]&0x20)		out_input->a = true;
-    if (jposxy_buttons[2]&0x40)		out_input->b = true;
-    if (jposxy_buttons[0]==0x00)	out_input->left = true;		// NOTE: 0x7F is 'centered' for direction buttons
-    if (jposxy_buttons[0]==0xFF)	out_input->right = true;
-    if (jposxy_buttons[1]==0x00)	out_input->up = true;
-    if (jposxy_buttons[1]==0xFF)	out_input->down = true;
-    if (jposxy_buttons[3]&0x10)		out_input->select = true;
-    if (jposxy_buttons[3]&0x20)		out_input->start = true;
+	uint16_t enterdown = GetKeyState(HKEY_ENTER) == 1; // 0:none 1:down 2:up
+	uint16_t tabdown = GetKeyState(HKEY_TAB) == 1;
+	uint16_t leftdown = GetKeyState(HKEY_A) == 1;
+	uint16_t rightdown = GetKeyState(HKEY_D) == 1;
+	uint16_t updown = GetKeyState(HKEY_W) == 1;
+	uint16_t downdown = GetKeyState(HKEY_S) == 1;
+	uint16_t commadown = GetKeyState(HKEY_COMMA) == 1;
+	uint16_t perioddown = GetKeyState(HKEY_PERIOD) == 1;
+
+    if (commadown || jposxy_buttons[2]&0x20)	out_input->a = true;
+    if (perioddown || jposxy_buttons[2]&0x40)	out_input->b = true;
+    if (leftdown || jposxy_buttons[0]==0x00)	out_input->left = true;		// NOTE: 0x7F is 'centered' for direction buttons
+    if (rightdown || jposxy_buttons[0]==0xFF)	out_input->right = true;
+    if (updown || jposxy_buttons[1]==0x00)		out_input->up = true;
+    if (downdown || jposxy_buttons[1]==0xFF)	out_input->down = true;
+    if (enterdown || jposxy_buttons[3]&0x10)	out_input->select = true;
+    if (tabdown || jposxy_buttons[3]&0x20)		out_input->start = true;
 }
 
 static void* read_file(const char *filename, size_t *out_len)

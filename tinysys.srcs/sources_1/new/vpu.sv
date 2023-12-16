@@ -18,15 +18,11 @@ module videocore(
 	input wire vpufifovalid,
 	output wire [31:0] vpustate);
 
-// A simple graphics unit with the following features:
+// A simple video unit with the following features:
 // - Four video output modes (320x240 or 640x480, indexed or 16bpp)
 // - Framebuffer scan-out from any cache aligned memory location in mapped device memory
 // - Frame counter support for vsync implementations
 // - Memory mapped command buffer interface
-
-// TODO:
-// - Allow command data to be read from any cache aligned memory location in 16 byte bursts
-// - Add sprite support
 
 // --------------------------------------------------
 // Scanline and scan pixel cdc registers
@@ -42,9 +38,9 @@ module videocore(
 // --------------------------------------------------
 
 // NOTE: First, set up the scanout address, then enable video scanout
-logic [31:0] scanaddr = 32'h00000000;
-logic [31:0] scanoffset = 0;
-logic [31:0] scaninc = 0;
+logic [31:0] scanaddr;
+logic [31:0] scanoffset;
+logic [10:0] scaninc;
 logic scanenable = 1'b0;
 
 // --------------------------------------------------
@@ -66,29 +62,46 @@ logic scanwidth = 1'b0;			// 0:320 pixel wide, 1:640 pixel wide
 logic colormode = 1'b0;			// 0:indexed color, 1:16bit color
 logic [9:0] lastscanline;
 
+
 // --------------------------------------------------
-// Scanline cache and output address selection
+// Scanline cache
 // --------------------------------------------------
 
-// The scanline cache
 logic [127:0] scanlinecache [0:127];
 
-logic [3:0] colorpixel;
-logic [6:0] colorblock;
+wire [127:0] scanlinedout;
+logic [127:0] scanlinedin;
+logic scanlinewe = 1'b0;
+logic [6:0] scanlinewa;
+logic [6:0] scanlinera;
+
+always @(posedge aclk) begin
+	if (scanlinewe)
+		scanlinecache[scanlinewa] <= scanlinedin;
+
+	// if (~aresetn) begin
+	// end
+end
+assign scanlinedout = scanlinecache[scanlinera];
+
+// --------------------------------------------------
+// Output address selection
+// --------------------------------------------------
+
+logic [3:0] pixelscanaddr;
 
 always_comb begin
 	unique case ({scanwidth, colormode})
-		2'b00: begin colorpixel = video_x[4:1];			colorblock = {2'b0, video_x[9:5]}; end	// 320*240 8bpp
-		2'b01: begin colorpixel = {1'b0,video_x[3:1]};	colorblock = {1'b0, video_x[9:4]}; end	// 320*240 16bpp
-		2'b10: begin colorpixel = video_x[3:0];			colorblock = {1'b0, video_x[9:4]}; end	// 640*480 8bpp
-		2'b11: begin colorpixel = {1'b0,video_x[2:0]};	colorblock = video_x[9:3]; end			// 640*480 16bpp
+		2'b00: begin pixelscanaddr = video_x[4:1];			scanlinera = {2'b0, video_x[9:5]}; end	// 320*240 8bpp
+		2'b01: begin pixelscanaddr = {1'b0,video_x[3:1]};	scanlinera = {1'b0, video_x[9:4]}; end	// 320*240 16bpp
+		2'b10: begin pixelscanaddr = video_x[3:0];			scanlinera = {1'b0, video_x[9:4]}; end	// 640*480 8bpp
+		2'b11: begin pixelscanaddr = {1'b0,video_x[2:0]};	scanlinera = video_x[9:3]; end			// 640*480 16bpp
 	endcase
 end
 
-logic [127:0] newblock;
-always_comb begin
-	newblock = scanlinecache[colorblock];
-end
+// --------------------------------------------------
+// Output color
+// --------------------------------------------------
 
 logic [11:0] rgbcolor;
 logic [7:0] paletteindex;
@@ -96,37 +109,37 @@ logic [7:0] paletteindex;
 // Generate actual RGB color for 16bit mode
 always_comb begin
 	// Pixel data is 12 bits but stored as 16 bits (the spare 4 bits are unused for now, could be utilized as alpha etc
-	unique case (colorpixel[2:0])
+	unique case (pixelscanaddr[2:0])
 		//                   R:G:B                    UNUSED
-		3'b000: rgbcolor = { newblock[11:0]     }; // newblock[15:12]
-		3'b001: rgbcolor = { newblock[27:16]    }; // newblock[31:28]
-		3'b010: rgbcolor = { newblock[43:32]    }; // newblock[47:44]
-		3'b011: rgbcolor = { newblock[59:48]    }; // newblock[63:60] 
-		3'b100: rgbcolor = { newblock[75:64]    }; // newblock[79:76]
-		3'b101: rgbcolor = { newblock[91:80]    }; // newblock[95:92]
-		3'b110: rgbcolor = { newblock[107:96]   }; // newblock[111:108]
-		3'b111: rgbcolor = { newblock[123:112]  }; // newblock[127:124]
+		3'b000: rgbcolor = { scanlinedout[11:0]     }; // scanlinedout[15:12]
+		3'b001: rgbcolor = { scanlinedout[27:16]    }; // scanlinedout[31:28]
+		3'b010: rgbcolor = { scanlinedout[43:32]    }; // scanlinedout[47:44]
+		3'b011: rgbcolor = { scanlinedout[59:48]    }; // scanlinedout[63:60] 
+		3'b100: rgbcolor = { scanlinedout[75:64]    }; // scanlinedout[79:76]
+		3'b101: rgbcolor = { scanlinedout[91:80]    }; // scanlinedout[95:92]
+		3'b110: rgbcolor = { scanlinedout[107:96]   }; // scanlinedout[111:108]
+		3'b111: rgbcolor = { scanlinedout[123:112]  }; // scanlinedout[127:124]
 	endcase
 end
 
 always_comb begin
-	unique case (colorpixel)
-		4'b0000: paletteindex = newblock[7:0];
-		4'b0001: paletteindex = newblock[15:8];
-		4'b0010: paletteindex = newblock[23:16];
-		4'b0011: paletteindex = newblock[31:24];
-		4'b0100: paletteindex = newblock[39:32];
-		4'b0101: paletteindex = newblock[47:40];
-		4'b0110: paletteindex = newblock[55:48];
-		4'b0111: paletteindex = newblock[63:56];
-		4'b1000: paletteindex = newblock[71:64];
-		4'b1001: paletteindex = newblock[79:72];
-		4'b1010: paletteindex = newblock[87:80];
-		4'b1011: paletteindex = newblock[95:88];
-		4'b1100: paletteindex = newblock[103:96];
-		4'b1101: paletteindex = newblock[111:104];
-		4'b1110: paletteindex = newblock[119:112];
-		4'b1111: paletteindex = newblock[127:120];
+	unique case (pixelscanaddr)
+		4'b0000: paletteindex = scanlinedout[7:0];
+		4'b0001: paletteindex = scanlinedout[15:8];
+		4'b0010: paletteindex = scanlinedout[23:16];
+		4'b0011: paletteindex = scanlinedout[31:24];
+		4'b0100: paletteindex = scanlinedout[39:32];
+		4'b0101: paletteindex = scanlinedout[47:40];
+		4'b0110: paletteindex = scanlinedout[55:48];
+		4'b0111: paletteindex = scanlinedout[63:56];
+		4'b1000: paletteindex = scanlinedout[71:64];
+		4'b1001: paletteindex = scanlinedout[79:72];
+		4'b1010: paletteindex = scanlinedout[87:80];
+		4'b1011: paletteindex = scanlinedout[95:88];
+		4'b1100: paletteindex = scanlinedout[103:96];
+		4'b1101: paletteindex = scanlinedout[111:104];
+		4'b1110: paletteindex = scanlinedout[119:112];
+		4'b1111: paletteindex = scanlinedout[127:120];
 	endcase
 end
 
@@ -226,7 +239,7 @@ typedef enum logic [2:0] {
 	WCMD, DISPATCH,
 	SETVPAGE,
 	SETPAL,
-	VMODE,
+	VMODE, VSCANSIZE,
 	FINALIZE } vpucmdmodetype;
 vpucmdmodetype cmdmode = CINIT;
 
@@ -238,6 +251,7 @@ always_ff @(posedge aclk) begin
 
 	case (cmdmode)
 		CINIT: begin
+			scanaddr <= 32'd0;
 			burstlen <= 'd19;
 			lastscanline <= 10'd0;
 			palettedin <= 24'd0;
@@ -292,21 +306,29 @@ always_ff @(posedge aclk) begin
 				colormode <= vpufifodout[2];	// 0:8bit indexed, 1:16bit rgb
 				lastscanline <= vpufifodout[1] ? 10'd524 : 10'd523;
 				// ? <= vpufifodout[31:3] unused for now
+
 				// Set up burst count to 20 / 40 / 80 depending on video mode
-				unique case ({vpufifodout[1], vpufifodout[2]})
+				unique case ({vpufifodout[2], vpufifodout[1]})
 					2'b00: burstlen <= 'd19;	// 320*240 8bpp
-					2'b01: burstlen <= 'd39;	// 320*240 16bpp
-					2'b10: burstlen <= 'd39;	// 640*480 8bpp
+					2'b01: burstlen <= 'd39;	// 640*480 8bpp
+					2'b10: burstlen <= 'd39;	// 320*240 16bpp
 					2'b11: burstlen <= 'd79;	// 640*480 16bpp
 				endcase
-				unique case (vpufifodout[1])
-					2'b0: scaninc <= 640;	// 320*240
-					2'b1: scaninc <= 1280;	// 640*480
-				endcase
+
 				// Advance FIFO
 				cmdre <= 1'b1;
-				cmdmode <= FINALIZE;
+				cmdmode <= VSCANSIZE;
 			end
+		end
+
+		VSCANSIZE: begin
+			unique case ({vpufifodout[2], vpufifodout[1]})
+				2'b00: scaninc <= 11'd320;	// 320*240 8bpp
+				2'b01: scaninc <= 11'd640;	// 640*480 8bpp
+				2'b10: scaninc <= 11'd640;	// 320*240 16bpp
+				2'b11: scaninc <= 11'd1280;	// 640*480 16bpp
+			endcase
+			cmdmode <= FINALIZE;
 		end
 		
 		FINALIZE: begin
@@ -371,6 +393,8 @@ end
 assign vpustate = {31'd0, blanktoggle};
 
 always_ff @(posedge aclk) begin
+	scanlinewe <= 1'b0;
+
 	case (scanstate)
 		SINIT: begin
 			m_axi.arvalid <= 0;
@@ -420,7 +444,9 @@ always_ff @(posedge aclk) begin
 			if (m_axi.rvalid  /*&& m_axi.rready*/) begin
 				// Load data into scanline cache in 128bit chunks (16 pixels at 8bpp, 20 of them)
 				// NOTE: video mode control sets up burst length to either 40 or 80
-				scanlinecache[rdata_cnt] <= m_axi.rdata;
+				scanlinewe <= 1'b1;
+				scanlinewa <= rdata_cnt;
+				scanlinedin <= m_axi.rdata;
 				rdata_cnt <= rdata_cnt + 'd1;
 				m_axi.rready <= ~m_axi.rlast;
 				scanstate <= m_axi.rlast ? ADVANCESCANLINEADDRESS : DATABURST;
@@ -431,7 +457,7 @@ always_ff @(posedge aclk) begin
 
 		ADVANCESCANLINEADDRESS: begin
 			// Wait for and load next scanline
-			scanoffset <= scanoffset + (colormode ? scaninc : {1'b0,scaninc[31:1]});
+			scanoffset <= scanoffset + scaninc;
 			scanstate <= STARTLOAD;
 		end
 
