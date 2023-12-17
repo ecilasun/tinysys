@@ -34,6 +34,37 @@ void TaskInitSystem(struct STaskContext *_ctx)
 	}
 }
 
+uint32_t Read4Bytes(const uint32_t _address)
+{
+	uint8_t *source = (uint8_t*)_address;
+	uint32_t retVal = 0;
+
+	retVal |= source[0];
+	retVal |= (source[1]<<8);
+	retVal |= (source[2]<<16);
+	retVal |= (source[3]<<24);
+
+	return retVal;
+}
+
+void Write4Bytes(const uint32_t _address, const uint32_t _bytes)
+{
+	uint8_t *target = (uint8_t*)_address;
+
+	target[0] = (_bytes&0x000000FF);
+	target[1] = (_bytes&0x0000FF00)>>8;
+	target[2] = (_bytes&0x00FF0000)>>16;
+	target[3] = (_bytes&0xFF000000)>>24;
+}
+
+void Write2Bytes(const uint32_t _address, const uint16_t _bytes)
+{
+	uint8_t *target = (uint8_t*)_address;
+
+	target[0] = (_bytes&0x00FF);
+	target[1] = (_bytes&0xFF00)>>8;
+}
+
 int TaskInsertBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint32_t _address)
 {
 	struct STask *task = &(_ctx->tasks[_taskid]);
@@ -54,16 +85,13 @@ int TaskInsertBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint
 
 	// New breakpoint
 	task->breakpoints[brk].address = _address;
-	uint32_t instr = *(uint32_t*)_address;
+	uint32_t instr = Read4Bytes(_address);
 
 	// Replace current instruction with EBREAK or C.EBREAK instruction depending on compression
 	if ((instr&3) == 0x3)
-		*(uint32_t*)_address = 0x00100073;	// EBREAK
+		Write4Bytes(_address, 0x00100073); // EBREAK
 	else
-	{
-		instr = *(uint16_t*)_address;
-		*(uint16_t*)_address = 0x9002;		// C.EBREAK
-	}
+		Write2Bytes(_address, 0x9002); // C.EBREAK
 
 	task->breakpoints[brk].originalinstruction = instr;
 	++task->num_breakpoints;
@@ -89,10 +117,10 @@ int TaskRemoveBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint
 
 			// Replace it with the original instruction
 			if ((instr&3) == 0x3)
-				*(uint32_t*)_address = instr;
+				Write4Bytes(_address, instr);
 			else
-				*(uint16_t*)_address = instr;
-			
+				Write2Bytes(_address, instr);
+
 			// Nullify the address and instruction
 			task->breakpoints[i].address = 0x00000000;
 			task->breakpoints[i].originalinstruction = 0x00000000;

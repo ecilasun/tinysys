@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
 
 				// This is one pixel's worth of processing
 				// In hardware we'll replicate this 16 times for a 16x1 tile
-				uint32_t val0 = (w0&w1&w2)<0 ? 0x000000FF : 0x00000000; // Output in hardware is a single bit (sign bit of w0&w1&w2)
+				uint32_t val0 = (w0&w1&w2)<0 ? 0x000000FF : 0x00000000;
 				baryu = abs(U)>>8;
 				baryv = abs(V)>>8;
 				w0 += a12; // We don't need to do this addition in hardware to pass to the next unit
@@ -216,7 +216,13 @@ int main(int argc, char *argv[])
 					break;
 				prevMaskAcc |= wmask;
 
-				// Hardware can write 16 pixels at once, so this'll be wider
+				// TODO: Use write mask for 4 adjacent pixels to avoid branches
+				/*asm volatile (
+					"mv t0, %0;"		// write mask
+					".word 0x0002800B;"	// "smask t0;"
+					: : "r" (wmask) : "t0" );
+				rasterOut[x/4] = bval;*/
+
 				if (wmask != 0) // This is not necessary in hardware. Instead we'll shift direction when we encounter an edge and try to skip zero masks
 					rasterOut[x/4] = bval & wmask;
 			}
@@ -290,7 +296,13 @@ int main(int argc, char *argv[])
 					break;
 				prevMaskAcc |= wmask;
 
-				// Hardware can write 16 pixels at once, so this'll be wider
+				// TODO: Use write mask for 4 adjacent pixels to avoid branches
+				/*asm volatile (
+					"mv t0, %0;"		// write mask
+					".word 0x0002800B;"	// "smask t0;"
+					: : "r" (wmask) : "t0" );
+				rasterOut[x/4] = bval;*/
+
 				if (wmask != 0) // This is not necessary in hardware. Instead we'll shift direction when we encounter an edge and try to skip zero masks
 					rasterOut[x/4] = bval & wmask;
 			}

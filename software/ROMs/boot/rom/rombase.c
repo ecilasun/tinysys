@@ -425,8 +425,25 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				}
 				else
 				{
-					uint32_t instruction = *((uint32_t*)PC);
-					kprintf("Illegal instruction 0x%X at 0x%X, terminating\n", instruction, PC);
+					if ((PC&0x2) == 0) // Aligned
+					{
+						uint32_t instruction = *((uint32_t*)PC);
+						if ((instruction&3)==3) // uncompressed
+							kprintf("Illegal instruction 0x%X at 0x%X, terminating\n", instruction, PC);
+						else
+							kprintf("Illegal instruction 0x%X at 0x%X, terminating\n", instruction&0x0000FFFF, PC);
+					}
+					else // Misaligned
+					{
+						// NOTE: This RISC-V CPU by default can't read misaligned 32bit data so we need to
+						// read it in two 16bit aligned chunks and combine
+						uint16_t instA = *((uint16_t*)PC);
+						uint16_t instB = *((uint16_t*)(PC+2));
+						if ((instA&3)==3) // uncompressed
+							kprintf("Illegal instruction 0x%X%X at 0x%X, terminating\n", instB, instA, PC);
+						else // compressed
+							kprintf("Illegal instruction 0x%X at 0x%X, terminating\n", instA, PC);
+					}
 					// Terminate task on first chance and remove from list of running tasks
 					TaskExitCurrentTask(&g_taskctx);
 					// Force switch to next task

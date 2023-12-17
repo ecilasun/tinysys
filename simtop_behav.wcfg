@@ -135,8 +135,8 @@
       <obj_property name="ObjectShortName">ififovalid</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/fetchdecodeinst/ififodout" type="array">
-      <obj_property name="ElementShortName">ififodout[131:0]</obj_property>
-      <obj_property name="ObjectShortName">ififodout[131:0]</obj_property>
+      <obj_property name="ElementShortName">ififodout[132:0]</obj_property>
+      <obj_property name="ObjectShortName">ififodout[132:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/fetchdecodeinst/ififord_en" type="logic">
       <obj_property name="ElementShortName">ififord_en</obj_property>
@@ -263,8 +263,8 @@
       <obj_property name="ObjectShortName">injectInstruction[31:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/fetchdecodeinst/ififodin" type="array">
-      <obj_property name="ElementShortName">ififodin[131:0]</obj_property>
-      <obj_property name="ObjectShortName">ififodin[131:0]</obj_property>
+      <obj_property name="ElementShortName">ififodin[132:0]</obj_property>
+      <obj_property name="ObjectShortName">ififodin[132:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/fetchdecodeinst/ififowr_en" type="logic">
       <obj_property name="ElementShortName">ififowr_en</obj_property>
@@ -369,8 +369,8 @@
       <obj_property name="ObjectShortName">ififovalid</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/controlunitinst/ififodout" type="array">
-      <obj_property name="ElementShortName">ififodout[131:0]</obj_property>
-      <obj_property name="ObjectShortName">ififodout[131:0]</obj_property>
+      <obj_property name="ElementShortName">ififodout[132:0]</obj_property>
+      <obj_property name="ObjectShortName">ififodout[132:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/controlunitinst/ififord_en" type="logic">
       <obj_property name="ElementShortName">ififord_en</obj_property>
