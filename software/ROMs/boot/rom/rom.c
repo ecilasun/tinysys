@@ -524,7 +524,7 @@ void __attribute__((aligned(64))) CopyPayloadAndChainOverlay(void *source)
 }
 
 // This is the payload to copy (34 bytes but we can copy 64 to cover both compressed and uncompressed variants)
-void __attribute__((aligned(64))) Payload()
+void __attribute__((aligned(64))) CopyOverlayToROM()
 {
 	asm volatile(
 		"lui s0, 0x00010;"		// Source: 0x00010000
@@ -590,7 +590,7 @@ int main()
 	if ((waterMark == 0) && LoadOverlay("sd:/rom.bin"))
 	{
 		// Point of no return. Literally.
-		CopyPayloadAndChainOverlay(Payload);
+		CopyPayloadAndChainOverlay(CopyOverlayToROM);
 
 		// We should never come back here
 		while(1) {}

@@ -421,10 +421,12 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			{
 				if (IsDebuggerConnected())
 				{
-					// TODO: Signal debugger with SIGILL (S03 or T 03 something; ?)
+					// CPU won't queue up illegal instructions but will throw
+					// TODO: Do we replace with ebreak and signal debugger with SIGILL (S03 or T 03 something; ?)
 				}
 				else
 				{
+					// Report and terminate
 					if ((PC&0x2) == 0) // Aligned
 					{
 						uint32_t instruction = *((uint32_t*)PC);
@@ -455,13 +457,14 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 
 			case CAUSE_BREAKPOINT:
 			{
-				// Where there's no debugger loaded, simply exit since we're not supposed to run past ebreak commands
 				if (IsDebuggerConnected())
 				{
+					// CPU will spin over ebreak forever and won't advance the PC
 					//TaskSetState(g_taskctx, TS_PAUSED);
 				}
 				else
 				{
+					// Where there's no debugger loaded, simply exit since we're not supposed to run past ebreak commands
 					kprintf("Encountered breakpoint with no debugger attached\n");
 					// Exit task in non-debug mode
 					TaskExitCurrentTask(&g_taskctx);
