@@ -137,11 +137,13 @@ void SendDebugPacket(const char *packetString)
 	USBSerialWrite(packetString);
 	USBSerialWrite("#");
 	USBSerialWrite(checksumstr);
+
+	//kprintf("\n< %s\n", packetString);
 }
 
 void HandlePacket()
 {
-	char outstring[512];
+	char *outstring = (char*)(KERNEL_TEMP_MEMORY + 2048);
 	struct STaskContext *taskctx = GetTaskContext();
 
 	if (startswith(s_packet, "qXfer:threads:read::")) // qXfer:threads:read::{start,offset}, normally would send l<?xml version=\"1.0\"?>\n<threads> etc
@@ -157,7 +159,7 @@ void HandlePacket()
 
 		if (offset == 0)
 		{
-			strcpy(outstring, "l<?xml version=\"1.0\"?>\n<threads>");
+			strcpy(outstring, "l<?xml version=\"1.0\"?><threads>");
 			for (int32_t i=0; i<taskctx->numTasks; ++i)
 			{
 				char threadid[10];
@@ -166,9 +168,9 @@ void HandlePacket()
 				strcat(outstring, threadid);
 				strcat(outstring, "\" core=\"0\" name=\"");
 				strcat(outstring, taskctx->tasks[i].name);
-				strcat(outstring, "\"></thread>\n");
+				strcat(outstring, "\"></thread>");
 			}
-			strcat(outstring, "</threads>\n");
+			strcat(outstring, "</threads>");
 
 			SendDebugPacket(outstring);
 		}

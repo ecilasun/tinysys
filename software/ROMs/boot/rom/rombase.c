@@ -22,7 +22,7 @@ int kprintfn(const int count, const char *fmt, ...)
 	int l;
 
 	va_start(va, fmt);
-	l = mini_vsnprintf(k_tmpstr, 128, fmt, va);
+	l = mini_vsnprintf(k_tmpstr, 512, fmt, va);
 	va_end(va);
 	l = count < l ? count : l;
 
@@ -39,7 +39,7 @@ int kprintf(const char *fmt, ...)
 	int l;
 
 	va_start(va, fmt);
-	l = mini_vsnprintf(k_tmpstr, 128, fmt, va);
+	l = mini_vsnprintf(k_tmpstr, 512, fmt, va);
 	va_end(va);
 
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();

@@ -3,7 +3,8 @@
 `include "shared.vh"
 
 module controlunit #(
-	parameter int CID = 32'h00000000 // Corresponds to HARTID
+	parameter int CID = 32'h00000000,	// Corresponds to HARTID
+	parameter int CSRBASE = 20'h8000A	// TODO: Add CID<<12, for instance HART#1 would be 32'h8000B
 ) (
 	input wire aclk,
 	input wire aresetn,
@@ -467,7 +468,7 @@ always @(posedge aclk) begin
 
 		CSROPS: begin
 			if (~pendingwrite || m_ibus.wdone) begin
-				m_ibus.raddr <= {20'h80004, csroffset}; // TODO: 0x8000?+(CID<<12) but make sure CSR address space is at the end
+				m_ibus.raddr <= {CSRBASE, csroffset};
 				m_ibus.rstrobe <= 1'b1;
 				ctlmode <= WCSROP;
 			end else begin
@@ -486,7 +487,7 @@ always @(posedge aclk) begin
 		SYSWBACK: begin
 			if (~pendingwrite || m_ibus.wdone) begin
 				// Update CSR register with read value
-				m_ibus.waddr <= {20'h80004, csroffset}; // TODO: 0x8000?+(CID<<12) but make sure CSR address space is at the end
+				m_ibus.waddr <= {CSRBASE, csroffset};
 				m_ibus.wstrobe <= 4'b1111;
 				unique case (func3)
 					3'b001: begin // CSRRW
