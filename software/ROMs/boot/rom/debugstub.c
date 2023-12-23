@@ -6,6 +6,8 @@
 #include "rombase.h"
 #include "serialinringbuffer.h"
 
+//#define DEBUG_DEBUG
+
 // https://www.embecosm.com/appnotes/ean4/embecosm-howto-rsp-server-ean4-issue-2.html
 
 static const char s_hexdigits[] = "0123456789ABCDEF";
@@ -16,7 +18,7 @@ static uint32_t s_packetComplete = 0;
 static uint32_t s_gatherBinary = 0;
 static uint32_t s_isBinaryHeader = 0;
 static uint32_t s_idx = 0;
-static uint32_t s_currentThread = 3; // SYSIDLE
+static uint32_t s_currentThread = 3; // User task
 static uint32_t s_binaryAddrs;
 static uint32_t s_binaryNumbytes;
 static uint32_t s_receivedBytes;
@@ -121,11 +123,19 @@ void StrChecksum(const char *str, char *checksumstr)
 void SendAck()
 {
 	USBSerialWrite("+");
+
+#ifdef DEBUG_DEBUG
+	kprintf("\n< + ");
+#endif
 }
 
 void SendNack()
 {
 	USBSerialWrite("-");
+
+#ifdef DEBUG_DEBUG
+	kprintf("\n< - ");
+#endif
 }
 
 void SendDebugPacket(const char *packetString)
@@ -138,7 +148,9 @@ void SendDebugPacket(const char *packetString)
 	USBSerialWrite("#");
 	USBSerialWrite(checksumstr);
 
-	//kprintf("\n< %s\n", packetString);
+#ifdef DEBUG_DEBUG
+	kprintf("\n<$%s#0%s ", packetString, checksumstr);
+#endif
 }
 
 void HandlePacket()
@@ -629,7 +641,9 @@ void HandlePacket()
 	}*/
 	else
 	{
+#ifdef DEBUG_DEBUG
 		kprintf("UNKOWN: %s\n", s_packet);
+#endif
 		SendNack();
 	}
 }
@@ -699,7 +713,7 @@ void ProcessChar(char input)
 		s_receivedBytes = 0;
 		s_isBinaryHeader = 0;
 
-		//kprintf("X @0x%x : 0x%x bytes\n", s_binaryAddrs, s_binaryNumbytes);
+		// kprintf("X @0x%x : 0x%x bytes\n", s_binaryAddrs, s_binaryNumbytes);
 
 		// Do not attempt to read bytes if we don't have any
 		s_gatherBinary = (s_binaryNumbytes == 0) ? 0 : 1;
@@ -743,7 +757,9 @@ void ProcessGDBRequest()
 		while (SerialInRingBufferRead(&drain, 1))
 		{
 			// Debug output for incoming packet
-			//kprintf("%c", drain);
+#ifdef DEBUG_DEBUG
+			kprintf("%c", drain);
+#endif
 
 			if (s_gatherBinary)
 				ProcessBinaryData(drain);
