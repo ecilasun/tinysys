@@ -2,6 +2,12 @@
 
 XLEN ?= 32
 
+ifeq ($(OS), Windows_NT)
+UNAME := Windows
+else
+UNAME := $(shell uname)
+endif
+
 default: all
 
 # Directories
@@ -24,7 +30,11 @@ folders = \
 RISCV_PREFIX ?= riscv64-unknown-elf-
 RISCV_GCC ?= $(RISCV_PREFIX)gcc
 RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump
+ifeq ($(UNAME), Linux)
+RISCVTOOL ?= ../../build/release/riscvtool
+else
 RISCVTOOL ?= ..\..\build\release\riscvtool.exe
+endif
 # No filesystem when defined
 # FILESYSTEM ?= -DDISABLE_FILESYSTEM
 FILESYSTEM ?= -DENABLE_FILESYSTEM -DLFS_NO_MALLOC -DLFS_NO_DEBUG
@@ -33,8 +43,11 @@ FILESYSTEM ?= -DENABLE_FILESYSTEM -DLFS_NO_MALLOC -DLFS_NO_DEBUG
 ROMWORDSIZE ?= 16
 # 512 bit cache lines makes 64 bytes per line
 # 256 cache lines makes total cache size 16 Kbytes
-#RISCV_GCC_OPTS ?= -mcmodel=medany -std=gnu99 -march=rv32imc_zicsr_zifencei -mabi=ilp32 --param l1-cache-line-size=64 --param l1-cache-size=16 -Wall -Os -static -ffreestanding -nostartfiles -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,-gc-sections,--strip-debug
+ifeq ($(UNAME), Linux)
+RISCV_GCC_OPTS ?= -fPIC -mcmodel=medany -std=gnu99 -march=rv32imc_zicsr_zifencei -mabi=ilp32 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Wno-format -Os -static -ffreestanding -nostartfiles -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,-gc-sections,--strip-debug
+else
 RISCV_GCC_OPTS ?= -fPIC -mcmodel=medany -std=gnu99 -march=rv32imc -mabi=ilp32 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Wno-format -Os -static -ffreestanding -nostartfiles -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,-gc-sections,--strip-debug
+endif
 
 incs  += -I$(src_dir) -I$(corelib_dir) -I$(thirdparty_libs)/ $(addprefix -I$(src_dir)/, $(folders))
 objs  :=
@@ -77,6 +90,8 @@ all: executables romimages overlayimage disassembly
 # Clean
 
 clean:
+ifeq ($(UNAME), Linux)
+	rm -rf $(objs) $(junk)
+else
 	del $(objs) $(junk)
-
-# rm -rf $(objs) $(junk)
+endif
