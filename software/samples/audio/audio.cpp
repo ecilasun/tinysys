@@ -4,6 +4,7 @@
 
 #include "core.h"
 #include "apu.h"
+#include "task.h"
 
 static short *apubuffer;
 
@@ -25,8 +26,8 @@ int main()
 		// Generate individual waves for each channel
 		for (uint32_t i=0;i<BUFFER_SAMPLES;++i)
 		{
-			apubuffer[i*NUM_CHANNELS+0] = short(16384.f*sinf(offset+3.1415927f*float(i)/12.f));
-			apubuffer[i*NUM_CHANNELS+1] = short(16384.f*cosf(offset+3.1415927f*float(i*2)/38.f));
+			apubuffer[i*NUM_CHANNELS+0] = short(16384.f*sinf(offset+2.f*3.1415927f*float(i)/12.f));
+			apubuffer[i*NUM_CHANNELS+1] = short(16384.f*cosf(offset+2.f*3.1415927f*float(i*2)/38.f));
 		}
 
 		// Make sure the writes are visible by the DMA
@@ -43,6 +44,8 @@ int main()
 		prevframe = currframe;
 		// Read buffer drained, swap to new read buffer
 		APUSwapBuffers();
+
+		TaskYield();
 
 		offset += 1.f;
 
