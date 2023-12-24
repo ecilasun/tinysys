@@ -263,15 +263,15 @@ void ExecuteCmd(char *_cmd)
 			// Path has to follow the format: sd:/path/
 
 			if (strstr(path, "/") == path)		// Attempt to go to root directory?
-				strncpy(s_pathtmp, "sd:/", 48);	// Prepend if not
+				strncpy(s_pathtmp, "sd:/", 47);	// Prepend if not
 
 			if (strstr(path, "sd:") != path)	// Does it begin with device name?
 			{
-				strncpy(s_pathtmp, "sd:/", 48);	// Prepend if not
+				strncpy(s_pathtmp, "sd:/", 47);	// Prepend if not
 				strcat(s_pathtmp, path);		// Rest of the path
 			}
 			else
-				strncpy(s_pathtmp, path, 48);
+				strncpy(s_pathtmp, path, 47);
 
 			int L = strlen(s_pathtmp)-1;
 			if (s_pathtmp[L] != '/')		// Does it end with a slash?
@@ -383,7 +383,7 @@ void ExecuteCmd(char *_cmd)
 					s_execParamCount = 1;
 				else
 				{
-					strncpy(s_execParam0, param, 32);
+					strncpy(s_execParam0, param, 31);
 					s_execParamCount = 2;
 				}
 
@@ -495,20 +495,20 @@ void _cliTask()
 }
 
 // Make sure we're aligned to sit at a cache line boundary
-void __attribute__((aligned(64))) CopyPayloadAndChainOverlay(void *source)
+void __attribute__((aligned(64), noinline)) CopyPayloadAndChainOverlay(void *source)
 {
 	// Copy this code outside ROM area
 	asm volatile(
 		"mv s0, %0;"			// Payload address: @payload
 		"lui s1, 0x0;"			// Target: 0x00000000
 		"addi s2, zero, 0x10;"	// Count:  64/4 (0x10)
-		"movepayload:"
+		"copypayloadloop:"
 		"lw a0, 0(s0);"			// Read source word
 		"sw a0, 0(s1);"			// Store target word
 		"addi s0,s0,4;"
 		"addi s1,s1,4;"
 		"addi s2,s2,-1;"
-		"bnez s2, movepayload;"
+		"bnez s2, copypayloadloop;"
 		".word 0xFC000073;"		// Invalidate D$ and I$
 		"fence.i;"
 		"lui s0, 0x0;"			// Branch to copy of payload at 0x00000000 which will then load the ROM overlay from storage
@@ -524,19 +524,19 @@ void __attribute__((aligned(64))) CopyPayloadAndChainOverlay(void *source)
 }
 
 // This is the payload to copy (34 bytes but we can copy 64 to cover both compressed and uncompressed variants)
-void __attribute__((aligned(64))) CopyOverlayToROM()
+void __attribute__((aligned(64), noinline)) CopyOverlayToROM()
 {
 	asm volatile(
 		"lui s0, 0x00010;"		// Source: 0x00010000
 		"lui s1, 0x0FFE0;"		// Target: 0x0FFE0000
 		"lui s2, 0x4;"			// Count:  65536/4 (0x4000)
-		"copyloop:"
+		"copyoverlayloop:"
 		"lw a0, 0(s0);"			// Read source word
 		"sw a0, 0(s1);"			// Store target word
 		"addi s0,s0,4;"
 		"addi s1,s1,4;"
 		"addi s2,s2,-1;"
-		"bnez s2, copyloop;"
+		"bnez s2, copyoverlayloop;"
 		".word 0xFC000073;"		// Invalidate & Write Back D$ (CFLUSH.D.L1)
 		"lui s0, 0x0FFE0;"		// Branch to reset vector: 0x0FFE0000
 		"jalr s0;"				// NOTE: ROM must invalidate I$ on entry
