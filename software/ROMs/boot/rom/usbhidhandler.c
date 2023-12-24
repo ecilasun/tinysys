@@ -65,10 +65,10 @@ void HandleUSBHID()
 		// bus reset complete, or bus resume signalled
 		hirq_sendback |= bmHXFRDNIRQ;
 	}
-	else
+	/*else
 	{
-		//printf("irq(unknown):%x\n", irq);
-	}
+		kprintf("irq(unknown):%x\n", irq);
+	}*/
 
 	if (hirq_sendback)
 		MAX3421WriteByte(rHIRQ, hirq_sendback);
@@ -290,18 +290,15 @@ void ProcessUSBDevice()
 		{
 			case SE0:
 				// Regardless of previous state, detach device
-				//printf("SE0\n");
 				devState = DEVS_DETACHED;
 			break;
 
 			case SE1:
-				//printf("SE1\n");
 				// This is an error state
 			break;
 
 			case FSHOST:
 			case LSHOST:
-				//printf("LSHOST/FSHOST\n");
 				// Full or low speed device attached
 				if (devState < DEVS_ATTACHED || devState >= DEVS_ERROR)
 				{
@@ -325,7 +322,7 @@ void ProcessUSBDevice()
 		switch(devState)
 		{
 			case DEVS_UNKNOWN:
-				//printf("DEVS_UNKNOWN\n");
+				//
 			break;
 
 			case DEVS_DETACHED:

@@ -2,6 +2,7 @@
 	"files.associations": {
 		"inttypes.h": "c",
 		"chrono": "c",
-		"cstdlib": "cpp"
+		"cstdlib": "cpp",
+		"stat.h": "c"
 	}
 }
