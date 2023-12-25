@@ -480,15 +480,18 @@ always @(posedge aclk) begin
 		WCSROP: begin
 			if (m_ibus.rdone) begin
 				csrprevval <= m_ibus.rdata;
+				wbdin <= m_ibus.rdata;
+				wback <= 1'b1;
 			end
 			ctlmode <= m_ibus.rdone ? SYSWBACK : WCSROP;
 		end
 
 		SYSWBACK: begin
-			if (~pendingwrite || m_ibus.wdone) begin
+			if (~pendingwback && (~pendingwrite || m_ibus.wdone)) begin
 				// Update CSR register with read value
 				m_ibus.waddr <= {CSRBASE, csroffset};
 				m_ibus.wstrobe <= 4'b1111;
+				pendingwrite <= 1'b1;
 				unique case (func3)
 					3'b001: begin // CSRRW
 						m_ibus.wdata <= A;
@@ -512,7 +515,6 @@ always @(posedge aclk) begin
 						m_ibus.wdata <= csrprevval;
 					end
 				endcase
-
 				// Wait for CSR writeback
 				ctlmode <= SYSWAIT;
 			end else begin
@@ -522,12 +524,8 @@ always @(posedge aclk) begin
 		end
 
 		SYSWAIT: begin
-			// Store old CSR value in wbdest
-			wbdin <= csrprevval;
-			wback <= m_ibus.wdone;
 			ctlmode <= m_ibus.wdone ? READINSTR : SYSWAIT;
 		end
-
 	endcase
 
 	if (~aresetn) begin
