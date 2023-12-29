@@ -15,31 +15,37 @@ module cachedmemorycontroller (
 	// Memory device bus
 	axi4if.master m_axi );
 
-	localparam burstlen = 4; // x4 128 bit reads or writes
+localparam burstlen = 4; // x4 128 bit reads or writes
 
-	// Write
-	logic [2:0] wdata_cnt;
-	assign m_axi.awlen = burstlen - 1;
-	assign m_axi.awsize = SIZE_16_BYTE; // 128bit write bus
-	assign m_axi.awburst = BURST_INCR;
+// Write
+assign m_axi.awlen = burstlen - 1;
+assign m_axi.awsize = SIZE_16_BYTE; // 128bit write bus
+assign m_axi.awburst = BURST_INCR;
 
-	typedef enum logic [2:0] {WINIT, WIDLE, WADDR, WDATA, WRESP} writestate_type;
-	writestate_type writestate = WINIT;
+typedef enum logic [2:0] {WINIT, WIDLE, WADDR, WDATA, WRESP} writestate_type;
+writestate_type writestate = WINIT;
 
-	always_ff @(posedge aclk) begin
+logic [2:0] wdata_cnt;
+
+always_ff @(posedge aclk) begin
+
+	if (~aresetn) begin
+		m_axi.awvalid <= 0;
+		m_axi.wvalid <= 0;
+		m_axi.wstrb <= 16'h0000;
+		m_axi.wlast <= 0;
+		m_axi.bready <= 0;
+		wdata_cnt <= 3'b000;
+		writestate <= WINIT;
+	end else begin
 		wdone <= 1'b0;
-
+	
 		unique case(writestate)
 			WINIT: begin
-				m_axi.awvalid <= 0;
-				m_axi.wvalid <= 0;
-				m_axi.wstrb <= 16'h0000;
-				m_axi.wlast <= 0;
-				m_axi.bready <= 0;
 				//m_axi.wdata <= 0;
 				writestate <= WIDLE;
 			end
-
+	
 			WIDLE: begin
 				if (start_write) begin
 					m_axi.awaddr <= addr; // NOTE: MUST be 64 byte aligned! {[31:7], 6'd0}
@@ -47,7 +53,7 @@ module cachedmemorycontroller (
 				end
 				writestate <= start_write ? WADDR : WIDLE;
 			end
-
+	
 			WADDR: begin
 				if (/*m_axi.awvalid &&*/ m_axi.awready) begin
 					m_axi.awvalid <= 0;
@@ -61,7 +67,7 @@ module cachedmemorycontroller (
 					writestate <= WADDR;
 				end
 			end
-
+	
 			WDATA: begin
 				if (/*m_axi.wvalid &&*/ m_axi.wready) begin
 					unique case (wdata_cnt)
@@ -75,7 +81,7 @@ module cachedmemorycontroller (
 				end
 				writestate <= (wdata_cnt == 3'b100) ? WRESP : WDATA;
 			end
-
+	
 			WRESP: begin
 				m_axi.wvalid <= 0;
 				m_axi.wstrb <= 16'h0000;
@@ -89,31 +95,34 @@ module cachedmemorycontroller (
 				end
 			end
 		endcase
-
-		if (~aresetn) begin
-			writestate <= WINIT;
-		end
 	end
+end
 
-	// Read
-	logic [1:0] rdata_cnt;
-	assign m_axi.arlen = burstlen - 1;
-	assign m_axi.arsize = SIZE_16_BYTE; // 128bit read bus
-	assign m_axi.arburst = BURST_INCR;
+// Read
+assign m_axi.arlen = burstlen - 1;
+assign m_axi.arsize = SIZE_16_BYTE; // 128bit read bus
+assign m_axi.arburst = BURST_INCR;
 
-	typedef enum logic [2:0] {RINIT, RIDLE, RADDR, RDATA} readstate_type;
-	readstate_type readstate = RINIT;
+typedef enum logic [2:0] {RINIT, RIDLE, RADDR, RDATA} readstate_type;
+readstate_type readstate = RINIT;
 
-	always_ff @(posedge aclk) begin
+logic [1:0] rdata_cnt;
+
+always_ff @(posedge aclk) begin
+
+	if (~aresetn) begin
+		m_axi.arvalid <= 0;
+		m_axi.rready <= 0;
+		rdata_cnt <= 0;
+		readstate <= RINIT;
+	end else begin
 		rdone <= 1'b0;
-
+	
 		unique case(readstate)
 			RINIT: begin
-				m_axi.arvalid <= 0;
-				m_axi.rready <= 0;
 				readstate <= RIDLE;
 			end
-
+	
 			RIDLE : begin
 				if (start_read) begin
 					rdata_cnt <= 0;
@@ -122,7 +131,7 @@ module cachedmemorycontroller (
 				end
 				readstate <= start_read ? RADDR : RIDLE;
 			end
-
+	
 			RADDR : begin
 				if (/*m_axi.arvalid && */m_axi.arready) begin
 					m_axi.arvalid <= 0;
@@ -132,7 +141,7 @@ module cachedmemorycontroller (
 					readstate <= RADDR;
 				end
 			end
-
+	
 			RDATA: begin
 				if (m_axi.rvalid  /*&& m_axi.rready*/) begin
 					dout[rdata_cnt] <= m_axi.rdata;
@@ -145,9 +154,7 @@ module cachedmemorycontroller (
 				end
 			end
 		endcase
-
-		if (~aresetn) begin
-			readstate <= RINIT;
-		end
 	end
+end
+
 endmodule
