@@ -96,19 +96,40 @@ int main(int argc, char *argv[])
 
 static void get_input(agnes_input_t *out_input)
 {
+	static uint16_t enterdown = 0, tabdown = 0, leftdown = 0, rightdown = 0;
+	static uint16_t updown = 0, downdown = 0, commadown = 0, perioddown = 0;
+
     memset(out_input, 0, sizeof(agnes_input_t));
 
-	// Read input from the USB joystick data region
-	int32_t *jposxy_buttons = (int32_t*)JOYSTICK_POS_AND_BUTTONS;
+	// Keyboard
+	uint16_t *keystates = GetKeyStateTable();
+	static uint32_t prevGen = 0xFFFFFFFF;
+	uint32_t keyGen = GetKeyStateGeneration();
+	// Do not read same generation twice
+	if (keyGen != prevGen)
+	{
+		// Refresh key states
+		for(int i=0; i<255; ++i)
+		{
+			uint16_t updown = keystates[i]&3;
+			switch(i)
+			{
+				case HKEY_ENTER:	{ enterdown = updown&1; break; }
+				case HKEY_TAB:		{ tabdown = updown&1; break; }
+				case HKEY_A:		{ leftdown = updown&1; break; }
+				case HKEY_D:		{ rightdown = updown&1; break; }
+				case HKEY_W:		{ updown = updown&1; break; }
+				case HKEY_S:		{ downdown = updown&1; break; }
+				case HKEY_COMMA:	{ commadown = updown&1; break; }
+				case HKEY_PERIOD:	{ perioddown = updown&1; break; }
+				default:			break;
+			}
+		}
+		prevGen = keyGen;
+	}
 
-	uint16_t enterdown = GetKeyState(HKEY_ENTER) == 1; // 0:none 1:down 2:up
-	uint16_t tabdown = GetKeyState(HKEY_TAB) == 1;
-	uint16_t leftdown = GetKeyState(HKEY_A) == 1;
-	uint16_t rightdown = GetKeyState(HKEY_D) == 1;
-	uint16_t updown = GetKeyState(HKEY_W) == 1;
-	uint16_t downdown = GetKeyState(HKEY_S) == 1;
-	uint16_t commadown = GetKeyState(HKEY_COMMA) == 1;
-	uint16_t perioddown = GetKeyState(HKEY_PERIOD) == 1;
+	// Joystick
+	int32_t *jposxy_buttons = (int32_t*)JOYSTICK_POS_AND_BUTTONS;
 
     if (commadown || jposxy_buttons[2]&0x20)	out_input->a = true;
     if (perioddown || jposxy_buttons[2]&0x40)	out_input->b = true;
