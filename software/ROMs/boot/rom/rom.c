@@ -25,9 +25,9 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "R005"
+#define VERSIONSTRING "R006"
 // On-storage version
-#define DEVVERSIONSTRING "D008"
+#define DEVVERSIONSTRING "D009"
 
 // For ROM image residing on the device:
 const uint8_t s_consolefgcolor = 0x2A; // Ember
@@ -295,7 +295,7 @@ void ExecuteCmd(char *_cmd)
 
 		// TODO: These two values need to come from a CSR,
 		// pointing at a memory location with device config data (machineconfig?)
-		kprintf("Board:          : revision 2B\n");
+		kprintf("Board:          : revision 2D\n");
 		kprintf("CPU:            : 166.67MHz\n");
 
 		// Report USB serial chip version

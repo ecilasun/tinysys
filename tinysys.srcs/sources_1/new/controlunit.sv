@@ -44,10 +44,10 @@ logic [4:0] rd;
 logic [11:0] csroffset;
 logic [31:0] immed;
 logic selectimmedasrval2;
-logic [31:0] csrprevval = 32'd0;
+logic [31:0] csrprevval;
 
-logic btready = 1'b0;
-logic [31:0] btarget = 32'd0;
+logic btready;
+logic [31:0] btarget;
 
 assign branchresolved = btready;
 assign branchtarget = btarget;
@@ -162,9 +162,9 @@ typedef enum logic [3:0] {
 	SYSCDISCARD, SYSCFLUSH, WCACHE} controlunitmode;
 controlunitmode ctlmode = INIT;
 
-logic [31:0] rwaddress = 32'd0;
-logic [31:0] offsetPC = 32'd0;
-logic [31:0] adjacentPC = 32'd0;
+logic [31:0] rwaddress;
+logic [31:0] offsetPC;
+logic [31:0] adjacentPC;
 
 always @(posedge aclk) begin
 	// TODO: Stop this if CPU's halted for debug
@@ -241,10 +241,6 @@ always_comb begin
 	rwen = m_ibus.rdone || mulready || divready || divuready || wback;
 end
 
-always_comb begin
-	adjacentPC = PC + PCincrement;
-end
-
 // EXEC
 always @(posedge aclk) begin
 	btready <= 1'b0;	// Stop branch target ready strobe
@@ -275,6 +271,7 @@ always @(posedge aclk) begin
 			m_ibus.wstrobe <= 4'h0;
 			m_ibus.cstrobe <= 1'b0;
 			m_ibus.dcacheop <= 2'b0;
+			btready <= 1'b0;
 			ctlmode <= READINSTR;
 		end
 
@@ -315,6 +312,7 @@ always @(posedge aclk) begin
 				wbdest <= rd;
 				rwaddress <= rval1 + immed;
 				offsetPC <= PC + immed;
+				adjacentPC <= PC + PCincrement;
 
 				unique case (1'b1)
 					instrOneHotOut[`O_H_STORE]: begin
