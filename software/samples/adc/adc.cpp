@@ -24,11 +24,19 @@ int main( int argc, char **argv )
 	VPUSetScanoutAddress(&vx, (uint32_t)framebufferB);
 	VPUSetDefaultPalette(&vx);
 
+	struct EVideoSwapContext sc;
+	sc.cycle = 0;
+	sc.framebufferA = framebufferA;
+	sc.framebufferB = framebufferB;
+	VPUSwapPages(&vx, &sc);
+
 	int cycle = 0;
+	char tmpstr[128];
 	while (1)
 	{
 		// Read temperature
 		temperaturebuffer[x] = ADCGetRawTemperature();
+		float tmp = ADCRawTemperatureToCentigrade(temperaturebuffer[x]);
 
 		// Next sample slot
 		x++;
@@ -36,15 +44,8 @@ int main( int argc, char **argv )
 		// Flush data cache at last pixel so we can see a coherent image
 		if (x==320)
 		{
-			// Video scan-out page
-			uint8_t *readpage = (cycle%2) ? framebufferA : framebufferB;
-			// Video write page
-			uint8_t *writepage = (cycle%2) ? framebufferB : framebufferA;
 			// Write page as words for faster block copy
-			uint32_t *writepageword = (uint32_t*)writepage;
-			// flip the read and write pages
-			VPUSetWriteAddress(&vx, (uint32_t)writepage);
-			VPUSetScanoutAddress(&vx, (uint32_t)readpage);
+			uint32_t *writepageword = (uint32_t*)sc.writepage;
 
 			// Clear screen to white
 			for (uint32_t i=0;i<80*240;++i)
@@ -54,13 +55,18 @@ int main( int argc, char **argv )
 			for (uint32_t i=0;i<320;++i)
 			{
 				uint32_t y = (temperaturebuffer[i]/17)%240;
-				writepage[i + y*320] = 0x0A; // Green
+				sc.writepage[i + y*320] = 0x0A; // Green
 			}
 
 			x = 0;
 			CFLUSH_D_L1;
 
+			int L = snprintf(tmpstr, 127, "Temperature: %f C", tmp);
+			VPUPrintString(&vx, 0x00, 0x0F, 8, 8, tmpstr, L);
+
 			++cycle;
+			VPUWaitVSync();
+			VPUSwapPages(&vx, &sc);
 		}
 	}
 

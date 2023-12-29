@@ -70,6 +70,7 @@ void VPUSetPal(const uint8_t _paletteIndex, const uint32_t _red, const uint32_t 
 uint32_t VPUReadVBlankCounter();
 void VPUSwapPages(struct EVideoContext* _vx, struct EVideoSwapContext *_sc);
 void VPUWaitVSync();
+void VPUPrintString(struct EVideoContext *_context, const uint8_t _foregroundIndex, const uint8_t _backgroundIndex, const uint16_t _x, const uint16_t _y, const char *_message, int _length);
 
 // Software emulated
 void VPUConsoleSetColors(struct EVideoContext *_context, const uint8_t _foregroundIndex, const uint8_t _backgroundIndex);

@@ -374,6 +374,54 @@ void VPUConsoleResolve(struct EVideoContext *_context)
 	CFLUSH_D_L1;
 }
 
+void VPUPrintString(struct EVideoContext *_context, const uint8_t _foregroundIndex, const uint8_t _backgroundIndex, const uint16_t _x, const uint16_t _y, const char *_message, int _length)
+{
+	uint32_t *vramBase = (uint32_t*)_context->m_cpuWriteAddressCacheAligned;
+	uint32_t stride = _context->m_strideInWords;
+	uint32_t FG = (_foregroundIndex<<24) | (_foregroundIndex<<16) | (_foregroundIndex<<8) | _foregroundIndex;
+	uint32_t BG = (_backgroundIndex<<24) | (_backgroundIndex<<16) | (_backgroundIndex<<8) | _backgroundIndex;
+
+	// Align to 4 pixels
+	uint16_t cx = _x&0xFFFC;
+	// Y is aligned to 1 pixel
+	uint16_t cy = _y;
+
+	for (int i=0; i<_length; ++i)
+	{
+		int currentchar = _message[i];
+		if (currentchar<32)
+			continue;
+
+		int charrow = (currentchar>>4)*8;
+		int charcol = (currentchar%16);
+		for (int y=0; y<8; ++y)
+		{
+			int yoffset = (cy*8+y)*stride;
+			// Expand bit packed character row into individual pixels
+			uint8_t chardata = residentfont[charcol+((charrow+y)*16)];
+			// Output the 2 words (8 pixels) for this row
+			for (int x=0; x<2; ++x)
+			{
+				// X offset in words
+				int xoffset = cx + x;
+				// Generate foreground / background output via masks
+				// Note that the nibbles of the font bytes are flipped for this to work
+				uint32_t mask = quadexpand[chardata&0x0F];
+				uint32_t invmask = ~mask;
+				uint32_t fourPixels = (mask & FG) | (invmask & BG);
+				// Output the combined 4-pixel value
+				vramBase[xoffset + yoffset] = fourPixels;
+				// Move to the next set of 4 pixels
+				chardata = chardata >> 4;
+			}
+		}
+		// Next char position (2 words)
+		cx+=2;
+	}
+
+	CFLUSH_D_L1;	
+}
+
 void VPUClear(struct EVideoContext *_context, const uint32_t _colorWord)
 {
 	uint32_t *vramBaseAsWord = (uint32_t*)_context->m_cpuWriteAddressCacheAligned;
