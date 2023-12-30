@@ -4,7 +4,7 @@
 module tophat(
 	// Board clock and reset
     input wire sys_clk
-    ,input wire sysresetn
+    //,input wire sysresetn
     // Debug LEDs
     ,output wire [3:0] leds
 	// DDR3 SDRAM
@@ -169,7 +169,7 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.clk166(clk166),
 	.clk200(clk200),
 	.aresetn(aresetn),
-	.sysresetn(sysresetn), // Soft reboot
+	//.sysresetn(sysresetn), // interrupt
 	.preresetn(preresetn),
 	// Debug bus
 	//.s_dbg(dbgbus),

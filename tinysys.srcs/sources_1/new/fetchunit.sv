@@ -127,9 +127,9 @@ decoder decoderinst(
 	leaveIllegalISR    93          100
 */
 
-logic [6:0] injectAddr = 7'd0;	// Instruction injection start and read address
-logic [6:0] injectStop = 7'd0;	// Instruction injection stop address
-logic [4:0] entryState = 5'd0;	// State at entry time
+logic [6:0] injectAddr;	// Instruction injection start and read address
+logic [6:0] injectStop;	// Instruction injection stop address
+logic [4:0] entryState;	// State at entry time
 
 logic [31:0] injectionROM [0:100];
 
@@ -195,11 +195,14 @@ logic [15:0] lowerhalf = 16'd0;
 always @(posedge aclk) begin
 
 	if (~aresetn) begin
-		PC <= RESETVECTOR;
-		prevPC <= RESETVECTOR;
-		adjacentPC <= RESETVECTOR;
-		emitPC <= RESETVECTOR;
+		PC <= 32'd0;
+		prevPC <= 32'd0;
+		adjacentPC <= 32'd0;
+		emitPC <= 32'd0;
 		IR <= 32'd0;
+		injectAddr <= 7'd0;
+		injectStop <= 7'd0;
+		entryState <= 5'd0;
 		fetchmode <= INIT;
 	end else begin
 		fetchena <= 1'b0;
@@ -208,6 +211,7 @@ always @(posedge aclk) begin
 
 		unique case(fetchmode)
 			INIT: begin
+				PC <= RESETVECTOR;
 				fetchena <= romReady;
 				fetchmode <= romReady ? FETCH : INIT;
 			end

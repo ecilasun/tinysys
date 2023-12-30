@@ -183,8 +183,13 @@ set_property PULLUP true [get_ports usba_resn]
 ## NMI switch
 ## ------------------------------------------------------------------------------------------------------
 
-set_property -dict {PACKAGE_PIN Y4 IOSTANDARD LVCMOS33} [get_ports sysresetn]
-set_property PULLUP true [get_ports sysresetn]
+## 2B
+## set_property -dict {PACKAGE_PIN Y4 IOSTANDARD LVCMOS33} [get_ports sysresetn]
+
+## 2D
+## set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports sysresetn]
+
+## set_property PULLUP true [get_ports sysresetn]
 
 ## ------------------------------------------------------------------------------------------------------
 ## DDR3 SDRAM (MT41K128M16XX-15E)
@@ -214,11 +219,16 @@ set_property IBUF_LOW_PWR FALSE [get_ports {ddr3_dq[14]}]
 set_property IBUF_LOW_PWR FALSE [get_ports {ddr3_dq[15]}]
 
 ## ------------------------------------------------------------------------------------------------------
+## False paths
+## ------------------------------------------------------------------------------------------------------
+
+set_false_path -to [get_ports {leds[*]}]
+
+## ------------------------------------------------------------------------------------------------------
 ## Timing
 ## ------------------------------------------------------------------------------------------------------
 
 ##set_property CLOCK_DEDICATED_ROUTE BACKBONE [get_nets {clockandresetinst/sys_clock_i}]
-set_false_path -to [get_ports {leds[*]}]
 
 ## ------------------------------------------------------------------------------------------------------
 ## Programming

@@ -12,7 +12,7 @@ module tinysoc #(
 	input wire clk166,
 	input wire clk200,
 	input wire aresetn,
-	input wire sysresetn,
+	//input wire sysresetn,
 	input wire preresetn,
 	output wire [3:0] leds,
 	//debugbusif.slave s_dbg,
@@ -329,7 +329,7 @@ axi4CSRFile csrfileinstHart0(
 	.keyfifoempty(keyfifoempty),
 	.usbirq({usbairq, usbcirq}),
 	// Soft reset
-	.sysresetn(sysresetn),
+	//.sysresetn(sysresetn),
 	// Shadow registers
 	.mepc(mepcHart0),
 	.mtvec(mtvecHart0),

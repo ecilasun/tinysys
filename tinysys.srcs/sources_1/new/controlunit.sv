@@ -279,8 +279,6 @@ always @(posedge aclk) begin
 		
 		retiredstrobe <= 1'b0;
 	
-		wbdin <= 32'd0;
-	
 		if (m_ibus.wdone) pendingwrite <= 1'b0;
 		if (m_ibus.rdone) pendingload <= 1'b0;
 		if (mulready) pendingmul <= 1'b0;
@@ -288,6 +286,7 @@ always @(posedge aclk) begin
 	
 		unique case(ctlmode)
 			INIT: begin
+				wbdin <= 32'd0;
 				ctlmode <= READINSTR;
 			end
 	
