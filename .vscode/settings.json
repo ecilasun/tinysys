@@ -4,5 +4,15 @@
 		"chrono": "c",
 		"cstdlib": "cpp",
 		"stat.h": "c"
+	},
+	"terminal.integrated.profiles.windows": {
+		"MSYS2": {
+			"path": "C:\\msys64\\mingw32.exe",
+			"args": [],
+			"env": {
+			  "MSYSTEM": "MINGW64",
+			  "CHERE_INVOKING": "1"
+			}
+		  }
 	}
 }

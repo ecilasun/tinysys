@@ -1,9 +1,13 @@
 # Setup
 
-ifeq ($(OS), Windows_NT)
-UNAME := Windows
+ifeq ($(OS),Windows_NT)
+	ifeq ($(MSYSTEM), MINGW32)
+		UNAME := MSYS
+	else
+		UNAME := Windows
+	endif
 else
-UNAME := $(shell uname)
+	UNAME := $(shell uname)
 endif
 
 default: all
@@ -19,10 +23,10 @@ thirdparty_libs = ../../3rdparty
 RISCV_PREFIX ?= riscv64-unknown-elf-
 RISCV_GCC ?= $(RISCV_PREFIX)g++
 
-ifeq ($(UNAME), Linux)
-RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++14 -Wall -Ofast -march=rv32imc_zicsr_zifencei -mabi=ilp32 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
-else
+ifeq ($(UNAME), Windows)
 RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++14 -Wall -Ofast -march=rv32imc -mabi=ilp32 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
+else
+RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++14 -Wall -Ofast -march=rv32imc_zicsr_zifencei -mabi=ilp32 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
 endif
 
 incs  += -I$(src_dir) -I$(corelib_dir)/ -I$(thirdparty_libs)/ -I$(src_dir)/.
@@ -45,8 +49,8 @@ all: modplayer.elf
 # Clean
 
 clean:
-ifeq ($(UNAME), Linux)
-	rm -rf $(objs) $(junk)
-else
+ifeq ($(UNAME), Windows)
 	del $(objs) $(junk)
+else
+	rm -rf $(objs) $(junk)
 endif

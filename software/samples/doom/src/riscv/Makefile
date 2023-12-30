@@ -1,3 +1,13 @@
+ifeq ($(OS),Windows_NT)
+	ifeq ($(MSYSTEM), MINGW32)
+		UNAME := MSYS
+	else
+		UNAME := Windows
+	endif
+else
+	UNAME := $(shell uname)
+endif
+
 CROSS ?= riscv64-unknown-elf-
 
 CC = $(CROSS)gcc
@@ -6,7 +16,12 @@ SIZE = $(CROSS)size
 
 #CFLAGS = -mcmodel=medany -std=gnu99 --param l1-cache-line-size=64 --param l1-cache-size=16 -Wall -Ofast -flto -march=rv32imc_zicsr_zifencei -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -I.. -I../../../../SDK/
 
+ifeq ($(UNAME), Windows)
 CFLAGS = -mcmodel=medany -std=gnu99 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -O2 -flto -march=rv32imc -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -I.. -I../../../../SDK/
+else
+CFLAGS = -mcmodel=medany -std=gnu99 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -O2 -flto -march=rv32imc_zicsr_zifencei -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -I.. -I../../../../SDK/
+endif
+
 CFLAGS += \
 	-DNORMALUNIX \
 	$(NULL)
@@ -42,9 +57,11 @@ doom.elf: $(addprefix ../,$(SOURCES_doom)) $(SOURCES_doom_arch)
 	$(SIZE) $@
 
 clean:
+ifeq ($(UNAME), Windows)
 	del *.elf *.o *.gen.h doom.txt
-
-#rm -f *.elf *.o *.gen.h doom.txt
+else
+	rm -rf *.elf *.o *.gen.h doom.txt
+endif
 
 %.txt: %.elf
 	$(OBJDUMP) -x -D -S $< >> $@

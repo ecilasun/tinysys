@@ -1,8 +1,18 @@
 # Setup
 
-XLEN ?= 32
+ifeq ($(OS),Windows_NT)
+	ifeq ($(MSYSTEM), MINGW32)
+		UNAME := MSYS
+	else
+		UNAME := Windows
+	endif
+else
+	UNAME := $(shell uname)
+endif
 
 default: all
+
+XLEN ?= 32
 
 # Directories
 
@@ -24,7 +34,11 @@ folders = \
 RISCV_PREFIX ?= riscv64-unknown-elf-
 RISCV_GCC ?= $(RISCV_PREFIX)gcc
 RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump
+ifeq ($(UNAME), Windows)
 RISCVTOOL ?= ..\..\build\release\riscvtool.exe
+else
+RISCVTOOL ?= ../../build/release/riscvtool
+endif
 # No filesystem when defined
 # FILESYSTEM ?= -DDISABLE_FILESYSTEM
 FILESYSTEM ?= -DENABLE_FILESYSTEM -DLFS_NO_MALLOC -DLFS_NO_DEBUG
@@ -33,8 +47,11 @@ FILESYSTEM ?= -DENABLE_FILESYSTEM -DLFS_NO_MALLOC -DLFS_NO_DEBUG
 ROMWORDSIZE ?= 16
 # 512 bit cache lines makes 64 bytes per line
 # 256 cache lines makes total cache size 16 Kbytes
-#RISCV_GCC_OPTS ?= -mcmodel=medany -std=gnu99 -march=rv32imc_zicsr_zifencei -mabi=ilp32 --param l1-cache-line-size=64 --param l1-cache-size=16 -Wall -Os -static -ffreestanding -nostartfiles -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,-gc-sections,--strip-debug
-RISCV_GCC_OPTS ?= -mcmodel=medany -std=gnu99 -march=rv32imc -mabi=ilp32 --param l1-cache-line-size=64 --param l1-cache-size=16 -Wall -Wno-format -Os -static -ffreestanding -nostartfiles -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,-gc-sections,--strip-debug -fPIC
+ifeq ($(UNAME), Windows)
+RISCV_GCC_OPTS ?= -mcmodel=medany -std=gnu99 -march=rv32imc -mabi=ilp32 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Wno-format -Os -static -ffreestanding -nostartfiles -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,-gc-sections,--strip-debug
+else
+RISCV_GCC_OPTS ?= -mcmodel=medany -std=gnu99 -march=rv32imc_zicsr_zifencei -mabi=ilp32 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Wno-format -Os -static -ffreestanding -nostartfiles -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,-gc-sections,--strip-debug
+endif
 
 incs  += -I$(src_dir) -I$(corelib_dir) -I$(thirdparty_libs)/ $(addprefix -I$(src_dir)/, $(folders))
 objs  :=
@@ -43,14 +60,8 @@ libs  := $(wildcard $(thirdparty_libs)/**/*.c)
 define compile_ROM
 $(1).elf: $(wildcard $(src_dir)/$(1)/*) $(wildcard $(src_dir)/*)
 	$$(RISCV_GCC) -DBUILDING_ROM $$(FILESYSTEM) $$(incs) $$(RISCV_GCC_OPTS) -o $$@ $(wildcard $(src_dir)/$(1)/*.c) $(wildcard $(corelib_dir)/*.c) $$(libs) -Wl,-T$(1)/rom.lds
-
-$(1).mem: $(wildcard $(src_dir)/$(1).elf)
 	$$(RISCVTOOL) $(src_dir)/$(1).elf -makemem $$(ROMWORDSIZE) $(src_dir)/$(1).mem
-
-$(1).bin: $(wildcard $(src_dir)/$(1).elf)
 	$$(RISCVTOOL) $(src_dir)/$(1).elf -makebin 4 $(src_dir)/$(1).bin
-
-$(1).txt: $(wildcard $(src_dir)/$(1).elf)
 	$$(RISCV_OBJDUMP) $(src_dir)/$(1).elf -x -D -S >> $(src_dir)/$(1).txt
 endef
 
@@ -77,6 +88,8 @@ all: executables romimages overlayimage disassembly
 # Clean
 
 clean:
+ifeq ($(UNAME), Windows)
 	del $(objs) $(junk)
-
-# rm -rf $(objs) $(junk)
+else
+	rm -rf $(objs) $(junk)
+endif

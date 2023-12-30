@@ -1,5 +1,15 @@
 # Setup
 
+ifeq ($(OS),Windows_NT)
+	ifeq ($(MSYSTEM), MINGW32)
+		UNAME := MSYS
+	else
+		UNAME := Windows
+	endif
+else
+	UNAME := $(shell uname)
+endif
+
 default: all
 
 # Directories
@@ -12,8 +22,11 @@ thirdparty_libs = ../../3rdparty
 
 RISCV_PREFIX ?= riscv64-unknown-elf-
 RISCV_GCC ?= $(RISCV_PREFIX)g++
-#RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++14 --param l1-cache-line-size=64 --param l1-cache-size=16 -Wall -Ofast -march=rv32imc_zicsr_zifencei -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
+ifeq ($(UNAME), Windows)
 RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++14 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Ofast -march=rv32imc -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -lgcc -lm
+else
+RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++14 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Ofast -march=rv32imc_zicsr_zifencei -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -lgcc -lm
+endif
 
 incs  += -I$(src_dir) -I$(corelib_dir)/ -I$(thirdparty_libs)/ -I$(src_dir)/.
 libs += $(wildcard $(corelib_dir)/*.c) $(wildcard $(thirdparty_libs)/**/*.c) $(wildcard $(thirdparty_libs)/**/*.cpp)
@@ -35,5 +48,8 @@ all: imguidemo.elf
 # Clean
 
 clean:
+ifeq ($(UNAME), Windows)
 	del $(objs) $(junk)
-# rm -rf $(objs) $(junk)
+else
+	rm -rf $(objs) $(junk)
+endif

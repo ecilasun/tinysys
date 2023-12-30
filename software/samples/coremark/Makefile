@@ -1,5 +1,15 @@
 # Setup
 
+ifeq ($(OS),Windows_NT)
+	ifeq ($(MSYSTEM), MINGW32)
+		UNAME := MSYS
+	else
+		UNAME := Windows
+	endif
+else
+	UNAME := $(shell uname)
+endif
+
 default: all
 
 # Directories
@@ -12,7 +22,11 @@ corelib_dir = ../../SDK
 OBJDUMP ?= riscv64-unknown-elf-
 RISCV_PREFIX ?= riscv64-unknown-elf-
 RISCV_GCC ?= $(RISCV_PREFIX)gcc
-RISCV_GCC_OPTS ?= -mcmodel=medany -Ofast -fno-exceptions -Wall -march=rv32im -mabi=ilp32 --param l1-cache-line-size=64 --param l1-cache-size=16 -lgcc -lm
+ifeq ($(UNAME), Windows)
+RISCV_GCC_OPTS ?= -mcmodel=medany --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Ofast -march=rv32imc -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
+else
+RISCV_GCC_OPTS ?= -mcmodel=medany --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Ofast -march=rv32imc_zicsr_zifencei -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
+endif
 
 incs  += -I$(src_dir) -I$(corelib_dir)/ -I$(src_dir)/.
 libs += $(wildcard $(corelib_dir)/*.c) 
@@ -37,4 +51,8 @@ all: coremark.elf coremark.txt
 # Clean
 
 clean:
-	del $(objs) $(junk) *.txt
+ifeq ($(UNAME), Windows)
+	del $(objs) $(junk)
+else
+	rm -rf $(objs) $(junk)
+endif

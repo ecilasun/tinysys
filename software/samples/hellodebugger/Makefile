@@ -1,5 +1,15 @@
 # Setup
 
+ifeq ($(OS),Windows_NT)
+	ifeq ($(MSYSTEM), MINGW32)
+		UNAME := MSYS
+	else
+		UNAME := Windows
+	endif
+else
+	UNAME := $(shell uname)
+endif
+
 default: all
 
 # Directories
@@ -15,7 +25,11 @@ RISCV_GCC ?= $(RISCV_PREFIX)g++
 # RELEASE
 #RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++14 -Wall -Ofast -march=rv32imc -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
 # DEBUG
+ifeq ($(UNAME), Windows)
 RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++14 -Wall -O0 -ggdb -march=rv32imc -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
+else
+RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++14 -Wall -O0 -ggdb -march=rv32imc_zicsr_zifencei -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
+endif
 
 incs  += -I$(src_dir) -I$(corelib_dir)/ -I$(thirdparty_libs)/ -I$(src_dir)/.
 libs += $(wildcard $(corelib_dir)/*.c) $(wildcard $(thirdparty_libs)/**/*.c)
@@ -37,4 +51,8 @@ all: hellodebugger.elf
 # Clean
 
 clean:
+ifeq ($(UNAME), Windows)
 	del $(objs) $(junk)
+else
+	rm -rf $(objs) $(junk)
+endif
