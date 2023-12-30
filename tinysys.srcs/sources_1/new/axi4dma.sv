@@ -64,9 +64,18 @@ initial begin
 		burstcache[i] = 128'd0;
 end
 
+logic burstwe;
+logic [127:0] burstdin;
+always @(posedge aclk) begin
+	if (burstwe)
+		burstcache[burstcursor] <= burstdin;
+end
+wire [127:0] burstdout = burstcache[burstcursor]; 
+
 always_ff @(posedge aclk) begin
 
 	cmdre <= 1'b0;
+	burstwe <= 1'b0;
 
 	case (cmdmode)
 
@@ -78,6 +87,7 @@ always_ff @(posedge aclk) begin
 			m_axi.bready <= 0;
 			m_axi.arvalid <= 0;
 			m_axi.rready <= 0;
+			burstwe <= 1'b0;
 			dmacmd <= 32'd0;
 			cmdmode <= WCMD;
 		end
@@ -125,7 +135,7 @@ always_ff @(posedge aclk) begin
 			if (dmafifovalid && ~dmafifoempty) begin
 				// Single burst, size < 256
 				dmasingleburstcount <= dmafifodout[7:0];
-				burstcursor <= 8'd0;
+				burstcursor <= 8'hFF;
 				// Advance FIFO
 				cmdre <= 1'b1;
 				cmdmode <= FINALIZE;
@@ -162,7 +172,8 @@ always_ff @(posedge aclk) begin
 		READLOOP: begin
 			if (m_axi.rvalid) begin
 				m_axi.rready <= ~m_axi.rlast;
-				burstcache[burstcursor] <= m_axi.rdata;
+				burstwe <= 1'b1;
+				burstdin <= m_axi.rdata;
 				burstcursor <= burstcursor + 8'd1;
 				cmdmode <= ~m_axi.rlast ? READLOOP : SETUPWRITE;
 			end
@@ -185,7 +196,7 @@ always_ff @(posedge aclk) begin
 		end
 		
 		WRITEBEGIN: begin
-			m_axi.wdata <= burstcache[burstcursor];
+			m_axi.wdata <= burstdout;
 			m_axi.wstrb <= 16'hFFFF;
 			m_axi.wvalid <= 1'b1;
 			m_axi.wlast <= (burstcursor==dmasingleburstcount) ? 1'b1 : 1'b0;
