@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <time.h>
 
@@ -29,12 +28,6 @@ int main()
 
 	printf("Changing work directory to sd:/\n");
 	chdir("sd:/");
-
-	printf("Attempting to nanosleep(1sec), might run longer than intended\n");
-	timespec req;
-	req.tv_nsec = 0;
-	req.tv_sec = 1;
-	nanosleep(&req, nullptr);
 
 	FILE *fp = fopen("sd:/test.jpg", "rb");
 	if (fp)

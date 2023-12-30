@@ -2,6 +2,12 @@
 
 XLEN ?= 32
 
+ifeq ($(OS), Windows_NT)
+UNAME := Windows
+else
+UNAME := $(shell uname)
+endif
+
 default: all
 
 # Directories
@@ -41,7 +47,12 @@ RISCV_PREFIX ?= riscv64-unknown-elf-
 RISCV_GCC ?= $(RISCV_PREFIX)g++
 #RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump
 #RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++14 --param l1-cache-line-size=64 --param l1-cache-size=16 -Wall -Ofast -march=rv32imc_zicsr_zifencei -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
+
+ifeq ($(UNAME), Linux)
+RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++20 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Ofast -march=rv32imc_zicsr_zifencei -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
+else
 RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++20 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Ofast -march=rv32imc -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
+endif
 
 incs  += -I$(src_dir) -I$(corelib_dir) -I$(memtest_libs)/ -I$(nanojpeg_libs)/ $(addprefix -I$(src_dir)/, $(folders))
 libs += $(wildcard $(corelib_dir)/*.S) $(wildcard $(corelib_dir)/*.c) $(wildcard $(memtest_libs)/*.c) $(wildcard $(nanojpeg_libs)/*.c)
@@ -74,7 +85,8 @@ all: executables
 # Clean
 
 clean:
+ifeq ($(UNAME), Linux)
+	rm -rf $(objs) $(junk)
+else
 	del $(objs) $(junk)
-
-# rm -rf $(objs) $(junk)
-# del $(objs) $(junk)
+endif
