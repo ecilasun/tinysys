@@ -17,3 +17,6 @@ board/expansionboardA**.lck
 vivado_*.backup.jou
 vivado_*.backup.log
 software/samples/doom/src/riscv/*.txt
+software/emulator/build/**
+software/emulator/waf3-**
+software/emulator/.lock**
