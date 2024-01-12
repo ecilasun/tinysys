@@ -13,6 +13,7 @@ bool CEmulator::Step()
     if (m_clock.m_edge==RisingEdge)
     {
         // TODO:
+        // We want the CPU to be able to boot the ROM image, and work as if it's the real deal
     }
 
     return false;
