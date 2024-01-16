@@ -13,7 +13,7 @@ module controlunit #(
 	// Instruction FIFO control
 	input wire ififoempty,
 	input wire ififovalid,
-	input wire [131:0] ififodout,
+	input wire [121:0] ififodout,
 	output wire ififord_en,
 	// CPU cycle / retired instruction counts
 	output wire [63:0] cpuclocktime,
@@ -34,7 +34,7 @@ logic [31:0] PCincrement;
 logic [31:0] immed;
 logic [31:0] csrprevval;
 logic [17:0] instrOneHotOut;
-logic [11:0] func12;
+logic [1:0] sysop;
 logic [11:0] csroffset;
 logic [4:0] rs1;
 logic [4:0] rs2;
@@ -293,7 +293,7 @@ always @(posedge aclk) begin
 			READINSTR: begin
 				// Grab next decoded instruction if there's something in the FIFO
 				{	csroffset,
-					func12, func3,
+					sysop, func3,
 					instrOneHotOut, selectimmedasrval2,
 					bluop, aluop,
 					rs1, rs2, rd,
@@ -439,14 +439,11 @@ always @(posedge aclk) begin
 			end
 	
 			SYSOP: begin
-				case ({func3, func12})
-					{3'b000, `F12_CDISCARD}:	ctlmode <= SYSCDISCARD;
-					{3'b000, `F12_CFLUSH}:		ctlmode <= SYSCFLUSH;
-					//{3'b000, `F12_MRET}:		ctlmode <= SYSMRET;		// Handled by Fetch unit
-					//{3'b000, `F12_WFI}:		ctlmode <= SYSWFI;		// Handled by Fetch unit
-					//{3'b000, `F12_EBREAK}:	ctlmode <= SYSEBREAK;	// Handled by Fetch unit
-					//{3'b000, `F12_ECALL}:		ctlmode <= SYSECALL;	// Handled by Fetch unit
-					default:					ctlmode <= CSROPS;
+				unique case (sysop)
+					2'b00,
+					2'b11 : ctlmode <= CSROPS;
+					2'b10 : ctlmode <= SYSCDISCARD;
+					2'b01 : ctlmode <= SYSCFLUSH;
 				endcase
 			end
 	

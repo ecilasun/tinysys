@@ -1,113 +1,115 @@
-cycle	0x0c00	URO		hypervisor	Cycle counter for RDCYCLE instruction.
-cycleh	0x0c80	URO		machine	Upper 32 bits of cycle, RV32I only.
-dcsr	0x07b0	DRW			Debug control and status register.
-dpc	0x07b1	DRW		debug	Debug PC.
-dscratch0	0x07b2	DRW		debug	Debug scratch register 0.
-dscratch1	0x07b3	DRW		debug	Debug scratch register 1.
-fcsr	0x0003	URW		machine	Floating-Point Control and Status
-fflags	0x0001	URW		memory	Floating-Point Accrued Exceptions.
-frm	0x0002	URW		dep-table	Floating-Point Dynamic Rounding Mode.
-hcounteren	0x0606	HRW		hypervisor	Hypervisor counter enable.
-hedeleg	0x0602	HRW		hypervisor	Hypervisor exception delegation register.
-hgatp	0x0680	HRW		hypervisor	Hypervisor guest address translation and protection.
-hgeie	0x0607	HRW		hypervisor	Hypervisor guest external interrupt-enable register.
-hgeip	0x0e07	HRO		hypervisor	Hypervisor guest external interrupt pending.
-hideleg	0x0603	HRW		hypervisor	Hypervisor interrupt delegation register.
-hie	0x0604	HRW		hypervisor	Hypervisor interrupt-enable register.
-hip	0x0644	HRW		hypervisor	Hypervisor interrupt pending.
-hpmcounter3	0x0c03	URO		hypervisor	Performance-monitoring counter.
-hpmcounter31	0x0c1f	URO		hypervisor	Performance-monitoring counter.
-hpmcounter31h	0x0c9f	URO		hypervisor	Upper 32 bits of hpmcounter31, RV32I only.
-hpmcounter3h	0x0c83	URO		hypervisor	Upper 32 bits of hpmcounter3, RV32I only.
-hpmcounter4	0x0c04	URO		hypervisor	Performance-monitoring counter.
-hpmcounter4h	0x0c84	URO		hypervisor	Upper 32 bits of hpmcounter4, RV32I only.
-hstatus	0x0600	HRW		hypervisor	Hypervisor status register.
-htimedelta	0x0605	HRW		hypervisor	Delta for VS/VU-mode timer.
-htimedeltah	0x0615	HRW		hypervisor	Upper 32 bits of htimedelta, RV32I only.
-htinst	0x064a	HRW		hypervisor	Hypervisor trap instruction (transformed).
-htval	0x0643	HRW		hypervisor	Hypervisor bad guest physical address.
-instret	0x0c02	URO		hypervisor	Instructions-retired counter for RDINSTRET instruction.
-instreth	0x0c82	URO		machine	Upper 32 bits of instret, RV32I only.
-marchid	0x0f12	MRO	mxlen	machine	Machine Architecture ID
-mbase	0x0380	MRW			Base register.
-mbound	0x0381	MRW			Bound register.
-mcause	0x0342	MRW	mxlen	machine	Machine Exception Cause
-mcounteren	0x0306	MRW	32	machine	Counter Enable
-mcountinhibit	0x0320	MRW	32	machine	Machine Counter Inhibit
-mcycle	0x0b00	MRW	64	machine	Clock Cycles Executed Counter
-mcycleh	0x0b80	MRW	32	machine	Upper 32 bits of mcycle, RV32I only.
-mdbase	0x0384	MRW			Data base register.
-mdbound	0x0385	MRW			Data bound register.
-medeleg	0x0302	MRW	mxlen	machine	Machine Exception Delegation
-mepc	0x0341	MRW	mxlen	machine	Machine Exception Program Counter
-mhartid	0x0f14	MRO	mxlen	machine	Hardware Thread ID
-mhpmcounter3	0x0b03	MRW	64	machine	Event Counters
-mhpmcounter31	0x0b1f	MRW		machine	Machine performance-monitoring counter.
-mhpmcounter31h	0x0b9f	MRW	32	machine	Upper 32 bits of mhpmcounter31, RV32I only.
-mhpmcounter3h	0x0b83	MRW	32	machine	Upper 32 bits of mhpmcounter3, RV32I only.
-mhpmcounter4	0x0b04	MRW		machine	Machine performance-monitoring counter.
-mhpmcounter4h	0x0b84	MRW	32	machine	Upper 32 bits of mhpmcounter4, RV32I only.
-mhpmevent3	0x0323	MRW	mxlen	machine	Event Counter Event Select
-mhpmevent31	0x033f	MRW		machine	Machine performance-monitoring event selector.
-mhpmevent4	0x0324	MRW	mxlen		Machine performance-monitoring event selector.
-mibase	0x0382	MRW			Instruction base register.
-mibound	0x0383	MRW			Instruction bound register.
-mideleg	0x0303	MRW	mxlen	machine	Machine Interrupt Delegation
-mie	0x0304	MRW	mxlen	machine	Machine Interrupt Enable
-mimpid	0x0f13	MRO	mxlen	machine	Machine Implementation ID
-minstret	0x0b02	MRW	64	machine	Number of Instructions Retired Counter
-minstreth	0x0b82	MRW	32	machine	Upper 32 bits of minstret, RV32I only.
-mip	0x0344	MRW	mxlen	machine	Machine Interrupt Pending
-misa	0x0301	MRW	mxlen	machine	Machine ISA
-mscratch	0x0340	MRW	mxlen	machine	Machine Mode Scratch Register
-mstatus	0x0300	MRW	mxlen	machine	Machine Status
-mstatush	0x0310	MRW		hypervisor	Additional machine status register, RV32 only.
-mtime	MMIO		64	machine	Machine Timer
-mtimecmp	MMIO		64	machine	Machine Timer Compare
-mtinst	0x034a	MRW		hypervisor	Machine trap instruction (transformed).
-mtval	0x0343	MRW	mxlen	machine	Machine Trap Value
-mtval2	0x034b	MRW		hypervisor	Machine bad guest physical address.
-mtvec	0x0305	MRW	mxlen	machine	Machine Trap Vector Base Address
-mvendorid	0x0f11	MRO	32	machine	Machine Vendor ID
-pmpaddr0	0x03b0	MRW		machine	Physical memory protection address register.
-pmpaddr1	0x03b1	MRW		machine	Physical memory protection address register.
-pmpaddr15	0x03bf	MRW		machine	Physical memory protection address register.
-pmpcfg0	0x03a0	MRW		machine	Physical memory protection configuration.
-pmpcfg1	0x03a1	MRW		machine	Physical memory protection configuration, RV32 only.
-pmpcfg2	0x03a2	MRW		machine	Physical memory protection configuration.
-pmpcfg3	0x03a3	MRW		machine	Physical memory protection configuration, RV32 only.
-satp	0x0180	SRW		supervisor	Supervisor address translation and protection.
-scause	0x0142	SRW		supervisor	Supervisor Exception Cause
-scounteren	0x0106	SRW		machine	Counter Enable
-sedeleg	0x0102	SRW		n	Supervisor Exception Delegation
-sepc	0x0141	SRW		supervisor	Supervisor Exception Program Counter
-sideleg	0x0103	SRW		n	Supervisor Interrupt Delegation
-sie	0x0104	SRW		supervisor	Supervisor Interrupt Enable
-sip	0x0144	SRW		supervisor	Supervisor Interrupt Pending
-sscratch	0x0140	SRW		machine	Supervisor Mode Scratch Register
-sstatus	0x0100	SRW		supervisor	Supervisor Status
-stval	0x0143	SRW		supervisor	Supervisor bad address or instruction.
-stvec	0x0105	SRW		supervisor	Supervisor Trap Vector Base Address
-tdata1	0x07a1	MRW		debug	First Debug/Trace trigger data register.
-tdata2	0x07a2	MRW		debug	Second Debug/Trace trigger data register.
-tdata3	0x07a3	MRW		debug	Third Debug/Trace trigger data register.
-time	0x0c01	URO		hypervisor	Timer for RDTIME instruction.
-timeh	0x0c81	URO		machine	Upper 32 bits of time, RV32I only.
-tselect	0x07a0	MRW			Debug/Trace trigger register select.
-ucause	0x0042	URW		n	User Exception Cause
-uepc	0x0041	URW		n	User Exception Program Counter
-uie	0x0004	URW		n	User Interrupt Enable
-uip	0x0044	URW		n	User Interrupt Pending
-uscratch	0x0040	URW		n	User Mode Scratch Register
-ustatus	0x0000	URW		n	User mode restricted view of mstatus
-utval	0x0043	URW		n	User Trap Value
-utvec	0x0005	URW		n	User Trap Vector Base Address
-vsatp	0x0280	HRW		hypervisor	Virtual supervisor address translation and protection.
-vscause	0x0242	HRW		hypervisor	Virtual supervisor trap cause.
-vsepc	0x0241	HRW		hypervisor	Virtual supervisor exception program counter.
-vsie	0x0204	HRW		hypervisor	Virtual supervisor interrupt-enable register.
-vsip	0x0244	HRW		hypervisor	Virtual supervisor interrupt pending.
-vsscratch	0x0240	HRW		hypervisor	Virtual supervisor scratch register.
-vsstatus	0x0200	HRW		hypervisor	Virtual supervisor status register.
-vstval	0x0243	HRW		hypervisor	Virtual supervisor bad address or instruction.
-vstvec	0x0205	HRW		hypervisor	Virtual supervisor trap handler base address.
+NAME			ADDR	ACCESS	LEN		MODE		DETAILS
+---------------------------------------------------------------------------------------------------------------
+cycle			0x0c00	URO				hypervisor	Cycle counter for RDCYCLE instruction.
+cycleh			0x0c80	URO				machine		Upper 32 bits of cycle, RV32I only.
+dcsr			0x07b0	DRW							Debug control and status register.
+dpc				0x07b1	DRW				debug		Debug PC.
+dscratch0		0x07b2	DRW				debug		Debug scratch register 0.
+dscratch1		0x07b3	DRW				debug		Debug scratch register 1.
+fcsr			0x0003	URW				machine		Floating-Point Control and Status
+fflags			0x0001	URW				memory		Floating-Point Accrued Exceptions.
+frm				0x0002	URW				dep-table	Floating-Point Dynamic Rounding Mode.
+hcounteren		0x0606	HRW				hypervisor	Hypervisor counter enable.
+hedeleg			0x0602	HRW				hypervisor	Hypervisor exception delegation register.
+hgatp			0x0680	HRW				hypervisor	Hypervisor guest address translation and protection.
+hgeie			0x0607	HRW				hypervisor	Hypervisor guest external interrupt-enable register.
+hgeip			0x0e07	HRO				hypervisor	Hypervisor guest external interrupt pending.
+hideleg			0x0603	HRW				hypervisor	Hypervisor interrupt delegation register.
+hie				0x0604	HRW				hypervisor	Hypervisor interrupt-enable register.
+hip				0x0644	HRW				hypervisor	Hypervisor interrupt pending.
+hpmcounter3		0x0c03	URO				hypervisor	Performance-monitoring counter.
+hpmcounter31	0x0c1f	URO				hypervisor	Performance-monitoring counter.
+hpmcounter31h	0x0c9f	URO				hypervisor	Upper 32 bits of hpmcounter31, RV32I only.
+hpmcounter3h	0x0c83	URO				hypervisor	Upper 32 bits of hpmcounter3, RV32I only.
+hpmcounter4		0x0c04	URO				hypervisor	Performance-monitoring counter.
+hpmcounter4h	0x0c84	URO				hypervisor	Upper 32 bits of hpmcounter4, RV32I only.
+hstatus			0x0600	HRW				hypervisor	Hypervisor status register.
+htimedelta		0x0605	HRW				hypervisor	Delta for VS/VU-mode timer.
+htimedeltah		0x0615	HRW				hypervisor	Upper 32 bits of htimedelta, RV32I only.
+htinst			0x064a	HRW				hypervisor	Hypervisor trap instruction (transformed).
+htval			0x0643	HRW				hypervisor	Hypervisor bad guest physical address.
+instret			0x0c02	URO				hypervisor	Instructions-retired counter for RDINSTRET instruction.
+instreth		0x0c82	URO				machine		Upper 32 bits of instret, RV32I only.
+marchid			0x0f12	MRO		mxlen	machine		Machine Architecture ID
+mbase			0x0380	MRW							Base register.
+mbound			0x0381	MRW							Bound register.
+mcause			0x0342	MRW		mxlen	machine		Machine Exception Cause
+mcounteren		0x0306	MRW		32		machine		Counter Enable
+mcountinhibit	0x0320	MRW		32		machine		Machine Counter Inhibit
+mcycle			0x0b00	MRW		64		machine		Clock Cycles Executed Counter
+mcycleh			0x0b80	MRW		32		machine		Upper 32 bits of mcycle, RV32I only.
+mdbase			0x0384	MRW							Data base register.
+mdbound			0x0385	MRW							Data bound register.
+medeleg			0x0302	MRW		mxlen	machine		Machine Exception Delegation
+mepc			0x0341	MRW		mxlen	machine		Machine Exception Program Counter
+mhartid			0x0f14	MRO		mxlen	machine		Hardware Thread ID
+mhpmcounter3	0x0b03	MRW		64		machine		Event Counters
+mhpmcounter31	0x0b1f	MRW				machine		Machine performance-monitoring counter.
+mhpmcounter31h	0x0b9f	MRW		32		machine		Upper 32 bits of mhpmcounter31, RV32I only.
+mhpmcounter3h	0x0b83	MRW		32		machine		Upper 32 bits of mhpmcounter3, RV32I only.
+mhpmcounter4	0x0b04	MRW				machine		Machine performance-monitoring counter.
+mhpmcounter4h	0x0b84	MRW		32		machine		Upper 32 bits of mhpmcounter4, RV32I only.
+mhpmevent3		0x0323	MRW		mxlen	machine		Event Counter Event Select
+mhpmevent31		0x033f	MRW				machine		Machine performance-monitoring event selector.
+mhpmevent4		0x0324	MRW		mxlen				Machine performance-monitoring event selector.
+mibase			0x0382	MRW							Instruction base register.
+mibound			0x0383	MRW							Instruction bound register.
+mideleg			0x0303	MRW		mxlen	machine		Machine Interrupt Delegation
+mie				0x0304	MRW		mxlen	machine		Machine Interrupt Enable
+mimpid			0x0f13	MRO		mxlen	machine		Machine Implementation ID
+minstret		0x0b02	MRW		64		machine		Number of Instructions Retired Counter
+minstreth		0x0b82	MRW		32		machine		Upper 32 bits of minstret, RV32I only.
+mip				0x0344	MRW		mxlen	machine		Machine Interrupt Pending
+misa			0x0301	MRW		mxlen	machine		Machine ISA
+mscratch		0x0340	MRW		mxlen	machine		Machine Mode Scratch Register
+mstatus			0x0300	MRW		mxlen	machine		Machine Status
+mstatush		0x0310	MRW				hypervisor	Additional machine status register, RV32 only.
+mtime					MMIO	64		machine		Machine Timer
+mtimecmp				MMIO	64		machine		Machine Timer Compare
+mtinst			0x034a	MRW				hypervisor	Machine trap instruction (transformed).
+mtval			0x0343	MRW		mxlen	machine		Machine Trap Value
+mtval2			0x034b	MRW				hypervisor	Machine bad guest physical address.
+mtvec			0x0305	MRW		mxlen	machine		Machine Trap Vector Base Address
+mvendorid		0x0f11	MRO		32		machine		Machine Vendor ID
+pmpaddr0		0x03b0	MRW				machine		Physical memory protection address register.
+pmpaddr1		0x03b1	MRW				machine		Physical memory protection address register.
+pmpaddr15		0x03bf	MRW				machine		Physical memory protection address register.
+pmpcfg0			0x03a0	MRW				machine		Physical memory protection configuration.
+pmpcfg1			0x03a1	MRW				machine		Physical memory protection configuration, RV32 only.
+pmpcfg2			0x03a2	MRW				machine		Physical memory protection configuration.
+pmpcfg3			0x03a3	MRW				machine		Physical memory protection configuration, RV32 only.
+satp			0x0180	SRW				supervisor	Supervisor address translation and protection.
+scause			0x0142	SRW				supervisor	Supervisor Exception Cause
+scounteren		0x0106	SRW				machine		Counter Enable
+sedeleg			0x0102	SRW		n					Supervisor Exception Delegation
+sepc			0x0141	SRW				supervisor	Supervisor Exception Program Counter
+sideleg			0x0103	SRW		n					Supervisor Interrupt Delegation
+sie				0x0104	SRW				supervisor	Supervisor Interrupt Enable
+sip				0x0144	SRW				supervisor	Supervisor Interrupt Pending
+sscratch		0x0140	SRW				machine		Supervisor Mode Scratch Register
+sstatus			0x0100	SRW				supervisor	Supervisor Status
+stval			0x0143	SRW				supervisor	Supervisor bad address or instruction.
+stvec			0x0105	SRW				supervisor	Supervisor Trap Vector Base Address
+tdata1			0x07a1	MRW				debug		First Debug/Trace trigger data register.
+tdata2			0x07a2	MRW				debug		Second Debug/Trace trigger data register.
+tdata3			0x07a3	MRW				debug		Third Debug/Trace trigger data register.
+time			0x0c01	URO				hypervisor	Timer for RDTIME instruction.
+timeh			0x0c81	URO				machine		Upper 32 bits of time, RV32I only.
+tselect			0x07a0	MRW							Debug/Trace trigger register select.
+ucause			0x0042	URW		n					User Exception Cause
+uepc			0x0041	URW		n					User Exception Program Counter
+uie				0x0004	URW		n					User Interrupt Enable
+uip				0x0044	URW		n					User Interrupt Pending
+uscratch		0x0040	URW		n					User Mode Scratch Register
+ustatus			0x0000	URW		n					User mode restricted view of mstatus
+utval			0x0043	URW		n					User Trap Value
+utvec			0x0005	URW		n					User Trap Vector Base Address
+vsatp			0x0280	HRW				hypervisor	Virtual supervisor address translation and protection.
+vscause			0x0242	HRW				hypervisor	Virtual supervisor trap cause.
+vsepc			0x0241	HRW				hypervisor	Virtual supervisor exception program counter.
+vsie			0x0204	HRW				hypervisor	Virtual supervisor interrupt-enable register.
+vsip			0x0244	HRW				hypervisor	Virtual supervisor interrupt pending.
+vsscratch		0x0240	HRW				hypervisor	Virtual supervisor scratch register.
+vsstatus		0x0200	HRW				hypervisor	Virtual supervisor status register.
+vstval			0x0243	HRW				hypervisor	Virtual supervisor bad address or instruction.
+vstvec			0x0205	HRW				hypervisor	Virtual supervisor trap handler base address.

@@ -13,7 +13,7 @@ module fetchunit #(
 	// Output FIFO control
 	output wire ififoempty,
 	output wire ififovalid,
-	output wire [131:0] ififodout,
+	output wire [121:0] ififodout,
 	input wire ififord_en,
 	// IRQ lines from CSR unit
 	input wire [1:0] irqReq,
@@ -143,7 +143,7 @@ wire [31:0] injectInstruction = injectionROM[injectAddr];
 // Instruction output FIFO
 // --------------------------------------------------
 
-logic [131:0] ififodin;
+logic [121:0] ififodin;
 logic ififowr_en = 1'b0;
 wire ififofull;
 
@@ -173,6 +173,10 @@ wire iswfi = instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_WFI);
 wire isebreak = sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_EBREAK);
 wire isecall = sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_ECALL);
 wire isillegalinstruction = sie && ~(|instrOneHotOut);
+
+wire [1:0] sysop = {
+	{func3, func12} == {3'b000, `F12_CDISCARD} ? 1'b1 : 1'b0,
+	{func3, func12} == {3'b000, `F12_CFLUSH} ? 1'b1 : 1'b0 };
 
 // --------------------------------------------------
 // Fetch logic
@@ -261,7 +265,7 @@ always @(posedge aclk) begin
 				ififowr_en <= (~isfence) && (~irqReq[0]) && (~irqReq[1]) && (~isillegalinstruction) && (~isecall) && (~isebreak) && (~ismret) && (~iswfi);
 				ififodin <= {
 					csroffset,
-					func12, func3,
+					sysop, func3,
 					instrOneHotOut, selectimmedasrval2,
 					bluop, aluop,
 					rs1, rs2, rd,
@@ -401,7 +405,7 @@ always @(posedge aclk) begin
 				ififowr_en <= ~ififofull;
 				ififodin <= {
 					csroffset,
-					func12, func3,
+					sysop, func3,
 					instrOneHotOut, selectimmedasrval2,
 					bluop, aluop,
 					rs1, rs2, rd,

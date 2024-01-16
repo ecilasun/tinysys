@@ -28,7 +28,7 @@ wire branchresolved;
 wire [31:0] branchtarget;
 wire ififoempty;
 wire ififovalid;
-wire [131:0] ififodout;
+wire [121:0] ififodout;
 wire ififord_en;
 
 // Reset vector at last 64K of DDR3 SDRAM
