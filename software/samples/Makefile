@@ -32,6 +32,7 @@ folders = \
 	helloworld \
 	joystick \
 	jpegview \
+	julia \
 	led \
 	mandelbrot \
 	memtest \
