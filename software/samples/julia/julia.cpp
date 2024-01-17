@@ -29,12 +29,13 @@ int x_c_i = 1;
 int y_c = (YCmin+YCmax)>>1;
 int y_c_i = 3;
 
-uint8_t *framebuffer;
+static uint8_t *s_framebufferA;
+static uint8_t *s_framebufferB;
 
 int tilex = 0;
 int tiley = 0;
 
-void juliaTile()
+void juliaTile(uint8_t* pixels)
 {
 	for (int y = 0; y < 16; ++y)
 	{
@@ -61,26 +62,27 @@ void juliaTile()
 					break;
 			}
 
-			framebuffer[col + (row*320)] = clr8;
+			pixels[col + (row*320)] = clr8;
 		}
 	}
-
-	// Flush tile to memory
-	CFLUSH_D_L1;
 }
 
 int main()
 {
-	// Set up frame buffer
-	// NOTE: Video scanout buffer has to be aligned at 64 byte boundary
-	framebuffer = VPUAllocateBuffer(320*240);
+	s_framebufferB = VPUAllocateBuffer(320*240); // Or think of it as 1280*64 for tiles
+	s_framebufferA = VPUAllocateBuffer(320*240);
+
 	struct EVideoContext vx;
 	vx.m_vmode = EVM_320_Wide;
 	vx.m_cmode = ECM_8bit_Indexed;
 	VPUSetVMode(&vx, EVS_Enable);
-	VPUSetWriteAddress(&vx, (uint32_t)framebuffer);
-	VPUSetScanoutAddress(&vx, (uint32_t)framebuffer);
-	VPUClear(&vx, 0x03030303);
+	VPUSetDefaultPalette(&vx);
+
+	struct EVideoSwapContext sc;
+	sc.cycle = 0;
+	sc.framebufferA = s_framebufferA;
+	sc.framebufferB = s_framebufferB;
+	VPUSwapPages(&vx, &sc);
 
 	// Grayscale palette
 	for (uint32_t i=0; i<256; ++i)
@@ -93,7 +95,7 @@ int main()
 
 	while(1)
 	{
-		juliaTile();
+		juliaTile(sc.writepage);
 
 		tilex++;
 		if (tilex == 20)
@@ -105,13 +107,14 @@ int main()
 		{
 			tiley = 0;
 
+			CFLUSH_D_L1;
+			VPUWaitVSync();
+			VPUSwapPages(&vx, &sc);
+
 			x_c += x_c_i;
 			if (x_c < XCmin || x_c > XCmax) { x_c_i = - x_c_i; }
 			y_c += y_c_i;
 			if (y_c < YCmin || y_c > YCmax) { y_c_i = - y_c_i; }
-
-			// Flush leftover writes
-			CFLUSH_D_L1;
 		}
 	}
 
