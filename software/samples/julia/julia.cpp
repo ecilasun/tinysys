@@ -61,7 +61,7 @@ void juliaTile()
 					break;
 			}
 
-			framebuffer[col + (row*320)] = 128-clr8;
+			framebuffer[col + (row*320)] = clr8;
 		}
 	}
 
