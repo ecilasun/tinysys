@@ -56,11 +56,11 @@
 // Task stack space
 #define TASKMEM_END_STACK_END			0x0FFD0000 // Tasks stack space above this
 //  Kernel stack
-#define STACK_BASE						0x0FFDFFF0 // Kernel stack above this
+#define STACK_BASE						0x0FFDFFFC // Kernel stack above this
 // 4 byte gap
 #define ROMSHADOW_START					0x0FFE0000 // Gap above this (4Bytes)
 // ROM SHADOW
-#define ROMSHADOW_END_MEM_END			0x0FFFFFFF // ROM shadow copy above this (128KBytes, ROM image fits into upper 96Kbytes)
+#define ROMSHADOW_END_MEM_END			0x0FFFFFFF // ROM shadow copy above this (128KBytes, ROM OS fits in upper 64KBytes)
 
 // Device address base
 #define DEVICE_BASE 0x80000000
