@@ -23,7 +23,7 @@ extern "C"
 		"la gp, __global_pointer$;"
 		".option pop;"*/
 
-		"li sp, 0x0FFDFFF0;"	   // Stack is at near end of BRAM
+		"li sp, 0x0FFDFFF0;"	   // Stack grows backwards starting from top of ROM area
 
 #if defined(MULTIHART_SUPPORT)
 		// Set up stack spaces automatically when supporting

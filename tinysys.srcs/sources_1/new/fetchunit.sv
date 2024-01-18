@@ -32,49 +32,25 @@ module fetchunit #(
 logic fetchena;
 logic [31:0] prevPC;
 logic [31:0] PC;
-logic [31:0] adjacentPC;
-logic [31:0] emitPC;
+logic [29:0] emitPC;
 logic [31:0] IR;
 wire rready;
 wire [31:0] instruction;
 logic icacheflush;
 
-wire misaligned = PC[1];
-wire isfullinstr = (misaligned && (instruction[17:16] == 2'b11)) || (~misaligned && (instruction[1:0] == 2'b11));
-logic stepsize = 1'b1; // full step by default
-
-logic [31:0] nextPC;
-always_comb begin
-	unique case (stepsize)
-		1'b0: nextPC = prevPC + 32'd2;
-		1'b1: nextPC = prevPC + 32'd4;
-	endcase
-end
-
 // --------------------------------------------------
 // Instruction cache
 // --------------------------------------------------
 
-logic secondhalf = 1'b0;
-
 instructioncache instructioncacheinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.addr(secondhalf ? adjacentPC : PC),
+	.addr(PC),
 	.icacheflush(icacheflush),
 	.dout(instruction),
 	.ren(fetchena),
 	.rready(rready),
 	.m_axi(m_axi) );
-
-// --------------------------------------------------
-// Instruction decompressor
-// --------------------------------------------------
-
-wire [31:0] decompressedinstr;
-instructiondecompressor idecinst(
-    .instr_lowword(misaligned ? instruction[31:16] : instruction[15:0]),
-    .fullinstr(decompressedinstr));
 
 // --------------------------------------------------
 // Pre-decoder
@@ -105,7 +81,7 @@ decoder decoderinst(
 	.rd(rd),									// 5	+
 	.csroffset(csroffset),						// 12	+
 	.immed(immed),								// 32	+
-	.selectimmedasrval2(selectimmedasrval2) );	// 1	+ -> 18+4+3+3+7+12+5+5+5+5+12+32+1+PC[31:1]+1(stepsize) = 144 bits (Exact *8 of 18)
+	.selectimmedasrval2(selectimmedasrval2) );	// 1
 
 // --------------------------------------------------
 // Microcode ROM
@@ -143,7 +119,7 @@ wire [31:0] injectInstruction = injectionROM[injectAddr];
 // Instruction output FIFO
 // --------------------------------------------------
 
-logic [121:0] ififodin;
+logic [119:0] ififodin;
 logic ififowr_en = 1'b0;
 wire ififofull;
 
@@ -184,7 +160,7 @@ wire [1:0] sysop = {
 
 typedef enum logic [3:0] {
 	INIT,										// Startup
-	FETCH, FETCHREST, STREAMOUT,				// Instuction fetch + stream loop
+	FETCH, STREAMOUT,							// Instuction fetch + stream loop
 	WAITNEWBRANCHTARGET, WAITIFENCE,			// Branch and fence handling
 	ENTERISR, EXITISR,							// ISR handling
 	STARTINJECT, INJECT, POSTENTER, POSTEXIT,	// ISR entry/exit instruction injection
@@ -194,15 +170,12 @@ typedef enum logic [3:0] {
 fetchstate fetchmode = INIT;
 fetchstate postInject = FETCH;	// Where to go after injection ends
 
-logic [15:0] lowerhalf = 16'd0;
-
 always @(posedge aclk) begin
 
 	if (~aresetn) begin
 		PC <= 32'd0;
 		prevPC <= 32'd0;
-		adjacentPC <= 32'd0;
-		emitPC <= 32'd0;
+		emitPC <= 30'd0;
 		IR <= 32'd0;
 		injectAddr <= 7'd0;
 		injectStop <= 7'd0;
@@ -221,37 +194,13 @@ always @(posedge aclk) begin
 			end
 
 			FETCH: begin
-				// Aligned full instruction: IR <= instruction
-				// Aligned half instuction: IR <= decompress(instruction[15:0])
-				// Misaligned half instuction: IR <= decompress(instruction[31:16])
-				// Misaligned full instruction: (read high half on next clock) IR <= {instruction[15:0], IR[31:16]}
+				// Pass it through
+				IR <= instruction;
 
-				// If we've detected a full instruction just pass it through, otherwise use decompressor's output
-				IR <= isfullinstr ? instruction : decompressedinstr;
-
-				// Either directly stream out or read the rest of a misaligned instruction
 				// NOTE: Stall when instruction fifo is full (currently unlikely but possible)
-				fetchmode <= (rready && ~ififofull) ? ((misaligned && isfullinstr) ? FETCHREST : STREAMOUT) : FETCH;
+				fetchmode <= (rready && ~ififofull) ? STREAMOUT : FETCH;
 
-				// Lower half of misaligned instruction
-				lowerhalf <= instruction[31:16];
-
-				// Read upper half of misaligned instruction
-				secondhalf <= rready && misaligned && isfullinstr;
-				fetchena <= rready && misaligned && isfullinstr;
-				stepsize <= isfullinstr;
-
-				// Offset to read from for misaligned shifted instruction
-				adjacentPC <= PC + 32'd2;
 				prevPC <= PC;
-			end
-
-			FETCHREST: begin
-				// Combine the two halves of the misaligned instruction
-				IR <= {instruction[15:0], lowerhalf};
-				// Not reading upper half anymore
-				secondhalf <= ~rready;
-				fetchmode <= rready ? STREAMOUT : FETCHREST;
 			end
 
 			STREAMOUT: begin
@@ -269,7 +218,7 @@ always @(posedge aclk) begin
 					instrOneHotOut, selectimmedasrval2,
 					bluop, aluop,
 					rs1, rs2, rd,
-					immed, prevPC[31:1], stepsize};
+					immed, prevPC[31:2]};
 
 				unique case (1'b1)
 					// IRQ/EBREAK/ILLEGAL don't step the PC (since we need the PC intact during those operations)
@@ -279,10 +228,8 @@ always @(posedge aclk) begin
 					isillegalinstruction:					PC <= prevPC;
 					// Rest of the instructions will step to the adjacent address depending on instruction length
 					// NOTE: ECALL will need next PC so that MRET can act like a return to the following instruction
-					default:								PC <= isjal ? (prevPC + immed) : nextPC;
+					default:								PC <= isjal ? (prevPC + immed) : (prevPC + 32'd4);
 				endcase
-
-				stepsize <= 1'b0; // Clear
 
 				// Flush I$ if we have an IFENCE instruction and go to wait
 				icacheflush <= isfence;
@@ -353,7 +300,7 @@ always @(posedge aclk) begin
 				// Save states for exit time
 				entryState <= {irqReq[0], irqReq[1], isecall, isebreak, isillegalinstruction};
 
-				emitPC <= {PC[31:1], 1'b1};
+				emitPC <= PC[31:2];
 
 				fetchmode <= STARTINJECT;
 				postInject <= POSTENTER;
@@ -388,7 +335,7 @@ always @(posedge aclk) begin
 					end
 				endcase
 
-				emitPC <= {PC[31:1], 1'b1};
+				emitPC <= PC[31:2];
 
 				fetchmode <= STARTINJECT;
 				postInject <= POSTEXIT;

@@ -13,7 +13,7 @@ module controlunit #(
 	// Instruction FIFO control
 	input wire ififoempty,
 	input wire ififovalid,
-	input wire [121:0] ififodout,
+	input wire [119:0] ififodout,
 	output wire ififord_en,
 	// CPU cycle / retired instruction counts
 	output wire [63:0] cpuclocktime,
@@ -30,7 +30,6 @@ assign cpuclocktime = cyclecount;
 assign retired = retiredcount;
 
 logic [31:0] PC;
-logic [31:0] PCincrement;
 logic [31:0] immed;
 logic [31:0] csrprevval;
 logic [17:0] instrOneHotOut;
@@ -44,7 +43,6 @@ logic [2:0] bluop;
 logic [2:0] func3;
 logic [2:0] rfunc3;
 logic selectimmedasrval2;
-logic stepsize;
 
 logic btready;
 logic [31:0] btarget;
@@ -297,16 +295,10 @@ always @(posedge aclk) begin
 					instrOneHotOut, selectimmedasrval2,
 					bluop, aluop,
 					rs1, rs2, rd,
-					immed, PC[31:1], stepsize} <= ififodout;
-	
-				unique case (ififodout[0])
-					1'b0: PCincrement <= 32'd2;
-					1'b1: PCincrement <= 32'd4;
-				endcase
-	
-				// NOTE: Since we don't do 8 bit addressing (only 32 or 16), lowest bit is always set to zero
-				PC[0] <= 1'b0;
-	
+					immed, PC[31:2]} <= ififodout;
+
+				PC[1:0] <= 2'b0;
+
 				// HAZARD#0: Wait for fetch fifo to populate
 				ififore <= (ififovalid && ~ififoempty);
 				retiredstrobe <= (ififovalid && ~ififoempty);
@@ -327,7 +319,7 @@ always @(posedge aclk) begin
 					wbdest <= rd;
 					rwaddress <= rval1 + immed;
 					offsetPC <= PC + immed;
-					adjacentPC <= PC + PCincrement;
+					adjacentPC <= PC + 32'd4;
 	
 					unique case (1'b1)
 						instrOneHotOut[`O_H_STORE]: begin

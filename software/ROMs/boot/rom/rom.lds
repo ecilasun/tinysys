@@ -5,8 +5,9 @@ OUTPUT_FORMAT("elf32-littleriscv", "elf32-littleriscv", "elf32-littleriscv")
 
 GROUP( -lc -lgloss -lgcc )
 
+/* ROM is 96 KBytes max*/
 MEMORY{
-   ROMRAM (xwr) : ORIGIN = 0x0FFE0000, LENGTH = 0xFFFF
+   ROMRAM (xwr) : ORIGIN = 0x0FFE0000, LENGTH = 0x18000
 }
 
 ENTRY(_start)

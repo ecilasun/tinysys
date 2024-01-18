@@ -18,8 +18,8 @@ assign romReady = ROMavailable;
 // ------------------------------------------------------------------------------------
 
 localparam ROMSTART = RESETVECTOR;						// This is also the start of the ROM target
-localparam ROMSIZE = 4096;								// Full size of the actual ROM including blank space
-localparam ROMIMAGEEND = ROMSTART + (ROMSIZE-1)*16;		// We assume a full ROM image of 4096 entries (64Kbytes)
+localparam ROMSIZE = 6144;								// Full size of the actual ROM including blank space
+localparam ROMIMAGEEND = ROMSTART + (ROMSIZE-1)*16;		// We assume a full ROM image of 6144 entries (96Kbytes)
 logic [12:0] bootROMaddr;
 logic [127:0] bootROM[0:ROMSIZE-1];
 
@@ -73,7 +73,6 @@ always_ff @(posedge aclk) begin
 	case (cmdmode)
 
 		INIT: begin
-			// Set up for 128Kbytes of ROM copy starting at 0x0FFE0000
 			dmatargetaddr <= ROMSTART;
 			dmatargetend <= ROMIMAGEEND;
 

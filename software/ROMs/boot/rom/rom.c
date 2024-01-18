@@ -25,9 +25,9 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "R007"
+#define VERSIONSTRING "R008"
 // On-storage version
-#define DEVVERSIONSTRING "D007"
+#define DEVVERSIONSTRING "D008"
 
 // For ROM image residing on the device:
 const uint8_t s_consolefgcolor = 0x2A; // Ember
@@ -139,6 +139,12 @@ void DeviceDefaultState(int _bootTime)
 	// Clear screen to overlay loader color
 	if (_bootTime == 2)
 		VPUClear(kernelgfx, 0x09090909);
+}
+
+void SimplifyPath(const char *inPath, char *outPath, const uint32_t pathLen)
+{
+	// TODO: Make the path shorter by removing redundant path traversal
+	strncpy(outPath, inPath, pathLen);
 }
 
 void ExecuteCmd(char *_cmd)
@@ -279,8 +285,8 @@ void ExecuteCmd(char *_cmd)
 
 			// Finally, change to this new path
 			f_chdir(s_pathtmp);
-			// Save for later
-			strncpy(s_workdir, s_pathtmp, 48);
+			// Simplyfiy & save
+			SimplifyPath(s_pathtmp, s_workdir, 48);
 		}
 	}
 	else if (!strcmp(command, "ver"))
@@ -293,27 +299,26 @@ void ExecuteCmd(char *_cmd)
 		else
 			kprintf("ROM             : " DEVVERSIONSTRING "\n");
 
-		// TODO: These two values need to come from a CSR,
-		// pointing at a memory location with device config data (machineconfig?)
-		kprintf("Board:          : revision 2D\n");
+		kprintf("Board:          : issue 2D\n");
 		kprintf("CPU:            : 166.67MHz\n");
+		kprintf("VPU             : SII164(12bpp,DVI)\n");
+		kprintf("USB             : ");
 
 		// Report USB serial chip version
 		uint8_t m3420rev = MAX3420ReadByte(rREVISION);
 		if (m3420rev != 0xFF)
-			kprintf("MAX3420(serial) : 0x%X\n", m3420rev);
+			kprintf("MAX3420, peripheral controller, v0x%X\n", m3420rev);
 		else
-			kprintf("MAX3420(serial) : n/a\n");
+			kprintf("no peripheral controller\n");
 
 		// Report USB host chip version
 		uint8_t m3421rev = MAX3421ReadByte(rREVISION);
 		if (m3421rev != 0xFF)
-			kprintf("MAX3421(host)   : 0x%X\n", m3421rev);
+			kprintf("                : MAX3421, host controller, v0x%X\n", m3421rev);
 		else
-			kprintf("MAX3421(host)   : n/a\n");
-
-		// Video circuit on 2B has no info we can read
-		kprintf("SII164(video)   : 12bpp DVI\n");
+			kprintf("                : no host controller\n");
+		kprintf("RAM: 0x%X-0x%X", APPMEM_START, ROMSHADOW_START);
+		kprintf("ROM: 0x%X-0x%X", ROMSHADOW_START, ROMSHADOW_END_MEM_END);
 	}
 	else if (!strcmp(command, "help"))
 	{
@@ -529,7 +534,7 @@ void __attribute__((aligned(64), noinline)) CopyOverlayToROM()
 	asm volatile(
 		"lui s0, 0x00010;"		// Source: 0x00010000
 		"lui s1, 0x0FFE0;"		// Target: 0x0FFE0000
-		"lui s2, 0x4;"			// Count:  65536/4 (0x4000)
+		"lui s2, 0x8;"			// Count:  98304/4 (0x6000), max ROM size is 96Kbytes
 		"copyoverlayloop:"
 		"lw a0, 0(s0);"			// Read source word
 		"sw a0, 0(s1);"			// Store target word
