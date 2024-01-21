@@ -65,7 +65,14 @@ FFFF 0001
 ```
  sudo dmesg
 ```
-- You can now start PuTTY or another serial terminal program, connect to ttyUSB port provided above, and send commands and receive responses from the device.
+- This will return a line similar to: "generic converter now attached to ttyUSB0"
+- You can now start PuTTY or another serial terminal program, connect to ttyUSB* port provided above, and send commands and receive responses from the device.
+
+NOTE: Run the following to diagnose if the device is indeed present and visible by the system:
+```
+lsusb
+```
+You should see "FFFF:0001 ENGIN tinysys usb serial" as part of the output
 
 # Adding tinysys as a generic serial device over USB - Windows
 
