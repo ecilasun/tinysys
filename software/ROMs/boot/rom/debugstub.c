@@ -5,6 +5,7 @@
 #include "debugstub.h"
 #include "rombase.h"
 #include "serialinringbuffer.h"
+#include "task.h"
 
 //#define DEBUG_DEBUG
 
@@ -314,7 +315,7 @@ void HandlePacket()
 			// On a single core machine this is not a problem.
 
 			// Step the PC
-			uint32_t instr = *(uint32_t*)PC;
+			uint32_t instr = TaskRead4Bytes(PC);
 			uint32_t newPC;
 			if ((instr&3) == 0x3) // Uncompressed?
 				newPC = PC+4;
@@ -580,7 +581,7 @@ void HandlePacket()
 		// On a single core machine this is not a problem.
 
 		// Step the PC
-		uint32_t instr = *(uint32_t*)PC;
+		uint32_t instr = TaskRead4Bytes(PC);
 		uint32_t newPC;
 		if ((instr&3) == 0x3) // Uncompressed?
 			newPC = PC+4;

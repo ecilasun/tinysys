@@ -34,7 +34,7 @@ void TaskInitSystem(struct STaskContext *_ctx)
 	}
 }
 
-uint32_t Read4Bytes(const uint32_t _address)
+uint32_t TaskRead4Bytes(const uint32_t _address)
 {
 	uint8_t *source = (uint8_t*)_address;
 	uint32_t retVal = 0;
@@ -47,7 +47,7 @@ uint32_t Read4Bytes(const uint32_t _address)
 	return retVal;
 }
 
-void Write4Bytes(const uint32_t _address, const uint32_t _bytes)
+void TaskWrite4Bytes(const uint32_t _address, const uint32_t _bytes)
 {
 	uint8_t *target = (uint8_t*)_address;
 
@@ -57,7 +57,7 @@ void Write4Bytes(const uint32_t _address, const uint32_t _bytes)
 	target[3] = (_bytes&0xFF000000)>>24;
 }
 
-void Write2Bytes(const uint32_t _address, const uint16_t _bytes)
+void TaskWrite2Bytes(const uint32_t _address, const uint16_t _bytes)
 {
 	uint8_t *target = (uint8_t*)_address;
 
@@ -85,13 +85,13 @@ int TaskInsertBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint
 
 	// New breakpoint
 	task->breakpoints[brk].address = _address;
-	uint32_t instr = Read4Bytes(_address);
+	uint32_t instr = TaskRead4Bytes(_address);
 
 	// Replace current instruction with EBREAK or C.EBREAK instruction depending on compression
 	if ((instr&3) == 0x3)
-		Write4Bytes(_address, 0x00100073); // EBREAK
+		TaskWrite4Bytes(_address, 0x00100073); // EBREAK
 	else
-		Write2Bytes(_address, 0x9002); // C.EBREAK
+		TaskWrite2Bytes(_address, 0x9002); // C.EBREAK
 
 	task->breakpoints[brk].originalinstruction = instr;
 	++task->num_breakpoints;
@@ -117,9 +117,9 @@ int TaskRemoveBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint
 
 			// Replace it with the original instruction
 			if ((instr&3) == 0x3)
-				Write4Bytes(_address, instr);
+				TaskWrite4Bytes(_address, instr);
 			else
-				Write2Bytes(_address, instr);
+				TaskWrite2Bytes(_address, instr);
 
 			// Nullify the address and instruction
 			task->breakpoints[i].address = 0x00000000;
