@@ -662,11 +662,8 @@ void ProcessBinaryData(uint8_t input)
 
 void ProcessChar(char input)
 {
-	if (!s_debuggerConnected)
-		return;
-
-	// Do not queue this one
-	if (!s_isBinaryHeader && (input == 0x03)) // CTRL+C
+	// CTRL+C
+	if (s_debuggerConnected && !s_isBinaryHeader && (input == 0x03))
 	{
 		struct STaskContext *taskctx = GetTaskContext();
 
