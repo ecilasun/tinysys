@@ -6,6 +6,7 @@
 #include "rombase.h"
 #include "serialinringbuffer.h"
 #include "task.h"
+#include "keyringbuffer.h"
 
 //#define DEBUG_DEBUG
 
@@ -661,6 +662,9 @@ void ProcessBinaryData(uint8_t input)
 
 void ProcessChar(char input)
 {
+	if (!s_debuggerConnected)
+		return;
+
 	// Do not queue this one
 	if (!s_isBinaryHeader && (input == 0x03)) // CTRL+C
 	{
@@ -761,6 +765,14 @@ void ProcessGDBRequest()
 #ifdef DEBUG_DEBUG
 			kprintf("%c", drain);
 #endif
+			// Incoming data goes to input buffer instead if we're not receiving a debug package
+			if (s_checksumStart == 0 && s_packetStart == 0)
+			{
+				uint32_t fakeKey = drain;
+				KeyRingBufferWrite(&fakeKey, sizeof(uint32_t));
+				// Echo to serial port
+				USBSerialWriteN((const char*)&drain, 1);
+			}
 
 			if (s_gatherBinary)
 				ProcessBinaryData(drain);
