@@ -1,0 +1,30 @@
+NOTE: This might be out of date
+
+Fetch
+
+INIT			FETCH			STREAMOUT		ENTERISR				STARTINJECT			INJECT		POSTENTER		FETCH
+												WAITIFENCE				FETCH
+												EXITISR					STARTINJECT			INJECT		POSTEXIT		FETCH
+												WFI						FETCH
+												WAITNEWBRANCHTARGET		FETCH
+								FETCHREST		STREAMOUT				FETCH
+
+Control
+
+INIT			READINSTR		READREG			WRITE					READINSTR
+												READ					READINSTR
+												DISPATCH				READINSTR
+												SYSOP					CSROPS				WCSROP		SYSWBACK		SYSWAIT		READINSTR
+																		SYSCDISCARD			WCACHE		READINSTR
+																		SYSCFLUSH			WCACHE		READINSTR
+
+
+Shortest path:
+At least 5 clocks to get to execute state from instruction fetch plus any additional clocks for load/store instructions already in flight
+
+FETCH			STREAMOUT		READINSTR		READREG					DISPATCH
+
+Longest path:
+At least 8 clocks to get to execute state from plus 3+N clocks to complete the instruction
+
+FETCH	FETCHREST	ENTERISR	STARTINJECT	INJECT	READINSTR	READREG	SYSOP	CSROPS	WCSROP	SYSWBACK	SYSWAIT
