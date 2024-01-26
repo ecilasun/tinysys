@@ -58,7 +58,8 @@ void TaskExitCurrentTask(struct STaskContext *_ctx);
 void TaskExitTaskWithID(struct STaskContext *_ctx, uint32_t _taskid, uint32_t _signal);
 
 // Yield leftover time back to the next task in chain
-void TaskYield();
+// Also returns the current time
+uint64_t TaskYield();
 
 int TaskInsertBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint32_t _address);
 int TaskRemoveBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint32_t _address);

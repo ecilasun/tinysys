@@ -248,7 +248,7 @@ void TaskExitTaskWithID(struct STaskContext *_ctx, uint32_t _taskid, uint32_t _s
 	task->exitCode = _signal;
 }
 
-void TaskYield()
+uint64_t TaskYield()
 {
 	// Set up the next task switch interrupt to now
 	// so we can yield as soon as possible.
@@ -256,6 +256,7 @@ void TaskYield()
 	uint64_t now = E32ReadTime();
 	E32SetTimeCompare(now);
 	write_csr(mstatus, MSTATUS_MIE);
+	return now;
 }
 
 uint32_t TaskSwitchToNext(struct STaskContext *_ctx)

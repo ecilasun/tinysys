@@ -276,7 +276,7 @@ enum EUSBDeviceState HandleJoystick(enum EUSBDeviceState _currentState)
 	return returnState;
 }*/
 
-void ProcessUSBDevice()
+void ProcessUSBDevice(uint64_t currentTime)
 {
 	enum EBusState probe_result = (enum EBusState)*s_probe_result;
 	uint32_t state_changed = probe_result != old_probe_result;
@@ -363,7 +363,6 @@ void ProcessUSBDevice()
 			case DEVS_ADDRESSING:
 			{
 				uint8_t rcode = USBAttach(&s_deviceAddress, &s_controlEndpoint);
-				uint64_t currentTime = E32ReadTime();
 				s_nextPoll = currentTime + s_devicePollInterval*ONE_MILLISECOND_IN_TICKS;
 
 				if (rcode == 0)// && s_deviceClass == HID)
@@ -390,7 +389,6 @@ void ProcessUSBDevice()
 				olddevState = DEVS_UNKNOWN;
 
 				// TODO: Driver should handle this according to device type
-				uint64_t currentTime = E32ReadTime();
 				if (currentTime > s_nextPoll)
 				{
 					s_nextPoll = currentTime + s_devicePollInterval*ONE_MICROSECOND_IN_TICKS;

@@ -642,6 +642,17 @@ int main()
 	while (1)
 	{
 		// ----------------------------------------------------------------
+		// Tasks which can be interrupted go here
+		// ----------------------------------------------------------------
+
+		// Refresh console output
+		if (kernelgfx->m_consoleUpdated)
+			VPUConsoleResolve(kernelgfx);
+		
+		// Yield time as soon as we're done here (disables/enables interrupts)
+		uint64_t currentTime = TaskYield();
+
+		// ----------------------------------------------------------------
 		// High level maintenance tasks which should not be interrupted
 		// ----------------------------------------------------------------
 
@@ -649,7 +660,7 @@ int main()
 		write_csr(mstatus, 0);
 
 		// Deal with USB peripheral setup and data traffic
-		ProcessUSBDevice();
+		ProcessUSBDevice(currentTime);
 
 		// Emit outgoing serial data
 		USBEmitBufferedOutput();
@@ -659,17 +670,6 @@ int main()
 
 		// Enable machine interrupts
 		write_csr(mstatus, MSTATUS_MIE);
-
-		// Yield time as soon as we're done here
-		TaskYield();
-
-		// ----------------------------------------------------------------
-		// Tasks which can be interrupted
-		// ----------------------------------------------------------------
-
-		// Refresh console output
-		if (kernelgfx->m_consoleUpdated)
-			VPUConsoleResolve(kernelgfx);
 	}
 
 	return 0;
