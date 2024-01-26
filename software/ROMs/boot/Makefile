@@ -18,7 +18,7 @@ XLEN ?= 32
 
 src_dir = .
 corelib_dir = ../../SDK
-thirdparty_libs = ../../3rdparty
+filesystemlib_dir = ../../3rdparty/fat32
 
 # Executable folders
 
@@ -53,9 +53,9 @@ else
 RISCV_GCC_OPTS ?= -mcmodel=medany -std=gnu99 -march=rv32imc_zicsr_zifencei -mabi=ilp32 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Wno-format -Os -static -ffreestanding -nostartfiles -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,-gc-sections,--strip-debug
 endif
 
-incs  += -I$(src_dir) -I$(corelib_dir) -I$(thirdparty_libs)/ $(addprefix -I$(src_dir)/, $(folders))
+incs  += -I$(src_dir) -I$(corelib_dir) -I$(filesystemlib_dir)/ $(addprefix -I$(src_dir)/, $(folders))
 objs  :=
-libs  := $(wildcard $(thirdparty_libs)/**/*.c)
+libs  := $(wildcard $(filesystemlib_dir)/*.c)
 
 define compile_ROM
 $(1).elf: $(wildcard $(src_dir)/$(1)/*) $(wildcard $(src_dir)/*)

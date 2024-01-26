@@ -8,7 +8,6 @@ default: all
 
 src_dir = .
 corelib_dir = ../SDK
-thirdparty_libs = ../3rdparty
 
 # Executable folders
 
@@ -28,16 +27,14 @@ RISCVTOOL ?= ..\..\build\release\riscvtool.exe
 # No filesystem when defined
 # FILESYSTEM ?= -DDISABLE_FILESYSTEM
 FILESYSTEM ?= -DENABLE_FILESYSTEM -DLFS_NO_MALLOC -DLFS_NO_DEBUG
-# The MEM file will be using 16 byte (128bit) output width to match the ROM layout
-# (cache controller reads x4 16byte chunks for each line)
-ROMWORDSIZE ?= 16
+ROMWORDSIZE ?= 4
 # 512 bit cache lines makes 64 bytes per line
 # 256 cache lines makes total cache size 16 Kbytes
 RISCV_GCC_OPTS ?= -mcmodel=medany -march=rv32im -mabi=ilp32 -O0 -static -ffreestanding -nostartfiles
 
-incs  += -I$(src_dir) -I$(corelib_dir) -I$(thirdparty_libs)/ $(addprefix -I$(src_dir)/, $(folders))
+incs  += -I$(src_dir) -I$(corelib_dir) $(addprefix -I$(src_dir)/, $(folders))
 objs  :=
-libs  := $(wildcard $(thirdparty_libs)/**/*.c)
+libs  := 
 
 define compile_ROM
 $(1).elf: $(wildcard $(src_dir)/$(1)/*) $(wildcard $(src_dir)/*)

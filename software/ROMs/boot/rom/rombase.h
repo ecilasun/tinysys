@@ -4,7 +4,7 @@
 #include "core.h"
 #include "encoding.h"
 #include "task.h"
-#include "fat32/ff.h"
+#include "ff.h"
 #include "leds.h"
 #include "elf.h"
 #include "vpu.h"
