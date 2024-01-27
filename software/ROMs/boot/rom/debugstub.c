@@ -7,6 +7,7 @@
 #include "serialinringbuffer.h"
 #include "task.h"
 #include "keyringbuffer.h"
+#include <stdlib.h>
 
 //#define DEBUG_DEBUG
 
@@ -15,6 +16,7 @@
 static const char s_hexdigits[] = "0123456789ABCDEF";
 static uint32_t s_debuggerConnected = 0;
 static uint32_t s_packetStart = 0;
+static uint32_t s_fileTransferMode = 0;
 static uint32_t s_checksumStart = 0;
 static uint32_t s_packetComplete = 0;
 static uint32_t s_gatherBinary = 0;
@@ -24,6 +26,8 @@ static uint32_t s_currentThread = 3; // User task
 static uint32_t s_binaryAddrs;
 static uint32_t s_binaryNumbytes;
 static uint32_t s_receivedBytes;
+static uint32_t s_filesize = 0;
+static char s_filename[32];
 static char s_chk[2];
 static char s_packet[256];
 
@@ -660,6 +664,90 @@ void ProcessBinaryData(uint8_t input)
 		s_gatherBinary = 0;
 }
 
+void HandleFileTransfer(uint8_t input)
+{
+	static uint32_t readlen = 0;
+	if (s_fileTransferMode == 1)
+	{
+		if (input == '!') // Check for 'start transfer'
+		{
+			kprintf("Receiving file ");
+			USBSerialWrite("!");
+			// Waiting for header
+			s_fileTransferMode = 2;
+		}
+	}
+	else if (s_fileTransferMode == 2) // Check for 'file name'
+	{
+		if (input == '!')
+		{
+			readlen = 0;
+		}
+		else
+		{
+			// Read name up to and including null terminator
+			s_packet[readlen++] = input;
+			if (input == 0)
+			{
+				strncpy(s_filename, s_packet, 32);
+				kprintf("%s ", s_filename);
+				USBSerialWrite("!");
+				s_fileTransferMode = 3;
+			}
+		}
+	}
+	else if (s_fileTransferMode == 3) // Check for 'file size'
+	{
+		if (input == '!')
+		{
+			readlen = 0;
+		}
+		else
+		{
+			// Read file size as zero terminated ascii string
+			s_packet[readlen++] = input;
+			if (input == 0)
+			{
+				s_filesize = atoi(s_packet);
+				readlen = 0;
+
+				kprintf("(%d bytes)...", s_filesize);
+
+				// TODO: Open file for write
+
+				USBSerialWrite("!");
+				s_fileTransferMode = 4;
+			}
+		}
+	}
+	else if (s_fileTransferMode == 4) // Raw data traffic
+	{
+		s_packet[readlen%128] = input;
+
+		if (readlen%128 == 0 && readlen)
+		{
+			// TODO: Dump the 128 bytes to disk
+			USBSerialWrite("!");
+		}
+
+		readlen++;
+
+		if (s_filesize == readlen)
+		{
+			// TODO: Close the file
+			USBSerialWrite("!");
+			kprintf("done.\n");
+			s_fileTransferMode = 5;
+		}
+	}
+	else if (s_fileTransferMode == 5) // Decompress / save
+	{
+		// TODO: Decompress file if compressed, and write to disk
+		// Exit to regular mode
+		s_fileTransferMode = 0;
+	}
+}
+
 void ProcessChar(char input)
 {
 	// CTRL+C
@@ -744,41 +832,51 @@ void ProcessChar(char input)
 	}
 }
 
-void ProcessGDBRequest()
+void HandleSerialInput()
 {
-	if (s_packetComplete)
+	// Pull more incoming data
+	uint8_t drain;
+	while (SerialInRingBufferRead(&drain, 1))
 	{
-		// Process pending packet
-		HandlePacket();
-		s_packetComplete = 0;
-	}
-	else
-	{
-		// Pull more incoming data
-		uint8_t drain;
-		while (SerialInRingBufferRead(&drain, 1))
-		{
-			// Debug output for incoming packet
+		// Debug output for incoming packet
 #ifdef DEBUG_DEBUG
-			kprintf("%c", drain);
+		kprintf("%c", drain);
 #endif
-			// Incoming data goes to input buffer instead if we're not receiving a debug package
-			if (s_checksumStart == 0 && s_packetStart == 0)
+		// Handle serial data transfer
+		if (s_fileTransferMode != 0)
+			HandleFileTransfer(drain);
+		else
+		{
+			// Handle binary data transfer from GDB remote
+			if (s_gatherBinary)
+				ProcessBinaryData(drain);
+			else
+			{
+				// Process next debug character
+				ProcessChar(drain);
+				// Stop spinning and respond once a packet is complete
+				if (s_packetComplete)
+				{
+					HandlePacket();
+					s_packetComplete = 0;
+				}
+			}
+		}
+
+		// Incoming data goes to input buffer instead if we're not receiving a debug package
+		if (s_fileTransferMode == 0 && s_checksumStart == 0 && s_packetStart == 0)
+		{
+			if (drain == '~') // Enter serial mode
+			{
+				USBSerialWrite("!");
+				s_fileTransferMode = 1;
+			}
+			else
 			{
 				uint32_t fakeKey = drain;
 				KeyRingBufferWrite(&fakeKey, sizeof(uint32_t));
 				// Echo to serial port
 				USBSerialWriteN((const char*)&drain, 1);
-			}
-
-			if (s_gatherBinary)
-				ProcessBinaryData(drain);
-			else
-			{
-				ProcessChar(drain);
-				// Stop spinning here and process the current packet
-				if (s_packetComplete)
-					break;
 			}
 		}
 	}

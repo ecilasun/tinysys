@@ -1,5 +1,5 @@
 #include <inttypes.h>
 
-void ProcessGDBRequest();
+void HandleSerialInput();
 void SendDebugPacket(const char *packetString);
 uint32_t IsDebuggerConnected();
