@@ -27,7 +27,7 @@ static uint32_t s_binaryAddrs;
 static uint32_t s_binaryNumbytes;
 static uint32_t s_receivedBytes;
 static uint32_t s_filesize = 0;
-static char s_filename[32];
+static char s_filename[64];
 static char s_chk[2];
 static char s_packet[256];
 
@@ -671,8 +671,8 @@ void HandleFileTransfer(uint8_t input)
 	{
 		if (input == '!') // Check for 'start transfer'
 		{
-			kprintf("Receiving file ");
 			USBSerialWrite("!");
+			kprintf("Receiving file");
 			// Waiting for header
 			s_fileTransferMode = 2;
 		}
@@ -686,12 +686,13 @@ void HandleFileTransfer(uint8_t input)
 		else
 		{
 			// Read name up to and including null terminator
-			s_packet[readlen++] = input;
+			char *nametemp = (char*)(KERNEL_TEMP_MEMORY + 4096);
+			nametemp[readlen++] = input;
 			if (input == 0)
 			{
-				strncpy(s_filename, s_packet, 32);
-				kprintf("%s ", s_filename);
 				USBSerialWrite("!");
+				strcpy(s_filename, nametemp);
+				kprintf(" %s ", s_filename);
 				s_fileTransferMode = 3;
 			}
 		}
@@ -705,24 +706,26 @@ void HandleFileTransfer(uint8_t input)
 		else
 		{
 			// Read file size as zero terminated ascii string
-			s_packet[readlen++] = input;
+			char *sizetemp = (char*)(KERNEL_TEMP_MEMORY + 4096);
+			sizetemp[readlen++] = input;
 			if (input == 0)
 			{
-				s_filesize = atoi(s_packet);
+				USBSerialWrite("!");
+				s_filesize = atoi(sizetemp);
 				readlen = 0;
 
 				kprintf("(%d bytes)...", s_filesize);
 
 				// TODO: Open file for write
 
-				USBSerialWrite("!");
 				s_fileTransferMode = 4;
 			}
 		}
 	}
 	else if (s_fileTransferMode == 4) // Raw data traffic
 	{
-		s_packet[readlen%128] = input;
+		char *filetemp = (char*)(KERNEL_TEMP_MEMORY + 4096);
+		filetemp[(readlen%128)] = input;
 
 		if (readlen%128 == 0 && readlen)
 		{
@@ -734,8 +737,11 @@ void HandleFileTransfer(uint8_t input)
 
 		if (s_filesize == readlen)
 		{
-			// TODO: Close the file
 			USBSerialWrite("!");
+
+			readlen = 0;
+
+			// TODO: Close the file
 			kprintf("done.\n");
 			s_fileTransferMode = 5;
 		}
