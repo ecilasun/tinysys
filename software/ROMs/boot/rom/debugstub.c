@@ -31,6 +31,8 @@ static char s_filename[64];
 static char s_chk[2];
 static char s_packet[256];
 
+FIL s_outfp;
+
 uint32_t startswith(const char *_source, const char *_token)
 {
 	if (strstr(_source, _token) == _source)
@@ -691,7 +693,8 @@ void HandleFileTransfer(uint8_t input)
 			if (input == 0)
 			{
 				USBSerialWrite("!");
-				strcpy(s_filename, nametemp);
+				strcpy(s_filename, "sd:/");
+				strcat(s_filename, nametemp);
 				kprintf(" %s ", s_filename);
 				s_fileTransferMode = 3;
 			}
@@ -716,7 +719,10 @@ void HandleFileTransfer(uint8_t input)
 
 				kprintf("(%d bytes)...", s_filesize);
 
-				// TODO: Open file for write
+				// Open new file for write
+				FRESULT re = f_open(&s_outfp, s_filename, FA_CREATE_ALWAYS | FA_WRITE);
+				if (re != FR_OK)
+					kprintf(" file not opened ");
 
 				s_fileTransferMode = 4;
 			}
@@ -729,7 +735,9 @@ void HandleFileTransfer(uint8_t input)
 
 		if (readlen%128 == 0 && readlen)
 		{
-			// TODO: Dump the 128 bytes to disk
+			// Dump the 128 bytes to disk
+			unsigned int written = 0;
+			f_write(&s_outfp, filetemp, 128, &written);
 			USBSerialWrite("!");
 		}
 
@@ -739,9 +747,18 @@ void HandleFileTransfer(uint8_t input)
 		{
 			USBSerialWrite("!");
 
+			// Dump any leftovers
+			if (s_filesize%128 != 0)
+			{
+				unsigned int written;
+				f_write(&s_outfp, filetemp, (s_filesize%128), &written);
+			}
+
+			// Close file
+			f_close(&s_outfp);
+
 			readlen = 0;
 
-			// TODO: Close the file
 			kprintf("done.\n");
 			s_fileTransferMode = 5;
 		}
