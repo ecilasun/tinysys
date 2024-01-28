@@ -76,11 +76,31 @@ You should see "FFFF:0001 ENGIN tinysys usb serial" as part of the output
 
 # Adding tinysys as a generic serial device over USB - Windows
 
-TBD: We use generic USB serial driver on Windows, provide instructions
+This is rather simpler on windows. All one needs to do is plug in the device and find it in the list under the Device Manager control panel. It should be displayed as 'tinysys USB serial'
+Once you locate the device, right click and select Update Driver, then Browse my computer for drivers, and finally Let me pick from a list of available drivers on my computer.
+
+What we're looking for is now the generic usb serial driver, which is listed under USB Serial Device / Microsoft / USB Serial Device. Select this, then hit Next. If any warning pop up, accept and you should have the device ready. This will be confirmed by a USB device plug sound, and you should now see a USB Serial Device (COMx) listed under Ports, where x is usually COM9 on Windows 11
+
+NOTE: The serial device will be only accepting 115200 bauds,8bits,1stopbit,noparity settings and may not function with any other, even though you change the settings on the control panel. This is because the device side driver is not going to cope with traffic throttling to keep it small and simple.
+
 
 # Uploading executables to the device - WiP
 
-TBD: Normally device uses SDCard, USB bulk storage is possible to implement, investigate
+To upload files to the device, first make sure you've got serial communication working. This can be tested by setting up the serial driver for the board as described above, then starting a terminal connected to that port set to 115200 baud, 8 bits, 1 stop bit, no parity.
+After the terminal connects to the board, you can try typing 'help' and the display attached to the board should display the help text, while also echoing back what you're typing to the terminal.
+
+Once the above is confirmed working, uploading binaries is straighforward. For example on Windows, simply run a command similar to the following, with the port and file names set to the ones on your local device:
+
+```
+build\release\riscvtool.exe rom.c -sendfile \\.\COM9
+```
+
+on Linux the comand would be similar to:
+```
+./build/release/riscvtool rom.c -sendfile /dev/ttyUSB1
+```
+
+NOTE: Please make sure the file name is not decorated, as it'll be sent as-is and the device will try to create the file using any path names, which might fail. This will be fixed in an upcoming revision.
 
 # Debugging with GDB - WiP
 
