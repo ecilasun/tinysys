@@ -40,6 +40,7 @@ folders = \
 	mouse \
 	oxygen \
 	raster \
+	reflections \
 	syscalltest \
 	tinyrt \
 	tinyrtty \
