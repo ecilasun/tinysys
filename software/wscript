@@ -10,33 +10,40 @@ APPNAME = 'riscvtool'
 
 top = '.'
 
-
 def options(opt):
     # Prefers msvc, but could also use conf.load('clang++') instead
-    if ('COMSPEC' in os.environ):
+    if platform.system().lower().startswith('win'):
         opt.load('msvc')
+    elif platform.system().lower().startswith('mac'):
+        opt.load('clang++')
     else:
         opt.load('clang++')
 
 def configure(conf):
     # Prefers msvc, but could also use conf.load('clang++') instead
-    if ('COMSPEC' in os.environ):
+    if platform.system().lower().startswith('win'):
         conf.load('msvc')
+    elif platform.system().lower().startswith('mac'):
+        conf.load('clang++')
     else:
         conf.load('clang++')
 
 def build(bld):
 
-    if ('COMSPEC' in os.environ):
+    if platform.system().lower().startswith('win'):
+        compile_flags = []
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_WINDOWS']
+    elif platform.system().lower().startswith('mac'):
+        compile_flags = ['-std=c++20']
+        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_MACOS']
     else:
+        compile_flags = ['-std=c++20']
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_LINUX']
     includes = ['source', 'includes']
 
     # RELEASE
     sdk_lib_path = []
     libs = []
-    compile_flags = []
     linker_flags = []
 
     # Build risctool

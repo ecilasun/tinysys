@@ -1,4 +1,4 @@
-#if defined(CAT_LINUX)
+#if defined(CAT_LINUX) || defined(CAT_MACOS)
 #include <termios.h>
 #include <unistd.h>
 #else
@@ -15,7 +15,7 @@
 #include <chrono>
 #include <thread>
 
-#if defined(CAT_LINUX)
+#if defined(CAT_LINUX) || defined(CAT_MACOS)
 char devicename[512] = "/dev/ttyUSB1";
 #else // CAT_WINDOWS
 char devicename[512] = "\\\\.\\COM3";
@@ -25,6 +25,8 @@ unsigned int getfilelength(const fpos_t &endpos)
 {
 #if defined(CAT_LINUX)
 	return (unsigned int)endpos.__pos;
+#elif defined(CAT_MACOS)
+	return (unsigned int)endpos.__pos; // FIX ME
 #else // CAT_WINDOWS
 	return (unsigned int)endpos;
 #endif
@@ -38,7 +40,7 @@ class CSerialPort{
 
 	bool Open()
 	{
-#if defined(CAT_LINUX)
+#if defined(CAT_LINUX) || defined(CAT_MACOS)
 		// Open COM port
 		serial_port = open(devicename, O_RDWR);
 		if (serial_port < 0 )
@@ -124,7 +126,7 @@ class CSerialPort{
 
 	uint32_t Receive(void *_target, unsigned int _rcvlength)
 	{
-#if defined(CAT_LINUX)
+#if defined(CAT_LINUX) || defined(CAT_MACOS)
 		int n = read(serial_port, _target, _rcvlength);
 		if (n < 0)
 			printf("ERROR: read() failed\n");
@@ -138,7 +140,7 @@ class CSerialPort{
 
 	uint32_t Send(uint8_t *_sendbytes, unsigned int _sendlength)
 	{
-#if defined(CAT_LINUX)
+#if defined(CAT_LINUX) || defined(CAT_MACOS)
 		int n = write(serial_port, _sendbytes, _sendlength);
 		if (n < 0)
 			printf("ERROR: write() failed\n");
@@ -153,14 +155,14 @@ class CSerialPort{
 
 	void Close()
 	{
-#if defined(CAT_LINUX)
+#if defined(CAT_LINUX) || defined(CAT_MACOS)
 		close(serial_port);
 #else // CAT_WINDOWS
 		CloseHandle(hComm);
 #endif
 	}
 
-#if defined(CAT_LINUX)
+#if defined(CAT_LINUX) || defined(CAT_MACOS)
 	int serial_port{-1};
 #else // CAT_WINDOWS
 	HANDLE hComm{INVALID_HANDLE_VALUE};
