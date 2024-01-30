@@ -26,7 +26,7 @@ unsigned int getfilelength(const fpos_t &endpos)
 #if defined(CAT_LINUX)
 	return (unsigned int)endpos.__pos;
 #elif defined(CAT_MACOS)
-	return (unsigned int)endpos.__pos; // FIX ME
+	return (unsigned int)endpos;
 #else // CAT_WINDOWS
 	return (unsigned int)endpos;
 #endif
@@ -395,19 +395,19 @@ void sendfile(char *_filename)
 	uint32_t dummy = 0;
 
 	// Send file transfer start
-	sprintf(tmpstring, "~");
+	snprintf(tmpstring, 128, "~");
 	serial.Send((uint8_t*)tmpstring, 1);
 	// Wait for !
 	while (serial.Receive(&dummy, 1) == 0) { std::this_thread::sleep_for(std::chrono::milliseconds(5)); }
 
 	// Send name+zero terminator
-	sprintf(tmpstring, "!%s", _filename);
+	snprintf(tmpstring, 128, "!%s", _filename);
 	serial.Send((uint8_t*)tmpstring, strlen(tmpstring)+1);
 	// Wait for !
 	while (serial.Receive(&dummy, 1) == 0) { std::this_thread::sleep_for(std::chrono::milliseconds(5)); }
 
 	// Send file length+zero terminator
-	sprintf(tmpstring, "!%d", filebytesize);
+	snprintf(tmpstring, 128, "!%d", filebytesize);
 	serial.Send((uint8_t*)tmpstring, strlen(tmpstring)+1);
 	// Wait for !
 	while (serial.Receive(&dummy, 1) == 0) { std::this_thread::sleep_for(std::chrono::milliseconds(5)); }
