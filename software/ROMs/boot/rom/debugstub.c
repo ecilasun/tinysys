@@ -673,9 +673,9 @@ void HandleFileTransfer(uint8_t input)
 	{
 		if (input == '!') // Check for 'start transfer'
 		{
-			USBSerialWrite("!");
 			kprintf("Receiving file");
-			// Waiting for header
+
+			USBSerialWrite("!");
 			s_fileTransferMode = 2;
 		}
 	}
@@ -692,10 +692,11 @@ void HandleFileTransfer(uint8_t input)
 			nametemp[readlen++] = input;
 			if (input == 0)
 			{
-				USBSerialWrite("!");
 				strcpy(s_filename, "sd:/");
 				strcat(s_filename, nametemp);
 				kprintf(" %s ", s_filename);
+
+				USBSerialWrite("!");
 				s_fileTransferMode = 3;
 			}
 		}
@@ -713,7 +714,6 @@ void HandleFileTransfer(uint8_t input)
 			sizetemp[readlen++] = input;
 			if (input == 0)
 			{
-				USBSerialWrite("!");
 				s_filesize = atoi(sizetemp);
 				readlen = 0;
 
@@ -724,6 +724,7 @@ void HandleFileTransfer(uint8_t input)
 				if (re != FR_OK)
 					kprintf(" file not opened ");
 
+				USBSerialWrite("!");
 				s_fileTransferMode = 4;
 			}
 		}
@@ -735,18 +736,19 @@ void HandleFileTransfer(uint8_t input)
 
 		readlen++;
 
+		int ack = 0;
 		if (readlen%128 == 0)
 		{
 			// Dump the 128 bytes to disk
 			unsigned int written = 0;
+			/*for (int i=0;i<128;++i) // Debug dump incoming data
+				kprintf("%c", filetemp[i]);*/
 			f_write(&s_outfp, filetemp, 128, &written);
-			USBSerialWrite("!");
+			ack = 1;
 		}
 
 		if (s_filesize == readlen)
 		{
-			USBSerialWrite("!");
-
 			// Dump any leftovers
 			if (s_filesize%128 != 0)
 			{
@@ -760,8 +762,12 @@ void HandleFileTransfer(uint8_t input)
 			readlen = 0;
 
 			kprintf("done.\n");
+			ack = 1;
 			s_fileTransferMode = 5;
 		}
+
+		if (ack)
+			USBSerialWrite("!");
 	}
 	else if (s_fileTransferMode == 5) // Decompress / save
 	{

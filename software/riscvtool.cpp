@@ -148,7 +148,7 @@ class CSerialPort{
 #else // CAT_WINDOWS
 		DWORD byteswritten = 0;
 		// Send the command
-		WriteFile(hComm, _sendbytes, _sendlength, &byteswritten, nullptr);
+		BOOL success = WriteFile(hComm, _sendbytes, _sendlength, &byteswritten, nullptr);
 		return (uint32_t)byteswritten;
 #endif
 	}
