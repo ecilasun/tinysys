@@ -730,18 +730,18 @@ void HandleFileTransfer(uint8_t input)
 	}
 	else if (s_fileTransferMode == 4) // Raw data traffic
 	{
-		char *filetemp = (char*)(KERNEL_TEMP_MEMORY + 4096);
+		uint8_t *filetemp = (uint8_t*)(KERNEL_TEMP_MEMORY + 4096);
 		filetemp[(readlen%128)] = input;
 
-		if (readlen%128 == 0 && readlen)
+		readlen++;
+
+		if (readlen%128 == 0)
 		{
 			// Dump the 128 bytes to disk
 			unsigned int written = 0;
 			f_write(&s_outfp, filetemp, 128, &written);
 			USBSerialWrite("!");
 		}
-
-		readlen++;
 
 		if (s_filesize == readlen)
 		{
