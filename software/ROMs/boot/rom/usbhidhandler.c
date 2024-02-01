@@ -113,10 +113,18 @@ enum EUSBDeviceState HandleKeyboard(enum EUSBDeviceState _currentState)
 		// 7  6  5  4  3  2  1  0
 		// RG RA RS RC LG LA LS LC
 		//uint8_t isGraphics = modifierState&0x8800 ? 1:0;
-		//uint8_t isAlt = modifierState&0x4400 ? 1:0;
+		uint8_t isAlt = modifierState&0x4400 ? 1:0;
 		uint8_t isShift = modifierState&0x2200 ? 1:0;
 		uint8_t isControl = modifierState&0x1100 ? 1:0;
 		uint8_t isCaps = isShift | (s_devicecontrol[0]&0x02);
+
+		if (isControl)
+			s_currentkeymap[HKEY_RIGHTCONTROL] = 1;
+		if (isShift)
+			s_currentkeymap[HKEY_RIGHTSHIFT] = 1;
+		if (isAlt)
+			s_currentkeymap[HKEY_RIGHTALT] = 1;
+
 		uint16_t *keystates = GetKeyStateTable();
 		for (uint32_t i=0; i<256; ++i)
 		{
@@ -139,7 +147,7 @@ enum EUSBDeviceState HandleKeyboard(enum EUSBDeviceState _currentState)
 					incoming = 3; // EXT (CTRL+C) or PAUSE key
 				else
 					incoming = KeyScanCodeToASCII(i, isCaps);
-				if (incoming) // Add only valid entries
+				if (incoming >= 8) // Add only valid key presses (ignore modifier keys)
 					KeyRingBufferWrite(&incoming, sizeof(uint32_t));
 			}
 		}
