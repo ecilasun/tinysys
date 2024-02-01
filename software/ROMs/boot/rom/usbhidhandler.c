@@ -147,7 +147,7 @@ enum EUSBDeviceState HandleKeyboard(enum EUSBDeviceState _currentState)
 					incoming = 3; // EXT (CTRL+C) or PAUSE key
 				else
 					incoming = KeyScanCodeToASCII(i, isCaps);
-				if (incoming >= 8) // Add only valid key presses (ignore modifier keys)
+				if (incoming) // Add only valid key presses (ignore modifier keys)
 					KeyRingBufferWrite(&incoming, sizeof(uint32_t));
 			}
 		}
