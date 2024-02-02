@@ -1,27 +1,24 @@
 #include "basesystem.h"
-#include "usbhost.h"
+#include "usbserial.h"
 #include <stdio.h>
 
 int main(int argc, char **argv)
 {
-    printf("USB probe\n");
-	if (argc<=1)
-	{
-		printf("Usage: usb deviceaddress\n");
-		return 0;
-	}
+    printf("USB descriptor dump (serial and console)\n");
+	printf("Use https://eleccelerator.com/usbdescreqparser/ to decode\n");
 
-	uint8_t *descdump = new uint8_t[16384];
-	uint32_t dumplen = 0;
-	uint8_t hidClass = 0;
-	uint8_t rcode = USBGetDeviceDescriptor(0, 0, &hidClass, descdump, &dumplen);
-	if (rcode != 0)
-		USBErrorString(rcode);
-	else
+	uint32_t *desclen = (uint32_t*)(KERNEL_TEMP_MEMORY + 8192);
+	uint8_t *devdesc = (uint8_t*)(KERNEL_TEMP_MEMORY + 8196);
+
+	printf("In-memory device descriptor size: %d\n", *desclen);
+	if (*desclen != 0)
 	{
-		printf("Device descriptor:\n");
-		for (uint32_t i=0; i<dumplen; ++i)
-			printf("%.2x", descdump[i]);
+		for (uint32_t i=0; i<*desclen; ++i)
+		{
+			printf("%.2x", devdesc[i]);
+			USBSerialWriteHexByte(devdesc[i]);
+		}
+		USBSerialWrite("\n");
 		printf("\n");
 	}
 

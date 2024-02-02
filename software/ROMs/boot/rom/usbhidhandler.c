@@ -87,6 +87,10 @@ void InitializeUSBHIDData()
 	// LED output
 	for (int i=0; i<8; ++i)
 		s_devicecontrol[i] = 0;
+
+	// Reset descriptor length
+	uint32_t *desclen = (uint32_t*)(KERNEL_TEMP_MEMORY + 8192);
+	*desclen = 0;
 }
 
 enum EUSBDeviceState HandleKeyboard(enum EUSBDeviceState _currentState)
@@ -360,7 +364,10 @@ void ProcessUSBDevice(uint64_t currentTime)
 				// Wait for first SOF
 				while ((MAX3421ReadByte(rHIRQ)&bmFRAMEIRQ) == 0) { asm volatile ("nop"); }
 				// Get device descriptor from default address and control endpoint
-				uint8_t rcode = USBGetDeviceDescriptor(0, 0, &s_hidClass, NULL, NULL);
+				uint32_t *desclen = (uint32_t*)(KERNEL_TEMP_MEMORY + 8192);
+				uint8_t *devdesc = (uint8_t*)(KERNEL_TEMP_MEMORY + 8196);
+				*desclen = 0;
+				uint8_t rcode = USBGetDeviceDescriptor(0, 0, &s_hidClass, devdesc, desclen);
 				// Assign device address
 				if (rcode != 0)
 					USBErrorString(rcode);

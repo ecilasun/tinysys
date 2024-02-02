@@ -617,7 +617,7 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, v
 		uint32_t L = sizeof(struct USBDeviceDescriptor);
 		__builtin_memcpy(target, &ddesc, L);
 		target += L;
-		_outlen += L;
+		*_outlen += L;
 	}
 
 	struct USBConfigurationDescriptor cdef;
@@ -630,7 +630,7 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, v
 			uint32_t L = sizeof(struct USBConfigurationDescriptor);
 			__builtin_memcpy(target, &cdef, L);
 			target += L;
-			_outlen += L;
+			*_outlen += L;
 		}
 
 		if (rcode != 0)
@@ -644,7 +644,7 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, v
 			uint32_t L = cdef.wTotalLength;
 			__builtin_memcpy(target, tmpdata, L);
 			target += L;
-			_outlen += L;
+			*_outlen += L;
 		}
 
 		if (rcode != 0)
@@ -671,7 +671,7 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, v
 			uint32_t L = sizeof(struct USBStringLanguageDescriptor);
 			__builtin_memcpy(target, &lang, L);
 			target += L;
-			_outlen += L;
+			*_outlen += L;
 		}
 
 		if (rcode != 0)
@@ -691,7 +691,7 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, v
 				uint32_t L = 2 + str.bLength; // including the blength+bdescriptortype
 				__builtin_memcpy(target, &str, L);
 				target += L;
-				_outlen += L;
+				*_outlen += L;
 #ifdef DEBUG_USB_HOST
 				USBSerialWriteN((char*)target, L);
 				USBSerialWrite("\n");
