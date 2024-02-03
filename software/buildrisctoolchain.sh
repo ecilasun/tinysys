@@ -8,6 +8,9 @@ cd riscv-gnu-toolchain
 
 sudo apt-get install autoconf automake autotools-dev curl python3 libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev ninja-build
 
+# NOTE: for MacOS this would be:
+# brew install python3 gawk gnu-sed gmp mpfr libmpc isl zlib expat texinfo flock
+
 # Optional - If you have something left from a prior session, run:
 
 # sudo make clean
