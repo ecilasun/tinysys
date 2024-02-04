@@ -44,7 +44,7 @@ folders = \
 	syscalltest \
 	tinyrt \
 	tinyrtty \
-	usb \
+	usbinfo \
 	vgmplayer \
 
 # Rules

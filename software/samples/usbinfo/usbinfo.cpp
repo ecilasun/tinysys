@@ -5,7 +5,8 @@
 int main(int argc, char **argv)
 {
     printf("USB descriptor dump (serial and console)\n");
-	printf("Use https://eleccelerator.com/usbdescreqparser/ to decode\n");
+	printf("NOTE: USB serial port must be connected!\n");
+	printf("Check https://eleccelerator.com/usbdescreqparser/ to decode\n\n");
 
 	uint32_t *desclen = (uint32_t*)(KERNEL_TEMP_MEMORY + 8192);
 	uint8_t *devdesc = (uint8_t*)(KERNEL_TEMP_MEMORY + 8196);

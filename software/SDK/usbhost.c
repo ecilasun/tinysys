@@ -596,7 +596,10 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, v
     uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, 0x00, USB_DESCRIPTOR_DEVICE, 0x0000, 8, (char*)&ddesc, 64);
 
 	if (rcode != 0)
+	{
+		USBErrorString(rcode);
 		return rcode;
+	}
 
 	s_deviceTable[_addr].endpointInfo[_ep].maxPacketSize = ddesc.bMaxPacketSizeEP0;
 
@@ -605,7 +608,10 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, v
 	rcode = USBControlRequest(_addr, _ep, bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, 0x00, USB_DESCRIPTOR_DEVICE, 0x0000, 18, (char*)&ddesc, 64);
 
 	if (rcode != 0)
+	{
+		USBErrorString(rcode);
 		return rcode;
+	}
 	
 	int stringCount = 0;
 
@@ -634,7 +640,10 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, v
 		}
 
 		if (rcode != 0)
+		{
+			USBErrorString(rcode);
 			return rcode;
+		}
 
 		// re-request config descriptor with actual data size (cdef.wTotalLength)
 		char *tmpdata = (char*)KERNEL_TEMP_MEMORY;
@@ -648,7 +657,10 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, v
 		}
 
 		if (rcode != 0)
+		{
+			USBErrorString(rcode);
 			return rcode;
+		}
 
 		dtype = USBDESCTYPE_UNKNOWN;
 		offset = 0;
@@ -675,8 +687,12 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, v
 		}
 
 		if (rcode != 0)
+		{
+			USBErrorString(rcode);
 			return rcode;
+		}
 
+		// Some devices can't read strings somehow
 		for (int s=0; s<stringCount; ++s)
 		{
 			struct USBStringDescriptor str;
@@ -704,7 +720,10 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, v
 				uint16_t epAddress = 0x81;	// TODO: get it from device->endpoints[_ep]->epAddress
 				rcode = USBControlRequest(_addr, _ep, bmREQ_CLEAR_FEATURE, USB_REQUEST_CLEAR_FEATURE, USB_FEATURE_ENDPOINT_HALT, 0, epAddress, 0, NULL, 64);
 				if (rcode == 0)
+				{
+					USBErrorString(rcode);
 					break;
+				}
 			}
 		}
 	}
