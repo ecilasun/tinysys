@@ -497,6 +497,7 @@ uint8_t USBParseDescriptor(uint8_t _addr, uint8_t *_desc, uint8_t* _dtype, uint8
 			}
 			if (desc->bInterfaceClass == USBClass_HID)
 			{
+				//desc->bInterfaceNumber?
 				switch (desc->bInterfaceProtocol)
 				{
 					case 0:
@@ -527,11 +528,12 @@ uint8_t USBParseDescriptor(uint8_t _addr, uint8_t *_desc, uint8_t* _dtype, uint8
 			*_offset = sizeof(struct USBEndpointDescriptor);
 			struct USBEndpointDescriptor *desc = (struct USBEndpointDescriptor*)_desc;
 
-			uint8_t eaddr = desc->bEndpointAddress&0x7F;
+			uint8_t eaddr = desc->bEndpointAddress&0x0F;
 			s_deviceTable[_addr].endpointInfo[eaddr].epAddr = desc->bEndpointAddress;
 			s_deviceTable[_addr].endpointInfo[eaddr].maxPacketSize = desc->wMaxPacketSize;
 			s_deviceTable[_addr].endpointInfo[eaddr].pollInterval = desc->bInterval;
 			s_deviceTable[_addr].endpointInfo[eaddr].epTransferType = desc->bEndpointAddress&0x80 ? 0 : 1;
+			s_deviceTable[_addr].endpointInfo[eaddr].attribs = desc->bmAttributes;
 
 #ifdef DEBUG_USB_HOST
 			USBSerialWrite("EP addr, maxsize, interval: ");
@@ -875,17 +877,17 @@ uint8_t USBReadHIDData(uint8_t _addr, uint8_t _ep, uint8_t _dataLen, uint8_t *_d
 {
 	uint8_t rcode;
 
-	if (s_protosubclass == 1 && _hidClass == 2) // Boot protocol and mouse
+	if (s_protosubclass == 1 && _hidClass == 2) // Use boot protocol for mouse
 	{
 		// Using interrupt endpoint
 		MAX3421WriteByte(rPERADDR, _addr);
 		s_deviceTable[_addr].endpointInfo[_ep].receiveToggle = bmRCVTOG1;
 		rcode = USBInTransfer(_addr, _ep, _dataLen, (char*)_data, 64);
 	}
-	else // Keyboard and others use report protocol
+	else // Use report protocol of keyboard and others
 	{
 		// Using control endpoint
-		uint8_t iface = 0;
+		uint8_t iface = 0; // TODO: gather correct read interface index
     	rcode = USBControlRequest(_addr, _ep, bmREQ_HIDIN, HID_REQUEST_GET_REPORT, _reportIndex, _reportType, iface, _dataLen, (char*)_data, 64);
 	}
 
@@ -896,7 +898,7 @@ uint8_t USBWriteHIDData(uint8_t _addr, uint8_t _ep, uint8_t *_data)
 {
 	uint8_t reportID = 0;
 	uint8_t reportType = 2; // LED control
-	uint8_t iface = 0;
+	uint8_t iface = 0; // TODO: gather correct write interface index
     uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_HIDOUT, HID_REQUEST_SET_REPORT, reportID, reportType, iface, 1, (char*)_data, 64);
 
 	return rcode;

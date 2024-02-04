@@ -42,11 +42,12 @@ struct USBEndpointRecord
     uint8_t pollInterval;
     uint8_t sendToggle;
     uint8_t receiveToggle;
+	uint8_t attribs;
 };
 
 struct USBDeviceRecord
 {
-    struct USBEndpointRecord endpointInfo[5];
+    struct USBEndpointRecord endpointInfo[16];
     uint8_t deviceClass;
 	uint8_t connected;
 };
