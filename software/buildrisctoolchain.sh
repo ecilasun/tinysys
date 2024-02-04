@@ -1,3 +1,7 @@
+# NOTE: for MacOS this would be done via brew and replace all of the following:
+# brew tap riscv-software-src/riscv
+# brew install riscv-tools
+
 # On Ubuntu, run the following to grab the riscv gnu toolchain into a drive with sufficient space:
 # (at this time the latest version of g++ was 12.2.0)
 
@@ -7,9 +11,6 @@ cd riscv-gnu-toolchain
 # Install the prerequisites
 
 sudo apt-get install autoconf automake autotools-dev curl python3 libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev ninja-build
-
-# NOTE: for MacOS this would be:
-# brew install python3 gawk gnu-sed gmp mpfr libmpc isl zlib expat texinfo flock
 
 # Optional - If you have something left from a prior session, run:
 

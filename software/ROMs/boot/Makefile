@@ -3,8 +3,10 @@
 ifeq ($(OS),Windows_NT)
 	ifeq ($(MSYSTEM), MINGW32)
 		UNAME := MSYS
+	else ifeq ($(MSYSTEM), DARWIN)
+		UNAME := DARWIN
 	else
-		UNAME := Windows
+		UNAME := WINDOWS
 	endif
 else
 	UNAME := $(shell uname)
@@ -34,7 +36,7 @@ folders = \
 RISCV_PREFIX ?= riscv64-unknown-elf-
 RISCV_GCC ?= $(RISCV_PREFIX)gcc
 RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump
-ifeq ($(UNAME), Windows)
+ifeq ($(UNAME), WINDOWS)
 RISCVTOOL ?= ..\..\build\release\riscvtool.exe
 else
 RISCVTOOL ?= ../../build/release/riscvtool
@@ -47,7 +49,7 @@ FILESYSTEM ?= -DENABLE_FILESYSTEM -DLFS_NO_MALLOC -DLFS_NO_DEBUG
 ROMWORDSIZE ?= 16
 # 512 bit cache lines makes 64 bytes per line
 # 256 cache lines makes total cache size 16 Kbytes
-ifeq ($(UNAME), Windows)
+ifeq ($(UNAME), WINDOWS)
 RISCV_GCC_OPTS ?= -mcmodel=medany -std=gnu99 -march=rv32imc -mabi=ilp32 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Wno-format -Os -static -ffreestanding -nostartfiles -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,-gc-sections,--strip-debug
 else
 RISCV_GCC_OPTS ?= -mcmodel=medany -std=gnu99 -march=rv32imc_zicsr_zifencei -mabi=ilp32 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Wno-format -Os -static -ffreestanding -nostartfiles -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,-gc-sections,--strip-debug
@@ -88,7 +90,7 @@ all: executables romimages overlayimage disassembly
 # Clean
 
 clean:
-ifeq ($(UNAME), Windows)
+ifeq ($(UNAME), WINDOWS)
 	del $(objs) $(junk)
 else
 	rm -rf $(objs) $(junk)
