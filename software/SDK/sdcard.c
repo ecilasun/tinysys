@@ -327,7 +327,7 @@ int __attribute__ ((noinline)) SDReadMultipleBlocks(uint8_t *datablock, uint32_t
 
 	for(uint32_t b=0; b<numblocks; ++b)
 	{
-      uint8_t* target = (uint8_t*)(datablock+cursor);
+		uint8_t* target = (uint8_t*)(datablock+cursor);
 		uint8_t response = SDReadSingleBlock(b+blockaddress, target, checksum);
 		if (response != SD_START_TOKEN)
 			return -1;
@@ -339,65 +339,65 @@ int __attribute__ ((noinline)) SDReadMultipleBlocks(uint8_t *datablock, uint32_t
 
 uint8_t __attribute__ ((noinline)) SDWriteSingleBlock(uint32_t sector, uint8_t *datablock, uint8_t checksum[2])
 {
-   uint32_t oldstate = LEDGetState();
-   LEDSetState(oldstate|0x2);
+	uint32_t oldstate = LEDGetState();
+	LEDSetState(oldstate|0x2);
 
-   uint16_t crc = CRC16(datablock, 512);
+	uint16_t crc = CRC16(datablock, 512);
 
-   SDCmd(CMD24_WRITE_BLOCK, sector);
-   uint8_t response = SDResponse1(); // R1: expect 0x00
+	SDCmd(CMD24_WRITE_BLOCK, sector);
+	uint8_t response = SDResponse1(); // R1: expect 0x00
 
-   //int haserror = 0;
-   if (response == SD_READY)
-   {
+	//int haserror = 0;
+	if (response == SD_READY)
+	{
 		// Send start token - single block (0xFD->multiblock)
 		response = SPITxRx(SD_START_TOKEN);
 
-      int x=0;
-      do {
-         response = SPITxRx(datablock[x++]);
-      } while(x<512);
+		int x=0;
+		do {
+			response = SPITxRx(datablock[x++]);
+		} while(x<512);
 
-      // This seems to be unused in most samples
-      SPITxRx(crc >> 8);
-      SPITxRx(crc & 0xff);
+		// This seems to be unused in most samples
+		SPITxRx(crc >> 8);
+		SPITxRx(crc & 0xff);
 
-      // Read response token
-      uint8_t token = SPITxRx(0xFF) & 0x1F;
-      if (token != 0x05) // 0x0b==crc error, 0x0d==data rejected
-      {
-         // Error
-         //if (token == 0x0b) UARTWrite("CRC error\n");
-         //if (token == 0x0d) UARTWrite("Data rejected\n");
-         // Expected status&x1F==0x05
-         // 010:accepted, 101:rejected-crcerror, 110:rejected-writeerror
-         SDCmd(CMD13_SEND_STATUS, 0);
-         response = SDResponse1();
-         //haserror = 1;
-      }
-      else
-      {
-         // Wait for writes to finish
-         response = SDWaitNotBusy();
-      }
-   }
-   else
-   {
-      //UARTWrite("Expected 0x00, ");
-      //haserror = 1;
-   }
+		// Read response token
+		uint8_t token = SPITxRx(0xFF) & 0x1F;
+		if (token != 0x05) // 0x0b==crc error, 0x0d==data rejected
+		{
+			// Error
+			//if (token == 0x0b) UARTWrite("CRC error\n");
+			//if (token == 0x0d) UARTWrite("Data rejected\n");
+			// Expected status&x1F==0x05
+			// 010:accepted, 101:rejected-crcerror, 110:rejected-writeerror
+			SDCmd(CMD13_SEND_STATUS, 0);
+			response = SDResponse1();
+			//haserror = 1;
+		}
+		else
+		{
+			// Wait for writes to finish
+			response = SDWaitNotBusy();
+		}
+	}
+	else
+	{
+		//UARTWrite("Expected 0x00, ");
+		//haserror = 1;
+	}
 
-   LEDSetState(oldstate);
+	LEDSetState(oldstate);
 
-   // Error
-   /*if (haserror)
-   {
-   	UARTWrite("SDWriteSingleBlock: write response: 0x");
-      UARTWriteHexByte(response);
-      UARTWrite("\n");
-   }*/
+	// Error
+	/*if (haserror)
+	{
+		UARTWrite("SDWriteSingleBlock: write response: 0x");
+		UARTWriteHexByte(response);
+		UARTWrite("\n");
+	}*/
 
-   return response;
+	return response;
 }
 
 int __attribute__ ((noinline)) SDIOControl(const uint8_t cmd, void *buffer)
@@ -450,15 +450,10 @@ int __attribute__ ((noinline)) SDWriteMultipleBlocks(const uint8_t *datablock, u
 
 	for(uint32_t b=0; b<numblocks; ++b)
 	{
-      uint8_t* source = (uint8_t*)(datablock+cursor);
+		uint8_t* source = (uint8_t*)(datablock+cursor);
 		/*uint8_t response =*/ SDWriteSingleBlock(b+blockaddress, source, checksum);
 		/*if (response != SD_READY)
-      {
-         UARTWrite("SDWriteMultipleBlocks: 0x");
-         UARTWriteHexByte(response);
-         UARTWrite("\n");
-			return -1;
-      }*/
+			return -1;*/
 		cursor += 512;
 	}
 
