@@ -94,11 +94,12 @@ class CSerialPort{
 			serialParams.DCBlength = sizeof(serialParams);
 			if (GetCommState(hComm, &serialParams))
 			{
-				serialParams.BaudRate = CBR_115200;
-				serialParams.ByteSize = 8;
-				serialParams.StopBits = ONESTOPBIT;
-				serialParams.Parity = NOPARITY;
-
+				serialParams.BaudRate = CBR_115200;		// 115200 baud
+				serialParams.ByteSize = 8;				// 8 bit bytes
+				serialParams.StopBits = ONESTOPBIT;		// 1 stop bit
+				serialParams.Parity = NOPARITY;			// no parity
+				serialParams.fOutX = 0;					// no xon/xoff
+				serialParams.fInX = 0;
 				if (SetCommState(hComm, &serialParams) != 0)
 				{
 					timeouts.ReadIntervalTimeout = 50;

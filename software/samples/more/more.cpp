@@ -19,11 +19,11 @@ int main(int argc, char *argv[])
 		if (fp)
 		{
 			printf("\n");
-			uint8_t *buffer = new uint8_t[16];
+			uint8_t *buffer = new uint8_t[512];
 			int readsize = 0;
 			do
 			{
-				readsize = fread(buffer, 1, 16, fp);
+				readsize = fread(buffer, 1, 128, fp);
 				for (int i=0; i<readsize; ++i)
 					printf("%c", buffer[i]);
 			} while (readsize > 0);
