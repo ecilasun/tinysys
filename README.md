@@ -41,13 +41,16 @@ This unit will read an instruction from the IFIFO if available, load registers w
 Video processing unit. Handles scan-out of various video sizes (320x240 and 640x480) and bit depths (8bpp index color or 16bpp RGB color)
 
 ## APU
-Audio processing unit. Handles mixing the OPL2/RAW audio outputs, and also manages 44/22/11KHz playback and buffer handling of RAW audio.
+Audio processing unit. Handles mixing the OPL2/RAW audio outputs, and also manages 44/22/11KHz stereo playback and buffer handling of RAW audio.
 
 ## RPU
 Raster processing unit. Used to rasterize primitives directly to memory. Rasterized output is in a tiled format which requires decoding to use.
 
 ## DMA
 Direct memory access unit. Used to copy blocks of memory within memory address space, and won't DMA between or from other devices.
+
+## OPL2
+This is a Yamaha OPL2 compatible device using an opensource implementation (mono output, 16bits)
 
 # Overview of the bus
 
@@ -56,7 +59,7 @@ The AXI4 bus, running at 166.67MHz, connects all of the processing units to memo
 
 # Custom instructions
 
-## Store mask (smask)
+## Store mask (smask) - WiP
 
 This instruction sets the following 32bit write to memory to use a 4 bit byte mask so that only the bytes corresponding to high bits of the mask end up being written to memory.
 As soon as any following store instruction gets executed, subsequent stores revert back to regular behavior.
