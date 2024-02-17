@@ -25,9 +25,9 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "R00A"
+#define VERSIONSTRING "R00B"
 // On-storage version
-#define DEVVERSIONSTRING "D00A"
+#define DEVVERSIONSTRING "D00B"
 
 // For ROM image residing on the device:
 const uint8_t s_consolefgcolor = 0x2A; // Ember
@@ -285,7 +285,7 @@ void ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "ver"))
 	{
-		kprintf("tinysys (c)2024 Engin Cilasun\n");
+		kprintf("\ntinysys\n");
 
 		uint32_t waterMark = read_csr(0xFF0);
 		if (waterMark == 0)
@@ -312,7 +312,7 @@ void ExecuteCmd(char *_cmd)
 		else
 			kprintf("MAX3421(host)   : n/a\n");
 
-		// Video circuit on 2B has no info we can read
+		// Video circuit on 2B has no info we can read so this is hardcoded
 		kprintf("SII164(video)   : 12bpp DVI\n");
 	}
 	else if (!strcmp(command, "help"))
@@ -600,10 +600,12 @@ int main()
 	// we need to make sure all things are stopped and reset to default states
 	LEDSetState(0xC);
 	DeviceDefaultState(1);
+	kprintf("Welcome to tinysys\n");
 	if (waterMark == 0)
 		kprintf("ROM: " VERSIONSTRING "\n");
 	else
 		kprintf("ROM: " DEVVERSIONSTRING "\n");
+	kprintf("Use HELP for a list of commands\n");
 
 	// Set up ring buffers
 	LEDSetState(0xB);
@@ -648,7 +650,7 @@ int main()
 		// Refresh console output
 		if (kernelgfx->m_consoleUpdated)
 			VPUConsoleResolve(kernelgfx);
-		
+	
 		// Yield time as soon as we're done here (disables/enables interrupts)
 		uint64_t currentTime = TaskYield();
 
@@ -662,11 +664,11 @@ int main()
 		// Deal with USB peripheral setup and data traffic
 		ProcessUSBDevice(currentTime);
 
-		// Emit outgoing serial data
-		USBEmitBufferedOutput();
-
 		// GDB stub / serial keyboard input / file transfer handler
 		HandleSerialInput();
+
+		// Emit outgoing serial data
+		USBEmitBufferedOutput();
 
 		// Enable machine interrupts
 		write_csr(mstatus, MSTATUS_MIE);

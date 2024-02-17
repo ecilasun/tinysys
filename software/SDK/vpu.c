@@ -293,10 +293,10 @@ void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _
 			// NOTE: This is not supposed to trigger any behavior except wrap around on same line
 			isNotTab = 0;
 		}
-		/*else if (currentchar == '\r') // Carriage return
+		else if (currentchar == '\r') // Carriage return is ignored for now
 		{
-			cx=0;
-		}*/
+			//cx=0; // TODO:
+		}
 		else
 		{
 			characterBase[cy*stride+cx] = currentchar;

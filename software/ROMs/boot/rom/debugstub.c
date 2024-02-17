@@ -27,6 +27,7 @@ static uint32_t s_binaryAddrs;
 static uint32_t s_binaryNumbytes;
 static uint32_t s_receivedBytes;
 static uint32_t s_filesize = 0;
+static uint32_t s_readlen = 0;
 static char s_filename[64];
 static char s_chk[2];
 static char s_packet[256];
@@ -668,12 +669,13 @@ void ProcessBinaryData(uint8_t input)
 
 void HandleFileTransfer(uint8_t input)
 {
-	static uint32_t readlen = 0;
+	const uint32_t packetSize = 512; // NOTE: Match this to riscvtool packet size.
+
 	if (s_fileTransferMode == 1)
 	{
 		if (input == '!') // Check for 'start transfer'
 		{
-			kprintf("Receiving file");
+			kprintf("Receiving file ");
 
 			USBSerialWrite("!");
 			s_fileTransferMode = 2;
@@ -683,18 +685,18 @@ void HandleFileTransfer(uint8_t input)
 	{
 		if (input == '!')
 		{
-			readlen = 0;
+			s_readlen = 0;
 		}
 		else
 		{
 			// Read name up to and including null terminator
 			char *nametemp = (char*)(KERNEL_TEMP_MEMORY + 4096);
-			nametemp[readlen++] = input;
+			nametemp[s_readlen++] = input;
 			if (input == 0)
 			{
 				strcpy(s_filename, "sd:/");
 				strcat(s_filename, nametemp);
-				kprintf(" %s ", s_filename);
+				kprintf("%s ", s_filename);
 
 				USBSerialWrite("!");
 				s_fileTransferMode = 3;
@@ -705,24 +707,28 @@ void HandleFileTransfer(uint8_t input)
 	{
 		if (input == '!')
 		{
-			readlen = 0;
+			s_readlen = 0;
 		}
 		else
 		{
 			// Read file size as zero terminated ascii string
 			char *sizetemp = (char*)(KERNEL_TEMP_MEMORY + 4096);
-			sizetemp[readlen++] = input;
+			sizetemp[s_readlen++] = input;
 			if (input == 0)
 			{
 				s_filesize = atoi(sizetemp);
-				readlen = 0;
+				s_readlen = 0;
 
-				kprintf("(%d bytes)...", s_filesize);
+				kprintf("(%d bytes)\n", s_filesize);
 
 				// Open new file for write
 				FRESULT re = f_open(&s_outfp, s_filename, FA_CREATE_ALWAYS | FA_WRITE);
 				if (re != FR_OK)
+				{
+					// Abort
 					kprintf(" file not opened ");
+					s_fileTransferMode = 0;
+				}
 
 				USBSerialWrite("!");
 				s_fileTransferMode = 4;
@@ -732,37 +738,39 @@ void HandleFileTransfer(uint8_t input)
 	else if (s_fileTransferMode == 4) // Raw data traffic
 	{
 		uint8_t *filetemp = (uint8_t*)(KERNEL_TEMP_MEMORY + 4096);
-		filetemp[(readlen%128)] = input;
+		filetemp[(s_readlen%packetSize)] = input;
 
-		readlen++;
+		s_readlen++;
 
 		int ack = 0;
-		if (readlen%128 == 0)
+		if (s_readlen%packetSize == 0)
 		{
-			// Dump the 128 bytes to disk
+			// Dump the packetSize bytes to disk
 			unsigned int written = 0;
-			/*for (int i=0;i<128;++i) // Debug dump incoming data
-				kprintf("%c", filetemp[i]);*/
-			f_write(&s_outfp, filetemp, 128, &written);
+			f_write(&s_outfp, filetemp, packetSize, &written);
+			int cx, cy;
+			kgetcursor(&cx, &cy);
+			ksetcursor(0, cy);
+			kprintf("%d/%d", s_readlen, s_filesize);
 			ack = 1;
 		}
 
-		if (s_filesize == readlen)
+		if (s_filesize == s_readlen)
 		{
 			// Dump any leftovers
-			if (s_filesize%128 != 0)
+			if (s_filesize%packetSize != 0)
 			{
 				unsigned int written;
-				f_write(&s_outfp, filetemp, (s_filesize%128), &written);
+				f_write(&s_outfp, filetemp, (s_filesize%packetSize), &written);
 			}
+
+			ack = 1;
+			s_readlen = 0;
 
 			// Close file
 			f_close(&s_outfp);
+			kprintf("\nFile transfer complete.\n");
 
-			readlen = 0;
-
-			kprintf("done.\n");
-			ack = 1;
 			s_fileTransferMode = 5;
 		}
 
@@ -895,7 +903,7 @@ void HandleSerialInput()
 		// Incoming data goes to input buffer instead if we're not receiving a debug package
 		if (s_fileTransferMode == 0 && s_checksumStart == 0 && s_packetStart == 0)
 		{
-			if (drain == '~') // Enter serial mode
+			if (drain == '~') // Enter serial file transfer mode
 			{
 				USBSerialWrite("!");
 				s_fileTransferMode = 1;

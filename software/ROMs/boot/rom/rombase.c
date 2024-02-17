@@ -22,13 +22,12 @@ int kprintfn(const int count, const char *fmt, ...)
 	int l;
 
 	va_start(va, fmt);
-	l = mini_vsnprintf(k_tmpstr, 512, fmt, va);
+	l = mini_vsnprintf(k_tmpstr, 1023, fmt, va);
 	va_end(va);
 	l = count < l ? count : l;
 
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
 	VPUConsolePrint(kernelgfx, k_tmpstr, count);
-	CFLUSH_D_L1;
 
 	return l;
 }
@@ -39,12 +38,12 @@ int kprintf(const char *fmt, ...)
 	int l;
 
 	va_start(va, fmt);
-	l = mini_vsnprintf(k_tmpstr, 512, fmt, va);
+	l = mini_vsnprintf(k_tmpstr, 1023, fmt, va);
 	va_end(va);
+	l = 1023 < l ? 1023 : l;
 
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
-	VPUConsolePrint(kernelgfx, k_tmpstr, 65536);
-	CFLUSH_D_L1;
+	VPUConsolePrint(kernelgfx, k_tmpstr, l);
 
 	return l;
 }

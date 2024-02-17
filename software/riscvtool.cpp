@@ -95,6 +95,8 @@ class CSerialPort{
 			if (GetCommState(hComm, &serialParams))
 			{
 				serialParams.BaudRate = CBR_115200;		// 115200 baud
+				serialParams.fBinary = 1;
+				serialParams.fParity = 0;
 				serialParams.ByteSize = 8;				// 8 bit bytes
 				serialParams.StopBits = ONESTOPBIT;		// 1 stop bit
 				serialParams.Parity = NOPARITY;			// no parity
@@ -367,7 +369,7 @@ void dumpelf(char *_filename, char *_outfilename, unsigned int groupsize, bool i
 
 void sendfile(char *_filename)
 {
-	char tmpstring[128];
+	char tmpstring[129];
 
 	FILE *fp;
 	fp = fopen(_filename, "rb");
@@ -385,15 +387,15 @@ void sendfile(char *_filename)
 	fsetpos(fp, &pos);
 	filebytesize = getfilelength(endpos);
 
-	uint8_t *bytestoread = new uint8_t[filebytesize];
-	fread(bytestoread, 1, filebytesize, fp);
+	uint8_t *filedata = new uint8_t[filebytesize + 64];
+	fread(filedata, 1, filebytesize, fp);
 	fclose(fp);
 
 	CSerialPort serial;
 	if (serial.Open() == false)
 		return;
 
-	uint32_t dummy = 0;
+	uint8_t dummy = 0;
 
 	// Send file transfer start
 	snprintf(tmpstring, 128, "~");
@@ -414,28 +416,30 @@ void sendfile(char *_filename)
 	while (serial.Receive(&dummy, 1) == 0) { std::this_thread::sleep_for(std::chrono::milliseconds(5)); }
 
 	// Send the file bytes
-	uint32_t num64BytePackets = filebytesize/128;
-	uint32_t leftoverBytes = filebytesize%128;
+	uint32_t packetSize = 512;
+	uint32_t numPackets = filebytesize / packetSize;
+	uint32_t leftoverBytes = filebytesize % packetSize;
 	uint32_t i = 0;
-	for (i=0; i<num64BytePackets; ++i)
+	for (i=0; i<numPackets; ++i)
 	{
-		serial.Send(&bytestoread[i*128], 128);
-		// Wait for !
+		serial.Send(filedata + (i*packetSize), packetSize);
+		// Wait for acknowledgement !
 		while (serial.Receive(&dummy, 1) == 0) { std::this_thread::sleep_for(std::chrono::milliseconds(5)); }
 	}
 
 	if (leftoverBytes)
 	{
 		// Receive 'ready', then send
-		serial.Send(&bytestoread[i*128], leftoverBytes);
-		// Wait for !
-		while (serial.Receive(&dummy, 1) == 0) { std::this_thread::sleep_for(std::chrono::milliseconds(5)); }
+		serial.Send(filedata + (i*packetSize), leftoverBytes);
 	}
+
+	// Wait for final !
+	while (serial.Receive(&dummy, 1) == 0) { std::this_thread::sleep_for(std::chrono::milliseconds(5)); }
 
 	serial.Close();
 	printf("File sent\n");
 
-	delete [] bytestoread;
+	delete [] filedata;
 }
 
 

@@ -363,12 +363,21 @@ uint8_t __attribute__ ((noinline)) SDWriteSingleBlock(uint32_t sector, uint8_t *
 		SPITxRx(crc & 0xff);
 
 		// Read response token
-		uint8_t token = SPITxRx(0xFF) & 0x1F;
-		if (token != 0x05) // 0x0b==crc error, 0x0d==data rejected
+		int retries = 0;
+		uint8_t writeAcceptState = 0x00;
+		while (retries < 4096)
+		{
+			++retries;
+			writeAcceptState = SPITxRx(0xFF) & 0x1F;
+			if (writeAcceptState != 0x00) // expected 0x05
+				break;
+		}
+
+		if (writeAcceptState != 0x05)
 		{
 			// Error
-			//if (token == 0x0b) UARTWrite("CRC error\n");
-			//if (token == 0x0d) UARTWrite("Data rejected\n");
+			//if (writeAcceptState == 0x0b) UARTWrite("CRC error\n");
+			//if (writeAcceptState == 0x0d) UARTWrite("Data rejected\n");
 			// Expected status&x1F==0x05
 			// 010:accepted, 101:rejected-crcerror, 110:rejected-writeerror
 			SDCmd(CMD13_SEND_STATUS, 0);

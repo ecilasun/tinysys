@@ -100,6 +100,8 @@ on Linux the comand would be similar to:
 ./build/release/riscvtool rom.c -sendfile /dev/ttyUSB1
 ```
 
+During the upload process the device will show a message to indicate upload status.
+
 NOTE: Please make sure the file name is not decorated, as it'll be sent as-is and the device will try to create the file using any path names, which might fail. This will be fixed in an upcoming revision.
 
 # Debugging with GDB - WiP
