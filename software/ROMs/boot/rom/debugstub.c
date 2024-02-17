@@ -9,7 +9,7 @@
 #include "keyringbuffer.h"
 #include <stdlib.h>
 
-//#define DEBUG_DEBUG
+//#define WHO_DEBUGS_THE_DEBUGGER
 
 // https://www.embecosm.com/appnotes/ean4/embecosm-howto-rsp-server-ean4-issue-2.html
 
@@ -133,7 +133,7 @@ void SendAck()
 {
 	USBSerialWrite("+");
 
-#ifdef DEBUG_DEBUG
+#ifdef WHO_DEBUGS_THE_DEBUGGER
 	kprintf("\n< + ");
 #endif
 }
@@ -142,7 +142,7 @@ void SendNack()
 {
 	USBSerialWrite("-");
 
-#ifdef DEBUG_DEBUG
+#ifdef WHO_DEBUGS_THE_DEBUGGER
 	kprintf("\n< - ");
 #endif
 }
@@ -157,7 +157,7 @@ void SendDebugPacket(const char *packetString)
 	USBSerialWrite("#");
 	USBSerialWrite(checksumstr);
 
-#ifdef DEBUG_DEBUG
+#ifdef WHO_DEBUGS_THE_DEBUGGER
 	kprintf("\n<$%s#0%s ", packetString, checksumstr);
 #endif
 }
@@ -650,7 +650,7 @@ void HandlePacket()
 	}*/
 	else
 	{
-#ifdef DEBUG_DEBUG
+#ifdef WHO_DEBUGS_THE_DEBUGGER
 		kprintf("UNKOWN: %s\n", s_packet);
 #endif
 		SendNack();
@@ -880,7 +880,7 @@ void HandleSerialInput()
 	while (SerialInRingBufferRead(&drain, 1))
 	{
 		// Debug output for incoming packet
-#ifdef DEBUG_DEBUG
+#ifdef WHO_DEBUGS_THE_DEBUGGER
 		kprintf("%c", drain);
 #endif
 		// Handle serial data transfer

@@ -293,6 +293,7 @@ void ProcessUSBDevice(uint64_t currentTime)
 	enum EBusState probe_result = (enum EBusState)*s_probe_result;
 	uint32_t state_changed = probe_result != old_probe_result;
 
+	// NOTE: Calling this behind CPU interrupt disables also works (see rom.c)
 	// Disable MAX3421 interrupts so we don't fall into ISR while processing state
 	//MAX3421WriteByte(rCPUCTL, 0);
 
