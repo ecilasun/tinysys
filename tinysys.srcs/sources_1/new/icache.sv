@@ -28,8 +28,8 @@ data_t cachedin[0:3];
 logic memwritestrobe = 1'b0;
 logic memreadstrobe = 1'b0;
 
-logic [13:0] ctag;					// current cache tag (14 bits)
-logic [3:0] coffset;				// current word offset 0..15
+logic [13:0] ctag = 14'd0;			// current cache tag (14 bits)
+logic [3:0] coffset = 4'd0;			// current word offset 0..15
 logic [7:0] clineaddr = 8'd0;		// current cache line 0..256
 
 logic [14:0] cachelinetags[0:255];	// cache line tags (14 bits) + 1 bit for valid flag
@@ -104,6 +104,8 @@ always_ff @(posedge aclk) begin
 	cachewe <= 1'b0;
 	ctagwe <= 1'b0;
 
+	dataout <= cdout[coffset*32 +: 32];
+
 	unique case(cachestate)
 		IDLE : begin
 			coffset <= offset;	// Cache offset 0..15
@@ -133,29 +135,12 @@ always_ff @(posedge aclk) begin
 		end
 
 		CREAD: begin
-			if ({1'b1, ctag} == ctagdout) begin // Hit
-				unique case(coffset)
-					4'b0000:  dataout <= cdout[31:0];
-					4'b0001:  dataout <= cdout[63:32];
-					4'b0010:  dataout <= cdout[95:64];
-					4'b0011:  dataout <= cdout[127:96];
-					4'b0100:  dataout <= cdout[159:128];
-					4'b0101:  dataout <= cdout[191:160];
-					4'b0110:  dataout <= cdout[223:192];
-					4'b0111:  dataout <= cdout[255:224];
-					4'b1000:  dataout <= cdout[287:256];
-					4'b1001:  dataout <= cdout[319:288];
-					4'b1010:  dataout <= cdout[351:320];
-					4'b1011:  dataout <= cdout[383:352];
-					4'b1100:  dataout <= cdout[415:384];
-					4'b1101:  dataout <= cdout[447:416];
-					4'b1110:  dataout <= cdout[479:448];
-					4'b1111:  dataout <= cdout[511:480];
-				endcase
-				// Mark as 'done' since the comb unit will yield the value in lastcdout
+			if ({1'b1, ctag} == ctagdout) begin
+				// Cache hit
 				readdone <= 1'b1;
 				cachestate <= IDLE;
-			end else begin // Miss
+			end else begin
+				// Cache miss
 				cachestate <= CPOPULATE;
 			end
 		end
