@@ -651,9 +651,6 @@ int main()
 		if (kernelgfx->m_consoleUpdated)
 			VPUConsoleResolve(kernelgfx);
 
-		// GDB stub / serial keyboard input / file transfer handler
-		HandleSerialInput();
-	
 		// Yield time as soon as we're done here (disables/enables interrupts)
 		uint64_t currentTime = TaskYield();
 
@@ -666,6 +663,9 @@ int main()
 
 		// Deal with USB peripheral setup and data traffic
 		ProcessUSBDevice(currentTime);
+
+		// GDB stub / serial keyboard input / file transfer handler
+		HandleSerialInput();
 
 		// Emit outgoing serial data
 		USBEmitBufferedOutput();
