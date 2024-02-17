@@ -115,7 +115,6 @@ class CSerialPort{
 						return true;
 					else
 						printf("ERROR: can't set communication timeouts\n");
-					
 				}
 				else
 					printf("ERROR: can't set communication parameters\n");
