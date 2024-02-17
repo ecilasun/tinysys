@@ -71,6 +71,7 @@ always @(posedge aclk) begin
 		cachelinetags[clineaddr] <= clinedin;
 end
 wire [14:0] ctagdout = cachelinetags[clineaddr];
+wire cachehit = ({1'b1, ctag} == ctagdout) ? 1'b1 : 1'b0;
 
 // ----------------------------------------------------------------------------
 // cached/uncached memory controllers
@@ -135,7 +136,7 @@ always_ff @(posedge aclk) begin
 		end
 
 		CREAD: begin
-			if ({1'b1, ctag} == ctagdout) begin
+			if (cachehit) begin
 				// Cache hit
 				readdone <= 1'b1;
 				cachestate <= IDLE;
