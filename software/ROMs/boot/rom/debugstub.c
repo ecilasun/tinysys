@@ -773,7 +773,7 @@ void HandleFileTransfer(uint8_t input)
 
 			ack = 1;
 			s_readlen = 0;
-			s_fileTransferMode = 5;
+			s_fileTransferMode = 0;
 		}
 
 		// Close file
@@ -783,15 +783,9 @@ void HandleFileTransfer(uint8_t input)
 			kprintf("\nFile transfer complete.\n");
 		}
 
-		// Accept packet
+		// Accept packet or acknowledge transfer complete
 		if (ack)
 			USBSerialWrite("!");
-	}
-	else if (s_fileTransferMode == 5) // Decompress / save
-	{
-		// TODO: Decompress file if compressed, and write to disk
-		// Exit to regular mode
-		s_fileTransferMode = 0;
 	}
 }
 

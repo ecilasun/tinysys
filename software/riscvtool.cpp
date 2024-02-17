@@ -152,7 +152,7 @@ class CSerialPort{
 		DWORD byteswritten = 0;
 		// Send the command
 		BOOL success = WriteFile(hComm, _sendbytes, _sendlength, &byteswritten, nullptr);
-		return (uint32_t)byteswritten;
+		return success ? (uint32_t)byteswritten : 0;
 #endif
 	}
 
@@ -433,15 +433,20 @@ void sendfile(char *_filename)
 	uint32_t i = 0;
 	for (i=0; i<numPackets; ++i)
 	{
-		serial.Send(filedata + (i*packetSize), packetSize);
+		uint32_t bytessent = 0;
+		do{
+			bytessent = serial.Send(filedata + (i*packetSize), packetSize);
+		} while (bytessent != packetSize);
 		// Wait for ack
 		WACK(serial);
 	}
 
 	if (leftoverBytes)
 	{
-		// Receive 'ready', then send
-		serial.Send(filedata + (i*packetSize), leftoverBytes);
+		uint32_t bytessent = 0;
+		do{
+			bytessent = serial.Send(filedata + (i*packetSize), leftoverBytes);
+		} while (bytessent != leftoverBytes);
 	}
 
 	// Wait for ack
