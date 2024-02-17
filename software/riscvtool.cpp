@@ -95,7 +95,9 @@ class CSerialPort{
 			if (GetCommState(hComm, &serialParams))
 			{
 				serialParams.BaudRate = CBR_115200;		// 115200 baud
-				serialParams.fBinary = 1;
+				serialParams.fBinary = true;
+				serialParams.fDtrControl = DTR_CONTROL_ENABLE;
+				serialParams.fRtsControl = RTS_CONTROL_ENABLE;
 				serialParams.fParity = 0;
 				serialParams.ByteSize = 8;				// 8 bit bytes
 				serialParams.StopBits = ONESTOPBIT;		// 1 stop bit
@@ -104,11 +106,11 @@ class CSerialPort{
 				serialParams.fInX = 0;
 				if (SetCommState(hComm, &serialParams) != 0)
 				{
-					timeouts.ReadIntervalTimeout = 50;
-					timeouts.ReadTotalTimeoutConstant = 50;
-					timeouts.ReadTotalTimeoutMultiplier = 10;
-					timeouts.WriteTotalTimeoutConstant = 50; // added to multiplier*numbyes
-					timeouts.WriteTotalTimeoutMultiplier = 10; // times numbytes
+					timeouts.ReadIntervalTimeout = 1;
+					timeouts.ReadTotalTimeoutConstant = 0;
+					timeouts.ReadTotalTimeoutMultiplier = 0;
+					timeouts.WriteTotalTimeoutConstant = 0;
+					timeouts.WriteTotalTimeoutMultiplier = 0;
 					if (SetCommTimeouts(hComm, &timeouts) != 0)
 						return true;
 					else
@@ -462,7 +464,6 @@ void sendfile(char *_filename)
 
 	delete [] filedata;
 }
-
 
 int main(int argc, char **argv)
 {
