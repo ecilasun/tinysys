@@ -18,6 +18,7 @@
 		"initializer_list": "c",
 		"type_traits": "c",
 		"vector": "c",
-		"xutility": "c"
+		"xutility": "c",
+		"thread": "cpp"
 	}
 }

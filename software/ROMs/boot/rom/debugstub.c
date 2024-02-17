@@ -667,6 +667,14 @@ void ProcessBinaryData(uint8_t input)
 		s_gatherBinary = 0;
 }
 
+void progress(const int A, const int B)
+{
+	int cx, cy;
+	kgetcursor(&cx, &cy);
+	ksetcursor(0, cy);
+	kprintf("%d/%d", A, B);
+}
+
 void HandleFileTransfer(uint8_t input)
 {
 	const uint32_t packetSize = 512; // NOTE: Match this to riscvtool packet size.
@@ -748,13 +756,11 @@ void HandleFileTransfer(uint8_t input)
 			// Dump the packetSize bytes to disk
 			unsigned int written = 0;
 			f_write(&s_outfp, filetemp, packetSize, &written);
-			int cx, cy;
-			kgetcursor(&cx, &cy);
-			ksetcursor(0, cy);
-			kprintf("%d/%d", s_readlen, s_filesize);
+			progress(s_readlen, s_filesize);
 			ack = 1;
 		}
 
+		// End of file
 		if (s_filesize == s_readlen)
 		{
 			// Dump any leftovers
@@ -762,18 +768,22 @@ void HandleFileTransfer(uint8_t input)
 			{
 				unsigned int written;
 				f_write(&s_outfp, filetemp, (s_filesize%packetSize), &written);
+				progress(s_readlen, s_filesize);
 			}
 
 			ack = 1;
 			s_readlen = 0;
-
-			// Close file
-			f_close(&s_outfp);
-			kprintf("\nFile transfer complete.\n");
-
 			s_fileTransferMode = 5;
 		}
 
+		// Close file
+		if (s_readlen == 0)
+		{
+			f_close(&s_outfp);
+			kprintf("\nFile transfer complete.\n");
+		}
+
+		// Accept packet
 		if (ack)
 			USBSerialWrite("!");
 	}

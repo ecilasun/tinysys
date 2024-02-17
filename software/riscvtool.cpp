@@ -367,6 +367,19 @@ void dumpelf(char *_filename, char *_outfilename, unsigned int groupsize, bool i
 	delete [] bytestosend;
 }
 
+void WACK(CSerialPort &serial)
+{
+	int ack = 0;
+	uint8_t dummy;
+	do
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		if (serial.Receive(&dummy, 1))
+			if (dummy == '!')
+				ack = 1;
+	} while (!ack);
+}
+
 void sendfile(char *_filename)
 {
 	char tmpstring[129];
@@ -395,25 +408,23 @@ void sendfile(char *_filename)
 	if (serial.Open() == false)
 		return;
 
-	uint8_t dummy = 0;
-
 	// Send file transfer start
 	snprintf(tmpstring, 128, "~");
 	serial.Send((uint8_t*)tmpstring, 1);
-	// Wait for !
-	while (serial.Receive(&dummy, 1) == 0) { std::this_thread::sleep_for(std::chrono::milliseconds(5)); }
+	// Wait for ack
+	WACK(serial);
 
 	// Send name+zero terminator
 	snprintf(tmpstring, 128, "!%s", _filename);
 	serial.Send((uint8_t*)tmpstring, strlen(tmpstring)+1);
-	// Wait for !
-	while (serial.Receive(&dummy, 1) == 0) { std::this_thread::sleep_for(std::chrono::milliseconds(5)); }
+	// Wait for ack
+	WACK(serial);
 
 	// Send file length+zero terminator
 	snprintf(tmpstring, 128, "!%d", filebytesize);
 	serial.Send((uint8_t*)tmpstring, strlen(tmpstring)+1);
-	// Wait for !
-	while (serial.Receive(&dummy, 1) == 0) { std::this_thread::sleep_for(std::chrono::milliseconds(5)); }
+	// Wait for ack
+	WACK(serial);
 
 	// Send the file bytes
 	uint32_t packetSize = 512;
@@ -423,8 +434,8 @@ void sendfile(char *_filename)
 	for (i=0; i<numPackets; ++i)
 	{
 		serial.Send(filedata + (i*packetSize), packetSize);
-		// Wait for acknowledgement !
-		while (serial.Receive(&dummy, 1) == 0) { std::this_thread::sleep_for(std::chrono::milliseconds(5)); }
+		// Wait for ack
+		WACK(serial);
 	}
 
 	if (leftoverBytes)
@@ -433,8 +444,8 @@ void sendfile(char *_filename)
 		serial.Send(filedata + (i*packetSize), leftoverBytes);
 	}
 
-	// Wait for final !
-	while (serial.Receive(&dummy, 1) == 0) { std::this_thread::sleep_for(std::chrono::milliseconds(5)); }
+	// Wait for ack
+	WACK(serial);
 
 	serial.Close();
 	printf("File sent\n");
