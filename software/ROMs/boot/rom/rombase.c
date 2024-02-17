@@ -4,7 +4,6 @@
 #include "mini-printf.h"
 #include "usbserialhandler.h"
 #include "usbhidhandler.h"
-#include "debugstub.h"
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -418,58 +417,42 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 		{
 			case CAUSE_ILLEGAL_INSTRUCTION:
 			{
-				if (IsDebuggerConnected())
+				// Report and terminate
+				if ((PC&0x2) == 0) // Aligned
 				{
-					// CPU won't queue up illegal instructions but will throw
-					// TODO: Do we replace with ebreak and signal debugger with SIGILL (S03 or T 03 something; ?)
+					uint32_t instruction = *((uint32_t*)PC);
+					if ((instruction&3)==3) // uncompressed
+						kprintf("Illegal instruction 0x%X at 0x%X, terminating\n", instruction, PC);
+					else
+						kprintf("Illegal instruction 0x%X at 0x%X, terminating\n", instruction&0x0000FFFF, PC);
 				}
-				else
+				else // Misaligned
 				{
-					// Report and terminate
-					if ((PC&0x2) == 0) // Aligned
-					{
-						uint32_t instruction = *((uint32_t*)PC);
-						if ((instruction&3)==3) // uncompressed
-							kprintf("Illegal instruction 0x%X at 0x%X, terminating\n", instruction, PC);
-						else
-							kprintf("Illegal instruction 0x%X at 0x%X, terminating\n", instruction&0x0000FFFF, PC);
-					}
-					else // Misaligned
-					{
-						// NOTE: This RISC-V CPU by default can't read misaligned 32bit data so we need to
-						// read it in two 16bit aligned chunks and combine
-						uint16_t instA = *((uint16_t*)PC);
-						uint16_t instB = *((uint16_t*)(PC+2));
-						if ((instA&3)==3) // uncompressed
-							kprintf("Illegal instruction 0x%X%X at 0x%X, terminating\n", instB, instA, PC);
-						else // compressed
-							kprintf("Illegal instruction 0x%X at 0x%X, terminating\n", instA, PC);
-					}
-					// Terminate task on first chance and remove from list of running tasks
-					TaskExitCurrentTask(&g_taskctx);
-					// Force switch to next task
-					TaskSwitchToNext(&g_taskctx);
+					// NOTE: This RISC-V CPU by default can't read misaligned 32bit data so we need to
+					// read it in two 16bit aligned chunks and combine
+					uint16_t instA = *((uint16_t*)PC);
+					uint16_t instB = *((uint16_t*)(PC+2));
+					if ((instA&3)==3) // uncompressed
+						kprintf("Illegal instruction 0x%X%X at 0x%X, terminating\n", instB, instA, PC);
+					else // compressed
+						kprintf("Illegal instruction 0x%X at 0x%X, terminating\n", instA, PC);
 				}
+				// Terminate task on first chance and remove from list of running tasks
+				TaskExitCurrentTask(&g_taskctx);
+				// Force switch to next task
+				TaskSwitchToNext(&g_taskctx);
 
 				break;
 			}
 
 			case CAUSE_BREAKPOINT:
 			{
-				if (IsDebuggerConnected())
-				{
-					// CPU will spin over ebreak forever and won't advance the PC
-					//TaskSetState(g_taskctx, TS_PAUSED);
-				}
-				else
-				{
-					// Where there's no debugger loaded, simply exit since we're not supposed to run past ebreak commands
-					kprintf("Encountered breakpoint with no debugger attached\n");
-					// Exit task in non-debug mode
-					TaskExitCurrentTask(&g_taskctx);
-					// Force switch to next task
-					TaskSwitchToNext(&g_taskctx);
-				}
+				// Where there's no debugger loaded, simply exit since we're not supposed to run past ebreak commands
+				kprintf("Encountered breakpoint with no debugger attached\n");
+				// Exit task in non-debug mode
+				TaskExitCurrentTask(&g_taskctx);
+				// Force switch to next task
+				TaskSwitchToNext(&g_taskctx);
 
 				break;
 			}

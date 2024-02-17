@@ -367,7 +367,7 @@ void dumpelf(char *_filename, char *_outfilename, unsigned int groupsize, bool i
 	delete [] bytestosend;
 }
 
-void WACK(CSerialPort &serial)
+void WACK(CSerialPort &serial, const uint8_t waitfor)
 {
 	int ack = 0;
 	uint8_t dummy;
@@ -375,7 +375,7 @@ void WACK(CSerialPort &serial)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		if (serial.Receive(&dummy, 1))
-			if (dummy == '!')
+			if (dummy == waitfor)
 				ack = 1;
 	} while (!ack);
 }
@@ -412,48 +412,53 @@ void sendfile(char *_filename)
 	snprintf(tmpstring, 128, "~");
 	serial.Send((uint8_t*)tmpstring, 1);
 	// Wait for ack
-	WACK(serial);
+	WACK(serial, '~');
 
 	// Send name+zero terminator
 	snprintf(tmpstring, 128, "!%s", _filename);
 	serial.Send((uint8_t*)tmpstring, strlen(tmpstring)+1);
 	// Wait for ack
-	WACK(serial);
+	WACK(serial, '!');
 
 	// Send file length+zero terminator
 	snprintf(tmpstring, 128, "!%d", filebytesize);
 	serial.Send((uint8_t*)tmpstring, strlen(tmpstring)+1);
 	// Wait for ack
-	WACK(serial);
+	WACK(serial, '!');
 
 	// Send the file bytes
 	uint32_t packetSize = 512;
 	uint32_t numPackets = filebytesize / packetSize;
 	uint32_t leftoverBytes = filebytesize % packetSize;
 	uint32_t i = 0;
+	uint32_t packetOffset = 0;
 	for (i=0; i<numPackets; ++i)
 	{
-		uint32_t bytessent = 0;
-		do{
-			bytessent = serial.Send(filedata + (i*packetSize), packetSize);
-		} while (bytessent != packetSize);
+		snprintf(tmpstring, 128, "#");
+		serial.Send((uint8_t*)tmpstring, 1);
 		// Wait for ack
-		WACK(serial);
+		WACK(serial, '#');
+		serial.Send(filedata + packetOffset, packetSize);
+		// Wait for ack
+		WACK(serial, '!');
+		packetOffset += packetSize;
 	}
 
 	if (leftoverBytes)
 	{
-		uint32_t bytessent = 0;
-		do{
-			bytessent = serial.Send(filedata + (i*packetSize), leftoverBytes);
-		} while (bytessent != leftoverBytes);
+		snprintf(tmpstring, 128, "#");
+		serial.Send((uint8_t*)tmpstring, 1);
+		// Wait for ack
+		WACK(serial, '#');
+		serial.Send(filedata + packetOffset, leftoverBytes);
 	}
 
 	// Wait for ack
-	WACK(serial);
+	WACK(serial, '!');
+	packetOffset += leftoverBytes;
 
 	serial.Close();
-	printf("File sent\n");
+	printf("%d bytes sent\n", packetOffset);
 
 	delete [] filedata;
 }

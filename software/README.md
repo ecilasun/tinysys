@@ -104,26 +104,6 @@ During the upload process the device will show a message to indicate upload stat
 
 NOTE: Please make sure the file name is not decorated, as it'll be sent as-is and the device will try to create the file using any path names, which might fail. This will be fixed in an upcoming revision.
 
-# Debugging with GDB - WiP
-
-One prerequisite of being able to debug code on tinysys is to install an UART-serial adapter, at least for the time being. In the future the USB serial device will expose debug functionality alongside serial data facilities which will make the UART port redundant.
-
-You can attach with GDB to debug your code over the UART port using:
-
-```
-NOTE: The speed of the internal UART is fixed at 115200 bauds and won't change
-riscv64-unknown-elf-gdb -b 115200 --tui samples/mysample.elf
-Make sure to use the UART port here and not the USB serial port
-target remote /dev/ttyUSB1
-```
-
-This will break into the currently executing program. Use 'c' command to resume execution, or Ctrl+C to break at an arbitrary breakpoint. You can also set breakpoints when the program is paused by using 'b DrawConsole' for instance. On resume with 'c' the program will be stopped at the new breakpoint address.
- 
-Please note that this is an entirely software based feature and its usage pattern / implementation may change over time.
-
-NOTE: One very useful visual too to aid in debugging is gdbgui which you can find here:
-https://www.gdbgui.com/gettingstarted/
-
 # More details on RISC-V compiler toolchain
 
 NOTE: If the RISC-V compiler binaries (riscv64-unknown-elf-gcc or riscv64-unknown-elf-g++) are missing from your system, please follow the instructions at https://github.com/riscv/riscv-gnu-toolchain
