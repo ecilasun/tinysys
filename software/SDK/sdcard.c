@@ -65,7 +65,7 @@ static uint8_t CRC7(const uint8_t* data, uint8_t n) {
   return (crc << 1) | 1;
 }
 
-uint16_t CRC16_one(uint16_t crcIn, uint8_t data)
+/*uint16_t CRC16_one(uint16_t crcIn, uint8_t data)
 {
 	crcIn  = (uint8_t)(crcIn >> 8)|(crcIn << 8);
 	crcIn ^=  data;
@@ -83,7 +83,7 @@ static uint16_t CRC16(const uint8_t *pData, uint16_t len)
 	while (len--) crc = CRC16_one(crc,*pData++);
 
 	return crc;
-}
+}*/
 
 // A single SPI transaction is a write from master followed by a read from slave's output
 uint8_t __attribute__ ((noinline)) SPITxRx(const uint8_t outbyte)
@@ -342,7 +342,7 @@ uint8_t __attribute__ ((noinline)) SDWriteSingleBlock(uint32_t sector, uint8_t *
 	uint32_t oldstate = LEDGetState();
 	LEDSetState(oldstate|0x2);
 
-	uint16_t crc = CRC16(datablock, 512);
+	uint16_t crc = 0xFFFF;//CRC16(datablock, 512);
 
 	SDCmd(CMD24_WRITE_BLOCK, sector);
 	uint8_t response = SDResponse1(); // R1: expect 0x00
@@ -358,14 +358,14 @@ uint8_t __attribute__ ((noinline)) SDWriteSingleBlock(uint32_t sector, uint8_t *
 			response = SPITxRx(datablock[x++]);
 		} while(x<512);
 
-		// This seems to be unused in most samples
+		// This seems to be unused in most samples, we'll emit 0xFFFF
 		SPITxRx(crc >> 8);
 		SPITxRx(crc & 0xff);
 
 		// Read response token
 		int retries = 0;
 		uint8_t writeAcceptState = 0x00;
-		while (retries < 4096)
+		while (retries < 64)
 		{
 			++retries;
 			writeAcceptState = SPITxRx(0xFF) & 0x1F;

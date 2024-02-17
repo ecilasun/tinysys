@@ -111,6 +111,7 @@ void HandleFileTransfer(uint8_t input)
 			// Dump the packetSize bytes to disk
 			unsigned int written = 0;
 			f_write(&s_outfp, filetemp, packetSize, &written);
+			f_sync(&s_outfp);
 			progress(s_readlen, s_filesize);
 			ack = 1;
 			s_fileTransferMode = 5; // Go to next block
@@ -125,6 +126,7 @@ void HandleFileTransfer(uint8_t input)
 			{
 				unsigned int written;
 				f_write(&s_outfp, filetemp, leftover, &written);
+				f_sync(&s_outfp);
 				progress(s_readlen, s_filesize);
 			}
 
