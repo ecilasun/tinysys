@@ -4,7 +4,7 @@
 // Simple ringbuffer
 // Adapted from DXUT locklesspipe (c) Microsoft
 
-const static uint32_t cbBufferSizeLog2 = 10;
+const static uint32_t cbBufferSizeLog2 = 14; // 16384
 const static uint8_t c_cbBufferSizeLog2 = cbBufferSizeLog2 < 31 ? cbBufferSizeLog2 : 31;
 const static uint32_t c_cbBufferSize = ( 1 << c_cbBufferSizeLog2 );
 const static uint32_t c_sizeMask = c_cbBufferSize - 1;
