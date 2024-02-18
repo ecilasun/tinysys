@@ -356,7 +356,11 @@ void BufferIncomingData()
 	for (uint8_t i=0; i<numBytes; ++i)
 	{
 		uint8_t rcvData = MAX3420ReadByte(rEP1OUTFIFO);
-		SerialInRingBufferWrite(&rcvData, 1);
+		int written = 0;
+		do
+		{
+			written = SerialInRingBufferWrite(&rcvData, 1);
+		} while (!written);
 	}
 }
 

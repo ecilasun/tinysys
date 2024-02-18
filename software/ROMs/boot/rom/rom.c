@@ -667,11 +667,14 @@ int main()
 		// Emit outgoing serial data
 		USBEmitBufferedOutput();
 
-		// GDB stub / serial keyboard input / file transfer handler
-		HandleSerialInput();
-
 		// Enable machine interrupts
 		write_csr(mstatus, MSTATUS_MIE);
+
+		// ----------------------------------------------------------------
+		// GDB stub / serial keyboard input / file transfer handler
+		// ----------------------------------------------------------------
+
+		HandleSerialInput();
 	}
 
 	return 0;
