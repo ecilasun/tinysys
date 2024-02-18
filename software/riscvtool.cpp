@@ -106,6 +106,7 @@ class CSerialPort{
 				serialParams.fInX = 0;
 				if (SetCommState(hComm, &serialParams) != 0)
 				{
+					printf("%s open\n", devicename);
 					return true;
 					/*timeouts.ReadIntervalTimeout = 1;
 					timeouts.ReadTotalTimeoutConstant = 0;
