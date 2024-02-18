@@ -477,7 +477,7 @@ void sendfile(char *_filename)
 		uint64_t extChecksum = WCHK(serial);
 		if (extChecksum != checksum)
 		{
-			printf("Checksum error at packet %d/%d\n", i, numPackets, checksum);
+			printf("Checksum error at packet %d/%d\n", i, numPackets);
 			snprintf(tmpstring, 128, "-");
 			serial.Send((uint8_t*)tmpstring, 1);
 			WACK(serial, '-');
@@ -507,7 +507,7 @@ void sendfile(char *_filename)
 		uint64_t extChecksum = WCHK(serial);
 		if (extChecksum != checksum)
 		{
-			printf("Checksum error at packet %d/%d\n", i, numPackets, checksum);
+			printf("Checksum error at packet %d/%d\n", i, numPackets);
 			snprintf(tmpstring, 128, "-");
 			serial.Send((uint8_t*)tmpstring, 1);
 			WACK(serial, '-');
