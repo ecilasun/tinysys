@@ -1,6 +1,8 @@
+#include <stdint.h>
+
 void HandleUSBHID();
 void InitializeUSBHIDData();
-void ProcessUSBDevice();
+void ProcessUSBDevice(uint64_t currentTime);
 int GetUSBDeviceState();
 
 /*union PS4Buttons {
