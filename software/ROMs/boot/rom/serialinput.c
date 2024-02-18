@@ -34,7 +34,7 @@ uint64_t AccumulateHash(const uint64_t inhash, const uint8_t byte)
 
 void HandleFileTransfer(uint8_t input)
 {
-	const uint32_t packetSize = 1024; // NOTE: Match this to riscvtool packet size.
+	const uint32_t packetSize = 4096; // NOTE: Match this to riscvtool packet size.
 
 	if (s_fileTransferMode == 1)
 	{

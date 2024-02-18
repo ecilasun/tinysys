@@ -453,7 +453,7 @@ void sendfile(char *_filename)
 	WACK(serial, '!');
 
 	// Send the file bytes
-	uint32_t packetSize = 1024;
+	uint32_t packetSize = 4096;
 	uint32_t numPackets = filebytesize / packetSize;
 	uint32_t leftoverBytes = filebytesize % packetSize;
 	uint32_t i = 0;
@@ -477,7 +477,7 @@ void sendfile(char *_filename)
 		uint64_t extChecksum = WCHK(serial);
 		if (extChecksum != checksum)
 		{
-			printf("Checksum error at packet %d/%d: %.16lx expected, got %.16lx, diff: %.16lx\n", i, numPackets, checksum, extChecksum, checksum ^ extChecksum);
+			printf("Checksum error at packet %d/%d\n", i, numPackets, checksum);
 			snprintf(tmpstring, 128, "-");
 			serial.Send((uint8_t*)tmpstring, 1);
 			WACK(serial, '-');
@@ -507,7 +507,7 @@ void sendfile(char *_filename)
 		uint64_t extChecksum = WCHK(serial);
 		if (extChecksum != checksum)
 		{
-			printf("Checksum error at packet %d/%d: %.16lx expected, got %.16lx, diff: %.16lx\n", i, numPackets, checksum, extChecksum, checksum ^ extChecksum);
+			printf("Checksum error at packet %d/%d\n", i, numPackets, checksum);
 			snprintf(tmpstring, 128, "-");
 			serial.Send((uint8_t*)tmpstring, 1);
 			WACK(serial, '-');

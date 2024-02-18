@@ -602,9 +602,15 @@ int main()
 	DeviceDefaultState(1);
 	kprintf("Welcome to tinysys\n");
 	if (waterMark == 0)
+	{
 		kprintf("ROM: " VERSIONSTRING "\n");
+		kprintf("Booted from ROM\n");
+	}
 	else
+	{
 		kprintf("ROM: " DEVVERSIONSTRING "\n");
+		kprintf("Booted from 'rom.bin'\n");
+	}
 	kprintf("Use HELP for a list of commands\n");
 
 	// Set up ring buffers

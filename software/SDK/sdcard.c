@@ -348,6 +348,27 @@ uint8_t __attribute__ ((noinline)) SDWriteSingleBlock(uint32_t sector, uint8_t *
 	return response;
 }
 
+int __attribute__ ((noinline)) SDWriteMultipleBlocks(const uint8_t *datablock, uint32_t numblocks, uint32_t blockaddress)
+{
+	if (numblocks == 0)
+		return -1;
+
+	uint32_t cursor = 0;
+
+	uint8_t checksum[2];
+
+	for(uint32_t b=0; b<numblocks; ++b)
+	{
+		uint8_t* source = (uint8_t*)(datablock+cursor);
+		/*uint8_t response =*/ SDWriteSingleBlock(b+blockaddress, source, checksum);
+		/*if (response != SD_READY)
+			return -1;*/
+		cursor += 512;
+	}
+
+	return 0;
+}
+
 int __attribute__ ((noinline)) SDIOControl(const uint8_t cmd, void *buffer)
 {
 //CTRL_SYNC			   0	/* Complete pending write process (needed at FF_FS_READONLY == 0) */
@@ -375,7 +396,7 @@ int __attribute__ ((noinline)) SDIOControl(const uint8_t cmd, void *buffer)
    {
       case 0: /*CTRL_SYNC*/
       {
-         E32Sleep(HALF_MILLISECOND_IN_TICKS);
+         // E32Sleep(ONE_MILLISECOND_IN_TICKS); // NOTE: All writes are blocking by default therefore always complete
       }
       break;
       /*default:
@@ -385,27 +406,6 @@ int __attribute__ ((noinline)) SDIOControl(const uint8_t cmd, void *buffer)
       break;*/
    }
    return 0;
-}
-
-int __attribute__ ((noinline)) SDWriteMultipleBlocks(const uint8_t *datablock, uint32_t numblocks, uint32_t blockaddress)
-{
-	if (numblocks == 0)
-		return -1;
-
-	uint32_t cursor = 0;
-
-	uint8_t checksum[2];
-
-	for(uint32_t b=0; b<numblocks; ++b)
-	{
-		uint8_t* source = (uint8_t*)(datablock+cursor);
-		/*uint8_t response =*/ SDWriteSingleBlock(b+blockaddress, source, checksum);
-		/*if (response != SD_READY)
-			return -1;*/
-		cursor += 512;
-	}
-
-	return 0;
 }
 
 int __attribute__ ((noinline)) SDCardStartup()
