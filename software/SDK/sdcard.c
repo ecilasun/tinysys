@@ -65,7 +65,7 @@ static uint8_t CRC7(const uint8_t* data, uint8_t n) {
   return (crc << 1) | 1;
 }
 
-/*uint16_t CRC16_one(uint16_t crcIn, uint8_t data)
+uint16_t CRC16_one(uint16_t crcIn, uint8_t data)
 {
 	crcIn  = (uint8_t)(crcIn >> 8)|(crcIn << 8);
 	crcIn ^=  data;
@@ -83,7 +83,7 @@ static uint16_t CRC16(const uint8_t *pData, uint16_t len)
 	while (len--) crc = CRC16_one(crc,*pData++);
 
 	return crc;
-}*/
+}
 
 // A single SPI transaction is a write from master followed by a read from slave's output
 uint8_t __attribute__ ((noinline)) SPITxRx(const uint8_t outbyte)
@@ -118,7 +118,7 @@ uint8_t __attribute__ ((noinline)) SDWaitNotBusy()
    uint8_t res1 = 0xFF;
 
    int timeout = 0;
-   while((res1 = SPITxRx(0xFF)) == 0x00) {
+   while((res1 = SPITxRx(0xFF)) != 0xFF) {
       ++timeout;
       if (timeout > G_SPI_TIMEOUT)
          break;
@@ -211,7 +211,7 @@ uint8_t __attribute__ ((noinline)) SDCardInit()
 {
    // Set high capacity mode on
    int timeout = 0;
-   uint8_t /*rA = 0xFF, */rB = 0xFF;
+   uint8_t rB = 0xFF;
    do {
       // ACMD header
       SDCmd(CMD55_APP_CMD, 0x00000000);
@@ -220,20 +220,6 @@ uint8_t __attribute__ ((noinline)) SDCardInit()
       rB = SDResponse1(); // Expected: 0x00 eventually, but will also get several 0x01 (idle)
       ++timeout;
    } while (rB != SD_READY && timeout < G_SPI_TIMEOUT);
-
-   /*if (rA != 0x01)
-   {
-      UARTWrite("SDCardInit expected 0x01, got 0x");
-      UARTWriteHex(rA);
-      UARTWrite("\n");
-   }
-
-   if (rB != SD_READY)
-   {
-      UARTWrite("SDCardInit expected 0x00, got 0x");
-      UARTWriteHex(rB);
-      UARTWrite("\n");
-   }*/
 
    // Initialize
    /**IO_SPIRXTX = 0xFF;
@@ -342,7 +328,7 @@ uint8_t __attribute__ ((noinline)) SDWriteSingleBlock(uint32_t sector, uint8_t *
 	uint32_t oldstate = LEDGetState();
 	LEDSetState(oldstate|0x2);
 
-	uint16_t crc = 0xFFFF;//CRC16(datablock, 512);
+	uint16_t crc = CRC16(datablock, 512);
 
 	SDCmd(CMD24_WRITE_BLOCK, sector);
 	uint8_t response = SDResponse1(); // R1: expect 0x00
@@ -365,7 +351,7 @@ uint8_t __attribute__ ((noinline)) SDWriteSingleBlock(uint32_t sector, uint8_t *
 		// Read response token
 		int retries = 0;
 		uint8_t writeAcceptState = 0x00;
-		while (retries < 64)
+		while (retries < G_SPI_TIMEOUT)
 		{
 			++retries;
 			writeAcceptState = SPITxRx(0xFF) & 0x1F;
@@ -471,7 +457,7 @@ int __attribute__ ((noinline)) SDWriteMultipleBlocks(const uint8_t *datablock, u
 
 int __attribute__ ((noinline)) SDCardStartup()
 {
-   uint8_t response[3];
+   uint8_t response[4];
 
    response[0] = SDIdle();
    if (response[0] != 0x01)
@@ -482,13 +468,12 @@ int __attribute__ ((noinline)) SDCardStartup()
       return -1;
 
    response[2] = SDCardInit();
-   if (response[2] == SD_READY) // OK
+   if (response[2] != SD_READY)
+      return -1;
+
+   response[3] = SDSetBlockSize512();
+   if (response[3] == SD_READY) // OK
       return 0;
 
    return -1;
-
-   // NOTE: Block size is already set to 512 for high speed and can't be changed
-   // Do I need to implement this one?
-   //response[3] = SDSetBlockSize512();
-   //EchoUART("SDSetBlockSize512()");
 }

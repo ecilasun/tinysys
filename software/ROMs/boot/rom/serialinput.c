@@ -125,10 +125,13 @@ void HandleFileTransfer(uint8_t input)
 				USBSerialWriteRawBytes(&s_checksum, 8);
 			}
 
+			USBSerialWrite("!");
+
 			s_readlen = 0;
 			s_fileTransferMode = 0; // File transfer done
 
 			// Dump entire file contents
+			kprintf("\nSaving file...\n");
 			FRESULT re = f_open(&s_outfp, s_filename, FA_CREATE_ALWAYS | FA_WRITE);
 			if (re == FR_OK)
 			{
@@ -137,8 +140,7 @@ void HandleFileTransfer(uint8_t input)
 				f_close(&s_outfp);
 			}
 
-			kprintf("\nFile transfer complete.\n");
-			USBSerialWrite("!");
+			kprintf("done.\n");
 		}
 	}
 }
