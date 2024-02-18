@@ -136,11 +136,14 @@ void HandleFileTransfer(uint8_t input)
 			if (re == FR_OK)
 			{
 				unsigned int written;
-				f_write(&s_outfp, filetemp, s_filesize, &written);
+				re = f_write(&s_outfp, filetemp, s_filesize, &written);
+				if (re == FR_OK)
+					kprintf("done.\n");
+				else
+					kprintf("failed.\n");
+				f_sync(&s_outfp);
 				f_close(&s_outfp);
 			}
-
-			kprintf("done.\n");
 		}
 	}
 }
