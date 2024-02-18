@@ -100,12 +100,12 @@ After the terminal connects to the board, you can try typing 'help' and the disp
 Once the above is confirmed working, uploading binaries is straighforward. For example on Windows, simply run a command similar to the following, with the port and file names set to the ones on your local device:
 
 ```
-build\release\riscvtool.exe rom.c -sendfile \\.\COM9
+build\release\riscvtool.exe test.elf -sendfile \\.\COM9
 ```
 
 on Linux the comand would be similar to:
 ```
-./build/release/riscvtool rom.c -sendfile /dev/ttyUSB1
+./build/release/riscvtool test.elf -sendfile /dev/ttyUSB0
 ```
 
 During the upload process the device will show a message to indicate upload status.
