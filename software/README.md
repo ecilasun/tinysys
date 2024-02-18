@@ -74,6 +74,14 @@ lsusb
 ```
 You should see "FFFF:0001 ENGIN tinysys usb serial" as part of the output
 
+NOTE:
+If for some reason the path to generic usb serial driver isn't there try the following:
+```
+sudo modprobe usbserial vendor=0xFFFF product=0x0001
+logout/login
+then check the path to see if it's there
+```
+
 # Adding tinysys as a generic serial device over USB - Windows
 
 This is rather simpler on windows. All one needs to do is plug in the device and find it in the list under the Device Manager control panel. It should be displayed as 'tinysys USB serial'
