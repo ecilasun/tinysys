@@ -89,7 +89,7 @@ void InitializeUSBHIDData()
 		s_devicecontrol[i] = 0;
 
 	// Reset descriptor length
-	uint32_t *desclen = (uint32_t*)(KERNEL_TEMP_MEMORY + 8192);
+	uint32_t *desclen = (uint32_t*)(KERNEL_TEMP_MEMORY + 4096);
 	*desclen = 0;
 }
 
@@ -365,8 +365,8 @@ void ProcessUSBDevice(uint64_t currentTime)
 				// Wait for first SOF
 				while ((MAX3421ReadByte(rHIRQ)&bmFRAMEIRQ) == 0) { asm volatile ("nop"); }
 				// Get device descriptor from default address and control endpoint
-				uint32_t *desclen = (uint32_t*)(KERNEL_TEMP_MEMORY + 8192);
-				uint8_t *devdesc = (uint8_t*)(KERNEL_TEMP_MEMORY + 8196);
+				uint32_t *desclen = (uint32_t*)(KERNEL_TEMP_MEMORY + 4096);
+				uint8_t *devdesc = (uint8_t*)(KERNEL_TEMP_MEMORY + 4100);
 				*desclen = 0;
 				uint8_t rcode = USBGetDeviceDescriptor(0, 0, &s_hidClass, devdesc, desclen);
 				// Assign device address

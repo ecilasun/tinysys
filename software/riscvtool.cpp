@@ -106,7 +106,8 @@ class CSerialPort{
 				serialParams.fInX = 0;
 				if (SetCommState(hComm, &serialParams) != 0)
 				{
-					timeouts.ReadIntervalTimeout = 1;
+					return true;
+					/*timeouts.ReadIntervalTimeout = 1;
 					timeouts.ReadTotalTimeoutConstant = 0;
 					timeouts.ReadTotalTimeoutMultiplier = 0;
 					timeouts.WriteTotalTimeoutConstant = 0;
@@ -114,7 +115,7 @@ class CSerialPort{
 					if (SetCommTimeouts(hComm, &timeouts) != 0)
 						return true;
 					else
-						printf("ERROR: can't set communication timeouts\n");
+						printf("ERROR: can't set communication timeouts\n");*/
 				}
 				else
 					printf("ERROR: can't set communication parameters\n");
@@ -153,6 +154,8 @@ class CSerialPort{
 		DWORD byteswritten = 0;
 		// Send the command
 		BOOL success = WriteFile(hComm, _sendbytes, _sendlength, &byteswritten, nullptr);
+		if (!success)
+			printf("ERROR: write() failed\n");
 		return success ? (uint32_t)byteswritten : 0;
 #endif
 	}
@@ -374,11 +377,30 @@ void WACK(CSerialPort &serial, const uint8_t waitfor)
 	uint8_t dummy;
 	do
 	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		if (serial.Receive(&dummy, 1))
 			if (dummy == waitfor)
 				ack = 1;
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 	} while (!ack);
+}
+
+uint64_t WCHK(CSerialPort &serial)
+{
+	int ack = 0;
+	uint64_t extChecksum = 2166136261U;
+	do
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		if (serial.Receive(&extChecksum, 8))
+			ack = 1;
+	} while (!ack);
+
+	return extChecksum;
+}
+
+uint64_t AccumulateHash(const uint64_t inhash, const uint8_t byte)
+{
+	return 16777619U * inhash ^ (uint64_t)byte;
 }
 
 void sendfile(char *_filename)
@@ -407,7 +429,10 @@ void sendfile(char *_filename)
 
 	CSerialPort serial;
 	if (serial.Open() == false)
+	{
+		delete [] filedata;
 		return;
+	}
 
 	// Send file transfer start
 	snprintf(tmpstring, 128, "~");
@@ -428,35 +453,73 @@ void sendfile(char *_filename)
 	WACK(serial, '!');
 
 	// Send the file bytes
-	uint32_t packetSize = 512;
+	uint32_t packetSize = 1024;
 	uint32_t numPackets = filebytesize / packetSize;
 	uint32_t leftoverBytes = filebytesize % packetSize;
 	uint32_t i = 0;
 	uint32_t packetOffset = 0;
 	for (i=0; i<numPackets; ++i)
 	{
+		// Generate checksum
+		uint64_t checksum = 2166136261U;
+		for (int j=0; j<packetSize; ++j)
+			checksum = AccumulateHash(checksum, filedata[packetOffset+j]);
+
+		// Wait for ready
 		snprintf(tmpstring, 128, "#");
 		serial.Send((uint8_t*)tmpstring, 1);
-		// Wait for ack
 		WACK(serial, '#');
+
+		// Send data block
 		serial.Send(filedata + packetOffset, packetSize);
-		// Wait for ack
-		WACK(serial, '!');
+
+		// Wait for block checksum
+		uint64_t extChecksum = WCHK(serial);
+		if (extChecksum != checksum)
+		{
+			printf("Checksum error at packet %d/%d: %.16lx expected, got %.16lx, diff: %.16lx\n", i, numPackets, checksum, extChecksum, checksum ^ extChecksum);
+			snprintf(tmpstring, 128, "-");
+			serial.Send((uint8_t*)tmpstring, 1);
+			WACK(serial, '-');
+			serial.Close();
+			delete [] filedata;
+			return;
+		}
 		packetOffset += packetSize;
 	}
 
 	if (leftoverBytes)
 	{
+		// Generate checksum
+		uint64_t checksum = 2166136261U;
+		for (int j=0; j<leftoverBytes; ++j)
+			checksum = AccumulateHash(checksum, filedata[packetOffset+j]);
+
+		// Wait for ready
 		snprintf(tmpstring, 128, "#");
 		serial.Send((uint8_t*)tmpstring, 1);
-		// Wait for ack
 		WACK(serial, '#');
+
+		// Send data block
 		serial.Send(filedata + packetOffset, leftoverBytes);
+
+		// Wait for block checksum
+		uint64_t extChecksum = WCHK(serial);
+		if (extChecksum != checksum)
+		{
+			printf("Checksum error at packet %d/%d: %.16lx expected, got %.16lx, diff: %.16lx\n", i, numPackets, checksum, extChecksum, checksum ^ extChecksum);
+			snprintf(tmpstring, 128, "-");
+			serial.Send((uint8_t*)tmpstring, 1);
+			WACK(serial, '-');
+			serial.Close();
+			delete [] filedata;
+			return;
+		}
+		packetOffset += leftoverBytes;
 	}
 
-	// Wait for ack
+	// Wait for done
 	WACK(serial, '!');
-	packetOffset += leftoverBytes;
 
 	serial.Close();
 	printf("%d bytes sent\n", packetOffset);

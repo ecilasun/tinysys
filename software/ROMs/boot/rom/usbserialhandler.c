@@ -306,7 +306,7 @@ void USBEmitBufferedOutput()
 	// Copy out from FIFO to send buffer
 	uint8_t out;
 	uint32_t count = 0;
-	uint8_t* sndData = (uint8_t*)KERNEL_TEMP_MEMORY;
+	uint8_t* sndData = (uint8_t*)(KERNEL_TEMP_MEMORY + 8192);
 	while (SerialOutRingBufferRead(&out, 1))
 	{
 		sndData[count++] = out;
@@ -353,13 +353,10 @@ void BufferIncomingData()
 {
 	// Incoming EP1 data package
 	uint8_t numBytes = MAX3420ReadByte(rEP1OUTBC);
-	if (numBytes)
+	for (uint8_t i=0; i<numBytes; ++i)
 	{
-		for (uint8_t i=0; i<numBytes; ++i)
-		{
-			uint8_t rcvData = MAX3420ReadByte(rEP1OUTFIFO);
-			SerialInRingBufferWrite(&rcvData, 1);
-		}
+		uint8_t rcvData = MAX3420ReadByte(rEP1OUTFIFO);
+		SerialInRingBufferWrite(&rcvData, 1);
 	}
 }
 

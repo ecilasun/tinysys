@@ -17,6 +17,7 @@ void USBSerialSetContext(struct SUSBSerialContext *ctx);
 struct SUSBSerialContext *USBSerialGetContext();
 int USBSerialInit(uint32_t enableInterrupts);
 
+uint32_t USBSerialWriteRawBytes(void *outbytes, uint32_t count);
 int USBSerialWriteN(const char *outstring, uint32_t count);
 int USBSerialWrite(const char *outstring);
 int USBSerialWriteHexByte(const uint8_t i);

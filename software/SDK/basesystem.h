@@ -37,10 +37,10 @@
 #define CONSOLE_FRAMEBUFFER_START		0x02000000 // Console framebuffer == 0x4B000 bytes max at 640*480 resolution
 #define CONSOLE_CHARACTERBUFFER_START	0x0204B000 // Character store == 80*60 bytes max at 640*480 resolution
 // Temp memory
-#define KERNEL_TEMP_MEMORY				0x0204C2C0 // Temporary kernel memory (~15Kbytes)
+#define KERNEL_TEMP_MEMORY				0x0204C2C0 // Temporary kernel memory (15680 bytes)
 // Serial buffers (first words are counters)
-#define SERIN_RINGBUFFER_BASE			0x02050000 // 16Kbytes of serial input
-#define SEROUT_RINGBUFFER_BASE			0x02054000 // 16Kbytes of serial output
+#define SERIN_RINGBUFFER_BASE			0x02050000 // Serial input (16384 bytes)
+#define SEROUT_RINGBUFFER_BASE			0x02054000 // Serial output (16384 bytes)
 #define SERIN_RINGBUFFER_STATE			0x02058010 // Serial input state
 #define SEROUT_RINGBUFFER_STATE			0x02058020 // Serial output state
 // ETC

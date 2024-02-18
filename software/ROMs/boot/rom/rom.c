@@ -664,11 +664,11 @@ int main()
 		// Deal with USB peripheral setup and data traffic
 		ProcessUSBDevice(currentTime);
 
-		// GDB stub / serial keyboard input / file transfer handler
-		HandleSerialInput();
-
 		// Emit outgoing serial data
 		USBEmitBufferedOutput();
+
+		// GDB stub / serial keyboard input / file transfer handler
+		HandleSerialInput();
 
 		// Enable machine interrupts
 		write_csr(mstatus, MSTATUS_MIE);

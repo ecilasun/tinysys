@@ -12,13 +12,14 @@
 
 static struct EVideoContext s_kernelgfxcontext;
 static FATFS Fs;
-// Stay away from other uses by devices etc
-static char *k_tmpstr = (char*)(KERNEL_TEMP_MEMORY + 1024);
 
 int kprintfn(const int count, const char *fmt, ...)
 {
 	va_list va;
 	int l;
+
+	// Stay away from other uses by devices etc
+	char *k_tmpstr = (char*)(KERNEL_TEMP_MEMORY + 1024);
 
 	va_start(va, fmt);
 	l = mini_vsnprintf(k_tmpstr, 1023, fmt, va);
@@ -35,6 +36,9 @@ int kprintf(const char *fmt, ...)
 {
 	va_list va;
 	int l;
+
+	// Stay away from other uses by devices etc
+	char *k_tmpstr = (char*)(KERNEL_TEMP_MEMORY + 1024);
 
 	va_start(va, fmt);
 	l = mini_vsnprintf(k_tmpstr, 1023, fmt, va);

@@ -167,6 +167,11 @@ int USBSerialWriteN(const char *outstring, uint32_t count)
 	return count;
 }
 
+uint32_t USBSerialWriteRawBytes(void *outbytes, uint32_t count)
+{
+	return SerialOutRingBufferWrite(outbytes, count);
+}
+
 int USBSerialWrite(const char *outstring)
 {
 	uint32_t count = 0;
