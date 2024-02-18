@@ -115,16 +115,14 @@ uint8_t __attribute__ ((noinline)) SDCmd(const SDCardCommand cmd, uint32_t args)
 
 uint8_t __attribute__ ((noinline)) SDWaitNotBusy()
 {
-   uint8_t res1 = 0xFF;
+	uint8_t res = 0xFF;
 
-   int timeout = 0;
-   while((res1 = SPITxRx(0xFF)) != 0xFF) {
-      ++timeout;
-      if (timeout > G_SPI_TIMEOUT)
-         break;
-   };
+	do
+	{
+		res = SPITxRx(0xFF);
+	} while (res == 0x00);
 
-   return res1;
+	return res;
 }
 
 uint8_t __attribute__ ((noinline)) SDResponse1()
@@ -172,13 +170,6 @@ uint8_t __attribute__ ((noinline)) SDIdle()
    SDCmd(CMD0_GO_IDLE_STATE, 0);
    uint8_t response = SDResponse1(); // Expected: 0x01
 
-   /*if (response != 0x01) // SPI mode
-   {
-      UARTWrite("SDIdle expected 0x01, got 0x");
-      UARTWriteHex(response);
-      UARTWrite("\n");
-   }*/
-
    return response;
 }
 
@@ -189,20 +180,6 @@ uint8_t __attribute__ ((noinline)) SDCheckVoltageRange()
    // Read the response and 00 00 01 AA sequence back from the SD CARD
    uint32_t databack;
    uint8_t response = SDResponse7(&databack); // Expected: 0x01(version 2 SDCARD) or 0x05(version 1 or MMC card)
-
-   /*if (response != 0x01) // V2 SD Card, 0x05 for a V1 SD Card / MMC card
-   {
-      UARTWrite("SDCheckVoltageRange expected 0x01, got 0x");
-      UARTWriteHex(response);
-      UARTWrite("\n");
-   }
-
-   if (databack != 0x000001AA)
-   {
-      UARTWrite("SDCheckVoltageRange expected 0x000001AA, got 0x");
-      UARTWriteHex(databack);
-      UARTWrite("\n");
-   }*/
 
    return response;
 }
@@ -220,22 +197,6 @@ uint8_t __attribute__ ((noinline)) SDCardInit()
       rB = SDResponse1(); // Expected: 0x00 eventually, but will also get several 0x01 (idle)
       ++timeout;
    } while (rB != SD_READY && timeout < G_SPI_TIMEOUT);
-
-   // Initialize
-   /**IO_SPIRXTX = 0xFF;
-   *IO_SPIRXTX = SPI_CMD(CMD1_SEND_OP_COND);
-   *IO_SPIRXTX = 0x00;
-   *IO_SPIRXTX = 0x00;
-   *IO_SPIRXTX = 0x00;
-   *IO_SPIRXTX = 0x00;
-   *IO_SPIRXTX = 0xFF; // checksum is not necessary at this point
-
-   do {
-      *IO_SPIRXTX = 0xFF;
-      response = *IO_SPIRXTX;
-      if (response != 0xFF)
-         break;
-   } while(1); // Expected: 0x00*/
 
    return rB;
 }
@@ -349,17 +310,14 @@ uint8_t __attribute__ ((noinline)) SDWriteSingleBlock(uint32_t sector, uint8_t *
 		SPITxRx(crc & 0xff);
 
 		// Read response token
-		int retries = 0;
-		uint8_t writeAcceptState = 0x00;
-		while (retries < G_SPI_TIMEOUT)
-		{
-			++retries;
-			writeAcceptState = SPITxRx(0xFF) & 0x1F;
-			if (writeAcceptState != 0x00) // expected 0x05
-				break;
-		}
+		uint8_t writeAcceptState = SPITxRx(0xFF) & 0x1F;
 
-		if (writeAcceptState != 0x05)
+		if (writeAcceptState == 0x05)
+		{
+			// Wait for writes to finish
+			response = SDWaitNotBusy();
+		}
+		else
 		{
 			// Error
 			//if (writeAcceptState == 0x0b) UARTWrite("CRC error\n");
@@ -369,11 +327,6 @@ uint8_t __attribute__ ((noinline)) SDWriteSingleBlock(uint32_t sector, uint8_t *
 			SDCmd(CMD13_SEND_STATUS, 0);
 			response = SDResponse1();
 			//haserror = 1;
-		}
-		else
-		{
-			// Wait for writes to finish
-			response = SDWaitNotBusy();
 		}
 	}
 	else
