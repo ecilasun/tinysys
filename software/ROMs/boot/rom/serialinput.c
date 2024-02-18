@@ -92,7 +92,7 @@ void HandleFileTransfer(uint8_t input)
 		{
 			USBSerialWrite("-");
 			kprintf("\nFile transfer aborted (CRC error)\n", s_filesize);
-			s_fileTransferMode = 6;
+			s_fileTransferMode = 0;
 		}
 	}
 	else if (s_fileTransferMode == 6)
