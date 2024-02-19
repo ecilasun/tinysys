@@ -1,4 +1,6 @@
 #include <stdio.h>
+
+// NOTE: Make sure to 'sudo apt-get install libusb-dev' for this on Linux
 #include <usb.h>
 
 int main()
