@@ -98,7 +98,7 @@ void HandleFileTransfer(uint8_t input)
 	else if (s_fileTransferMode == 6)
 	{
 		// Read blocksize bytes 16kbytes into app memory
-		uint8_t *filetemp = (uint8_t*)(HEAP_START_APPMEM_END + 16384);
+		uint8_t *filetemp = (uint8_t*)TEMP_FILE_UPLOAD_START;
 		filetemp[s_readlen] = input;
 		
 		s_checksum = AccumulateHash(s_checksum, input);
@@ -127,11 +127,9 @@ void HandleFileTransfer(uint8_t input)
 
 			USBSerialWrite("!");
 
-			s_readlen = 0;
-			s_fileTransferMode = 0; // File transfer done
-
 			// Dump entire file contents
 			kprintf("\nSaving file...\n");
+			write_csr(mstatus, 0);
 			FRESULT re = f_open(&s_outfp, s_filename, FA_CREATE_ALWAYS | FA_WRITE);
 			if (re == FR_OK)
 			{
@@ -144,6 +142,10 @@ void HandleFileTransfer(uint8_t input)
 				f_sync(&s_outfp);
 				f_close(&s_outfp);
 			}
+			write_csr(mstatus, MSTATUS_MIE);
+
+			s_readlen = 0;
+			s_fileTransferMode = 0; // File transfer done
 		}
 	}
 }

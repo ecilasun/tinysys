@@ -33,6 +33,8 @@
 #define MOUSE_POS_AND_BUTTONS			0x00000D24
 // Joystick x/y and buttons - 16 bytes
 #define JOYSTICK_POS_AND_BUTTONS		0x00000D30
+// Temp file upload location
+#define TEMP_FILE_UPLOAD_START			0x00100000
 // Console buffer
 #define CONSOLE_FRAMEBUFFER_START		0x02000000 // Console framebuffer == 0x4B000 bytes max at 640*480 resolution
 #define CONSOLE_CHARACTERBUFFER_START	0x0204B000 // Character store == 80*60 bytes max at 640*480 resolution
