@@ -1,1 +1,6 @@
-../build/release/riscvtool dmatest.elf -sendfile /dev/ttyUSB0
+if [ $# -eq 0 ]
+    then
+        echo "Usage: upload.sh binaryfilename"
+else
+    ../build/release/riscvtool $1 -sendfile /dev/ttyUSB0
+fi
