@@ -284,7 +284,7 @@ int __attribute__ ((noinline)) SDReadMultipleBlocks(uint8_t *datablock, uint32_t
 	return 0;
 }
 
-uint8_t __attribute__ ((noinline)) SDWriteSingleBlock(uint32_t sector, uint8_t *datablock, uint8_t checksum[2])
+uint8_t __attribute__ ((noinline)) SDWriteSingleBlock(uint32_t sector, uint8_t *datablock)
 {
 	uint32_t oldstate = LEDGetState();
 	LEDSetState(oldstate|0x2);
@@ -310,12 +310,13 @@ uint8_t __attribute__ ((noinline)) SDWriteSingleBlock(uint32_t sector, uint8_t *
 		SPITxRx(crc & 0xff);
 
 		// Read response token
-		uint8_t writeAcceptState = SPITxRx(0xFF) & 0x1F;
+		uint8_t writeAcceptState = SDResponse1() & 0x1F;
 
 		if (writeAcceptState == 0x05)
 		{
 			// Wait for writes to finish
-			response = SDWaitNotBusy();
+			SDWaitNotBusy();
+			response = SD_READY;
 		}
 		else
 		{
@@ -355,14 +356,12 @@ int __attribute__ ((noinline)) SDWriteMultipleBlocks(const uint8_t *datablock, u
 
 	uint32_t cursor = 0;
 
-	uint8_t checksum[2];
-
 	for(uint32_t b=0; b<numblocks; ++b)
 	{
 		uint8_t* source = (uint8_t*)(datablock+cursor);
-		/*uint8_t response =*/ SDWriteSingleBlock(b+blockaddress, source, checksum);
-		/*if (response != SD_READY)
-			return -1;*/
+		uint8_t response = SDWriteSingleBlock(b+blockaddress, source);
+		if (response != SD_READY)
+			return -1;
 		cursor += 512;
 	}
 
