@@ -48,9 +48,11 @@ logic opl2ce = 1'b0;
 logic [27:0] sum = 0;
 
 // Output cdc
+(* async_reg = "true" *) logic [7:0] opl2doutcdcA = 1'b0;
 (* async_reg = "true" *) logic [7:0] opl2doutcdc = 1'b0;
 always @(posedge aclk) begin
-	opl2doutcdc <= opl2dout;
+	opl2doutcdcA <= opl2dout;
+	opl2doutcdc <= opl2doutcdcA;
 end
 
 always @(posedge audioclock) begin
@@ -66,8 +68,15 @@ end
 
 // OPL2 device
 
+(* async_reg = "true" *) logic oplresetA = 1'b0;
+(* async_reg = "true" *) logic oplresetB = 1'b0;
+always_ff @(posedge audioclock) begin
+	oplresetA <= ~aresetn;
+	oplresetB <= oplresetA;
+end
+
 jtopl2 jtopl2_inst(
-	.rst(~aresetn),
+	.rst(oplresetB),
 	.clk(audioclock),	// Master clock at 50MHz 
 	.cen(opl2ce),		// OPL2 clock at 3.579545MHz
 	.din(opl2din),

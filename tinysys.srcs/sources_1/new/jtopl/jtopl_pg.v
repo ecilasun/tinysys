@@ -59,7 +59,7 @@ always @(posedge clk) if(cenop) begin
 end
 
 // Rhythm phase
-always @(posedge clk, posedge rst) begin
+always @(posedge clk/*, posedge rst*/) begin
     if( rst ) begin
         hh <= 10'd0;
         tc <= 10'd0;

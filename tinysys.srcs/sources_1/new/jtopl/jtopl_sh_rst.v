@@ -41,7 +41,7 @@ endgenerate
 
 generate
 	for (i=0; i < width; i=i+1) begin: bit_shifter
-		always @(posedge clk, posedge rst) 
+		always @(posedge clk/*, posedge rst*/) 
 			if( rst ) begin
 				bits[i] <= {stages{rstval}};
 			end else if(cen) begin

@@ -27,7 +27,7 @@ module jtopl_eg_cnt(
 	output reg [14:0] eg_cnt
 );
 
-always @(posedge clk, posedge rst) begin : envelope_counter
+always @(posedge clk/*, posedge rst*/) begin : envelope_counter
 	if( rst ) begin
 		eg_cnt		<=15'd0;
 	end

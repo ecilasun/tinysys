@@ -36,7 +36,7 @@ reg        nbit;
 
 assign     noise = poly[22] ^ poly[9] ^ poly[8] ^ poly[0];
 
-always @(posedge clk, posedge rst) begin
+always @(posedge clk/*, posedge rst*/) begin
     if( rst )
         poly <= 1;
     else if(cen) begin

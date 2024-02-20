@@ -105,7 +105,7 @@ jtopl_slot_cnt u_slot_cnt(
     .slot   ( slot      )    // hot one encoding of active slot
 );
 
-always @(posedge clk, posedge rst) begin
+always @(posedge clk/*, posedge rst*/) begin
     if( rst ) begin
         patch[00]<=64'h0000000000000000;
         patch[01]<=64'h170078D0171E6171;
@@ -148,7 +148,7 @@ assign fb_I                 = op ? 3'd0 : patch[ inst_sel ][ 24 +: 3 ];
 assign { arate_I, drate_I } = patch[ inst_sel ][ (op ? 40 : 32) +: 8 ];
 assign { sl_I, rrate_I    } = patch[ inst_sel ][ op ? 56 : 48 +: 8 ];
 
-always @(posedge clk, posedge rst) begin
+always @(posedge clk/*, posedge rst*/) begin
     if( rst ) begin
         { ks_II, mul_II } <= 0;
     end else if(cen) begin

@@ -1,4 +1,5 @@
 #include "clock.h"
+#include "rv32.h"
 
 class CEmulator
 {
@@ -10,4 +11,5 @@ public:
     bool Step();
 
     CClock m_clock;
+	CRV32 m_cpu;
 };

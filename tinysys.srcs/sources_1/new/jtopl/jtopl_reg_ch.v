@@ -69,7 +69,7 @@ always @(posedge clk) if(zero) begin
 end
 `endif
 
-always @(posedge clk, posedge rst) begin
+always @(posedge clk/*, posedge rst*/) begin
     if( rst ) begin
         rhy_csr <= 6'd0;
         rhy_oen <= 0;

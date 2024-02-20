@@ -9,12 +9,8 @@ bool CEmulator::Step()
 {
     m_clock.Step();
 
-    // For each device
-    if (m_clock.m_edge==RisingEdge)
-    {
-        // TODO:
-        // We want the CPU to be able to boot the ROM image, and work as if it's the real deal
-    }
+    // Wire up the clocks to each device
+	m_cpu.Tick(m_clock);
 
     return false;
 }
