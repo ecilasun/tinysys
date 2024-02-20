@@ -30,7 +30,18 @@ Linux: ./upload.sh mybinary.elf
 
 This will trigger an upload process where first the binary will be copied to the device RAM (in 4Kbyte chunks, with 64bit checsum code accompanying each), then after all blocks arrive in RAM it will be dumped to the sdcard. This ensures that if during transfer there are any issues the existing binary on the sdcard won't be damaged.
 
-To run your executable on the device, connect to the device over `putty` or use the local keyboard to type the binary file's name without the .elf extension.
+To run your executable on the device simply use the following (make sure to omit the '.elf' extension):
+```
+Windows: run.bat binaryname
+Linux: ./run.sh binaryname
+```
+
+If you wish to stop the current executable, you can simply use:
+```
+Windows: stop.bat
+Linux: ./stop.sh
+```
+and the current user binary will stop executing, dropping you back to the CLI.
 
 # Q/A
 
