@@ -91,7 +91,6 @@ What we're looking for is now the generic usb serial driver, which is listed und
 
 NOTE: The serial device will be only accepting 115200 bauds,8bits,1stopbit,noparity settings and may not function with any other, even though you change the settings on the control panel. This is because the device side driver is not going to cope with traffic throttling to keep it small and simple.
 
-
 # Uploading executables to the device - WiP
 
 To upload files to the device, first make sure you've got serial communication working. This can be tested by setting up the serial driver for the board as described above, then starting a terminal connected to that port set to 115200 baud, 8 bits, 1 stop bit, no parity.
@@ -100,17 +99,31 @@ After the terminal connects to the board, you can try typing 'help' and the disp
 Once the above is confirmed working, uploading binaries is straighforward. For example on Windows, simply run a command similar to the following, with the port and file names set to the ones on your local device:
 
 ```
-build\release\riscvtool.exe test.elf -sendfile \\.\COM9
+upload.bat test.elf
+```
+or for Linux, use:
+```
+./upload.sh test.elf
 ```
 
-on Linux the comand would be similar to:
+If you have issues running the above, you can always use the following on Windows:
+```
+build\release\riscvtool.exe test.elf -sendfile \\.\COM9
+```
+or this one on Linux:
 ```
 ./build/release/riscvtool test.elf -sendfile /dev/ttyUSB0
 ```
 
-During the upload process the device will show a message to indicate upload status.
+During the upload process the device will show the upload progress, followed by a success or failure notice. The file is not written to disk if the transfer was somehow incomplete or had an error, so the previous binary with the same name should still be intact in those situations.
 
-NOTE: Please make sure the file name is not decorated, as it'll be sent as-is and the device will try to create the file using any path names, which might fail. This will be fixed in an upcoming revision.
+NOTE: Please note that whatever path you provide as part of the file name will become a full path on the device. For instance if you run './upload.sh modplayer/modplayer.elf' it'll be copied to 'SD:\modplayer\modplayer.elf'
+
+# Creating your own project
+
+To make your own project, the recommended way is to copy the `starthere` sample directory to a new one and make your changes as needed. In that directory you will find a Makefile, and upload shell script/batch file to help get you started.
+
+Please refer to the [README.md](./samples/modplayer/README.md) file in `starthere` folder for more assistance.
 
 # More details on RISC-V compiler toolchain
 
