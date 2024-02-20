@@ -1,7 +1,7 @@
 echo off
 if %1.==. goto fail
 set arg1=%1
-..\..\build\release\riscvtool.exe %arg1% -sendfile \\.\COM3
+..\..\build\release\riscvtool.exe %arg1% -sendfile \\.\COM9
 goto end
 
 :fail
