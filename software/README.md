@@ -123,7 +123,7 @@ NOTE: Please note that whatever path you provide as part of the file name will b
 
 To make your own project, the recommended way is to copy the `starthere` sample directory to a new one and make your changes as needed. In that directory you will find a Makefile, and upload shell script/batch file to help get you started.
 
-Please refer to the [README.md](./samples/modplayer/README.md) file in `starthere` folder for more assistance.
+Please refer to the [README.md](./samples/starthere/README.md) file in `starthere` folder for more assistance.
 
 # More details on RISC-V compiler toolchain
 
