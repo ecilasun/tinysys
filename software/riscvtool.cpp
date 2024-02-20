@@ -16,9 +16,9 @@
 #include <thread>
 
 #if defined(CAT_LINUX) || defined(CAT_MACOS)
-char devicename[512] = "/dev/ttyUSB1";
+char devicename[512] = "/dev/ttyUSB0";
 #else // CAT_WINDOWS
-char devicename[512] = "\\\\.\\COM3";
+char devicename[512] = "\\\\.\\COM9";
 #endif
 
 unsigned int getfilelength(const fpos_t &endpos)
@@ -528,36 +528,115 @@ void sendfile(char *_filename)
 	delete [] filedata;
 }
 
-int main(int argc, char **argv)
+void stop()
 {
-	if (argc <= 3)
+	CSerialPort serial;
+	if (serial.Open() == false)
 	{
-		printf("RISCVTool 1.0\n");
-		printf("Usage: riscvtool.exe binaryfilename {-sendfile [usbdevicename]} | {-makerom|makemem|makebin groupbytesize} outputfilename\n");
-		printf("NOTE: Default device name is %s", devicename);
-		return -1;
+		serial.Close();
+		return;
 	}
 
-	if (strstr(argv[2], "-makerom"))
+	// Send stop request
+	char tmpstring[4];
+	tmpstring[0] = 1;
+	serial.Send((uint8_t*)tmpstring, 0);
+	// Wait for ack
+	WACK(serial, '~');
+
+	serial.Close();
+	printf("User process stopped\n");
+}
+
+void run(const char *processname)
+{
+	CSerialPort serial;
+	if (serial.Open() == false)
+	{
+		serial.Close();
+		return;
+	}
+
+	// Send stop request
+	char tmpstring[129];
+	snprintf(tmpstring, 128, "%c%s", 1, processname);
+	serial.Send((uint8_t*)tmpstring, 1);
+	// Wait for ack
+	WACK(serial, '~');
+
+	serial.Close();
+	printf("User process %s started\n", processname);
+}
+
+void showusage()
+{
+	printf("Usage:\n");
+	printf("riscvtool.exe -stop [usbdevicename]\n");
+	printf("riscvtool.exe executable -run [usbdevicename]\n");
+	printf("riscvtool.exe binaryfilename -sendfile [usbdevicename]\n");
+	printf("riscvtool.exe binaryfilename -makerom groupbytesize outputfilename\n");
+	printf("riscvtool.exe binaryfilename -makemem groupbytesize outputfilename\n");
+	printf("riscvtool.exe binaryfilename -makebin groupbytesize outputfilename\n");
+	printf("NOTE: Default device name is %s\n", devicename);
+}
+
+int main(int argc, char **argv)
+{
+	if (argc==1)
+	{
+		printf("RISCVTool 1.0\n");
+		showusage();
+		return 0;
+	}
+
+	if (argc>=2 && strstr(argv[1], "-stop"))
+	{
+		if (argc > 2)
+			strcpy(devicename, argv[2]);
+		stop();
+		return 0;
+	}
+
+	if (argc>=3 && strstr(argv[2], "-run"))
+	{
+		if (argc > 3)
+			strcpy(devicename, argv[3]);
+		run(argv[1]);
+		return 0;
+	}
+
+	if (argc>=3 && strstr(argv[2], "-makerom"))
 	{
 		unsigned int groupsize = (unsigned int)strtoul(argv[3], nullptr, 10);
 		dumpelf(argv[1], argv[4], groupsize, true, false);
+		return 0;
 	}
-	if (strstr(argv[2], "-makemem"))
+
+	if (argc>=3 && strstr(argv[2], "-makemem"))
 	{
 		unsigned int groupsize = (unsigned int)strtoul(argv[3], nullptr, 10);
 		dumpelf(argv[1], argv[4], groupsize, false, false);
+		return 0;
 	}
-	if (strstr(argv[2], "-makebin"))
+
+	if (argc>=3 && strstr(argv[2], "-makebin"))
 	{
 		unsigned int groupsize = (unsigned int)strtoul(argv[3], nullptr, 10);
 		dumpelf(argv[1], argv[4], groupsize, false, true);
+		return 0;
 	}
-	if (strstr(argv[2], "-sendfile"))
+
+	if (argc>=3 && strstr(argv[2], "-sendfile"))
 	{
 		if (argc > 3)
 			strcpy(devicename, argv[3]);
 		sendfile(argv[1]);
+		return 0;
 	}
+
+	printf("RISCVTool 1.0\n");
+	printf("Unknown arguments.\n");
+	showusage();
+
 	return 0;
 }
