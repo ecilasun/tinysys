@@ -539,10 +539,8 @@ void stop()
 
 	// Send stop request
 	char tmpstring[4];
-	tmpstring[0] = 1;
-	serial.Send((uint8_t*)tmpstring, 0);
-	// Wait for ack
-	WACK(serial, '~');
+	tmpstring[0] = 3;
+	serial.Send((uint8_t*)tmpstring, 1);
 
 	serial.Close();
 	printf("User process stopped\n");
@@ -559,10 +557,8 @@ void run(const char *processname)
 
 	// Send stop request
 	char tmpstring[129];
-	snprintf(tmpstring, 128, "%c%s", 1, processname);
-	serial.Send((uint8_t*)tmpstring, 1);
-	// Wait for ack
-	WACK(serial, '~');
+	snprintf(tmpstring, 128, "%s\n", processname);
+	serial.Send((uint8_t*)tmpstring, strlen(tmpstring));
 
 	serial.Close();
 	printf("User process %s started\n", processname);
