@@ -12,21 +12,28 @@
 #include <termios.h>
 #include <unistd.h>
 
-int log2quick(unsigned char c)
+static uint8_t masktable[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
+
+static uint8_t keycodetoscancode[256] =
 {
-    switch(c)
-    {
-        case 1: return 0;
-        case 2: return 1;
-        case 4: return 2;
-        case 8: return 3;
-        case 16: return 4;
-        case 32: return 5;
-        case 64: return 6;
-        case 128: return 7;
-    }
-    return 0;
-}
+//  0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
+    0,    0,    0,    0,    0,    0,    0,    0,    0, 0x29, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, // 0
+ 0x24, 0x25, 0x26, 0x27, 0x2d, 0x2e, 0x2a, 0x2b, 0x14, 0x1A, 0x08, 0x15, 0x17, 0x1c, 0x18, 0x0c, // 1
+ 0x12, 0x13, 0x2f, 0x30, 0X28,    0, 0x04, 0x16, 0x07, 0x09, 0x0a, 0x0b, 0x0d, 0x0e, 0x0f, 0x33, // 2
+ 0x34, 0x35,    0, 0x31, 0x1d, 0x1b, 0x06, 0x19, 0x05, 0x11, 0x10, 0x36, 0x37, 0x38,    0,    0, // 3
+    0, 0x2c,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 4
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 5
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 6
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 7
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 8
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 9
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // A
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // B
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // C
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // D
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // E
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // F
+};
 
 int main(int argc, char **argv)
 {
@@ -70,7 +77,7 @@ int main(int argc, char **argv)
         //tty.c_oflag &= ~ONOEOT;
 
         tty.c_cc[VTIME] = 50;
-        tty.c_cc[VMIN] = 0;
+        tty.c_cc[VMIN] = 10;
         cfsetispeed(&tty, B115200);
         cfsetospeed(&tty, B115200); // or only cfsetspeed(&tty, B115200);
 
@@ -92,6 +99,7 @@ int main(int argc, char **argv)
     uint8_t isdown = 1;
     uint8_t isup = 0;
 	uint8_t startToken = ':';
+    KeyCode kc2 = XKeysymToKeycode( dpy, XK_End );
     do {
         usleep(5000);
         XQueryKeymap( dpy, (char*)keys_new );
@@ -106,29 +114,33 @@ int main(int argc, char **argv)
             //resubmit = 1;
         }
 
-        for (uint32_t i=0;i<32;++i)
+        uint8_t dummy;
+        for (uint32_t code = 0; code < 256; code++)
         {
-            uint8_t keycode = i*8 + log2quick(keys_new[i] ^ keys_old[i]);
-            char ks = XKeycodeToKeysym(dpy, keycode, 0);
+            uint8_t currdown = keys_new[code>>3] & masktable[code&7];
+            uint8_t prevdown = keys_old[code>>3] & masktable[code&7];
+            uint8_t scancode = keycodetoscancode[code];
 
-            int currdown = keys_new[ keycode>>3 ] & ( 1<<(keycode&7) );
-            int prevdown = keys_old[ keycode>>3 ] & ( 1<<(keycode&7) );
             if (currdown && (!prevdown))
             {
-			   write(serial_port, &startToken, 1);
-               write(serial_port, &isdown, 1);
-               write(serial_port, &keycode, 1);
+                printf("DOWN: %.2X\n", code);
+                write(serial_port, &startToken, 1);
+                write(serial_port, &isdown, 1);
+                write(serial_port, &scancode, 1);
+                read(serial_port, &dummy, 1);
             }
+
             if ((!currdown) && prevdown)
             {
-			   write(serial_port, &startToken, 1);
-               write(serial_port, &isup, 1);
-               write(serial_port, &keycode, 1);
+                printf("UP: %.2X\n", code);
+                write(serial_port, &startToken, 1);
+                write(serial_port, &isup, 1);
+                write(serial_port, &scancode, 1);
+                read(serial_port, &dummy, 1);
             }
         }
 
         // End key down
-        KeyCode kc2 = XKeysymToKeycode( dpy, XK_End );
         bShiftPressed = !!( keys_new[ kc2>>3 ] & ( 1<<(kc2&7) ) );
 
         memcpy(keys_old, keys_new, 32);
