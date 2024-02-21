@@ -332,7 +332,7 @@ end
 typedef enum logic [3:0] {
 	RASTERINIT,
 	RASTERWCMD,
-	RASTERSETUP, SWEEPROW, TESTDELAY, WRITEROW, WRITEWAIT, STEPTILE, SWEEPCOLUMN, STARTNEXTROW,
+	RASTERSETUP, SWEEPROW, EDGETEST, WRITEROW, WRITEWAIT, STEPTILE, SWEEPCOLUMN, STARTNEXTROW,
 	RASTERFINALIZE } rastermodetype;
 rastermodetype rastermode = RASTERINIT;
 rastermodetype postwait = RASTERINIT;
@@ -361,25 +361,12 @@ logic signed [17:0] sw0;
 logic signed [17:0] sw1;
 logic signed [17:0] sw2;
 
-/*wire [15:0] sv;
+logic [15:0] sv;
+logic [17:0] E0;
+logic [17:0] E1;
+logic [17:0] E2;
 
-edgetest edge0(.aclk(aclk), .aresetn(aresetn), .N(16'd1),  .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[0]));
-edgetest edge1(.aclk(aclk), .aresetn(aresetn), .N(16'd2),  .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[1]));
-edgetest edge2(.aclk(aclk), .aresetn(aresetn), .N(16'd3),  .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[2]));
-edgetest edge3(.aclk(aclk), .aresetn(aresetn), .N(16'd4),  .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[3]));
-edgetest edge4(.aclk(aclk), .aresetn(aresetn), .N(16'd5),  .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[4]));
-edgetest edge5(.aclk(aclk), .aresetn(aresetn), .N(16'd6),  .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[5]));
-edgetest edge6(.aclk(aclk), .aresetn(aresetn), .N(16'd7),  .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[6]));
-edgetest edge7(.aclk(aclk), .aresetn(aresetn), .N(16'd8),  .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[7]));
-edgetest edge8(.aclk(aclk), .aresetn(aresetn), .N(16'd9),  .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[8]));
-edgetest edge9(.aclk(aclk), .aresetn(aresetn), .N(16'd10), .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[9]));
-edgetest edgea(.aclk(aclk), .aresetn(aresetn), .N(16'd11), .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[10]));
-edgetest edgeb(.aclk(aclk), .aresetn(aresetn), .N(16'd12), .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[11]));
-edgetest edgec(.aclk(aclk), .aresetn(aresetn), .N(16'd13), .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[12]));
-edgetest edged(.aclk(aclk), .aresetn(aresetn), .N(16'd14), .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[13]));
-edgetest edgee(.aclk(aclk), .aresetn(aresetn), .N(16'd15), .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[14]));
-edgetest edgef(.aclk(aclk), .aresetn(aresetn), .N(16'd16), .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[15]));*/
-
+logic [3:0] edgecnt;
 always_ff @(posedge aclk) begin
 	rasterworkren <= 1'b0;
 	wstrb <= 16'd0;
@@ -393,11 +380,11 @@ always_ff @(posedge aclk) begin
 			if (rasterworkvalid && ~rasterworkempty) begin
 				{scolor, sminx, sminy, smaxx, smaxy, sA12, sB12, sW0_row, sA20, sB20, sW1_row, sA01, sB01, sW2_row} <= rasterworkdout;
 				rasterworkren <= 1'b1;
-				rastermode <= RASTERSETUP;
+				rastermode <= RASTERFINALIZE;//RASTERSETUP;
 			end
 		end
 
-		RASTERSETUP: begin
+		/*RASTERSETUP: begin
 			// Using tiles of 16x1 in size for easy mask generation
 			scx <= sminx[17:4];
 			scy <= sminy;
@@ -410,21 +397,28 @@ always_ff @(posedge aclk) begin
 		end
 
 		SWEEPROW: begin
-			// One clock delay for edge tests to complete
-			// Also covers address calculation for current tile's output
 			addr <= rasterbaseaddr + {scx + scy*20, 4'h0}; // base + blockaddress*16
 			din <= {scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor};
-			rastermode <= TESTDELAY;
+			E0 <= sw0;
+			E1 <= sw1;
+			E2 <= sw2;
+			sv <= 16'h0000;
+			edgecnt <= 4'd0;
+			rastermode <= EDGETEST;
 		end
 
-		TESTDELAY: begin
-			// Wait state for edge calculations
-			rastermode <= WRITEROW;
+		EDGETEST: begin
+			E0 <= E0 + sA12;
+			E1 <= E1 + sA20;
+			E2 <= E2 + sA01;
+			sv <= {sv[14:0], E0[17] & E1[17] & E2[17]};
+			edgecnt <= edgecnt + 4'd1;
+			rastermode <= edgecnt==15 ? WRITEROW : EDGETEST;
 		end
 
 		WRITEROW: begin
 			// We can now use the sign bits of above calculation as our write mask and emit the 16x1 tile's color
-			wstrb <= 16'hFFFF;//sv;
+			wstrb <= sv;
 
 			// Next 16 pixel block
 			scx <= scx + 14'd1;
@@ -433,8 +427,6 @@ always_ff @(posedge aclk) begin
 			if (scx == scendx) begin
 				// Rewind to start x
 				scx <= sminx[17:4];
-				// Go one line down
-				scy <= scy + 18'd1;
 			end
 			rastermode <= WRITEWAIT;
 			postwait <= (scx == scendx) ? SWEEPCOLUMN : SWEEPROW;
@@ -453,7 +445,6 @@ always_ff @(posedge aclk) begin
 		end
 
 		SWEEPCOLUMN: begin
-			// Step one line down
 			sW0_row <= + sB12;
 			sW1_row <= + sB20;
 			sW2_row <= + sB01;
@@ -461,12 +452,14 @@ always_ff @(posedge aclk) begin
 		end
 
 		STARTNEXTROW: begin
+			// Step one line down
+			scy <= scy + 18'd1;
 			// Go to start of next row
 			sw0 <= sW0_row;
 			sw1 <= sW1_row;
-			sw2 <= sW1_row;
-			rastermode <= (scy >= scendy) ? RASTERFINALIZE : SWEEPROW;
-		end
+			sw2 <= sW2_row;
+			rastermode <= (scy == scendy) ? RASTERFINALIZE : SWEEPROW;
+		end*/
 
 		RASTERFINALIZE: begin
 			rastermode <= RASTERWCMD;
