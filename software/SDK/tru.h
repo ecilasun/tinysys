@@ -1,6 +1,7 @@
 #pragma once
 
-#define TRU_HARDWARE
+// Default is software rasterization
+//#define TRU_HARDWARE
 
 #include <inttypes.h>
 
