@@ -1,5 +1,7 @@
 #pragma once
 
+#define TRU_HARDWARE
+
 #include <inttypes.h>
 
 #define RASTERCMD_OUTADDRS			0x00000000
