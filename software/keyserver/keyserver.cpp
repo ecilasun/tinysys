@@ -89,8 +89,9 @@ int main(int argc, char **argv)
     bool bShiftPressed = false;
     
     auto start = std::chrono::steady_clock::now();
-    int isdown = 1;
-    int isup = 0;
+    uint8_t isdown = 1;
+    uint8_t isup = 0;
+	uint8_t startToken = ':';
     do {
         usleep(5000);
         XQueryKeymap( dpy, (char*)keys_new );
@@ -107,22 +108,22 @@ int main(int argc, char **argv)
 
         for (uint32_t i=0;i<32;++i)
         {
-            unsigned int keycode = i*8 + log2quick(keys_new[i] ^ keys_old[i]);
+            uint8_t keycode = i*8 + log2quick(keys_new[i] ^ keys_old[i]);
             char ks = XKeycodeToKeysym(dpy, keycode, 0);
 
             int currdown = keys_new[ keycode>>3 ] & ( 1<<(keycode&7) );
             int prevdown = keys_old[ keycode>>3 ] & ( 1<<(keycode&7) );
             if (currdown && (!prevdown))
             {
+			   write(serial_port, &startToken, 1);
                write(serial_port, &isdown, 1);
-               write(serial_port, &ks, 1);
-               printf("keydown: %d\n", ks);
+               write(serial_port, &keycode, 1);
             }
             if ((!currdown) && prevdown)
             {
+			   write(serial_port, &startToken, 1);
                write(serial_port, &isup, 1);
-               write(serial_port, &ks, 1);
-               printf("keyup: %d\n", ks);
+               write(serial_port, &keycode, 1);
             }
         }
 
