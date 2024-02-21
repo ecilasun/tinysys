@@ -97,9 +97,15 @@ int main(int argc, char **argv)
     
     auto start = std::chrono::steady_clock::now();
     uint8_t isdown = 1;
-    uint8_t isup = 0;
+    uint8_t isup = 2;
 	uint8_t startToken = ':';
     KeyCode kc2 = XKeysymToKeycode( dpy, XK_End );
+    KeyCode lshift = XKeysymToKeycode( dpy, XK_Shift_L );
+    KeyCode rshift = XKeysymToKeycode( dpy, XK_Shift_R );
+    KeyCode lalt = XKeysymToKeycode( dpy, XK_Alt_L );
+    KeyCode ralt = XKeysymToKeycode( dpy, XK_Alt_R );
+    KeyCode lctrl = XKeysymToKeycode( dpy, XK_Control_L );
+    KeyCode rctrl = XKeysymToKeycode( dpy, XK_Control_R );
     do {
         usleep(5000);
         XQueryKeymap( dpy, (char*)keys_new );
@@ -121,26 +127,37 @@ int main(int argc, char **argv)
             uint8_t prevdown = keys_old[code>>3] & masktable[code&7];
             uint8_t scancode = keycodetoscancode[code];
 
-            if (currdown && (!prevdown))
-            {
-                printf("DOWN: %.2X\n", code);
-                write(serial_port, &startToken, 1);
-                write(serial_port, &isdown, 1);
-                write(serial_port, &scancode, 1);
-                read(serial_port, &dummy, 1);
-            }
+            uint8_t modifierstate = 0;
+            if (!!( keys_new[ (lshift)>>3 ] & ( 1<<((lshift)&7) ) ) ||
+                !!( keys_new[ (rshift)>>3 ] & ( 1<<((rshift)&7) ) ))
+                modifierstate |= 0x22;
+            if (!!( keys_new[ (lalt)>>3 ] & ( 1<<((lalt)&7) ) ) ||
+                !!( keys_new[ (ralt)>>3 ] & ( 1<<((ralt)&7) ) ))
+                modifierstate |= 0x44;
+            if (!!( keys_new[ (lctrl)>>3 ] & ( 1<<((lctrl)&7) ) ) ||
+                !!( keys_new[ (rctrl)>>3 ] & ( 1<<((rctrl)&7) ) ))
+                modifierstate |= 0x11;
 
+            uint8_t keystate = 0;
+            if (currdown && (!prevdown))
+                keystate |= isdown;
             if ((!currdown) && prevdown)
+                keystate |= isup;
+
+            if (keystate)
             {
-                printf("UP: %.2X\n", code);
-                write(serial_port, &startToken, 1);
-                write(serial_port, &isup, 1);
-                write(serial_port, &scancode, 1);
+                printf("%.2X -> %.2X\n", code, scancode);
+                uint8_t outdata[4];
+                outdata[0] = startToken;
+                outdata[1] = modifierstate;
+                outdata[2] = keystate;
+                outdata[3] = scancode;
+                write(serial_port, outdata, 4);
                 read(serial_port, &dummy, 1);
             }
         }
 
-        // End key down
+        // End key is down
         bShiftPressed = !!( keys_new[ kc2>>3 ] & ( 1<<(kc2&7) ) );
 
         memcpy(keys_old, keys_new, 32);
