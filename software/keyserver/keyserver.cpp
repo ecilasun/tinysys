@@ -146,7 +146,7 @@ int main(int argc, char **argv)
 
             if (keystate)
             {
-                printf("%.2X -> %.2X\n", code, scancode);
+                //printf("%.2X -> %.2X\n", code, scancode); // DEBUG
                 uint8_t outdata[4];
                 outdata[0] = startToken;
                 outdata[1] = modifierstate;
