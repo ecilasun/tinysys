@@ -24,7 +24,7 @@ static uint8_t keycodetoscancode[256] =
     0, 0x2c,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 4
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 5
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 6
-    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 7
+    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, 0x03, // 7 // 7F -> Ctrl+C (0x03)
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 8
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 9
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // A
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
     memset(keys_old, 0, 32);
     memset(keys_new, 0, 32);
 
-    printf("Keyserver\nPlease hit END key to quit\n");
+    printf("Keyserver\nEND: quit keyserver\nPAUSE: quit remote process\n");
 
     int serial_port = open("/dev/ttyUSB0", O_RDWR);
     if (serial_port <0 )
