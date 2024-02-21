@@ -3,7 +3,8 @@
 		"inttypes.h": "c",
 		"chrono": "c",
 		"cstdlib": "cpp",
-		"stat.h": "c"
+		"stat.h": "c",
+		"ostream": "cpp"
 	},
 	"terminal.integrated.profiles.windows": {
 		"MSYS2": {

@@ -7,6 +7,7 @@
 #include "serialinringbuffer.h"
 #include "task.h"
 #include "keyringbuffer.h"
+#include "keyboard.h"
 #include <stdlib.h>
 
 static uint32_t s_fileTransferMode = 0;
@@ -32,11 +33,39 @@ uint64_t AccumulateHash(const uint64_t inhash, const uint8_t byte)
 	return 16777619U * inhash ^ (uint64_t)byte;
 }
 
+static uint16_t s_keystate = 0x0000;
 void HandleFileTransfer(uint8_t input)
 {
 	const uint32_t packetSize = 4096; // NOTE: Match this to riscvtool packet size.
 
-	if (s_fileTransferMode == 1)
+	if (s_fileTransferMode == 10) // Modifier state
+	{
+		s_keystate = (uint16_t)input<<8;
+		s_fileTransferMode = 11;
+	}
+	else if (s_fileTransferMode == 11) // Key state
+	{
+		s_keystate |= input;
+		s_fileTransferMode = 12;
+	}
+	else if (s_fileTransferMode == 12) // Scan code
+	{
+		// Insert key state at the keymap position
+		uint16_t* keystates = (uint16_t*)KEYBOARD_KEYSTATE_BASE;
+		keystates[input] = s_keystate;
+
+		// Update generation
+		uint32_t *generation = (uint32_t*)KEYBOARD_INPUT_GENERATION;
+		*generation = (*generation) + 1;
+
+		uint32_t incoming = KeyScanCodeToASCII(input, s_keystate&0x2200 ? 1:0);
+		if (incoming && (s_keystate&1)) // Only see 'down' for ascii queue
+			KeyRingBufferWrite(&incoming, sizeof(uint32_t));
+
+		USBSerialWrite("~");
+		s_fileTransferMode = 0;
+	}
+	else if (s_fileTransferMode == 1)
 	{
 		if (input == '!') // Wait for name header
 		{
@@ -163,6 +192,10 @@ void HandleSerialInput()
 			{
 				USBSerialWrite("~");
 				s_fileTransferMode = 1;
+			}
+			else if (drain == ':') // Go to keymap update mode
+			{
+				s_fileTransferMode = 10;
 			}
 			else
 			{
