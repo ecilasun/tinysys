@@ -1,4 +1,5 @@
-#pragma once
+// needs:
+// libx11-dev
 
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
@@ -39,10 +40,10 @@ int main(int argc, char **argv)
 
     printf("Keyserver\nPlease hit END key to quit\n");
 
-    int serial_port = open("/dev/ttyUSB1", O_RDWR);
+    int serial_port = open("/dev/ttyUSB0", O_RDWR);
     if (serial_port <0 )
     {
-        printf("cannot open /dev/ttyUSB1\n");
+        printf("cannot open /dev/ttyUSB0\n");
         return -1;
     }
 
@@ -97,11 +98,11 @@ int main(int argc, char **argv)
         // Re-trigger key state submit after 0.160 seconds
         auto end = std::chrono::steady_clock::now();
         std::chrono::duration<double> elapsed_seconds = end-start;
-        int resubmit = 0;
+        //int resubmit = 0;
         if(elapsed_seconds.count()>0.160)
         {
             start = end;
-            resubmit = 1;
+            //resubmit = 1;
         }
 
         for (uint32_t i=0;i<32;++i)
