@@ -18,9 +18,9 @@ module trianglerasterizer(
 // Raster cache
 // --------------------------------------------------
 
-logic [31:0] addr = 32'd0;
 logic [127:0] din = 128'd0;
-logic [15:0] wstrb = 0;
+logic [31:0] addr = 32'd0;
+logic [15:0] wstrb = 16'd0;
 logic cflush = 1'b0;
 logic cinvalidate = 1'b0;
 wire wready;
@@ -41,8 +41,8 @@ rastercache rcache(
 // --------------------------------------------------
 
 wire edgefuncfull, edgefuncempty, edgefuncvalid;
-logic [107:0] edgefuncdin;
-wire [107:0] edgefuncdout;
+logic [119:0] edgefuncdin;
+wire [119:0] edgefuncdout;
 logic edgefuncwen, edgefuncren;
 rasterizerinputfifo edgefuncfifo(
 	.full(edgefuncfull),
@@ -59,23 +59,24 @@ rasterizerinputfifo edgefuncfifo(
 // Command processor
 // --------------------------------------------------
 
-logic [15:0] x0;
-logic [15:0] y0;
-logic [15:0] x1;
-logic [15:0] y1;
-logic [15:0] x2;
-logic [15:0] y2;
+logic [17:0] x0;
+logic [17:0] y0;
+logic [17:0] x1;
+logic [17:0] y1;
+logic [17:0] x2;
+logic [17:0] y2;
 
 logic cmdre = 1'b0;
 assign trufifore = cmdre;
 
-typedef enum logic [2:0] {
+typedef enum logic [3:0] {
 	INIT,
 	WCMD, DISPATCH,
 	SETRASTEROUT,
 	SETRASTERCOLOR,
 	PUSHVERTEX,
 	RASTERQUEUE,
+	WCACHE,
 	FINALIZE } rastercmdmodetype;
 rastercmdmodetype cmdmode = INIT;
 
@@ -84,7 +85,8 @@ logic [31:0] rasterbaseaddr;
 logic [7:0] rastercolor;
 
 always_ff @(posedge aclk) begin
-
+	cflush <= 1'b0;
+	cinvalidate <= 1'b0;
 	cmdre <= 1'b0;
 	edgefuncwen <= 1'b0;
 
@@ -130,16 +132,16 @@ always_ff @(posedge aclk) begin
 		PUSHVERTEX: begin
 			if (trufifovalid && ~trufifoempty) begin
 				unique case (rastercmd[17:16])
-					2'b00: {y0,x0} <= trufifodout;
-					2'b01: {y1,x1} <= trufifodout;
-					default: {y2,x2} <= trufifodout; // 2'b10
+					2'b00: {y0,x0} <= {trufifodout[31], trufifodout[31], trufifodout[31:16], trufifodout[15], trufifodout[15], trufifodout[15:0]};
+					2'b01: {y1,x1} <= {trufifodout[31], trufifodout[31], trufifodout[31:16], trufifodout[15], trufifodout[15], trufifodout[15:0]};
+					default: {y2,x2} <= {trufifodout[31], trufifodout[31], trufifodout[31:16], trufifodout[15], trufifodout[15], trufifodout[15:0]}; // 2'b10
 				endcase
 				// Advance FIFO
 				cmdre <= 1'b1;
 				cmdmode <= FINALIZE;
 			end
 		end
-		
+
 		SETRASTERCOLOR: begin
 			if (trufifovalid && ~trufifoempty) begin
 				rastercolor <= trufifodout;
@@ -150,10 +152,26 @@ always_ff @(posedge aclk) begin
 		end
 
 		RASTERQUEUE: begin
-			// Push to rasterizer queue
-			edgefuncdin <= {rastercolor,y2,x2,y1,x1,y0,x0, rastercmd[15:12]};
-			edgefuncwen <= ~edgefuncfull;
-			cmdmode <= ~edgefuncfull ? FINALIZE : RASTERQUEUE;
+			case (rastercmd[15:12])
+				4'd0: begin
+					// Push to rasterizer queue
+					edgefuncdin <= {rastercolor,y2,x2,y1,x1,y0,x0, rastercmd[15:12]};
+					edgefuncwen <= ~edgefuncfull;
+					cmdmode <= ~edgefuncfull ? FINALIZE : RASTERQUEUE;
+				end
+				4'd1: begin
+					cflush <= 1'b1;
+					cmdmode <= WCACHE;
+				end
+				4'd2: begin
+					cinvalidate <= 1'b1;
+					cmdmode <= WCACHE;
+				end
+			endcase
+		end
+
+		WCACHE: begin
+			cmdmode <= wready ? FINALIZE : WCACHE;
 		end
 
 		FINALIZE: begin
@@ -171,55 +189,55 @@ end
 // Edge function and bounds generator
 // --------------------------------------------------
 
-typedef enum logic [2:0] {
+typedef enum logic [3:0] {
 	EDGEINIT,
 	EDGEWCMD,
-	BOUNDSPARTIAL, BOUNDSFINAL,
-	EDGEFINALIZE } edgemodetype;
+	BOUNDSSTEPA, BOUNDSSTEPB,
+	EDGEWAITA, EDGEWAITB, CLIPTOVIEWPORT, REJECTBYVIEWPORT, EDGEFINALIZE } edgemodetype;
 edgemodetype edgemode = EDGEINIT;
 
 // Bounds
-logic signed [15:0] rx0;
-logic signed [15:0] rx1;
-logic signed [15:0] rx2;
-logic signed [15:0] ry0;
-logic signed [15:0] ry1;
-logic signed [15:0] ry2;
+logic signed [17:0] rx0;
+logic signed [17:0] rx1;
+logic signed [17:0] rx2;
+logic signed [17:0] ry0;
+logic signed [17:0] ry1;
+logic signed [17:0] ry2;
 logic [7:0] rcolor;
 logic [3:0] rcommandunused;
 
 // Bounds
-logic signed [15:0] minxA;
-logic signed [15:0] minyA;
-logic signed [15:0] maxxA;
-logic signed [15:0] maxyA;
-logic signed [15:0] minx;
-logic signed [15:0] miny;
-logic signed [15:0] maxx;
-logic signed [15:0] maxy;
+logic signed [17:0] minxA;
+logic signed [17:0] minyA;
+logic signed [17:0] maxxA;
+logic signed [17:0] maxyA;
+logic signed [17:0] minx;
+logic signed [17:0] miny;
+logic signed [17:0] maxx;
+logic signed [17:0] maxy;
 
 // Edge functions
-wire signed [15:0] A12;
-wire signed [15:0] B12;
-wire signed [15:0] A20;
-wire signed [15:0] B20;
-wire signed [15:0] A01;
-wire signed [15:0] B01;
-wire signed [31:0] W0_row;
-wire signed [31:0] W1_row;
-wire signed [31:0] W2_row;
+wire signed [17:0] A12;
+wire signed [17:0] B12;
+wire signed [17:0] A20;
+wire signed [17:0] B20;
+wire signed [17:0] A01;
+wire signed [17:0] B01;
+wire signed [17:0] W0_row;
+wire signed [17:0] W1_row;
+wire signed [17:0] W2_row;
 
-edgefunction edge01(.px(minx), .py(miny), .x0(rx1), .y0(ry1), .x1(rx2), .y1(ry2), .A_out(A12), .B_out(B12), .W_out(W0_row));
-edgefunction edge12(.px(minx), .py(miny), .x0(rx2), .y0(ry2), .x1(rx0), .y1(ry0), .A_out(A20), .B_out(B20), .W_out(W1_row));
-edgefunction edge20(.px(minx), .py(miny), .x0(rx0), .y0(ry0), .x1(rx1), .y1(ry1), .A_out(A01), .B_out(B01), .W_out(W2_row));
+edgefunction edge01(.aclk(aclk), .aresetn(aresetn), .px(minx), .py(miny), .x0(rx1), .y0(ry1), .x1(rx2), .y1(ry2), .A_out(A12), .B_out(B12), .W_out(W0_row));
+edgefunction edge12(.aclk(aclk), .aresetn(aresetn), .px(minx), .py(miny), .x0(rx2), .y0(ry2), .x1(rx0), .y1(ry0), .A_out(A20), .B_out(B20), .W_out(W1_row));
+edgefunction edge20(.aclk(aclk), .aresetn(aresetn), .px(minx), .py(miny), .x0(rx0), .y0(ry0), .x1(rx1), .y1(ry1), .A_out(A01), .B_out(B01), .W_out(W2_row));
 
 // --------------------------------------------------
 // Rasterizer input fifo
 // --------------------------------------------------
 
 wire rasterworkfull, rasterworkempty, rasterworkvalid;
-logic [263:0] rasterworkdin;
-wire [263:0] rasterworkdout;
+logic [241:0] rasterworkdin;
+wire [241:0] rasterworkdout;
 logic rasterworkwen, rasterworkren;
 sweepinputfifo rasterworkfifo(
 	.full(rasterworkfull),
@@ -233,7 +251,6 @@ sweepinputfifo rasterworkfifo(
 	.rst(~aresetn) );
 
 always_ff @(posedge aclk) begin
-
 	edgefuncren <= 1'b0;
 	rasterworkwen <= 1'b0;
 
@@ -246,30 +263,56 @@ always_ff @(posedge aclk) begin
 			if (edgefuncvalid && ~edgefuncempty) begin
 				{rcolor,ry2,rx2,ry1,rx1,ry0,rx0,rcommandunused} <= edgefuncdout;
 				edgefuncren <= 1'b1;
-				edgemode <= BOUNDSPARTIAL;
+				edgemode <= BOUNDSSTEPA;
 			end
 		end
 
-		BOUNDSPARTIAL: begin
+		BOUNDSSTEPA: begin
 			// Partial bounds
 			minxA <= rx0<rx1 ? rx0:rx1;
 			minyA <= ry0<ry1 ? ry0:ry1;
-			maxxA <= rx0>=rx1 ? rx0:rx1;
-			maxyA <= ry0>=ry1 ? ry0:ry1;
-			edgemode <= BOUNDSFINAL;
+			maxxA <= rx0>rx1 ? rx0:rx1;
+			maxyA <= ry0>ry1 ? ry0:ry1;
+			edgemode <= BOUNDSSTEPB;
 		end
 
-		BOUNDSFINAL: begin
+		BOUNDSSTEPB: begin
 			// Final bounds
-			minx <= minxA<rx2 ? minx:rx2;
-			miny <= minyA<ry2 ? miny:ry2;
-			maxx <= maxxA>=rx2 ? minx:rx2;
-			maxy <= maxyA>=ry2 ? miny:ry2;
-			edgemode <= EDGEFINALIZE;
+			minx <= minxA<rx2 ? minxA:rx2;
+			miny <= minyA<ry2 ? minyA:ry2;
+			maxx <= maxxA>rx2 ? maxxA:rx2;
+			maxy <= maxyA>ry2 ? maxyA:ry2;
+			edgemode <= EDGEWAITA;
+		end
+
+		EDGEWAITA: begin
+			// First delay
+			edgemode <= EDGEWAITB;
+		end
+
+		EDGEWAITB: begin
+			// Second delay
+			edgemode <= CLIPTOVIEWPORT;
+		end
+
+		CLIPTOVIEWPORT: begin
+			minx <= minx < 0 ? 0 : minx;
+			maxx <= maxx > 319 ? 319 : maxx;
+			miny <= miny < 0 ? 0 : miny;
+			maxy <= maxy > 239 ? 239 : maxy;
+			edgemode <= REJECTBYVIEWPORT;
+		end
+
+		REJECTBYVIEWPORT: begin
+			// Reject rectangles outside view
+			if (minx>=319 || miny>=239 || maxx<0 || maxy<0)
+				edgemode <= EDGEWCMD;
+			else
+				edgemode <= EDGEFINALIZE;
 		end
 
 		EDGEFINALIZE: begin
-			// TODO: Push to sweep rasterizer queue
+			// TODO: Reject backfacing before pushing the work
 			rasterworkdin <= {rcolor, minx, miny, maxx, maxy, A12, B12, W0_row, A20, B20, W1_row, A01, B01, W2_row};
 			rasterworkwen <= 1'b1;
 			edgemode <= EDGEWCMD;
@@ -280,36 +323,66 @@ always_ff @(posedge aclk) begin
 	if (~aresetn) begin
 		edgemode <= EDGEINIT;
 	end
-
 end
 
 // --------------------------------------------------
 // Sweep rasterizer
 // --------------------------------------------------
 
-typedef enum logic [2:0] {
+typedef enum logic [3:0] {
 	RASTERINIT,
 	RASTERWCMD,
+	RASTERSETUP, SWEEPROW, TESTDELAY, WRITEROW, WRITEWAIT, STEPTILE, SWEEPCOLUMN, STARTNEXTROW,
 	RASTERFINALIZE } rastermodetype;
 rastermodetype rastermode = RASTERINIT;
+rastermodetype postwait = RASTERINIT;
 
-logic signed [15:0] sminx;
-logic signed [15:0] sminy;
-logic signed [15:0] smaxx;
-logic signed [15:0] smaxy;
-logic signed [15:0] sA12;
-logic signed [15:0] sB12;
-logic signed [15:0] sA20;
-logic signed [15:0] sB20;
-logic signed [15:0] sA01;
-logic signed [15:0] sB01;
-logic signed [31:0] sW0_row;
-logic signed [31:0] sW1_row;
-logic signed [31:0] sW2_row;
 logic [7:0] scolor;
+logic signed [17:0] sminx;
+logic signed [17:0] sminy;
+logic signed [17:0] smaxx;
+logic signed [17:0] smaxy;
+logic signed [17:0] sA12;
+logic signed [17:0] sB12;
+logic signed [17:0] sA20;
+logic signed [17:0] sB20;
+logic signed [17:0] sA01;
+logic signed [17:0] sB01;
+logic signed [17:0] sW0_row;
+logic signed [17:0] sW1_row;
+logic signed [17:0] sW2_row;
+
+// Sweep temps
+logic signed [13:0] scx;
+logic signed [13:0] scendx;
+logic signed [17:0] scy;
+logic signed [17:0] scendy;
+logic signed [17:0] sw0;
+logic signed [17:0] sw1;
+logic signed [17:0] sw2;
+
+/*wire [15:0] sv;
+
+edgetest edge0(.aclk(aclk), .aresetn(aresetn), .N(16'd1),  .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[0]));
+edgetest edge1(.aclk(aclk), .aresetn(aresetn), .N(16'd2),  .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[1]));
+edgetest edge2(.aclk(aclk), .aresetn(aresetn), .N(16'd3),  .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[2]));
+edgetest edge3(.aclk(aclk), .aresetn(aresetn), .N(16'd4),  .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[3]));
+edgetest edge4(.aclk(aclk), .aresetn(aresetn), .N(16'd5),  .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[4]));
+edgetest edge5(.aclk(aclk), .aresetn(aresetn), .N(16'd6),  .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[5]));
+edgetest edge6(.aclk(aclk), .aresetn(aresetn), .N(16'd7),  .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[6]));
+edgetest edge7(.aclk(aclk), .aresetn(aresetn), .N(16'd8),  .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[7]));
+edgetest edge8(.aclk(aclk), .aresetn(aresetn), .N(16'd9),  .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[8]));
+edgetest edge9(.aclk(aclk), .aresetn(aresetn), .N(16'd10), .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[9]));
+edgetest edgea(.aclk(aclk), .aresetn(aresetn), .N(16'd11), .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[10]));
+edgetest edgeb(.aclk(aclk), .aresetn(aresetn), .N(16'd12), .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[11]));
+edgetest edgec(.aclk(aclk), .aresetn(aresetn), .N(16'd13), .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[12]));
+edgetest edged(.aclk(aclk), .aresetn(aresetn), .N(16'd14), .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[13]));
+edgetest edgee(.aclk(aclk), .aresetn(aresetn), .N(16'd15), .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[14]));
+edgetest edgef(.aclk(aclk), .aresetn(aresetn), .N(16'd16), .sw0(sw0), .sw1(sw1), .sw2(sw2), .sA12(sA12), .sA20(sA20), .sA01(sA01), .testOut(sv[15]));*/
 
 always_ff @(posedge aclk) begin
 	rasterworkren <= 1'b0;
+	wstrb <= 16'd0;
 
 	case (rastermode)
 		RASTERINIT: begin
@@ -320,26 +393,98 @@ always_ff @(posedge aclk) begin
 			if (rasterworkvalid && ~rasterworkempty) begin
 				{scolor, sminx, sminy, smaxx, smaxy, sA12, sB12, sW0_row, sA20, sB20, sW1_row, sA01, sB01, sW2_row} <= rasterworkdout;
 				rasterworkren <= 1'b1;
-				rastermode <= RASTERFINALIZE;
+				rastermode <= RASTERSETUP;
 			end
 		end
 
+		RASTERSETUP: begin
+			// Using tiles of 16x1 in size for easy mask generation
+			scx <= sminx[17:4];
+			scy <= sminy;
+			scendx <= smaxx[17:4];
+			scendy <= smaxy;
+			sw0 <= sW0_row;
+			sw1 <= sW1_row;
+			sw2 <= sW1_row;
+			rastermode <= SWEEPROW;
+		end
+
+		SWEEPROW: begin
+			// One clock delay for edge tests to complete
+			// Also covers address calculation for current tile's output
+			addr <= rasterbaseaddr + {scx + scy*20, 4'h0}; // base + blockaddress*16
+			din <= {scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor};
+			rastermode <= TESTDELAY;
+		end
+
+		TESTDELAY: begin
+			// Wait state for edge calculations
+			rastermode <= WRITEROW;
+		end
+
+		WRITEROW: begin
+			// We can now use the sign bits of above calculation as our write mask and emit the 16x1 tile's color
+			wstrb <= 16'hFFFF;//sv;
+
+			// Next 16 pixel block
+			scx <= scx + 14'd1;
+
+			// Are we at the end?
+			if (scx == scendx) begin
+				// Rewind to start x
+				scx <= sminx[17:4];
+				// Go one line down
+				scy <= scy + 18'd1;
+			end
+			rastermode <= WRITEWAIT;
+			postwait <= (scx == scendx) ? SWEEPCOLUMN : SWEEPROW;
+		end
+
+		WRITEWAIT: begin
+			rastermode <= wready ? STEPTILE : WRITEWAIT;
+		end
+
+		STEPTILE: begin
+			// Skip to the next 16x1 pixel tile
+			sw0 <= sw0 + 16*sA12;
+			sw1 <= sw1 + 16*sA20;
+			sw2 <= sw2 + 16*sA01;
+			rastermode <= postwait; // Either continue on current line or go to the next line
+		end
+
+		SWEEPCOLUMN: begin
+			// Step one line down
+			sW0_row <= + sB12;
+			sW1_row <= + sB20;
+			sW2_row <= + sB01;
+			rastermode <= STARTNEXTROW;
+		end
+
+		STARTNEXTROW: begin
+			// Go to start of next row
+			sw0 <= sW0_row;
+			sw1 <= sW1_row;
+			sw2 <= sW1_row;
+			rastermode <= (scy >= scendy) ? RASTERFINALIZE : SWEEPROW;
+		end
+
 		RASTERFINALIZE: begin
-			// TODO:
 			rastermode <= RASTERWCMD;
 		end
 
 	endcase
 
 	if (~aresetn) begin
+		addr <= 32'd0;
+		wstrb <= 16'd0;
 		rastermode <= RASTERINIT;
 	end
 end
 
 // --------------------------------------------------
-// Rasterizer unit idle state
+// Rasterizer unit busy state
 // --------------------------------------------------
 
-assign trustate = {31'd0, ~(trufifoempty && edgefuncempty)};
+assign trustate = {31'd0, ~(trufifoempty && edgefuncempty && rasterworkempty)};
 
 endmodule
