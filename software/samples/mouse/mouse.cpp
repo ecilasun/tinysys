@@ -1,7 +1,7 @@
 #include "basesystem.h"
 #include "core.h"
 #include "vpu.h"
-#include "rpu.h"
+#include "tru.h"
 #include "task.h"
 #include "dma.h"
 #include <stdio.h>
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 	struct ERasterizerContext rc;
 
 	VPUSetDefaultPalette(&vx);
-	RPUSetTileBuffer(&rc, (uint32_t)s_rasterBuffer);
+	TRUSetTileBuffer(&rc, (uint32_t)s_rasterBuffer);
 
 	sc.cycle = 0;
 	sc.framebufferA = bufferA;
@@ -102,9 +102,9 @@ int main(int argc, char *argv[])
 			prim.y1 = 239;
 			prim.x2 = 319;
 			prim.y2 = 0;
-			RPUPushPrimitive(&rc, &prim);
-			RPUSetColor(&rc, 0x0C);
-			RPURasterizePrimitive(&rc);
+			TRUPushPrimitive(&rc, &prim);
+			TRUSetColor(&rc, 0x0C);
+			TRURasterizePrimitive(&rc);
 
 			prim.x0 = 319;
 			prim.y0 = 239;
@@ -112,16 +112,16 @@ int main(int argc, char *argv[])
 			prim.y1 = 0;
 			prim.x2 = 0;
 			prim.y2 = 239;
-			RPUPushPrimitive(&rc, &prim);
-			RPUSetColor(&rc, 0x0C);
-			RPURasterizePrimitive(&rc);
+			TRUPushPrimitive(&rc, &prim);
+			TRUSetColor(&rc, 0x0C);
+			TRURasterizePrimitive(&rc);
 		}
 
 		// Queue up a flush, wait for all raster work to finish, and resolve onto write page
-		RPUFlushCache(&rc);
-		RPUInvalidateCache(&rc);
-		RPUBarrier(&rc);
-		RPUWait(&rc);
+		TRUFlushCache(&rc);
+		TRUInvalidateCache(&rc);
+		TRUBarrier(&rc);
+		TRUWait(&rc);
 		DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)sc.writepage);
 
 		// Cursor overlay

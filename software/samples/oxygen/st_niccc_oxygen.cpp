@@ -13,7 +13,7 @@
 #include "basesystem.h"
 #include "core.h"
 #include "vpu.h"
-#include "rpu.h"
+#include "tru.h"
 #include "dma.h"
 #include <stdio.h>
 #include <string.h>
@@ -63,9 +63,9 @@ static void clear(void) {
 	prim.y1 = 239;
 	prim.x2 = 319;
 	prim.y2 = 0;
-	RPUPushPrimitive(&s_rctx, &prim);
-	RPUSetColor(&s_rctx, 0);
-	RPURasterizePrimitive(&s_rctx);
+	TRUPushPrimitive(&s_rctx, &prim);
+	TRUSetColor(&s_rctx, 0);
+	TRURasterizePrimitive(&s_rctx);
 
 	prim.x0 = 319;
 	prim.y0 = 239;
@@ -73,9 +73,9 @@ static void clear(void) {
 	prim.y1 = 0;
 	prim.x2 = 0;
 	prim.y2 = 239;
-	RPUPushPrimitive(&s_rctx, &prim);
-	RPUSetColor(&s_rctx, 0);
-	RPURasterizePrimitive(&s_rctx);
+	TRUPushPrimitive(&s_rctx, &prim);
+	TRUSetColor(&s_rctx, 0);
+	TRURasterizePrimitive(&s_rctx);
 }
 
 /*
@@ -201,9 +201,9 @@ static int read_frame(void)
 			prim.x2 = poly[2*(i+2)];
 			prim.y2 = poly[2*(i+2)+1];
 
-			RPUPushPrimitive(&s_rctx, &prim);
-			RPUSetColor(&s_rctx, poly_col);
-			RPURasterizePrimitive(&s_rctx);
+			TRUPushPrimitive(&s_rctx, &prim);
+			TRUSetColor(&s_rctx, poly_col);
+			TRURasterizePrimitive(&s_rctx);
 		}
 	}
 	return 1; 
@@ -303,9 +303,9 @@ static int read_frame_flip(void)
 			prim.x1 = poly[2*(i+2)];
 			prim.y1 = poly[2*(i+2)+1];
 
-			RPUPushPrimitive(&s_rctx, &prim);
-			RPUSetColor(&s_rctx, poly_col);
-			RPURasterizePrimitive(&s_rctx);
+			TRUPushPrimitive(&s_rctx, &prim);
+			TRUSetColor(&s_rctx, poly_col);
+			TRURasterizePrimitive(&s_rctx);
 		}
 	}
 	return 1; 
@@ -332,8 +332,8 @@ int main(int argc, char** argv)
 	sc.framebufferB = s_framebufferB;
 	VPUSwapPages(&s_vctx, &sc);
 
-	//RPUSetTileBuffer(&s_rctx, (uint32_t)s_rasterBuffer); // For hardware
-	RPUSetTileBuffer(&s_rctx, (uint32_t)sc.writepage);
+	//TRUSetTileBuffer(&s_rctx, (uint32_t)s_rasterBuffer); // For hardware
+	TRUSetTileBuffer(&s_rctx, (uint32_t)sc.writepage);
 
 	while(1)
 	{
@@ -369,12 +369,12 @@ int main(int argc, char** argv)
 				res = read_frame();
 
 				// Make sure to flush rasterizer cache to raster memory before it's read
-				RPUFlushCache(&s_rctx);
-				RPUInvalidateCache(&s_rctx);
+				TRUFlushCache(&s_rctx);
+				TRUInvalidateCache(&s_rctx);
 
 				// Wait for all raster work to finish
-				RPUBarrier(&s_rctx);
-				RPUWait(&s_rctx);
+				TRUBarrier(&s_rctx);
+				TRUWait(&s_rctx);
 
 				// TODO: Get the DMA unit to resolve and write output onto the current VPU write page
 				//DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)sc.writepage);
@@ -382,7 +382,7 @@ int main(int argc, char** argv)
 				if (argc<=1) // no vsync if we have a command line argument
 					VPUWaitVSync();
 				VPUSwapPages(&s_vctx, &sc);
-				RPUSetTileBuffer(&s_rctx, (uint32_t)sc.writepage);
+				TRUSetTileBuffer(&s_rctx, (uint32_t)sc.writepage);
 			} while(res);
 		}
 		else
@@ -392,12 +392,12 @@ int main(int argc, char** argv)
 				res = read_frame_flip();
 
 				// Make sure to flush rasterizer cache to raster memory before it's read
-				RPUFlushCache(&s_rctx);
-				RPUInvalidateCache(&s_rctx);
+				TRUFlushCache(&s_rctx);
+				TRUInvalidateCache(&s_rctx);
 
 				// Wait for all raster work to finish
-				RPUBarrier(&s_rctx);
-				RPUWait(&s_rctx);
+				TRUBarrier(&s_rctx);
+				TRUWait(&s_rctx);
 
 				// TODO: Get the DMA unit to resolve and write output onto the current VPU write page
 				//DMAResolveTiles((uint32_t)s_rasterBuffer, (uint32_t)sc.writepage);
@@ -405,7 +405,7 @@ int main(int argc, char** argv)
 				if (argc<=1) // no vsync if we have a command line argument
 					VPUWaitVSync();
 				VPUSwapPages(&s_vctx, &sc);
-				RPUSetTileBuffer(&s_rctx, (uint32_t)sc.writepage);
+				TRUSetTileBuffer(&s_rctx, (uint32_t)sc.writepage);
 			} while(res);
 		}
 	}
