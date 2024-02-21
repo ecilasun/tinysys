@@ -10,6 +10,9 @@
 * More details and links in C_EXAMPLES/DATA/notes.txt
 */
 
+// Define this to use hardware rasterization
+#define TRU_HARDWARE
+
 #include "basesystem.h"
 #include "core.h"
 #include "vpu.h"

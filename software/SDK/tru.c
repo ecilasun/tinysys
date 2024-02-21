@@ -9,6 +9,7 @@ static inline int32_t gmin(int32_t x, int32_t y) { return x<=y?x:y; }
 // Rasterizer control
 volatile uint32_t *TRUCMDIO = (volatile uint32_t* ) DEVICE_TRUC;
 
+#ifndef TRU_HARDWARE
 int32_t TRUEdgeFunction(const struct TRUVec2 *v0, const struct TRUVec2 *v1, int32_t *A, int32_t *B, const struct TRUVec2 *p)
 {
 	*A = v0->y - v1->y;
@@ -19,16 +20,21 @@ int32_t TRUEdgeFunction(const struct TRUVec2 *v0, const struct TRUVec2 *v1, int3
 	// Add A to the following to advance left or B to advance down one pixel
 	return (*A)*p->x + (*B)*p->y + C;
 }
+#endif
 
 void TRUSetTileBuffer(struct ERasterizerContext *_rc, const uint32_t _TRUWriteAddress16ByteAligned)
 {
+#ifndef TRU_HARDWARE
 	_rc->m_rasterOutAddrressCacheAligned = _TRUWriteAddress16ByteAligned;
-	//*TRUCMDIO = RASTERCMD_OUTADDRS;
-	//*TRUCMDIO = _TRUWriteAddress16ByteAligned;
+#else
+	*TRUCMDIO = RASTERCMD_OUTADDRS;
+	*TRUCMDIO = _TRUWriteAddress16ByteAligned;
+#endif
 }
 
 void TRUPushPrimitive(struct ERasterizerContext *_rc, struct SPrimitive* _primitive)
 {
+#ifndef TRU_HARDWARE
 	_rc->v0.x = _primitive->x0;
 	_rc->v0.y = _primitive->y0;
 	_rc->v1.x = _primitive->x1;
@@ -60,17 +66,19 @@ void TRUPushPrimitive(struct ERasterizerContext *_rc, struct SPrimitive* _primit
 	_rc->w0_row = TRUEdgeFunction(&_rc->v1, &_rc->v2, &_rc->a12, &_rc->b12, &p);
 	_rc->w1_row = TRUEdgeFunction(&_rc->v2, &_rc->v0, &_rc->a20, &_rc->b20, &p);
 	_rc->w2_row = TRUEdgeFunction(&_rc->v0, &_rc->v1, &_rc->a01, &_rc->b01, &p);
-
-	/**TRUCMDIO = RASTERCMD_PUSHVERTEX0;
+#else
+	*TRUCMDIO = RASTERCMD_PUSHVERTEX0;
 	*TRUCMDIO = (uint32_t)(_primitive->y0<<16) | (((uint32_t)_primitive->x0)&0xFFFF);
 	*TRUCMDIO = RASTERCMD_PUSHVERTEX1;
 	*TRUCMDIO = (uint32_t)(_primitive->y1<<16) | (((uint32_t)_primitive->x1)&0xFFFF);
 	*TRUCMDIO = RASTERCMD_PUSHVERTEX2;
-	*TRUCMDIO = (uint32_t)(_primitive->y2<<16) | (((uint32_t)_primitive->x2)&0xFFFF);*/
+	*TRUCMDIO = (uint32_t)(_primitive->y2<<16) | (((uint32_t)_primitive->x2)&0xFFFF);
+#endif
 }
 
 void TRURasterizePrimitive(struct ERasterizerContext *_rc)
 {
+#ifndef TRU_HARDWARE
 	int32_t left = _rc->m_minx;
 	int32_t right = _rc->m_maxx;
 
@@ -167,44 +175,62 @@ void TRURasterizePrimitive(struct ERasterizerContext *_rc)
 		w2 += _rc->b01;
 		rasterOut += 80;
 	}
-
-	//*TRUCMDIO = RASTERCMD_RASTERIZEPRIM;
+#else
+	*TRUCMDIO = RASTERCMD_RASTERIZEPRIM;
+#endif
 }
 
 void TRUSetColor(struct ERasterizerContext *_rc, const uint8_t _colorIndex)
 {
+#ifndef TRU_HARDWARE
 	_rc->m_color = (_colorIndex<<24) | (_colorIndex<<16) | (_colorIndex<<8) | _colorIndex;
-	//*TRUCMDIO = RASTERCMD_SETRASTERCOLOR;
-	//*TRUCMDIO = (_colorIndex<<24) | (_colorIndex<<16) | (_colorIndex<<8) | _colorIndex;
+#else
+	*TRUCMDIO = RASTERCMD_SETRASTERCOLOR;
+	*TRUCMDIO = (_colorIndex<<24) | (_colorIndex<<16) | (_colorIndex<<8) | _colorIndex;
+#endif
 }
 
 void TRUFlushCache(struct ERasterizerContext *_rc)
 {
+#ifndef TRU_HARDWARE
 	CFLUSH_D_L1;
-	// TODO:
-	//*TRUCMDIO = RASTERCMD_FLUSHCACHE;
+#else
+	*TRUCMDIO = RASTERCMD_FLUSHCACHE;
+#endif
 }
 
 void TRUInvalidateCache(struct ERasterizerContext *_rc)
 {
+#ifndef TRU_HARDWARE
 	// TODO:
-	//*TRUCMDIO = RASTERCMD_INVALIDATECACHE;
+#else
+	*TRUCMDIO = RASTERCMD_INVALIDATECACHE;
+#endif
 }
 
 void TRUBarrier(struct ERasterizerContext *_rc)
 {
+#ifndef TRU_HARDWARE
 	// TODO:
-	//*TRUCMDIO = RASTERCMD_BARRIER;
+#else
+	*TRUCMDIO = RASTERCMD_BARRIER;
+#endif
 }
 
 uint32_t TRUPending(struct ERasterizerContext *_rc)
 {
+#ifndef TRU_HARDWARE
 	return 0;
-	//return *TRUCMDIO;
+#else
+	return *TRUCMDIO;
+#endif
 }
 
 void TRUWait(struct ERasterizerContext *_rc)
 {
+#ifndef TRU_HARDWARE
 	// TODO:
-	//while (*TRUCMDIO) { asm volatile("nop;"); }
+#else
+	while (*TRUCMDIO) { asm volatile("nop;"); }
+#endif
 }
