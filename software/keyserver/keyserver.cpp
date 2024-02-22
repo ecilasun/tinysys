@@ -19,12 +19,12 @@ static uint8_t keycodetoscancode[256] =
 //  0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
     0,    0,    0,    0,    0,    0,    0,    0,    0, 0x29, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, // 0
  0x24, 0x25, 0x26, 0x27, 0x2d, 0x2e, 0x2a, 0x2b, 0x14, 0x1A, 0x08, 0x15, 0x17, 0x1c, 0x18, 0x0c, // 1
- 0x12, 0x13, 0x2f, 0x30, 0X28,    0, 0x04, 0x16, 0x07, 0x09, 0x0a, 0x0b, 0x0d, 0x0e, 0x0f, 0x33, // 2
- 0x34, 0x35,    0, 0x31, 0x1d, 0x1b, 0x06, 0x19, 0x05, 0x11, 0x10, 0x36, 0x37, 0x38,    0,    0, // 3
-    0, 0x2c,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 4
+ 0x12, 0x13, 0x2f, 0x30, 0X28, 0xe0, 0x04, 0x16, 0x07, 0x09, 0x0a, 0x0b, 0x0d, 0x0e, 0x0f, 0x33, // 2
+ 0x34, 0x35, 0xe1, 0x31, 0x1d, 0x1b, 0x06, 0x19, 0x05, 0x11, 0x10, 0x36, 0x37, 0x38, 0xe5,    0, // 3
+ 0xe2, 0x2c,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 4
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 5
-    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 6
-    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, 0x03, // 7 // 7F -> Ctrl+C (0x03)
+    0,    0,    0,    0,    0,    0,    0,    0,    0, 0xe4,    0,    0, 0xe6,    0,    0, 0x52, // 6
+    0, 0x50, 0x4f,    0, 0x51,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, 0x03, // 7 // 7F -> Ctrl+C (0x03)
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 8
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 9
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // A
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
     KeyCode lctrl = XKeysymToKeycode( dpy, XK_Control_L );
     KeyCode rctrl = XKeysymToKeycode( dpy, XK_Control_R );
     do {
-        usleep(5000);
+        //usleep(5000);
         XQueryKeymap( dpy, (char*)keys_new );
 
         // Re-trigger key state submit after 0.160 seconds
@@ -146,7 +146,7 @@ int main(int argc, char **argv)
 
             if (keystate)
             {
-                //printf("%.2X -> %.2X\n", code, scancode); // DEBUG
+                printf("%.2X -> %.2X\n", code, scancode); // DEBUG
                 uint8_t outdata[4];
                 outdata[0] = startToken;
                 outdata[1] = modifierstate;
