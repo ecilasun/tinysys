@@ -193,7 +193,8 @@ typedef enum logic [3:0] {
 	EDGEINIT,
 	EDGEWCMD,
 	BOUNDSSTEPA, BOUNDSSTEPB,
-	EDGEWAITA, EDGEWAITB, CLIPTOVIEWPORT, REJECTBYVIEWPORT, EDGEFINALIZE } edgemodetype;
+	EDGEWAITA, EDGEWAITB, EDGEWAITC, EDGEWAITD,
+	CLIPTOVIEWPORT, REJECTBYVIEWPORT, EDGEFINALIZE } edgemodetype;
 edgemodetype edgemode = EDGEINIT;
 
 // Bounds
@@ -217,19 +218,18 @@ logic signed [17:0] maxx;
 logic signed [17:0] maxy;
 
 // Edge functions
-wire signed [17:0] A12;
-wire signed [17:0] B12;
-wire signed [17:0] A20;
-wire signed [17:0] B20;
-wire signed [17:0] A01;
-wire signed [17:0] B01;
-wire signed [17:0] W0_row;
-wire signed [17:0] W1_row;
-wire signed [17:0] W2_row;
-
-edgefunction edge01(.aclk(aclk), .aresetn(aresetn), .px(minx), .py(miny), .x0(rx1), .y0(ry1), .x1(rx2), .y1(ry2), .A_out(A12), .B_out(B12), .W_out(W0_row));
-edgefunction edge12(.aclk(aclk), .aresetn(aresetn), .px(minx), .py(miny), .x0(rx2), .y0(ry2), .x1(rx0), .y1(ry0), .A_out(A20), .B_out(B20), .W_out(W1_row));
-edgefunction edge20(.aclk(aclk), .aresetn(aresetn), .px(minx), .py(miny), .x0(rx0), .y0(ry0), .x1(rx1), .y1(ry1), .A_out(A01), .B_out(B01), .W_out(W2_row));
+logic signed [17:0] A12;
+logic signed [17:0] B12;
+logic signed [17:0] C12;
+logic signed [17:0] A20;
+logic signed [17:0] B20;
+logic signed [17:0] C20;
+logic signed [17:0] A01;
+logic signed [17:0] B01;
+logic signed [17:0] C01;
+logic signed [17:0] W0_row;
+logic signed [17:0] W1_row;
+logic signed [17:0] W2_row;
 
 // --------------------------------------------------
 // Rasterizer input fifo
@@ -273,6 +273,7 @@ always_ff @(posedge aclk) begin
 			minyA <= ry0<ry1 ? ry0:ry1;
 			maxxA <= rx0>rx1 ? rx0:rx1;
 			maxyA <= ry0>ry1 ? ry0:ry1;
+
 			edgemode <= BOUNDSSTEPB;
 		end
 
@@ -282,17 +283,14 @@ always_ff @(posedge aclk) begin
 			miny <= minyA<ry2 ? minyA:ry2;
 			maxx <= maxxA>rx2 ? maxxA:rx2;
 			maxy <= maxyA>ry2 ? maxyA:ry2;
-			edgemode <= EDGEWAITA;
+			edgemode <= REJECTBYVIEWPORT;
 		end
 
-		EDGEWAITA: begin
-			// First delay
-			edgemode <= EDGEWAITB;
-		end
-
-		EDGEWAITB: begin
-			// Second delay
-			edgemode <= CLIPTOVIEWPORT;
+		REJECTBYVIEWPORT: begin
+			if (minx>=319 || miny>=239 || maxx<0 || maxy<0)
+				edgemode <= EDGEWCMD;
+			else
+				edgemode <= CLIPTOVIEWPORT;
 		end
 
 		CLIPTOVIEWPORT: begin
@@ -300,21 +298,49 @@ always_ff @(posedge aclk) begin
 			maxx <= maxx > 319 ? 319 : maxx;
 			miny <= miny < 0 ? 0 : miny;
 			maxy <= maxy > 239 ? 239 : maxy;
-			edgemode <= REJECTBYVIEWPORT;
+
+			edgemode <= EDGEWAITA;
 		end
 
-		REJECTBYVIEWPORT: begin
-			// Reject rectangles outside view
-			if (minx>=319 || miny>=239 || maxx<0 || maxy<0)
-				edgemode <= EDGEWCMD;
-			else
-				edgemode <= EDGEFINALIZE;
+		EDGEWAITA: begin
+			A12 <= ry1 - ry2;
+			B12 <= rx2 - rx1;
+			C12 <= rx0*ry1 - ry0*rx0;
+
+			edgemode <= EDGEWAITB;
+		end
+
+		EDGEWAITB: begin
+			W0_row <= A12*minx + B12*miny + C12;
+
+			A20 <= ry2 - ry0;
+			B20 <= rx0 - rx2;
+			C20 <= rx0*ry1 - ry0*rx0;
+
+			edgemode <= EDGEWAITC;
+		end
+
+		EDGEWAITC: begin
+			W1_row <= A20*minx + B20*miny + C20;
+
+			A01 <= ry0 - ry1;
+			B01 <= rx1 - rx0;
+			C01 <= rx0*ry1 - ry0*rx0;
+
+			edgemode <= EDGEWAITD;
+		end
+		
+		EDGEWAITD: begin
+			W2_row <= A01*minx + B01*miny + C01;
+
+			edgemode <= EDGEFINALIZE;
 		end
 
 		EDGEFINALIZE: begin
 			// TODO: Reject backfacing before pushing the work
 			rasterworkdin <= {rcolor, minx, miny, maxx, maxy, A12, B12, W0_row, A20, B20, W1_row, A01, B01, W2_row};
 			rasterworkwen <= 1'b1;
+
 			edgemode <= EDGEWCMD;
 		end
 
@@ -380,11 +406,11 @@ always_ff @(posedge aclk) begin
 			if (rasterworkvalid && ~rasterworkempty) begin
 				{scolor, sminx, sminy, smaxx, smaxy, sA12, sB12, sW0_row, sA20, sB20, sW1_row, sA01, sB01, sW2_row} <= rasterworkdout;
 				rasterworkren <= 1'b1;
-				rastermode <= RASTERFINALIZE;//RASTERSETUP;
+				rastermode <= RASTERSETUP;
 			end
 		end
 
-		/*RASTERSETUP: begin
+		RASTERSETUP: begin
 			// Using tiles of 16x1 in size for easy mask generation
 			scx <= sminx[17:4];
 			scy <= sminy;
@@ -404,21 +430,21 @@ always_ff @(posedge aclk) begin
 			E2 <= sw2;
 			sv <= 16'h0000;
 			edgecnt <= 4'd0;
-			rastermode <= EDGETEST;
+			rastermode <= WRITEROW;//EDGETEST;
 		end
 
-		EDGETEST: begin
+		/*EDGETEST: begin
 			E0 <= E0 + sA12;
 			E1 <= E1 + sA20;
 			E2 <= E2 + sA01;
 			sv <= {sv[14:0], E0[17] & E1[17] & E2[17]};
 			edgecnt <= edgecnt + 4'd1;
 			rastermode <= edgecnt==15 ? WRITEROW : EDGETEST;
-		end
+		end*/
 
 		WRITEROW: begin
 			// We can now use the sign bits of above calculation as our write mask and emit the 16x1 tile's color
-			wstrb <= sv;
+			wstrb <= 16'hFFFF;//sv;
 
 			// Next 16 pixel block
 			scx <= scx + 14'd1;
@@ -459,7 +485,7 @@ always_ff @(posedge aclk) begin
 			sw1 <= sW1_row;
 			sw2 <= sW2_row;
 			rastermode <= (scy == scendy) ? RASTERFINALIZE : SWEEPROW;
-		end*/
+		end
 
 		RASTERFINALIZE: begin
 			rastermode <= RASTERWCMD;
