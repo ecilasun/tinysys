@@ -62,7 +62,7 @@ always_ff @(posedge aclk) begin
 					b <= 33'dz;
 				end
             endcase
-            count <= 6; // Match this to the latency of the DSP multiplier IP
+            count <= 5; // Match this to the latency of the DSP multiplier IP
             mulce <= start;
             cmdmode <= start ? MULLOOP : WCMD;
         end

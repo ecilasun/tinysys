@@ -65,13 +65,13 @@
     <Option Name="WTVcsLaunchSim" Val="0"/>
     <Option Name="WTRivieraLaunchSim" Val="0"/>
     <Option Name="WTActivehdlLaunchSim" Val="0"/>
-    <Option Name="WTXSimExportSim" Val="543"/>
-    <Option Name="WTModelSimExportSim" Val="543"/>
-    <Option Name="WTQuestaExportSim" Val="543"/>
+    <Option Name="WTXSimExportSim" Val="546"/>
+    <Option Name="WTModelSimExportSim" Val="546"/>
+    <Option Name="WTQuestaExportSim" Val="546"/>
     <Option Name="WTIesExportSim" Val="0"/>
-    <Option Name="WTVcsExportSim" Val="543"/>
-    <Option Name="WTRivieraExportSim" Val="543"/>
-    <Option Name="WTActivehdlExportSim" Val="543"/>
+    <Option Name="WTVcsExportSim" Val="546"/>
+    <Option Name="WTRivieraExportSim" Val="546"/>
+    <Option Name="WTActivehdlExportSim" Val="546"/>
     <Option Name="GenerateIPUpgradeLog" Val="TRUE"/>
     <Option Name="XSimRadix" Val="hex"/>
     <Option Name="XSimTimeUnit" Val="ns"/>
@@ -139,6 +139,20 @@
         </FileInfo>
       </File>
       <File Path="$PSRCDIR/sources_1/ip/cachememhalf/cachememhalf.xci">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/ip/peripheralclocks.xcix">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/ip/peripheralclocks/peripheralclocks.xci">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -665,7 +679,6 @@
       <File Path="$PSRCDIR/sources_1/new/rcache.sv">
         <FileInfo>
           <Attr Name="UserDisabled" Val="1"/>
-          <Attr Name="AutoDisabled" Val="1"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
@@ -674,7 +687,6 @@
       <File Path="$PSRCDIR/sources_1/new/tru.sv">
         <FileInfo>
           <Attr Name="UserDisabled" Val="1"/>
-          <Attr Name="AutoDisabled" Val="1"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
@@ -683,7 +695,6 @@
       <File Path="$PSRCDIR/sources_1/new/edgemaskgen.sv">
         <FileInfo>
           <Attr Name="UserDisabled" Val="1"/>
-          <Attr Name="AutoDisabled" Val="1"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
@@ -1069,26 +1080,6 @@
         <Option Name="UseBlackboxStub" Val="1"/>
       </Config>
     </FileSet>
-    <FileSet Name="peripheralclocks" Type="BlockSrcs" RelSrcDir="$PSRCDIR/peripheralclocks" RelGenDir="$PGENDIR/peripheralclocks">
-      <File Path="$PSRCDIR/sources_1/ip/peripheralclocks.xcix">
-        <FileInfo>
-          <Attr Name="UsedIn" Val="synthesis"/>
-          <Attr Name="UsedIn" Val="implementation"/>
-          <Attr Name="UsedIn" Val="simulation"/>
-        </FileInfo>
-      </File>
-      <File Path="$PSRCDIR/sources_1/ip/peripheralclocks/peripheralclocks.xci">
-        <FileInfo>
-          <Attr Name="UsedIn" Val="synthesis"/>
-          <Attr Name="UsedIn" Val="implementation"/>
-          <Attr Name="UsedIn" Val="simulation"/>
-        </FileInfo>
-      </File>
-      <Config>
-        <Option Name="TopModule" Val="peripheralclocks"/>
-        <Option Name="UseBlackboxStub" Val="1"/>
-      </Config>
-    </FileSet>
     <FileSet Name="instructinfifo" Type="BlockSrcs" RelSrcDir="$PSRCDIR/instructinfifo" RelGenDir="$PGENDIR/instructinfifo">
       <File Path="$PSRCDIR/sources_1/ip/instructinfifo/instructinfifo.xci">
         <FileInfo>
@@ -1225,16 +1216,6 @@
       <RQSFiles/>
     </Run>
     <Run Id="cachemem_synth_1" Type="Ft3:Synth" SrcSet="cachemem" Part="xc7a200tfbg484-1" ConstrsSet="cachemem" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/cachemem_synth_1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/cachemem_synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/cachemem_synth_1">
-      <Strategy Version="1" Minor="2">
-        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2023"/>
-        <Step Id="synth_design"/>
-      </Strategy>
-      <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
-      <ReportStrategy Name="Vivado Synthesis Default Reports" Flow="Vivado Synthesis 2023"/>
-      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
-      <RQSFiles/>
-    </Run>
-    <Run Id="peripheralclocks_synth_1" Type="Ft3:Synth" SrcSet="peripheralclocks" Part="xc7a200tfbg484-1" ConstrsSet="peripheralclocks" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/peripheralclocks_synth_1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/peripheralclocks_synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/peripheralclocks_synth_1">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2023"/>
         <Step Id="synth_design"/>
@@ -1428,23 +1409,6 @@
       <RQSFiles/>
     </Run>
     <Run Id="cachemem_impl_1" Type="Ft2:EntireDesign" Part="xc7a200tfbg484-1" ConstrsSet="cachemem" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="cachemem_synth_1" IncludeInArchive="false" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/cachemem_impl_1" AutoRQSDir="$PSRCDIR/utils_1/imports/cachemem_impl_1">
-      <Strategy Version="1" Minor="2">
-        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2023"/>
-        <Step Id="init_design"/>
-        <Step Id="opt_design"/>
-        <Step Id="power_opt_design"/>
-        <Step Id="place_design"/>
-        <Step Id="post_place_power_opt_design"/>
-        <Step Id="phys_opt_design"/>
-        <Step Id="route_design"/>
-        <Step Id="post_route_phys_opt_design"/>
-        <Step Id="write_bitstream"/>
-      </Strategy>
-      <ReportStrategy Name="Vivado Implementation Default Reports" Flow="Vivado Implementation 2023"/>
-      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
-      <RQSFiles/>
-    </Run>
-    <Run Id="peripheralclocks_impl_1" Type="Ft2:EntireDesign" Part="xc7a200tfbg484-1" ConstrsSet="peripheralclocks" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="peripheralclocks_synth_1" IncludeInArchive="false" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/peripheralclocks_impl_1" AutoRQSDir="$PSRCDIR/utils_1/imports/peripheralclocks_impl_1">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2023"/>
         <Step Id="init_design"/>
