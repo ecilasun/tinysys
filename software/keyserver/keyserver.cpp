@@ -52,7 +52,7 @@ static uint8_t keycodetoscancode[256] =
 uint32_t YUVtoRGBX32(int y, int u, int v)
 {
     y -= 16; u -= 128; v -= 128;
-    return (YUV2RO(y,u,v) & 0xff)<<16 | (YUV2GO(y,u,v) & 0xff)<<8 | (YUV2BO(y,u,v) & 0xff) | 0xFF000000;
+    return (YUV2RO(y,u,v) )<<16 | (YUV2GO(y,u,v) )<<8 | (YUV2BO(y,u,v) ) | 0xFF000000;
 }
 
 int main(int argc, char **argv)
