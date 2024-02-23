@@ -305,7 +305,7 @@ always_ff @(posedge aclk) begin
 		EDGEWAITA: begin
 			A12 <= ry1 - ry2;
 			B12 <= rx2 - rx1;
-			C12 <= rx0*ry1 - ry0*rx0;
+			C12 <= rx1*ry2 - rx2*ry1;
 
 			edgemode <= EDGEWAITB;
 		end
@@ -315,7 +315,7 @@ always_ff @(posedge aclk) begin
 
 			A20 <= ry2 - ry0;
 			B20 <= rx0 - rx2;
-			C20 <= rx0*ry1 - ry0*rx0;
+			C20 <= rx2*ry0 - rx0*ry2;
 
 			edgemode <= EDGEWAITC;
 		end
@@ -325,7 +325,7 @@ always_ff @(posedge aclk) begin
 
 			A01 <= ry0 - ry1;
 			B01 <= rx1 - rx0;
-			C01 <= rx0*ry1 - ry0*rx0;
+			C01 <= rx0*ry1 - rx1*ry0;
 
 			edgemode <= EDGEWAITD;
 		end
@@ -418,7 +418,7 @@ always_ff @(posedge aclk) begin
 			scendy <= smaxy;
 			sw0 <= sW0_row;
 			sw1 <= sW1_row;
-			sw2 <= sW1_row;
+			sw2 <= sW2_row;
 			rastermode <= SWEEPROW;
 		end
 
@@ -430,21 +430,21 @@ always_ff @(posedge aclk) begin
 			E2 <= sw2;
 			sv <= 16'h0000;
 			edgecnt <= 4'd0;
-			rastermode <= WRITEROW;//EDGETEST;
+			rastermode <= EDGETEST;
 		end
 
-		/*EDGETEST: begin
+		EDGETEST: begin
 			E0 <= E0 + sA12;
 			E1 <= E1 + sA20;
 			E2 <= E2 + sA01;
 			sv <= {sv[14:0], E0[17] & E1[17] & E2[17]};
 			edgecnt <= edgecnt + 4'd1;
-			rastermode <= edgecnt==15 ? WRITEROW : EDGETEST;
-		end*/
+			rastermode <= (edgecnt==15) ? WRITEROW : EDGETEST;
+		end
 
 		WRITEROW: begin
 			// We can now use the sign bits of above calculation as our write mask and emit the 16x1 tile's color
-			wstrb <= 16'hFFFF;//sv;
+			wstrb <= sv;
 
 			// Next 16 pixel block
 			scx <= scx + 14'd1;
@@ -453,8 +453,10 @@ always_ff @(posedge aclk) begin
 			if (scx == scendx) begin
 				// Rewind to start x
 				scx <= sminx[17:4];
+				// Step one line down
+				scy <= scy + 18'd1;
 			end
-			rastermode <= WRITEWAIT;
+			rastermode <= (sv==16'd0) ? STEPTILE : WRITEWAIT;
 			postwait <= (scx == scendx) ? SWEEPCOLUMN : SWEEPROW;
 		end
 
@@ -478,8 +480,6 @@ always_ff @(posedge aclk) begin
 		end
 
 		STARTNEXTROW: begin
-			// Step one line down
-			scy <= scy + 18'd1;
 			// Go to start of next row
 			sw0 <= sW0_row;
 			sw1 <= sW1_row;
