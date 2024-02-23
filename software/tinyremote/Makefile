@@ -1,6 +1,9 @@
 CC = clang
 
+# Release
 CFLAGS=-L/usr/lib/x86_64-linux-gnu/ -lX11 -lstdc++ -lv4l2 -Wall -std=c++20 -Ofast -flto -fomit-frame-pointer -Iincludes
+# Debug
+# CFLAGS=-L/usr/lib/x86_64-linux-gnu/ -lX11 -lstdc++ -lv4l2 -Wall -std=c++20 -Og -g -Iincludes
 
 SOURCES := tinyremote.cpp
 

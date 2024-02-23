@@ -3,6 +3,7 @@
 // libv4l-dev
 
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
 #include <X11/keysym.h>
 #include <stdbool.h>
 #include <string.h>
@@ -58,28 +59,14 @@ uint32_t YUVtoRGBX32(int y, int u, int v)
     return (YUV2RO(y,u,v) )<<16 | (YUV2GO(y,u,v) )<<8 | (YUV2BO(y,u,v) ) | 0xFF000000;
 }
 
-int main(int argc, char **argv)
+int vtype = 0;
+v4l2_buffer vbufferinfo;
+char* vbuffer = nullptr;
+uint32_t *intermediate = nullptr;
+unsigned int vbufferlen = 0;
+
+int initialize_serial()
 {
-    if (argc > 1)
-		strcpy(commdevicename, argv[1]);
-    if (argc > 2)
-		strcpy(capturedevicename, argv[2]);
-
-    Display* dpy = XOpenDisplay(NULL);
-    int width = 640;
-    int height = 480;
-
-    if (!dpy)
-    {
-        printf("Cannot open display\n");
-        return -1;
-    }
-
-    unsigned char keys_old[32];
-    unsigned char keys_new[32];
-
-    printf("Usage: tinyremote commdevicename capturedevicename\ndefault comm device:%s default capture device:%s\nCtrl+C or PAUSE: quit current remote process\n", commdevicename, capturedevicename);
-
     // Serial
     int serial_port = open(commdevicename, O_RDWR); // TODO: move to command line option
     if (serial_port <0 )
@@ -127,34 +114,17 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    // Window
-    int screen_num = DefaultScreen(dpy);
-    Visual *visual = DefaultVisual(dpy, screen_num);
-    unsigned long background = WhitePixel(dpy, screen_num);
-    unsigned long border = BlackPixel(dpy, screen_num);
+    return serial_port;
+}
 
-    char *videodata = (char*)malloc(width*height*4);
+void terminate_serial(int serial_port)
+{
+    close(serial_port);
+}
 
-    Window win = XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), 0,0, width, height, 2, border, background);
-    XStoreName(dpy, win, "tinysys remote");
-    Pixmap pixmap = XCreatePixmap(dpy, win, width, height, 24);
-    XImage *img = XCreateImage(dpy, visual, DefaultDepth(dpy,screen_num), ZPixmap, 0, videodata, width, height, 32, 0);
-
-    XSelectInput(dpy, win, ButtonPressMask|StructureNotifyMask|KeyPressMask|KeyReleaseMask|KeymapStateMask|FocusChangeMask);
-    XMapWindow(dpy, win);
-
-    uint8_t isdown = 1;
-    uint8_t isup = 2;
-    uint8_t startToken = ':';
-    KeyCode lshift = XKeysymToKeycode( dpy, XK_Shift_L );
-    KeyCode rshift = XKeysymToKeycode( dpy, XK_Shift_R );
-    KeyCode lalt = XKeysymToKeycode( dpy, XK_Alt_L );
-    KeyCode ralt = XKeysymToKeycode( dpy, XK_Alt_R );
-    KeyCode lctrl = XKeysymToKeycode( dpy, XK_Control_L );
-    KeyCode rctrl = XKeysymToKeycode( dpy, XK_Control_R );
-
-    memset(keys_old, 0, 32);
-    memset(keys_new, 0, 32);
+int initialize_video_capture(int width, int height)
+{
+    intermediate = (uint32_t*)malloc(width*height*4);
 
     // Video capture
     int video_capture = open(capturedevicename, O_RDWR);
@@ -202,65 +172,113 @@ int main(int argc, char **argv)
     if(ioctl(video_capture, VIDIOC_QUERYBUF, &queryBuffer) < 0)
     {
         perror("device did not return the buffer information, VIDIOC_QUERYBUF");
-        return 1;
+        return -1;
     }
-    char* buffer = (char*)mmap(NULL, queryBuffer.length, PROT_READ | PROT_WRITE, MAP_SHARED, video_capture, queryBuffer.m.offset);
-    memset(buffer, 0, queryBuffer.length);
+    vbuffer = (char*)mmap(NULL, queryBuffer.length, PROT_READ | PROT_WRITE, MAP_SHARED, video_capture, queryBuffer.m.offset);
+    vbufferlen = queryBuffer.length;
+    memset(vbuffer, 0, vbufferlen);
 
-    v4l2_buffer bufferinfo;
-    memset(&bufferinfo, 0, sizeof(bufferinfo));
-    bufferinfo.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    bufferinfo.memory = V4L2_MEMORY_MMAP;
-    bufferinfo.index = 0;
+    memset(&vbufferinfo, 0, sizeof(vbufferinfo));
+    vbufferinfo.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    vbufferinfo.memory = V4L2_MEMORY_MMAP;
+    vbufferinfo.index = 0;
 
-    int type = bufferinfo.type;
-    if(ioctl(video_capture, VIDIOC_STREAMON, &type) < 0)
+    vtype = vbufferinfo.type;
+    if(ioctl(video_capture, VIDIOC_STREAMON, &vtype) < 0)
     {
         perror("could not start streaming, VIDIOC_STREAMON");
         return -1;
     }
 
+    return video_capture;
+}
+
+void terminate_video_capture(int video_capture)
+{
+    free(intermediate);
+
+    if (video_capture<0)
+        return;
+
+    if (vbufferlen)
+        munmap(vbuffer, vbufferlen);
+
+    if(ioctl(video_capture, VIDIOC_STREAMOFF, &vtype) < 0)
+    {
+        perror("could not end streaming, VIDIOC_STREAMOFF");
+        return;
+    }
+    close(video_capture);
+}
+
+int main(int argc, char **argv)
+{
+    if (argc > 1)
+		strcpy(commdevicename, argv[1]);
+    if (argc > 2)
+		strcpy(capturedevicename, argv[2]);
+
+    Display* dpy = XOpenDisplay(NULL);
+
+    int width = 640;
+    int height = 480;
+    int videowidth = 640;
+    int videoheight = 480;
+
+    if (!dpy)
+    {
+        printf("Cannot open display\n");
+        return -1;
+    }
+
+    unsigned char keys_old[32];
+    unsigned char keys_new[32];
+
+    printf("Usage: tinyremote commdevicename capturedevicename\ndefault comm device:%s default capture device:%s\nCtrl+C or PAUSE: quit current remote process\n", commdevicename, capturedevicename);
+
+    int serial_port = initialize_serial();
+    if (serial_port<0)
+        return -1;
+
+    // Window
+    int screen_num = DefaultScreen(dpy);
+    Visual *visual = DefaultVisual(dpy, screen_num);
+    unsigned long background = WhitePixel(dpy, screen_num);
+    unsigned long border = BlackPixel(dpy, screen_num);
+
+    char *videodata = (char*)malloc(width*height*4);
+
+    Window win = XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), 0,0, width, height, 2, border, background);
+    XStoreName(dpy, win, "tinysys remote");
+    Pixmap pixmap = XCreatePixmap(dpy, win, width, height, 24);
+    XImage *img = XCreateImage(dpy, visual, DefaultDepth(dpy,screen_num), ZPixmap, 0, videodata, width, height, 32, 0);
+
+    XSelectInput(dpy, win, ButtonPressMask|StructureNotifyMask|KeyPressMask|KeyReleaseMask|KeymapStateMask|FocusChangeMask);
+    XMapWindow(dpy, win);
+
+    Atom wmDelete=XInternAtom(dpy, "WM_DELETE_WINDOW", True);
+    XSetWMProtocols(dpy, win, &wmDelete, 1);
+
+    uint8_t isdown = 1;
+    uint8_t isup = 2;
+    uint8_t startToken = ':';
+    KeyCode lshift = XKeysymToKeycode( dpy, XK_Shift_L );
+    KeyCode rshift = XKeysymToKeycode( dpy, XK_Shift_R );
+    KeyCode lalt = XKeysymToKeycode( dpy, XK_Alt_L );
+    KeyCode ralt = XKeysymToKeycode( dpy, XK_Alt_R );
+    KeyCode lctrl = XKeysymToKeycode( dpy, XK_Control_L );
+    KeyCode rctrl = XKeysymToKeycode( dpy, XK_Control_R );
+
+    memset(keys_old, 0, 32);
+    memset(keys_new, 0, 32);
+
+    int video_capture = initialize_video_capture(width, height);
+
     XEvent ev;
     bool isForeground = false;
-    while(1)
+    bool done = false;
+    while(!done)
     {
-        while(XPending(dpy))
-        {
-            XNextEvent(dpy, &ev);
-            switch(ev.type)
-            {
-                case KeymapNotify:
-                {
-                    XRefreshKeyboardMapping(&ev.xmapping);
-                }
-                break;
-                case FocusIn:
-                {
-                    isForeground = true;
-                }
-                break;
-                case FocusOut:
-                {
-                    isForeground = false;
-                }
-                break;
-                case ConfigureNotify:
-                {
-                    if (width != ev.xconfigure.width || height != ev.xconfigure.height)
-                    {
-                        width = ev.xconfigure.width;
-                        height = ev.xconfigure.height;
-                    }
-                }
-                break;
-                case DestroyNotify:
-                {
-                    XCloseDisplay(dpy);
-                }
-                break;
-            }
-        }
-
         // Non-event
         if (isForeground)
         {
@@ -305,58 +323,111 @@ int main(int argc, char **argv)
             memcpy(keys_old, keys_new, 32);
         }
 
-        // Video
-        if(ioctl(video_capture, VIDIOC_QBUF, &bufferinfo) < 0){
-            perror("could not queue buffer, VIDIOC_QBUF");
-            return -1;
-        }
-
-        if(ioctl(video_capture, VIDIOC_DQBUF, &bufferinfo) < 0)
+        if (video_capture>0)
         {
-            perror("could not dequeue the buffer, VIDIOC_DQBUF");
-            return -1;
-        }
-
-        if (bufferinfo.bytesused)
-        {
-            uint32_t *outputimage = (uint32_t*)img->data;
-            for(int y=0; y<height; ++y)
-            {
-                int pY = y*width;
-                for(int x=0;x<width/2;++x)
-                {
-                    int idx0 = x*2+pY;
-                    int idx1 = x*2+pY;
-                    // current pixel luma, shared blue
-                    uint8_t Y0 = buffer[idx1*2+0]; // Y0
-                    uint8_t Cb = buffer[idx1*2+1]; // Cb
-                    // adjacent pixel luma, shared red
-                    uint8_t Y1 = buffer[(idx1+1)*2+0]; // Y1
-                    uint8_t Cr = buffer[(idx1+1)*2+1]; // Cr
-
-                    // Convert the pair to RGB
-                    uint32_t A = YUVtoRGBX32(Y0, Cb, Cr);
-                    uint32_t B = YUVtoRGBX32(Y1, Cb, Cr);
-
-                    // Two successive pixels with individual luma and shared CbCr
-                    outputimage[idx0] = A;
-                    outputimage[idx0+1] = B;
-                }
+            // Video
+            if(ioctl(video_capture, VIDIOC_QBUF, &vbufferinfo) < 0){
+                perror("could not queue buffer, VIDIOC_QBUF");
+                return -1;
             }
 
-            XPutImage(dpy, pixmap, DefaultGC(dpy, screen_num), img, 0, 0, 0, 0, width, height);
-	        XCopyArea(dpy, pixmap, win, DefaultGC(dpy, screen_num), 0, 0, width, height, 0, 0);
-            //XPutImage(dpy,win,DefaultGC(dpy,screen_num),img,0,0,0,0,width,height);
-            XSync(dpy, False);
+            if(ioctl(video_capture, VIDIOC_DQBUF, &vbufferinfo) < 0)
+            {
+                perror("could not dequeue the buffer, VIDIOC_DQBUF");
+                return -1;
+            }
+
+            if (vbufferinfo.bytesused)
+            {
+                for(int y=0; y<videoheight; ++y)
+                {
+                    int pY = y*videowidth;
+                    for(int x=0;x<videowidth/2;++x)
+                    {
+                        int idx0 = x*2+pY;
+                        int idx1 = x*2+pY;
+                        // current pixel luma, shared blue
+                        uint8_t Y0 = vbuffer[idx1*2+0]; // Y0
+                        uint8_t Cb = vbuffer[idx1*2+1]; // Cb
+                        // adjacent pixel luma, shared red
+                        uint8_t Y1 = vbuffer[(idx1+1)*2+0]; // Y1
+                        uint8_t Cr = vbuffer[(idx1+1)*2+1]; // Cr
+
+                        // Convert the pair to RGB
+                        uint32_t A = YUVtoRGBX32(Y0, Cb, Cr);
+                        uint32_t B = YUVtoRGBX32(Y1, Cb, Cr);
+
+                        // Two successive pixels with individual luma and shared CbCr
+                        intermediate[idx0] = A;
+                        intermediate[idx0+1] = B;
+                    }
+                }
+
+                // TODO: scale intermediate onto outputimage
+                uint32_t *outputimage = (uint32_t*)img->data;
+                memcpy(outputimage, intermediate, videowidth*videoheight*4);
+
+                // Blit away
+                XPutImage(dpy, pixmap, DefaultGC(dpy, screen_num), img, 0, 0, 0, 0, width, height);
+                XCopyArea(dpy, pixmap, win, DefaultGC(dpy, screen_num), 0, 0, width, height, 0, 0);
+                XSync(dpy, False);
+            }
+        }
+
+        while(XPending(dpy))
+        {
+            XNextEvent(dpy, &ev);
+            switch(ev.type)
+            {
+                case KeymapNotify:
+                {
+                    XRefreshKeyboardMapping(&ev.xmapping);
+                }
+                break;
+                case FocusIn:
+                {
+                    isForeground = true;
+                }
+                break;
+                case FocusOut:
+                {
+                    isForeground = false;
+                }
+                break;
+                case ConfigureNotify:
+                {
+                    if (width != ev.xconfigure.width || height != ev.xconfigure.height)
+                    {
+                        width = ev.xconfigure.width;
+                        height = ev.xconfigure.height;
+
+                        terminate_video_capture(video_capture);
+                        initialize_video_capture(videowidth, videoheight);
+
+                        //free(videodata); -> destroyimage takes care of this
+                        XFreePixmap(dpy, pixmap);
+                        pixmap = XCreatePixmap(dpy, win, width, height, 24);
+                        XDestroyImage(img);
+                        videodata = (char*)malloc(width*height*4);
+                        img = XCreateImage(dpy, visual, DefaultDepth(dpy,screen_num), ZPixmap, 0, videodata, width, height, 32, 0);
+                    }
+                }
+                break;
+                case ClientMessage:
+                {
+                    done = true;
+                }
+                break;
+                case DestroyNotify:
+                {
+                    XCloseDisplay(dpy);
+                }
+                break;
+            }
         }
     };
 
-    close(serial_port);
-
-    if(ioctl(video_capture, VIDIOC_STREAMOFF, &type) < 0)
-    {
-        perror("could not end streaming, VIDIOC_STREAMOFF");
-        return -1;
-    }
-    close(video_capture);
+    printf("remote connection terminated\n");
+    terminate_serial(serial_port);
+    terminate_video_capture(video_capture);
 }

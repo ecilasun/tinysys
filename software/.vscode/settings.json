@@ -64,6 +64,8 @@
 		"xloctime": "cpp",
 		"xmemory": "cpp",
 		"xtr1common": "cpp",
-		"variant": "cpp"
+		"variant": "cpp",
+		"array": "cpp",
+		"functional": "cpp"
 	}
 }

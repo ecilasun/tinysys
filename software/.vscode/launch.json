@@ -8,8 +8,7 @@
             "name": "C++ Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}\\samples\\hellodebugger\\hellodebugger.elf",
-			//"deploySteps": [],
+            "program": "${workspaceFolder}\\tinyremote\\tinyremote",
             "args": [],
             "stopAtEntry": false,
 			"stopAtConnect": true,
@@ -17,17 +16,13 @@
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
-			"useExtendedRemote": true,
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": false
                 }
-            ],
-            "miDebuggerPath": "riscv64-unknown-elf-gdb",
-			"miDebuggerArgs": "-ix ${workspaceFolder}\\samples\\.gdbinit",
-            "miDebuggerServerAddress": "//.//COM9"
+            ]
         }
     ]
 }
