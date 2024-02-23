@@ -213,26 +213,29 @@ int main(int argc, char **argv)
     XEvent ev;
     while(1)
     {
-        XNextEvent(dpy, &ev);
-        switch(ev.type)
+        while(XPending(dpy))
         {
-            case KeymapNotify:
-                XRefreshKeyboardMapping(&ev.xmapping);
-            break;
-            case ConfigureNotify:
+            XNextEvent(dpy, &ev);
+            switch(ev.type)
             {
-                if (width != ev.xconfigure.width || height != ev.xconfigure.height)
+                case KeymapNotify:
+                    XRefreshKeyboardMapping(&ev.xmapping);
+                break;
+                case ConfigureNotify:
                 {
-                    width = ev.xconfigure.width;
-                    height = ev.xconfigure.height;
+                    if (width != ev.xconfigure.width || height != ev.xconfigure.height)
+                    {
+                        width = ev.xconfigure.width;
+                        height = ev.xconfigure.height;
+                    }
                 }
+                break;
+                case DestroyNotify:
+                {
+                    XCloseDisplay(dpy);
+                }
+                break;
             }
-            break;
-            case DestroyNotify:
-            {
-                XCloseDisplay(dpy);
-            }
-            break;
         }
 
         // Non-event
