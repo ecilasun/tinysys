@@ -58,7 +58,11 @@ void HandleFileTransfer(uint8_t input)
 		uint32_t *generation = (uint32_t*)KEYBOARD_INPUT_GENERATION;
 		*generation = (*generation) + 1;
 
-		uint32_t incoming = (input == 3) ? 3 : KeyScanCodeToASCII(input, s_keystate&0x2200 ? 1:0);
+		uint32_t incoming;
+		if (((input==HKEY_C) && (s_keystate&0x1100)) || (input==HKEY_PAUSE))
+			incoming = 3;
+		else
+			incoming = KeyScanCodeToASCII(input, (s_keystate&0x2200) ? 1:0);
 		if (incoming && (s_keystate&1)) // Only see 'down' for ascii queue
 			KeyRingBufferWrite(&incoming, sizeof(uint32_t));
 
