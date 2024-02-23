@@ -194,7 +194,7 @@ typedef enum logic [3:0] {
 	EDGEWCMD,
 	BOUNDSSTEPA, BOUNDSSTEPB,
 	EDGEWAITA, EDGEWAITB, EDGEWAITC, EDGEWAITD,
-	CLIPTOVIEWPORT, REJECTBYVIEWPORT, EDGEFINALIZE } edgemodetype;
+	CLIPTOVIEWPORT, REJECTBYAREA, EDGEFINALIZE } edgemodetype;
 edgemodetype edgemode = EDGEINIT;
 
 // Bounds
@@ -283,14 +283,7 @@ always_ff @(posedge aclk) begin
 			miny <= minyA<ry2 ? minyA:ry2;
 			maxx <= maxxA>rx2 ? maxxA:rx2;
 			maxy <= maxyA>ry2 ? maxyA:ry2;
-			edgemode <= REJECTBYVIEWPORT;
-		end
-
-		REJECTBYVIEWPORT: begin
-			if (minx>=319 || miny>=239 || maxx<0 || maxy<0)
-				edgemode <= EDGEWCMD;
-			else
-				edgemode <= CLIPTOVIEWPORT;
+			edgemode <= CLIPTOVIEWPORT;
 		end
 
 		CLIPTOVIEWPORT: begin
@@ -299,7 +292,15 @@ always_ff @(posedge aclk) begin
 			miny <= miny < 0 ? 0 : miny;
 			maxy <= maxy > 239 ? 239 : maxy;
 
-			edgemode <= EDGEWAITA;
+			edgemode <= REJECTBYAREA;
+		end
+
+		REJECTBYAREA: begin
+			// Zero or negative area
+			if (maxx<=minx || maxy<=miny)
+				edgemode <= EDGEWCMD;
+			else
+				edgemode <= CLIPTOVIEWPORT;
 		end
 
 		EDGEWAITA: begin
@@ -388,11 +389,12 @@ logic signed [17:0] sw1;
 logic signed [17:0] sw2;
 
 logic [15:0] sv;
-logic [17:0] E0;
-logic [17:0] E1;
-logic [17:0] E2;
+logic signed [17:0] E0;
+logic signed [17:0] E1;
+logic signed [17:0] E2;
 
 logic [3:0] edgecnt;
+wire edgesign = E0[17] & E1[17] & E2[17];
 always_ff @(posedge aclk) begin
 	rasterworkren <= 1'b0;
 	wstrb <= 16'd0;
@@ -419,12 +421,12 @@ always_ff @(posedge aclk) begin
 			sw0 <= sW0_row;
 			sw1 <= sW1_row;
 			sw2 <= sW2_row;
+			din <= {scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor};
 			rastermode <= SWEEPROW;
 		end
 
 		SWEEPROW: begin
 			addr <= rasterbaseaddr + {scx + scy*20, 4'h0}; // base + blockaddress*16
-			din <= {scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor, scolor};
 			E0 <= sw0;
 			E1 <= sw1;
 			E2 <= sw2;
@@ -437,17 +439,20 @@ always_ff @(posedge aclk) begin
 			E0 <= E0 + sA12;
 			E1 <= E1 + sA20;
 			E2 <= E2 + sA01;
-			sv <= {sv[14:0], E0[17] & E1[17] & E2[17]};
+			sv <= {sv[14:0], edgesign};
 			edgecnt <= edgecnt + 4'd1;
-			rastermode <= (edgecnt==15) ? WRITEROW : EDGETEST;
+			if (edgecnt==15) begin
+				// Next 16 pixel block
+				scx <= scx + 14'd1;
+				rastermode <= WRITEROW;
+			end else begin
+				rastermode <= EDGETEST;
+			end
 		end
 
 		WRITEROW: begin
 			// We can now use the sign bits of above calculation as our write mask and emit the 16x1 tile's color
 			wstrb <= sv;
-
-			// Next 16 pixel block
-			scx <= scx + 14'd1;
 
 			// Are we at the end?
 			if (scx == scendx) begin

@@ -35,7 +35,6 @@ axi4if instructionbusHart0();	// Fetch bus for HART#0
 axi4if databusHart0();			// Data bus for HART#0
 axi4if devicebusHart0();		// Direct access to devices from data unit of HART#0
 
-axi4if rasterizerbus();			// Rasterizer unit bus
 axi4if videobus();				// Video output unit bus
 axi4if dmabus();				// Direct memory access bus
 axi4if romcopybus();			// Bus for boot ROM copy (TODO: switch between ROM types?)
@@ -43,7 +42,6 @@ axi4if audiobus();				// Bus for audio device output
 
 axi4if memorybus();				// Arbitrated access to main memory
 
-axi4if trucmdif();				// Sub bus: TRU control device (rasterizer)
 axi4if ledif();					// Sub bus: LED contol device (debug LEDs)
 axi4if vpucmdif();				// Sub bus: VPU command fifo (video scan out logic)
 axi4if spiif();					// Sub bus: SPI control device (sdcard)
@@ -102,25 +100,6 @@ riscv #(.RESETVECTOR(RESETVECTOR)) hart0(
 	.devicebus(devicebusHart0),
 	.cpuclocktime(cpuclocktimeHart0),
 	.retired(retiredHart0));
-
-// --------------------------------------------------
-// Triangle rasterizer unit
-// --------------------------------------------------
-
-wire trufifoempty;
-wire [31:0] trufifodout;
-wire trufifore;
-wire trufifovalid;
-wire [31:0] trustate;
-trianglerasterizer TRU(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.m_axi(rasterizerbus),
-	.trufifoempty(trufifoempty),
-	.trufifodout(trufifodout),
-	.trufifore(trufifore),
-	.trufifovalid(trufifovalid),
-	.trustate(trustate));
 
 // --------------------------------------------------
 // Video output unit
@@ -212,10 +191,10 @@ axi4i2saudio APU(
 // Traffic arbiter between master units and memory
 // --------------------------------------------------
 
-arbiter arbiter7x1instSDRAM(
+arbiter arbiter6x1instSDRAM(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.axi_s({romcopybus, audiobus, dmabus, videobus, rasterizerbus, databusHart0, instructionbusHart0}),
+	.axi_s({romcopybus, audiobus, dmabus, videobus, databusHart0, instructionbusHart0}),
 	.axi_m(memorybus) );
 
 // --------------------------------------------------
@@ -247,7 +226,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 
 // 12bit (4K) address space reserved for each memory mapped device
 // dev   start     end       addrs[30:12]                 size  notes
-// TRUC: 80000000  80000FFF  19'b000_0000_0000_0000_0000  4KB	Rasterizer
+// ----: 80000000  80000FFF  19'b000_0000_0000_0000_0000  4KB	Unused
 // LEDS: 80001000  80001FFF  19'b000_0000_0000_0000_0001  4KB	Debug LEDs
 // VPUC: 80002000  80002FFF  19'b000_0000_0000_0000_0010  4KB	Video Processing Unit
 // SDCC: 80003000  80003FFF  19'b000_0000_0000_0000_0011  4KB	SDCard SPI Unit
@@ -279,9 +258,8 @@ devicerouter devicerouterinst(
     	19'b000_0000_0000_0000_0100,	// XADC Analog / Digital Converter Interface
 		19'b000_0000_0000_0000_0011,	// SDCC SDCard access via SPI
 		19'b000_0000_0000_0000_0010,	// VPUC Graphics Processing Unit Command Fifo
-		19'b000_0000_0000_0000_0001,	// LEDS Debug / Status LED interface
-		19'b000_0000_0000_0000_0000 }),	// TRUC Triangle rasterizer unit
-    .axi_m({csrif, usbaif, opl2if, audioif, usbcif, dmaif, xadcif, spiif, vpucmdif, ledif, trucmdif}));
+		19'b000_0000_0000_0000_0001}),	// LEDS Debug / Status LED interface
+    .axi_m({csrif, usbaif, opl2if, audioif, usbcif, dmaif, xadcif, spiif, vpucmdif, ledif}));
 
 // --------------------------------------------------
 // Interrupt wires
@@ -293,16 +271,6 @@ wire usbcirq, usbairq;
 // --------------------------------------------------
 // Memory mapped devices
 // --------------------------------------------------
-
-commandqueue trucmdinst(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.s_axi(trucmdif),
-	.fifoempty(trufifoempty),
-	.fifodout(trufifodout),
-	.fifore(trufifore),
-	.fifovalid(trufifovalid),
-	.devicestate(trustate));
 
 axi4led leddevice(
 	.aclk(aclk),

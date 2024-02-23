@@ -43,9 +43,6 @@ Video processing unit. Handles scan-out of various video sizes (320x240 and 640x
 ## APU
 Audio processing unit. Handles mixing the OPL2/RAW audio outputs, and also manages 44/22/11KHz stereo playback and buffer handling of RAW audio.
 
-## RPU
-Raster processing unit. Used to rasterize primitives directly to memory. Rasterized output is in a tiled format which requires decoding to use.
-
 ## DMA
 Direct memory access unit. Used to copy blocks of memory within memory address space, and won't DMA between or from other devices.
 
