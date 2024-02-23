@@ -78,7 +78,7 @@ int main(int argc, char **argv)
     unsigned char keys_old[32];
     unsigned char keys_new[32];
 
-    printf("Usage: keyserver commdevicename capturedevicename\ndefault comm device:%s default capture device:%s\nEND: quit keyserver\nPAUSE: quit remote process\n", commdevicename, capturedevicename);
+    printf("Usage: tinyremote commdevicename capturedevicename\ndefault comm device:%s default capture device:%s\nPAUSE: quit remote process\n", commdevicename, capturedevicename);
 
     // Serial
     int serial_port = open(commdevicename, O_RDWR); // TODO: move to command line option
