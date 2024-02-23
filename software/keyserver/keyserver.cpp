@@ -22,6 +22,9 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
+char commdevicename[512] = "/dev/ttyUSB0";
+char capturedevicename[512] = "/dev/video0";
+
 static uint8_t masktable[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
 
 static uint8_t keycodetoscancode[256] =
@@ -57,6 +60,11 @@ uint32_t YUVtoRGBX32(int y, int u, int v)
 
 int main(int argc, char **argv)
 {
+    if (argc > 1)
+		strcpy(commdevicename, argv[1]);
+    if (argc > 2)
+		strcpy(capturedevicename, argv[2]);
+
     Display* dpy = XOpenDisplay(NULL);
     int width = 640;
     int height = 480;
@@ -70,13 +78,13 @@ int main(int argc, char **argv)
     unsigned char keys_old[32];
     unsigned char keys_new[32];
 
-    printf("Keyserver\nEND: quit keyserver\nPAUSE: quit remote process\n");
+    printf("Usage: keyserver commdevicename capturedevicename\ndefault comm device:%s default capture device:%s\nEND: quit keyserver\nPAUSE: quit remote process\n", commdevicename, capturedevicename);
 
     // Serial
-    int serial_port = open("/dev/ttyUSB0", O_RDWR); // TODO: move to command line option
+    int serial_port = open(commdevicename, O_RDWR); // TODO: move to command line option
     if (serial_port <0 )
     {
-        printf("cannot open /dev/ttyUSB0\n");
+        printf("cannot open %s\n", commdevicename);
         return -1;
     }
 
@@ -128,6 +136,7 @@ int main(int argc, char **argv)
     char *videodata = (char*)malloc(width*height*4);
 
     Window win = XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), 0,0, width, height, 2, border, background);
+    XStoreName(dpy, win, "tinysys remote");
     Pixmap pixmap = XCreatePixmap(dpy, win, width, height, 24);
     XImage *img = XCreateImage(dpy, visual, DefaultDepth(dpy,screen_num), ZPixmap, 0, videodata, width, height, 32, 0);
 
@@ -148,10 +157,10 @@ int main(int argc, char **argv)
     memset(keys_new, 0, 32);
 
     // Video capture
-    int video_capture = open("/dev/video0", O_RDWR);
+    int video_capture = open(capturedevicename, O_RDWR);
     if (video_capture < 0)
     {
-        printf("cannot open /dev/video0\n");
+        printf("cannot open %s\n", capturedevicename);
         return -1;
     }
 
