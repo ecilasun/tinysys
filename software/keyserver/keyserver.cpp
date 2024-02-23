@@ -126,11 +126,12 @@ int main(int argc, char **argv)
     unsigned long border = BlackPixel(dpy, screen_num);
 
     char *videodata = (char*)malloc(width*height*4);
-    XImage *img = XCreateImage(dpy, visual, DefaultDepth(dpy,screen_num), ZPixmap, 0, videodata, width, height, 32, 0);
 
     Window win = XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), 0,0, width, height, 2, border, background);
+    Pixmap pixmap = XCreatePixmap(dpy, win, width, height, 24);
+    XImage *img = XCreateImage(dpy, visual, DefaultDepth(dpy,screen_num), ZPixmap, 0, videodata, width, height, 32, 0);
 
-    XSelectInput(dpy, win, ButtonPressMask|StructureNotifyMask|KeyPressMask|KeyReleaseMask|KeymapStateMask);
+    XSelectInput(dpy, win, ButtonPressMask|StructureNotifyMask|KeyPressMask|KeyReleaseMask|KeymapStateMask|FocusChangeMask);
     XMapWindow(dpy, win);
 
     uint8_t isdown = 1;
@@ -211,6 +212,7 @@ int main(int argc, char **argv)
     }
 
     XEvent ev;
+    bool isForeground = false;
     while(1)
     {
         while(XPending(dpy))
@@ -219,7 +221,19 @@ int main(int argc, char **argv)
             switch(ev.type)
             {
                 case KeymapNotify:
+                {
                     XRefreshKeyboardMapping(&ev.xmapping);
+                }
+                break;
+                case FocusIn:
+                {
+                    isForeground = true;
+                }
+                break;
+                case FocusOut:
+                {
+                    isForeground = false;
+                }
                 break;
                 case ConfigureNotify:
                 {
@@ -239,45 +253,48 @@ int main(int argc, char **argv)
         }
 
         // Non-event
-        XQueryKeymap( dpy, (char*)keys_new );
-
-        uint8_t dummy;
-        for (uint32_t code = 0; code < 256; code++)
+        if (isForeground)
         {
-            uint8_t currdown = keys_new[code>>3] & masktable[code&7];
-            uint8_t prevdown = keys_old[code>>3] & masktable[code&7];
-            uint8_t scancode = keycodetoscancode[code];
+            XQueryKeymap( dpy, (char*)keys_new );
 
-            uint8_t modifierstate = 0;
-            if (!!( keys_new[ (lshift)>>3 ] & ( 1<<((lshift)&7) ) ) ||
-                !!( keys_new[ (rshift)>>3 ] & ( 1<<((rshift)&7) ) ))
-                modifierstate |= 0x22;
-            if (!!( keys_new[ (lalt)>>3 ] & ( 1<<((lalt)&7) ) ) ||
-                !!( keys_new[ (ralt)>>3 ] & ( 1<<((ralt)&7) ) ))
-                modifierstate |= 0x44;
-            if (!!( keys_new[ (lctrl)>>3 ] & ( 1<<((lctrl)&7) ) ) ||
-                !!( keys_new[ (rctrl)>>3 ] & ( 1<<((rctrl)&7) ) ))
-                modifierstate |= 0x11;
-
-            uint8_t keystate = 0;
-            if (currdown && (!prevdown))
-                keystate |= isdown;
-            if ((!currdown) && prevdown)
-                keystate |= isup;
-
-            if (keystate)
+            uint8_t dummy;
+            for (uint32_t code = 0; code < 256; code++)
             {
-                // printf("%.2X -> %.2X\n", code, scancode); // DEBUG output
-                uint8_t outdata[4];
-                outdata[0] = startToken;
-                outdata[1] = modifierstate;
-                outdata[2] = keystate;
-                outdata[3] = scancode;
-                write(serial_port, outdata, 4);
-                read(serial_port, &dummy, 1);
+                uint8_t currdown = keys_new[code>>3] & masktable[code&7];
+                uint8_t prevdown = keys_old[code>>3] & masktable[code&7];
+                uint8_t scancode = keycodetoscancode[code];
+
+                uint8_t modifierstate = 0;
+                if (!!( keys_new[ (lshift)>>3 ] & ( 1<<((lshift)&7) ) ) ||
+                    !!( keys_new[ (rshift)>>3 ] & ( 1<<((rshift)&7) ) ))
+                    modifierstate |= 0x22;
+                if (!!( keys_new[ (lalt)>>3 ] & ( 1<<((lalt)&7) ) ) ||
+                    !!( keys_new[ (ralt)>>3 ] & ( 1<<((ralt)&7) ) ))
+                    modifierstate |= 0x44;
+                if (!!( keys_new[ (lctrl)>>3 ] & ( 1<<((lctrl)&7) ) ) ||
+                    !!( keys_new[ (rctrl)>>3 ] & ( 1<<((rctrl)&7) ) ))
+                    modifierstate |= 0x11;
+
+                uint8_t keystate = 0;
+                if (currdown && (!prevdown))
+                    keystate |= isdown;
+                if ((!currdown) && prevdown)
+                    keystate |= isup;
+
+                if (keystate)
+                {
+                    // printf("%.2X -> %.2X\n", code, scancode); // DEBUG output
+                    uint8_t outdata[4];
+                    outdata[0] = startToken;
+                    outdata[1] = modifierstate;
+                    outdata[2] = keystate;
+                    outdata[3] = scancode;
+                    write(serial_port, outdata, 4);
+                    read(serial_port, &dummy, 1);
+                }
             }
+            memcpy(keys_old, keys_new, 32);
         }
-        memcpy(keys_old, keys_new, 32);
 
         // Video
         if(ioctl(video_capture, VIDIOC_QBUF, &bufferinfo) < 0){
@@ -317,7 +334,10 @@ int main(int argc, char **argv)
                     outputimage[idx0+1] = B;
                 }
             }
-            XPutImage(dpy,win,DefaultGC(dpy,screen_num),img,0,0,0,0,width,height);
+
+            XPutImage(dpy, pixmap, DefaultGC(dpy, screen_num), img, 0, 0, 0, 0, width, height);
+	        XCopyArea(dpy, pixmap, win, DefaultGC(dpy, screen_num), 0, 0, width, height, 0, 0);
+            //XPutImage(dpy,win,DefaultGC(dpy,screen_num),img,0,0,0,0,width,height);
             XSync(dpy, False);
         }
     };
