@@ -13,7 +13,7 @@ module fetchunit #(
 	// Output FIFO control
 	output wire ififoempty,
 	output wire ififovalid,
-	output wire [121:0] ififodout,
+	output wire [133:0] ififodout,
 	input wire ififord_en,
 	// IRQ lines from CSR unit
 	input wire [1:0] irqReq,
@@ -143,7 +143,7 @@ wire [31:0] injectInstruction = injectionROM[injectAddr];
 // Instruction output FIFO
 // --------------------------------------------------
 
-logic [121:0] ififodin;
+logic [133:0] ififodin;
 logic ififowr_en = 1'b0;
 wire ififofull;
 
@@ -265,10 +265,11 @@ always @(posedge aclk) begin
 				ififowr_en <= (~isfence) && (~irqReq[0]) && (~irqReq[1]) && (~isillegalinstruction) && (~isecall) && (~isebreak) && (~ismret) && (~iswfi);
 				ififodin <= {
 					csroffset,
-					sysop, func3,
-					instrOneHotOut, selectimmedasrval2,
+					sysop, func3, func7,
+					selectimmedasrval2,
+					instrOneHotOut,
 					bluop, aluop,
-					rs1, rs2, rd,
+					rs1, rs2, rs3, rd,
 					immed, prevPC[31:1], stepsize};
 
 				unique case (1'b1)
@@ -405,10 +406,11 @@ always @(posedge aclk) begin
 				ififowr_en <= ~ififofull;
 				ififodin <= {
 					csroffset,
-					sysop, func3,
-					instrOneHotOut, selectimmedasrval2,
+					sysop, func3, func7,
+					selectimmedasrval2,
+					instrOneHotOut,
 					bluop, aluop,
-					rs1, rs2, rd,
+					rs1, rs2, rs3, rd,
 					immed, emitPC};
 
 				// WARNING: Injection ignores all instruction handling and never advances the PC
