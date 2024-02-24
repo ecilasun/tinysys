@@ -25,9 +25,9 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "v1.03"
+#define VERSIONSTRING "v1.04"
 // On-storage version
-#define DEVVERSIONSTRING "v1.03"
+#define DEVVERSIONSTRING "v1.04"
 
 // For ROM image residing on the device:
 const uint8_t s_consolefgcolor = 0x2A; // Ember
