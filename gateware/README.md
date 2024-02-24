@@ -1,3 +1,8 @@
+# Gateware version 1.04
+
+The gateware binary contains version 1.04 of the device.
+There is no need for a ROM file if you have an old one, but it's recommended to use a ROM version >=1.04 if required.
+
 # Device gateware
 
 This folder contains the gateware that will reprogram the FPGA board on tinysys to a functioning RISC-V CPU with several other peripherals.
