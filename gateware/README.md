@@ -1,7 +1,11 @@
-# Gateware version 1.04
+# Gateware version 1.05
 
-The gateware binary contains version 1.04 of the device.
-There is no need for a ROM file if you have an old one, but it's recommended to use a ROM version >=1.04 if required.
+The gateware binary contains version 1.05 of the device.
+There is no need for a ROM file if you have an old one, but it's recommended to use a ROM version >=1.05 if required.
+
+# Changes:
+1.04: Single precision FPU added<br>
+1.05: Auto-byte masked DMA support added
 
 # Device gateware
 
