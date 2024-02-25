@@ -215,6 +215,7 @@
 `define F7_FCVTWUS     7'b1100000
 `define F7_FCVTSW      7'b1101000
 `define F7_FCVTSWU     7'b1101000
+`define F7_FCVTSWU5SAT 7'b1100001 // NON-STANDARD EXTENSION
 
 // Move from/to integer registers
 `define F7_FMVXW       7'b1110000

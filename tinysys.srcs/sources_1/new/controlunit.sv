@@ -194,6 +194,7 @@ logic fi2fstrobe = 1'b0;
 logic fui2fstrobe = 1'b0;
 logic ff2istrobe = 1'b0;
 logic ff2uistrobe = 1'b0;
+logic ff2ui4satstrobe = 1'b0;
 logic fsqrtstrobe = 1'b0;
 logic feqstrobe = 1'b0;
 logic fltstrobe = 1'b0;
@@ -204,6 +205,7 @@ wire [31:0] fpuresult;
 
 floatingpointunit FPU(
 	.clock(aclk),
+	.aresetn(aresetn),
 
 	// inputs
 	.frval1(fA),
@@ -224,6 +226,7 @@ floatingpointunit FPU(
 	.fui2fstrobe(fui2fstrobe),
 	.ff2istrobe(ff2istrobe),
 	.ff2uistrobe(ff2uistrobe),
+	.ff2ui4satstrobe(ff2ui4satstrobe),
 	.fsqrtstrobe(fsqrtstrobe),
 	.feqstrobe(feqstrobe),
 	.fltstrobe(fltstrobe),
@@ -380,6 +383,7 @@ always @(posedge aclk) begin
 		fui2fstrobe <= 1'b0;
 		ff2istrobe <= 1'b0;
 		ff2uistrobe <= 1'b0;
+		ff2ui4satstrobe <= 1'b0;
 		fsqrtstrobe <= 1'b0;
 		feqstrobe <= 1'b0;
 		fltstrobe <= 1'b0;
@@ -520,6 +524,7 @@ always @(posedge aclk) begin
 						fui2fstrobe <= (func7 == `F7_FCVTSW) & (rs2==5'b00001); // Unsigned
 						ff2istrobe <= (func7 == `F7_FCVTWS) & (rs2==5'b00000); // Signed
 						ff2uistrobe <= (func7 == `F7_FCVTWS) & (rs2==5'b00001); // Unsigned
+						ff2ui4satstrobe <= (func7 == `F7_FCVTSWU5SAT);
 						fsqrtstrobe <= (func7 == `F7_FSQRT);
 						feqstrobe <= (func7==`F7_FEQ) & (func3==`F3_FEQ);
 						fltstrobe <= ((func7==`F7_FEQ) & (func3==`F3_FLT)) | (func7==`F7_FMAX); // min/max same as flt

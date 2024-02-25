@@ -5,7 +5,7 @@ There is no need for a ROM file if you have an old one, but it's recommended to 
 
 # Changes:
 1.04: Single precision FPU added<br>
-1.05: Auto-byte masked DMA support added
+1.05: Auto-byte masked DMA support added, saturate instruction by Wade Brainerd added
 
 # Device gateware
 

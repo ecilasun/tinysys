@@ -65,13 +65,13 @@
     <Option Name="WTVcsLaunchSim" Val="0"/>
     <Option Name="WTRivieraLaunchSim" Val="0"/>
     <Option Name="WTActivehdlLaunchSim" Val="0"/>
-    <Option Name="WTXSimExportSim" Val="561"/>
-    <Option Name="WTModelSimExportSim" Val="561"/>
-    <Option Name="WTQuestaExportSim" Val="561"/>
+    <Option Name="WTXSimExportSim" Val="574"/>
+    <Option Name="WTModelSimExportSim" Val="574"/>
+    <Option Name="WTQuestaExportSim" Val="574"/>
     <Option Name="WTIesExportSim" Val="0"/>
-    <Option Name="WTVcsExportSim" Val="561"/>
-    <Option Name="WTRivieraExportSim" Val="561"/>
-    <Option Name="WTActivehdlExportSim" Val="561"/>
+    <Option Name="WTVcsExportSim" Val="574"/>
+    <Option Name="WTRivieraExportSim" Val="574"/>
+    <Option Name="WTActivehdlExportSim" Val="574"/>
     <Option Name="GenerateIPUpgradeLog" Val="TRUE"/>
     <Option Name="XSimRadix" Val="hex"/>
     <Option Name="XSimTimeUnit" Val="ns"/>
@@ -755,6 +755,13 @@
         </FileInfo>
       </File>
       <File Path="$PSRCDIR/sources_1/new/devicerouter.sv">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/new/f2ui4sat.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
