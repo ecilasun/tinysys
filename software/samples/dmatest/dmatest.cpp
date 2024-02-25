@@ -2,6 +2,7 @@
 #include "core.h"
 #include "vpu.h"
 #include "dma.h"
+#include "lodepng.h"
 #include <stdio.h>
 
 int main(int argc, char *argv[])
