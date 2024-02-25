@@ -81,8 +81,8 @@ int main()
 
 			//ImGui::ShowDemoWindow(NULL);
 
-			ImGui::SetNextWindowPos(ImVec2(320,8), ImGuiCond_Always);
-			//ImGui::SetNextWindowSize(ImVec2(160, 160));
+			ImGui::SetNextWindowPos(ImVec2(128,16), ImGuiCond_Always);
+			ImGui::SetNextWindowSize(ImVec2(256, 180));
 			ImGui::Begin("Stats");
 			ImGui::Text("Frame: %d", (int)cycle);
             ImGui::PlotLines("Temp", temps, IM_ARRAYSIZE(temps));
@@ -104,12 +104,12 @@ int main()
 				uint32_t W = y*vx.m_graphicsWidth;
 				for (uint32_t x=0;x<vx.m_graphicsWidth;++x)
 				{
-					uint32_t img	 = imguiframebuffer[x+W];
+					uint32_t img = imguiframebuffer[x+W];
 
-					// img -> a, b, g, r
-					uint8_t B = ((img>>16)&0x000000FF)>>3;
-					uint8_t G = ((img>>8)&0x000000FF)>>2;
-					uint8_t R = ((img)&0x000000FF)>>3;
+					// img <= {a,b,g,r};
+					uint8_t B = img>>20;
+					uint8_t G = img>>12;
+					uint8_t R = img>>4;
 
 					writepage[x+W] = MAKECOLORRGB12(R,G,B);
 				}
