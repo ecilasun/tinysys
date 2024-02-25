@@ -52,6 +52,7 @@ typedef enum logic [3:0] {
 	FINALIZE } dmacmdmodetype;
 dmacmdmodetype cmdmode = INIT;
 
+logic maskmode;
 logic [31:0] dmacmd;
 logic [31:0] dmasourceaddr;
 logic [31:0] dmatargetaddr;
@@ -70,7 +71,14 @@ always @(posedge aclk) begin
 	if (burstwe)
 		burstcache[burstcursor] <= burstdin;
 end
-wire [127:0] burstdout = burstcache[burstcursor]; 
+wire [127:0] burstdout = burstcache[burstcursor];
+
+wire [15:0] automask = {
+	|burstdout[127:120], |burstdout[119:112], |burstdout[111:104], |burstdout[103:96],
+	|burstdout[95:88], |burstdout[87:80], |burstdout[79:72], |burstdout[71:64],
+	|burstdout[63:56], |burstdout[55:48], |burstdout[47:40], |burstdout[39:32],
+	|burstdout[31:23], |burstdout[23:16], |burstdout[15:7], |burstdout[7:0]
+};
 
 always_ff @(posedge aclk) begin
 
@@ -87,6 +95,7 @@ always_ff @(posedge aclk) begin
 			m_axi.bready <= 0;
 			m_axi.arvalid <= 0;
 			m_axi.rready <= 0;
+			maskmode <= 1'b0;
 			burstwe <= 1'b0;
 			dmacmd <= 32'd0;
 			cmdmode <= WCMD;
@@ -103,13 +112,13 @@ always_ff @(posedge aclk) begin
 		end
 
 		DISPATCH: begin
-			case (dmacmd)
-				32'h00000000:	cmdmode <= DMASOURCE;		// Source address, byte aligned
-				32'h00000001:	cmdmode <= DMATARGET;		// Target address, byte aligned
-				32'h00000002:	cmdmode <= DMABURST;		// Number of 16 byte blocks to copy, minus one, up to a maximum of 256
-				32'h00000003:	cmdmode <= DMASTART;		// Start transfer with current setup
-				32'h00000004:	cmdmode <= DMATAG;			// Dummy command, used to ensure FIFO has something after the copy completes we can wait on
-				default:		cmdmode <= FINALIZE;		// Invalid command, wait one clock and try next
+			case (dmacmd[7:0])
+				8'h00:		cmdmode <= DMASOURCE;		// Source address, byte aligned
+				8'h01:		cmdmode <= DMATARGET;		// Target address, byte aligned
+				8'h02:		cmdmode <= DMABURST;		// Number of 16 byte blocks to copy, minus one, up to a maximum of 256
+				8'h03:		cmdmode <= DMASTART;		// Start transfer with current setup
+				8'h04:		cmdmode <= DMATAG;			// Dummy command, used to ensure FIFO has something after the copy completes we can wait on
+				default:	cmdmode <= FINALIZE;		// Invalid command, wait one clock and try next
 			endcase
 		end
 
@@ -143,6 +152,8 @@ always_ff @(posedge aclk) begin
 		end
 
 		DMASTART: begin
+			// Auto byte mask enable/disable flag
+			maskmode <= dmacmd[8];
 			// NOTE: Not to complicate hardware, we make sure to set this to burstcount-8'd1 in software
 			m_axi.arlen <= dmasingleburstcount;
 			m_axi.arvalid <= 1;
@@ -197,7 +208,7 @@ always_ff @(posedge aclk) begin
 		
 		WRITEBEGIN: begin
 			m_axi.wdata <= burstdout;
-			m_axi.wstrb <= 16'hFFFF;
+			m_axi.wstrb <= maskmode ? automask : 16'hFFFF;
 			m_axi.wvalid <= 1'b1;
 			m_axi.wlast <= (burstcursor==dmasingleburstcount) ? 1'b1 : 1'b0;
 			cmdmode <= WRITELOOP;

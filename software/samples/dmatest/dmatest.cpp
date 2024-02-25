@@ -64,17 +64,17 @@ int main(int argc, char *argv[])
 
 		starttime = E32ReadTime();
 
-		// Do the full DMAs first
+		// Do the full 4K DMA blocks first
 		uint32_t fulloffset = 0;
 		for (uint32_t full=0;full<fullDMAs;++full)
 		{
-			DMACopy4K((uint32_t)(bufferA+offset*W+fulloffset), (uint32_t)bufferB+fulloffset);
+			DMACopyAutoByteMask4K((uint32_t)(bufferA+offset*W+fulloffset), (uint32_t)bufferB+fulloffset);
 			fulloffset += 256*16; // 16 bytes for each 256-block, total of 4K
 		}
-		
-		// Partial DMA next
+
+		// Queue up last DMA block less than 4K in size
 		if (leftoverDMA!=0)
-			DMACopy((uint32_t)(bufferA+offset*W+fulloffset), (uint32_t)(bufferB+fulloffset), leftoverDMA);
+			DMACopyAutoByteMask((uint32_t)(bufferA+offset*W+fulloffset), (uint32_t)(bufferB+fulloffset), leftoverDMA);
 
 		// Tag for DMA sync (essentially an item in FIFO after last DMA so we can check if DMA is complete when this drains)
 		DMATag(0x0);

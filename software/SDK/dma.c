@@ -18,6 +18,17 @@ void DMACopy4K(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targe
 	*DMAIO = DMACMD_ENQUEUE;
 }
 
+void DMACopyAutoByteMask4K(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned)
+{
+	*DMAIO = DMACMD_SETSOURCE;
+	*DMAIO = _sourceAddress16ByteAligned;
+	*DMAIO = DMACMD_SETTARGET;
+	*DMAIO = _targetAddress16ByteAligned;
+	*DMAIO = DMACMD_SETLENGHT;
+	*DMAIO = 255;
+	*DMAIO = DMACMD_ENQUEUE_AUTOBYTEMASK;
+}
+
 void DMACopy(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned, const uint8_t _blockCountInMultiplesOf16bytes)
 {
 	*DMAIO = DMACMD_SETSOURCE;
@@ -27,6 +38,17 @@ void DMACopy(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetA
 	*DMAIO = DMACMD_SETLENGHT;
 	*DMAIO = (_blockCountInMultiplesOf16bytes-1);
 	*DMAIO = DMACMD_ENQUEUE;
+}
+
+void DMACopyAutoByteMask(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned, const uint8_t _blockCountInMultiplesOf16bytes)
+{
+	*DMAIO = DMACMD_SETSOURCE;
+	*DMAIO = _sourceAddress16ByteAligned;
+	*DMAIO = DMACMD_SETTARGET;
+	*DMAIO = _targetAddress16ByteAligned;
+	*DMAIO = DMACMD_SETLENGHT;
+	*DMAIO = (_blockCountInMultiplesOf16bytes-1);
+	*DMAIO = DMACMD_ENQUEUE_AUTOBYTEMASK;
 }
 
 void DMATag(const uint32_t _tag)
