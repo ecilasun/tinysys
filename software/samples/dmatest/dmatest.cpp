@@ -14,6 +14,7 @@ int main(int argc, char *argv[])
 	printf("Preparing buffers\n");
 
 	// Create source and target buffers (using VPU functions to get aligned buffer addresses)
+	uint8_t *bufferC = VPUAllocateBuffer(W*H);
 	uint8_t *bufferB = VPUAllocateBuffer(W*H);
 	uint8_t *bufferA = VPUAllocateBuffer(W*H*3);
 
@@ -24,13 +25,25 @@ int main(int argc, char *argv[])
 
 	// Set buffer B as output
 	VPUSetWriteAddress(&vx, (uint32_t)bufferA);
-	VPUSetScanoutAddress(&vx, (uint32_t)bufferB);
+	VPUSetScanoutAddress(&vx, (uint32_t)bufferC);
 	VPUSetDefaultPalette(&vx);
 
 	// Fill buffer A with some data
 	for (uint32_t y=0;y<H*3;++y)
+	{
 		for (uint32_t x=0;x<W;++x)
-			bufferA[x+y*W] = (x^y)%255;
+		{
+			if (((x/19)&1)^(((y+x)/21)&1))
+				bufferA[x+y*W] = (x^y)%255;
+			else
+				bufferA[x+y*W] = 0x0;
+		}
+	}
+
+	// Fill buffer B with background data
+	for (uint32_t y=0;y<H;++y)
+		for (uint32_t x=0;x<W;++x)
+			bufferB[x+y*W] = y%255;
 
 	// DMA operatins work directly on memory.
 	// Therefore, we need to insert a cache flush here so that
@@ -64,17 +77,26 @@ int main(int argc, char *argv[])
 
 		starttime = E32ReadTime();
 
-		// Do the full 4K DMA blocks first
 		uint32_t fulloffset = 0;
 		for (uint32_t full=0;full<fullDMAs;++full)
 		{
-			DMACopyAutoByteMask4K((uint32_t)(bufferA+offset*W+fulloffset), (uint32_t)bufferB+fulloffset);
+			DMACopy4K((uint32_t)(bufferB+fulloffset), (uint32_t)bufferC+fulloffset);
+			fulloffset += 256*16; // 16 bytes for each 256-block, total of 4K
+		}
+		if (leftoverDMA!=0)
+			DMACopy((uint32_t)(bufferB+fulloffset), (uint32_t)(bufferC+fulloffset), leftoverDMA);
+
+		// Do the full 4K DMA blocks first
+		fulloffset = 0;
+		for (uint32_t full=0;full<fullDMAs;++full)
+		{
+			DMACopyAutoByteMask4K((uint32_t)(bufferA+offset*W+fulloffset), (uint32_t)bufferC+fulloffset);
 			fulloffset += 256*16; // 16 bytes for each 256-block, total of 4K
 		}
 
 		// Queue up last DMA block less than 4K in size
 		if (leftoverDMA!=0)
-			DMACopyAutoByteMask((uint32_t)(bufferA+offset*W+fulloffset), (uint32_t)(bufferB+fulloffset), leftoverDMA);
+			DMACopyAutoByteMask((uint32_t)(bufferA+offset*W+fulloffset), (uint32_t)(bufferC+fulloffset), leftoverDMA);
 
 		// Tag for DMA sync (essentially an item in FIFO after last DMA so we can check if DMA is complete when this drains)
 		DMATag(0x0);
