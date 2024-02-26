@@ -30,7 +30,6 @@ assign cpuclocktime = cyclecount;
 assign retired = retiredcount;
 
 logic [31:0] PC;
-logic [31:0] PCincrement;
 logic [31:0] immed;
 logic [31:0] csrprevval;
 logic [17:0] instrOneHotOut;
@@ -46,7 +45,6 @@ logic [2:0] func3;
 logic [6:0] func7;
 logic [2:0] rfunc3;
 logic selectimmedasrval2;
-logic stepsize;
 
 logic btready;
 logic [31:0] btarget;
@@ -411,15 +409,7 @@ always @(posedge aclk) begin
 					instrOneHotOut,
 					bluop, aluop,
 					rs1, rs2, rs3, rd,
-					immed, PC[31:1], stepsize} <= ififodout;
-
-				unique case (ififodout[0])
-					1'b0: PCincrement <= 32'd2;
-					1'b1: PCincrement <= 32'd4;
-				endcase
-
-				// NOTE: Since we don't do 8 bit addressing (only 32 or 16), lowest bit is always set to zero
-				PC[0] <= 1'b0;
+					immed, PC} <= ififodout;
 
 				// HAZARD#0: Wait for fetch fifo to populate
 				ififore <= (ififovalid && ~ififoempty);
@@ -444,7 +434,7 @@ always @(posedge aclk) begin
 					wbdest <= rd;
 					rwaddress <= rval1 + immed;
 					offsetPC <= PC + immed;
-					adjacentPC <= PC + PCincrement;
+					adjacentPC <= PC + 32'd4;
 
 					unique case (1'b1)
 						instrOneHotOut[`O_H_FLOAT_MADD],
@@ -492,7 +482,7 @@ always @(posedge aclk) begin
 			end
 
 			FPUOP: begin
-				case (func7)
+				unique case (func7)
 					`F7_FSGNJ: begin
 						fwback <= 1'b1;
 						case(func3)
@@ -504,10 +494,8 @@ always @(posedge aclk) begin
 					end
 					`F7_FMVXW: begin
 						wback <= 1'b1;
-						if (func3 == 3'b000)
-							wbdin <= fA; // fmvxw
-						else
-							wbdin <= 32'd0; // fclass todo: classify the float
+						wbdin <= fA; // fmvxw (TODO: fclass: classify the float)
+						// wbdin <= func3 == 3'b000 ? fA : ?????; // fmvxw
 						ctlmode <= READINSTR;
 					end
 					`F7_FMVWX: begin
@@ -515,20 +503,33 @@ always @(posedge aclk) begin
 						fwbdin <= rval1;
 						ctlmode <= READINSTR;
 					end
+					`F7_FMAX: begin
+						fltstrobe <= 1'b1; // min/max uses same hardware as flt
+						ctlmode <= FLOATMATHSTALL;
+					end
+					`F7_FEQ: begin
+						feqstrobe <= (func3==`F3_FEQ);
+						fltstrobe <= (func3==`F3_FLT); // shares same hardware with min/max
+						flestrobe <= (func3==`F3_FLE);
+						ctlmode <= FLOATMATHSTALL;
+					end
+					`F7_FCVTSW: begin
+						fi2fstrobe <= (rs2==5'b00000); // Signed
+						fui2fstrobe <= (rs2!=5'b00000); // Unsigned (5'b00001)
+						ctlmode <= FLOATMATHSTALL;
+					end
+					`F7_FCVTWS: begin
+						ff2istrobe <= (rs2==5'b00000); // Signed
+						ff2uistrobe <= (rs2!=5'b00000); // Unsigned (5'b00001)
+						ctlmode <= FLOATMATHSTALL;
+					end
 					default: begin
 						faddstrobe <= (func7 == `F7_FADD);
 						fsubstrobe <= (func7 == `F7_FSUB);
 						fmulstrobe <= (func7 == `F7_FMUL);
 						fdivstrobe <= (func7 == `F7_FDIV);
-						fi2fstrobe <= (func7 == `F7_FCVTSW) & (rs2==5'b00000); // Signed
-						fui2fstrobe <= (func7 == `F7_FCVTSW) & (rs2==5'b00001); // Unsigned
-						ff2istrobe <= (func7 == `F7_FCVTWS) & (rs2==5'b00000); // Signed
-						ff2uistrobe <= (func7 == `F7_FCVTWS) & (rs2==5'b00001); // Unsigned
 						ff2ui4satstrobe <= (func7 == `F7_FCVTSWU5SAT);
 						fsqrtstrobe <= (func7 == `F7_FSQRT);
-						feqstrobe <= (func7==`F7_FEQ) & (func3==`F3_FEQ);
-						fltstrobe <= ((func7==`F7_FEQ) & (func3==`F3_FLT)) | (func7==`F7_FMAX); // min/max same as flt
-						flestrobe <= (func7==`F7_FEQ) & (func3==`F3_FLE);
 						ctlmode <= FLOATMATHSTALL;
 					end
 				endcase
