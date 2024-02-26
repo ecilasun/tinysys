@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <termios.h>
+#include <pthread.h>
 
 #include <linux/ioctl.h>
 #include <linux/types.h>
@@ -64,6 +65,9 @@ v4l2_buffer vbufferinfo;
 char* vbuffer = nullptr;
 uint32_t *intermediate = nullptr;
 unsigned int vbufferlen = 0;
+bool isForeground = false;
+bool appDone = false;
+Display* dpy;
 
 int initialize_serial()
 {
@@ -211,6 +215,77 @@ void terminate_video_capture(int video_capture)
     close(video_capture);
 }
 
+void *capture_input( void *ptr )
+{
+    int serial_port = *(int*)ptr;
+
+    unsigned char keys_old[32];
+    unsigned char keys_new[32];
+
+    memset(keys_old, 0, 32);
+    memset(keys_new, 0, 32);
+
+    uint8_t isdown = 1;
+    uint8_t isup = 2;
+    uint8_t startToken = ':';
+    KeyCode lshift = XKeysymToKeycode( dpy, XK_Shift_L );
+    KeyCode rshift = XKeysymToKeycode( dpy, XK_Shift_R );
+    KeyCode lalt = XKeysymToKeycode( dpy, XK_Alt_L );
+    KeyCode ralt = XKeysymToKeycode( dpy, XK_Alt_R );
+    KeyCode lctrl = XKeysymToKeycode( dpy, XK_Control_L );
+    KeyCode rctrl = XKeysymToKeycode( dpy, XK_Control_R );
+
+    while(!appDone)
+    {
+        // Non-event
+        if (isForeground)
+        {
+            if (XQueryKeymap(dpy, (char*)keys_new))
+                {
+                uint8_t dummy;
+                for (uint32_t code = 0; code < 256; code++)
+                {
+                    uint8_t currdown = keys_new[code>>3] & masktable[code&7];
+                    uint8_t prevdown = keys_old[code>>3] & masktable[code&7];
+                    uint8_t scancode = keycodetoscancode[code];
+
+                    uint8_t modifierstate = 0;
+                    if (!!( keys_new[ (lshift)>>3 ] & ( 1<<((lshift)&7) ) ) ||
+                        !!( keys_new[ (rshift)>>3 ] & ( 1<<((rshift)&7) ) ))
+                        modifierstate |= 0x22;
+                    if (!!( keys_new[ (lalt)>>3 ] & ( 1<<((lalt)&7) ) ) ||
+                        !!( keys_new[ (ralt)>>3 ] & ( 1<<((ralt)&7) ) ))
+                        modifierstate |= 0x44;
+                    if (!!( keys_new[ (lctrl)>>3 ] & ( 1<<((lctrl)&7) ) ) ||
+                        !!( keys_new[ (rctrl)>>3 ] & ( 1<<((rctrl)&7) ) ))
+                        modifierstate |= 0x11;
+
+                    uint8_t keystate = 0;
+                    if (currdown && (!prevdown))
+                        keystate |= isdown;
+                    if ((!currdown) && prevdown)
+                        keystate |= isup;
+
+                    if (keystate)
+                    {
+                        // printf("%.2X -> %.2X\n", code, scancode); // DEBUG output
+                        uint8_t outdata[4];
+                        outdata[0] = startToken;
+                        outdata[1] = modifierstate;
+                        outdata[2] = keystate;
+                        outdata[3] = scancode;
+                        write(serial_port, outdata, 4);
+                        read(serial_port, &dummy, 1);
+                    }
+                }
+                memcpy(keys_old, keys_new, 32);
+            }
+        }
+    }
+
+    return nullptr;
+}
+
 int main(int argc, char **argv)
 {
     if (argc > 1)
@@ -218,7 +293,7 @@ int main(int argc, char **argv)
     if (argc > 2)
 		strcpy(capturedevicename, argv[2]);
 
-    Display* dpy = XOpenDisplay(NULL);
+    dpy = XOpenDisplay(NULL);
 
     int width = 640;
     int height = 480;
@@ -230,9 +305,6 @@ int main(int argc, char **argv)
         printf("Cannot open display\n");
         return -1;
     }
-
-    unsigned char keys_old[32];
-    unsigned char keys_new[32];
 
     printf("Usage: tinyremote commdevicename capturedevicename\ndefault comm device:%s default capture device:%s\nCtrl+C or PAUSE: quit current remote process\n", commdevicename, capturedevicename);
 
@@ -259,70 +331,14 @@ int main(int argc, char **argv)
     Atom wmDelete=XInternAtom(dpy, "WM_DELETE_WINDOW", True);
     XSetWMProtocols(dpy, win, &wmDelete, 1);
 
-    uint8_t isdown = 1;
-    uint8_t isup = 2;
-    uint8_t startToken = ':';
-    KeyCode lshift = XKeysymToKeycode( dpy, XK_Shift_L );
-    KeyCode rshift = XKeysymToKeycode( dpy, XK_Shift_R );
-    KeyCode lalt = XKeysymToKeycode( dpy, XK_Alt_L );
-    KeyCode ralt = XKeysymToKeycode( dpy, XK_Alt_R );
-    KeyCode lctrl = XKeysymToKeycode( dpy, XK_Control_L );
-    KeyCode rctrl = XKeysymToKeycode( dpy, XK_Control_R );
-
-    memset(keys_old, 0, 32);
-    memset(keys_new, 0, 32);
-
     int video_capture = initialize_video_capture(width, height);
 
+    pthread_t inputCaptureThread;
+    pthread_create( &inputCaptureThread, NULL, capture_input, (void*)&serial_port);
+
     XEvent ev;
-    bool isForeground = false;
-    bool done = false;
-    while(!done)
+    while(!appDone)
     {
-        // Non-event
-        if (isForeground)
-        {
-            XQueryKeymap( dpy, (char*)keys_new );
-
-            uint8_t dummy;
-            for (uint32_t code = 0; code < 256; code++)
-            {
-                uint8_t currdown = keys_new[code>>3] & masktable[code&7];
-                uint8_t prevdown = keys_old[code>>3] & masktable[code&7];
-                uint8_t scancode = keycodetoscancode[code];
-
-                uint8_t modifierstate = 0;
-                if (!!( keys_new[ (lshift)>>3 ] & ( 1<<((lshift)&7) ) ) ||
-                    !!( keys_new[ (rshift)>>3 ] & ( 1<<((rshift)&7) ) ))
-                    modifierstate |= 0x22;
-                if (!!( keys_new[ (lalt)>>3 ] & ( 1<<((lalt)&7) ) ) ||
-                    !!( keys_new[ (ralt)>>3 ] & ( 1<<((ralt)&7) ) ))
-                    modifierstate |= 0x44;
-                if (!!( keys_new[ (lctrl)>>3 ] & ( 1<<((lctrl)&7) ) ) ||
-                    !!( keys_new[ (rctrl)>>3 ] & ( 1<<((rctrl)&7) ) ))
-                    modifierstate |= 0x11;
-
-                uint8_t keystate = 0;
-                if (currdown && (!prevdown))
-                    keystate |= isdown;
-                if ((!currdown) && prevdown)
-                    keystate |= isup;
-
-                if (keystate)
-                {
-                    // printf("%.2X -> %.2X\n", code, scancode); // DEBUG output
-                    uint8_t outdata[4];
-                    outdata[0] = startToken;
-                    outdata[1] = modifierstate;
-                    outdata[2] = keystate;
-                    outdata[3] = scancode;
-                    write(serial_port, outdata, 4);
-                    read(serial_port, &dummy, 1);
-                }
-            }
-            memcpy(keys_old, keys_new, 32);
-        }
-
         if (video_capture>0)
         {
             // Video
@@ -415,7 +431,7 @@ int main(int argc, char **argv)
                 break;
                 case ClientMessage:
                 {
-                    done = true;
+                    appDone = true;
                 }
                 break;
                 case DestroyNotify:
@@ -426,6 +442,8 @@ int main(int argc, char **argv)
             }
         }
     };
+
+    pthread_join(inputCaptureThread, nullptr);
 
     printf("remote connection terminated\n");
     terminate_serial(serial_port);
