@@ -18,12 +18,10 @@ CC = $(CROSS)gcc
 OBJDUMP ?= $(CROSS)objdump
 SIZE = $(CROSS)size
 
-#CFLAGS = -mcmodel=medany -std=gnu99 --param l1-cache-line-size=64 --param l1-cache-size=16 -Wall -Ofast -flto -march=rv32imf_zicsr_zifencei -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -I.. -I../../../../SDK/
-
 ifeq ($(UNAME), Windows)
-CFLAGS = -mcmodel=medany -std=gnu99 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -O2 -flto -march=rv32im_zicsr_zifencei -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -I.. -I../../../../SDK/
+CFLAGS = -mcmodel=medany -std=gnu99 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -O1 -flto -march=rv32im_zicsr_zifencei -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -I.. -I../../../../SDK/
 else
-CFLAGS = -mcmodel=medany -std=gnu99 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -O2 -flto -march=rv32im_zicsr_zifencei -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -I.. -I../../../../SDK/
+CFLAGS = -mcmodel=medany -std=gnu99 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -O1 -flto -march=rv32im_zicsr_zifencei -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -I.. -I../../../../SDK/
 endif
 
 CFLAGS += \
