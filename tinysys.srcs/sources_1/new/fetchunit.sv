@@ -33,7 +33,7 @@ logic fetchena;
 logic [31:0] prevPC;
 logic [31:0] PC;
 logic [31:0] emitPC;
-logic [31:0] IR;
+(* extract_reset = "yes" *) logic [31:0] IR;
 wire rready;
 wire [31:0] instruction;
 logic icacheflush;

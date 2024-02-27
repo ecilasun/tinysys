@@ -53,13 +53,13 @@ assign branchresolved = btready;
 assign branchtarget = btarget;
 
 // Operands for exec
-logic [31:0] A; // rval1
-logic [31:0] B; // rval2
-logic [31:0] C; // rval2 : immed
-logic [31:0] D; // immed
-logic [31:0] fA; // frval1
-logic [31:0] fB; // frval2
-logic [31:0] fC; // frval3
+(* extract_reset = "yes" *) logic [31:0] A; // rval1
+(* extract_reset = "yes" *) logic [31:0] B; // rval2
+(* extract_reset = "yes" *) logic [31:0] C; // rval2 : immed
+(* extract_reset = "yes" *) logic [31:0] D; // immed
+(* extract_reset = "yes" *) logic [31:0] fA; // frval1
+(* extract_reset = "yes" *) logic [31:0] fB; // frval2
+(* extract_reset = "yes" *) logic [31:0] fC; // frval3
 
 // Writeback data
 logic [31:0] wbdin;
@@ -361,7 +361,6 @@ always @(posedge aclk) begin
 		pendingflwd <= 1'b0;
 		pendingwrite <= 1'b0;
 		wbdin <= 32'd0;
-		C <= 32'd0;
 		ctlmode <= INIT;
 	end else begin
 		btready <= 1'b0;	// Stop branch target ready strobe
