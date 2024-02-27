@@ -130,13 +130,11 @@ Please refer to the [README.md](./samples/starthere/README.md) file in `starther
 NOTE: If the RISC-V compiler binaries (riscv64-unknown-elf-gcc or riscv64-unknown-elf-g++) are missing from your system, please follow the instructions at https://github.com/riscv/riscv-gnu-toolchain
 It is advised to build the rv32i / rv32im / rv32imf libraries
 
-If you want to work on Windows and don't want to compile the toolchain, you can use the following link and download the latest riscv-v-gcc installer executable (risc-v-gcc10.1.0.exe at the time of writing this)
+If you want to work on Windows and don't want to compile the toolchain, you can use the following link and download the latest RISC-V Embedded stable release compilers -> gcc13.2.0 (Windows) zip file from the following page:
 
-https://gnutoolchains.com/risc-v/
+https://www.embecosm.com/resources/tool-chain-downloads/
 
-This will place all the toolchain files under C:\SysGCC\risc-v by default and make sure to have that path added to your %PATH% by using the 'Add binary directory to %PATH%' option.
-
-NOTE: One thing worth mentioning is that at this time Win32 compiler toolchain was not aware of march=rv32imf_zicsr_zifencei so please set the makefile to use march=rv32imf in sample projects and ROM projects instead.
+Unpack the bin, include, lib etc directories from the above archive to a folder called C:\gcc\risc-v and make sure to have C:\gcc\risc-v\bin added to your %PATH%. After this point you can use these compilers to generate binaries for tinysys on Windows.
 
 # Other notes
 

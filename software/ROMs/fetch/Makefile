@@ -2,6 +2,18 @@
 
 XLEN ?= 32
 
+ifeq ($(OS),Windows_NT)
+	ifeq ($(MSYSTEM), MINGW32)
+		UNAME := MSYS
+	else ifeq ($(MSYSTEM), DARWIN)
+		UNAME := DARWIN
+	else
+		UNAME := WINDOWS
+	endif
+else
+	UNAME := $(shell uname)
+endif
+
 default: all
 
 # Directories
@@ -20,17 +32,23 @@ folders = \
 
 #override CFLAGS += -Xlinker --defsym=__stack_size=0x800
 
+ifeq ($(UNAME), WINDOWS)
+RISCV_PREFIX ?= riscv32-unknown-elf-
+RISCVTOOL ?= ..\..\build\release\riscvtool.exe
+else
 RISCV_PREFIX ?= riscv64-unknown-elf-
+RISCVTOOL ?= ../../build/release/riscvtool
+endif
 RISCV_GCC ?= $(RISCV_PREFIX)gcc
 RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump
-RISCVTOOL ?= ..\..\build\release\riscvtool.exe
+
 # No filesystem when defined
 # FILESYSTEM ?= -DDISABLE_FILESYSTEM
 FILESYSTEM ?= -DENABLE_FILESYSTEM -DLFS_NO_MALLOC -DLFS_NO_DEBUG
 ROMWORDSIZE ?= 4
 # 512 bit cache lines makes 64 bytes per line
 # 256 cache lines makes total cache size 16 Kbytes
-RISCV_GCC_OPTS ?= -mcmodel=medany -march=rv32im -mabi=ilp32 -O0 -static -ffreestanding -nostartfiles
+RISCV_GCC_OPTS ?= -mcmodel=medany -march=rv32imf_zicsr_zifencei -mabi=ilp32 -O0 -static -ffreestanding -nostartfiles
 
 incs  += -I$(src_dir) -I$(corelib_dir) $(addprefix -I$(src_dir)/, $(folders))
 objs  :=

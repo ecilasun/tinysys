@@ -20,12 +20,14 @@ thirdparty_libs = ../../3rdparty
 
 # Rules
 
+ifeq ($(UNAME), Windows)
+RISCV_PREFIX ?= riscv32-unknown-elf-
+RISCV_GCC ?= $(RISCV_PREFIX)g++
+RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++14 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Warray-bounds=0 -Wstringop-overflow=0 -Ofast -march=rv32imf_zicsr_zifencei -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
+else
 RISCV_PREFIX ?= riscv64-unknown-elf-
 RISCV_GCC ?= $(RISCV_PREFIX)g++
-ifeq ($(UNAME), Windows)
-RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++14 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Ofast -march=rv32imf -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -lgcc -lm
-else
-RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++14 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Ofast -march=rv32imf_zicsr_zifencei -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -lgcc -lm
+RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++14 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Ofast -march=rv32imf_zicsr_zifencei -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
 endif
 
 incs  += -I$(src_dir) -I$(corelib_dir)/ -I$(thirdparty_libs)/ -I$(src_dir)/.

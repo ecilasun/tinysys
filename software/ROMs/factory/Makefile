@@ -33,14 +33,16 @@ folders = \
 
 #override CFLAGS += -Xlinker --defsym=__stack_size=0x800
 
-RISCV_PREFIX ?= riscv64-unknown-elf-
-RISCV_GCC ?= $(RISCV_PREFIX)gcc
-RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump
 ifeq ($(UNAME), WINDOWS)
+RISCV_PREFIX ?= riscv32-unknown-elf-
 RISCVTOOL ?= ..\..\build\release\riscvtool.exe
 else
+RISCV_PREFIX ?= riscv64-unknown-elf-
 RISCVTOOL ?= ../../build/release/riscvtool
 endif
+RISCV_GCC ?= $(RISCV_PREFIX)gcc
+RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump
+
 # No filesystem when defined
 # FILESYSTEM ?= -DDISABLE_FILESYSTEM
 FILESYSTEM ?= -DENABLE_FILESYSTEM -DLFS_NO_MALLOC -DLFS_NO_DEBUG
