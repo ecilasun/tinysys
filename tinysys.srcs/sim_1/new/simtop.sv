@@ -2,15 +2,12 @@
 
 module simtop();
 
-logic boardresetn;
 logic boardclock;
 
 initial begin
-	boardresetn = 1'bz;
 	boardclock = 1'bz;
 	#80;
 	boardclock = 1'b0;
-	boardresetn = 1'b1;
 end
 
 wire [3:0] ledout;
@@ -58,7 +55,6 @@ ddr3_model ddr3simmod(
 
 tophat main(
     .sys_clk(boardclock),
-    .sysresetn(boardresetn),
     // LEDs
     .leds(ledout),
 	// DDR3 SDRAM
@@ -76,11 +72,12 @@ tophat main(
 	.ddr3_dqs_p(ddr3_dqs_p),
 	.ddr3_dqs_n(ddr3_dqs_n),
 	.ddr3_dq(ddr3_dq),
-	// DVI -> HDMI
-	.hdmi_tx_p(),
-	.hdmi_tx_n(),
-	.hdmi_tx_clk_p(),
-	.hdmi_tx_clk_n(),
+	// DVI
+	.vvsync(),
+	.vhsync(),
+	.vclk(),
+	.vde(),
+	.vdat(),
 	// Micro SD Card
 	.sdcard_miso(sdcard_miso),
 	.sdcard_cs_n(),

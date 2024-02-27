@@ -75,7 +75,7 @@ logic fwback;
 wire [31:0] rval1;
 wire [31:0] rval2;
 logic [31:0] rdin;
-logic rwen = 1'b0;
+logic rwen;
 integerregisterfile GPR(
 	.clock(aclk),
 	.rs1(rs1),
@@ -94,7 +94,7 @@ wire [31:0] frval1;
 wire [31:0] frval2;
 wire [31:0] frval3;
 logic [31:0] frdin;
-logic frwen = 1'b0;
+logic frwen;
 
 floatregisterfile FGPR(
 	.clock(aclk),
@@ -280,56 +280,61 @@ logic pendingwrite = 1'b0;
 wire pendingwback = rwen || frwen;
 
 always_comb begin
-	if (m_ibus.rdone) begin
-		unique case(rfunc3)
-			3'b000: begin // BYTE with sign extension
-				unique case(rwaddress[1:0])
-					2'b11: begin rdin = {{24{m_ibus.rdata[31]}}, m_ibus.rdata[31:24]}; end
-					2'b10: begin rdin = {{24{m_ibus.rdata[23]}}, m_ibus.rdata[23:16]}; end
-					2'b01: begin rdin = {{24{m_ibus.rdata[15]}}, m_ibus.rdata[15:8]}; end
-					2'b00: begin rdin = {{24{m_ibus.rdata[7]}}, m_ibus.rdata[7:0]}; end
-				endcase
-			end
-			3'b001: begin // HALF with sign extension
-				unique case(rwaddress[1])
-					1'b1: begin rdin = {{16{m_ibus.rdata[31]}}, m_ibus.rdata[31:16]}; end
-					1'b0: begin rdin = {{16{m_ibus.rdata[15]}}, m_ibus.rdata[15:0]}; end
-				endcase
-			end
-			3'b100: begin // BYTE with zero extension
-				unique case(rwaddress[1:0])
-					2'b11: begin rdin = {24'd0, m_ibus.rdata[31:24]}; end
-					2'b10: begin rdin = {24'd0, m_ibus.rdata[23:16]}; end
-					2'b01: begin rdin = {24'd0, m_ibus.rdata[15:8]}; end
-					2'b00: begin rdin = {24'd0, m_ibus.rdata[7:0]}; end 
-				endcase
-			end
-			3'b101: begin // HALF with zero extension
-				unique case(rwaddress[1])
-					1'b1: begin rdin = {16'd0, m_ibus.rdata[31:16]}; end
-					1'b0: begin rdin = {16'd0, m_ibus.rdata[15:0]}; end
-				endcase
-			end
-			default: begin // WORD - 3'b010
-				rdin = m_ibus.rdata;
-				frdin = m_ibus.rdata;
-			end
-		endcase
-	end else if (mulready) begin
-		rdin = product;
-	end else if (divready || divuready) begin
-		unique case (mfunc3)
-			`F3_DIV:	rdin = quotient;
-			`F3_DIVU:	rdin = quotientu;
-			`F3_REM:	rdin = remainder;
-			`F3_REMU:	rdin = remainderu;
-		endcase
+	if (~aresetn) begin
+		rwen = 1'b0;
+		frwen = 1'b0;
 	end else begin
-		rdin = wbdin;
-		frdin = fwbdin;
+		if (m_ibus.rdone) begin
+			unique case(rfunc3)
+				3'b000: begin // BYTE with sign extension
+					unique case(rwaddress[1:0])
+						2'b11: begin rdin = {{24{m_ibus.rdata[31]}}, m_ibus.rdata[31:24]}; end
+						2'b10: begin rdin = {{24{m_ibus.rdata[23]}}, m_ibus.rdata[23:16]}; end
+						2'b01: begin rdin = {{24{m_ibus.rdata[15]}}, m_ibus.rdata[15:8]}; end
+						2'b00: begin rdin = {{24{m_ibus.rdata[7]}}, m_ibus.rdata[7:0]}; end
+					endcase
+				end
+				3'b001: begin // HALF with sign extension
+					unique case(rwaddress[1])
+						1'b1: begin rdin = {{16{m_ibus.rdata[31]}}, m_ibus.rdata[31:16]}; end
+						1'b0: begin rdin = {{16{m_ibus.rdata[15]}}, m_ibus.rdata[15:0]}; end
+					endcase
+				end
+				3'b100: begin // BYTE with zero extension
+					unique case(rwaddress[1:0])
+						2'b11: begin rdin = {24'd0, m_ibus.rdata[31:24]}; end
+						2'b10: begin rdin = {24'd0, m_ibus.rdata[23:16]}; end
+						2'b01: begin rdin = {24'd0, m_ibus.rdata[15:8]}; end
+						2'b00: begin rdin = {24'd0, m_ibus.rdata[7:0]}; end 
+					endcase
+				end
+				3'b101: begin // HALF with zero extension
+					unique case(rwaddress[1])
+						1'b1: begin rdin = {16'd0, m_ibus.rdata[31:16]}; end
+						1'b0: begin rdin = {16'd0, m_ibus.rdata[15:0]}; end
+					endcase
+				end
+				default: begin // WORD - 3'b010
+					rdin = m_ibus.rdata;
+					frdin = m_ibus.rdata;
+				end
+			endcase
+		end else if (mulready) begin
+			rdin = product;
+		end else if (divready || divuready) begin
+			unique case (mfunc3)
+				`F3_DIV:	rdin = quotient;
+				`F3_DIVU:	rdin = quotientu;
+				`F3_REM:	rdin = remainder;
+				`F3_REMU:	rdin = remainderu;
+			endcase
+		end else begin
+			rdin = wbdin;
+			frdin = fwbdin;
+		end
+		rwen = (pendingload && m_ibus.rdone) || mulready || divready || divuready || wback;
+		frwen = (pendingflwd && m_ibus.rdone) || fwback;
 	end
-	rwen = (pendingload && m_ibus.rdone) || mulready || divready || divuready || wback;
-	frwen = (pendingflwd && m_ibus.rdone) || fwback;
 end
 
 // --------------------------------------------------
@@ -355,6 +360,8 @@ always @(posedge aclk) begin
 		pendingload <= 1'b0;
 		pendingflwd <= 1'b0;
 		pendingwrite <= 1'b0;
+		wbdin <= 32'd0;
+		C <= 32'd0;
 		ctlmode <= INIT;
 	end else begin
 		btready <= 1'b0;	// Stop branch target ready strobe
@@ -397,7 +404,6 @@ always @(posedge aclk) begin
 
 		unique case(ctlmode)
 			INIT: begin
-				wbdin <= 32'd0;
 				ctlmode <= READINSTR;
 			end
 
@@ -523,13 +529,31 @@ always @(posedge aclk) begin
 						ff2uistrobe <= (rs2!=5'b00000); // Unsigned (5'b00001)
 						ctlmode <= FLOATMATHSTALL;
 					end
+					`F7_FADD: begin
+						faddstrobe <= 1'b1;
+						ctlmode <= FLOATMATHSTALL;
+					end
+					`F7_FSUB: begin
+						fsubstrobe <= 1'b1;
+						ctlmode <= FLOATMATHSTALL;
+					end
+					`F7_FMUL: begin
+						fmulstrobe <= 1'b1;
+						ctlmode <= FLOATMATHSTALL;
+					end
+					`F7_FDIV: begin
+						fdivstrobe <= 1'b1;
+						ctlmode <= FLOATMATHSTALL;
+					end
+					`F7_FCVTSWU4SAT: begin
+						ff2ui4satstrobe <= 1'b1;
+						ctlmode <= FLOATMATHSTALL;
+					end
+					`F7_FSQRT: begin
+						fsqrtstrobe <= 1'b1;
+						ctlmode <= FLOATMATHSTALL;
+					end
 					default: begin
-						faddstrobe <= (func7 == `F7_FADD);
-						fsubstrobe <= (func7 == `F7_FSUB);
-						fmulstrobe <= (func7 == `F7_FMUL);
-						fdivstrobe <= (func7 == `F7_FDIV);
-						ff2ui4satstrobe <= (func7 == `F7_FCVTSWU5SAT);
-						fsqrtstrobe <= (func7 == `F7_FSQRT);
 						ctlmode <= FLOATMATHSTALL;
 					end
 				endcase
@@ -547,8 +571,9 @@ always @(posedge aclk) begin
 
 			FLOATMATHSTALL: begin
 				if (fpuresultvalid) begin
-					case (func7)
-						`F7_FCVTWS: begin
+					unique case (func7)
+						`F7_FCVTWS,
+						`F7_FCVTSWU4SAT: begin
 							wbdin <= fpuresult;
 							wback <= 1'b1;
 						end
