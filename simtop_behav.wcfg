@@ -13,29 +13,21 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="767.823388500 us"></ZoomStartTime>
-      <ZoomEndTime time="1,397.323388501 us"></ZoomEndTime>
-      <Cursor1Time time="969.998001000 us"></Cursor1Time>
+      <ZoomStartTime time="914,558.500000 ns"></ZoomStartTime>
+      <ZoomEndTime time="914,811.100001 ns"></ZoomEndTime>
+      <Cursor1Time time="914,648.100000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="310"></NameColumnWidth>
-      <ValueColumnWidth column_width="102"></ValueColumnWidth>
+      <ValueColumnWidth column_width="98"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="238" />
+   <WVObjectSize size="226" />
    <wave_markers>
       <marker time="3083299200000" label="" />
       <marker time="3279660000000" label="" />
       <marker time="910490000000" label="" />
       <marker time="124250000000" label="" />
    </wave_markers>
-   <wvobject type="divider" fp_name="divider23">
-      <obj_property name="label">board</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/sys_clk" type="logic">
-      <obj_property name="ElementShortName">sys_clk</obj_property>
-      <obj_property name="ObjectShortName">sys_clk</obj_property>
-   </wvobject>
    <wvobject fp_name="/simtop/main/leds" type="array">
       <obj_property name="ElementShortName">leds[3:0]</obj_property>
       <obj_property name="ObjectShortName">leds[3:0]</obj_property>
@@ -44,25 +36,9 @@
       <obj_property name="label">clock and reset</obj_property>
       <obj_property name="DisplayName">label</obj_property>
    </wvobject>
-   <wvobject fp_name="/simtop/main/clockandresetinst/clk10" type="logic">
-      <obj_property name="ElementShortName">clk10</obj_property>
-      <obj_property name="ObjectShortName">clk10</obj_property>
-   </wvobject>
    <wvobject fp_name="/simtop/main/clockandresetinst/clk166" type="logic">
       <obj_property name="ElementShortName">clk166</obj_property>
       <obj_property name="ObjectShortName">clk166</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/clockandresetinst/clk200" type="logic">
-      <obj_property name="ElementShortName">clk200</obj_property>
-      <obj_property name="ObjectShortName">clk200</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/clockandresetinst/aresetn" type="logic">
-      <obj_property name="ElementShortName">aresetn</obj_property>
-      <obj_property name="ObjectShortName">aresetn</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/clockandresetinst/preresetn" type="logic">
-      <obj_property name="ElementShortName">preresetn</obj_property>
-      <obj_property name="ObjectShortName">preresetn</obj_property>
    </wvobject>
    <wvobject type="divider" fp_name="divider122">
       <obj_property name="label">fetch</obj_property>
@@ -77,14 +53,6 @@
    <wvobject fp_name="/simtop/main/socinstance/hart0/fetchdecodeinst/branchresolved" type="logic">
       <obj_property name="ElementShortName">branchresolved</obj_property>
       <obj_property name="ObjectShortName">branchresolved</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/hart0/fetchdecodeinst/branchmissed" type="logic">
-      <obj_property name="ElementShortName">branchmissed</obj_property>
-      <obj_property name="ObjectShortName">branchmissed</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/hart0/fetchdecodeinst/branchmissseen" type="logic">
-      <obj_property name="ElementShortName">branchmissseen</obj_property>
-      <obj_property name="ObjectShortName">branchmissseen</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/hart0/fetchdecodeinst/branchtarget" type="array">
       <obj_property name="ElementShortName">branchtarget[31:0]</obj_property>
@@ -290,10 +258,6 @@
       <obj_property name="ElementShortName">postInject[3:0]</obj_property>
       <obj_property name="ObjectShortName">postInject[3:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/hart0/fetchdecodeinst/branchmissack" type="logic">
-      <obj_property name="ElementShortName">branchmissack</obj_property>
-      <obj_property name="ObjectShortName">branchmissack</obj_property>
-   </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/hart0/fetchdecodeinst/RESETVECTOR" type="array">
       <obj_property name="ElementShortName">RESETVECTOR[31:0]</obj_property>
       <obj_property name="ObjectShortName">RESETVECTOR[31:0]</obj_property>
@@ -321,18 +285,6 @@
    <wvobject fp_name="/simtop/main/socinstance/hart0/controlunitinst/branchresolved" type="logic">
       <obj_property name="ElementShortName">branchresolved</obj_property>
       <obj_property name="ObjectShortName">branchresolved</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/hart0/controlunitinst/branchmissed" type="logic">
-      <obj_property name="ElementShortName">branchmissed</obj_property>
-      <obj_property name="ObjectShortName">branchmissed</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/hart0/controlunitinst/branchmissedreg" type="logic">
-      <obj_property name="ElementShortName">branchmissedreg</obj_property>
-      <obj_property name="ObjectShortName">branchmissedreg</obj_property>
-   </wvobject>
-   <wvobject fp_name="/simtop/main/socinstance/hart0/controlunitinst/branchmissseen" type="logic">
-      <obj_property name="ElementShortName">branchmissseen</obj_property>
-      <obj_property name="ObjectShortName">branchmissseen</obj_property>
    </wvobject>
    <wvobject fp_name="/simtop/main/socinstance/hart0/controlunitinst/branchtarget" type="array">
       <obj_property name="ElementShortName">branchtarget[31:0]</obj_property>
