@@ -92,12 +92,12 @@ inline void graphics_set_pixel(int x, int y, float r, float g, float b) {
    if(bench_run)
       return;
 
-  uint32_t red = ftoui4sat(r)<<8;
-  uint32_t green = ftoui4sat(g)<<4;
+  uint32_t red = ftoui4sat(r);
+  uint32_t green = ftoui4sat(g);
   uint32_t blue = ftoui4sat(b);
 
   uint16_t *pixel = (uint16_t*)(framebuffer + (x+y*vx.m_graphicsWidth)*2);
-  *pixel = red | blue | green;
+  *pixel = (green<<8) | (red<<4) | blue;
 }
 
 
