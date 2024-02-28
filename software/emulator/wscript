@@ -36,8 +36,13 @@ def build(bld):
     # RELEASE
     sdk_lib_path = []
     libs = []
-    compile_flags = []
     linker_flags = []
+    if platform.system().lower().startswith('win'):
+        compile_flags = []
+    elif platform.system().lower().startswith('darwin'):
+        compile_flags = ['-std=c++20']
+    elif platform.system().lower().startswith('linux'):
+        compile_flags = ['-std=c++20']
 
     # Build risctool
     bld.program(

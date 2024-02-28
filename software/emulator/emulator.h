@@ -1,3 +1,5 @@
+#pragma once
+
 #include "clock.h"
 #include "rv32.h"
 
