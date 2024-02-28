@@ -176,7 +176,6 @@ always @(posedge aclk) begin
 		PC <= 32'd0;
 		prevPC <= 32'd0;
 		emitPC <= 32'd0;
-		IR <= 32'd0;
 		injectAddr <= 7'd0;
 		injectStop <= 7'd0;
 		entryState <= 5'd0;

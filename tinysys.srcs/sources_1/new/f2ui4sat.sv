@@ -26,11 +26,11 @@ wire [22:0] m = value[22:0];
 always @(posedge clk) begin
 	if (~aresetn) begin
 		done <= 2'b00;
-		shift <= 6'd0;
-		result <= 32'd0;
 	end else begin
-		done <= {done[0], start};
 		if (start) begin
+			done <= 2'b01;
+		end else begin
+			done <= {done[0], 1'b0};
 			if (s == 1'b1 || e < 8'd115) begin // Negative or exponents that will overflow shift go directly to zero
 				result <= 0;
 			end else if (e > 8'd126) begin // Values greater than 1.0 go directly to saturate
