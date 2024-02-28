@@ -72,6 +72,19 @@ static inline void graphics_terminate() {
     //printf("\033[48;5;16m\033[38;5;15m");
 }
 
+/**inline uint32_t ftoui4sat(float value)
+{
+  uint32_t retval;
+  asm (
+    ".word 0xa6040553; "
+    "mv %0, a0; "
+    : "=r" (retval)
+    : "fp" (value)
+    : "a0"
+  );
+  return retval;
+}**/
+
 // Replace with your own code.
 inline void graphics_set_pixel(int x, int y, float r, float g, float b) {
    // graphics output deactivated for bench run
