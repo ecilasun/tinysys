@@ -1,6 +1,6 @@
-# Gateware version 1.05
+# Gateware version 1.06
 
-The gateware binary contains version 1.05 of the device.
+The gateware binary contains version 1.06 of the device.
 There is no need for a ROM file if you have an old one, but it's recommended to use a ROM version >=1.05 if required.
 
 # Changes:
@@ -9,7 +9,9 @@ Single precision FPU added<br>
 1.05:<br>
 Auto-byte masked DMA support added<br>
 saturate instruction by Wade Brainerd added<br>
-compressed instruction support removed
+compressed instruction support removed<br>
+1.06:<br>
+fixed the saturate instruction<br>
 
 # Device gateware
 
