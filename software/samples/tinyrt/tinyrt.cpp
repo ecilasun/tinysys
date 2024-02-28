@@ -72,34 +72,31 @@ static inline void graphics_terminate() {
     //printf("\033[48;5;16m\033[38;5;15m");
 }
 
-/**inline uint32_t ftoui4sat(float value)
+inline uint32_t ftoui4sat(float value)
 {
   uint32_t retval;
   asm (
-    ".word 0xa6040553; "
+    ".word 0xc2000553;" // fcvtswu4sat a0, f0 // note A0==cpu.x10, F0==fpu.x0
     "mv %0, a0; "
     : "=r" (retval)
-    : "fp" (value)
+    : "f0" (value)
     : "a0"
   );
   return retval;
-}**/
+}
 
 // Replace with your own code.
 inline void graphics_set_pixel(int x, int y, float r, float g, float b) {
    // graphics output deactivated for bench run
    if(bench_run)
       return;
-   r = max(0.0f, min(1.0f, r));
-   g = max(0.0f, min(1.0f, g));
-   b = max(0.0f, min(1.0f, b));
-  
-   uint16_t G = (uint16_t)(g*255.0f)>>4;
-   uint16_t R = (uint16_t)(r*255.0f)>>4;
-   uint16_t B = (uint16_t)(b*255.0f)>>4;
 
-   uint16_t *pixel = (uint16_t*)(framebuffer + (x+y*vx.m_graphicsWidth)*2);
-   *pixel = MAKECOLORRGB12(R,G,B);
+  int red = ftoui4sat(r);
+  int green = ftoui4sat(g);
+  int blue = ftoui4sat(b);
+
+  uint16_t *pixel = (uint16_t*)(framebuffer + (x+y*vx.m_graphicsWidth)*2);
+  *pixel = (red<<8) | (blue<<4) | green;
 }
 
 
