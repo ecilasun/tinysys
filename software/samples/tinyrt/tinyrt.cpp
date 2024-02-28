@@ -97,7 +97,7 @@ inline void graphics_set_pixel(int x, int y, float r, float g, float b) {
   uint32_t blue = ftoui4sat(b);
 
   uint16_t *pixel = (uint16_t*)(framebuffer + (x+y*vx.m_graphicsWidth)*2);
-  *pixel = (green<<8) | (red<<4) | blue;
+  *pixel = (red<<8) | (blue<<4) | green;
 }
 
 
