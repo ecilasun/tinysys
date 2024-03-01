@@ -5,12 +5,14 @@
 - RISC-V based CPU (full architecture name with extensions: rv32_imc_Zicsr_Zifencei_Zicntr)
 - 32 GRPs x 32 bits
 - 4096 CSRs x 32 bits (some registers reserved for CPU)
+- Single precision FPU
+- DMA with optional zero-masking for 16 byte aligned memory copies
 - Integer multiply / divide
 - Software, hardware and timer interrupts
 - 16Kbytes of direct mapped instruction cache (256 lines x 64 bytes)
 - 32Kbytes of direct mapped data cache (512 lines x 64 bytes)
 - 128 bit AXI4 bus with 32 bit address line
-- Memory arbiter for 8 on-board devices
+- Memory arbiter for on-board devices
 - Memory mapped external hardware
 - USB host and peripheral controller chips and ports
 - 16 bit stereo audio output chip (24 bit native in reality)
@@ -19,10 +21,8 @@
 - 4 debug LEDs
 - System enumerates as a serial device when plugged into a developer PC
 - Supports one USB peripheral for input (keyboard / mouse / gamepad)
-- Soft-reset button
-- Preemptive multitasking OS, with file I/O and basic memory allocator via syscalls
-- GDB support over serial port
-- Optional ROM overlay can be loaded from SDCard
+- Custom preemptive multitasking OS, with file I/O and basic memory allocator via syscalls
+- Optionally, a rom.bin image can be loaded from SDCard to replace the OS in ROM
 
 # Overview of the processing units
 
@@ -44,7 +44,7 @@ Video processing unit. Handles scan-out of various video sizes (320x240 and 640x
 Audio processing unit. Handles mixing the OPL2/RAW audio outputs, and also manages 44/22/11KHz stereo playback and buffer handling of RAW audio.
 
 ## DMA
-Direct memory access unit. Used to copy blocks of memory within memory address space, and won't DMA between or from other devices.
+Direct memory access unit. Used to copy blocks of memory within memory address space, and won't DMA between or from other devices. It can optionally ignore zeros on input data and won't write them to the output location (i.e. automatic masking)
 
 ## OPL2
 This is a Yamaha OPL2 compatible device using an opensource implementation (mono output, 16bits)
