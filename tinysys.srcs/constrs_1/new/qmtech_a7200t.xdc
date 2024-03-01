@@ -87,22 +87,22 @@ set_property PULLUP true [get_ports sdcard_swtch]
 ## 12bpp (4:4:4) Video output - SII164CTG64
 ## ------------------------------------------------------------------------------------------------------
 
-set_property -dict {PACKAGE_PIN AA3 IOSTANDARD LVCMOS33} [get_ports {vvsync}]
-set_property -dict {PACKAGE_PIN Y3  IOSTANDARD LVCMOS33} [get_ports {vhsync}]
-set_property -dict {PACKAGE_PIN W4  IOSTANDARD LVCMOS33} [get_ports {vde}]
-set_property -dict {PACKAGE_PIN V4  IOSTANDARD LVCMOS33} [get_ports {vclk}]
+set_property -dict {PACKAGE_PIN AA3 IOSTANDARD LVCMOS33} [get_ports vvsync]
+set_property -dict {PACKAGE_PIN Y3 IOSTANDARD LVCMOS33} [get_ports vhsync]
+set_property -dict {PACKAGE_PIN W4 IOSTANDARD LVCMOS33} [get_ports vde]
+set_property -dict {PACKAGE_PIN V4 IOSTANDARD LVCMOS33} [get_ports vclk]
 set_property -dict {PACKAGE_PIN AB2 IOSTANDARD LVCMOS33} [get_ports {vdat[0]}]
 set_property -dict {PACKAGE_PIN AB3 IOSTANDARD LVCMOS33} [get_ports {vdat[1]}]
 set_property -dict {PACKAGE_PIN AB1 IOSTANDARD LVCMOS33} [get_ports {vdat[2]}]
 set_property -dict {PACKAGE_PIN AA1 IOSTANDARD LVCMOS33} [get_ports {vdat[3]}]
-set_property -dict {PACKAGE_PIN Y1  IOSTANDARD LVCMOS33} [get_ports {vdat[4]}]
-set_property -dict {PACKAGE_PIN W1  IOSTANDARD LVCMOS33} [get_ports {vdat[5]}]
-set_property -dict {PACKAGE_PIN U1  IOSTANDARD LVCMOS33} [get_ports {vdat[6]}]
-set_property -dict {PACKAGE_PIN T1  IOSTANDARD LVCMOS33} [get_ports {vdat[7]}]
-set_property -dict {PACKAGE_PIN U5  IOSTANDARD LVCMOS33} [get_ports {vdat[8]}]
-set_property -dict {PACKAGE_PIN T5  IOSTANDARD LVCMOS33} [get_ports {vdat[9]}]
-set_property -dict {PACKAGE_PIN T4  IOSTANDARD LVCMOS33} [get_ports {vdat[10]}]
-set_property -dict {PACKAGE_PIN R4  IOSTANDARD LVCMOS33} [get_ports {vdat[11]}]
+set_property -dict {PACKAGE_PIN Y1 IOSTANDARD LVCMOS33} [get_ports {vdat[4]}]
+set_property -dict {PACKAGE_PIN W1 IOSTANDARD LVCMOS33} [get_ports {vdat[5]}]
+set_property -dict {PACKAGE_PIN U1 IOSTANDARD LVCMOS33} [get_ports {vdat[6]}]
+set_property -dict {PACKAGE_PIN T1 IOSTANDARD LVCMOS33} [get_ports {vdat[7]}]
+set_property -dict {PACKAGE_PIN U5 IOSTANDARD LVCMOS33} [get_ports {vdat[8]}]
+set_property -dict {PACKAGE_PIN T5 IOSTANDARD LVCMOS33} [get_ports {vdat[9]}]
+set_property -dict {PACKAGE_PIN T4 IOSTANDARD LVCMOS33} [get_ports {vdat[10]}]
+set_property -dict {PACKAGE_PIN R4 IOSTANDARD LVCMOS33} [get_ports {vdat[11]}]
 
 ## Using 12bpp output, add the following if using 24bpp (NOTE: board 2D does not have these connected!)
 ## set_property -dict {PACKAGE_PIN P4  IOSTANDARD LVCMOS33} [get_ports {vdat[12]}]
@@ -260,6 +260,8 @@ set_clock_groups -name grpI -asynchronous -group [get_clocks -of_objects [get_pi
 set_clock_groups -name grpJ -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT1]] -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1]]
 set_clock_groups -name grpK -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT3]] -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1]]
 set_clock_groups -name grpL -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1]] -group [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT3]]
+set_clock_groups -name grpM -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1]] -group [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT0]]
+set_clock_groups -name grpN -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT0]] -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1]]
 
 ## ------------------------------------------------------------------------------------------------------
 ## False paths

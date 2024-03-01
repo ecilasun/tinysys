@@ -99,13 +99,22 @@ typedef enum logic [2:0] {
 	INVALIDATEBEGIN, INVALIDATESTEP} cachestatetype;
 cachestatetype cachestate = IDLE;
 
+logic [14:0] prevtag;
+logic [7:0] prevline;
+(* extract_reset = "yes" *) logic [511:0] prevdata;
+
+wire prevhit = ren && ({1'b1, tag} == prevtag) && (line == prevline);
+wire countdone = (dccount == 8'hFF);
+
 always_ff @(posedge aclk) begin
 	memreadstrobe <= 1'b0;
 	readdone <= 1'b0;
 	cachewe <= 1'b0;
 	ctagwe <= 1'b0;
-
-	dataout <= cdout[coffset*32 +: 32];
+	
+	prevdata <= cdout;
+	prevtag <= ctagdout;
+	prevline <= clineaddr;
 
 	unique case(cachestate)
 		IDLE : begin
@@ -114,15 +123,23 @@ always_ff @(posedge aclk) begin
 			ctag <= tag;		// Cache tag 0000..3fff
 			dccount <= 8'h00;
 
-			casex ({icacheflush, ren})
-				2'b1x: cachestate <= INVALIDATEBEGIN;
-				2'bx1: cachestate <= CREAD;
-				default: cachestate <= IDLE;
-			endcase
+			if (prevhit) begin
+				// Return hit one clock earlier if this is the same cache line as before
+				dataout <= prevdata[offset*32 +: 32];
+				readdone <= 1'b1;
+			end else begin
+				casex ({icacheflush, ren})
+					2'b1x: cachestate <= INVALIDATEBEGIN;
+					2'bx1: cachestate <= CREAD;
+					default: cachestate <= IDLE;
+				endcase
+			end
 		end
 		
 		INVALIDATEBEGIN: begin
 			// Invalidate
+			prevtag <= 15'd0;
+			prevline <= 8'd0;
 			clineaddr <= dccount;
 			clinedin <= 15'd0; // invalid + zero tag
 			ctagwe <= 1'b1;
@@ -131,13 +148,14 @@ always_ff @(posedge aclk) begin
 
 		INVALIDATESTEP: begin
 			dccount <= dccount + 8'd1;
-			readdone <= dccount == 8'hFF;
-			cachestate <= dccount == 8'hFF ? IDLE : INVALIDATEBEGIN;
+			readdone <= countdone;
+			cachestate <= countdone ? IDLE : INVALIDATEBEGIN;
 		end
 
 		CREAD: begin
 			if (cachehit) begin
 				// Cache hit
+				dataout <= cdout[coffset*32 +: 32];
 				readdone <= 1'b1;
 				cachestate <= IDLE;
 			end else begin
