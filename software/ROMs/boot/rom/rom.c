@@ -25,9 +25,9 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "v1.05"
+#define VERSIONSTRING "v1.07"
 // On-storage version
-#define DEVVERSIONSTRING "v1.05"
+#define DEVVERSIONSTRING "v1.07"
 
 // For ROM image residing on the device:
 const uint8_t s_consolefgcolor = 0x2A; // Ember
@@ -322,23 +322,24 @@ void ExecuteCmd(char *_cmd)
 		kprintf(" cd path      | Change working directory         \n");
 		kprintf(" del fname    | Delete file                      \n");
 		kprintf(" dir [path]   | Show list of files in cwd or path\n");
-		kprintf(" kill pid     | Kill process with id pid         \n");
 		kprintf(" mem          | Show available memory            \n");
-		kprintf(" mount        | Mount drive sd:                  \n");
-		kprintf(" proc         | Show process info                \n");
 		kprintf(" pwd          | Show current work directory      \n");
 		kprintf(" reboot       | Soft reboot                      \n");
 		kprintf(" ren old new  | Rename file from old to new name \n");
-		kprintf(" unmount      | Unmount drive sd:                \n");
 		kprintf(" ver          | Show version info                \n");
 
-		// Hidden commands for dev mode
+		// Hidden commands for dev mode reveal when running from overlay
 		uint32_t waterMark = read_csr(0xFF0);
 		if (waterMark != 0)
 		{
-			kprintf("\nDEV MODE SPECIFIC\n");\
+			kprintf("________________________________________\n");
+			kprintf("DEV MODE SPECIFIC - USE AT YOUR OWN RISK\n");
 			kprintf(" COMMAND      | USAGE\n");
+			kprintf(" kill pid     | Kill process with id pid         \n");
+			kprintf(" mount        | Mount drive sd:                  \n");
+			kprintf(" proc         | Show process info                \n");
 			kprintf(" reloc        | Set ELF relocation offset (test) \n");
+			kprintf(" unmount      | Unmount drive sd:                \n");
 		}
 	}
 	else // Anything else defers to being a command on storage

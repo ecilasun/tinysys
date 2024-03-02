@@ -1,7 +1,8 @@
-# Gateware version 1.06
+# Gateware version 1.07
 
-The gateware binary contains version 1.06 of the device.
-There is no need for a ROM file if you have an old one, but it's recommended to use a ROM version >=1.05 if required.
+The gateware binary contains version 1.07 of the device.
+There is no need for a ROM file.<br>
+If you have an older one, you can simply delete it, or use a `rom.bin` file with version 1.07 or higher.
 
 # Changes:
 1.04:<br>
@@ -12,6 +13,11 @@ saturate instruction by Wade Brainerd added<br>
 compressed instruction support removed<br>
 1.06:<br>
 fixed the saturate instruction<br>
+1.07<br>
+dropped core speed to 150MHz<br>
+made I$ return one clock earlier<br>
+overall device speed is slightly better (coremark 0.6667 versus coremark 0.60) <br>
+overall tight loop memory write speed is better (37.7mb/sec vs 35.4mb/sec)<br>
 
 # Device gateware
 
