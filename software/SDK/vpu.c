@@ -325,7 +325,8 @@ void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _
 			__builtin_memcpy((void*)targetcolor, (void*)sourcecolor, _context->m_consoleWidth*(_context->m_consoleHeight-1));
 			// Fill last row with spaces
 			__builtin_memset((void*)lasttextrow, 0x20, _context->m_consoleWidth);
-			__builtin_memset((void*)lastcolorrow, currentcolor, _context->m_consoleWidth);
+			// Fill last row with default background
+			__builtin_memset((void*)lastcolorrow, (CONSOLEDEFAULTBG<<4) | (CONSOLEDEFAULTFG), _context->m_consoleWidth);
 			cy = _context->m_consoleHeight - 1;
 		}
 
