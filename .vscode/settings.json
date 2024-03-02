@@ -4,7 +4,9 @@
 		"chrono": "c",
 		"cstdlib": "cpp",
 		"stat.h": "c",
-		"ostream": "cpp"
+		"ostream": "cpp",
+		"opl2.h": "c",
+		"vpu.h": "c"
 	},
 	"terminal.integrated.profiles.windows": {
 		"MSYS2": {

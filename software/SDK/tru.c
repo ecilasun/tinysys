@@ -7,7 +7,9 @@ static inline int32_t gmax(int32_t x, int32_t y) { return x>=y?x:y; }
 static inline int32_t gmin(int32_t x, int32_t y) { return x<=y?x:y; }
 
 // Rasterizer control
+#ifdef TRU_HARDWARE
 volatile uint32_t *TRUCMDIO = (volatile uint32_t* ) DEVICE_TRUC;
+#endif
 
 #ifndef TRU_HARDWARE
 int32_t TRUEdgeFunction(const struct TRUVec2 *v0, const struct TRUVec2 *v1, int32_t *A, int32_t *B, const struct TRUVec2 *p)

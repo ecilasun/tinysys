@@ -1,6 +1,5 @@
-// This unit has more than one HART
-// Defined this to allow for auto-setup of per-HART stacks
-//#define MULTIHART_SUPPORT
+// Defined this to allow for two HARTs
+//#define TIMELORD
 
 #ifdef __cplusplus
 extern "C"
@@ -25,7 +24,7 @@ extern "C"
 
 		"li sp, 0x0FFDFFF0;"	   // Stack is at near end of BRAM
 
-#if defined(MULTIHART_SUPPORT)
+#if defined(TIMELORD)
 		// Set up stack spaces automatically when supporting
 		// more than one hardware thread
 		// Note that this version leaves one stack space worth of gap at the end
@@ -71,13 +70,13 @@ extern "C"
 		// Stop at breakpoint / no return / _exit is useless
 		"ebreak;"
 
-#if defined(MULTIHART_SUPPORT)
+#if defined(TIMELORD)
 		// Set up and branch to worker hardware thread entry point
 		"gotoworkermain:"
 		"lw a0,0(sp);"
 		"addi	a1,sp,4;"
 		"li a2,0;"
-		"j _Z10workermainv;"
+		"j workermain;"
 
 		// Put worker hardware thread to sleep if its workermain() exits
 		"_workerfreeze: "

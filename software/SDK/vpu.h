@@ -6,6 +6,27 @@
 #define VPUCMD_SETPAL				0x00000001
 #define VPUCMD_SETVMODE				0x00000002
 
+#define CONSOLEDIMGRAY 0x00
+#define CONSOLEDIMBLUE 0x01
+#define CONSOLEDIMGREEN 0x02
+#define CONSOLEDIMCYAN 0x03
+#define CONSOLEDIMRED 0x04
+#define CONSOLEDIMMAGENTA 0x05
+#define CONSOLEDIMYELLOW 0x06
+#define CONSOLEDIMWHITE 0x07
+
+#define CONSOLEGRAY 0x08
+#define CONSOLEBLUE 0x09
+#define CONSOLEGREEN 0x0A
+#define CONSOLECYAN 0x0B
+#define CONSOLERED 0x0C
+#define CONSOLEMAGENTA 0x0D
+#define CONSOLEYELLOW 0x0E
+#define CONSOLEWHITE 0x0F
+
+#define CONSOLEDEFAULTFG CONSOLEDIMGRAY
+#define CONSOLEDEFAULTBG CONSOLEDIMWHITE
+
 // Hardware format is: 12bit R:B:G
 #define MAKECOLORRGB12(_r, _g, _b) ((((_r&0xF)<<8) | (_b&0xF)<<4) | (_g&0xF))
 
@@ -39,10 +60,10 @@ struct EVideoContext
 	uint32_t m_scanoutAddressCacheAligned;
 	uint32_t m_cpuWriteAddressCacheAligned;
 	uint32_t m_graphicsWidth, m_graphicsHeight;
-	uint32_t m_consoleForeground, m_consoleBackground;
 	uint16_t m_consoleWidth, m_consoleHeight;
 	uint16_t m_cursorX, m_cursorY;
-	uint16_t m_consoleUpdated, m_unused0;
+	uint16_t m_consoleUpdated;
+	uint8_t m_consoleColor;
 };
 
 struct EVideoSwapContext

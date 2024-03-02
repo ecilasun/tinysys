@@ -248,16 +248,16 @@ void VPUSetPal(const uint8_t _paletteIndex, const uint32_t _red, const uint32_t 
 
 void VPUConsoleSetColors(struct EVideoContext *_context, const uint8_t _foregroundIndex, const uint8_t _backgroundIndex)
 {
-	_context->m_consoleForeground = (_foregroundIndex<<24) | (_foregroundIndex<<16) | (_foregroundIndex<<8) | _foregroundIndex;
-	_context->m_consoleBackground = (_backgroundIndex<<24) | (_backgroundIndex<<16) | (_backgroundIndex<<8) | _backgroundIndex;
-	_context->m_consoleUpdated = 1;
+	_context->m_consoleColor = ((_backgroundIndex&0x0F)<<4) | (_foregroundIndex&0x0F);
 }
 
 void VPUConsoleClear(struct EVideoContext *_context)
 {
 	uint8_t *characterBase = (uint8_t*)CONSOLE_CHARACTERBUFFER_START;
+	uint8_t *colorBase = (uint8_t*)CONSOLE_COLORBUFFER_START;
 	// Fill console with spaces
 	__builtin_memset(characterBase, 0x20, _context->m_consoleWidth*_context->m_consoleHeight);
+	__builtin_memset(colorBase, _context->m_consoleColor, _context->m_consoleWidth*_context->m_consoleHeight);
 	_context->m_consoleUpdated = 1;
 	_context->m_cursorX = 0;
 	_context->m_cursorY = 0;
@@ -272,12 +272,14 @@ void VPUConsoleSetCursor(struct EVideoContext *_context, const uint16_t _x, cons
 void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _length)
 {
 	uint8_t *characterBase = (uint8_t*)CONSOLE_CHARACTERBUFFER_START;
+	uint8_t *colorBase = (uint8_t*)CONSOLE_COLORBUFFER_START;
 	uint32_t stride = _context->m_consoleWidth;
 	int cx = _context->m_cursorX;
 	int cy = _context->m_cursorY;
 
 	int i=0;
 	int isNotTab = 1;
+	uint8_t currentcolor = _context->m_consoleColor;
 	while (_message[i] != 0 && i<_length)
 	{
 		int currentchar = _message[i];
@@ -300,6 +302,7 @@ void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _
 		else
 		{
 			characterBase[cy*stride+cx] = currentchar;
+			colorBase[cy*stride+cx] = currentcolor;
 			cx++;
 		}
 
@@ -312,12 +315,17 @@ void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _
 		if (cy >= _context->m_consoleHeight)
 		{
 			// We're trying to write past end of console; scroll up the contents of the console
-			uint32_t target = CONSOLE_CHARACTERBUFFER_START;
-			uint32_t source = CONSOLE_CHARACTERBUFFER_START + _context->m_consoleWidth;
-			uint32_t lastrow = CONSOLE_CHARACTERBUFFER_START + _context->m_consoleWidth*(_context->m_consoleHeight-1);
-			__builtin_memcpy((void*)target, (void*)source, _context->m_consoleWidth*(_context->m_consoleHeight-1));
+			uint32_t targettext = CONSOLE_CHARACTERBUFFER_START;
+			uint32_t targetcolor = CONSOLE_COLORBUFFER_START;
+			uint32_t sourcetext = CONSOLE_CHARACTERBUFFER_START + _context->m_consoleWidth;
+			uint32_t sourcecolor = CONSOLE_COLORBUFFER_START + _context->m_consoleWidth;
+			uint32_t lasttextrow = CONSOLE_CHARACTERBUFFER_START + _context->m_consoleWidth*(_context->m_consoleHeight-1);
+			uint32_t lastcolorrow = CONSOLE_COLORBUFFER_START + _context->m_consoleWidth*(_context->m_consoleHeight-1);
+			__builtin_memcpy((void*)targettext, (void*)sourcetext, _context->m_consoleWidth*(_context->m_consoleHeight-1));
+			__builtin_memcpy((void*)targetcolor, (void*)sourcecolor, _context->m_consoleWidth*(_context->m_consoleHeight-1));
 			// Fill last row with spaces
-			__builtin_memset((void*)lastrow, 0x20, _context->m_consoleWidth);
+			__builtin_memset((void*)lasttextrow, 0x20, _context->m_consoleWidth);
+			__builtin_memset((void*)lastcolorrow, currentcolor, _context->m_consoleWidth);
 			cy = _context->m_consoleHeight - 1;
 		}
 
@@ -332,10 +340,9 @@ void VPUConsoleResolve(struct EVideoContext *_context)
 {
 	uint32_t *vramBase = (uint32_t*)_context->m_cpuWriteAddressCacheAligned;
 	uint8_t *characterBase = (uint8_t*)CONSOLE_CHARACTERBUFFER_START;
+	uint8_t *colorBase = (uint8_t*)CONSOLE_COLORBUFFER_START;
 	uint32_t stride = _context->m_strideInWords;
 	uint32_t charstride = _context->m_consoleWidth;
-	uint32_t FG = _context->m_consoleForeground;
-	uint32_t BG = _context->m_consoleBackground;
 
 	for (uint16_t cy=0; cy<_context->m_consoleHeight; ++cy)
 	{
@@ -344,6 +351,12 @@ void VPUConsoleResolve(struct EVideoContext *_context)
 			int currentchar = characterBase[cx+cy*charstride];
 			if (currentchar<32)
 				continue;
+
+			uint8_t currentcolor = colorBase[cx+cy*charstride];
+			uint32_t BG = (currentcolor>>4)&0x0F;
+			BG = (BG<<24) | (BG<<16) | (BG<<8) | BG;
+			uint32_t FG = currentcolor&0x0F;
+			FG = (FG<<24) | (FG<<16) | (FG<<8) | FG;
 
 			int charrow = (currentchar>>4)*8;
 			int charcol = (currentchar%16);

@@ -25,17 +25,9 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "v1.07"
+#define VERSIONSTRING "v1.08"
 // On-storage version
-#define DEVVERSIONSTRING "v1.07"
-
-// For ROM image residing on the device:
-const uint8_t s_consolefgcolor = 0x2A; // Ember
-const uint8_t s_consolebgcolor = 0x11; // Dark gray
-
-// For ROM image loaded from storage:
-const uint8_t s_devfgcolor = 0x02; // Green
-const uint8_t s_devbgcolor = 0x11; // Dark gray
+#define DEVVERSIONSTRING "v1.08"
 
 static char s_execName[32] = "ROM";
 static char s_execParam0[32] = "auto";
@@ -128,11 +120,7 @@ void DeviceDefaultState(int _bootTime)
 	// Preserve contents of screen for non-boot time
 	if (_bootTime)
 	{
-		uint32_t waterMark = read_csr(0xFF0);
-		if (waterMark == 0) // On-device ROM
-			VPUConsoleSetColors(kernelgfx, s_consolefgcolor, s_consolebgcolor);
-		else // Overlay ROM (white on blue)
-			VPUConsoleSetColors(kernelgfx, s_devfgcolor, s_devbgcolor);
+		VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 		VPUConsoleClear(kernelgfx);
 	}
 
@@ -332,7 +320,7 @@ void ExecuteCmd(char *_cmd)
 		uint32_t waterMark = read_csr(0xFF0);
 		if (waterMark != 0)
 		{
-			kprintf("________________________________________\n");
+			kprintf("----------------------------------------\n");
 			kprintf("DEV MODE SPECIFIC - USE AT YOUR OWN RISK\n");
 			kprintf(" COMMAND      | USAGE\n");
 			kprintf(" kill pid     | Kill process with id pid         \n");

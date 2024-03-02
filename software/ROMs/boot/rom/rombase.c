@@ -51,6 +51,12 @@ int kprintf(const char *fmt, ...)
 	return l;
 }
 
+void ksetcolor(int8_t fg, int8_t bg)
+{
+	struct EVideoContext *kernelgfx = GetKernelGfxContext();
+	VPUConsoleSetColors(kernelgfx, fg, bg);
+}
+
 void kgetcursor(int *_x, int *_y)
 {
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
@@ -75,17 +81,12 @@ uint32_t MountDrive()
 			return 0;
 	}
 
-	//kprintf("Device sd: mounted\n");
 	return 1;
 }
 
 void UnmountDrive()
 {
-	/*FRESULT unmountattempt =*/ f_mount(NULL, "sd:", 1);
-	/*if (unmountattempt != FR_OK)
-		kprintf("File system error (unmount)");
-	else
-		kprintf("Device sd: unmounted\n");*/
+	f_mount(NULL, "sd:", 1);
 }
 
 void ListFiles(const char *path)
@@ -93,6 +94,7 @@ void ListFiles(const char *path)
 	DIR dir;
 	FRESULT re = f_opendir(&dir, path);
 	static const char blankspace[33] = "                                ";
+
 	if (re == FR_OK)
 	{
 		FILINFO finf;
@@ -102,11 +104,13 @@ void ListFiles(const char *path)
 				break;
 
 			int isdir = finf.fattrib&AM_DIR;
-			/*char *isexe = strstr(finf.fname, ".elf");
+			char *isexe = strstr(finf.fname, ".elf");
 			if (isdir)
-				set color to yellow
-			if (isexe!=NULL)
-				set color to green*/
+				ksetcolor(CONSOLEDIMBLUE, CONSOLEDEFAULTBG);
+			else if (isexe!=NULL)
+				ksetcolor(CONSOLEDIMYELLOW, CONSOLEDEFAULTBG);
+			else
+				ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 
 			// Make sure we're always aligned to max 32 characters
 			int count = 0;
@@ -138,7 +142,12 @@ void ListFiles(const char *path)
 		f_closedir(&dir);
 	}
 	else
+	{
+		ksetcolor(CONSOLEDIMRED, CONSOLEDEFAULTBG);
 		kprintf("File system error (listfiles)\n");
+	}
+
+	ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 }
 
 uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader, uint32_t* jumptarget, int _relocOffset)
@@ -485,7 +494,6 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				if (value==0) // io_setup()
 				{
 					//sys_io_setup(unsigned nr_reqs, aio_context_t __user *ctx);
-					kprintf("unimpl: io_setup()\n");
 					write_csr(0x8AA, 0xFFFFFFFF);
 				}
 				else if (value==17) // getcwd()
@@ -709,7 +717,6 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				{
 					// Wait for child process status change - unused
 					// pid_t wait(int *wstatus);
-					kprintf("unimpl: wait()\n");
 					errno = ECHILD;
 					write_csr(0x8AA, 0xFFFFFFFF);
 				}
@@ -820,7 +827,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				}
 				else if (value==0xFFFFFFFF) // setdebugger()
 				{
-					kprintf("Unimplemented debugger interface\n");
+					// kprintf("Unimplemented debugger interface\n");
 					write_csr(0x8AA, 0xFFFFFFFF);
 				}
 				else // Unimplemented syscalls drop here
@@ -847,7 +854,9 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			default:
 			{
 				// Code contains the CAUSE_ code
+				ksetcolor(CONSOLEDIMGRAY, CONSOLERED);
 				kprintf("Guru meditation, core halted\n");
+				ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 
 				// Put core to endless sleep
 				while(1) { asm volatile("wfi;"); }
