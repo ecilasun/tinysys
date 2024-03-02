@@ -112,10 +112,6 @@ always_ff @(posedge aclk) begin
 	cachewe <= 1'b0;
 	ctagwe <= 1'b0;
 	
-	prevdata <= cdout;
-	prevtag <= ctagdout;
-	prevline <= clineaddr;
-
 	unique case(cachestate)
 		IDLE : begin
 			coffset <= offset;	// Cache offset 0..15
@@ -156,6 +152,9 @@ always_ff @(posedge aclk) begin
 			if (cachehit) begin
 				// Cache hit
 				dataout <= cdout[coffset*32 +: 32];
+				prevdata <= cdout;
+				prevtag <= ctagdout;
+				prevline <= clineaddr;
 				readdone <= 1'b1;
 				cachestate <= IDLE;
 			end else begin
