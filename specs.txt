@@ -1,7 +1,7 @@
 CPU:
 32 bit CPU running at 166.6MHz, approximately 5 clocks per instruction
 Based on RISC-V architecture
-Implements the rv32imc_zicsr_zifencei feature set (32bit base instruction set, intereger div/mul, 4096 control/status registers, I$/D$ fence and flush instructions, software/hardware/timer interrupts, compressed instructions)
+Implements the rv32im_zicsr_zifencei_zfinx feature set (32bit base instruction set, intereger div/mul, 4096 control/status registers, I$/D$ fence and flush instructions, software/hardware/timer interrupts, compressed instructions)
 32Kbytes instruction cache
 32Kbytes data cache
 64Kbytes of ROM for the OS

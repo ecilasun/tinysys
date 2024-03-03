@@ -2,7 +2,7 @@ This folder contains the riscvtool helper utility, the ROM image, sample code an
 
 # Prerequisites
 
-First, you'll need the risc-v toolchain from https://github.com/riscv/riscv-gnu-toolchain or its precompiled version (make sure to have support for 32bit ELF and rv32imf variant)
+First, you'll need the risc-v toolchain from https://github.com/riscv/riscv-gnu-toolchain or its precompiled version (make sure to have support for 32bit ELF and rv32im variant)
 You'll also need a working Python so that the WAF build system can build the riscvtool.
 
 There's a convenience script in this directory that will automate this task for you. Simply run:

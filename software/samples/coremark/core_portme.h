@@ -90,7 +90,7 @@ typedef uint64_t CORE_TICKS;
 #endif
 #ifndef COMPILER_FLAGS
 #define COMPILER_FLAGS \
-    "-mcmodel=medany -Ofast -fno-exceptions -Wall -march=rv32im -mabi=ilp32 --param l1-cache-line-size=64 --param l1-cache-size=16 -lgcc -lm" /* "Please put compiler flags here (e.g. -o3)" */
+    "-mcmodel=medany -Ofast -fno-exceptions -Wall -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 --param l1-cache-line-size=64 --param l1-cache-size=16 -lgcc -lm" /* "Please put compiler flags here (e.g. -o3)" */
 #endif
 #ifndef MEM_LOCATION
 #define MEM_LOCATION                                                         \

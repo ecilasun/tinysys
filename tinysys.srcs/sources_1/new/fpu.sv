@@ -9,7 +9,6 @@ module floatingpointunit(
 	input wire [31:0] frval1,
 	input wire [31:0] frval2,
 	input wire [31:0] frval3,
-	input wire [31:0] rval1, // integer input
 
 	// strobe
 	input wire fmaddstrobe,
@@ -72,23 +71,23 @@ wire [7:0] fleresult;
 
 always @(posedge clock) begin
 	case (1'b1)
-		fmaddresultvalid:	result <= fmaddresult;
-		fmsubresultvalid:	result <= fmsubresult;
-		fnmsubresultvalid:	result <= fnmsubresult;
-		fnmaddresultvalid:	result <= fnmaddresult;
-		faddresultvalid:	result <= faddresult;
-		fsubresultvalid:	result <= fsubresult;
-		fmulresultvalid:	result <= fmulresult;
-		fdivresultvalid:	result <= fdivresult;
-		fi2fresultvalid:	result <= fi2fresult;
-		fui2fresultvalid:	result <= fui2fresult;
-		ff2iresultvalid:	result <= ff2iresult;
-		ff2uiresultvalid:	result <= ff2uiresult;
+		fmaddresultvalid:		result <= fmaddresult;
+		fmsubresultvalid:		result <= fmsubresult;
+		fnmsubresultvalid:		result <= fnmsubresult;
+		fnmaddresultvalid:		result <= fnmaddresult;
+		faddresultvalid:		result <= faddresult;
+		fsubresultvalid:		result <= fsubresult;
+		fmulresultvalid:		result <= fmulresult;
+		fdivresultvalid:		result <= fdivresult;
+		fi2fresultvalid:		result <= fi2fresult;
+		fui2fresultvalid:		result <= fui2fresult;
+		ff2iresultvalid:		result <= ff2iresult;
+		ff2uiresultvalid:		result <= ff2uiresult;
 		ff2ui4satresultvalid:	result <= ff2ui4satresult;
-		fsqrtresultvalid:	result <= fsqrtresult;
-		feqresultvalid:		result <= {24'd0, feqresult};
-		fltresultvalid:		result <= {24'd0, fltresult};
-		fleresultvalid:		result <= {24'd0, fleresult};
+		fsqrtresultvalid:		result <= fsqrtresult;
+		feqresultvalid:			result <= {24'd0, feqresult};
+		fltresultvalid:			result <= {24'd0, fltresult};
+		fleresultvalid:			result <= {24'd0, fleresult};
 	endcase
 	resultvalid <= fmaddresultvalid | fmsubresultvalid |  fnmsubresultvalid | fnmaddresultvalid | faddresultvalid |
 					fsubresultvalid | fmulresultvalid | fdivresultvalid | fi2fresultvalid | fui2fresultvalid |
@@ -185,7 +184,7 @@ fp_div floatdiv(
 	.m_axis_result_tvalid(fdivresultvalid) );
 
 fp_i2f floati2f(
-	.s_axis_a_tdata(rval1), // integer source
+	.s_axis_a_tdata(frval1), // integer source
 	.s_axis_a_tvalid(fi2fstrobe),
 	.aclk(clock),
 	.aresetn(aresetn),
@@ -193,7 +192,7 @@ fp_i2f floati2f(
 	.m_axis_result_tvalid(fi2fresultvalid) );
 
 fp_ui2f floatui2f(
-	.s_axis_a_tdata(rval1), // integer source
+	.s_axis_a_tdata(frval1), // integer source
 	.s_axis_a_tvalid(fui2fstrobe),
 	.aclk(clock),
 	.aresetn(aresetn),

@@ -55,18 +55,13 @@ assign branchtarget = btarget;
 // Operands for exec
 (* extract_reset = "yes" *) logic [31:0] A; // rval1
 (* extract_reset = "yes" *) logic [31:0] B; // rval2
-(* extract_reset = "yes" *) logic [31:0] C; // rval2 : immed
 (* extract_reset = "yes" *) logic [31:0] D; // immed
-(* extract_reset = "yes" *) logic [31:0] fA; // frval1
-(* extract_reset = "yes" *) logic [31:0] fB; // frval2
-(* extract_reset = "yes" *) logic [31:0] fC; // frval3
+(* extract_reset = "yes" *) logic [31:0] E; // rval3
 
 // Writeback data
 logic [31:0] wbdin;
 logic [4:0] wbdest;
 logic wback;
-logic [31:0] fwbdin;
-logic fwback;
 
 // --------------------------------------------------
 // Integer register file
@@ -74,39 +69,20 @@ logic fwback;
 
 wire [31:0] rval1;
 wire [31:0] rval2;
+wire [31:0] rval3;
 logic [31:0] rdin;
 logic rwen;
 integerregisterfile GPR(
 	.clock(aclk),
 	.rs1(rs1),
 	.rs2(rs2),
+	.rs3(rs3),
 	.rd(wbdest),
 	.wren(rwen),
 	.din(rdin),
 	.rval1(rval1),
-	.rval2(rval2) );
-
-// --------------------------------------------------
-// Float register file
-// --------------------------------------------------
-
-wire [31:0] frval1;
-wire [31:0] frval2;
-wire [31:0] frval3;
-logic [31:0] frdin;
-logic frwen;
-
-floatregisterfile FGPR(
-	.clock(aclk),
-	.rs1(rs1),
-	.rs2(rs2),
-	.rs3(rs3),
-	.rd(wbdest),
-	.wren(frwen),
-	.datain(frdin),
-	.rval1(frval1),
-	.rval2(frval2),
-	.rval3(frval3) );
+	.rval2(rval2),
+	.rval3(rval3));
 
 // --------------------------------------------------
 // Branch logic
@@ -129,7 +105,7 @@ arithmeticlogic ALU(
 	.aresetn(aresetn),
 	.aluout(aluout),
 	.val1(A),
-	.val2(C),
+	.val2(selectimmedasrval2 ? D : B),
 	.aluop(aluop) );
 
 // --------------------------------------------------
@@ -206,10 +182,9 @@ floatingpointunit FPU(
 	.aresetn(aresetn),
 
 	// inputs
-	.frval1(fA),
-	.frval2(fB),
-	.frval3(fC),
-	.rval1(A), // i2f input
+	.frval1(A),
+	.frval2(B),
+	.frval3(E),
 
 	// operation select strobe
 	.fmaddstrobe(fmaddstrobe),
@@ -277,12 +252,11 @@ logic pendingdiv = 1'b0;
 logic pendingload = 1'b0;
 logic pendingflwd = 1'b0;
 logic pendingwrite = 1'b0;
-wire pendingwback = rwen || frwen;
+wire pendingwback = rwen;
 
 always_comb begin
 	if (~aresetn) begin
 		rwen = 1'b0;
-		frwen = 1'b0;
 	end else begin
 		if (m_ibus.rdone) begin
 			unique case(rfunc3)
@@ -316,7 +290,6 @@ always_comb begin
 				end
 				default: begin // WORD - 3'b010
 					rdin = m_ibus.rdata;
-					frdin = m_ibus.rdata;
 				end
 			endcase
 		end else if (mulready) begin
@@ -330,10 +303,8 @@ always_comb begin
 			endcase
 		end else begin
 			rdin = wbdin;
-			frdin = fwbdin;
 		end
 		rwen = (pendingload && m_ibus.rdone) || mulready || divready || divuready || wback;
-		frwen = (pendingflwd && m_ibus.rdone) || fwback;
 	end
 end
 
@@ -366,7 +337,6 @@ always @(posedge aclk) begin
 		btready <= 1'b0;	// Stop branch target ready strobe
 		ififore <= 1'b0;	// Stop instruction fifo read enable strobe
 		wback <= 1'b0;		// Stop register writeback shadow strobe
-		fwback <= 1'b0;
 
 		m_ibus.rstrobe <= 1'b0;	// Stop data read strobe
 		m_ibus.wstrobe <= 4'h0;	// Stop data write strobe
@@ -431,11 +401,8 @@ always @(posedge aclk) begin
 					// Set up inputs to math/branch units, addresses, and any math strobes required
 					A <= rval1;
 					B <= rval2;
-					C <= selectimmedasrval2 ? immed : rval2;
-					fA <= frval1;
-					fB <= frval2;
-					fC <= frval3;
 					D <= immed;
+					E <= rval3;
 					wbdest <= rd;
 					rwaddress <= rval1 + immed;
 					offsetPC <= PC + immed;
@@ -455,12 +422,10 @@ always @(posedge aclk) begin
 						instrOneHotOut[`O_H_FLOAT_OP]: begin
 							ctlmode <= FPUOP;
 						end
-						instrOneHotOut[`O_H_STORE],
-						instrOneHotOut[`O_H_FLOAT_STW]: begin
+						instrOneHotOut[`O_H_STORE]: begin
 							ctlmode <= STORE;
 						end
-						instrOneHotOut[`O_H_LOAD],
-						instrOneHotOut[`O_H_FLOAT_LDW]: begin
+						instrOneHotOut[`O_H_LOAD]: begin
 							ctlmode <= LOAD;
 						end
 						instrOneHotOut[`O_H_SYSTEM]: begin
@@ -489,23 +454,23 @@ always @(posedge aclk) begin
 			FPUOP: begin
 				unique case (func7)
 					`F7_FSGNJ: begin
-						fwback <= 1'b1;
+						wback <= 1'b1;
 						case(func3)
-							3'b000: fwbdin <= {fB[31], fA[30:0]}; // fsgnj
-							3'b001: fwbdin <= {~fB[31], fA[30:0]}; // fsgnjn
-							3'b010: fwbdin <= {fA[31]^fB[31], fA[30:0]}; // fsgnjx
+							3'b000: wbdin <= {B[31], A[30:0]}; // fsgnj
+							3'b001: wbdin <= {~B[31], A[30:0]}; // fsgnjn
+							3'b010: wbdin <= {A[31]^B[31], A[30:0]}; // fsgnjx
 						endcase
 						ctlmode <= READINSTR;
 					end
 					`F7_FMVXW: begin
 						wback <= 1'b1;
-						wbdin <= fA; // fmvxw (TODO: fclass: classify the float)
+						wbdin <= A; // fmvxw (TODO: fclass: classify the float)
 						// wbdin <= func3 == 3'b000 ? fA : ?????; // fmvxw
 						ctlmode <= READINSTR;
 					end
 					`F7_FMVWX: begin
-						fwback <= 1'b1;
-						fwbdin <= rval1;
+						wback <= 1'b1;
+						wbdin <= rval1;
 						ctlmode <= READINSTR;
 					end
 					`F7_FMAX: begin
@@ -560,8 +525,8 @@ always @(posedge aclk) begin
 
 			FUSEDMATHSTALL: begin
 				if (fpuresultvalid) begin
-					fwbdin <= fpuresult;
-					fwback <= 1'b1;
+					wbdin <= fpuresult;
+					wback <= 1'b1;
 					ctlmode <= READINSTR;
 				end else begin
 					ctlmode <= FUSEDMATHSTALL;
@@ -581,15 +546,15 @@ always @(posedge aclk) begin
 							wback <= 1'b1;
 						end
 						`F7_FMAX: begin
-							fwback <= 1'b1;
 							if (func3==3'b000) // fmin
-								fwbdin <= fpuresult[0] ? fA : fB;
+								wbdin <= fpuresult[0] ? A : B;
 							else // fmax
-								fwbdin <= fpuresult[0] ? fB : fA;
+								wbdin <= fpuresult[0] ? B : A;
+							wback <= 1'b1;
 						end
 						default: begin // add/sub/mul/div/sqrt/cvtsw
-							fwback <= 1'b1;
-							fwbdin <= fpuresult;
+							wbdin <= fpuresult;
+							wback <= 1'b1;
 						end
 					endcase
 					ctlmode <= READINSTR;
@@ -605,7 +570,7 @@ always @(posedge aclk) begin
 					unique case(func3)
 						3'b000:  m_ibus.wdata <= {B[7:0], B[7:0], B[7:0], B[7:0]};
 						3'b001:  m_ibus.wdata <= {B[15:0], B[15:0]};
-						default: m_ibus.wdata <= instrOneHotOut[`O_H_STORE] ? B : fB;
+						default: m_ibus.wdata <= B;
 					endcase
 					unique case(func3)
 						3'b000:  m_ibus.wstrobe <= {rwaddress[1], rwaddress[1], ~rwaddress[1], ~rwaddress[1]} & {rwaddress[0], ~rwaddress[0], rwaddress[0], ~rwaddress[0]};

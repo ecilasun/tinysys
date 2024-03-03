@@ -46,7 +46,7 @@ and the current user binary will stop executing, dropping you back to the CLI.
 # Q/A
 
 Q: What feature level does the RISC-V processor contain?<br>
-A: If you're familiar with RISC-V ISA, this one implements the `rv32imf_zicsr_zifencei` subset of instructions
+A: If you're familiar with RISC-V ISA, this one implements the `rv32im_zicsr_zifencei_zfinx` subset of instructions
 
 Q: Where do I find details for programming on the RISC-V?<br>
 A: [RISC-V Documentation On GitHub](https://github.com/riscv/riscv-isa-manual/releases/tag/Ratified-IMAFDQC) would be a good starting point for the current ISA documents. Make sure to use only the feature set mentioned above!
