@@ -6,7 +6,14 @@
 		"stat.h": "c",
 		"ostream": "cpp",
 		"opl2.h": "c",
-		"vpu.h": "c"
+		"vpu.h": "c",
+		"algorithm": "cpp",
+		"optional": "cpp",
+		"system_error": "cpp",
+		"type_traits": "cpp",
+		"xlocmon": "cpp",
+		"xtr1common": "cpp",
+		"xutility": "cpp"
 	},
 	"terminal.integrated.profiles.windows": {
 		"MSYS2": {

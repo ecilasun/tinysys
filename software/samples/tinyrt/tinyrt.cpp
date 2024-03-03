@@ -77,7 +77,7 @@ inline uint32_t ftoui4sat(float value)
   uint32_t retval;
   asm (
     "mv a1, %1;"
-    ".word 0xc2068653;" // fcvtswu4sat a0, a1 // note A0==cpu.x10, A1==cpu.x11
+    ".word 0xc2058553;" // fcvtswu4sat a0, a1 // note A0==cpu.x10, A1==cpu.x11
     "mv %0, a0; "
     : "=r" (retval)
     : "r" (value)
@@ -95,9 +95,6 @@ inline void graphics_set_pixel(int x, int y, float r, float g, float b) {
   uint32_t red = ftoui4sat(r);
   uint32_t green = ftoui4sat(g);
   uint32_t blue = ftoui4sat(b);
-//   uint32_t red = uint8_t(min(r*255.f,255.f))>>4;
-//   uint32_t green = uint8_t(min(g*255.f,255.f))>>4;
-//   uint32_t blue = uint8_t(min(b*255.f,255.f))>>4;
 
   uint16_t *pixel = (uint16_t*)(framebuffer + (x+y*vx.m_graphicsWidth)*2);
   *pixel = (red<<8) | (blue<<4) | green;
