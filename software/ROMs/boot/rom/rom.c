@@ -274,40 +274,41 @@ void ExecuteCmd(char *_cmd)
 	else if (!strcmp(command, "ver"))
 	{
 		VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
-		kprintf("\n                                     \n");
-		kprintf("tinysys                              \n");
+		kprintf("\n                                               \n");
+		kprintf(" tinysys                                       \n");
 
 		uint32_t waterMark = read_csr(0xFF0);
 		if (waterMark == 0)
-			kprintf("ROM             : " VERSIONSTRING "              \n");
+			kprintf(" ROM             : " VERSIONSTRING "                       \n");
 		else
-			kprintf("ROM             : " DEVVERSIONSTRING "              \n");
+			kprintf(" ROM             : " DEVVERSIONSTRING "                       \n");
 
 		// TODO: These two values need to come from a CSR,
 		// pointing at a memory location with device config data (machineconfig?)
 		// That memory location will in turn point at an onboard EEPROM we can
 		// read device versions/presence from.
-		kprintf("Board:          : issue 2D:2023      \n");
-		kprintf("CPU:            : 150MHz             \n");
+		kprintf(" Board           : issue 2D:2023               \n");
+		kprintf(" CPU & bus clock : 150MHz                      \n");
+		kprintf(" HART#0          : rv32im_zicsr_zifencei_zfinx \n");
 
 		// Report USB serial chip version
 		uint8_t m3420rev = MAX3420ReadByte(rREVISION);
 		if (m3420rev != 0xFF)
-			kprintf("MAX3420(serial) : 0x%X                \n", m3420rev);
+			kprintf(" MAX3420(serial) : 0x%X                         \n", m3420rev);
 		else
-			kprintf("MAX3420(serial) : n/a                \n");
+			kprintf(" MAX3420(serial) : n/a                         \n");
 
 		// Report USB host chip version
 		uint8_t m3421rev = MAX3421ReadByte(rREVISION);
 		if (m3421rev != 0xFF)
-			kprintf("MAX3421(host)   : 0x%X               \n", m3421rev);
+			kprintf(" MAX3421(host)   : 0x%X                        \n", m3421rev);
 		else
-			kprintf("MAX3421(host)   : n/a                \n");
+			kprintf(" MAX3421(host)   : n/a                         \n");
 
 		// Video circuit on 2B has no info we can read so this is hardcoded
-		kprintf("SII164(video)   : 12bpp DVI          \n");
-		kprintf("CS4344(audio)   : 11/22/44KHz stereo \n");
-		kprintf("                                     \n\n");
+		kprintf(" SII164(video)   : 12bpp DVI                   \n");
+		kprintf(" CS4344(audio)   : 11/22/44KHz stereo          \n");
+		kprintf("                                               \n\n");
 		VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 	}
 	else if (!strcmp(command, "help"))

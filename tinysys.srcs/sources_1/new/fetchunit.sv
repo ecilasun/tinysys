@@ -13,7 +13,7 @@ module fetchunit #(
 	// Output FIFO control
 	output wire ififoempty,
 	output wire ififovalid,
-	output wire [133:0] ififodout,
+	output wire [131:0] ififodout,
 	input wire ififord_en,
 	// IRQ lines from CSR unit
 	input wire [1:0] irqReq,
@@ -56,7 +56,7 @@ instructioncache instructioncacheinst(
 // Pre-decoder
 // --------------------------------------------------
 
-wire [17:0] instrOneHotOut;
+wire [15:0] instrOneHotOut;
 wire [3:0] aluop;
 wire [2:0] bluop;
 wire [2:0] func3;
@@ -69,7 +69,7 @@ wire selectimmedasrval2;
 
 decoder decoderinst(
 	.instruction(IR),
-	.instrOneHotOut(instrOneHotOut),			// 18	+
+	.instrOneHotOut(instrOneHotOut),			// 16	+
 	.aluop(aluop),								// 4	+
 	.bluop(bluop),								// 3	+
 	.func3(func3),								// 3	+
@@ -119,7 +119,7 @@ wire [31:0] injectInstruction = injectionROM[injectAddr];
 // Instruction output FIFO
 // --------------------------------------------------
 
-logic [133:0] ififodin;
+logic [131:0] ififodin;
 logic ififowr_en = 1'b0;
 wire ififofull;
 

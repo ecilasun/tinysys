@@ -4,7 +4,7 @@
 
 module decoder(
 	input wire [31:0] instruction,		// Raw input instruction
-	output bit [17:0] instrOneHotOut,	// Current instruction class
+	output bit [15:0] instrOneHotOut,	// Current instruction class
 	output bit [3:0] aluop,				// Current ALU op
 	output bit [2:0] bluop,				// Current BLU op
 	output bit [2:0] func3,				// Sub-instruction
@@ -19,7 +19,7 @@ module decoder(
 	output bit selectimmedasrval2		// Select rval2 or unpacked integer during EXEC
 );
 
-wire [17:0] instrOneHot = {
+wire [15:0] instrOneHot = {
 	instruction[6:0]==`OPCODE_OP ? 1'b1:1'b0,
 	instruction[6:0]==`OPCODE_OP_IMM ? 1'b1:1'b0,
 	instruction[6:0]==`OPCODE_AUIPC ? 1'b1:1'b0,
@@ -32,8 +32,8 @@ wire [17:0] instrOneHot = {
 	instruction[6:0]==`OPCODE_FENCE ? 1'b1:1'b0,
 	instruction[6:0]==`OPCODE_SYSTEM ? 1'b1:1'b0,
 	instruction[6:0]==`OPCODE_FLOAT_OP ? 1'b1:1'b0,
-	instruction[6:0]==`OPCODE_FLOAT_LDW ? 1'b1:1'b0,
-	instruction[6:0]==`OPCODE_FLOAT_STW ? 1'b1:1'b0,
+	// instruction[6:0]==`OPCODE_FLOAT_LDW ? 1'b1:1'b0,
+	// instruction[6:0]==`OPCODE_FLOAT_STW ? 1'b1:1'b0,
 	instruction[6:0]==`OPCODE_FLOAT_MADD ? 1'b1:1'b0,
 	instruction[6:0]==`OPCODE_FLOAT_MSUB ? 1'b1:1'b0,
 	instruction[6:0]==`OPCODE_FLOAT_NMSUB ? 1'b1:1'b0,
@@ -44,7 +44,7 @@ always_comb begin
 end
 
 // Immed vs rval2 selector
-wire selector = instrOneHot[`O_H_JALR] || instrOneHot[`O_H_OP_IMM] || instrOneHot[`O_H_LOAD] || instrOneHot[`O_H_FLOAT_LDW] || instrOneHot[`O_H_FLOAT_STW] || instrOneHot[`O_H_STORE];
+wire selector = instrOneHot[`O_H_JALR] || instrOneHot[`O_H_OP_IMM] || instrOneHot[`O_H_LOAD] /*|| instrOneHot[`O_H_FLOAT_LDW] || instrOneHot[`O_H_FLOAT_STW]*/ || instrOneHot[`O_H_STORE];
 
 // Every instruction except SYS:3'b000, BRANCH, FPU ops and STORE are recoding form
 // i.e. NOT (branch or store) OR (SYS AND at least one bit set)
@@ -179,7 +179,7 @@ always_comb begin
 			immed = {instruction[31:12], 12'd0};
 		end
 		// S-imm
-		instrOneHot[`O_H_FLOAT_STW], instrOneHot[`O_H_STORE]: begin
+		/*instrOneHot[`O_H_FLOAT_STW],*/ instrOneHot[`O_H_STORE]: begin
 			immed = {{21{instruction[31]}}, instruction[30:25], instruction[11:7]};
 		end
 		// J-imm

@@ -13,7 +13,7 @@ module controlunit #(
 	// Instruction FIFO control
 	input wire ififoempty,
 	input wire ififovalid,
-	input wire [133:0] ififodout,
+	input wire [131:0] ififodout,
 	output wire ififord_en,
 	// CPU cycle / retired instruction counts
 	output wire [63:0] cpuclocktime,
@@ -32,7 +32,7 @@ assign retired = retiredcount;
 logic [31:0] PC;
 logic [31:0] immed;
 logic [31:0] csrprevval;
-logic [17:0] instrOneHotOut;
+logic [15:0] instrOneHotOut;
 logic [1:0] sysop;
 logic [11:0] csroffset;
 logic [4:0] rs1;
@@ -250,7 +250,6 @@ logic [31:0] rwaddress;
 logic pendingmul = 1'b0;
 logic pendingdiv = 1'b0;
 logic pendingload = 1'b0;
-logic pendingflwd = 1'b0;
 logic pendingwrite = 1'b0;
 wire pendingwback = rwen;
 
@@ -329,7 +328,6 @@ always @(posedge aclk) begin
 		pendingmul <= 1'b0;
 		pendingdiv <= 1'b0;
 		pendingload <= 1'b0;
-		pendingflwd <= 1'b0;
 		pendingwrite <= 1'b0;
 		wbdin <= 32'd0;
 		ctlmode <= INIT;
@@ -367,7 +365,6 @@ always @(posedge aclk) begin
 
 		if (m_ibus.wdone) pendingwrite <= 1'b0;
 		if (m_ibus.rdone) pendingload <= 1'b0;
-		if (m_ibus.rdone) pendingflwd <= 1'b0;
 		if (mulready) pendingmul <= 1'b0;
 		if (divready || divuready) pendingdiv <= 1'b0;
 
@@ -393,7 +390,7 @@ always @(posedge aclk) begin
 			end
 
 			READREG: begin
-				if (pendingwback || pendingmul || pendingdiv || ((pendingload||pendingflwd) && ~m_ibus.rdone)) begin
+				if (pendingwback || pendingmul || pendingdiv || (pendingload && ~m_ibus.rdone)) begin
 					// HAZARD#1: Wait for pending register writeback
 					// HAZARD#2: Wait for pending memory load
 					ctlmode <= READREG;
@@ -590,7 +587,6 @@ always @(posedge aclk) begin
 					m_ibus.rstrobe <= 1'b1;
 					rfunc3 <= func3;
 					pendingload <= instrOneHotOut[`O_H_LOAD];
-					pendingflwd <= instrOneHotOut[`O_H_FLOAT_LDW];
 					ctlmode <= READINSTR;
 				end else begin
 					// HAZARD#3: Wait for pending write before write

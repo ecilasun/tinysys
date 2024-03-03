@@ -28,8 +28,8 @@
 `define OPCODE_SYSTEM	    7'b1110011
 
 `define OPCODE_FLOAT_OP     7'b1010011
-`define OPCODE_FLOAT_LDW    7'b0000111
-`define OPCODE_FLOAT_STW    7'b0100111
+//`define OPCODE_FLOAT_LDW    7'b0000111
+//`define OPCODE_FLOAT_STW    7'b0100111
 `define OPCODE_FLOAT_MADD   7'b1000011
 `define OPCODE_FLOAT_MSUB   7'b1000111
 `define OPCODE_FLOAT_NMSUB  7'b1001011
@@ -232,22 +232,22 @@
 // Instruction decoder one-hot states
 // ------------------------------------------
 
-`define O_H_OP				17
-`define O_H_OP_IMM			16
-`define O_H_AUIPC			15
-`define O_H_LUI				14
-`define O_H_STORE			13
-`define O_H_LOAD			12
-`define O_H_JAL				11
-`define O_H_JALR			10
-`define O_H_BRANCH			9
+`define O_H_OP				15
+`define O_H_OP_IMM			14
+`define O_H_AUIPC			13
+`define O_H_LUI				12
+`define O_H_STORE			11
+`define O_H_LOAD			10
+`define O_H_JAL				9
+`define O_H_JALR			8
+`define O_H_BRANCH			7
 
-`define O_H_FENCE			8
-`define O_H_SYSTEM			7
+`define O_H_FENCE			6
+`define O_H_SYSTEM			5
 
-`define O_H_FLOAT_OP		6
-`define O_H_FLOAT_LDW		5
-`define O_H_FLOAT_STW		4
+`define O_H_FLOAT_OP		4
+//`define O_H_FLOAT_LDW		5
+//`define O_H_FLOAT_STW		4
 `define O_H_FLOAT_MADD		3
 `define O_H_FLOAT_MSUB		2
 `define O_H_FLOAT_NMSUB		1
