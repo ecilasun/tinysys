@@ -111,7 +111,7 @@ int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum E
 	// Resume timer interrupts on this core
 	write_csr(mie, MIP_MSIP | MIP_MEIP | MIP_MTIP);
 
-	return idx;
+	return prevcount;
 }
 
 void TaskExitCurrentTask(struct STaskContext *_ctx)
