@@ -514,8 +514,11 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					char *path = (char*)read_csr(0x8AA); // A0
 					if (path)
 					{
-						f_chdir(path);
-						write_csr(0x8AA, 0x0);
+						FRESULT chdirattempt = f_chdir(path);
+						if (chdirattempt == FR_OK)
+							write_csr(0x8AA, 0x0);
+						else
+							write_csr(0x8AA, 0xFFFFFFFF);
 					}
 					else
 						write_csr(0x8AA, 0xFFFFFFFF);

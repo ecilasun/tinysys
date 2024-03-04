@@ -310,9 +310,16 @@ void ExecuteCmd(char *_cmd)
 				strcat(s_pathtmp, "/");		// Append one if not
 
 			// Finally, change to this new path
-			f_chdir(s_pathtmp);
-			// Save for later
-			strncpy(s_workdir, s_pathtmp, 48);
+			FRESULT cwdres = f_chdir(s_pathtmp);
+			if (cwdres == FR_OK)
+			{
+				// Save for later
+				strncpy(s_workdir, s_pathtmp, 48);
+			}
+			else
+			{
+				kprintf("invalid path '%s'\n", s_pathtmp);
+			}
 		}
 	}
 	else if (!strcmp(command, "ver"))
