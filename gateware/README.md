@@ -1,8 +1,8 @@
-# Gateware version 1.08
+# Gateware version 1.09
 
-The gateware binary contains version 1.08 of the device.
+The gateware binary contains version 1.09 of the device.
 There is no need for a ROM file.<br>
-If you have an older one, you can simply delete it, or use a `rom.bin` file with version 1.08 or higher.
+If you have an older one, you can simply delete it, or use a `rom.bin` file with version 1.09 or higher.
 
 # Current device architecture
 This is the current architecture to use with gcc13 and higher: `rv32im_zicsr_zifencei_zfinx`
@@ -23,7 +23,10 @@ overall device speed is slightly better (coremark 0.6667 versus coremark 0.60) <
 overall tight loop memory write speed is better (37.7mb/sec vs 35.4mb/sec)<br>
 1.08<br>
 device now drops 'f' extension and used ZFix (floats in integer registers extension)<br>
-all samples and ROM changed to reflect this change
+all samples and ROM changed to reflect this change<br>
+<b>1.09</b><br>
+minimal hardware change (no impact on code)<br>
+updated built-in ROM<br>
 
 # Device gateware
 
