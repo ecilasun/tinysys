@@ -43,6 +43,7 @@ folders = \
 	raster \
 	reflections \
 	syscalltest \
+	task \
 	tinyrt \
 	tinyrtty \
 	usbinfo \

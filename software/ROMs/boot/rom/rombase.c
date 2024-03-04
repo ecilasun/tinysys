@@ -264,20 +264,20 @@ static char s_fileNames[MAX_HANDLES][MAXFILENAMELEN+1] = {
 	{"                                                "},
 	{"                                                "},};
 
-static struct STaskContext g_taskctx;
+static struct STaskContext *s_taskctx = (struct STaskContext *)KERNEL_TASK_CONTEXT;
 static UINT tmpresult = 0;
 
 struct STaskContext *CreateTaskContext()
 {
 	// Initialize task context memory
-	TaskInitSystem(&g_taskctx);
+	TaskInitSystem(s_taskctx);
 
-	return &g_taskctx;
+	return s_taskctx;
 }
 
 struct STaskContext *GetTaskContext()
 {
-	return &g_taskctx;
+	return s_taskctx;
 }
 
 void HandleSDCardDetect()
@@ -384,7 +384,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 
 				// Switch between running tasks
 				// TODO: Return time slice request of current task
-				uint32_t runLength = TaskSwitchToNext(&g_taskctx);
+				uint32_t runLength = TaskSwitchToNext(s_taskctx);
 
 				// Task scheduler will re-visit after we've filled run length of this task
 				uint64_t now = E32ReadTime();
@@ -451,9 +451,9 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 						kprintf("Illegal instruction 0x%X at 0x%X, terminating\n", instA, PC);
 				}
 				// Terminate task on first chance and remove from list of running tasks
-				TaskExitCurrentTask(&g_taskctx);
+				TaskExitCurrentTask(s_taskctx);
 				// Force switch to next task
-				TaskSwitchToNext(&g_taskctx);
+				TaskSwitchToNext(s_taskctx);
 
 				break;
 			}
@@ -463,9 +463,9 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				// Where there's no debugger loaded, simply exit since we're not supposed to run past ebreak commands
 				kprintf("Encountered breakpoint with no debugger attached\n");
 				// Exit task in non-debug mode
-				TaskExitCurrentTask(&g_taskctx);
+				TaskExitCurrentTask(s_taskctx);
 				// Force switch to next task
-				TaskSwitchToNext(&g_taskctx);
+				TaskSwitchToNext(s_taskctx);
 
 				break;
 			}
@@ -710,7 +710,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				else if (value==93) // exit()
 				{
 					// Terminate and remove from list of running tasks
-					TaskExitCurrentTask(&g_taskctx);
+					TaskExitCurrentTask(s_taskctx);
 					write_csr(0x8AA, 0x0);
 				}
 				else if (value==95) // wait()
@@ -725,7 +725,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					// Signal process to terminate
 					uint32_t pid = read_csr(0x8AA); // A0
 					uint32_t sig = read_csr(0x8AB); // A1
-					TaskExitTaskWithID(&g_taskctx, pid, sig);
+					TaskExitTaskWithID(s_taskctx, pid, sig);
 					kprintf("\nSIG:0x%x PID:0x%x\n", sig, pid);
 					write_csr(0x8AA, sig);
 				}

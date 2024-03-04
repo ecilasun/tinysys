@@ -2,8 +2,7 @@
 
 #include <inttypes.h>
 
-#define TASK_MAX 4
-#define TASK_MAX_BREAKPOINTS 12
+#define TASK_MAX 8
 
 typedef void(*taskfunc)();
 
@@ -31,8 +30,6 @@ struct STask {
 
 	// Debug support - this will probably move somewhere else
 	char name[16];				// Name of this task
-	uint32_t num_breakpoints;	// Breakpoint count
-	struct STaskBreakpoint breakpoints[TASK_MAX_BREAKPOINTS];	// List of breakpoints
 };
 
 struct STaskContext {
@@ -61,9 +58,6 @@ void TaskExitTaskWithID(struct STaskContext *_ctx, uint32_t _taskid, uint32_t _s
 // Also returns the current time
 uint64_t TaskYield();
 
-int TaskInsertBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint32_t _address);
-int TaskRemoveBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint32_t _address);
-void TaskRemoveAllBreakpoints(struct STaskContext *_ctx, const uint32_t _taskid);
 void TaskSetState(struct STaskContext *_ctx, const uint32_t _taskid, enum ETaskState _state);
 enum ETaskState TaskGetState(struct STaskContext *_ctx, const uint32_t _taskid);
 uint32_t TaskGetPC(struct STaskContext *_ctx, const uint32_t _taskid);

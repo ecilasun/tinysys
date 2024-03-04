@@ -28,14 +28,13 @@
 `define OPCODE_SYSTEM	    7'b1110011
 
 `define OPCODE_FLOAT_OP     7'b1010011
-//`define OPCODE_FLOAT_LDW    7'b0000111
-//`define OPCODE_FLOAT_STW    7'b0100111
 `define OPCODE_FLOAT_MADD   7'b1000011
 `define OPCODE_FLOAT_MSUB   7'b1000111
 `define OPCODE_FLOAT_NMSUB  7'b1001011
 `define OPCODE_FLOAT_NMADD  7'b1001111
 
-//`define OPCODE_CUSTOM_REDGE 7'b0001011
+//`define OPCODE_FLOAT_LDW    7'b0000111
+//`define OPCODE_FLOAT_STW    7'b0100111
 //`define OPCODE_CUSTOM_RMASK 7'b0101011
 //`define OPCODE_CUSTOM_RWAIT 7'b1001011
 
@@ -309,6 +308,8 @@
 `define CSR_HWSTATE		12'hFFF // immutable, custom hardware state bits
 
 `define CSR_REGISTERSHADOW	12'h8A0 // These are used to store shadow copies of registers from ISRs
+
+`define CSR_WATERMARK		12'hFF0 // Machine boot state (watermark) register, survives soft reboot intact
 
 //`define CSR_MCONFIGPTR  12'hF15
 // `define CSR_DSCRATCH    12'h340

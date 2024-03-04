@@ -25,12 +25,6 @@ void TaskInitSystem(struct STaskContext *_ctx)
 		task->regs[8] = 0x0;			// Frame pointer
 		task->state = TS_UNKNOWN;
 		task->name[0] = 0; // No name
-		task->num_breakpoints = 0;
-		for (int j=0; j<TASK_MAX_BREAKPOINTS; ++j)
-		{
-			task->breakpoints[j].address = 0x0;
-			task->breakpoints[j].originalinstruction = 0x0;
-		}
 	}
 }
 
@@ -65,113 +59,6 @@ void TaskWrite2Bytes(const uint32_t _address, const uint16_t _bytes)
 	target[1] = (_bytes&0xFF00)>>8;
 }
 
-int TaskInsertBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint32_t _address)
-{
-	struct STask *task = &(_ctx->tasks[_taskid]);
-	uint32_t brk = task->num_breakpoints;
-
-	// Too many breakpoints
-	if (brk == TASK_MAX_BREAKPOINTS-1)
-		return 0;
-
-	for (uint32_t i=0; i<brk; ++i)
-	{
-		if (task->breakpoints[i].address == _address)
-		{
-			// Already have a breakpoint here
-			return 0;
-		}
-	}
-
-	// New breakpoint
-	task->breakpoints[brk].address = _address;
-	uint32_t instr = TaskRead4Bytes(_address);
-
-	// Replace current instruction with EBREAK or C.EBREAK instruction depending on compression
-	if ((instr&3) == 0x3)
-		TaskWrite4Bytes(_address, 0x00100073); // EBREAK
-	else
-		TaskWrite2Bytes(_address, 0x9002); // C.EBREAK
-
-	task->breakpoints[brk].originalinstruction = instr;
-	++task->num_breakpoints;
-
-	// Make sure the write makes it to RAM and also visible to I$
-	CFLUSH_D_L1;
-	FENCE_I;
-
-	return 1;
-}
-
-int TaskRemoveBreakpoint(struct STaskContext *_ctx, const uint32_t _taskid, uint32_t _address)
-{
-	struct STask *task = &(_ctx->tasks[_taskid]);
-	uint32_t brk = task->num_breakpoints;
-
-	for (uint32_t i=0; i<brk; ++i)
-	{
-		if (task->breakpoints[i].address == _address)
-		{
-			// Found breakpoint
-			uint32_t instr = task->breakpoints[i].originalinstruction;
-
-			// Replace it with the original instruction
-			if ((instr&3) == 0x3)
-				TaskWrite4Bytes(_address, instr);
-			else
-				TaskWrite2Bytes(_address, instr);
-
-			// Nullify the address and instruction
-			task->breakpoints[i].address = 0x00000000;
-			task->breakpoints[i].originalinstruction = 0x00000000;
-
-			// Make sure the write makes it to RAM and also visible to I$
-			CFLUSH_D_L1;
-			FENCE_I;
-
-			// Swap last entry over deleted one if we're not at the end of the list
-			if (i != brk-1)
-				task->breakpoints[i] = task->breakpoints[brk-1];
-			task->num_breakpoints--;
-
-			return 1;
-		}
-	}
-
-	return 0;
-}
-
-void TaskRemoveAllBreakpoints(struct STaskContext *_ctx, const uint32_t _taskid)
-{
-	struct STask *task = &(_ctx->tasks[_taskid]);
-	uint32_t brk = task->num_breakpoints;
-
-	for (uint32_t i=0; i<brk; ++i)
-	{
-		if (task->breakpoints[i].address != 0)
-		{
-			uint32_t address = task->breakpoints[i].address;
-
-			// Restore original instruction
-			uint32_t instr = task->breakpoints[i].originalinstruction;
-			if ((instr&3) == 0x3)
-				*(uint32_t*)address = instr;
-			else
-				*(uint16_t*)address = instr;
-			
-			// Nullify the address and instruction
-			task->breakpoints[i].address = 0x00000000;
-			task->breakpoints[i].originalinstruction = 0x00000000;
-		}
-	}
-
-	// Make sure the write makes it to RAM and also visible to I$
-	CFLUSH_D_L1;
-	FENCE_I;
-
-	task->num_breakpoints = 0;
-}
-
 void TaskSetState(struct STaskContext *_ctx, const uint32_t _taskid, enum ETaskState _state)
 {
 	_ctx->tasks[_taskid].state = _state;
@@ -194,7 +81,7 @@ int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum E
 		return 0;
 
 	// Stop timer interrupts on this core during this operation
-	//write_csr(mie, MIP_MSIP | MIP_MEIP);
+	write_csr(mie, MIP_MSIP | MIP_MEIP);
 
 	++_ctx->numTasks;
 
@@ -222,9 +109,9 @@ int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum E
 	task->state = _initialState;
 
 	// Resume timer interrupts on this core
-	//write_csr(mie, MIP_MSIP | MIP_MEIP | MIP_MTIP);
+	write_csr(mie, MIP_MSIP | MIP_MEIP | MIP_MTIP);
 
-	return 1;
+	return idx;
 }
 
 void TaskExitCurrentTask(struct STaskContext *_ctx)
@@ -309,7 +196,6 @@ uint32_t TaskSwitchToNext(struct STaskContext *_ctx)
 		{
 			// Mark as 'terminated'
 			_ctx->tasks[currentTask].state = TS_TERMINATED;
-			_ctx->tasks[currentTask].num_breakpoints = 0;
 			// Replace with task at end of list, if we're not the end of list
 			if (currentTask != _ctx->numTasks-1)
 				__builtin_memcpy(&_ctx->tasks[currentTask], &_ctx->tasks[_ctx->numTasks-1], sizeof(struct STask));

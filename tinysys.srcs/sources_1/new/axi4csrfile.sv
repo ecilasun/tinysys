@@ -15,26 +15,12 @@ module axi4CSRFile(
 	// Incoming hardware interrupt requests
 	input wire keyfifoempty,
 	input wire [1:0] usbirq,
-	// Interrupt switch
-	//input wire sysresetn,
 	// Expose certain registers to fetch unit
 	output wire [31:0] mepc,
 	output wire [31:0] mtvec,
 	output wire sie,
 	// Bus
 	axi4if.slave s_axi );
-
-// --------------------------------------------------
-// Reset CDC and debounce
-// --------------------------------------------------
-
-/*wire stablereset;
-
-debounce resetnswtchdebounce(
-	.clk(aclk),
-	.reset(~aresetn),
-	.bouncy(~sysresetn),
-	.stable(stablereset) );*/
 
 // --------------------------------------------------
 // CSR RAM
@@ -64,10 +50,10 @@ initial begin
 	// Start same as timecmpshadow
 	csrmemory[`CSR_TIMECMPLO] = 32'hFFFFFFFF;
 	csrmemory[`CSR_TIMECMPHI] = 32'hFFFFFFFF;
-	// Machine ISA: compressed(bit2) rv32i base ISA(bit8), integer mul/div(bit12) machine level
-	csrmemory[`CSR_MISA] = 32'h00001104;
-	// Top bit must be set, can't contain zero
-	csrmemory[`CSR_MARCHID] = 32'h800000EC;
+	// Machine ISA: rv32i/mul-div/nonstandarextensions
+	csrmemory[`CSR_MISA] = 32'h00801100; // 0000 0000 1000 0000 0001 0001 0000 0000
+	// Top bit must be set, can't contain zero (need a reserved ID from RISC-V international)
+	csrmemory[`CSR_MARCHID] = 32'h80000000;
 end
 
 // Read/Write CSR
@@ -94,7 +80,7 @@ always @(posedge aclk) begin
 
 	softInterruptEna <= mieshadow[0] && mstatusIEshadow; // Software interrupt (The rest of this condition is in fetch unit based on instruction)
 	timerInterrupt <= mieshadow[1] && mstatusIEshadow && (wallclocktime >= timecmpshadow); // Timer interrupt
-	hwInterrupt <= mieshadow[2] && mstatusIEshadow && (/*stablereset ||*/ ~keyfifoempty || ~usbirq[1] || ~usbirq[0]); // Machine external interrupts
+	hwInterrupt <= mieshadow[2] && mstatusIEshadow && (~keyfifoempty || ~usbirq[1] || ~usbirq[0]); // Machine external interrupts
 
 	if (~aresetn) begin
 		softInterruptEna <= 0;
@@ -216,7 +202,7 @@ always @(posedge aclk) begin
 					`CSR_TIMELO:	s_axi.rdata[31:0] <= wallclocktime[31:0];
 					`CSR_CYCLELO:	s_axi.rdata[31:0] <= cpuclocktime[31:0];
 					// interrupt states of all hardware devices
-					`CSR_HWSTATE:	s_axi.rdata[31:0] <= {28'd0, 1'b0/*stablereset*/, ~usbirq[1], ~usbirq[0], ~keyfifoempty};
+					`CSR_HWSTATE:	s_axi.rdata[31:0] <= {28'd0, 1'b0, ~usbirq[1], ~usbirq[0], ~keyfifoempty};
 					default:		s_axi.rdata[31:0] <= csrdout;	// Pass through actual data
 				endcase
 				s_axi.rvalid <= 1'b1;

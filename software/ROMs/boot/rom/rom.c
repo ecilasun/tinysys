@@ -25,13 +25,14 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "v1.08"
+#define VERSIONSTRING "v1.09"
 // On-storage version
-#define DEVVERSIONSTRING "v1.08"
+#define DEVVERSIONSTRING "v1.09"
 
 static char s_execName[32] = "ROM";
 static char s_execParam0[32] = "auto";
 static uint32_t s_execParamCount = 1;
+static uint32_t s_userTaskID = 2;
 
 static char s_cmdString[64] = "";
 static char s_workdir[48];
@@ -360,7 +361,7 @@ void ExecuteCmd(char *_cmd)
 		struct STaskContext* tctx = GetTaskContext();
 		// Temporary measure to avoid loading another executable while the first one is running
 		// until we get a virtual memory device
-		if (tctx->numTasks>2)
+		if (tctx->numTasks > 2)
 		{
 			kprintf("Virtual memory / code relocator not implemented.\n");
 		}
@@ -398,7 +399,7 @@ void ExecuteCmd(char *_cmd)
 					s_execParamCount = 2;
 				}
 
-				TaskAdd(tctx, command, _runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+				s_userTaskID = TaskAdd(tctx, command, _runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 			}
 		}
 	}
@@ -433,7 +434,7 @@ void _cliTask()
 				{
 					execcmd++;
 					// TODO: This has to be handled differently and terminate active task not hardcoded one
-					TaskExitTaskWithID(taskctx, 2, 0); // Sig:0, terminate process if no debugger is attached
+					TaskExitTaskWithID(taskctx, s_userTaskID, 0); // Sig:0, terminate process if no debugger is attached
 				}
 				break;
 

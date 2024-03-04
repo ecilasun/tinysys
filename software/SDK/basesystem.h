@@ -47,9 +47,9 @@
 #define SERIN_RINGBUFFER_STATE			0x02058010 // Serial input state
 #define SEROUT_RINGBUFFER_STATE			0x02058020 // Serial output state
 // ETC
-#define KERNEL_EXTRA_SPACE				0x02058030 // Extra empty space
+#define KERNEL_TASK_CONTEXT				0x02058030 // Task context memory (11970 bytes)
 // Executable
-#define HEAP_START_APPMEM_END			0x02060000 // Executable space above this
+#define HEAP_START_APPMEM_END			0x02070000 // Executable space above this
 // Heap
 #define HEAP_END_CONSOLEMEM_START		0x0FF00000 // Heap space above this
 // Kernel console text+attrib/scratch
