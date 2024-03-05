@@ -25,8 +25,10 @@ overall tight loop memory write speed is better (37.7mb/sec vs 35.4mb/sec)<br>
 device now drops 'f' extension and used ZFix (floats in integer registers extension)<br>
 all samples and ROM changed to reflect this change<br>
 <b>1.09</b><br>
-minimal hardware change (no impact on code)<br>
-updated built-in ROM<br>
+audio hardware fixes as suggested by Ben Stragnell<br>
+updated built-in ROM with new audio halt on exit<br>
+memory locations modified for task data<br>
+small checks added to directory switch logic<br>
 
 # Device gateware
 
