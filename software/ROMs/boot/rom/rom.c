@@ -88,11 +88,8 @@ void _runExecTask()
 
 void DeviceDefaultState(int _bootTime)
 {
-	// Clear both audio output buffers to stop raw sound output
-	APUStop();
-	APUSwapBuffers();
-	APUStop();
-	APUSwapBuffers();
+	// Stop output
+	APUSetSampleRate(ASR_Halt);
 
 	// Stop any pending OPL2 audio output by sending a series commands
 	OPL2Stop();

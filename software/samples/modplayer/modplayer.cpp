@@ -151,7 +151,7 @@ static long play_module( signed char *module )
 
 			// NOTE: Buffer size is in multiples of 32bit words
 			// h/w loops over (wordcount/4)-1 sample addresses and reads blocks of 16 bytes each time
-			// There are two audio pages; every call to APUSwapBuffers() switches the read/write pages
+			// Every time the APU flips to a new buffer, it'll change the value returned by APUFrame()
 
 			// Make sure the writes are visible by the DMA
 			CFLUSH_D_L1;
@@ -168,10 +168,9 @@ static long play_module( signed char *module )
 				currframe = APUFrame();
 			} while (currframe == prevframe);
 
-			// Read buffer drained, swap to new read buffer with no gap
-			// NOTE: We probably need to signal early, long enough for
-			// the CPU to read, send the swap, and catch things in time for gapless playback
-			APUSwapBuffers();
+			// At this point the APU has switched
+			// playback to the other buffer, we can
+			// now fill the previous buffer.
 
 			// Remember this frame
 			prevframe = currframe;
@@ -230,12 +229,6 @@ int main(int argc, char *argv[])
 	PlayMODFile(fullpath);
 
 	printf("Playback complete\n");
-
-	// Stop audio output
-	APUStop();
-	APUSwapBuffers();
-	APUStop();
-	APUSwapBuffers();
 
 	return 0;
 }

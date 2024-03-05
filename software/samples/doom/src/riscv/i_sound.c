@@ -689,9 +689,9 @@ I_SubmitSound(void)
   if (cbuf != pbuf)
   {
     pbuf = cbuf;
+
     // Ensure writes are visible by audio DMA
     CFLUSH_D_L1;
-    APUSwapBuffers();
 
     // Fill current write buffer with new mix data
     APUStartDMA((uint32_t)playbackbuffer);

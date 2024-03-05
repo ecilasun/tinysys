@@ -42,9 +42,8 @@ int main()
 			currframe = APUFrame();
 		} while (currframe == prevframe);
 		prevframe = currframe;
-		// Read buffer drained, swap to new read buffer
-		APUSwapBuffers();
 
+		// Read buffer drained, APU swapped to new read buffer
 		TaskYield();
 
 		offset += 1.f;

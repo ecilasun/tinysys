@@ -27,16 +27,6 @@ void APUStartDMA(uint32_t audioBufferAddress16byteAligned)
     *IO_AUDIOOUT = audioBufferAddress16byteAligned;
 }
 
-void APUStop()
-{
-    *IO_AUDIOOUT = APUCMD_STOP;
-}
-
-void APUSwapBuffers()
-{
-    *IO_AUDIOOUT = APUCMD_SWAP;
-}
-
 void APUSetSampleRate(enum EAPUSampleRate sampleRate)
 {
     *IO_AUDIOOUT = APUCMD_SETRATE;
