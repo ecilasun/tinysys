@@ -10,11 +10,12 @@
 #include "keyboard.h"
 #include <stdlib.h>
 
+static uint64_t s_lastPacketTime = 0U;
+static uint64_t s_checksum = 0U;
 static uint32_t s_fileTransferMode = 0;
 static uint32_t s_filesize = 0;
 static uint32_t s_readlen = 0;
 static uint32_t s_packetCursor = 0;
-static uint64_t s_checksum = 0U;
 static char s_buffertemp[64];
 static char s_filename[64];
 
@@ -116,6 +117,7 @@ void HandleFileTransfer(uint8_t input)
 	{
 		if (input == '#') // Wait for file block ready signal
 		{
+			s_lastPacketTime = E32ReadTime();
 			USBSerialWrite("#");
 			s_checksum = 2166136261U;
 			s_packetCursor = 0;
@@ -196,6 +198,7 @@ void HandleSerialInput()
 			{
 				USBSerialWrite("~");
 				s_fileTransferMode = 1;
+				s_lastPacketTime = E32ReadTime();
 			}
 			else if (drain == ':') // Go to keymap update mode
 			{
@@ -211,5 +214,16 @@ void HandleSerialInput()
 		}
 		else
 			HandleFileTransfer(drain);
+	}
+
+	if (s_fileTransferMode)
+	{
+		uint64_t currentTime = E32ReadTime();
+		uint32_t msec = ClockToMs(currentTime - s_lastPacketTime);
+		if (msec > 5000)
+		{
+			s_fileTransferMode = 0;
+			kprintf("\nFile transfer aborted due to timeout.\n");
+		}
 	}
 }

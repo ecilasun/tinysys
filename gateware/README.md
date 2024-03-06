@@ -29,6 +29,7 @@ audio hardware fixes as suggested by Ben Stragnell<br>
 updated built-in ROM with new audio halt on exit<br>
 memory locations modified for task data<br>
 small checks added to directory switch logic<br>
+added 5 second timeout between upload packages to not hang the device<br>
 
 # Device gateware
 
