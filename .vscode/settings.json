@@ -13,7 +13,8 @@
 		"type_traits": "cpp",
 		"xlocmon": "cpp",
 		"xtr1common": "cpp",
-		"xutility": "cpp"
+		"xutility": "cpp",
+		"serialinput.h": "c"
 	},
 	"terminal.integrated.profiles.windows": {
 		"MSYS2": {

@@ -301,25 +301,7 @@ always_ff @(posedge aclk) begin
 
 		CREAD: begin
 			if (ctag == ptag) begin
-				// Return word directly from cache
-				unique case(coffset)
-					4'b0000:  dout <= cdout[31:0];
-					4'b0001:  dout <= cdout[63:32];
-					4'b0010:  dout <= cdout[95:64];
-					4'b0011:  dout <= cdout[127:96];
-					4'b0100:  dout <= cdout[159:128];
-					4'b0101:  dout <= cdout[191:160];
-					4'b0110:  dout <= cdout[223:192];
-					4'b0111:  dout <= cdout[255:224];
-					4'b1000:  dout <= cdout[287:256];
-					4'b1001:  dout <= cdout[319:288];
-					4'b1010:  dout <= cdout[351:320];
-					4'b1011:  dout <= cdout[383:352];
-					4'b1100:  dout <= cdout[415:384];
-					4'b1101:  dout <= cdout[447:416];
-					4'b1110:  dout <= cdout[479:448];
-					4'b1111:  dout <= cdout[511:480];
-				endcase
+				dout <= cdout[coffset*32 +: 32];
 				rready <= 1'b1;
 				cachestate <= IDLE;
 			end else begin // Cache miss when ctag != ptag
