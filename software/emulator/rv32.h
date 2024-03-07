@@ -1,7 +1,6 @@
 #pragma once
 
 #include "clock.h"
-#include "memman.h"
 
 enum CPUState{
 	ECPUReset,
@@ -25,8 +24,6 @@ public:
 
 	CPUState m_state = ECPUReset;
 	CPUState m_state_next;
-
-	CMemMan m_memory;
 
 	void Tick(CClock& cpuclock);
 };

@@ -11,6 +11,11 @@ CMemMan::~CMemMan()
     free(m_devicemem);
 }
 
+void CMemMan::Tick(CClock& cpuclock)
+{
+
+}
+
 uint32_t CMemMan::FetchInstruction(uint32_t address)
 {
 	// TODO: Return from I$

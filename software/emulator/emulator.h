@@ -1,6 +1,7 @@
 #pragma once
 
 #include "clock.h"
+#include "memman.h"
 #include "rv32.h"
 
 class CEmulator
@@ -14,4 +15,5 @@ public:
 
     CClock m_clock;
 	CRV32 m_cpu;
+    CMemMan m_mem;
 };

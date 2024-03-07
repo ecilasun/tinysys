@@ -6,7 +6,6 @@ CRV32::CRV32()
 
 CRV32::~CRV32()
 {
-
 }
 
 void CRV32::Tick(CClock& cpuclock)
