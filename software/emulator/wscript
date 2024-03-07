@@ -31,17 +31,21 @@ def build(bld):
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_WINDOWS']
     else:
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_LINUX']
-    includes = ['source', 'includes']
 
     # RELEASE
-    sdk_lib_path = []
-    libs = []
+    libs = ['SDL2']
     linker_flags = []
     if platform.system().lower().startswith('win'):
+        includes = ['source', 'includes', 'sdl2/2.30.0/include']
+        sdk_lib_path = 'sdl2/2.30.0/lib/'
         compile_flags = []
     elif platform.system().lower().startswith('darwin'):
+        includes = ['source', 'includes', '/opt/homebrew/Cellar/sdl2/2.30.0/include']
+        sdk_lib_path = '/opt/homebrew/Cellar/sdl2/2.30.0/lib/'
         compile_flags = ['-std=c++20']
     elif platform.system().lower().startswith('linux'):
+        includes = ['source', 'includes', '/opt/sdl2/2.30.0/include']
+        sdk_lib_path = '/opt/sdl2/2.30.0/lib/'
         compile_flags = ['-std=c++20']
 
     # Build risctool
