@@ -1,4 +1,8 @@
+#ifdef CAT_WINDOWS
+#include "SDL.h"
+#else
 #include <SDL2/SDL.h>
+#endif
 #include "emulator.h"
 
 void CEmulator::Reset()
