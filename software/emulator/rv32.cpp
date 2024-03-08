@@ -116,6 +116,46 @@ void CRV32::Tick(CClock& cpuclock)
 			{
 				switch(m_decoded.m_opcode)
 				{
+					case OP_LUI:
+					{
+					}
+					break;
+
+					case OP_AUIPC:
+					{
+					}
+					break;
+
+					case OP_STORE:
+					{
+					}
+					break;
+
+					case OP_JAL:
+					{
+					}
+					break;
+
+					case OP_BRANCH:
+					{
+					}
+					break;
+
+					case OP_OP_IMM:
+					{
+					}
+					break;
+
+					case OP_LOAD:
+					{
+					}
+					break;
+
+					case OP_JALR:
+					{
+					}
+					break;
+
 					default:
 						// illegal instruction
 					break;
