@@ -8,6 +8,80 @@ CRV32::~CRV32()
 {
 }
 
+void CRV32::SetMem(CMemMan *mem)
+{
+	m_mem = mem;
+}
+
+void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
+{
+	dec.m_opcode = instr & 0x0000007F;
+	dec.m_f3 = (instr & 0x00007000) >> 12;
+	dec.m_rs1 = (instr & 0x000F8000) >> 15;
+	dec.m_rs2 = (instr & 0x01F00000) >> 20;
+	dec.m_rd = (instr & 0x00000F80) >> 7;
+
+	switch (dec.m_opcode)
+	{
+		case OP_LUI:
+		case OP_AUIPC:
+		{
+			// U-imm
+			dec.m_immed = instr & 0xFFFFF000;
+		}
+		break;
+
+		case OP_STORE:
+		{
+			// S-imm
+			int32_t sign = (instr & 0x80000000) >> 18;
+			uint32_t upper = (instr & 0x7E000000) >> 18;
+			uint32_t lower = (instr & 0x00003F80) >> 7;
+			dec.m_immed = sign | upper | lower;
+		}
+		break;
+
+		case OP_JAL:
+		{
+			// J-imm
+			int32_t sign = (instr & 0x80000000) >> 11;
+			uint32_t upper = (instr & 0x000FF000);
+			uint32_t middle = (instr & 0x00100000) >> 8;
+			uint32_t lower = (instr & 0x7FE00000) >> 20;
+			dec.m_immed = sign | upper | middle | lower;
+		}
+		break;
+
+		case OP_BRANCH:
+		{
+			// B-imm
+			int32_t sign = (instr & 0x80000000) >> 19;
+			uint32_t upper = (instr & 0x00000080) << 4;
+			uint32_t middle = (instr & 0x7E000000) >> 20;
+			uint32_t lower = (instr & 0x00000F00) >> 7;
+			dec.m_immed = sign | upper | middle | lower;
+		}
+		break;
+
+		case OP_OP_IMM:
+		case OP_LOAD:
+		case OP_JALR:
+		{
+			// I-imm
+			int32_t sign = (instr & 0x80000000) >> 20;
+			uint32_t lower = (instr & 0x7FF00000) >> 20;
+			dec.m_immed = sign | lower;
+		}
+		break;
+
+		default:
+		{
+			dec.m_immed = 0;
+		}
+		break;
+	}
+}
+
 void CRV32::Tick(CClock& cpuclock)
 {
 	if (cpuclock.m_edge == RisingEdge)
@@ -17,27 +91,35 @@ void CRV32::Tick(CClock& cpuclock)
 		{
 			case ECPUReset:
 			{
-				PC_next = 0;
+				m_PC_next = 0;
 				for (int i=0;i<32;++i)
-					GPR_next[i] = 0;
+					m_GPR_next[i] = 0;
 				m_state_next = ECPUFetch;
 			}
 			break;
 
 			case ECPUFetch:
 			{
+				m_instruction_next = m_mem->FetchInstruction(m_PC);
 				m_state_next = ECPUDecode;
 			}
 			break;
 
 			case ECPUDecode:
 			{
+				DecodeInstruction(m_instruction, m_decoded_next);
 				m_state_next = ECPUExecute;
 			}
 			break;
 
 			case ECPUExecute:
 			{
+				switch(m_decoded.m_opcode)
+				{
+					default:
+						// illegal instruction
+					break;
+				}
 				m_state_next = ECPURetire;
 			}
 			break;
@@ -54,10 +136,14 @@ void CRV32::Tick(CClock& cpuclock)
 	}
 	else
 	{
-		// Propagate intermediates to registers
-		PC = PC_next;
+		// Propagate state
 		m_state = m_state_next;
-		for (int i=0;i<32;++i)
-			GPR[i] = GPR_next[i];
+
+		// Propagate intermediates to registers
+		m_PC = m_PC_next;
+		m_instruction = m_instruction_next;
+		m_decoded = m_decoded_next;
+		for (int i=0; i<32; ++i)
+			m_GPR[i] = m_GPR_next[i];
 	}
 }

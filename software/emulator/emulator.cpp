@@ -8,6 +8,7 @@
 void CEmulator::Reset()
 {
     m_clock.Reset();
+	m_cpu.SetMem(&m_mem);
 }
 
 bool CEmulator::Step()
