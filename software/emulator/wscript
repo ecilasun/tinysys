@@ -29,22 +29,24 @@ def build(bld):
 
     # RELEASE
     libs = ['SDL2']
-    linker_flags = []
     if platform.system().lower().startswith('win'):
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_WINDOWS']
         includes = ['source', 'includes', '3rdparty/SDL2/include']
         sdk_lib_path = os.path.abspath('3rdparty/SDL2/lib/x64/')
-        compile_flags = []
+        compile_flags = ['/permissive-', '/arch:AVX', '/WX', '/Od', '/DDEBUG', '/Qfast_transcendentals', '/Zi', '/GS', '/EHsc', '/FS', '/std:c++20']
+        linker_flags = ['/DEBUG'] # '/RELEASE'
     elif platform.system().lower().startswith('darwin'):
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_DARWIN']
         includes = ['source', 'includes', '/opt/homebrew/Cellar/sdl2/2.30.0/include']
         sdk_lib_path = '/opt/homebrew/Cellar/sdl2/2.30.0/lib/'
         compile_flags = ['-std=c++20']
+        linker_flags = []
     elif platform.system().lower().startswith('linux'):
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_LINUX']
         includes = ['source', 'includes', '/opt/sdl2/2.30.0/include']
         sdk_lib_path = '/opt/sdl2/2.30.0/lib/'
         compile_flags = ['-std=c++20']
+        linker_flags = []
 
     # Build risctool
     bld.program(
