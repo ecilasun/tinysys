@@ -19,5 +19,4 @@ public:
 
     uint8_t *m_rombin = nullptr;
     uint32_t m_romsize = 0;
-    uint32_t m_resetvector = 0x0FFE0000;
 };

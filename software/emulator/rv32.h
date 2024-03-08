@@ -54,6 +54,8 @@ public:
 	CPUState m_state_next;
 	CMemMan *m_mem = nullptr;
 
+    uint32_t m_resetvector = 0x0FFE0000;
+
 	void SetMem(CMemMan *mem);
 	void DecodeInstruction(uint32_t instr, SDecodedInstruction& dec);
 	void Tick(CClock& cpuclock);

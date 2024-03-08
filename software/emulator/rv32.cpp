@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "rv32.h"
 
 CRV32::CRV32()
@@ -80,6 +81,14 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 		}
 		break;
 	}
+
+
+	dec.m_opcode = instr & 0x0000007F;
+	dec.m_f3 = (instr & 0x00007000) >> 12;
+	dec.m_rs1 = (instr & 0x000F8000) >> 15;
+	dec.m_rs2 = (instr & 0x01F00000) >> 20;
+	dec.m_rd = (instr & 0x00000F80) >> 7;
+	printf("  OP: 0x%.8x F3: 0x%.8x RS1: 0x%.8x RS2: 0x%.8x RD: 0x%.8x IMM: 0x%.8x\n", dec.m_opcode, dec.m_f3, dec.m_rs1, dec.m_rs2, dec.m_rd, dec.m_immed);
 }
 
 void CRV32::Tick(CClock& cpuclock)
@@ -91,7 +100,8 @@ void CRV32::Tick(CClock& cpuclock)
 		{
 			case ECPUReset:
 			{
-				m_PC_next = 0;
+				printf("RESET\n");
+				m_PC_next = m_resetvector;
 				for (int i=0;i<32;++i)
 					m_GPR_next[i] = 0;
 				m_state_next = ECPUFetch;
@@ -100,6 +110,7 @@ void CRV32::Tick(CClock& cpuclock)
 
 			case ECPUFetch:
 			{
+				printf("FETCH\n");
 				m_instruction_next = m_mem->FetchInstruction(m_PC);
 				m_state_next = ECPUDecode;
 			}
@@ -107,6 +118,7 @@ void CRV32::Tick(CClock& cpuclock)
 
 			case ECPUDecode:
 			{
+				printf("DECODE\n");
 				DecodeInstruction(m_instruction, m_decoded_next);
 				m_state_next = ECPUExecute;
 			}
@@ -114,6 +126,7 @@ void CRV32::Tick(CClock& cpuclock)
 
 			case ECPUExecute:
 			{
+				printf("EXECUTE\n");
 				switch(m_decoded.m_opcode)
 				{
 					case OP_LUI:
@@ -166,6 +179,7 @@ void CRV32::Tick(CClock& cpuclock)
 
 			case ECPURetire:
 			{
+				printf("RETIRE\n");
 				m_state_next = ECPUFetch;
 			}
 			break;

@@ -31,7 +31,7 @@ bool CEmulator::Reset(const char* romFile)
         fclose(fp);
     }
 
-    m_mem.CopyROM(m_resetvector, m_rombin, m_romsize);
+    m_mem.CopyROM(m_cpu.m_resetvector, m_rombin, m_romsize);
 
     return true;
 }
