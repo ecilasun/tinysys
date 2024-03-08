@@ -19,9 +19,17 @@ void CMemMan::Tick(CClock& cpuclock)
 
 void CMemMan::CopyROM(uint32_t resetvector, uint8_t *bin, uint32_t size)
 {
-	uint8_t *ddr3 = (uint8_t*)m_devicemem;
-	for (uint32_t i=0; i<size; ++i)
-		ddr3[resetvector+i] = bin[i];
+	uint32_t *ddr3 = (uint32_t*)m_devicemem;
+	uint32_t *rom = (uint32_t*)bin;
+	// Convert from cache byte order to memory byte order
+	uint32_t base = resetvector>>2;
+	for (uint32_t i=0; i<size/4; ++i)
+	{
+		uint32_t offset = 3-(i%4);
+		ddr3[base+offset] = rom[i];
+		if (offset==0)
+			base += 4;
+	}
 	printf("ROM @%.8x (%.8x bytes)\n", resetvector, size);
 }
 

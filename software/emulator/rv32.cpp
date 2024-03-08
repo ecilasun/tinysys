@@ -100,7 +100,7 @@ void CRV32::Tick(CClock& cpuclock)
 		{
 			case ECPUReset:
 			{
-				printf("RESET\n");
+				printf("[RESET]\n");
 				m_PC_next = m_resetvector;
 				for (int i=0;i<32;++i)
 					m_GPR_next[i] = 0;
@@ -110,15 +110,16 @@ void CRV32::Tick(CClock& cpuclock)
 
 			case ECPUFetch:
 			{
-				printf("FETCH\n");
+				printf("[FETCH]\n");
 				m_instruction_next = m_mem->FetchInstruction(m_PC);
+				printf("  INSTR: %.8x\n", m_instruction_next);
 				m_state_next = ECPUDecode;
 			}
 			break;
 
 			case ECPUDecode:
 			{
-				printf("DECODE\n");
+				printf("[DECODE]\n");
 				DecodeInstruction(m_instruction, m_decoded_next);
 				m_state_next = ECPUExecute;
 			}
@@ -126,51 +127,60 @@ void CRV32::Tick(CClock& cpuclock)
 
 			case ECPUExecute:
 			{
-				printf("EXECUTE\n");
+				printf("[EXECUTE]\n");
 				switch(m_decoded.m_opcode)
 				{
 					case OP_LUI:
 					{
+						printf("  LUI\n");
 					}
 					break;
 
 					case OP_AUIPC:
 					{
+						printf("  AUIPC\n");
 					}
 					break;
 
 					case OP_STORE:
 					{
+						printf("  STORE\n");
 					}
 					break;
 
 					case OP_JAL:
 					{
+						printf("  JAL\n");
 					}
 					break;
 
 					case OP_BRANCH:
 					{
+						printf("  BRANCH\n");
 					}
 					break;
 
 					case OP_OP_IMM:
 					{
+						printf("  OP_IMM\n");
 					}
 					break;
 
 					case OP_LOAD:
 					{
+						printf("  OP\n");
 					}
 					break;
 
 					case OP_JALR:
 					{
+						printf("  JALR\n");
 					}
 					break;
 
 					default:
-						// illegal instruction
+						// TODO: trap illegal instruction
+						printf("  ! ILLEGAL INSTRUCTION !\n");
 					break;
 				}
 				m_state_next = ECPURetire;
@@ -179,7 +189,7 @@ void CRV32::Tick(CClock& cpuclock)
 
 			case ECPURetire:
 			{
-				printf("RETIRE\n");
+				printf("[RETIRE]\n");
 				m_state_next = ECPUFetch;
 			}
 			break;
