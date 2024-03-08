@@ -21,9 +21,32 @@ enum CPUState{
 #define OP_JALR		    0b1100111
 #define OP_BRANCH	    0b1100011
 
+// Integer base
+#define ALU_NONE		0
+#define ALU_ADD 		1
+#define ALU_SUB			2
+#define ALU_SLL			3
+#define ALU_SLT			4
+#define ALU_SLTU		5
+#define ALU_XOR			6
+#define ALU_SRL			7
+#define ALU_SRA			8
+#define ALU_OR			9
+#define ALU_AND			10
+
+#define BLU_NONE		0
+#define BLU_EQ			1
+#define BLU_NE			2
+#define BLU_L			3
+#define BLU_GE			4
+#define BLU_LU			5
+#define BLU_GEU			6
+
 struct SDecodedInstruction
 {
 	uint32_t m_opcode;
+	uint32_t m_aluop;
+	uint32_t m_bluop;
 	uint32_t m_f3;
 	uint32_t m_rs1;
 	uint32_t m_rs2;
@@ -41,12 +64,20 @@ public:
 	uint32_t m_PC_next;
 	uint32_t m_GPR_next[32];
 	uint32_t m_instruction_next;
+	uint32_t m_rval1_next;
+	uint32_t m_rval2_next;
+	uint32_t m_aluout_next;
+	uint32_t m_branchout_next;
 	SDecodedInstruction m_decoded_next;
 
 	// Right hand side
 	uint32_t m_PC;
 	uint32_t m_GPR[32];
 	uint32_t m_instruction;
+	uint32_t m_rval1;
+	uint32_t m_rval2;
+	uint32_t m_aluout;
+	uint32_t m_branchout;
 	SDecodedInstruction m_decoded;
 
 	// Internal state
@@ -59,4 +90,6 @@ public:
 	void SetMem(CMemMan *mem);
 	void DecodeInstruction(uint32_t instr, SDecodedInstruction& dec);
 	void Tick(CClock& cpuclock);
+	uint32_t ALU();
+	uint32_t BLU();
 };

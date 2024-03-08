@@ -14,9 +14,77 @@ void CRV32::SetMem(CMemMan *mem)
 	m_mem = mem;
 }
 
+uint32_t CRV32::ALU()
+{
+	uint32_t aluout = 0;
+
+	switch(m_decoded.m_aluop)
+	{
+		case ALU_OR:
+		{
+
+		}
+		break;
+		case ALU_SUB:
+		{
+
+		}
+		break;
+		case ALU_SLL:
+		{
+
+		}
+		break;
+		case ALU_SLT:
+		{
+
+		}
+		break;
+		case ALU_SLTU:
+		{
+
+		}
+		break;
+		case ALU_XOR:
+		{
+
+		}
+		break;
+		case ALU_SRL:
+		{
+
+		}
+		break;
+		case ALU_SRA:
+		{
+
+		}
+		break;
+		case ALU_ADD:
+		{
+
+		}
+		break;
+		case ALU_AND:
+		{
+
+		}
+		break;
+	}
+
+	return aluout;
+}
+
+uint32_t CRV32::BLU()
+{
+	
+}
+
 void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 {
 	dec.m_opcode = instr & 0x0000007F;
+	dec.m_aluop = ;
+	dec.m_bluop = ;
 	dec.m_f3 = (instr & 0x00007000) >> 12;
 	dec.m_rs1 = (instr & 0x000F8000) >> 15;
 	dec.m_rs2 = (instr & 0x01F00000) >> 20;
@@ -112,7 +180,7 @@ void CRV32::Tick(CClock& cpuclock)
 			{
 				printf("[FETCH]\n");
 				m_instruction_next = m_mem->FetchInstruction(m_PC);
-				printf("  INSTR: %.8x\n", m_instruction_next);
+				printf("  PC: %.8X INSTR: %.8x\n", m_PC, m_instruction_next);
 				m_state_next = ECPUDecode;
 			}
 			break;
@@ -121,24 +189,57 @@ void CRV32::Tick(CClock& cpuclock)
 			{
 				printf("[DECODE]\n");
 				DecodeInstruction(m_instruction, m_decoded_next);
+
+				// TODO: this could potentially go to next clock, assuming comb. circuit
+				m_rval1_next = m_GPR[m_decoded_next.m_rs1];
+				m_rval2_next = m_GPR[m_decoded_next.m_rs2];
+
 				m_state_next = ECPUExecute;
 			}
 			break;
 
 			case ECPUExecute:
 			{
-				printf("[EXECUTE]\n");
+				if (m_decoded.m_opcode != OP_JALR && m_decoded.m_opcode != OP_BRANCH)
+					m_PC_next = m_PC + 4; // adjacentpc
+
 				switch(m_decoded.m_opcode)
 				{
-					case OP_LUI:
+					case OP_OP:
+					case OP_OP_IMM:
 					{
-						printf("  LUI\n");
+						m_GPR_next[m_decoded.m_rd] = m_aluout;
 					}
 					break;
 
 					case OP_AUIPC:
 					{
-						printf("  AUIPC\n");
+						m_GPR_next[m_decoded.m_rd] = m_PC + m_decoded.m_immed; // offsetpc
+					}
+					break;
+
+					case OP_LUI:
+					{
+						m_GPR_next[m_decoded.m_rd] = m_decoded.m_immed;
+					}
+					break;
+
+					case OP_JAL:
+					{
+						m_GPR_next[m_decoded.m_rd] = m_PC + 4;
+					}
+					break;
+
+					case OP_JALR:
+					{
+						m_GPR_next[m_decoded.m_rd] = m_GPR[m_decoded.m_rs1] + 4; // adjacentpc
+						m_PC_next = m_PC + m_decoded.m_immed; // rwaddrs
+					}
+					break;
+
+					case OP_BRANCH:
+					{
+						m_PC_next = m_branchout ? m_PC + m_decoded.m_immed : m_PC + 4;
 					}
 					break;
 
@@ -148,33 +249,9 @@ void CRV32::Tick(CClock& cpuclock)
 					}
 					break;
 
-					case OP_JAL:
-					{
-						printf("  JAL\n");
-					}
-					break;
-
-					case OP_BRANCH:
-					{
-						printf("  BRANCH\n");
-					}
-					break;
-
-					case OP_OP_IMM:
-					{
-						printf("  OP_IMM\n");
-					}
-					break;
-
 					case OP_LOAD:
 					{
 						printf("  OP\n");
-					}
-					break;
-
-					case OP_JALR:
-					{
-						printf("  JALR\n");
 					}
 					break;
 
@@ -197,6 +274,9 @@ void CRV32::Tick(CClock& cpuclock)
 			default:
 			break;
 		}
+
+		m_aluout_next = ALU();
+		m_branchout_next = BLU();
 	}
 	else
 	{
@@ -207,6 +287,12 @@ void CRV32::Tick(CClock& cpuclock)
 		m_PC = m_PC_next;
 		m_instruction = m_instruction_next;
 		m_decoded = m_decoded_next;
+		m_rval1 = m_rval1_next;
+		m_rval2 = m_rval2_next;
+		m_aluout = m_aluout_next;
+		m_branchout = m_branchout_next;
+
+		// Propagate GPR
 		for (int i=0; i<32; ++i)
 			m_GPR[i] = m_GPR_next[i];
 	}
