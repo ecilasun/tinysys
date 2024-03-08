@@ -83,8 +83,6 @@ uint32_t CRV32::BLU()
 void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 {
 	dec.m_opcode = instr & 0x0000007F;
-	dec.m_aluop = ;
-	dec.m_bluop = ;
 	dec.m_f3 = (instr & 0x00007000) >> 12;
 	dec.m_rs1 = (instr & 0x000F8000) >> 15;
 	dec.m_rs2 = (instr & 0x01F00000) >> 20;
@@ -103,6 +101,7 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 		case OP_STORE:
 		{
 			// S-imm
+			// TODO: use SelectBitRange() instead
 			int32_t sign = (instr & 0x80000000) >> 18;
 			uint32_t upper = (instr & 0x7E000000) >> 18;
 			uint32_t lower = (instr & 0x00003F80) >> 7;
@@ -150,12 +149,64 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 		break;
 	}
 
-
 	dec.m_opcode = instr & 0x0000007F;
 	dec.m_f3 = (instr & 0x00007000) >> 12;
 	dec.m_rs1 = (instr & 0x000F8000) >> 15;
 	dec.m_rs2 = (instr & 0x01F00000) >> 20;
 	dec.m_rd = (instr & 0x00000F80) >> 7;
+
+	uint32_t mathopsel = instr & 0x40000000;
+	if (dec.m_opcode == OP_OP)
+	{
+		switch (dec.m_f3)
+		{
+			case 0b000:	dec.m_aluop = mathopsel ? ALU_SUB : ALU_ADD; break;
+			case 0b001:	dec.m_aluop = ALU_SLL; break;
+			case 0b011:	dec.m_aluop = ALU_SLTU; break;
+			case 0b010:	dec.m_aluop = ALU_SLT; break;
+			case 0b110:	dec.m_aluop = ALU_OR; break;
+			case 0b111:	dec.m_aluop = ALU_AND; break;
+			case 0b101:	dec.m_aluop = mathopsel ? ALU_SRA : ALU_SRL; break;
+			case 0b100:	dec.m_aluop = ALU_XOR; break;
+			default:	dec.m_aluop = ALU_NONE; break;
+		}
+	}
+
+	dec.m_aluop = ALU_NONE;
+	dec.m_bluop = BLU_NONE;
+
+	if (dec.m_opcode == OP_OP_IMM)
+	{
+		switch (dec.m_f3)
+		{
+			case 0b000:	dec.m_aluop = ALU_ADD; break;
+			case 0b001:	dec.m_aluop = ALU_SLL; break;
+			case 0b011:	dec.m_aluop = ALU_SLTU; break;
+			case 0b010:	dec.m_aluop = ALU_SLT; break;
+			case 0b110:	dec.m_aluop = ALU_OR; break;
+			case 0b111:	dec.m_aluop = ALU_AND; break;
+			case 0b101:	dec.m_aluop = mathopsel ? ALU_SRA : ALU_SRL; break;
+			case 0b100:	dec.m_aluop = ALU_XOR; break;
+			default:	dec.m_aluop = ALU_NONE; break;
+		}
+	}
+
+	if (dec.m_opcode == OP_BRANCH)
+	{
+		switch (dec.m_f3)
+		{
+			case 0b000:	dec.m_bluop = BLU_EQ;
+			case 0b001:	dec.m_bluop = BLU_NE;
+			case 0b011:	dec.m_bluop = BLU_NONE;
+			case 0b010:	dec.m_bluop = BLU_NONE;
+			case 0b110:	dec.m_bluop = BLU_LU;
+			case 0b111:	dec.m_bluop = BLU_GEU;
+			case 0b101:	dec.m_bluop = BLU_GE;
+			case 0b100:	dec.m_bluop = BLU_L;
+			default:	dec.m_bluop = BLU_NONE;
+		}
+	}
+
 	printf("  OP: 0x%.8x F3: 0x%.8x RS1: 0x%.8x RS2: 0x%.8x RD: 0x%.8x IMM: 0x%.8x\n", dec.m_opcode, dec.m_f3, dec.m_rs1, dec.m_rs2, dec.m_rd, dec.m_immed);
 }
 

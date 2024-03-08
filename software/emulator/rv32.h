@@ -42,6 +42,21 @@ enum CPUState{
 #define BLU_LU			5
 #define BLU_GEU			6
 
+uint32_t SelectBitRange(uint32_t val, uint32_t startbit, uint32_t endbit)
+{
+	// get number of bits covered; delta = (start-end)+1
+	uint32_t delta = (startbit-endbit)+1;
+	// logic shift right by endbit
+	uint32_t shifted = val >> endbit;
+	// prep inverse mask: 0x80000000 >>> (31-delta)
+	uint32_t invmask = ((int32_t)0x80000000) >> (31-delta);
+	// prep actual mask
+	uint32_t mask = ~invmask;
+	// final return value
+	uint32_t retval = shifted & mask;
+	return retval;
+}
+
 struct SDecodedInstruction
 {
 	uint32_t m_opcode;
