@@ -253,28 +253,37 @@ void CRV32::Tick(CClock& cpuclock)
 				if (m_decoded.m_opcode != OP_JALR && m_decoded.m_opcode != OP_BRANCH)
 					m_PC_next = m_PC + 4; // adjacentpc
 
+				uint32_t rwaddress = m_PC + m_decoded.m_immed;
+				uint32_t rdin = 0;
+				uint32_t rwen = 0;
+
 				switch(m_decoded.m_opcode)
 				{
 					case OP_OP:
 					case OP_OP_IMM:
-						m_GPR_next[m_decoded.m_rd] = m_aluout;
+						rdin = m_aluout;
+						rwen = 1;
 					break;
 
 					case OP_AUIPC:
-						m_GPR_next[m_decoded.m_rd] = m_PC + m_decoded.m_immed; // offsetpc
+						rdin = m_PC + m_decoded.m_immed; // offsetpc
+						rwen = 1;
 					break;
 
 					case OP_LUI:
-						m_GPR_next[m_decoded.m_rd] = m_decoded.m_immed;
+						rdin = m_decoded.m_immed;
+						rwen = 1;
 					break;
 
 					case OP_JAL:
-						m_GPR_next[m_decoded.m_rd] = m_PC + 4;
+						rdin = m_PC + 4;
+						rwen = 1;
 					break;
 
 					case OP_JALR:
-						m_GPR_next[m_decoded.m_rd] = m_GPR[m_decoded.m_rs1] + 4; // adjacentpc
-						m_PC_next = m_PC + m_decoded.m_immed; // rwaddrs
+						rdin = m_GPR[m_decoded.m_rs1] + 4; // adjacentpc
+						rwen = 1;
+						m_PC_next = rwaddress;
 					break;
 
 					case OP_BRANCH:
@@ -282,11 +291,100 @@ void CRV32::Tick(CClock& cpuclock)
 					break;
 
 					case OP_STORE:
-						printf("  STORE\n");
+					{
+						uint32_t wdata = 0;
+						uint32_t wstrobe = 0;
+						uint32_t byte = SelectBitRange(m_rval2, 7, 0);
+						uint32_t half = SelectBitRange(m_rval2, 15, 0);
+						switch (m_decoded.m_f3)
+						{
+							case 0b000:	wdata = (byte<<24)|(byte<<16)|(byte<<8)|byte; break;
+							case 0b001:	wdata = (half<<16)|half; break;
+							default:	wdata = m_rval2; break;
+						}
+						uint32_t ab = SelectBitRange(rwaddress, 0, 0);
+						uint32_t ah = SelectBitRange(rwaddress, 1, 1);
+						uint32_t wordmask = (ah<<3)|(ah<<2)|((~ah)<<1)|(~ah);
+						uint32_t bytemask = wordmask & ((ab<<3)|((~ab)<<2)|(ab<<1)|(~ab));
+						switch (m_decoded.m_f3)
+						{
+							case 0b000:	wstrobe = bytemask; break;
+							case 0b001:	wstrobe = wordmask; break;
+							default:	wstrobe = 0b1111; break;
+						}
+
+						m_mem->WriteDataWord(rwaddress, wdata, wstrobe);
+					}
 					break;
 
 					case OP_LOAD:
-						printf("  LOAD\n");
+					{
+						uint32_t dataword = m_mem->FetchDataWord(rwaddress);
+						uint32_t range1 = SelectBitRange(rwaddress,1,1);
+						uint32_t range2 = SelectBitRange(rwaddress,1,0);
+
+						uint32_t b3 = SelectBitRange(dataword,31,24);
+						uint32_t b2 = SelectBitRange(dataword,23,16);
+						uint32_t b1 = SelectBitRange(dataword,15,8);
+						uint32_t b0 = SelectBitRange(dataword,7,0);
+
+						uint32_t h1 = SelectBitRange(dataword,31,16);
+						uint32_t h0 = SelectBitRange(dataword,15,0);
+
+						int32_t sign3 = int32_t(dataword & 0x80000000);
+						int32_t sign2 = int32_t((dataword<<8) & 0x80000000);
+						int32_t sign1 = int32_t((dataword<<16) & 0x80000000);
+						int32_t sign0 = int32_t((dataword<<24) & 0x80000000);
+
+						switch(m_decoded.m_f3)
+						{
+							case 0b000: // BYTE with sign extension
+							{
+								switch(range2)
+								{
+									case 0b11: rdin = (sign3>>24) | b3; break;
+									case 0b10: rdin = (sign2>>24) | b2; break;
+									case 0b01: rdin = (sign1>>24) | b1; break;
+									case 0b00: rdin = (sign0>>24) | b0; break;
+								}
+							}
+							break;
+							case 0b001: // HALF with sign extension
+							{
+								switch(range1)
+								{
+									case 0b1: rdin = (sign3>>16) | h1; break;
+									case 0b0: rdin = (sign1>>16) | h0; break;
+								}
+							}
+							break;
+							case 0b100: // BYTE with zero extension
+							{
+								switch(range2)
+								{
+									case 0b11: rdin = b3; break;
+									case 0b10: rdin = b2; break;
+									case 0b01: rdin = b1; break;
+									case 0b00: rdin = b0; break;
+								}
+							}
+							break;
+							case 0b101: // HALF with zero extension
+							{
+								switch(range1)
+								{
+									case 0b1: rdin = h1; break;
+									case 0b0: rdin = h0; break;
+								}
+							}
+							default: // WORD - 0b010
+							{
+								rdin = dataword;
+							}
+							break;
+						}
+						rwen = 1;
+					}
 					break;
 
 					default:
@@ -294,6 +392,10 @@ void CRV32::Tick(CClock& cpuclock)
 						printf("  ! ILLEGAL INSTRUCTION !\n");
 					break;
 				}
+
+				if(rwen && m_decoded.m_rd != 0)
+					m_GPR_next[m_decoded.m_rd] = rdin;
+
 				fflush(stdout);
 				m_state_next = ECPURetire;
 			}
