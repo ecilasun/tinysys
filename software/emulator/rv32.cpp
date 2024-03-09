@@ -1,6 +1,31 @@
 #include <stdio.h>
 #include "rv32.h"
 
+const char *opnames[] = {
+	{"illegal"},
+	{""},
+	{""},
+	{"auipc"},
+	{"lui"},
+	{"store"},
+	{"load"},
+	{"jal"},
+	{"jalr"},
+	{"branch"} };
+
+const char *alunames[] = {
+	{""}, // none
+	{"add"},
+	{"sub"},
+	{"sll"},
+	{"slt"},
+	{"sltu"},
+	{"xor"},
+	{"srl"},
+	{"sra"},
+	{"or"},
+	{"and"} };
+
 CRV32::CRV32()
 {
 }
@@ -96,6 +121,20 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 
 	switch (dec.m_opcode)
 	{
+		case OP_OP:		dec.m_opindex = 1; break;
+		case OP_OP_IMM:	dec.m_opindex = 2; break;
+		case OP_AUIPC:	dec.m_opindex = 3; break;
+		case OP_LUI:	dec.m_opindex = 4; break;
+		case OP_STORE:	dec.m_opindex = 5; break;
+		case OP_LOAD:	dec.m_opindex = 6; break;
+		case OP_JAL:	dec.m_opindex = 7; break;
+		case OP_JALR:	dec.m_opindex = 8; break;
+		case OP_BRANCH:	dec.m_opindex = 9; break;
+		default:		dec.m_opindex = 0; break;
+	}
+
+	switch (dec.m_opcode)
+	{
 		case OP_LUI:
 		case OP_AUIPC:
 		{
@@ -117,11 +156,12 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 		case OP_JAL:
 		{
 			// J-imm
-			int32_t sign = int32_t(instr & 0x80000000) >> 13;			// 32-19 == 13
+			int32_t sign = int32_t(instr & 0x80000000) >> 12;			// 32-20 == 12
 			uint32_t upper = SelectBitRange(instr, 19, 12);		// 8
 			uint32_t middle = SelectBitRange(instr, 20, 20);	// +1
-			uint32_t lower = SelectBitRange(instr, 30, 21);		// +10 == 19
-			dec.m_immed = sign | (upper<<11) | (middle<<10) | lower;
+			uint32_t lower = SelectBitRange(instr, 30, 21);		// +10
+			uint32_t zero = 0;									// +1 == 20
+			dec.m_immed = sign | (upper<<12) | (middle<<11) | (lower<<1);
 		}
 		break;
 
@@ -209,7 +249,7 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 
 	dec.m_selimm = (dec.m_opcode==OP_JALR) || (dec.m_opcode==OP_OP_IMM) || (dec.m_opcode==OP_LOAD) || (dec.m_opcode==OP_STORE);
 
-	printf("  OP: 0x%.8x F3: 0x%.8x RS1: 0x%.8x RS2: 0x%.8x RD: 0x%.8x IMM: 0x%.8x\n", dec.m_opcode, dec.m_f3, dec.m_rs1, dec.m_rs2, dec.m_rd, dec.m_immed);
+	printf("  OP: 0x%.8x(%s%s) F3: 0x%.8x RS1: 0x%.8x RS2: 0x%.8x RD: 0x%.8x IMM: 0x%.8x\n", dec.m_opcode, opnames[dec.m_opindex], alunames[dec.m_aluop], dec.m_f3, dec.m_rs1, dec.m_rs2, dec.m_rd, dec.m_immed);
 }
 
 void CRV32::Tick(CClock& cpuclock)
@@ -250,12 +290,13 @@ void CRV32::Tick(CClock& cpuclock)
 
 			case ECPUExecute:
 			{
-				if (m_decoded.m_opcode != OP_JALR && m_decoded.m_opcode != OP_BRANCH)
-					m_PC_next = m_PC + 4; // adjacentpc
-
-				uint32_t rwaddress = m_PC + m_decoded.m_immed;
+				uint32_t adjacentpc = m_PC + 4;
+				uint32_t offsetpc = m_PC + m_decoded.m_immed; // also known as rwaddress
 				uint32_t rdin = 0;
 				uint32_t rwen = 0;
+
+				if (m_decoded.m_opcode != OP_BRANCH && m_decoded.m_opcode != OP_JALR && m_decoded.m_opcode != OP_JAL)
+					m_PC_next = adjacentpc;
 
 				switch(m_decoded.m_opcode)
 				{
@@ -266,7 +307,7 @@ void CRV32::Tick(CClock& cpuclock)
 					break;
 
 					case OP_AUIPC:
-						rdin = m_PC + m_decoded.m_immed; // offsetpc
+						rdin = offsetpc;
 						rwen = 1;
 					break;
 
@@ -276,18 +317,19 @@ void CRV32::Tick(CClock& cpuclock)
 					break;
 
 					case OP_JAL:
-						rdin = m_PC + 4;
+						m_PC_next = offsetpc;
+						rdin = adjacentpc;
 						rwen = 1;
 					break;
 
 					case OP_JALR:
 						rdin = m_GPR[m_decoded.m_rs1] + 4; // adjacentpc
 						rwen = 1;
-						m_PC_next = rwaddress;
+						m_PC_next = offsetpc;
 					break;
 
 					case OP_BRANCH:
-						m_PC_next = m_branchout ? m_PC + m_decoded.m_immed : m_PC + 4;
+						m_PC_next = m_branchout ? offsetpc : adjacentpc;
 					break;
 
 					case OP_STORE:
@@ -302,8 +344,8 @@ void CRV32::Tick(CClock& cpuclock)
 							case 0b001:	wdata = (half<<16)|half; break;
 							default:	wdata = m_rval2; break;
 						}
-						uint32_t ab = SelectBitRange(rwaddress, 0, 0);
-						uint32_t ah = SelectBitRange(rwaddress, 1, 1);
+						uint32_t ab = SelectBitRange(offsetpc, 0, 0);
+						uint32_t ah = SelectBitRange(offsetpc, 1, 1);
 						uint32_t wordmask = (ah<<3)|(ah<<2)|((~ah)<<1)|(~ah);
 						uint32_t bytemask = wordmask & ((ab<<3)|((~ab)<<2)|(ab<<1)|(~ab));
 						switch (m_decoded.m_f3)
@@ -313,15 +355,15 @@ void CRV32::Tick(CClock& cpuclock)
 							default:	wstrobe = 0b1111; break;
 						}
 
-						m_mem->WriteDataWord(rwaddress, wdata, wstrobe);
+						m_mem->WriteDataWord(offsetpc, wdata, wstrobe);
 					}
 					break;
 
 					case OP_LOAD:
 					{
-						uint32_t dataword = m_mem->FetchDataWord(rwaddress);
-						uint32_t range1 = SelectBitRange(rwaddress,1,1);
-						uint32_t range2 = SelectBitRange(rwaddress,1,0);
+						uint32_t dataword = m_mem->FetchDataWord(offsetpc);
+						uint32_t range1 = SelectBitRange(offsetpc,1,1);
+						uint32_t range2 = SelectBitRange(offsetpc,1,0);
 
 						uint32_t b3 = SelectBitRange(dataword,31,24);
 						uint32_t b2 = SelectBitRange(dataword,23,16);

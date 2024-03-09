@@ -1,6 +1,13 @@
 #include <stdio.h>
 #include "memman.h"
 
+static const uint32_t quadexpand[] = {
+	0x00000000, 0x000000FF, 0x0000FF00, 0x0000FFFF,
+	0x00FF0000, 0x00FF00FF, 0x00FFFF00, 0x00FFFFFF,
+	0xFF000000, 0xFF0000FF, 0xFF00FF00, 0xFF00FFFF,
+	0xFFFF0000, 0xFFFF00FF, 0xFFFFFF00, 0xFFFFFFFF,
+};
+
 CMemMan::CMemMan()
 {
 	// Warning! Allocating 256Mbytes in one go!
@@ -45,13 +52,6 @@ uint32_t CMemMan::FetchDataWord(uint32_t address)
 	data = wordmem[address>>2];
 	return data;
 }
-
-const uint32_t quadexpand[] = {
-	0x00000000, 0x000000FF, 0x0000FF00, 0x0000FFFF,
-	0x00FF0000, 0x00FF00FF, 0x00FFFF00, 0x00FFFFFF,
-	0xFF000000, 0xFF0000FF, 0xFF00FF00, 0xFF00FFFF,
-	0xFFFF0000, 0xFFFF00FF, 0xFFFFFF00, 0xFFFFFFFF,
-};
 
 void CMemMan::WriteDataWord(uint32_t address, uint32_t word, uint32_t wstrobe)
 {

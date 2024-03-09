@@ -69,6 +69,8 @@ struct SDecodedInstruction
 	uint32_t m_rd;
 	uint32_t m_immed;
 	uint32_t m_selimm;
+	// internal / debugging related
+	uint32_t m_opindex;
 };
 
 class CRV32
