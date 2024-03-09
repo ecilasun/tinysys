@@ -19,11 +19,11 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    bool done;
+    bool alive = true;
     do
     {
-        done = emulator.Step();
-    } while(!done);
+        alive = emulator.Step();
+    } while(alive);
 
     return 0;
 }

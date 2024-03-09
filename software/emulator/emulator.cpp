@@ -9,7 +9,7 @@
 bool CEmulator::Reset(const char* romFile)
 {
     m_clock.Reset();
-	m_cpu.SetMem(&m_mem);
+	m_cpu.SetMemManager(&m_mem);
 
     if (m_rombin)
         delete []m_rombin;
@@ -42,7 +42,7 @@ bool CEmulator::Step()
 
     // Wire up the clocks to each device
     m_mem.Tick(m_clock);
-	m_cpu.Tick(m_clock);
+	bool retval = m_cpu.Tick(m_clock);
 
-    return false;
+    return retval;
 }

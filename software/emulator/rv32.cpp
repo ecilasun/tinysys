@@ -11,7 +11,9 @@ const char *opnames[] = {
 	{"load"},
 	{"jal"},
 	{"jalr"},
-	{"branch"} };
+	{"branch"},
+	{"fence"},
+	{"system"} };
 
 const char *alunames[] = {
 	{""}, // none
@@ -26,6 +28,40 @@ const char *alunames[] = {
 	{"or"},
 	{"and"} };
 
+const char *regnames[] = {
+	{"zero"},
+	{"ra"},
+	{"sp"},
+	{"gp"},
+	{"tp"},
+	{"t0"},
+	{"t1"},
+	{"t2"},
+	{"s0"},
+	{"s1"},
+	{"a0"},
+	{"a1"},
+	{"a2"},
+	{"a3"},
+	{"a4"},
+	{"a5"},
+	{"a6"},
+	{"a7"},
+	{"s2"},
+	{"s3"},
+	{"s4"},
+	{"s5"},
+	{"s6"},
+	{"s7"},
+	{"s8"},
+	{"s9"},
+	{"s10"},
+	{"s11"},
+	{"t3"},
+	{"t4"},
+	{"t5"},
+	{"t6"} };
+
 CRV32::CRV32()
 {
 }
@@ -34,7 +70,7 @@ CRV32::~CRV32()
 {
 }
 
-void CRV32::SetMem(CMemMan *mem)
+void CRV32::SetMemManager(CMemMan *mem)
 {
 	m_mem = mem;
 }
@@ -43,39 +79,39 @@ uint32_t CRV32::ALU()
 {
 	uint32_t aluout = 0;
 
-	uint32_t selected = m_decoded.m_selimm ? m_decoded.m_immed : m_rval2;
+	uint32_t selected = m_decoded_next.m_selimm ? m_decoded_next.m_immed : m_rval2_next;
 
-	switch(m_decoded.m_aluop)
+	switch(m_decoded_next.m_aluop)
 	{
 		case ALU_OR:
-			aluout = m_rval1 | selected;
+			aluout = m_rval1_next | selected;
 		break;
 		case ALU_SUB:
-			aluout = m_rval1 + (~selected + 1); // val1-val2
+			aluout = m_rval1_next + (~selected + 1); // val1-val2
 		break;
 		case ALU_SLL:
-			aluout = m_rval1 << (selected&0x1F);
+			aluout = m_rval1_next << (selected&0x1F);
 		break;
 		case ALU_SLT:
-			aluout = ((int32_t)m_rval1 < (int32_t)selected) ? 1 : 0;
+			aluout = ((int32_t)m_rval1_next < (int32_t)selected) ? 1 : 0;
 		break;
 		case ALU_SLTU:
-			aluout = (m_rval1 < selected) ? 1 : 0;
+			aluout = (m_rval1_next < selected) ? 1 : 0;
 		break;
 		case ALU_XOR:
-			aluout = m_rval1 ^ selected;
+			aluout = m_rval1_next ^ selected;
 		break;
 		case ALU_SRL:
-			aluout = m_rval1 >> (selected&0x1F);
+			aluout = m_rval1_next >> (selected&0x1F);
 		break;
 		case ALU_SRA:
-			aluout = (int32_t)m_rval1 >> (selected&0x1F);
+			aluout = (int32_t)m_rval1_next >> (selected&0x1F);
 		break;
 		case ALU_ADD:
-			aluout = m_rval1 + selected;
+			aluout = m_rval1_next + selected;
 		break;
 		case ALU_AND:
-			aluout = m_rval1 & selected;
+			aluout = m_rval1_next & selected;
 		break;
 	}
 
@@ -86,25 +122,25 @@ uint32_t CRV32::BLU()
 {
 	uint32_t bluout = 0;
 
-	switch (m_decoded.m_bluop)
+	switch (m_decoded_next.m_bluop)
 	{
 		case BLU_EQ:
-			bluout = m_rval1 == m_rval2 ? 1 : 0;
+			bluout = m_rval1_next == m_rval2_next ? 1 : 0;
 		break;
 		case BLU_NE:
-			bluout = m_rval1 != m_rval2 ? 1 : 0;
+			bluout = m_rval1_next != m_rval2_next ? 1 : 0;
 		break;
 		case BLU_L:
-			bluout = (int32_t)bluout < (int32_t)m_rval1 ? 1 : 0;
+			bluout = (int32_t)m_rval1_next < (int32_t)m_rval2_next ? 1 : 0;
 		break;
 		case BLU_GE:
-			bluout = (int32_t)bluout >= (int32_t)m_rval1 ? 1 : 0;
+			bluout = (int32_t)m_rval1_next >= (int32_t)m_rval2_next ? 1 : 0;
 		break;
 		case BLU_LU:
-			bluout = bluout < m_rval1 ? 1 : 0;
+			bluout = m_rval1_next < m_rval2_next ? 1 : 0;
 		break;
 		case BLU_GEU:
-			bluout = bluout >= m_rval1 ? 1 : 0;
+			bluout = m_rval1_next >= m_rval2_next ? 1 : 0;
 		break;
 	}
 
@@ -118,7 +154,9 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 	dec.m_rs1 = SelectBitRange(instr, 19, 15);
 	dec.m_rs2 = SelectBitRange(instr, 24, 20);
 	dec.m_rd = SelectBitRange(instr, 11, 7);
+	dec.m_f12 = SelectBitRange(instr, 31, 20);
 
+#if defined(DEBUG)
 	switch (dec.m_opcode)
 	{
 		case OP_OP:		dec.m_opindex = 1; break;
@@ -130,8 +168,11 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 		case OP_JAL:	dec.m_opindex = 7; break;
 		case OP_JALR:	dec.m_opindex = 8; break;
 		case OP_BRANCH:	dec.m_opindex = 9; break;
+		case OP_FENCE:	dec.m_opindex = 10; break;
+		case OP_SYSTEM:	dec.m_opindex = 11; break;
 		default:		dec.m_opindex = 0; break;
 	}
+#endif
 
 	switch (dec.m_opcode)
 	{
@@ -146,9 +187,9 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 		case OP_STORE:
 		{
 			// S-imm
-			int32_t sign = int32_t(instr & 0x80000000) >> 21;		// 32-11 == 21
-			uint32_t upper = SelectBitRange(instr, 30, 25);	// 6
-			uint32_t lower = SelectBitRange(instr, 11, 7);	// +5 == 11
+			int32_t sign = int32_t(instr & 0x80000000) >> 21;	// 32-11 == 21
+			uint32_t upper = SelectBitRange(instr, 30, 25);		// 6
+			uint32_t lower = SelectBitRange(instr, 11, 7);		// +5 == 11
 			dec.m_immed = sign | (upper<<5) | lower;
 		}
 		break;
@@ -156,7 +197,7 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 		case OP_JAL:
 		{
 			// J-imm
-			int32_t sign = int32_t(instr & 0x80000000) >> 12;			// 32-20 == 12
+			int32_t sign = int32_t(instr & 0x80000000) >> 12;	// 32-20 == 12
 			uint32_t upper = SelectBitRange(instr, 19, 12);		// 8
 			uint32_t middle = SelectBitRange(instr, 20, 20);	// +1
 			uint32_t lower = SelectBitRange(instr, 30, 21);		// +10
@@ -168,7 +209,7 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 		case OP_BRANCH:
 		{
 			// B-imm
-			int32_t sign = int32_t(instr & 0x80000000) >> 20;			// 32-12 == 20
+			int32_t sign = int32_t(instr & 0x80000000) >> 20;	// 32-12 == 20
 			uint32_t upper = SelectBitRange(instr, 7, 7);		// 1
 			uint32_t middle = SelectBitRange(instr, 30, 25);	// +6
 			uint32_t lower = SelectBitRange(instr, 11, 8);		// +4
@@ -177,18 +218,25 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 		}
 		break;
 
+		case OP_SYSTEM:
+		{
+			uint32_t lower = SelectBitRange(instr, 19, 15);	// 5
+			dec.m_immed = lower;
+		}
+		break;
+
 		case OP_OP_IMM:
 		case OP_LOAD:
 		case OP_JALR:
 		{
 			// I-imm
-			int32_t sign = int32_t(instr & 0x80000000) >> 21;			// 32-11 == 21
+			int32_t sign = int32_t(instr & 0x80000000) >> 21;	// 32-11 == 21
 			uint32_t lower = SelectBitRange(instr, 30, 20);		// 11
 			dec.m_immed = sign | lower;
 		}
 		break;
 
-		default:
+		default: // OP_FENCE
 		{
 			dec.m_immed = 0;
 		}
@@ -249,11 +297,15 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 
 	dec.m_selimm = (dec.m_opcode==OP_JALR) || (dec.m_opcode==OP_OP_IMM) || (dec.m_opcode==OP_LOAD) || (dec.m_opcode==OP_STORE);
 
-	printf("  OP: 0x%.8x(%s%s) F3: 0x%.8x RS1: 0x%.8x RS2: 0x%.8x RD: 0x%.8x IMM: 0x%.8x\n", dec.m_opcode, opnames[dec.m_opindex], alunames[dec.m_aluop], dec.m_f3, dec.m_rs1, dec.m_rs2, dec.m_rd, dec.m_immed);
+#if defined(DEBUG)
+	printf("%.8X: %s%s %s %s -> %s I=%d\n", m_PC, opnames[dec.m_opindex], alunames[dec.m_aluop], regnames[dec.m_rs1], regnames[dec.m_rs2], regnames[dec.m_rd], dec.m_immed);
+#endif
 }
 
-void CRV32::Tick(CClock& cpuclock)
+bool CRV32::Tick(CClock& cpuclock)
 {
+	bool retval = true;
+
 	if (cpuclock.m_edge == RisingEdge)
 	{
 		// Process input and prepare intermediates
@@ -271,7 +323,6 @@ void CRV32::Tick(CClock& cpuclock)
 			case ECPUFetch:
 			{
 				m_instruction_next = m_mem->FetchInstruction(m_PC);
-				printf("PC: %.8X INSTR: %.8x\n", m_PC, m_instruction_next);
 				m_state_next = ECPUDecode;
 			}
 			break;
@@ -280,9 +331,12 @@ void CRV32::Tick(CClock& cpuclock)
 			{
 				DecodeInstruction(m_instruction, m_decoded_next);
 
-				// TODO: this could potentially go to next clock, assuming comb. circuit for now
+				// NOTE: Register reads happen at end of this clock in hardware
 				m_rval1_next = m_GPR[m_decoded_next.m_rs1];
 				m_rval2_next = m_GPR[m_decoded_next.m_rs2];
+				// Same deal with ALU and BLU
+				m_aluout_next = ALU();
+				m_branchout_next = BLU();
 
 				m_state_next = ECPUExecute;
 			}
@@ -291,9 +345,13 @@ void CRV32::Tick(CClock& cpuclock)
 			case ECPUExecute:
 			{
 				uint32_t adjacentpc = m_PC + 4;
-				uint32_t offsetpc = m_PC + m_decoded.m_immed; // also known as rwaddress
+				uint32_t rwaddress = m_rval1 + m_decoded.m_immed;
+				uint32_t offsetpc = m_PC + m_decoded.m_immed;
+				uint32_t jumpabs = m_rval1 + m_decoded.m_immed;
 				uint32_t rdin = 0;
 				uint32_t rwen = 0;
+				uint32_t wdata = 0;
+				uint32_t wstrobe = 0;
 
 				if (m_decoded.m_opcode != OP_BRANCH && m_decoded.m_opcode != OP_JALR && m_decoded.m_opcode != OP_JAL)
 					m_PC_next = adjacentpc;
@@ -323,19 +381,76 @@ void CRV32::Tick(CClock& cpuclock)
 					break;
 
 					case OP_JALR:
-						rdin = m_GPR[m_decoded.m_rs1] + 4; // adjacentpc
+						m_PC_next = jumpabs;
+						rdin = adjacentpc;
 						rwen = 1;
-						m_PC_next = offsetpc;
 					break;
 
 					case OP_BRANCH:
 						m_PC_next = m_branchout ? offsetpc : adjacentpc;
 					break;
 
+					case OP_FENCE:
+					break;
+
+					case OP_SYSTEM:
+						if (m_decoded.m_f3 == 0)
+						{
+							if (m_decoded.m_f12 == F12_CDISCARD)
+							{
+							}
+							else if (m_decoded.m_f12 == F12_CFLUSH)
+							{
+							}
+							else if (m_decoded.m_f12 == F12_MRET)
+							{
+							}
+							else if (m_decoded.m_f12 == F12_WFI)
+							{
+							}
+							else if (m_decoded.m_f12 == F12_EBREAK)
+							{
+							}
+							else if (m_decoded.m_f12 == F12_ECALL)
+							{
+							}
+							else
+							{
+								// CSROPS
+								// read old CSR value from {CSRBASE, csroffset} into m_prevCSR;
+								// apply op and write back to new csr value to same address
+								// m_ibus.waddr <= {CSRBASE, csroffset};
+								// m_ibus.wstrobe <= 4'b1111;
+								// pendingwrite <= 1'b1;
+								// unique case (func3)
+								// 	3'b001: begin // CSRRW
+								// 		m_ibus.wdata <= A;
+								// 	end
+								// 	3'b101: begin // CSRRWI
+								// 		m_ibus.wdata <= D;
+								// 	end
+								// 	3'b010: begin // CSRRS
+								// 		m_ibus.wdata <= csrprevval | A;
+								// 	end
+								// 	3'b110: begin // CSRRSI
+								// 		m_ibus.wdata <= csrprevval | D;
+								// 	end
+								// 	3'b011: begin // CSRRC
+								// 		m_ibus.wdata <= csrprevval & (~A);
+								// 	end
+								// 	3'b111: begin // CSRRCI
+								// 		m_ibus.wdata <= csrprevval & (~D);
+								// 	end
+								// 	default: begin // Unknown - keep previous value
+								// 		m_ibus.wdata <= csrprevval;
+								// 	end
+								// endcase
+							}
+						}
+					break;
+
 					case OP_STORE:
 					{
-						uint32_t wdata = 0;
-						uint32_t wstrobe = 0;
 						uint32_t byte = SelectBitRange(m_rval2, 7, 0);
 						uint32_t half = SelectBitRange(m_rval2, 15, 0);
 						switch (m_decoded.m_f3)
@@ -344,8 +459,8 @@ void CRV32::Tick(CClock& cpuclock)
 							case 0b001:	wdata = (half<<16)|half; break;
 							default:	wdata = m_rval2; break;
 						}
-						uint32_t ab = SelectBitRange(offsetpc, 0, 0);
-						uint32_t ah = SelectBitRange(offsetpc, 1, 1);
+						uint32_t ab = SelectBitRange(rwaddress, 0, 0);
+						uint32_t ah = SelectBitRange(rwaddress, 1, 1);
 						uint32_t wordmask = (ah<<3)|(ah<<2)|((~ah)<<1)|(~ah);
 						uint32_t bytemask = wordmask & ((ab<<3)|((~ab)<<2)|(ab<<1)|(~ab));
 						switch (m_decoded.m_f3)
@@ -354,16 +469,15 @@ void CRV32::Tick(CClock& cpuclock)
 							case 0b001:	wstrobe = wordmask; break;
 							default:	wstrobe = 0b1111; break;
 						}
-
-						m_mem->WriteDataWord(offsetpc, wdata, wstrobe);
 					}
 					break;
 
 					case OP_LOAD:
 					{
-						uint32_t dataword = m_mem->FetchDataWord(offsetpc);
-						uint32_t range1 = SelectBitRange(offsetpc,1,1);
-						uint32_t range2 = SelectBitRange(offsetpc,1,0);
+						uint32_t dataword = m_mem->FetchDataWord(rwaddress);
+
+						uint32_t range1 = SelectBitRange(rwaddress,1,1);
+						uint32_t range2 = SelectBitRange(rwaddress,1,0);
 
 						uint32_t b3 = SelectBitRange(dataword,31,24);
 						uint32_t b2 = SelectBitRange(dataword,23,16);
@@ -431,14 +545,24 @@ void CRV32::Tick(CClock& cpuclock)
 
 					default:
 						// TODO: trap illegal instruction
-						printf("  ! ILLEGAL INSTRUCTION !\n");
+#if defined(DEBUG)
+						printf("ILLEGAL_INSTRUCTION @PC 0x%.8X\n", m_PC);
+						for (int i=0; i<32; ++i)
+							printf("%s=%.8X ", regnames[i], m_GPR[i]);
+						retval = false;
+#endif
 					break;
 				}
+
+				if(wstrobe)
+					m_mem->WriteDataWord(rwaddress, wdata, wstrobe);
 
 				if(rwen && m_decoded.m_rd != 0)
 					m_GPR_next[m_decoded.m_rd] = rdin;
 
+#if defined(DEBUG)
 				fflush(stdout);
+#endif
 				m_state_next = ECPURetire;
 			}
 			break;
@@ -448,12 +572,11 @@ void CRV32::Tick(CClock& cpuclock)
 			break;
 
 			default:
+#if defined(DEBUG)
 				printf("  ! ILLEGAL CPU STATE !\n");
+#endif
 			break;
 		}
-
-		m_aluout_next = ALU();
-		m_branchout_next = BLU();
 	}
 	else
 	{
@@ -473,4 +596,6 @@ void CRV32::Tick(CClock& cpuclock)
 		for (int i=0; i<32; ++i)
 			m_GPR[i] = m_GPR_next[i];
 	}
+
+	return retval;
 }

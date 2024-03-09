@@ -20,6 +20,8 @@ enum CPUState{
 #define OP_JAL		    0b1101111
 #define OP_JALR		    0b1100111
 #define OP_BRANCH	    0b1100011
+#define OP_FENCE	    0b0001111
+#define OP_SYSTEM	    0b1110011
 
 // Integer base
 #define ALU_NONE		0
@@ -41,6 +43,13 @@ enum CPUState{
 #define BLU_GE			4
 #define BLU_LU			5
 #define BLU_GEU			6
+
+#define F12_CDISCARD   0xFC2
+#define F12_CFLUSH     0xFC0
+#define F12_MRET       0x302
+#define F12_WFI        0x105
+#define F12_EBREAK     0x001
+#define F12_ECALL      0x000
 
 // This will select the bit range and right align it
 __forceinline uint32_t SelectBitRange(uint32_t val, uint32_t startbit, uint32_t endbit)
@@ -64,13 +73,16 @@ struct SDecodedInstruction
 	uint32_t m_aluop;
 	uint32_t m_bluop;
 	uint32_t m_f3;
+	uint32_t m_f12;
 	uint32_t m_rs1;
 	uint32_t m_rs2;
 	uint32_t m_rd;
 	uint32_t m_immed;
 	uint32_t m_selimm;
+#if defined(DEBUG)
 	// internal / debugging related
 	uint32_t m_opindex;
+#endif
 };
 
 class CRV32
@@ -106,9 +118,9 @@ public:
 
     uint32_t m_resetvector = 0x0FFE0000;
 
-	void SetMem(CMemMan *mem);
+	void SetMemManager(CMemMan *mem);
 	void DecodeInstruction(uint32_t instr, SDecodedInstruction& dec);
-	void Tick(CClock& cpuclock);
+	bool Tick(CClock& cpuclock);
 	uint32_t ALU();
 	uint32_t BLU();
 };
