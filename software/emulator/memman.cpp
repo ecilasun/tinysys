@@ -24,12 +24,7 @@ void CMemMan::CopyROM(uint32_t resetvector, uint8_t *bin, uint32_t size)
 	// Convert from cache byte order to memory byte order
 	uint32_t base = resetvector>>2;
 	for (uint32_t i=0; i<size/4; ++i)
-	{
-		uint32_t offset = 3-(i%4);
-		ddr3[base+offset] = rom[i];
-		if (offset==0)
-			base += 4;
-	}
+		ddr3[base+i] = rom[i];
 	printf("ROM @%.8x (%.8x bytes)\n", resetvector, size);
 }
 

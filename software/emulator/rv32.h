@@ -42,7 +42,8 @@ enum CPUState{
 #define BLU_LU			5
 #define BLU_GEU			6
 
-uint32_t SelectBitRange(uint32_t val, uint32_t startbit, uint32_t endbit)
+// This will select the bit range and right align it
+__forceinline uint32_t SelectBitRange(uint32_t val, uint32_t startbit, uint32_t endbit)
 {
 	// get number of bits covered; delta = (start-end)+1
 	uint32_t delta = (startbit-endbit)+1;
@@ -67,6 +68,7 @@ struct SDecodedInstruction
 	uint32_t m_rs2;
 	uint32_t m_rd;
 	uint32_t m_immed;
+	uint32_t m_selimm;
 };
 
 class CRV32
@@ -97,7 +99,7 @@ public:
 
 	// Internal state
 	CPUState m_state = ECPUReset;
-	CPUState m_state_next;
+	CPUState m_state_next = ECPUReset;
 	CMemMan *m_mem = nullptr;
 
     uint32_t m_resetvector = 0x0FFE0000;
