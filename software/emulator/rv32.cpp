@@ -30,37 +30,13 @@ const char *alunames[] = {
 
 const char *regnames[] = {
 	{"zero"},
-	{"ra"},
-	{"sp"},
-	{"gp"},
-	{"tp"},
-	{"t0"},
-	{"t1"},
-	{"t2"},
-	{"s0"},
-	{"s1"},
-	{"a0"},
-	{"a1"},
-	{"a2"},
-	{"a3"},
-	{"a4"},
-	{"a5"},
-	{"a6"},
-	{"a7"},
-	{"s2"},
-	{"s3"},
-	{"s4"},
-	{"s5"},
-	{"s6"},
-	{"s7"},
-	{"s8"},
-	{"s9"},
-	{"s10"},
-	{"s11"},
-	{"t3"},
-	{"t4"},
-	{"t5"},
-	{"t6"} };
+	{"ra"}, {"sp"},
+	{"gp"}, {"tp"},
+	{"t0"}, {"t1"}, {"t2"},
+	{"s0"}, {"s1"},
+	{"a0"}, {"a1"}, {"a2"}, {"a3"}, {"a4"}, {"a5"}, {"a6"}, {"a7"},
+	{"s2"}, {"s3"}, {"s4"}, {"s5"}, {"s6"}, {"s7"}, {"s8"}, {"s9"}, {"s10"}, {"s11"},
+	{"t3"}, {"t4"}, {"t5"}, {"t6"} };
 
 CRV32::CRV32()
 {
@@ -187,7 +163,7 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 		case OP_STORE:
 		{
 			// S-imm
-			int32_t sign = int32_t(instr & 0x80000000) >> 21;	// 32-11 == 21
+			int32_t sign = int32_t(instr & 0x80000000) >> 20;	// 32-11 == 21
 			uint32_t upper = SelectBitRange(instr, 30, 25);		// 6
 			uint32_t lower = SelectBitRange(instr, 11, 7);		// +5 == 11
 			dec.m_immed = sign | (upper<<5) | lower;
@@ -197,7 +173,7 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 		case OP_JAL:
 		{
 			// J-imm
-			int32_t sign = int32_t(instr & 0x80000000) >> 12;	// 32-20 == 12
+			int32_t sign = int32_t(instr & 0x80000000) >> 11;	// 32-20 == 12
 			uint32_t upper = SelectBitRange(instr, 19, 12);		// 8
 			uint32_t middle = SelectBitRange(instr, 20, 20);	// +1
 			uint32_t lower = SelectBitRange(instr, 30, 21);		// +10
@@ -209,7 +185,7 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 		case OP_BRANCH:
 		{
 			// B-imm
-			int32_t sign = int32_t(instr & 0x80000000) >> 20;	// 32-12 == 20
+			int32_t sign = int32_t(instr & 0x80000000) >> 19;	// 32-12 == 20
 			uint32_t upper = SelectBitRange(instr, 7, 7);		// 1
 			uint32_t middle = SelectBitRange(instr, 30, 25);	// +6
 			uint32_t lower = SelectBitRange(instr, 11, 8);		// +4
@@ -230,7 +206,7 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 		case OP_JALR:
 		{
 			// I-imm
-			int32_t sign = int32_t(instr & 0x80000000) >> 21;	// 32-11 == 21
+			int32_t sign = int32_t(instr & 0x80000000) >> 20;	// 32-11 == 21
 			uint32_t lower = SelectBitRange(instr, 30, 20);		// 11
 			dec.m_immed = sign | lower;
 		}
