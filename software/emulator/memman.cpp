@@ -65,5 +65,5 @@ void CMemMan::WriteDataWord(uint32_t address, uint32_t word, uint32_t wstrobe)
 	uint32_t invfullmask = ~fullmask;
 
 	// Mask and mix incoming and old data
-	wordmem[address>>2] = (olddata&invfullmask) | (word*fullmask);
+	wordmem[address>>2] = (olddata&invfullmask) | (word&fullmask);
 }

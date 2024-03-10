@@ -259,15 +259,15 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 	{
 		switch (dec.m_f3)
 		{
-			case 0b000:	dec.m_bluop = BLU_EQ;
-			case 0b001:	dec.m_bluop = BLU_NE;
-			case 0b011:	dec.m_bluop = BLU_NONE;
-			case 0b010:	dec.m_bluop = BLU_NONE;
-			case 0b110:	dec.m_bluop = BLU_LU;
-			case 0b111:	dec.m_bluop = BLU_GEU;
-			case 0b101:	dec.m_bluop = BLU_GE;
-			case 0b100:	dec.m_bluop = BLU_L;
-			default:	dec.m_bluop = BLU_NONE;
+			case 0b000:	dec.m_bluop = BLU_EQ; break;
+			case 0b001:	dec.m_bluop = BLU_NE; break;
+			case 0b011:	dec.m_bluop = BLU_NONE; break;
+			case 0b010:	dec.m_bluop = BLU_NONE; break;
+			case 0b110:	dec.m_bluop = BLU_LU; break;
+			case 0b111:	dec.m_bluop = BLU_GEU; break;
+			case 0b101:	dec.m_bluop = BLU_GE; break;
+			case 0b100:	dec.m_bluop = BLU_L; break;
+			default:	dec.m_bluop = BLU_NONE; break;
 		}
 	}
 
@@ -437,8 +437,8 @@ bool CRV32::Tick(CClock& cpuclock)
 						}
 						uint32_t ab = SelectBitRange(rwaddress, 0, 0);
 						uint32_t ah = SelectBitRange(rwaddress, 1, 1);
-						uint32_t wordmask = (ah<<3)|(ah<<2)|((~ah)<<1)|(~ah);
-						uint32_t bytemask = wordmask & ((ab<<3)|((~ab)<<2)|(ab<<1)|(~ab));
+						uint32_t wordmask = (ah<<3)|(ah<<2)|((1-ah)<<1)|(1-ah);
+						uint32_t bytemask = wordmask & ((ab<<3)|((1-ab)<<2)|(ab<<1)|(1-ab));
 						switch (m_decoded.m_f3)
 						{
 							case 0b000:	wstrobe = bytemask; break;
