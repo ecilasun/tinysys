@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "clock.h"
+#include "sdcard.h"
 
 #define DEVICE_BASE 0x80000000
 #define DEVICE_TRUC (DEVICE_BASE+0x0000)
@@ -54,4 +55,7 @@ public:
     uint32_t FetchInstruction(uint32_t address);
     uint32_t FetchDataWord(uint32_t address);
 	void WriteDataWord(uint32_t address, uint32_t word, uint32_t wstrobe);
+
+	// Memory mapped devices
+	CSDCard m_sdcard;
 };

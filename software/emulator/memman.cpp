@@ -71,60 +71,69 @@ uint32_t CMemMan::FetchDataWord(uint32_t address)
 			case 0:
 			{
 				// DEVICE_TRUC
+				printf("<-TRU\n");
 				data = 0;
 			}
 			break;
 			case 1:
 			{
 				// DEVICE_LEDS
+				printf("<-LED\n");
 				data = 0;
 			}
 			break;
 			case 2:
 			{
 				// DEVICE_VPUC
+				printf("<-VPU\n");
 				data = 0;
 			}
 			break;
 			case 3:
 			{
 				// DEVICE_SPIC
-				data = 0;
+				data = m_sdcard.Read(address);
 			}
 			break;
 			case 4:
 			{
 				// DEVICE_XADC
+				printf("<-ADC\n");
 				data = 0;
 			}
 			break;
 			case 5:
 			{
 				// DEVICE_DMAC
+				printf("<-DMA\n");
 				data = 0;
 			}
 			break;
 			case 6:
 			{
 				// DEVICE_USBC
+				printf("<-USB-C\n");
 				data = 0;
 			}
 			break;
 			case 7:
 			{
 				// DEVICE_APUC
+				printf("<-APU\n");
 				data = 0;
 			}
 			break;
 			case 8:
 			{
 				// DEVICE_OPL2
+				printf("<-OPL2\n");
 				data = 0;
 			}
 			break;
 			case 9:
 			{
 				// DEVICE_USBA
+				printf("<-USB-A\n");
 				data = 0;
 			}
 			break;
@@ -163,6 +172,7 @@ void CMemMan::WriteDataWord(uint32_t address, uint32_t word, uint32_t wstrobe)
 			case 0:
 			{
 				// DEVICE_TRUC
+				printf("TRU:%.8x\n", word);
 			}
 			break;
 			case 1:
@@ -174,41 +184,49 @@ void CMemMan::WriteDataWord(uint32_t address, uint32_t word, uint32_t wstrobe)
 			case 2:
 			{
 				// DEVICE_VPUC
+				printf("VPU:%.8x\n", word);
 			}
 			break;
 			case 3:
 			{
 				// DEVICE_SPIC
+				m_sdcard.Write(address, word);
 			}
 			break;
 			case 4:
 			{
 				// DEVICE_XADC
+				printf("ADC:%.8x\n", word);
 			}
 			break;
 			case 5:
 			{
 				// DEVICE_DMAC
+				printf("DMA:%.8x\n", word);
 			}
 			break;
 			case 6:
 			{
 				// DEVICE_USBC
+				printf("USB-C:%.8x\n", word);
 			}
 			break;
 			case 7:
 			{
 				// DEVICE_APUC
+				printf("APU:%.8x\n", word);
 			}
 			break;
 			case 8:
 			{
 				// DEVICE_OPL2
+				printf("OPL2:%.8x\n", word);
 			}
 			break;
 			case 9:
 			{
 				// DEVICE_USBA
+				printf("USB-A:%.8x\n", word);
 			}
 			break;
 			case 10:

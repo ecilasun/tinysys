@@ -275,7 +275,7 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 	dec.m_selimm = (dec.m_opcode==OP_JALR) || (dec.m_opcode==OP_OP_IMM) || (dec.m_opcode==OP_LOAD) || (dec.m_opcode==OP_STORE);
 
 #if defined(DEBUG)
-	printf("%.8X: %s%s %s %s -> %s I=%d\n", m_PC, opnames[dec.m_opindex], alunames[dec.m_aluop], regnames[dec.m_rs1], regnames[dec.m_rs2], regnames[dec.m_rd], dec.m_immed);
+	// printf("%.8X: %s%s %s %s -> %s I=%d\n", m_PC, opnames[dec.m_opindex], alunames[dec.m_aluop], regnames[dec.m_rs1], regnames[dec.m_rs2], regnames[dec.m_rd], dec.m_immed);
 #endif
 }
 
@@ -538,9 +538,6 @@ bool CRV32::Tick(CClock& cpuclock)
 				if(rwen && m_decoded.m_rd != 0)
 					m_GPR_next[m_decoded.m_rd] = rdin;
 
-#if defined(DEBUG)
-				fflush(stdout);
-#endif
 				m_state_next = ECPURetire;
 			}
 			break;
