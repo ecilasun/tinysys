@@ -51,6 +51,8 @@ enum CPUState{
 #define F12_EBREAK     0x001
 #define F12_ECALL      0x000
 
+#define CSRBASE 0x8000A000
+
 // This will select the bit range and right align it
 __forceinline uint32_t SelectBitRange(uint32_t val, uint32_t startbit, uint32_t endbit)
 {
@@ -79,6 +81,7 @@ struct SDecodedInstruction
 	uint32_t m_rd;
 	uint32_t m_immed;
 	uint32_t m_selimm;
+	uint32_t m_csroffset;
 #if defined(DEBUG)
 	// internal / debugging related
 	uint32_t m_opindex;
@@ -115,6 +118,11 @@ public:
 	CPUState m_state = ECPUReset;
 	CPUState m_state_next = ECPUReset;
 	CMemMan *m_mem = nullptr;
+
+	// Internal counters
+	uint64_t m_cyclecounter = 0;
+	uint64_t m_wallclock = 0;
+	uint64_t m_retired = 0;
 
     uint32_t m_resetvector = 0x0FFE0000;
 

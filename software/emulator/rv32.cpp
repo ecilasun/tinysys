@@ -131,6 +131,7 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 	dec.m_rs2 = SelectBitRange(instr, 24, 20);
 	dec.m_rd = SelectBitRange(instr, 11, 7);
 	dec.m_f12 = SelectBitRange(instr, 31, 20);
+	dec.m_csroffset = (SelectBitRange(instr, 31, 25) << 5) | dec.m_rs2;
 
 #if defined(DEBUG)
 	switch (dec.m_opcode)
@@ -284,6 +285,20 @@ bool CRV32::Tick(CClock& cpuclock)
 
 	if (cpuclock.m_edge == RisingEdge)
 	{
+		// We hack our way around with these CSR register
+		// Normally they're shadowed to hardware counters
+		// in the device so we don't have to emulate any latency here
+		m_mem->m_csrmem[CSR_CYCLELO] = (uint32_t)(m_cyclecounter&0x00000000FFFFFFFFU);
+		m_mem->m_csrmem[CSR_CYCLEHI] = (uint32_t)((m_cyclecounter&0xFFFFFFFF00000000U) >> 32);
+		m_mem->m_csrmem[CSR_RETILO] = (uint32_t)(m_retired&0x00000000FFFFFFFFU);
+		m_mem->m_csrmem[CSR_RETIHI] = (uint32_t)((m_retired&0xFFFFFFFF00000000U) >> 32);
+		m_mem->m_csrmem[CSR_TIMELO] = (uint32_t)(m_wallclock&0x00000000FFFFFFFFU);
+		m_mem->m_csrmem[CSR_TIMEHI] = (m_wallclock&0xFFFFFFFF00000000U) >> 32;
+
+		++m_cyclecounter;
+		if (m_cyclecounter%15 == 0) // 150MHz vs 10Mhz
+			++m_wallclock;
+
 		// Process input and prepare intermediates
 		switch (m_state)
 		{
@@ -370,57 +385,44 @@ bool CRV32::Tick(CClock& cpuclock)
 					break;
 
 					case OP_SYSTEM:
-						if (m_decoded.m_f3 == 0)
+						if (m_decoded.m_f12 == F12_CDISCARD)
 						{
-							if (m_decoded.m_f12 == F12_CDISCARD)
+						}
+						else if (m_decoded.m_f12 == F12_CFLUSH)
+						{
+						}
+						else if (m_decoded.m_f12 == F12_MRET)
+						{
+						}
+						else if (m_decoded.m_f12 == F12_WFI)
+						{
+						}
+						else if (m_decoded.m_f12 == F12_EBREAK)
+						{
+						}
+						else if (m_decoded.m_f12 == F12_ECALL)
+						{
+						}
+						else
+						{
+							// Read previous value
+							uint32_t csrprevval = m_mem->FetchDataWord(CSRBASE + m_decoded.m_csroffset);
+
+							// Keep it in a register
+							rwen = 1;
+							rdin = csrprevval;
+
+							// Apply operation
+							wstrobe = 0b1111;
+							switch (m_decoded.m_f3)
 							{
-							}
-							else if (m_decoded.m_f12 == F12_CFLUSH)
-							{
-							}
-							else if (m_decoded.m_f12 == F12_MRET)
-							{
-							}
-							else if (m_decoded.m_f12 == F12_WFI)
-							{
-							}
-							else if (m_decoded.m_f12 == F12_EBREAK)
-							{
-							}
-							else if (m_decoded.m_f12 == F12_ECALL)
-							{
-							}
-							else
-							{
-								// CSROPS
-								// read old CSR value from {CSRBASE, csroffset} into m_prevCSR;
-								// apply op and write back to new csr value to same address
-								// m_ibus.waddr <= {CSRBASE, csroffset};
-								// m_ibus.wstrobe <= 4'b1111;
-								// pendingwrite <= 1'b1;
-								// unique case (func3)
-								// 	3'b001: begin // CSRRW
-								// 		m_ibus.wdata <= A;
-								// 	end
-								// 	3'b101: begin // CSRRWI
-								// 		m_ibus.wdata <= D;
-								// 	end
-								// 	3'b010: begin // CSRRS
-								// 		m_ibus.wdata <= csrprevval | A;
-								// 	end
-								// 	3'b110: begin // CSRRSI
-								// 		m_ibus.wdata <= csrprevval | D;
-								// 	end
-								// 	3'b011: begin // CSRRC
-								// 		m_ibus.wdata <= csrprevval & (~A);
-								// 	end
-								// 	3'b111: begin // CSRRCI
-								// 		m_ibus.wdata <= csrprevval & (~D);
-								// 	end
-								// 	default: begin // Unknown - keep previous value
-								// 		m_ibus.wdata <= csrprevval;
-								// 	end
-								// endcase
+								case 0b001:	wdata = m_rval1; break;
+								case 0b101:	wdata = m_decoded.m_immed; break;
+								case 0b010:	wdata = csrprevval | m_rval1; break;
+								case 0b110:	wdata = csrprevval | m_decoded.m_immed; break;
+								case 0b011:	wdata = ~m_rval1; break;
+								case 0b111:	wdata = ~m_decoded.m_immed; break;
+								default:	wdata = csrprevval; break;
 							}
 						}
 					break;
@@ -544,6 +546,7 @@ bool CRV32::Tick(CClock& cpuclock)
 			break;
 
 			case ECPURetire:
+				++m_retired;
 				m_state_next = ECPUFetch;
 			break;
 
