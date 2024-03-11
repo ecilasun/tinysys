@@ -21,27 +21,37 @@ def options(opt):
 def configure(conf):
     # Prefers msvc, but could also use conf.load('clang++') instead
     if ('COMSPEC' in os.environ):
+        conf.env.MSVC_TARGETS = ['x64']
         conf.load('msvc')
+        conf.env.PLATFORM = ['windows']
     else:
         conf.load('clang++')
 
 def build(bld):
 
+    bld.post_mode = Build.POST_LAZY
+
     # RELEASE
-    libs = ['SDL2']
     if platform.system().lower().startswith('win'):
+        libs = ['ws2_32', 'shell32', 'user32', 'Comdlg32', 'gdi32', 'ole32', 'kernel32', 'winmm', 'SDL2main', 'SDL2']
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_WINDOWS']
         includes = ['source', 'includes', '3rdparty/SDL2/include']
         sdk_lib_path = os.path.abspath('3rdparty/SDL2/lib/x64/')
-        compile_flags = ['/permissive-', '/arch:AVX', '/WX', '/Od', '/DDEBUG', '/Qfast_transcendentals', '/Zi', '/GS', '/EHsc', '/FS', '/std:c++20']
-        linker_flags = ['/DEBUG'] # '/RELEASE'
+        compile_flags =  ['/permissive-', '/arch:AVX', '/std:c++20', '/GL', '/WX', '/Ox', '/Ot', '/Oy', '/fp:fast', '/Qfast_transcendentals', '/Zi', '/EHsc', '/FS', '/DDEBUG', '/D_SECURE_SCL 0', '/Fdtinysys'] # '/DRELEASE'
+        linker_flags = ['/DEBUG', '/SUBSYSTEM:CONSOLE', '/LTCG'] # '/RELEASE'
+        #sdl_dll_path = os.path.abspath('3rdparty/SDL2/lib/x64/SDL2.dll')
+        #bld(features='subst',
+        #    source = sdl_dll_path,
+        #    target='SDL2.dll', is_copy=True, before='cxx')
     elif platform.system().lower().startswith('darwin'):
+        libs = ['SDL2']
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_DARWIN']
         includes = ['source', 'includes', '/opt/homebrew/Cellar/sdl2/2.30.0/include']
         sdk_lib_path = '/opt/homebrew/Cellar/sdl2/2.30.0/lib/'
         compile_flags = ['-std=c++20']
         linker_flags = []
     elif platform.system().lower().startswith('linux'):
+        libs = ['SDL2']
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_LINUX']
         includes = ['source', 'includes', '/opt/sdl2/2.30.0/include']
         sdk_lib_path = '/opt/sdl2/2.30.0/lib/'
