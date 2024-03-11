@@ -5,8 +5,19 @@
 	"version": "0.2.0",
     "configurations": [
 	    {
-            "name": "C++ Launch",
+            "name": "C++ Launch (Win)",
             "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\build\\release\\tinysys.exe",
+            "args": ["rom.bin"],
+            "cwd": "${workspaceFolder}\\",
+            "stopAtEntry": false,
+            "environment": [],
+            "externalConsole": false
+        },
+	    {
+            "name": "C++ Launch (Linux / Darwin)",
+            "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\build\\release\\tinysys.exe",
             "args": ["rom.bin"],
