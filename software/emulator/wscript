@@ -4,6 +4,7 @@ import platform
 from waflib.TaskGen import extension, feature, task_gen
 from waflib.Task import Task
 from waflib import Build
+from shutil import copyfile
 
 VERSION = '0.1'
 APPNAME = 'tinysys'
@@ -24,6 +25,9 @@ def configure(conf):
         conf.env.MSVC_TARGETS = ['x64']
         conf.load('msvc')
         conf.env.PLATFORM = ['windows']
+        sdlsourcepath = os.path.abspath('3rdparty/SDL2/lib/x64/SDL2.dll')
+        sdltargetpath = os.path.abspath('./build/release/SDL2.dll')
+        copyfile(sdlsourcepath, sdltargetpath)
     else:
         conf.load('clang++')
 
@@ -39,10 +43,6 @@ def build(bld):
         sdk_lib_path = os.path.abspath('3rdparty/SDL2/lib/x64/')
         compile_flags =  ['/permissive-', '/arch:AVX', '/std:c++20', '/GL', '/WX', '/Ox', '/Ot', '/Oy', '/fp:fast', '/Qfast_transcendentals', '/Zi', '/EHsc', '/FS', '/DDEBUG', '/D_SECURE_SCL 0', '/Fdtinysys'] # '/DRELEASE'
         linker_flags = ['/DEBUG', '/SUBSYSTEM:CONSOLE', '/LTCG'] # '/RELEASE'
-        #sdl_dll_path = os.path.abspath('3rdparty/SDL2/lib/x64/SDL2.dll')
-        #bld(features='subst',
-        #    source = sdl_dll_path,
-        #    target='SDL2.dll', is_copy=True, before='cxx')
     elif platform.system().lower().startswith('darwin'):
         libs = ['SDL2']
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_DARWIN']
