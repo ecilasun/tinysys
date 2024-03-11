@@ -53,8 +53,14 @@ enum CPUState{
 
 #define CSRBASE 0x8000A000
 
+#if defined(CAT_WINDOWS) || defined(CAT_LINUX)
+#define FINLINE __forceinline
+#else
+#define FINLINE inline
+#endif
+
 // This will select the bit range and right align it
-__forceinline uint32_t SelectBitRange(uint32_t val, uint32_t startbit, uint32_t endbit)
+FINLINE uint32_t SelectBitRange(uint32_t val, uint32_t startbit, uint32_t endbit)
 {
 	// get number of bits covered; delta = (start-end)+1
 	uint32_t delta = (startbit-endbit)+1;
