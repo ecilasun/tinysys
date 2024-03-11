@@ -7,7 +7,7 @@
 #include <SDL2/SDL.h>
 #endif
 
-#if defined(CAT_LINUX)
+#if defined(CAT_LINUX) || defined(CAT_DARWIN)
 int main(int argc, char** argv)
 #else
 int SDL_main(int argc, char** argv)
