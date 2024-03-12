@@ -1,0 +1,11 @@
+.DEFAULT_GOAL := all
+
+TOPTARGETS := all clean
+
+SUBDIRS := src/riscv/.
+
+$(TOPTARGETS): $(SUBDIRS)
+$(SUBDIRS):
+	$(MAKE) -s -C $@ $(MAKECMDGOALS)
+
+.PHONY: $(TOPTARGETS) $(SUBDIRS)
