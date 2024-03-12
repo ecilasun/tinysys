@@ -5,6 +5,7 @@
 
 #include "core.h"
 #include "apu.h"
+#include "vpu.h"
 
 #include "micromod/micromod.h"
 
@@ -19,6 +20,9 @@ static short reverb_buffer[ REVERB_BUF_LEN ];
 static short *apubuffer;
 static long reverb_len = REVERB_BUF_LEN, reverb_idx = 0, filt_l = 0, filt_r = 0;
 static long samples_remaining = 0;
+
+static EVideoContext vx;
+static EVideoSwapContext sc;
 
 /*
 	2:1 downsampling with simple but effective anti-aliasing.
@@ -116,6 +120,25 @@ static long read_module_length( const char *filename ) {
 	return length;
 }
 
+void draw_wave()
+{
+	VPUClear(&vx, 0x00000000);
+
+	for (uint32_t i=0; i<256; ++i)
+	{
+		int16_t L = 120 + (apubuffer[i*2+0]>>8);
+		int16_t R = 120 + (apubuffer[i*2+1]>>8);
+		L = L<0 ? 0 : (L>239 ? 239 : L);
+		R = R<0 ? 0 : (R>239 ? 239 : R);
+		sc.writepage[i + L*320] = 0x37;
+		sc.writepage[i + R*320] = 0x27;
+	}
+
+	//VPUWaitVSync();
+	CFLUSH_D_L1;
+	VPUSwapPages(&vx, &sc);
+}
+
 static long play_module( signed char *module )
 {
 	long result;
@@ -158,6 +181,9 @@ static long play_module( signed char *module )
 
 			// Fill current write buffer with new mix data
 			APUStartDMA((uint32_t)apubuffer);
+
+			// Draw the waveform in the mix buffer so we don't clash with apu buffer
+			draw_wave();
 
 			// Wait for the APU to finish playing back current read buffer
 			// Meanwhile the playback buffer will still be going without interruptions
@@ -226,6 +252,19 @@ int main(int argc, char *argv[])
 		strcat(fullpath, argv[1]);
 
 	printf("Loading and playing module %s\n", fullpath);
+
+	uint8_t *bufferB = VPUAllocateBuffer(320*240);
+	uint8_t *bufferA = VPUAllocateBuffer(320*240);
+
+    vx.m_vmode = EVM_320_Wide;
+    vx.m_cmode = ECM_8bit_Indexed;
+	VPUSetVMode(&vx, EVS_Enable);
+
+	sc.cycle = 0;
+	sc.framebufferA = bufferA;
+	sc.framebufferB = bufferB;
+	VPUSwapPages(&vx, &sc);
+
 	PlayMODFile(fullpath);
 
 	printf("Playback complete\n");
