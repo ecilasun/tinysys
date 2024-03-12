@@ -121,8 +121,13 @@ void TRURasterizePrimitive(struct ERasterizerContext *_rc)
 				break;
 			prevMaskAcc |= wmask;
 
-			if (wmask != 0)
+			if (wmask == 0xFFFFFFFF)
 				rasterOut[x/4] = _rc->m_color & wmask;
+			else if (wmask != 0x00000000)
+			{
+				uint32_t imask = ~wmask;
+				rasterOut[x/4] = (rasterOut[x/4] & imask) | (_rc->m_color & wmask);
+			}
 		}
 
 		// Next row
@@ -164,8 +169,13 @@ void TRURasterizePrimitive(struct ERasterizerContext *_rc)
 				break;
 			prevMaskAcc |= wmask;
 
-			if (wmask != 0)
+			if (wmask == 0xFFFFFFFF)
 				rasterOut[x/4] = _rc->m_color & wmask;
+			else if (wmask != 0x00000000)
+			{
+				uint32_t imask = ~wmask;
+				rasterOut[x/4] = (rasterOut[x/4] & imask) | (_rc->m_color & wmask);
+			}
 		}
 
 		// Next row
