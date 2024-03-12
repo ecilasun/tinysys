@@ -2,10 +2,12 @@
 
 # System specifications
 
-- RISC-V based CPU (full architecture name with extensions: rv32_imc_Zicsr_Zifencei_Zicntr)
-- 32 GRPs x 32 bits
-- 4096 CSRs x 32 bits (some registers reserved for CPU)
+- RISC-V based CPU (full architecture name with extensions: rv32im_zicsr_zifencei_zfinx)
+- Supports instruction fence and data cache flush/invalidate operations
 - Single precision FPU
+- Float and integer GPRs use same register space (zfinx extension)
+- 32 GRPs x 32 bits
+- 4096 CSRs x 32 bits (some registers reserved for CPU and some are immutable)
 - DMA with optional zero-masking for 16 byte aligned memory copies
 - Integer multiply / divide
 - Software, hardware and timer interrupts
@@ -16,7 +18,7 @@
 - Memory mapped external hardware
 - USB host and peripheral controller chips and ports
 - 16 bit stereo audio output chip (24 bit native in reality)
-- HDMI port for video
+- DVI 1.0 compatible video output (12 bits per pixel, RGB or paletted modes)
 - SDCard port for file I/O
 - 4 debug LEDs
 - System enumerates as a serial device when plugged into a developer PC
@@ -56,9 +58,38 @@ The AXI4 bus, running at 166.67MHz, connects all of the processing units to memo
 
 # Custom instructions
 
-## Store mask (smask) - WiP
+## Convert from float to 4 bit integer, saturated (FCVTSWU5SAT)
 
-This instruction sets the following 32bit write to memory to use a 4 bit byte mask so that only the bytes corresponding to high bits of the mask end up being written to memory.
-As soon as any following store instruction gets executed, subsequent stores revert back to regular behavior.
+This instuction has been contributed by Wade Brainerd. It's very useful in converting floating point values to device specific 4 bit color values.
 
-```smask addressregister, maskimmed, sourceregister```
+The following python script helps encode a hex representation for convenience
+
+```
+op = 0b1010011		# OP-FP (floating point operation)
+rd = 0b01010		# destination register - a0 in this sample (a0 == x10)
+rs1 = 0b01011		# source register - a1 in this sample (a1 == x11)
+funct7 = 0b1100001	# funct5 F7_FCVTSWU5SAT - this is our new sub-instruction
+inst = op | (rd << 7) | (rs1 << 15) | (funct7 << 25)
+
+print(f"{inst:x}")
+```
+
+You can then use it in code as follows:
+
+```
+inline uint32_t ftoui4sat(float value)
+{
+  uint32_t retval;
+  asm (
+    "mv a1, %1;"
+    ".word 0xc2058553;" // fcvtswu4sat a0, a1 // note A0==cpu.x10, A1==cpu.x11
+    "mv %0, a0; "
+    : "=r" (retval)
+    : "r" (value)
+    : "a0", "a1"
+  );
+  return retval;
+}
+```
+
+P.S. Perhaps in the future it might be possible to convince gcc so that we won't have to add the extra mv instructions and directly let the actual registers known.
