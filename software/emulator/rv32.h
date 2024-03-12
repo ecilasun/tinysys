@@ -62,6 +62,8 @@ enum CPUState{
 // This will select the bit range and right align it
 FINLINE uint32_t SelectBitRange(uint32_t val, uint32_t startbit, uint32_t endbit)
 {
+	// XOP.LZ.0A 10 /r id	BEXTR	Bit field extract (with immediate)	(src >> start) & ((1 << len) - 1)
+
 	// get number of bits covered; delta = (start-end)+1
 	uint32_t delta = (startbit-endbit)+1;
 	// logic shift right by endbit
