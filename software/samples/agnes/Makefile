@@ -44,10 +44,7 @@ junk += $(folders_riscv_bin)
 
 # Default
 
-all: agnes.elf agnes.txt
-
-%.txt: %.elf
-	$(OBJDUMP)objdump -x -D -S $< >> $@
+all: agnes.elf
 
 # Clean
 

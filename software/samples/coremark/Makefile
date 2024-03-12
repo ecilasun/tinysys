@@ -44,10 +44,7 @@ junk += $(folders_riscv_bin)
 
 # Default
 
-all: coremark.elf coremark.txt
-
-%.txt: %.elf
-	$(OBJDUMP)objdump -x -D -S $< >> $@
+all: coremark.elf
 
 # Clean
 

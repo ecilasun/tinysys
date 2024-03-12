@@ -15,7 +15,6 @@ CROSS ?= riscv64-unknown-elf-
 endif
 
 CC = $(CROSS)gcc
-OBJDUMP ?= $(CROSS)objdump
 SIZE = $(CROSS)size
 
 ifeq ($(UNAME), Windows)
@@ -52,7 +51,7 @@ SOURCES_doom_arch := \
 	i_video.c \
 	$(NULL)
 
-all: doom.elf doom.txt
+all: doom.elf
 
 doom.elf: $(addprefix ../,$(SOURCES_doom)) $(SOURCES_doom_arch)
 	$(CC) $(CFLAGS) -o $@ $(addprefix ../,$(SOURCES_doom)) $(SOURCES_doom_arch) $(CLIBS)
@@ -60,12 +59,9 @@ doom.elf: $(addprefix ../,$(SOURCES_doom)) $(SOURCES_doom_arch)
 
 clean:
 ifeq ($(UNAME), Windows)
-	del *.elf *.o *.gen.h doom.txt
+	del *.elf *.o *.gen.h
 else
-	rm -rf *.elf *.o *.gen.h doom.txt
+	rm -rf *.elf *.o *.gen.h
 endif
 
-%.txt: %.elf
-	$(OBJDUMP) -x -D -S $< >> $@
-
-.PHONY: all clean upload
+.PHONY: all clean
