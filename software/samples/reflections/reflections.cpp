@@ -95,7 +95,10 @@ void intersectPlane(const t_ray *r, const t_plane *p, t_hit *h)
     h->t = t;
     h->p = add(r->s , mul(r->n, t));
     h->n = p->n;
-    h->c = s2v(to_fixed( (((h->p.x>>(FP-3)) + g_time) ^ ((h->p.z>>(FP-3))) + g_time) &255));
+	stdi X = ((h->p.x>>(FP-3)) + g_time);
+	stdi Y = ((h->p.z>>(FP-3)));
+	stdi notfixedpt = (X ^ Y) + g_time;
+    h->c = s2v(to_fixed(notfixedpt & 255));
   }
 }
 /* -------------------------------------------------------- */

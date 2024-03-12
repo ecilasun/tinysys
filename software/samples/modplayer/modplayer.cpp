@@ -134,7 +134,7 @@ void draw_wave()
 		sc.writepage[i + R*320] = 0x27;
 	}
 
-	//VPUWaitVSync();
+	VPUWaitVSync();
 	CFLUSH_D_L1;
 	VPUSwapPages(&vx, &sc);
 }

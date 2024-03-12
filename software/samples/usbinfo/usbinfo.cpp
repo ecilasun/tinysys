@@ -11,7 +11,7 @@ int main(int argc, char **argv)
 	uint32_t *desclen = (uint32_t*)(KERNEL_TEMP_MEMORY + 4096);
 	uint8_t *devdesc = (uint8_t*)(KERNEL_TEMP_MEMORY + 4100);
 
-	printf("In-memory device descriptor size: %d\n", *desclen);
+	printf("In-memory device descriptor size: %ld\n", *desclen);
 	if (*desclen != 0)
 	{
 		for (uint32_t i=0; i<*desclen; ++i)
