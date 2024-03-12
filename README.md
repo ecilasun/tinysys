@@ -93,3 +93,7 @@ inline uint32_t ftoui4sat(float value)
 ```
 
 P.S. Perhaps in the future it might be possible to convince gcc so that we won't have to add the extra mv instructions and directly let the actual registers known.
+
+# Samples
+
+Please see the software/samples directory for a list of example code and a port of doom that runs natively on the device.
