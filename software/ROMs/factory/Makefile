@@ -14,8 +14,6 @@ endif
 
 default: all
 
-XLEN ?= 32
-
 # Directories
 
 src_dir = .
@@ -33,24 +31,25 @@ folders = \
 
 #override CFLAGS += -Xlinker --defsym=__stack_size=0x800
 
-ifeq ($(UNAME), WINDOWS)
-RISCV_PREFIX ?= riscv32-unknown-elf-
-RISCVTOOL ?= ..\..\build\release\riscvtool.exe
-else
-RISCV_PREFIX ?= riscv64-unknown-elf-
-RISCVTOOL ?= ../../build/release/riscvtool
-endif
 RISCV_GCC ?= $(RISCV_PREFIX)gcc
 RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump
-
+RISCV_PREFIX ?= riscv32-unknown-elf-
+ifeq ($(UNAME), WINDOWS)
+RISCVTOOL ?= ..\..\build\release\riscvtool.exe
+RISCV_PREFIX ?= riscv64-unknown-elf-
+else
+RISCVTOOL ?= ../../build/release/riscvtool
+endif
 # No filesystem when defined
 # FILESYSTEM ?= -DDISABLE_FILESYSTEM
 FILESYSTEM ?= -DENABLE_FILESYSTEM -DLFS_NO_MALLOC -DLFS_NO_DEBUG
-# This aims to run on the factory test ROM for tinysys and won't work as a regular ROM
-ROMWORDSIZE ?= 4
-# Using only the base instruction set to ensure we get support on any board this runs on
+# The MEM file will be using 16 byte (128bit) output width to match the ROM layout
+# (cache controller reads x4 16byte chunks for each line)
+ROMWORDSIZE ?= 16
+# 512 bit cache lines makes 64 bytes per line
+# 256 cache lines makes total cache size 16 Kbytes
 ifeq ($(UNAME), WINDOWS)
-RISCV_GCC_OPTS ?= -mcmodel=medany -std=gnu99 -march=rv32i -mabi=ilp32 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Wno-format -Os -static -ffreestanding -nostartfiles -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,-gc-sections,--strip-debug
+RISCV_GCC_OPTS ?= -mcmodel=medany -std=gnu99 -march=rv32i -mabi=ilp32 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Warray-bounds=0 -Wstringop-overflow=0 -Wno-format -Os -static -ffreestanding -nostartfiles -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,-gc-sections,--strip-debug
 else
 RISCV_GCC_OPTS ?= -mcmodel=medany -std=gnu99 -march=rv32i -mabi=ilp32 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Wno-format -Os -static -ffreestanding -nostartfiles -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,-gc-sections,--strip-debug
 endif
@@ -59,10 +58,11 @@ incs  += -I$(src_dir) -I$(corelib_dir) -I$(filesystemlib_dir)/ $(addprefix -I$(s
 objs  :=
 libs  := $(wildcard $(filesystemlib_dir)/*.c)
 
+# NOTE: not linking to $(wildcard $(corelib_dir)/*.c) since we only need headers
 define compile_ROM
 $(1).elf: $(wildcard $(src_dir)/$(1)/*) $(wildcard $(src_dir)/*)
-	$$(RISCV_GCC) -DBUILDING_ROM $$(FILESYSTEM) $$(incs) $$(RISCV_GCC_OPTS) -o $$@ $(wildcard $(src_dir)/$(1)/*.c) $(wildcard $(corelib_dir)/*.c) $$(libs) -Wl,-T$(1)/rom.lds
-	$$(RISCVTOOL) $(src_dir)/$(1).elf -makerom $$(ROMWORDSIZE) $(src_dir)/$(1).coe
+	$$(RISCV_GCC) -DBUILDING_ROM $$(FILESYSTEM) $$(incs) $$(RISCV_GCC_OPTS) -o $$@ $(wildcard $(src_dir)/$(1)/*.c) $$(libs) -Wl,-T$(1)/rom.lds
+	$$(RISCVTOOL) $(src_dir)/$(1).elf -makerom 4 $(src_dir)/$(1).coe
 	$$(RISCV_OBJDUMP) $(src_dir)/$(1).elf -x -D -S >> $(src_dir)/$(1).txt
 endef
 
@@ -71,16 +71,15 @@ $(foreach folder,$(folders),$(eval $(call compile_ROM,$(folder))))
 # Build
 
 folders_riscv_elf  = $(addsuffix .elf,  $(folders))
-folders_riscv_mem = $(addsuffix .mem, $(folders))
-folders_riscv_bin = $(addsuffix .bin, $(folders))
+folders_riscv_coe = $(addsuffix .coe, $(folders))
 folders_riscv_disasm = $(addsuffix .txt, $(folders))
 
 executables: $(folders_riscv_elf)
 romimages: $(folders_riscv_mem)
-overlayimage: $(folders_riscv_bin)
+overlayimage: $(folders_riscv_coe)
 disassembly: $(folders_riscv_disasm)
 
-junk += $(folders_riscv_elf) $(folders_riscv_mem) $(folders_riscv_bin) $(folders_riscv_disasm)
+junk += $(folders_riscv_elf) $(folders_riscv_mem) $(folders_riscv_coe) $(folders_riscv_disasm)
 
 # Default
 
