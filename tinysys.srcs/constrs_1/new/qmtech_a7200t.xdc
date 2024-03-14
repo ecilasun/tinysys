@@ -276,34 +276,4 @@ set_clock_groups -name grpP -asynchronous -group [get_clocks -of_objects [get_pi
 ## set_input_delay -clock [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT0]] 0.000 [get_ports sysresetn]
 ## set_input_delay -clock [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT0]] 0.000 [get_ports sdcard_swtch]
 
-create_pblock pblock_COPYROM
-add_cells_to_pblock [get_pblocks pblock_COPYROM] [get_cells -quiet [list socinstance/COPYROM]]
-resize_pblock [get_pblocks pblock_COPYROM] -add {SLICE_X2Y53:SLICE_X17Y118}
-resize_pblock [get_pblocks pblock_COPYROM] -add {DSP48_X0Y22:DSP48_X0Y45}
-resize_pblock [get_pblocks pblock_COPYROM] -add {RAMB18_X0Y22:RAMB18_X0Y45}
-resize_pblock [get_pblocks pblock_COPYROM] -add {RAMB36_X0Y11:RAMB36_X0Y22}
-create_pblock pblock_DMA
-add_cells_to_pblock [get_pblocks pblock_DMA] [get_cells -quiet [list socinstance/DMA]]
-resize_pblock [get_pblocks pblock_DMA] -add {SLICE_X20Y50:SLICE_X83Y73}
-resize_pblock [get_pblocks pblock_DMA] -add {DSP48_X2Y20:DSP48_X4Y27}
-resize_pblock [get_pblocks pblock_DMA] -add {RAMB18_X1Y20:RAMB18_X4Y27}
-resize_pblock [get_pblocks pblock_DMA] -add {RAMB36_X1Y10:RAMB36_X4Y13}
-create_pblock pblock_FPU
-add_cells_to_pblock [get_pblocks pblock_FPU] [get_cells -quiet [list socinstance/hart0/controlunitinst/FPU]]
-resize_pblock [get_pblocks pblock_FPU] -add {SLICE_X98Y100:SLICE_X157Y199}
-resize_pblock [get_pblocks pblock_FPU] -add {DSP48_X6Y40:DSP48_X8Y79}
-resize_pblock [get_pblocks pblock_FPU] -add {RAMB18_X6Y40:RAMB18_X8Y79}
-resize_pblock [get_pblocks pblock_FPU] -add {RAMB36_X6Y20:RAMB36_X8Y39}
 
-create_pblock pblock_APU
-add_cells_to_pblock [get_pblocks pblock_APU] [get_cells -quiet [list socinstance/APU]]
-resize_pblock [get_pblocks pblock_APU] -add {SLICE_X46Y144:SLICE_X65Y174}
-resize_pblock [get_pblocks pblock_APU] -add {DSP48_X3Y58:DSP48_X3Y69}
-resize_pblock [get_pblocks pblock_APU] -add {RAMB18_X3Y58:RAMB18_X3Y69}
-resize_pblock [get_pblocks pblock_APU] -add {RAMB36_X3Y29:RAMB36_X3Y34}
-create_pblock pblock_VPU
-add_cells_to_pblock [get_pblocks pblock_VPU] [get_cells -quiet [list socinstance/VPU]]
-resize_pblock [get_pblocks pblock_VPU] -add {SLICE_X92Y52:SLICE_X125Y93}
-resize_pblock [get_pblocks pblock_VPU] -add {DSP48_X5Y22:DSP48_X6Y35}
-resize_pblock [get_pblocks pblock_VPU] -add {RAMB18_X6Y22:RAMB18_X6Y35}
-resize_pblock [get_pblocks pblock_VPU] -add {RAMB36_X6Y11:RAMB36_X6Y17}

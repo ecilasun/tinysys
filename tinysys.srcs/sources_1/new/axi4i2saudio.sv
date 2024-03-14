@@ -10,7 +10,6 @@ module axi4i2saudio(
 	output wire audiore,				// Command read control
     input wire [31:0] audiodin,			// APU command input
 	output wire [31:0] swapcount,		// Buffer swap counter for sync
-	input wire [15:0] mixinput,			// Input from external audio source
     output wire tx_mclk,				// Audio bus output
     output wire tx_lrck,				// L/R select
     output wire tx_sclk,				// Stream clock
@@ -221,14 +220,12 @@ end
 // ------------------------------------------------------------------------------------
 
 logic [1:0] sampleRateCounter = 2'b00;	// Sample rate counter
-logic [1:0] audiooutstate = 2'b00;
 always@(posedge audioclock) begin
 
 	if (~aresetn) begin
 		readCursor <= 10'd0;
 		bufferSwap <= 1'd0;
 		sampleRateCounter <= 2'd0;
-		audiooutstate <= 2'b01;
 	end else begin
 		if (count==9'h0ff) begin
 			// New sample
@@ -256,20 +253,13 @@ always@(posedge audioclock) begin
 	end
 end
 
-logic [23:0] tx_data_l_shift = 24'b0;
-logic [23:0] tx_data_r_shift = 24'b0;
-logic [23:0] leftmix = 24'b0;
-logic [23:0] rightmix = 24'b0;
+logic [23:0] tx_data_l_shift;
+logic [23:0] tx_data_r_shift;
 
 always@(posedge audioclock) begin
 	if (count == 3'b00000111) begin
-		// TODO: Move the mixer to an external device
-		// TODO: (A+B) << volume2
-		// NOTE: OPL2 input is mono
-		leftmix <= {tx_data_lr[31:16] + mixinput, 8'd0};
-		rightmix <= {tx_data_lr[15:0] + mixinput, 8'd0};
-		tx_data_l_shift <= leftmix;
-		tx_data_r_shift <= rightmix;
+		tx_data_l_shift <= {tx_data_lr[31:16], 8'd0};
+		tx_data_r_shift <= {tx_data_lr[15:0], 8'd0};
 	end else if (count[2:0] == 3'b111 && count[7:3] >= 5'd1 && count[7:3] <= 5'd24) begin
 		if (count[8] == 1'b1)
 			tx_data_r_shift <= {tx_data_r_shift[22:0], 1'b0};

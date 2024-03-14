@@ -125,19 +125,12 @@ uint32_t CMemMan::FetchDataWord(uint32_t address)
 			break;
 			case 8:
 			{
-				// DEVICE_OPL2
-				printf("<-OPL2\n");
-				data = 0;
-			}
-			break;
-			case 9:
-			{
 				// DEVICE_USBA
 				printf("<-USB-A\n");
 				data = 0;
 			}
 			break;
-			case 10:
+			case 9:
 			{
 				// DEVICE_CSR0
 				uint32_t csrindex = address&0xFFF;
@@ -219,17 +212,11 @@ void CMemMan::WriteDataWord(uint32_t address, uint32_t word, uint32_t wstrobe)
 			break;
 			case 8:
 			{
-				// DEVICE_OPL2
-				printf("OPL2:%.8x\n", word);
-			}
-			break;
-			case 9:
-			{
 				// DEVICE_USBA
 				printf("USB-A:%.8x\n", word);
 			}
 			break;
-			case 10:
+			case 9:
 			{
 				// DEVICE_CSR0
 				uint32_t csrindex = address&0xFFF;

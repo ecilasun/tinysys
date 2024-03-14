@@ -49,8 +49,7 @@ axi4if csrif();					// Sub bus: CSR file device (control registers)
 axi4if xadcif();				// Sub bus: ADC controller (temperature sensor)
 axi4if dmaif();					// Sub bus: DMA controller (memcopy)
 axi4if usbcif();				// Sub bus: USB-C controller (usb peripheral interface)
-axi4if audioif();				// Sub bus: APU i2s audio output unit (raw audio and OPL2/raw mixer)
-axi4if opl2if();				// Sub bus: OPL2 interface (Yamaha OPL2)
+axi4if audioif();				// Sub bus: APU i2s audio output unit (raw audio)
 axi4if usbaif();				// Sub bus: USB-A controller (usb host interface)
 
 // --------------------------------------------------
@@ -165,7 +164,6 @@ wire [31:0] audiofifodout;
 wire audiofifore;
 wire audiofifovalid;
 wire [31:0] audiobufferswapcount;
-wire [15:0] opl2sampleout;
 
 axi4i2saudio APU(
 	.aclk(aclk),				// Bus clock
@@ -179,8 +177,6 @@ axi4i2saudio APU(
 	.audiore(audiofifore),
     .audiodin(audiofifodout),
     .swapcount(audiobufferswapcount),
-    
-    .mixinput(opl2sampleout),
 
     .tx_mclk(i2sconn.mclk),
     .tx_lrck(i2sconn.lrclk),
@@ -224,42 +220,41 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // address space is for 4Kbytes of data yet we can
 // access 16KBytes worth of data.
 
-// 12bit (4K) address space reserved for each memory mapped device
-// dev   start     end       addrs[30:12]                 size  notes
-// ----: 80000000  80000FFF  19'b000_0000_0000_0000_0000  4KB	Unused
-// LEDS: 80001000  80001FFF  19'b000_0000_0000_0000_0001  4KB	Debug LEDs
-// VPUC: 80002000  80002FFF  19'b000_0000_0000_0000_0010  4KB	Video Processing Unit
-// SDCC: 80003000  80003FFF  19'b000_0000_0000_0000_0011  4KB	SDCard SPI Unit
-// XADC: 80004000  80004FFF  19'b000_0000_0000_0000_0100  4KB	Die Temperature DAC
-// DMAC: 80005000  80005FFF  19'b000_0000_0000_0000_0101  4KB	Direct Memory Access / Memcopy
-// USBC: 80006000  80006FFF  19'b000_0000_0000_0000_0110  4KB	USB-C Peripheral Interface Unit
-// APUC: 80007000  80007FFF  19'b000_0000_0000_0000_0111  4KB	Audio Processing Unit / Mixer
-// OPL2: 80008000  80008FFF  19'b000_0000_0000_0000_1000  4KB	Yamaha OPL2 Compatible Unit
-// USBA: 80009000  80009FFF  19'b000_0000_0000_0000_1001  4KB	USB-A Host Interface Unit
-// CSR0: 8000A000  8000AFFF  19'b000_0000_0000_0000_1010  4KB	HART#0
-// ----: 8000B000  8000BFFF  19'b000_0000_0000_0000_1011  4KB	Unused
-// ----: 8000C000  8000CFFF  19'b000_0000_0000_0000_1100  4KB	Unused
-// ----: 8000D000  8000DFFF  19'b000_0000_0000_0000_1101  4KB	Unused
-// ----: 8000E000  8000EFFF  19'b000_0000_0000_0000_1110  4KB	Unused
-// ----: 8000F000  8000FFFF  19'b000_0000_0000_0000_1111  4KB	Unused
-// ----: 80010000  80010FFF  19'b000_0000_0000_0001_0000  4KB	Unused
+// 12bit (4K) address space reserved for each memory mapped device (255 devices max)
+// dev   start     end       addrs[19:12]  size  notes
+// ----: 80000000  8xx00FFF  8'b0000_0000  4KB	Unused
+// LEDS: 8xx01000  8xx01FFF  8'b0000_0001  4KB	Debug LEDs
+// VPUC: 8xx02000  8xx02FFF  8'b0000_0010  4KB	Video Processing Unit
+// SDCC: 8xx03000  8xx03FFF  8'b0000_0011  4KB	SDCard SPI Unit
+// XADC: 8xx04000  8xx04FFF  8'b0000_0100  4KB	Die Temperature DAC
+// DMAC: 8xx05000  8xx05FFF  8'b0000_0101  4KB	Direct Memory Access / Memcopy
+// USBC: 8xx06000  8xx06FFF  8'b0000_0110  4KB	USB-C Peripheral Interface Unit
+// APUC: 8xx07000  8xx07FFF  8'b0000_0111  4KB	Audio Processing Unit / Mixer
+// USBA: 8xx08000  8xx08FFF  8'b0000_1000  4KB	USB-A Host Interface Unit
+// CSR0: 8xx09000  8xx09FFF  8'b0000_1001  4KB	HART#0
+// ----: 8xx0A000  8xx0AFFF  8'b0000_1010  4KB	Unused
+// ----: 8xx0B000  8xx0BFFF  8'b0000_1011  4KB	Unused
+// ----: 8xx0C000  8xx0CFFF  8'b0000_1100  4KB	Unused
+// ----: 8xx0D000  8xx0DFFF  8'b0000_1101  4KB	Unused
+// ----: 8xx0E000  8xx0EFFF  8'b0000_1110  4KB	Unused
+// ----: 8xx0F000  8xx0FFFF  8'b0000_1111  4KB	Unused
+// ----: 8xx10000  8xx10FFF  8'b0001_0000  4KB	Unused
 
 devicerouter devicerouterinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
     .axi_s(devicebusHart0),				// TODO: Will need this to come from a bus arbiter
     .addressmask({
-		19'b000_0000_0000_0000_1010,	// CRS0 CSR file for HART#0
-    	19'b000_0000_0000_0000_1001,	// USBA USB-A access via SPI
-    	19'b000_0000_0000_0000_1000,	// OPL2	OPL2(YM8312) Command and Register Ports
-    	19'b000_0000_0000_0000_0111,	// APUC	Audio Processing Unit Command Fifo
-        19'b000_0000_0000_0000_0110,	// USBC USB-C access via SPI
-    	19'b000_0000_0000_0000_0101,	// DMAC DMA Command Fifo
-    	19'b000_0000_0000_0000_0100,	// XADC Analog / Digital Converter Interface
-		19'b000_0000_0000_0000_0011,	// SDCC SDCard access via SPI
-		19'b000_0000_0000_0000_0010,	// VPUC Graphics Processing Unit Command Fifo
-		19'b000_0000_0000_0000_0001}),	// LEDS Debug / Status LED interface
-    .axi_m({csrif, usbaif, opl2if, audioif, usbcif, dmaif, xadcif, spiif, vpucmdif, ledif}));
+		8'b0000_1001,		// CRS0 CSR file for HART#0
+    	8'b0000_1000,		// USBA USB-A access via SPI
+    	8'b0000_0111,		// APUC	Audio Processing Unit Command Fifo
+        8'b0000_0110,		// USBC USB-C access via SPI
+    	8'b0000_0101,		// DMAC DMA Command Fifo
+    	8'b0000_0100,		// XADC Analog / Digital Converter Interface
+		8'b0000_0011,		// SDCC SDCard access via SPI
+		8'b0000_0010,		// VPUC Graphics Processing Unit Command Fifo
+		8'b0000_0001}),	// LEDS Debug / Status LED interface
+    .axi_m({csrif, usbaif, audioif, usbcif, dmaif, xadcif, spiif, vpucmdif, ledif}));
 
 // --------------------------------------------------
 // Interrupt wires
@@ -368,12 +363,5 @@ commandqueue audiocmdinst(
 	.fifore(audiofifore),
 	.fifovalid(audiofifovalid),
     .devicestate(audiobufferswapcount));
-
-axi4opl2 opl2inst(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.audioclock(clk50),
-	.sampleout(opl2sampleout),
-	.s_axi(opl2if) );
 
 endmodule

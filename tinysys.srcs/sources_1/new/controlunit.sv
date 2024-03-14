@@ -4,7 +4,7 @@
 
 module controlunit #(
 	parameter int CID = 32'h00000000,	// Corresponds to HARTID
-	parameter int CSRBASE = 20'h8000A	// TODO: Add CID<<12, for instance HART#1 would be 32'h8000B
+	parameter int CSRBASE = 20'h80009	// TODO: Add CID<<12, for instance HART#1 would be 32'h8000A
 ) (
 	input wire aclk,
 	input wire aresetn,

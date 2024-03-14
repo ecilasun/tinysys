@@ -5,7 +5,6 @@
 #include "xadc.h"
 #include "apu.h"
 #include "vpu.h"
-#include "opl2.h"
 #include "dma.h"
 #include "usbserial.h"
 #include "usbhost.h"
@@ -90,9 +89,6 @@ void DeviceDefaultState(int _bootTime)
 {
 	// Stop output
 	APUSetSampleRate(ASR_Halt);
-
-	// Stop any pending OPL2 audio output by sending a series commands
-	OPL2Stop();
 
 	// Turn off LEDs
 	LEDSetState(0x0);

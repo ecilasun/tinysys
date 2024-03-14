@@ -10,7 +10,7 @@ Once that is out of the way, we can begin!
 
 Tinysys is a simple computer with a 32 bit RISC-V core. It has no branch prediction, no pipelining and will run at approximately 27MIPS, and has a coremark score of 0.54
 
-However slow it might seem, it makes up for what it lacks with a few hardware devices. There is an OPL2 compatible audio layer, a DMA unit that can move 16 byte aligned memory blocks, USB host and peripheral interfaces to talk to a keyboard/joystick or the host PC, and has 256Mbytes of fast DDR3 memory. To see the speed at which memory can be moved around, compile and run the `dmatest 1` command on the device CLI.
+However slow it might seem, it makes up for what it lacks with a few hardware devices. There is a DMA unit that can move 16 byte aligned memory blocks, USB host and peripheral interfaces to talk to a keyboard/joystick or the host PC, and has 256Mbytes of fast DDR3 memory. To see the speed at which memory can be moved around, compile and run the `dmatest 1` command on the device CLI.
 
 There's also a mini OS (~47Kbytes) on ROM which contains the necessary routines to help with file access, memory allocation and other facilities.
 
