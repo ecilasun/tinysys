@@ -43,8 +43,16 @@ int SDL_main(int argc, char** argv)
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
     bool alive = true;
+    SDL_Event ev;
     do
     {
+        if (SDL_PollEvent(&ev) != 0)
+        {
+            if (ev.type == SDL_QUIT)
+                alive = false;
+        }
+
+        //SDL_UpdateWindowSurface(window);
         alive = emulator.Step();
     } while(alive);
 
