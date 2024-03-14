@@ -5,7 +5,6 @@
 		"cstdlib": "cpp",
 		"stat.h": "c",
 		"ostream": "cpp",
-		"opl2.h": "c",
 		"vpu.h": "c",
 		"algorithm": "cpp",
 		"optional": "cpp",

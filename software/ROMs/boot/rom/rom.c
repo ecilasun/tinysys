@@ -24,9 +24,9 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "v1.09"
+#define VERSIONSTRING "r1.0"
 // On-storage version
-#define DEVVERSIONSTRING "v1.09"
+#define DEVVERSIONSTRING "r1.0"
 
 static char s_execName[32] = "ROM";
 static char s_execParam0[32] = "auto";
@@ -93,11 +93,7 @@ void DeviceDefaultState(int _bootTime)
 	// Turn off LEDs
 	LEDSetState(0x0);
 
-	// Wait for any pending raster ops to complete
-	//RPUFlushCache();		// Complete writes
-	//RPUInvalidateCache();	// Invalidate cache
-	//RPUBarrier();
-	//RPUWait();				// Complete all RPU ops
+	// TODO: Wait for any pending raster ops to complete
 
 	// Wait for any pending DMA to complete
 	DMAWait();

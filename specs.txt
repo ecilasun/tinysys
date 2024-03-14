@@ -16,7 +16,6 @@ Cached access from CPU and direct access from other devices on the bus, in 128bi
 Devices:
 Memory mapped access to the following devices:
 - 16bit stereo audio output (44/22/11KHz selectable)
-- OPL2 device (clone of YM3812, mono output, mixed together with 16bit stereo audio)
 - Device temperature monitor, accessible from user software
 - DMA (currently handles 16-byte aligned block transfers within the 256Mbyte SDRAM region only)
 - DVI signal over HDMI port (640x480 or 320x240 modes with 8bpp indexed or 16bpp truecolor for a total of 4 modes)

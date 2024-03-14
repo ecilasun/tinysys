@@ -43,13 +43,10 @@ This unit will read an instruction from the IFIFO if available, load registers w
 Video processing unit. Handles scan-out of various video sizes (320x240 and 640x480) and bit depths (8bpp index color or 16bpp RGB color)
 
 ## APU
-Audio processing unit. Handles mixing the OPL2/RAW audio outputs, and also manages 44/22/11KHz stereo playback and buffer handling of RAW audio.
+Audio processing unit. Handles RAW audio outputs, and also manages 44/22/11KHz stereo playback and buffer handling of RAW audio.
 
 ## DMA
 Direct memory access unit. Used to copy blocks of memory within memory address space, and won't DMA between or from other devices. It can optionally ignore zeros on input data and won't write them to the output location (i.e. automatic masking)
-
-## OPL2
-This is a Yamaha OPL2 compatible device using an opensource implementation (mono output, 16bits)
 
 # Overview of the bus
 

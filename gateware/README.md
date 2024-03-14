@@ -8,28 +8,31 @@ If you have an older one, you can simply delete it, or use a `rom.bin` file with
 This is the current architecture to use with gcc13 and higher: `rv32im_zicsr_zifencei_zfinx`
 
 # Changes:
-1.04:<br>
+s1.04:<br>
 Single precision FPU added<br>
-1.05:<br>
+s1.05:<br>
 Auto-byte masked DMA support added<br>
 saturate instruction by Wade Brainerd added<br>
 compressed instruction support removed<br>
-1.06:<br>
+s1.06:<br>
 fixed the saturate instruction<br>
-1.07<br>
+s1.07<br>
 dropped core speed to 150MHz<br>
 made I$ return one clock earlier<br>
 overall device speed is slightly better (coremark 0.6667 versus coremark 0.60) <br>
 overall tight loop memory write speed is better (37.7mb/sec vs 35.4mb/sec)<br>
-1.08<br>
+s1.08<br>
 device now drops 'f' extension and used ZFix (floats in integer registers extension)<br>
 all samples and ROM changed to reflect this change<br>
-<b>1.09</b><br>
+<b>s1.09</b><br>
 audio hardware fixes as suggested by Ben Stragnell<br>
 updated built-in ROM with new audio halt on exit<br>
 memory locations modified for task data<br>
 small checks added to directory switch logic<br>
 added 5 second timeout between upload packages to not hang the device<br>
+<b>r1.0</b><br>
+post-programming competition release version<br>
+OPL2 hardware removed<br>
 
 # Device gateware
 

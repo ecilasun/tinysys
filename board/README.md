@@ -40,7 +40,6 @@ For software, visit https://github.com/ecilasun/riscvtool and check the tinysys 
 - Device manuals:
     - Device memory map
     - Raw audio
-    - OPL2 audio
     - VPU (video processing unit)
     - DMA
 	- Rasterizer
