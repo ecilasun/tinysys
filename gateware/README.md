@@ -30,9 +30,10 @@ updated built-in ROM with new audio halt on exit<br>
 memory locations modified for task data<br>
 small checks added to directory switch logic<br>
 added 5 second timeout between upload packages to not hang the device<br>
-<b>r1.0</b><br>
+<b>r1.00</b><br>
 post-programming competition release version<br>
 OPL2 hardware removed<br>
+final stable release version of tinysys<br>
 
 # Device gateware
 
