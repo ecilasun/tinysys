@@ -1,5 +1,5 @@
 // Defined this to allow for two HARTs
-#define TIMELORD
+//#define TIMELORD
 
 #ifdef __cplusplus
 extern "C"
