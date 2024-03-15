@@ -579,24 +579,19 @@ uint32_t LoadOverlay(const char *filename)
 	return 0;
 }
 
-#ifdef TIMELORD
 int workermain()
 {
 	while(1)
 	{
 		LEDSetState(0xF);
-		E32Sleep(10*ONE_MILLISECOND_IN_TICKS);
-
+		E32Sleep(2*ONE_MILLISECOND_IN_TICKS);
 		LEDSetState(0x0);
-		E32Sleep(10*ONE_MILLISECOND_IN_TICKS);
+		E32Sleep(2*ONE_MILLISECOND_IN_TICKS);
 
 		// Nothing else to do here...
 		//asm volatile("wfi;");
 	}
-
-	return 0;
 }
-#endif
 
 int main()
 {

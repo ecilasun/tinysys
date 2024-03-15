@@ -1,8 +1,5 @@
 `timescale 1ns / 1ps
 
-// Define this to get two HARTs
-//`define TIMELORD
-
 module tinysoc #(
 	parameter int RESETVECTOR = 32'd0
 ) (
@@ -15,8 +12,10 @@ module tinysoc #(
 	input wire clk166,
 	input wire clk200,
 	input wire aresetn,
+	//input wire sysresetn,
 	input wire preresetn,
 	output wire [3:0] leds,
+	//debugbusif.slave s_dbg,
 	output wire vvsync,
 	output wire vhsync,
 	output wire vclk,
@@ -36,11 +35,9 @@ axi4if instructionbusHart0();	// Fetch bus for HART#0
 axi4if databusHart0();			// Data bus for HART#0
 axi4if devicebusHart0();		// Direct access to devices from data unit of HART#0
 
-`ifdef TIMELORD
 axi4if instructionbusHart1();	// Fetch bus for HART#1
 axi4if databusHart1();			// Data bus for HART#1
 axi4if devicebusHart1();		// Direct access to devices from data unit of HART#1
-`endif
 
 axi4if videobus();				// Video output unit bus
 axi4if dmabus();				// Direct memory access bus
@@ -48,17 +45,13 @@ axi4if romcopybus();			// Bus for boot ROM copy (TODO: switch between ROM types?
 axi4if audiobus();				// Bus for audio device output
 
 axi4if memorybus();				// Arbitrated access to main memory
-`ifdef TIMELORD
 axi4if devicebus();				// Arbitrated access to devices
-`endif
 
 axi4if ledif();					// Sub bus: LED contol device (debug LEDs)
 axi4if vpucmdif();				// Sub bus: VPU command fifo (video scan out logic)
 axi4if spiif();					// Sub bus: SPI control device (sdcard)
 axi4if csr0if();				// Sub bus: CSR#0 file device (control registers)
-`ifdef TIMELORD
 axi4if csr1if();				// Sub bus: CSR#1 file device (control registers)
-`endif
 axi4if xadcif();				// Sub bus: ADC controller (temperature sensor)
 axi4if dmaif();					// Sub bus: DMA controller (memcopy)
 axi4if usbcif();				// Sub bus: USB-C controller (usb peripheral interface)
@@ -123,7 +116,7 @@ riscv #(.RESETVECTOR(RESETVECTOR),
 // --------------------------------------------------
 // HART#1
 // --------------------------------------------------
-`ifdef TIMELORD
+
 wire sieHart1;
 wire [63:0] cpuclocktimeHart1;
 wire [63:0] retiredHart1;
@@ -145,7 +138,6 @@ riscv #(.RESETVECTOR(RESETVECTOR),
 	.devicebus(devicebusHart1),
 	.cpuclocktime(cpuclocktimeHart1),
 	.retired(retiredHart1));
-`endif
 
 // --------------------------------------------------
 // Video output unit
@@ -233,30 +225,22 @@ axi4i2saudio APU(
 // --------------------------------------------------
 // Traffic arbiter between master units and memory
 // --------------------------------------------------
-`ifdef TIMELORD
-arbiter8x arbiter8x1instSDRAM(
+
+arbiter arbiter8x1instSDRAM(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.axi_s({romcopybus, audiobus, dmabus, videobus, databusHart1, instructionbusHart1, databusHart0, instructionbusHart0}),
 	.axi_m(memorybus) );
-`else
-arbiter6x arbiter8x1instSDRAM(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.axi_s({romcopybus, audiobus, dmabus, videobus, databusHart0, instructionbusHart0}),
-	.axi_m(memorybus) );
-`endif
 
 // --------------------------------------------------
 // Traffic arbiter between master units and devices
 // --------------------------------------------------
-`ifdef TIMELORD
+
 arbiter2x arbiter2x1instDEV(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.axi_s({devicebusHart1, devicebusHart0}),
 	.axi_m(devicebus) );
-`endif
 
 // --------------------------------------------------
 // RAM
@@ -305,14 +289,13 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // ----: 8xx0F000  8xx0FFFF  8'b0000_1111  4KB	Unused
 // ----: 8xx10000  8xx10FFF  8'b0001_0000  4KB	Unused
 
-`ifdef TIMELORD
-devicerouter10x devicerouterinst(
+devicerouter devicerouterinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
     .axi_s(devicebus),
     .addressmask({
-    	8'b0000_1010,		// CRS1 CSR file for HART#1
-		8'b0000_1001,		// CRS0 CSR file for HART#0
+    	8'b0000_1010,		// CRS0 CSR#1 file for HART#1
+		8'b0000_1001,		// CRS0 CSR#0 file for HART#0
     	8'b0000_1000,		// USBA USB-A access via SPI
     	8'b0000_0111,		// APUC	Audio Processing Unit Command Fifo
         8'b0000_0110,		// USBC USB-C access via SPI
@@ -320,25 +303,8 @@ devicerouter10x devicerouterinst(
     	8'b0000_0100,		// XADC Analog / Digital Converter Interface
 		8'b0000_0011,		// SDCC SDCard access via SPI
 		8'b0000_0010,		// VPUC Graphics Processing Unit Command Fifo
-		8'b0000_0001}),		// LEDS Debug / Status LED interface
+		8'b0000_0001}),	// LEDS Debug / Status LED interface
     .axi_m({csr1if, csr0if, usbaif, audioif, usbcif, dmaif, xadcif, spiif, vpucmdif, ledif}));
-`else
-devicerouter9x devicerouterinst(
-	.aclk(aclk),
-	.aresetn(aresetn),
-    .axi_s(devicebusHart0),
-    .addressmask({
-		8'b0000_1001,		// CRS0 CSR file for HART#0
-    	8'b0000_1000,		// USBA USB-A access via SPI
-    	8'b0000_0111,		// APUC	Audio Processing Unit Command Fifo
-        8'b0000_0110,		// USBC USB-C access via SPI
-    	8'b0000_0101,		// DMAC DMA Command Fifo
-    	8'b0000_0100,		// XADC Analog / Digital Converter Interface
-		8'b0000_0011,		// SDCC SDCard access via SPI
-		8'b0000_0010,		// VPUC Graphics Processing Unit Command Fifo
-		8'b0000_0001}),		// LEDS Debug / Status LED interface
-    .axi_m({csr0if, usbaif, audioif, usbcif, dmaif, xadcif, spiif, vpucmdif, ledif}));
-`endif
 
 // --------------------------------------------------
 // Interrupt wires
@@ -414,7 +380,6 @@ axi4CSRFile #(.HARTID(32'd0)) CSR0(
 	// Bus
 	.s_axi(csr0if) );
 
-`ifdef TIMELORD
 axi4CSRFile #(.HARTID(32'd1)) CSR1(
 	.aclk(aclk),
 	.aresetn(aresetn),
@@ -432,7 +397,6 @@ axi4CSRFile #(.HARTID(32'd1)) CSR1(
 	.sie(sieHart1),
 	// Bus
 	.s_axi(csr1if) );
-`endif
 
 // XADC
 axi4xadc xadcinst(

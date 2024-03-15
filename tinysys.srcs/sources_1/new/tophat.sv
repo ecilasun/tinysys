@@ -4,6 +4,7 @@
 module tophat(
 	// Board clock and reset
     input wire sys_clk
+    //,input wire sysresetn
     // Debug LEDs
     ,output wire [3:0] leds
 	// DDR3 SDRAM
@@ -48,6 +49,9 @@ module tophat(
 	,output wire usba_mosi
 	,output wire usba_resn
 	,input wire usba_int
+	// DEBUG UART
+	//,input wire debugrx
+	//,output wire debugtx
 	// Audio out
 	,output wire au_sdin
 	,output wire au_sclk
@@ -138,6 +142,20 @@ audiowires i2sconn(
 	.mclk(au_mclk));
 
 // --------------------------------------------------
+// Hardware debug device
+// --------------------------------------------------
+
+/*debugbusif dbgbus();
+
+hwdebug hwdebuginst(
+	.aresetn(aresetn),
+	.aclk(clkbus),
+	.clk100(clk100),
+	.m_dbg(dbgbus),
+	.rx(debugrx),
+	.tx(debugtx) );*/
+
+// --------------------------------------------------
 // SoC device
 // --------------------------------------------------
 
@@ -151,7 +169,10 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.clk166(clk166),
 	.clk200(clk200),
 	.aresetn(aresetn),
+	//.sysresetn(sysresetn), // interrupt
 	.preresetn(preresetn),
+	// Debug bus
+	//.s_dbg(dbgbus),
 	// Device wires
 	.leds(leds),
 	.ddr3conn(ddr3conn),
