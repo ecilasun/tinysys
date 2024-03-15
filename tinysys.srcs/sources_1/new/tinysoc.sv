@@ -35,23 +35,17 @@ axi4if instructionbusHart0();	// Fetch bus for HART#0
 axi4if databusHart0();			// Data bus for HART#0
 axi4if devicebusHart0();		// Direct access to devices from data unit of HART#0
 
-axi4if instructionbusHart1();	// Fetch bus for HART#1
-axi4if databusHart1();			// Data bus for HART#1
-axi4if devicebusHart1();		// Direct access to devices from data unit of HART#1
-
 axi4if videobus();				// Video output unit bus
 axi4if dmabus();				// Direct memory access bus
 axi4if romcopybus();			// Bus for boot ROM copy (TODO: switch between ROM types?)
 axi4if audiobus();				// Bus for audio device output
 
 axi4if memorybus();				// Arbitrated access to main memory
-axi4if devicebus();				// Arbitrated access to devices
 
 axi4if ledif();					// Sub bus: LED contol device (debug LEDs)
 axi4if vpucmdif();				// Sub bus: VPU command fifo (video scan out logic)
 axi4if spiif();					// Sub bus: SPI control device (sdcard)
-axi4if csr0if();				// Sub bus: CSR#0 file device (control registers)
-axi4if csr1if();				// Sub bus: CSR#1 file device (control registers)
+axi4if csrif();					// Sub bus: CSR file device (control registers)
 axi4if xadcif();				// Sub bus: ADC controller (temperature sensor)
 axi4if dmaif();					// Sub bus: DMA controller (memcopy)
 axi4if usbcif();				// Sub bus: USB-C controller (usb peripheral interface)
@@ -82,24 +76,17 @@ always @(posedge aclk) begin
 end
 
 // --------------------------------------------------
-// ROM copy state
-// --------------------------------------------------
-
-wire romReady;
-
-// --------------------------------------------------
 // HART#0
 // --------------------------------------------------
 
-wire sieHart0;
+wire romReady, sieHart0;
 wire [63:0] cpuclocktimeHart0;
 wire [63:0] retiredHart0;
 wire [31:0] mepcHart0;
 wire [31:0] mtvecHart0;
 wire [1:0] irqReqHart0;
 
-riscv #(.RESETVECTOR(RESETVECTOR),
-		.CSRBASE(20'h80009)) HART0(
+riscv #(.RESETVECTOR(RESETVECTOR)) hart0(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.romReady(romReady),
@@ -112,32 +99,6 @@ riscv #(.RESETVECTOR(RESETVECTOR),
 	.devicebus(devicebusHart0),
 	.cpuclocktime(cpuclocktimeHart0),
 	.retired(retiredHart0));
-
-// --------------------------------------------------
-// HART#1
-// --------------------------------------------------
-
-wire sieHart1;
-wire [63:0] cpuclocktimeHart1;
-wire [63:0] retiredHart1;
-wire [31:0] mepcHart1;
-wire [31:0] mtvecHart1;
-wire [1:0] irqReqHart1;
-
-riscv #(.RESETVECTOR(RESETVECTOR),
-		.CSRBASE(20'h8000A)) HART1(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.romReady(romReady),
-	.sie(sieHart1),
-	.mepc(mepcHart1),
-	.mtvec(mtvecHart1),
-	.irqReq(irqReqHart1),
-	.instructionbus(instructionbusHart1),
-	.databus(databusHart1),
-	.devicebus(devicebusHart1),
-	.cpuclocktime(cpuclocktimeHart1),
-	.retired(retiredHart1));
 
 // --------------------------------------------------
 // Video output unit
@@ -226,21 +187,11 @@ axi4i2saudio APU(
 // Traffic arbiter between master units and memory
 // --------------------------------------------------
 
-arbiter arbiter8x1instSDRAM(
+arbiter arbiter6x1instSDRAM(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.axi_s({romcopybus, audiobus, dmabus, videobus, databusHart1, instructionbusHart1, databusHart0, instructionbusHart0}),
+	.axi_s({romcopybus, audiobus, dmabus, videobus, databusHart0, instructionbusHart0}),
 	.axi_m(memorybus) );
-
-// --------------------------------------------------
-// Traffic arbiter between master units and devices
-// --------------------------------------------------
-
-arbiter2x arbiter2x1instDEV(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.axi_s({devicebusHart1, devicebusHart0}),
-	.axi_m(devicebus) );
 
 // --------------------------------------------------
 // RAM
@@ -280,8 +231,8 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // USBC: 8xx06000  8xx06FFF  8'b0000_0110  4KB	USB-C Peripheral Interface Unit
 // APUC: 8xx07000  8xx07FFF  8'b0000_0111  4KB	Audio Processing Unit / Mixer
 // USBA: 8xx08000  8xx08FFF  8'b0000_1000  4KB	USB-A Host Interface Unit
-// CSR0: 8xx09000  8xx09FFF  8'b0000_1001  4KB	CSR#0
-// CSR1: 8xx0A000  8xx0AFFF  8'b0000_1010  4KB	CSR#1
+// CSR0: 8xx09000  8xx09FFF  8'b0000_1001  4KB	HART#0
+// ----: 8xx0A000  8xx0AFFF  8'b0000_1010  4KB	Unused
 // ----: 8xx0B000  8xx0BFFF  8'b0000_1011  4KB	Unused
 // ----: 8xx0C000  8xx0CFFF  8'b0000_1100  4KB	Unused
 // ----: 8xx0D000  8xx0DFFF  8'b0000_1101  4KB	Unused
@@ -292,10 +243,9 @@ axi4ddr3sdram axi4ddr3sdraminst(
 devicerouter devicerouterinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
-    .axi_s(devicebus),
+    .axi_s(devicebusHart0),				// TODO: Will need this to come from a bus arbiter
     .addressmask({
-    	8'b0000_1010,		// CRS0 CSR#1 file for HART#1
-		8'b0000_1001,		// CRS0 CSR#0 file for HART#0
+		8'b0000_1001,		// CRS0 CSR file for HART#0
     	8'b0000_1000,		// USBA USB-A access via SPI
     	8'b0000_0111,		// APUC	Audio Processing Unit Command Fifo
         8'b0000_0110,		// USBC USB-C access via SPI
@@ -304,7 +254,7 @@ devicerouter devicerouterinst(
 		8'b0000_0011,		// SDCC SDCard access via SPI
 		8'b0000_0010,		// VPUC Graphics Processing Unit Command Fifo
 		8'b0000_0001}),	// LEDS Debug / Status LED interface
-    .axi_m({csr1if, csr0if, usbaif, audioif, usbcif, dmaif, xadcif, spiif, vpucmdif, ledif}));
+    .axi_m({csrif, usbaif, audioif, usbcif, dmaif, xadcif, spiif, vpucmdif, ledif}));
 
 // --------------------------------------------------
 // Interrupt wires
@@ -358,11 +308,11 @@ axi4usbc usbhostport(
 	.usbirq(usbairq),
 	.s_axi(usbaif));
 
-// CSR files act as a region of uncached memory
+// CSR file acts as a region of uncached memory
 // Access to register indices get mapped to LOAD/STORE
 // and addresses get mapped starting at 0x8000B000 + csroffset
 // CSR module also acts as the interrupt generator
-axi4CSRFile #(.HARTID(32'd0)) CSR0(
+axi4CSRFile csrfileinstHart0(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.cpuclocktime(cpuclocktimeHart0),
@@ -373,30 +323,14 @@ axi4CSRFile #(.HARTID(32'd0)) CSR0(
 	// External interrupt wires
 	.keyfifoempty(keyfifoempty),
 	.usbirq({usbairq, usbcirq}),
+	// Soft reset
+	//.sysresetn(sysresetn),
 	// Shadow registers
 	.mepc(mepcHart0),
 	.mtvec(mtvecHart0),
 	.sie(sieHart0),
 	// Bus
-	.s_axi(csr0if) );
-
-axi4CSRFile #(.HARTID(32'd1)) CSR1(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.cpuclocktime(cpuclocktimeHart1),
-	.wallclocktime(wallclocktime),
-	.retired(retiredHart1),
-	// IRQ tracking
-	.irqReq(irqReqHart1),
-	// External interrupt wires
-	.keyfifoempty(keyfifoempty),
-	.usbirq({usbairq, usbcirq}),
-	// Shadow registers
-	.mepc(mepcHart1),
-	.mtvec(mtvecHart1),
-	.sie(sieHart1),
-	// Bus
-	.s_axi(csr1if) );
+	.s_axi(csrif) );
 
 // XADC
 axi4xadc xadcinst(

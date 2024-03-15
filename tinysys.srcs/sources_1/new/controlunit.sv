@@ -3,7 +3,8 @@
 `include "shared.vh"
 
 module controlunit #(
-	parameter int CSRBASE = 20'h80009	// TODO: Add HARTID<<12, for instance HART#1 would be 32'h8000A
+	parameter int CID = 32'h00000000,	// Corresponds to HARTID
+	parameter int CSRBASE = 20'h80009	// TODO: Add CID<<12, for instance HART#1 would be 32'h8000A
 ) (
 	input wire aclk,
 	input wire aresetn,
@@ -104,7 +105,7 @@ arithmeticlogic ALU(
 	.aresetn(aresetn),
 	.aluout(aluout),
 	.val1(A),
-	.val2(D),
+	.val2(selectimmedasrval2 ? D : B),
 	.aluop(aluop) );
 
 // --------------------------------------------------
@@ -397,7 +398,7 @@ always @(posedge aclk) begin
 					// Set up inputs to math/branch units, addresses, and any math strobes required
 					A <= rval1;
 					B <= rval2;
-					D <= selectimmedasrval2 ? immed : rval2;
+					D <= immed;
 					E <= rval3;
 					wbdest <= rd;
 					rwaddress <= rval1 + immed;

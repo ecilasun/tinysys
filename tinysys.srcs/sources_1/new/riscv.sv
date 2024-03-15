@@ -1,6 +1,5 @@
 module riscv #(
-	parameter int RESETVECTOR = 32'd0,
-	parameter int CSRBASE = 20'h80009
+	parameter int RESETVECTOR = 32'd0
 ) (
 	input wire aclk,
 	input wire aresetn,
@@ -65,7 +64,8 @@ dataunit dataunitinst (
 // --------------------------------------------------
 
 controlunit #(
-	.CSRBASE(CSRBASE)) controlunitinst (
+	.CID(32'h00000000),
+	.CSRBASE(20'h80009)) controlunitinst (
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.branchresolved(branchresolved),

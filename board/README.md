@@ -42,6 +42,7 @@ For software, visit https://github.com/ecilasun/riscvtool and check the tinysys 
     - Raw audio
     - VPU (video processing unit)
     - DMA
+	- Rasterizer
     - Temperature sensor
     - Interrupt handling
     - Task system
