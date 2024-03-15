@@ -24,9 +24,9 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "r1.00"
+#define VERSIONSTRING "r1.01"
 // On-storage version
-#define DEVVERSIONSTRING "r1.00"
+#define DEVVERSIONSTRING "r1.01"
 
 static char s_execName[32] = "ROM";
 static char s_execParam0[32] = "auto";
@@ -577,6 +577,20 @@ uint32_t LoadOverlay(const char *filename)
 	}
 
 	return 0;
+}
+
+int workermain()
+{
+	while(1)
+	{
+		LEDSetState(0xF);
+		E32Sleep(2*ONE_MILLISECOND_IN_TICKS);
+		LEDSetState(0x0);
+		E32Sleep(2*ONE_MILLISECOND_IN_TICKS);
+
+		// Nothing else to do here...
+		//asm volatile("wfi;");
+	}
 }
 
 int main()
