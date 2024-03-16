@@ -16,4 +16,6 @@
   (lib (name "2023-08-24_23-47-03")(type "KiCad")(uri "${KIPRJMOD}/STM32C011F6P6/2023-08-24_23-47-03.kicad_sym")(options "")(descr ""))
   (lib (name "SII164CTG64")(type "KiCad")(uri "${KIPRJMOD}/SI164CTG64/SII164CTG64.kicad_sym")(options "")(descr ""))
   (lib (name "403C35D12M00000")(type "KiCad")(uri "${KIPRJMOD}/403C35D12M00000/403C35D12M00000.kicad_sym")(options "")(descr ""))
+  (lib (name "ESP32-C3")(type "KiCad")(uri "${KIPRJMOD}/ESP32_C3/2024-03-15_22-53-36.kicad_sym")(options "")(descr ""))
+  (lib (name "ESP32-C6")(type "KiCad")(uri "${KIPRJMOD}/ESP32_C6/ESP32-C6.kicad_sym")(options "")(descr ""))
 )
