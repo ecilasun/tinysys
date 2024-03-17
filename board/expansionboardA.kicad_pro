@@ -37,9 +37,9 @@
         "other_text_thickness": 0.15,
         "other_text_upright": false,
         "pads": {
-          "drill": 0.0,
-          "height": 1.7,
-          "width": 1.7
+          "drill": 2.2,
+          "height": 4.4,
+          "width": 4.4
         },
         "silk_line_width": 0.15,
         "silk_text_italic": false,
@@ -484,7 +484,7 @@
       "gencad": "",
       "idf": "",
       "netlist": "",
-      "plot": "",
+      "plot": "expansionboardA-gerber/",
       "pos_files": "",
       "specctra_dsn": "",
       "step": "expansionboardA.step",
