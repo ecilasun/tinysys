@@ -553,7 +553,7 @@
 		(layers "F.Cu" "F.Paste" "F.Mask")
 		(uuid "f2160edf-8d17-41b1-8f48-d9603d60e435")
 	)
-	(model "${KIPRJMOD}/ESP32-C6-WROOM/ESP32-C6-WROOM-1.STEP"
+	(model "D:/repos/tinysys/board/ESP32-C6-WROOM/ESP32-C6-WROOM-1.STEP"
 		(offset
 			(xyz -9 -12.75 0)
 		)
