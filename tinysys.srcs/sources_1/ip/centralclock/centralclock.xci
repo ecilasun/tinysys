@@ -3,7 +3,7 @@
   "ip_inst": {
     "xci_name": "centralclock",
     "component_reference": "xilinx.com:ip:clk_wiz:6.0",
-    "ip_revision": "12",
+    "ip_revision": "13",
     "gen_directory": "../../../../tinysys.gen/sources_1/ip/centralclock",
     "parameters": {
       "component_parameters": {
@@ -72,7 +72,7 @@
         "CLK_OUT4_PORT": [ { "value": "clk200", "value_src": "user", "resolve_type": "user", "usage": "all" } ],
         "CLK_OUT5_PORT": [ { "value": "clk25", "value_src": "user", "resolve_type": "user", "usage": "all" } ],
         "CLK_OUT6_PORT": [ { "value": "clk50", "value_src": "user", "resolve_type": "user", "usage": "all" } ],
-        "CLK_OUT7_PORT": [ { "value": "clkbus", "value_src": "user", "resolve_type": "user", "usage": "all" } ],
+        "CLK_OUT7_PORT": [ { "value": "clk_out7", "value_src": "user", "resolve_type": "user", "usage": "all" } ],
         "DADDR_PORT": [ { "value": "daddr", "resolve_type": "user", "usage": "all" } ],
         "DCLK_PORT": [ { "value": "dclk", "resolve_type": "user", "usage": "all" } ],
         "DRDY_PORT": [ { "value": "drdy", "resolve_type": "user", "usage": "all" } ],
@@ -102,7 +102,7 @@
         "CLKOUT6_REQUESTED_OUT_FREQ": [ { "value": "50.000", "value_src": "user", "resolve_type": "user", "format": "float", "usage": "all" } ],
         "CLKOUT6_REQUESTED_PHASE": [ { "value": "0.000", "resolve_type": "user", "format": "float", "usage": "all" } ],
         "CLKOUT6_REQUESTED_DUTY_CYCLE": [ { "value": "50.000", "resolve_type": "user", "format": "float", "usage": "all" } ],
-        "CLKOUT7_REQUESTED_OUT_FREQ": [ { "value": "166.66667", "value_src": "user", "resolve_type": "user", "format": "float", "usage": "all" } ],
+        "CLKOUT7_REQUESTED_OUT_FREQ": [ { "value": "100.000", "value_src": "user", "resolve_type": "user", "format": "float", "usage": "all" } ],
         "CLKOUT7_REQUESTED_PHASE": [ { "value": "0.000", "resolve_type": "user", "format": "float", "usage": "all" } ],
         "CLKOUT7_REQUESTED_DUTY_CYCLE": [ { "value": "50.000", "resolve_type": "user", "format": "float", "usage": "all" } ],
         "USE_MAX_I_JITTER": [ { "value": "false", "resolve_type": "user", "format": "bool", "usage": "all" } ],
@@ -351,7 +351,7 @@
         "C_CLKOUT4_REQUESTED_OUT_FREQ": [ { "value": "200.000", "resolve_type": "generated", "format": "float", "usage": "all" } ],
         "C_CLKOUT5_REQUESTED_OUT_FREQ": [ { "value": "25.000", "resolve_type": "generated", "format": "float", "usage": "all" } ],
         "C_CLKOUT6_REQUESTED_OUT_FREQ": [ { "value": "50.000", "resolve_type": "generated", "format": "float", "usage": "all" } ],
-        "C_CLKOUT7_REQUESTED_OUT_FREQ": [ { "value": "166.66667", "resolve_type": "generated", "format": "float", "usage": "all" } ],
+        "C_CLKOUT7_REQUESTED_OUT_FREQ": [ { "value": "100.000", "resolve_type": "generated", "format": "float", "usage": "all" } ],
         "C_CLKOUT1_REQUESTED_PHASE": [ { "value": "0.000", "resolve_type": "generated", "format": "float", "usage": "all" } ],
         "C_CLKOUT2_REQUESTED_PHASE": [ { "value": "0.000", "resolve_type": "generated", "format": "float", "usage": "all" } ],
         "C_CLKOUT3_REQUESTED_PHASE": [ { "value": "0.000", "resolve_type": "generated", "format": "float", "usage": "all" } ],
@@ -476,7 +476,7 @@
         "C_CLK_OUT4_PORT": [ { "value": "clk200", "resolve_type": "generated", "usage": "all" } ],
         "C_CLK_OUT5_PORT": [ { "value": "clk25", "resolve_type": "generated", "usage": "all" } ],
         "C_CLK_OUT6_PORT": [ { "value": "clk50", "resolve_type": "generated", "usage": "all" } ],
-        "C_CLK_OUT7_PORT": [ { "value": "clkbus", "resolve_type": "generated", "usage": "all" } ],
+        "C_CLK_OUT7_PORT": [ { "value": "clk_out7", "resolve_type": "generated", "usage": "all" } ],
         "C_RESET_PORT": [ { "value": "reset", "resolve_type": "generated", "usage": "all" } ],
         "C_LOCKED_PORT": [ { "value": "locked", "resolve_type": "generated", "usage": "all" } ],
         "C_CLKFB_IN_PORT": [ { "value": "clkfb_in", "resolve_type": "generated", "usage": "all" } ],
@@ -599,12 +599,12 @@
       },
       "runtime_parameters": {
         "IPCONTEXT": [ { "value": "IP_Flow" } ],
-        "IPREVISION": [ { "value": "12" } ],
+        "IPREVISION": [ { "value": "13" } ],
         "MANAGED": [ { "value": "TRUE" } ],
         "OUTPUTDIR": [ { "value": "../../../../tinysys.gen/sources_1/ip/centralclock" } ],
         "SELECTEDSIMMODEL": [ { "value": "" } ],
         "SHAREDDIR": [ { "value": "." } ],
-        "SWVERSION": [ { "value": "2023.1" } ],
+        "SWVERSION": [ { "value": "2023.2" } ],
         "SYNTHESISFLOW": [ { "value": "OUT_OF_CONTEXT" } ]
       }
     },

@@ -3,7 +3,7 @@
   "ip_inst": {
     "xci_name": "instructinfifo",
     "component_reference": "xilinx.com:ip:fifo_generator:13.2",
-    "ip_revision": "8",
+    "ip_revision": "9",
     "gen_directory": "../../../../tinysys.gen/sources_1/ip/instructinfifo",
     "parameters": {
       "component_parameters": {
@@ -397,12 +397,12 @@
       },
       "runtime_parameters": {
         "IPCONTEXT": [ { "value": "IP_Flow" } ],
-        "IPREVISION": [ { "value": "8" } ],
+        "IPREVISION": [ { "value": "9" } ],
         "MANAGED": [ { "value": "TRUE" } ],
         "OUTPUTDIR": [ { "value": "../../../../tinysys.gen/sources_1/ip/instructinfifo" } ],
         "SELECTEDSIMMODEL": [ { "value": "" } ],
         "SHAREDDIR": [ { "value": "." } ],
-        "SWVERSION": [ { "value": "2023.1" } ],
+        "SWVERSION": [ { "value": "2023.2" } ],
         "SYNTHESISFLOW": [ { "value": "OUT_OF_CONTEXT" } ]
       }
     },

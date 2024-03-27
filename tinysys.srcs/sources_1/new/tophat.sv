@@ -49,9 +49,10 @@ module tophat(
 	,output wire usba_mosi
 	,output wire usba_resn
 	,input wire usba_int
-	// DEBUG UART
-	//,input wire debugrx
-	//,output wire debugtx
+	// ESP32
+	,inout wire [0:14] esp_io
+	,input wire esp_txd
+	,output wire esp_rxd
 	// Audio out
 	,output wire au_sdin
 	,output wire au_sclk
@@ -140,20 +141,6 @@ audiowires i2sconn(
 	.sclk(au_sclk),
 	.lrclk(au_lrclk),
 	.mclk(au_mclk));
-
-// --------------------------------------------------
-// Hardware debug device
-// --------------------------------------------------
-
-/*debugbusif dbgbus();
-
-hwdebug hwdebuginst(
-	.aresetn(aresetn),
-	.aclk(clkbus),
-	.clk100(clk100),
-	.m_dbg(dbgbus),
-	.rx(debugrx),
-	.tx(debugtx) );*/
 
 // --------------------------------------------------
 // SoC device

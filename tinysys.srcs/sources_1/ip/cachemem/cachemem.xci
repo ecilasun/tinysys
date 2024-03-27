@@ -3,7 +3,7 @@
   "ip_inst": {
     "xci_name": "cachemem",
     "component_reference": "xilinx.com:ip:blk_mem_gen:8.4",
-    "ip_revision": "6",
+    "ip_revision": "7",
     "gen_directory": "../../../../tinysys.gen/sources_1/ip/cachemem",
     "parameters": {
       "component_parameters": {
@@ -174,12 +174,12 @@
       },
       "runtime_parameters": {
         "IPCONTEXT": [ { "value": "IP_Flow" } ],
-        "IPREVISION": [ { "value": "6" } ],
+        "IPREVISION": [ { "value": "7" } ],
         "MANAGED": [ { "value": "TRUE" } ],
         "OUTPUTDIR": [ { "value": "../../../../tinysys.gen/sources_1/ip/cachemem" } ],
         "SELECTEDSIMMODEL": [ { "value": "" } ],
         "SHAREDDIR": [ { "value": "." } ],
-        "SWVERSION": [ { "value": "2023.1" } ],
+        "SWVERSION": [ { "value": "2023.2" } ],
         "SYNTHESISFLOW": [ { "value": "OUT_OF_CONTEXT" } ]
       }
     },
