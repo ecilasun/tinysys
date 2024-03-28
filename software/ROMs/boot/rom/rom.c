@@ -135,7 +135,7 @@ void ShowVersion(int waterMark)
 	// pointing at a memory location with device config data (machineconfig?)
 	// That memory location will in turn point at an onboard EEPROM we can
 	// read device versions/presence from.
-	kprintf(" Board           : issue 2D:2023               \n");
+	kprintf(" Board           : issue 2E:2024               \n");
 	kprintf(" CPU & bus clock : 150MHz                      \n");
 	kprintf(" HART#0          : rv32im_zicsr_zifencei_zfinx \n");
 
