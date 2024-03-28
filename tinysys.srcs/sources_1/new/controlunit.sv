@@ -102,10 +102,11 @@ branchlogic BLU(
 
 wire [31:0] aluout;
 arithmeticlogic ALU(
+	.aclk(aclk),
 	.aresetn(aresetn),
 	.aluout(aluout),
-	.val1(A),
-	.val2(selectimmedasrval2 ? D : B),
+	.val1(rval1),
+	.val2(selectimmedasrval2 ? immed : rval2),
 	.aluop(aluop) );
 
 // --------------------------------------------------

@@ -3,14 +3,15 @@
 `include "shared.vh"
 
 module arithmeticlogic (
+	input wire aclk,
 	input wire aresetn,
 	output logic [31:0] aluout,
 	input wire [31:0] val1,
 	input wire [31:0] val2,
 	input wire [3:0] aluop );
 
-wire [8:0] aluonehot = {
-	/*aluop == `ALU_OR   ? 1'b1 : 1'b0,*/
+wire [9:0] aluonehot = {
+	aluop == `ALU_OR   ? 1'b1 : 1'b0,
 	aluop == `ALU_SUB  ? 1'b1 : 1'b0,
 	aluop == `ALU_SLL  ? 1'b1 : 1'b0,
 	aluop == `ALU_SLT  ? 1'b1 : 1'b0,
@@ -72,23 +73,24 @@ always_comb begin
 	vand = val1 & val2;
 end
 
-always_comb begin
-	priority case(1'b1)
-		// integer ops
-		aluonehot[0]:	aluout = vand;
-		aluonehot[1]:	aluout = vsum;
-		aluonehot[2]:	aluout = vsra;
-		aluonehot[3]:	aluout = vshr;
-		aluonehot[4]:	aluout = vxor;
-		aluonehot[5]:	aluout = vless;
-		aluonehot[6]:	aluout = vsless;
-		aluonehot[7]:	aluout = vshl;
-		aluonehot[8]:	aluout = vdiff;
-		default:		aluout = vor; // aluonehot[9]
-	endcase
-
+always_ff @(posedge aclk) begin
 	if (~aresetn) begin
-		aluout = 32'd0;
+		aluout <= 32'd0;
+	end else begin
+		priority case(1'b1)
+			// integer ops
+			aluonehot[0]:	aluout <= vand;
+			aluonehot[1]:	aluout <= vsum;
+			aluonehot[2]:	aluout <= vsra;
+			aluonehot[3]:	aluout <= vshr;
+			aluonehot[4]:	aluout <= vxor;
+			aluonehot[5]:	aluout <= vless;
+			aluonehot[6]:	aluout <= vsless;
+			aluonehot[7]:	aluout <= vshl;
+			aluonehot[8]:	aluout <= vdiff;
+			aluonehot[9]:	aluout <= vor;
+			default:		aluout <= 32'd0;
+		endcase
 	end
 end
 
