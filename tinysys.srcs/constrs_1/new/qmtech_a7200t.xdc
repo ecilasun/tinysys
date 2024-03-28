@@ -179,7 +179,7 @@ set_property -dict {PACKAGE_PIN L20 IOSTANDARD LVCMOS33} [get_ports usbc_mosi]
 set_property -dict {PACKAGE_PIN L19 IOSTANDARD LVCMOS33} [get_ports usbc_miso]
 set_property -dict {PACKAGE_PIN H14 IOSTANDARD LVCMOS33} [get_ports usbc_int]
 set_property -dict {PACKAGE_PIN J14 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
-set_property -dict {PACKAGE_PIN H19 IOSTANDARD LVCMOS33} [get_ports usbc_gpi]
+## set_property -dict {PACKAGE_PIN H19 IOSTANDARD LVCMOS33} [get_ports usbc_gpi]
 
 ## 2E
 ## set_property -dict {PACKAGE_PIN M2 IOSTANDARD LVCMOS33} [get_ports usbc_resn]
