@@ -3,7 +3,7 @@
 ## ------------------------------------------------------------------------------------------------------
 
 ## (C) 2023 Engin Cilasun
-## Applies to expansion board ISSUE-2E
+## Applies to expansion board ISSUE-2D/2E
 ## Please do not change/remove the Clock Groups or False Paths regardless of the warnings during synth
 ## Also note that changing any of the pin positions will change the timing closure of the device
 ## due to changes in placing and routing
@@ -26,16 +26,16 @@ create_clock -period 20.000 -name sys_clk_pin -waveform {0.000 10.000} -add [get
 ## ------------------------------------------------------------------------------------------------------
 
 ## 2D
-## set_property -dict {PACKAGE_PIN N18 IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
-## set_property -dict {PACKAGE_PIN L14 IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
-## set_property -dict {PACKAGE_PIN N22 IOSTANDARD LVCMOS33} [get_ports {leds[2]}]
-## set_property -dict {PACKAGE_PIN N20 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
+set_property -dict {PACKAGE_PIN N18 IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
+set_property -dict {PACKAGE_PIN L14 IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
+set_property -dict {PACKAGE_PIN N22 IOSTANDARD LVCMOS33} [get_ports {leds[2]}]
+set_property -dict {PACKAGE_PIN N20 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
 
 ## 2E
-set_property -dict {PACKAGE_PIN N17 IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
-set_property -dict {PACKAGE_PIN R18 IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
-set_property -dict {PACKAGE_PIN Y21 IOSTANDARD LVCMOS33} [get_ports {leds[2]}]
-set_property -dict {PACKAGE_PIN T21 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
+## set_property -dict {PACKAGE_PIN N17 IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
+## set_property -dict {PACKAGE_PIN R18 IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
+## set_property -dict {PACKAGE_PIN Y21 IOSTANDARD LVCMOS33} [get_ports {leds[2]}]
+## set_property -dict {PACKAGE_PIN T21 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
 
 ## ------------------------------------------------------------------------------------------------------
 ## UART Tx/Rx debug port (tie to an external USB-UART cable or other device)
@@ -146,23 +146,23 @@ set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports au_mclk]
 ## IO13 - USB D+
 
 ## 2E
-set_property -dict {PACKAGE_PIN J14 IOSTANDARD LVCMOS33} [get_ports esp_io[0]]	# IO0
-set_property -dict {PACKAGE_PIN H14 IOSTANDARD LVCMOS33} [get_ports esp_io[1]]	# IO1
-set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports esp_io[2]]	# IO2
-set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports esp_io[3]]	# IO3
-set_property -dict {PACKAGE_PIN K17 IOSTANDARD LVCMOS33} [get_ports esp_io[4]]	# IO4
-set_property -dict {PACKAGE_PIN J17 IOSTANDARD LVCMOS33} [get_ports esp_io[5]]	# IO5
-set_property -dict {PACKAGE_PIN L19 IOSTANDARD LVCMOS33} [get_ports esp_io[6]]	# IO6
-set_property -dict {PACKAGE_PIN L20 IOSTANDARD LVCMOS33} [get_ports esp_io[7]]	# IO7
-set_property -dict {PACKAGE_PIN K22 IOSTANDARD LVCMOS33} [get_ports esp_io[8]]	# IO15
-set_property -dict {PACKAGE_PIN J19 IOSTANDARD LVCMOS33} [get_ports esp_io[9]]	# IO18
-set_property -dict {PACKAGE_PIN J21 IOSTANDARD LVCMOS33} [get_ports esp_io[10]]	# IO19
-set_property -dict {PACKAGE_PIN J20 IOSTANDARD LVCMOS33} [get_ports esp_io[11]]	# IO20
-set_property -dict {PACKAGE_PIN H20 IOSTANDARD LVCMOS33} [get_ports esp_io[12]]	# IO21
-set_property -dict {PACKAGE_PIN G20 IOSTANDARD LVCMOS33} [get_ports esp_io[13]]	# IO22
-set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports esp_io[14]]	# IO23
-set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports esp_txd]	# TXD0
-set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports esp_rxd]	# RXD0
+## set_property -dict {PACKAGE_PIN J14 IOSTANDARD LVCMOS33} [get_ports esp_io[0]]	# IO0
+## set_property -dict {PACKAGE_PIN H14 IOSTANDARD LVCMOS33} [get_ports esp_io[1]]	# IO1
+## set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports esp_io[2]]	# IO2
+## set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports esp_io[3]]	# IO3
+## set_property -dict {PACKAGE_PIN K17 IOSTANDARD LVCMOS33} [get_ports esp_io[4]]	# IO4
+## set_property -dict {PACKAGE_PIN J17 IOSTANDARD LVCMOS33} [get_ports esp_io[5]]	# IO5
+## set_property -dict {PACKAGE_PIN L19 IOSTANDARD LVCMOS33} [get_ports esp_io[6]]	# IO6
+## set_property -dict {PACKAGE_PIN L20 IOSTANDARD LVCMOS33} [get_ports esp_io[7]]	# IO7
+## set_property -dict {PACKAGE_PIN K22 IOSTANDARD LVCMOS33} [get_ports esp_io[8]]	# IO15
+## set_property -dict {PACKAGE_PIN J19 IOSTANDARD LVCMOS33} [get_ports esp_io[9]]	# IO18
+## set_property -dict {PACKAGE_PIN J21 IOSTANDARD LVCMOS33} [get_ports esp_io[10]]	# IO19
+## set_property -dict {PACKAGE_PIN J20 IOSTANDARD LVCMOS33} [get_ports esp_io[11]]	# IO20
+## set_property -dict {PACKAGE_PIN H20 IOSTANDARD LVCMOS33} [get_ports esp_io[12]]	# IO21
+## set_property -dict {PACKAGE_PIN G20 IOSTANDARD LVCMOS33} [get_ports esp_io[13]]	# IO22
+## set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports esp_io[14]]	# IO23
+## set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports esp_txd]	# TXD0
+## set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports esp_rxd]	# RXD0
 
 ## Keep pulled down until code enables
 ## set_property PULLDOWN true [get_ports esp_en]
@@ -172,23 +172,23 @@ set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports esp_rxd]	# R
 ## ------------------------------------------------------------------------------------------------------
 
 ## 2D
-## set_property -dict {PACKAGE_PIN J21 IOSTANDARD LVCMOS33} [get_ports usbc_resn]
-## set_property -dict {PACKAGE_PIN J17 IOSTANDARD LVCMOS33} [get_ports usbc_ss_n]
-## set_property -dict {PACKAGE_PIN K17 IOSTANDARD LVCMOS33} [get_ports usbc_clk]
-## set_property -dict {PACKAGE_PIN L20 IOSTANDARD LVCMOS33} [get_ports usbc_mosi]
-## set_property -dict {PACKAGE_PIN L19 IOSTANDARD LVCMOS33} [get_ports usbc_miso]
-## set_property -dict {PACKAGE_PIN H14 IOSTANDARD LVCMOS33} [get_ports usbc_int]
-## set_property -dict {PACKAGE_PIN J14 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
-## set_property -dict {PACKAGE_PIN H19 IOSTANDARD LVCMOS33} [get_ports usbc_gpi]
+set_property -dict {PACKAGE_PIN J21 IOSTANDARD LVCMOS33} [get_ports usbc_resn]
+set_property -dict {PACKAGE_PIN J17 IOSTANDARD LVCMOS33} [get_ports usbc_ss_n]
+set_property -dict {PACKAGE_PIN K17 IOSTANDARD LVCMOS33} [get_ports usbc_clk]
+set_property -dict {PACKAGE_PIN L20 IOSTANDARD LVCMOS33} [get_ports usbc_mosi]
+set_property -dict {PACKAGE_PIN L19 IOSTANDARD LVCMOS33} [get_ports usbc_miso]
+set_property -dict {PACKAGE_PIN H14 IOSTANDARD LVCMOS33} [get_ports usbc_int]
+set_property -dict {PACKAGE_PIN J14 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
+set_property -dict {PACKAGE_PIN H19 IOSTANDARD LVCMOS33} [get_ports usbc_gpi]
 
 ## 2E
-set_property -dict {PACKAGE_PIN M2 IOSTANDARD LVCMOS33} [get_ports usbc_resn]
-set_property -dict {PACKAGE_PIN K3 IOSTANDARD LVCMOS33} [get_ports usbc_ss_n]
-set_property -dict {PACKAGE_PIN M3 IOSTANDARD LVCMOS33} [get_ports usbc_clk]
-set_property -dict {PACKAGE_PIN J4 IOSTANDARD LVCMOS33} [get_ports usbc_mosi]
-set_property -dict {PACKAGE_PIN L3 IOSTANDARD LVCMOS33} [get_ports usbc_miso]
-set_property -dict {PACKAGE_PIN L1 IOSTANDARD LVCMOS33} [get_ports usbc_int]
-set_property -dict {PACKAGE_PIN K4 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
+## set_property -dict {PACKAGE_PIN M2 IOSTANDARD LVCMOS33} [get_ports usbc_resn]
+## set_property -dict {PACKAGE_PIN K3 IOSTANDARD LVCMOS33} [get_ports usbc_ss_n]
+## set_property -dict {PACKAGE_PIN M3 IOSTANDARD LVCMOS33} [get_ports usbc_clk]
+## set_property -dict {PACKAGE_PIN J4 IOSTANDARD LVCMOS33} [get_ports usbc_mosi]
+## set_property -dict {PACKAGE_PIN L3 IOSTANDARD LVCMOS33} [get_ports usbc_miso]
+## set_property -dict {PACKAGE_PIN L1 IOSTANDARD LVCMOS33} [get_ports usbc_int]
+## set_property -dict {PACKAGE_PIN K4 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
 
 set_property PULLUP true [get_ports usbc_int]
 set_property PULLUP true [get_ports usbc_resn]

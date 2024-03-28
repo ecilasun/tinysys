@@ -4,7 +4,6 @@
 module tophat(
 	// Board clock and reset
     input wire sys_clk
-    //,input wire sysresetn
     // Debug LEDs
     ,output wire [3:0] leds
 	// DDR3 SDRAM
@@ -49,15 +48,15 @@ module tophat(
 	,output wire usba_mosi
 	,output wire usba_resn
 	,input wire usba_int
-	// ESP32
-	,inout wire [0:14] esp_io
-	,input wire esp_txd
-	,output wire esp_rxd
+	// Coprocessor via ESP32-C6-WROOM-1-N8 (only on rev. 2E boards)
+	//,inout wire [14:0] esp_io
+	//,input wire esp_txd
+	//,output wire esp_rxd
 	// Audio out
 	,output wire au_sdin
 	,output wire au_sclk
 	,output wire au_lrclk
-	,output wire au_mclk);
+	,output wire au_mclk );
 
 // --------------------------------------------------
 // Clock and reset generator
@@ -156,10 +155,7 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.clk166(clk166),
 	.clk200(clk200),
 	.aresetn(aresetn),
-	//.sysresetn(sysresetn), // interrupt
 	.preresetn(preresetn),
-	// Debug bus
-	//.s_dbg(dbgbus),
 	// Device wires
 	.leds(leds),
 	.ddr3conn(ddr3conn),
