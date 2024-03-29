@@ -626,21 +626,25 @@ int main()
 	// Command line interpreter task
 	TaskAdd(taskctx, "cmd", _cliTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 
-	// Ready to start, silence LED activity since other systems need it
-	LEDSetState(0x0);
-
 	// Start the timer and hardware interrupt handlers.
 	// This is where all task switching and other interrupt handling occurs
 	InstallISR();
+
+	LEDSetState(0x8);
 
 	// Start USB serial peripheral
 	USBSerialSetContext(&s_usbserialctx);
 	USBSerialInit(1);
 
+	LEDSetState(0x4);
+
 	// Start USB host
 	InitializeUSBHIDData();
 	USBHostSetContext(&s_usbhostctx);
 	USBHostInit(1);
+
+	// Ready to start, silence LED activity since other systems need it
+	LEDSetState(0x0);
 
 	// Main CLI loop
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
