@@ -6,6 +6,10 @@
 // The ESP32 code will write to pins 18 and 19 (which are our GPIO 9 and 10)
 // On seeing a change, this code will send out alternating values on GPIO 4 and 5
 // (which are pins 4 and 5 on the ESP side), causing the sample to output them.
+//
+// NOTE: Reads may not see both pins activate at the same time
+// so we will get either 9,10 or both simultaneously, and will
+// output 4 and/or 5 to match what we receive
 
 #define GPIO_OUTPUT_IO_0    4
 #define GPIO_OUTPUT_IO_1    5
@@ -17,8 +21,7 @@
 
 int main()
 {
-    printf("GPIO test - polling\n");
-	uint32_t state = 0;
+    printf("GPIO test - polling ESP32 GPIO pins...\n");
 
 	*GPIO_OUTPUTENABLE = GPIO_OUTPUT_PIN_SEL;
 	*GPIO_INPUTENABLE = GPIO_INPUT_PIN_SEL;
@@ -28,15 +31,21 @@ int main()
 	do
 	{
 		// Did we receive anything form GPIO9 or GPIO10?
-		uint32_t val = (*GPIO_DATA) & GPIO_INPUT_PIN_SEL;
-		if (val != prevval)
+		uint32_t inval = (*GPIO_DATA) & GPIO_INPUT_PIN_SEL;
+		if (inval != prevval)
 		{
-			prevval = val;
-			printf("inputs: %.8x\n", val);
-			// Write output state
-			*GPIO_DATA = (state%2) ? 0xFFFFFFFF : 0x00000000;
-			// Flip states of GPIO[4] and GPIO[5] between Low or High
-			++state;
+			prevval = inval;
+
+			printf("Inputs: %.8x\n", inval);
+
+			// Write suitable output states (4 for 9, 5 for 10)
+			uint32_t outval = 0;
+			outval |= inval&(1ULL<<GPIO_INPUT_IO_0) ? (1ULL<<GPIO_OUTPUT_IO_0) : 0;
+			outval |= inval&(1ULL<<GPIO_INPUT_IO_1) ? (1ULL<<GPIO_OUTPUT_IO_1) : 0;
+			printf("Outputs: %.8x\n", outval);
+
+			*GPIO_DATA = outval;
+
 			++count;
 		}
 	} while (count < 10);
