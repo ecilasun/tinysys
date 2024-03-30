@@ -12,7 +12,7 @@
 
 int main()
 {
-    printf("GPIO test\n");
+    printf("GPIO test - polling\n");
 	uint32_t state = 0;
 
 	*GPIO_OUTPUTENABLE = GPIO_OUTPUT_PIN_SEL;
