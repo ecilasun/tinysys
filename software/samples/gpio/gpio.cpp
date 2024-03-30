@@ -2,6 +2,11 @@
 #include "gpio.h"
 #include <stdio.h>
 
+// This sample works in combination with the gpio_example from ESP32-IDF samples
+// The ESP32 code will write to pins 18 and 19 (which are our GPIO 9 and 10)
+// On seeing a change, this code will send out alternating values on GPIO 4 and 5
+// (which are pins 4 and 5 on the ESP side), causing the sample to output them.
+
 #define GPIO_OUTPUT_IO_0    4
 #define GPIO_OUTPUT_IO_1    5
 #define GPIO_OUTPUT_PIN_SEL  ((1ULL<<GPIO_OUTPUT_IO_0) | (1ULL<<GPIO_OUTPUT_IO_1))
