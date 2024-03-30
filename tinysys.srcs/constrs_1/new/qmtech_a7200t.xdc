@@ -79,23 +79,11 @@ set_property PULLUP true [get_ports sdcard_swtch]
 ## set_property -dict {PACKAGE_PIN Y18 IOSTANDARD LVCMOS33} [get_ports spi_swtch]
 
 ## ------------------------------------------------------------------------------------------------------
-## DVI output over HDMI
-## ------------------------------------------------------------------------------------------------------
-
-## set_property -dict {PACKAGE_PIN AB3 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[0]}]
-## set_property -dict {PACKAGE_PIN AB2 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[0]}]
-## set_property -dict {PACKAGE_PIN V4  IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_p]
-## set_property -dict {PACKAGE_PIN W4  IOSTANDARD TMDS_33} [get_ports hdmi_tx_clk_n]
-## set_property -dict {PACKAGE_PIN AA1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[1]}]
-## set_property -dict {PACKAGE_PIN AB1 IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[1]}]
-## set_property -dict {PACKAGE_PIN W1  IOSTANDARD TMDS_33} [get_ports {hdmi_tx_p[2]}]
-## set_property -dict {PACKAGE_PIN Y1  IOSTANDARD TMDS_33} [get_ports {hdmi_tx_n[2]}]
-
-## ------------------------------------------------------------------------------------------------------
 ## 12bpp (4:4:4) Video output - SII164CTG64
 ## ------------------------------------------------------------------------------------------------------
 
 ## 2D/2E
+## 12bpp output
 set_property -dict {PACKAGE_PIN AA3 IOSTANDARD LVCMOS33} [get_ports vvsync]
 set_property -dict {PACKAGE_PIN Y3 IOSTANDARD LVCMOS33} [get_ports vhsync]
 set_property -dict {PACKAGE_PIN W4 IOSTANDARD LVCMOS33} [get_ports vde]
@@ -113,19 +101,19 @@ set_property -dict {PACKAGE_PIN T5 IOSTANDARD LVCMOS33} [get_ports {vdat[9]}]
 set_property -dict {PACKAGE_PIN T4 IOSTANDARD LVCMOS33} [get_ports {vdat[10]}]
 set_property -dict {PACKAGE_PIN R4 IOSTANDARD LVCMOS33} [get_ports {vdat[11]}]
 
-## Using 12bpp output, add the following if using 24bpp (NOTE: board 2D does not have these connected!)
-## set_property -dict {PACKAGE_PIN P4  IOSTANDARD LVCMOS33} [get_ports {vdat[12]}]
-## set_property -dict {PACKAGE_PIN P5  IOSTANDARD LVCMOS33} [get_ports {vdat[13]}]
-## set_property -dict {PACKAGE_PIN P1  IOSTANDARD LVCMOS33} [get_ports {vdat[14]}]
-## set_property -dict {PACKAGE_PIN R1  IOSTANDARD LVCMOS33} [get_ports {vdat[15]}]
-## set_property -dict {PACKAGE_PIN N2  IOSTANDARD LVCMOS33} [get_ports {vdat[16]}]
-## set_property -dict {PACKAGE_PIN P2  IOSTANDARD LVCMOS33} [get_ports {vdat[17]}]
-## set_property -dict {PACKAGE_PIN M2  IOSTANDARD LVCMOS33} [get_ports {vdat[18]}]
-## set_property -dict {PACKAGE_PIN M3  IOSTANDARD LVCMOS33} [get_ports {vdat[19]}]
-## set_property -dict {PACKAGE_PIN K3  IOSTANDARD LVCMOS33} [get_ports {vdat[20]}]
-## set_property -dict {PACKAGE_PIN L3  IOSTANDARD LVCMOS33} [get_ports {vdat[21]}]
-## set_property -dict {PACKAGE_PIN J4  IOSTANDARD LVCMOS33} [get_ports {vdat[22]}]
-## set_property -dict {PACKAGE_PIN K4  IOSTANDARD LVCMOS33} [get_ports {vdat[23]}]
+## Add the following if using 24bpp (NOTE: Boards 2D/2E do not have these connected!)
+## set_property -dict {PACKAGE_PIN ?? IOSTANDARD LVCMOS33} [get_ports {vdat[12]}]
+## set_property -dict {PACKAGE_PIN ?? IOSTANDARD LVCMOS33} [get_ports {vdat[13]}]
+## set_property -dict {PACKAGE_PIN ?? IOSTANDARD LVCMOS33} [get_ports {vdat[14]}]
+## set_property -dict {PACKAGE_PIN ?? IOSTANDARD LVCMOS33} [get_ports {vdat[15]}]
+## set_property -dict {PACKAGE_PIN ?? IOSTANDARD LVCMOS33} [get_ports {vdat[16]}]
+## set_property -dict {PACKAGE_PIN ?? IOSTANDARD LVCMOS33} [get_ports {vdat[17]}]
+## set_property -dict {PACKAGE_PIN ?? IOSTANDARD LVCMOS33} [get_ports {vdat[18]}]
+## set_property -dict {PACKAGE_PIN ?? IOSTANDARD LVCMOS33} [get_ports {vdat[19]}]
+## set_property -dict {PACKAGE_PIN ?? IOSTANDARD LVCMOS33} [get_ports {vdat[20]}]
+## set_property -dict {PACKAGE_PIN ?? IOSTANDARD LVCMOS33} [get_ports {vdat[21]}]
+## set_property -dict {PACKAGE_PIN ?? IOSTANDARD LVCMOS33} [get_ports {vdat[22]}]
+## set_property -dict {PACKAGE_PIN ?? IOSTANDARD LVCMOS33} [get_ports {vdat[23]}]
 
 ## ------------------------------------------------------------------------------------------------------
 ## Audio output - CS4344-CZZR
@@ -146,39 +134,57 @@ set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports au_mclk]
 ## IO13 - USB D+
 
 ## 2E
-set_property -dict {PACKAGE_PIN J14 IOSTANDARD LVCMOS33} [get_ports esp_io[0]]	# IO0
-set_property -dict {PACKAGE_PIN H14 IOSTANDARD LVCMOS33} [get_ports esp_io[1]]	# IO1
-set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports esp_io[2]]	# IO2
-set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports esp_io[3]]	# IO3
-set_property -dict {PACKAGE_PIN K17 IOSTANDARD LVCMOS33} [get_ports esp_io[4]]	# IO4
-set_property -dict {PACKAGE_PIN J17 IOSTANDARD LVCMOS33} [get_ports esp_io[5]]	# IO5
-set_property -dict {PACKAGE_PIN L19 IOSTANDARD LVCMOS33} [get_ports esp_io[6]]	# IO6
-set_property -dict {PACKAGE_PIN L20 IOSTANDARD LVCMOS33} [get_ports esp_io[7]]	# IO7
-set_property -dict {PACKAGE_PIN K22 IOSTANDARD LVCMOS33} [get_ports esp_io[8]]	# IO15
-set_property -dict {PACKAGE_PIN J19 IOSTANDARD LVCMOS33} [get_ports esp_io[9]]	# IO18
-set_property -dict {PACKAGE_PIN J21 IOSTANDARD LVCMOS33} [get_ports esp_io[10]]	# IO19
-set_property -dict {PACKAGE_PIN J20 IOSTANDARD LVCMOS33} [get_ports esp_io[11]]	# IO20
-set_property -dict {PACKAGE_PIN H20 IOSTANDARD LVCMOS33} [get_ports esp_io[12]]	# IO21
-set_property -dict {PACKAGE_PIN G20 IOSTANDARD LVCMOS33} [get_ports esp_io[13]]	# IO22
-set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports esp_io[14]]	# IO23
-## set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports esp_txd]	# TXD0
-## set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports esp_rxd]	# RXD0
+## IO0
+set_property -dict {PACKAGE_PIN J14 IOSTANDARD LVCMOS33} [get_ports esp_io[0]]
+## IO1
+set_property -dict {PACKAGE_PIN H14 IOSTANDARD LVCMOS33} [get_ports esp_io[1]]
+## IO2
+set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports esp_io[2]]
+## IO3
+set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports esp_io[3]]
+## IO4
+set_property -dict {PACKAGE_PIN K17 IOSTANDARD LVCMOS33} [get_ports esp_io[4]]
+## IO5
+set_property -dict {PACKAGE_PIN J17 IOSTANDARD LVCMOS33} [get_ports esp_io[5]]
+## IO6
+set_property -dict {PACKAGE_PIN L19 IOSTANDARD LVCMOS33} [get_ports esp_io[6]]
+## IO7
+set_property -dict {PACKAGE_PIN L20 IOSTANDARD LVCMOS33} [get_ports esp_io[7]]
+## IO15
+set_property -dict {PACKAGE_PIN K22 IOSTANDARD LVCMOS33} [get_ports esp_io[8]]
+## IO18
+set_property -dict {PACKAGE_PIN J19 IOSTANDARD LVCMOS33} [get_ports esp_io[9]]
+## IO19
+set_property -dict {PACKAGE_PIN J21 IOSTANDARD LVCMOS33} [get_ports esp_io[10]]
+## IO20
+set_property -dict {PACKAGE_PIN J20 IOSTANDARD LVCMOS33} [get_ports esp_io[11]]
+## IO21
+set_property -dict {PACKAGE_PIN H20 IOSTANDARD LVCMOS33} [get_ports esp_io[12]]
+## IO22
+set_property -dict {PACKAGE_PIN G20 IOSTANDARD LVCMOS33} [get_ports esp_io[13]]
+## IO23
+set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports esp_io[14]]
+## TXD0
+set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports esp_txd]
+## RXD0
+set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports esp_rxd]
 
-set_property PULLDOWN true [get_ports esp_io[0]]
-set_property PULLDOWN true [get_ports esp_io[1]]
-set_property PULLDOWN true [get_ports esp_io[2]]
-set_property PULLDOWN true [get_ports esp_io[3]]
-set_property PULLDOWN true [get_ports esp_io[4]]
-set_property PULLDOWN true [get_ports esp_io[5]]
-set_property PULLDOWN true [get_ports esp_io[6]]
-set_property PULLDOWN true [get_ports esp_io[7]]
-set_property PULLDOWN true [get_ports esp_io[8]]
-set_property PULLDOWN true [get_ports esp_io[9]]
-set_property PULLDOWN true [get_ports esp_io[10]]
-set_property PULLDOWN true [get_ports esp_io[11]]
-set_property PULLDOWN true [get_ports esp_io[12]]
-set_property PULLDOWN true [get_ports esp_io[13]]
-set_property PULLDOWN true [get_ports esp_io[14]]
+## set_property PULLDOWN true [get_ports esp_io[0]]
+## set_property PULLDOWN true [get_ports esp_io[1]]
+## set_property PULLDOWN true [get_ports esp_io[4]]
+## set_property PULLDOWN true [get_ports esp_io[5]]
+## set_property PULLDOWN true [get_ports esp_io[6]]
+## set_property PULLDOWN true [get_ports esp_io[7]]
+## set_property PULLDOWN true [get_ports esp_io[10]]
+## set_property PULLDOWN true [get_ports esp_io[11]]
+
+## set_property PULLDOWN true [get_ports esp_io[2]]
+## set_property PULLDOWN true [get_ports esp_io[3]]
+## set_property PULLDOWN true [get_ports esp_io[8]]
+## set_property PULLDOWN true [get_ports esp_io[9]]
+## set_property PULLDOWN true [get_ports esp_io[12]]
+## set_property PULLDOWN true [get_ports esp_io[13]]
+## set_property PULLDOWN true [get_ports esp_io[14]]
 
 ## ------------------------------------------------------------------------------------------------------
 ## USB-C - MAX3420EECJ over SPI interface, USB Device

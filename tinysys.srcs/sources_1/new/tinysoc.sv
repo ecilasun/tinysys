@@ -12,19 +12,28 @@ module tinysoc #(
 	input wire clk166,
 	input wire clk200,
 	input wire aresetn,
-	//input wire sysresetn,
 	input wire preresetn,
+	// LEDs
 	output wire [3:0] leds,
-	//debugbusif.slave s_dbg,
+	// ESP32
+	inout wire [14:0] esp_io,
+	input wire esp_txd,
+	output wire esp_rxd,
+	// Video output
 	output wire vvsync,
 	output wire vhsync,
 	output wire vclk,
 	output wire vde,
 	output wire [11:0] vdat,
+	// DDR3
 	ddr3sdramwires.def ddr3conn,
+	// I2S
 	audiowires.def i2sconn,
+	// SDCard
 	sdcardwires.def sdconn,
+	// USB-C (peripheral)
 	max3420wires.def usbcconn,
+	// USB-A (host)
 	max3420wires.def usbaconn );
 
 // --------------------------------------------------
@@ -42,6 +51,7 @@ axi4if audiobus();				// Bus for audio device output
 
 axi4if memorybus();				// Arbitrated access to main memory
 
+axi4if gpioif();				// Sub bus: GPIO port
 axi4if ledif();					// Sub bus: LED contol device (debug LEDs)
 axi4if vpucmdif();				// Sub bus: VPU command fifo (video scan out logic)
 axi4if spiif();					// Sub bus: SPI control device (sdcard)
@@ -222,7 +232,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 
 // 12bit (4K) address space reserved for each memory mapped device (255 devices max)
 // dev   start     end       addrs[19:12]  size  notes
-// ----: 80000000  8xx00FFF  8'b0000_0000  4KB	Unused
+// GPIO: 80000000  8xx00FFF  8'b0000_0000  4KB	GPIO pins
 // LEDS: 8xx01000  8xx01FFF  8'b0000_0001  4KB	Debug LEDs
 // VPUC: 8xx02000  8xx02FFF  8'b0000_0010  4KB	Video Processing Unit
 // SDCC: 8xx03000  8xx03FFF  8'b0000_0011  4KB	SDCard SPI Unit
@@ -253,8 +263,9 @@ devicerouter devicerouterinst(
     	8'b0000_0100,		// XADC Analog / Digital Converter Interface
 		8'b0000_0011,		// SDCC SDCard access via SPI
 		8'b0000_0010,		// VPUC Graphics Processing Unit Command Fifo
-		8'b0000_0001}),	// LEDS Debug / Status LED interface
-    .axi_m({csrif, usbaif, audioif, usbcif, dmaif, xadcif, spiif, vpucmdif, ledif}));
+		8'b0000_0001,		// LEDS Debug / Status LED interface
+		8'b0000_0000}),		// GPIO Input/output pins to ESP32 module
+    .axi_m({csrif, usbaif, audioif, usbcif, dmaif, xadcif, spiif, vpucmdif, ledif, gpioif}));
 
 // --------------------------------------------------
 // Interrupt wires
@@ -266,6 +277,12 @@ wire usbcirq, usbairq;
 // --------------------------------------------------
 // Memory mapped devices
 // --------------------------------------------------
+
+axi4gpio gpiodevice(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.s_axi(gpioif),
+	.gpio(esp_io) );
 
 axi4led leddevice(
 	.aclk(aclk),

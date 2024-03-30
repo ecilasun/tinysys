@@ -69,7 +69,7 @@
 #define DEVICE_BASE 0x80000000
 
 // Each device has 4 Kbytes of continous, uncached memory region mapped to it
-#define DEVICE_TRUC (DEVICE_BASE+0x0000)
+#define DEVICE_GPIO (DEVICE_BASE+0x0000)
 #define DEVICE_LEDS (DEVICE_BASE+0x1000)
 #define DEVICE_VPUC (DEVICE_BASE+0x2000)
 #define DEVICE_SPIC (DEVICE_BASE+0x3000)
