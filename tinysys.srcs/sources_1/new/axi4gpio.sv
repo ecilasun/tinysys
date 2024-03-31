@@ -4,18 +4,18 @@ module axi4gpio(
 	input wire aclk,
 	input wire aresetn,
 	axi4if.slave s_axi,
-	inout wire [14:0] gpio );
+	inout wire [18:0] gpio );
 
 logic gpiowe = 1'b0;
-logic [14:0] gpiodout;
+logic [18:0] gpiodout;
 
 // Output and input values
-logic [14:0] gpiooutstate;
-logic [14:0] gpioinstate;
+logic [18:0] gpiooutstate;
+logic [18:0] gpioinstate;
 
 // Nothing is input or output by default (all pins floating)
-logic [14:0] gpioinputmask;
-logic [14:0] gpiooutputmask;
+logic [18:0] gpioinputmask;
+logic [18:0] gpiooutputmask;
 
 assign gpio[0]  = gpiooutputmask[0]==1'b1  ? gpiooutstate[0]  : 1'bz;
 assign gpio[1]  = gpiooutputmask[1]==1'b1  ? gpiooutstate[1]  : 1'bz;
@@ -32,12 +32,16 @@ assign gpio[11] = gpiooutputmask[11]==1'b1 ? gpiooutstate[11] : 1'bz;
 assign gpio[12] = gpiooutputmask[12]==1'b1 ? gpiooutstate[12] : 1'bz;
 assign gpio[13] = gpiooutputmask[13]==1'b1 ? gpiooutstate[13] : 1'bz;
 assign gpio[14] = gpiooutputmask[14]==1'b1 ? gpiooutstate[14] : 1'bz;
+assign gpio[15] = gpiooutputmask[15]==1'b1 ? gpiooutstate[15] : 1'bz;
+assign gpio[16] = gpiooutputmask[16]==1'b1 ? gpiooutstate[16] : 1'bz;
+assign gpio[17] = gpiooutputmask[17]==1'b1 ? gpiooutstate[17] : 1'bz;
+assign gpio[18] = gpiooutputmask[18]==1'b1 ? gpiooutstate[18] : 1'bz;
 
 logic [3:0] ledbits = 4'd0;
 always @(posedge aclk) begin
 	if (~aresetn) begin
-		gpioinstate <= 15'd0;
-		gpiooutstate <= 15'd0;
+		gpioinstate <= 19'd0;
+		gpiooutstate <= 19'd0;
 	end else begin
 
 		if (gpiowe)
@@ -58,6 +62,10 @@ always @(posedge aclk) begin
 		gpioinstate[12] <= gpioinputmask[12]==1'b1 ? gpio[12] : 1'b0;
 		gpioinstate[13] <= gpioinputmask[13]==1'b1 ? gpio[13] : 1'b0;
 		gpioinstate[14] <= gpioinputmask[14]==1'b1 ? gpio[14] : 1'b0;
+		gpioinstate[15] <= gpioinputmask[15]==1'b1 ? gpio[15] : 1'b0;
+		gpioinstate[16] <= gpioinputmask[16]==1'b1 ? gpio[16] : 1'b0;
+		gpioinstate[17] <= gpioinputmask[17]==1'b1 ? gpio[17] : 1'b0;
+		gpioinstate[18] <= gpioinputmask[18]==1'b1 ? gpio[18] : 1'b0;
 	end
 end
 
@@ -65,9 +73,9 @@ assign led = ledbits;
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
-		gpiodout <= 15'd0;
-		gpioinputmask <= 15'd0;
-		gpiooutputmask <= 15'd0;
+		gpiodout <= 19'd0;
+		gpioinputmask <= 19'd0;
+		gpiooutputmask <= 19'd0;
 		s_axi.awready <= 1'b0;
 		s_axi.arready <= 1'b0;
 		s_axi.wready <= 1'b0;
@@ -89,9 +97,9 @@ always @(posedge aclk) begin
 
 		if (s_axi.rready) begin
 			unique case (s_axi.araddr[3:0])
-				4'h4: s_axi.rdata[31:0] <= {17'd0, gpioinputmask};
-				4'h8: s_axi.rdata[31:0] <= {17'd0, gpiooutputmask};
-				default: s_axi.rdata[31:0] <= {17'd0, gpioinstate};
+				4'h4: s_axi.rdata[31:0] <= {13'd0, gpioinputmask};
+				4'h8: s_axi.rdata[31:0] <= {13'd0, gpiooutputmask};
+				default: s_axi.rdata[31:0] <= {13'd0, gpioinstate};
 			endcase
 			s_axi.rlast <= 1'b1;
 		end
@@ -99,14 +107,14 @@ always @(posedge aclk) begin
 		if (s_axi.wvalid) begin
 			unique case (s_axi.awaddr[3:0])
 				4'h4: begin
-					gpioinputmask <= s_axi.wdata[14:0];
+					gpioinputmask <= s_axi.wdata[18:0];
 				end
 				4'h8: begin
-					gpiooutputmask <= s_axi.wdata[14:0];
+					gpiooutputmask <= s_axi.wdata[18:0];
 				end
 				default: begin
 					gpiowe <= 1'b1;
-					gpiodout <= s_axi.wdata[14:0];
+					gpiodout <= s_axi.wdata[18:0];
 				end
 			endcase
 		end

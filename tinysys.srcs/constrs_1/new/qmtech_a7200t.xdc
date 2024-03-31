@@ -134,40 +134,44 @@ set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports au_mclk]
 ## IO13 - USB D+
 
 ## 2E
-## IO0
-set_property -dict {PACKAGE_PIN J14 IOSTANDARD LVCMOS33} [get_ports esp_io[0]]
+## IO11
+set_property -dict {PACKAGE_PIN K14 IOSTANDARD LVCMOS33} [get_ports esp_io[0]]
+## IO10
+set_property -dict {PACKAGE_PIN K13 IOSTANDARD LVCMOS33} [get_ports esp_io[1]]
 ## IO1
-set_property -dict {PACKAGE_PIN H14 IOSTANDARD LVCMOS33} [get_ports esp_io[1]]
-## IO2
-set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports esp_io[2]]
-## IO3
-set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports esp_io[3]]
-## IO4
-set_property -dict {PACKAGE_PIN K17 IOSTANDARD LVCMOS33} [get_ports esp_io[4]]
-## IO5
-set_property -dict {PACKAGE_PIN J17 IOSTANDARD LVCMOS33} [get_ports esp_io[5]]
-## IO6
-set_property -dict {PACKAGE_PIN L19 IOSTANDARD LVCMOS33} [get_ports esp_io[6]]
+set_property -dict {PACKAGE_PIN H14 IOSTANDARD LVCMOS33} [get_ports esp_io[2]]
+## IO0
+set_property -dict {PACKAGE_PIN J14 IOSTANDARD LVCMOS33} [get_ports esp_io[3]]
 ## IO7
-set_property -dict {PACKAGE_PIN L20 IOSTANDARD LVCMOS33} [get_ports esp_io[7]]
-## IO15
-set_property -dict {PACKAGE_PIN K22 IOSTANDARD LVCMOS33} [get_ports esp_io[8]]
-## IO18
-set_property -dict {PACKAGE_PIN J19 IOSTANDARD LVCMOS33} [get_ports esp_io[9]]
+set_property -dict {PACKAGE_PIN L20 IOSTANDARD LVCMOS33} [get_ports esp_io[4]]
+## IO6
+set_property -dict {PACKAGE_PIN L19 IOSTANDARD LVCMOS33} [get_ports esp_io[5]]
+## IO5
+set_property -dict {PACKAGE_PIN J17 IOSTANDARD LVCMOS33} [get_ports esp_io[6]]
+## IO4
+set_property -dict {PACKAGE_PIN K17 IOSTANDARD LVCMOS33} [get_ports esp_io[7]]
 ## IO19
-set_property -dict {PACKAGE_PIN J21 IOSTANDARD LVCMOS33} [get_ports esp_io[10]]
+set_property -dict {PACKAGE_PIN J21 IOSTANDARD LVCMOS33} [get_ports esp_io[8]]
 ## IO20
-set_property -dict {PACKAGE_PIN J20 IOSTANDARD LVCMOS33} [get_ports esp_io[11]]
+set_property -dict {PACKAGE_PIN J20 IOSTANDARD LVCMOS33} [get_ports esp_io[9]]
+## IO18
+set_property -dict {PACKAGE_PIN J19 IOSTANDARD LVCMOS33} [get_ports esp_io[10]]
+## IO22
+set_property -dict {PACKAGE_PIN G20 IOSTANDARD LVCMOS33} [get_ports esp_io[11]]
 ## IO21
 set_property -dict {PACKAGE_PIN H20 IOSTANDARD LVCMOS33} [get_ports esp_io[12]]
-## IO22
-set_property -dict {PACKAGE_PIN G20 IOSTANDARD LVCMOS33} [get_ports esp_io[13]]
+## IO15
+set_property -dict {PACKAGE_PIN K22 IOSTANDARD LVCMOS33} [get_ports esp_io[13]]
 ## IO23
 set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports esp_io[14]]
 ## TXD0
-set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports esp_txd]
+set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports esp_io[15]]
 ## RXD0
-set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports esp_rxd]
+set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports esp_io[16]]
+## IO2
+set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports esp_io[17]]
+## IO3
+set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports esp_io[18]]
 
 ## set_property PULLDOWN true [get_ports esp_io[0]]
 ## set_property PULLDOWN true [get_ports esp_io[1]]

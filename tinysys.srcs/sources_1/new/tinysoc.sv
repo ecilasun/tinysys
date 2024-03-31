@@ -16,9 +16,7 @@ module tinysoc #(
 	// LEDs
 	output wire [3:0] leds,
 	// ESP32
-	inout wire [14:0] esp_io,
-	input wire esp_txd,
-	output wire esp_rxd,
+	inout wire [18:0] esp_io,
 	// Video output
 	output wire vvsync,
 	output wire vhsync,
