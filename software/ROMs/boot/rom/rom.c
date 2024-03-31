@@ -24,9 +24,9 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "r1.00"
+#define VERSIONSTRING "r1.01"
 // On-storage version
-#define DEVVERSIONSTRING "r1.00"
+#define DEVVERSIONSTRING "r1.01"
 
 static char s_execName[32] = "ROM";
 static char s_execParam0[32] = "auto";
@@ -138,6 +138,7 @@ void ShowVersion(int waterMark)
 	kprintf(" Board           : issue 2E:2024               \n");
 	kprintf(" CPU & bus clock : 150MHz                      \n");
 	kprintf(" HART#0          : rv32im_zicsr_zifencei_zfinx \n");
+	kprintf(" ESP32           : ESP32-C6-WROOM-1-N8         \n");
 
 	// Report USB serial chip version
 	uint8_t m3420rev = MAX3420ReadByte(rREVISION);

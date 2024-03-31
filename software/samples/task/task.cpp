@@ -20,7 +20,13 @@ int main(int argc, char *argv[])
 {
 	printf("Task test\n");
 
-	int taskID = TaskAdd(s_taskctx, "idle", MyTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+	int taskID = TaskAdd(s_taskctx, "mytask", MyTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+
+	if (taskID == 0)
+	{
+		printf("No room for new task\n");
+		return -1;
+	}
 
 	for (uint32_t i=0; i<1000; ++i)
 	{
