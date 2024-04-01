@@ -14510,6 +14510,19 @@
 		)
 		(uuid 2b3ea3b2-2124-4d67-9324-c433869379b0)
 	)
+	(arc
+		(start 364.49 204.47)
+		(mid 360.4816 207.2682)
+		(end 355.6 207.01)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill
+			(type none)
+		)
+		(uuid 5c130413-4d48-42a0-b91a-3e32d7c1c735)
+	)
 	(rectangle
 		(start 163.83 71.12)
 		(end 233.68 113.03)
@@ -14608,7 +14621,7 @@
 	)
 	(rectangle
 		(start 273.05 157.48)
-		(end 368.3 261.62)
+		(end 405.13 261.62)
 		(stroke
 			(width 0)
 			(type default)
@@ -14651,6 +14664,17 @@
 			(justify left bottom)
 		)
 		(uuid "2d5470cf-f85f-4747-a6ed-59fb0cb1f2d0")
+	)
+	(text "NOTE: The following EFUSEs should be\nall set to zero to ignore GPIO pin15\nso that we can use it for our purposes:\n\nEFUSE_DIS_PAD_JTAG\nEFUSE_DIS_USB_JTAG\nEFUSE_JTAG_SEL_ENABLE"
+		(exclude_from_sim no)
+		(at 364.998 208.534 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "3be653e8-411e-43a4-8aa1-69de29a7aeaa")
 	)
 	(text "FPGA board GPIO pins"
 		(exclude_from_sim no)
