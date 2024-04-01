@@ -5,6 +5,7 @@
 #include "mini-printf.h"
 #include "usbserialhandler.h"
 #include "usbhidhandler.h"
+#include "gpioringbuffer.h"
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -325,7 +326,10 @@ uint32_t IsFileHandleAllocated(const uint32_t _bitIndex, const uint32_t  _input)
 void HandleGPIO(const uint32_t _PC)
 {
 	while (*GPIO_FIFOHASDATA)
-		kprintf("GPIO: 0x%X\n", *GPIO_DATA);
+	{
+		uint32_t data = *GPIO_DATA;
+		GPIORingBufferWrite(&data, sizeof(uint32_t));
+	}
 }
 
 //void __attribute__((aligned(16))) __attribute__((interrupt("machine"))) interrupt_service_routine() // Auto-saves registers

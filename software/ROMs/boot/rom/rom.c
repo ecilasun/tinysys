@@ -16,6 +16,7 @@
 #include "keyringbuffer.h"
 #include "serialinringbuffer.h"
 #include "serialoutringbuffer.h"
+#include "gpioringbuffer.h"
 #include "serialinput.h"
 
 #include <string.h>
@@ -616,6 +617,7 @@ int main()
 	KeyRingBufferReset();
 	SerialInRingBufferReset();
 	SerialOutRingBufferReset();
+	GPIORingBufferReset();
 
 	// Create task context
 	LEDSetState(0xA);
