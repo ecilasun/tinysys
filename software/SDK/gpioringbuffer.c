@@ -1,4 +1,5 @@
 #include "gpioringbuffer.h"
+#include "encoding.h"
 #include <string.h>
 
 // Simple ringbuffer
@@ -19,6 +20,16 @@ void __attribute__ ((noinline)) GPIORingBufferReset()
 {
     *m_gpio_readOffset  = 0;
     *m_gpio_writeOffset = 0;
+}
+
+void __attribute__ ((noinline)) GPIORingBufferFlush()
+{
+	// Disable machine interrupts
+	write_csr(mstatus, 0);
+	// Reset FIFO
+	GPIORingBufferReset();
+	// Enable machine interrupts
+	write_csr(mstatus, MSTATUS_MIE);
 }
 
 uint32_t __attribute__ ((noinline)) GPIORingBufferRead(void* pvDest, const uint32_t cbDest)

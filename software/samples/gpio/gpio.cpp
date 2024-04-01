@@ -28,29 +28,24 @@ int main()
 	*GPIO_INPUTENABLE = GPIO_INPUT_PIN_SEL;
 
 	int count = 0;
-	uint32_t prevval = 0xFFFFFFFF;
+	GPIORingBufferFlush();
 	do
 	{
 		uint32_t data;
 		while (GPIORingBufferRead(&data, sizeof(uint32_t)))
 		{
 			// Did we receive anything form GPIO9 or GPIO10?
-			if (data != prevval)
-			{
-				prevval = data;
+			printf("Inputs: %.8x\n", data);
 
-				printf("Inputs: %.8x\n", data);
+			// Write suitable output states (4 for 9, 5 for 10)
+			uint32_t outval = 0;
+			outval |= data&(1ULL<<GPIO_INPUT_IO_0) ? (1ULL<<GPIO_OUTPUT_IO_0) : 0;
+			outval |= data&(1ULL<<GPIO_INPUT_IO_1) ? (1ULL<<GPIO_OUTPUT_IO_1) : 0;
+			printf("Outputs: %.8x\n", outval);
 
-				// Write suitable output states (4 for 9, 5 for 10)
-				uint32_t outval = 0;
-				outval |= data&(1ULL<<GPIO_INPUT_IO_0) ? (1ULL<<GPIO_OUTPUT_IO_0) : 0;
-				outval |= data&(1ULL<<GPIO_INPUT_IO_1) ? (1ULL<<GPIO_OUTPUT_IO_1) : 0;
-				printf("Outputs: %.8x\n", outval);
+			*GPIO_DATA = outval;
 
-				*GPIO_DATA = outval;
-
-				++count;
-			}
+			++count;
 		}
 		TaskYield();
 	} while (count < 10);
