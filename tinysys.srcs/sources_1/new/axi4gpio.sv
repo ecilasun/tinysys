@@ -90,7 +90,6 @@ always @(posedge aclk) begin
 	if (~aresetn) begin
 		previnstate <= 19'd0;
 		gpiofifowe <= 1'b0;
-		gpiofifore <= 1'b0;
 	end else begin
 		gpiofifowe <= 1'b0;
 		if (gpioinstate != previnstate) begin
