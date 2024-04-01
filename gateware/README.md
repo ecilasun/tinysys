@@ -1,8 +1,8 @@
-# Gateware version 1.09
+# Gateware build r1.01
 
-The gateware binary contains version 1.09 of the device.
+The gateware binary contains latest version of the device.
 There is no need for a ROM file.<br>
-If you have an older one, you can simply delete it, or use a `rom.bin` file with version 1.09 or higher.
+If you have an older one, you can simply delete it, or use a `rom.bin` file with this version or higher.
 
 # Current device architecture
 This is the current architecture to use with gcc13 and higher: `rv32im_zicsr_zifencei_zfinx`
@@ -24,16 +24,18 @@ overall tight loop memory write speed is better (37.7mb/sec vs 35.4mb/sec)<br>
 s1.08<br>
 device now drops 'f' extension and used ZFix (floats in integer registers extension)<br>
 all samples and ROM changed to reflect this change<br>
-<b>s1.09</b><br>
+s1.09<br>
 audio hardware fixes as suggested by Ben Stragnell<br>
 updated built-in ROM with new audio halt on exit<br>
 memory locations modified for task data<br>
 small checks added to directory switch logic<br>
 added 5 second timeout between upload packages to not hang the device<br>
-<b>r1.00</b><br>
+r1.00<br>
 post-programming competition release version<br>
 OPL2 hardware removed<br>
 final stable release version of tinysys<br>
+<b>r1.01</b><br>
+Added GPIO hardware to link to the ESP32-C6-WROOM1-N8 on PCB version 2E<br>
 
 # Device gateware
 
