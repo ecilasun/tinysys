@@ -1,5 +1,6 @@
 #include "rombase.h"
 #include "sdcard.h"
+#include "gpio.h"
 #include "usbserial.h"
 #include "mini-printf.h"
 #include "usbserialhandler.h"
@@ -321,9 +322,10 @@ uint32_t IsFileHandleAllocated(const uint32_t _bitIndex, const uint32_t  _input)
 	return (_input & mask) ? 1 : 0;
 }
 
-void HandleSoftReset(const uint32_t _PC)
+void HandleGPIO(const uint32_t _PC)
 {
-	kprintf("Soft reset handler not installed\n");
+	while (*GPIO_FIFOHASDATA)
+		kprintf("GPIO: 0x%X\n", *GPIO_DATA);
 }
 
 //void __attribute__((aligned(16))) __attribute__((interrupt("machine"))) interrupt_service_routine() // Auto-saves registers
@@ -402,7 +404,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				if (hwid&1) HandleSDCardDetect();
 				else if (hwid&2) HandleUSBSerial();
 				else if (hwid&4) HandleUSBHID();
-				else if (hwid&8) HandleSoftReset(PC);
+				else if (hwid&8) HandleGPIO(PC);
 				else // No familiar bit set, unknown device
 				{
 					kprintf("Unknown hardware device, core halted\n");

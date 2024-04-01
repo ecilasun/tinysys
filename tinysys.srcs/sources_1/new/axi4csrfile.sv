@@ -15,6 +15,7 @@ module axi4CSRFile(
 	// Incoming hardware interrupt requests
 	input wire keyfifoempty,
 	input wire [1:0] usbirq,
+	input wire gpiofifoempty,
 	// Expose certain registers to fetch unit
 	output wire [31:0] mepc,
 	output wire [31:0] mtvec,
@@ -80,7 +81,7 @@ always @(posedge aclk) begin
 
 	softInterruptEna <= mieshadow[0] && mstatusIEshadow; // Software interrupt (The rest of this condition is in fetch unit based on instruction)
 	timerInterrupt <= mieshadow[1] && mstatusIEshadow && (wallclocktime >= timecmpshadow); // Timer interrupt
-	hwInterrupt <= mieshadow[2] && mstatusIEshadow && (~keyfifoempty || ~usbirq[1] || ~usbirq[0]); // Machine external interrupts
+	hwInterrupt <= mieshadow[2] && mstatusIEshadow && (~gpiofifoempty || ~keyfifoempty || ~usbirq[1] || ~usbirq[0]); // Machine external interrupts
 
 	if (~aresetn) begin
 		softInterruptEna <= 0;
@@ -194,16 +195,18 @@ always @(posedge aclk) begin
 				s_axi.rdata[127:32] <= 0;
 				// Some values such as timers and h/w states are dynamic and never end up in the CSR file, so make up a dynamic version for those
 				unique case (csrraddr)
-					`CSR_MHARTID:	s_axi.rdata[31:0] <= 0;//HARTID; // Immutable TODO: Pass HARTID comes from the current CSR address (i.e. hartid = addrs%4096; )
+					// Immutables
+					`CSR_MHARTID:	s_axi.rdata[31:0] <= 0;	// TODO: use HARTID;
 					`CSR_RETIHI:	s_axi.rdata[31:0] <= retired[63:32];
 					`CSR_TIMEHI:	s_axi.rdata[31:0] <= wallclocktime[63:32];
 					`CSR_CYCLEHI:	s_axi.rdata[31:0] <= cpuclocktime[63:32];
 					`CSR_RETILO:	s_axi.rdata[31:0] <= retired[31:0];
 					`CSR_TIMELO:	s_axi.rdata[31:0] <= wallclocktime[31:0];
 					`CSR_CYCLELO:	s_axi.rdata[31:0] <= cpuclocktime[31:0];
-					// interrupt states of all hardware devices
-					`CSR_HWSTATE:	s_axi.rdata[31:0] <= {28'd0, 1'b0, ~usbirq[1], ~usbirq[0], ~keyfifoempty};
-					default:		s_axi.rdata[31:0] <= csrdout;	// Pass through actual data
+					// Interrupt states of all hardware devices
+					`CSR_HWSTATE:	s_axi.rdata[31:0] <= {28'd0, ~gpiofifoempty, ~usbirq[1], ~usbirq[0], ~keyfifoempty};
+					// Pass through actual data
+					default:		s_axi.rdata[31:0] <= csrdout;
 				endcase
 				s_axi.rvalid <= 1'b1;
 				raddrstate <= 2'b01;

@@ -3,6 +3,7 @@
 module axi4gpio(
 	input wire aclk,
 	input wire aresetn,
+	output wire gpiofifoempty,
 	axi4if.slave s_axi,
 	inout wire [18:0] gpio );
 
@@ -12,6 +13,7 @@ logic [18:0] gpiodout;
 // Output and input values
 logic [18:0] gpiooutstate;
 logic [18:0] gpioinstate;
+logic [18:0] previnstate;
 
 // Nothing is input or output by default (all pins floating)
 logic [18:0] gpioinputmask;
@@ -69,6 +71,36 @@ always @(posedge aclk) begin
 	end
 end
 
+wire gpiofifofull, gpiofifovalid;
+logic [18:0] gpiofifodin;
+wire [18:0] gpiofifodout;
+logic gpiofifowe, gpiofifore;
+gpiofifo gpiofifoinst(
+	.full(gpiofifofull),
+	.din(gpiofifodin),
+	.wr_en(gpiofifowe),
+	.empty(gpiofifoempty),
+	.dout(gpiofifodout),
+	.rd_en(gpiofifore),
+	.valid(gpiofifovalid),
+	.clk(aclk),
+	.rst(~aresetn) );
+
+always @(posedge aclk) begin
+	if (~aresetn) begin
+		previnstate <= 19'd0;
+		gpiofifowe <= 1'b0;
+		gpiofifore <= 1'b0;
+	end else begin
+		gpiofifowe <= 1'b0;
+		if (gpioinstate != previnstate) begin
+			previnstate <= gpioinstate;
+			gpiofifodin <= gpioinstate;
+			gpiofifowe <= ~gpiofifofull;
+		end
+	end
+end
+
 assign led = ledbits;
 
 always @(posedge aclk) begin
@@ -76,6 +108,7 @@ always @(posedge aclk) begin
 		gpiodout <= 19'd0;
 		gpioinputmask <= 19'd0;
 		gpiooutputmask <= 19'd0;
+		gpiofifore <= 1'b0;
 		s_axi.awready <= 1'b0;
 		s_axi.arready <= 1'b0;
 		s_axi.wready <= 1'b0;
@@ -88,20 +121,31 @@ always @(posedge aclk) begin
 		s_axi.bvalid <= s_axi.bready;
 		s_axi.rvalid <= s_axi.rready;
 		s_axi.wready <= s_axi.wvalid;
+		s_axi.rlast <= 1'b1;
 
 		gpiowe <= 1'b0;
+		gpiofifore <= 1'b0;
 
 		// xxxxxxx0 -> data i/o
 		// xxxxxxx4 -> pin read mask
 		// xxxxxxx8 -> pin write mask
+		// xxxxxxxC -> fifo state
 
 		if (s_axi.rready) begin
 			unique case (s_axi.araddr[3:0])
-				4'h4: s_axi.rdata[31:0] <= {13'd0, gpioinputmask};
-				4'h8: s_axi.rdata[31:0] <= {13'd0, gpiooutputmask};
-				default: s_axi.rdata[31:0] <= {13'd0, gpioinstate};
+				4'h4: s_axi.rdata[31:0] <= {13'd0, gpioinputmask};	// 4'h4: Write mask port
+				4'h8: s_axi.rdata[31:0] <= {13'd0, gpiooutputmask}; // 4'h8: Read mask port
+				4'hC: s_axi.rdata[31:0] <= {31'd0, ~gpiofifoempty};	// 4'hC: I/O fifo status
+				default: begin
+					if (~gpiofifoempty && gpiofifovalid) begin
+						s_axi.rdata[31:0] <= {13'd0, gpiofifodout}; // 4'h0: Output data
+						// Advance fifo
+						gpiofifore <= 1'b1;
+					end else begin
+						s_axi.rdata[31:0] <= 32'd0;
+					end
+				end
 			endcase
-			s_axi.rlast <= 1'b1;
 		end
 
 		if (s_axi.wvalid) begin
@@ -112,7 +156,10 @@ always @(posedge aclk) begin
 				4'h8: begin
 					gpiooutputmask <= s_axi.wdata[18:0];
 				end
-				default: begin
+				4'hC: begin
+					// Can't write to fifo state register
+				end
+				default: begin	// 4'h0 and any other address
 					gpiowe <= 1'b1;
 					gpiodout <= s_axi.wdata[18:0];
 				end

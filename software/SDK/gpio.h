@@ -5,6 +5,7 @@
 extern volatile uint32_t *GPIO_DATA;			// Data I/O
 extern volatile uint32_t *GPIO_INPUTENABLE;		// Bit mask for reads
 extern volatile uint32_t *GPIO_OUTPUTENABLE;	// Bit mask for writes
+extern volatile uint32_t *GPIO_FIFOHASDATA;		// FIFO status
 
 // ESP UI pin names to bit index (0 is LSB)
 // NOTE: The IO indices will not match bit indices

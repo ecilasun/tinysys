@@ -271,6 +271,7 @@ devicerouter devicerouterinst(
 
 wire keyfifoempty;
 wire usbcirq, usbairq;
+wire gpiofifoempty;
 
 // --------------------------------------------------
 // Memory mapped devices
@@ -279,6 +280,7 @@ wire usbcirq, usbairq;
 axi4gpio gpiodevice(
 	.aclk(aclk),
 	.aresetn(aresetn),
+	.gpiofifoempty(gpiofifoempty),
 	.s_axi(gpioif),
 	.gpio(esp_io) );
 
@@ -338,6 +340,7 @@ axi4CSRFile csrfileinstHart0(
 	// External interrupt wires
 	.keyfifoempty(keyfifoempty),
 	.usbirq({usbairq, usbcirq}),
+	.gpiofifoempty(gpiofifoempty),
 	// Soft reset
 	//.sysresetn(sysresetn),
 	// Shadow registers
