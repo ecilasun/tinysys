@@ -7,7 +7,8 @@ If you have an older one, you can simply delete it, or use a `rom.bin` file with
 # Current device architecture
 This is the current architecture to use with gcc13 and higher: `rv32im_zicsr_zifencei_zfinx`
 
-# Changes:
+# Changes compatible with version 2D boards:
+For version 2D boards<br>
 s1.04:<br>
 Single precision FPU added<br>
 s1.05:<br>
@@ -34,6 +35,8 @@ r1.00<br>
 post-programming competition release version<br>
 OPL2 hardware removed<br>
 final stable release version of tinysys<br>
+
+# Changes compatible with version 2E boards:
 <b>r1.01</b><br>
 Added GPIO hardware to link to the ESP32-C6-WROOM1-N8 on PCB version 2E<br>
 
