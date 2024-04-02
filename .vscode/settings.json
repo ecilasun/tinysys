@@ -13,7 +13,8 @@
 		"xlocmon": "cpp",
 		"xtr1common": "cpp",
 		"xutility": "cpp",
-		"serialinput.h": "c"
+		"serialinput.h": "c",
+		"keyringbuffer.h": "c"
 	},
 	"terminal.integrated.profiles.windows": {
 		"MSYS2": {
