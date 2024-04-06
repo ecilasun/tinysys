@@ -5,19 +5,19 @@ module axi4gpio(
 	input wire aresetn,
 	output wire gpiofifoempty,
 	axi4if.slave s_axi,
-	inout wire [18:0] gpio );
+	inout wire [16:0] gpio );
 
 logic gpiowe = 1'b0;
-logic [18:0] gpiodout;
+logic [16:0] gpiodout;
 
 // Output and input values
-logic [18:0] gpiooutstate;
-logic [18:0] gpioinstate;
-logic [18:0] previnstate;
+logic [16:0] gpiooutstate;
+logic [16:0] gpioinstate;
+logic [16:0] previnstate;
 
 // Nothing is input or output by default (all pins floating)
-logic [18:0] gpioinputmask;
-logic [18:0] gpiooutputmask;
+logic [16:0] gpioinputmask;
+logic [16:0] gpiooutputmask;
 
 assign gpio[0]  = gpiooutputmask[0]==1'b1  ? gpiooutstate[0]  : 1'bz;
 assign gpio[1]  = gpiooutputmask[1]==1'b1  ? gpiooutstate[1]  : 1'bz;
@@ -36,14 +36,11 @@ assign gpio[13] = gpiooutputmask[13]==1'b1 ? gpiooutstate[13] : 1'bz;
 assign gpio[14] = gpiooutputmask[14]==1'b1 ? gpiooutstate[14] : 1'bz;
 assign gpio[15] = gpiooutputmask[15]==1'b1 ? gpiooutstate[15] : 1'bz;
 assign gpio[16] = gpiooutputmask[16]==1'b1 ? gpiooutstate[16] : 1'bz;
-assign gpio[17] = gpiooutputmask[17]==1'b1 ? gpiooutstate[17] : 1'bz;
-assign gpio[18] = gpiooutputmask[18]==1'b1 ? gpiooutstate[18] : 1'bz;
 
-logic [3:0] ledbits = 4'd0;
 always @(posedge aclk) begin
 	if (~aresetn) begin
-		gpioinstate <= 19'd0;
-		gpiooutstate <= 19'd0;
+		gpioinstate <= 17'd0;
+		gpiooutstate <= 17'd0;
 	end else begin
 
 		if (gpiowe)
@@ -66,14 +63,12 @@ always @(posedge aclk) begin
 		gpioinstate[14] <= gpioinputmask[14]==1'b1 ? gpio[14] : 1'b0;
 		gpioinstate[15] <= gpioinputmask[15]==1'b1 ? gpio[15] : 1'b0;
 		gpioinstate[16] <= gpioinputmask[16]==1'b1 ? gpio[16] : 1'b0;
-		gpioinstate[17] <= gpioinputmask[17]==1'b1 ? gpio[17] : 1'b0;
-		gpioinstate[18] <= gpioinputmask[18]==1'b1 ? gpio[18] : 1'b0;
 	end
 end
 
 wire gpiofifofull, gpiofifovalid;
-logic [18:0] gpiofifodin;
-wire [18:0] gpiofifodout;
+logic [16:0] gpiofifodin;
+wire [16:0] gpiofifodout;
 logic gpiofifowe, gpiofifore;
 gpiofifo gpiofifoinst(
 	.full(gpiofifofull),
@@ -88,7 +83,7 @@ gpiofifo gpiofifoinst(
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
-		previnstate <= 19'd0;
+		previnstate <= 17'd0;
 		gpiofifowe <= 1'b0;
 	end else begin
 		gpiofifowe <= 1'b0;
@@ -100,13 +95,11 @@ always @(posedge aclk) begin
 	end
 end
 
-assign led = ledbits;
-
 always @(posedge aclk) begin
 	if (~aresetn) begin
-		gpiodout <= 19'd0;
-		gpioinputmask <= 19'd0;
-		gpiooutputmask <= 19'd0;
+		gpiodout <= 17'd0;
+		gpioinputmask <= 17'd0;
+		gpiooutputmask <= 17'd0;
 		gpiofifore <= 1'b0;
 		s_axi.awready <= 1'b0;
 		s_axi.arready <= 1'b0;
@@ -132,12 +125,12 @@ always @(posedge aclk) begin
 
 		if (s_axi.rready) begin
 			unique case (s_axi.araddr[3:0])
-				4'h4: s_axi.rdata[31:0] <= {13'd0, gpioinputmask};	// 4'h4: Write mask port
-				4'h8: s_axi.rdata[31:0] <= {13'd0, gpiooutputmask}; // 4'h8: Read mask port
+				4'h4: s_axi.rdata[31:0] <= {15'd0, gpioinputmask};	// 4'h4: Write mask port
+				4'h8: s_axi.rdata[31:0] <= {15'd0, gpiooutputmask}; // 4'h8: Read mask port
 				4'hC: s_axi.rdata[31:0] <= {31'd0, ~gpiofifoempty};	// 4'hC: I/O fifo status
 				default: begin
 					if (~gpiofifoempty && gpiofifovalid) begin
-						s_axi.rdata[31:0] <= {13'd0, gpiofifodout}; // 4'h0: Output data
+						s_axi.rdata[31:0] <= {15'd0, gpiofifodout}; // 4'h0: Output data
 						// Advance fifo
 						gpiofifore <= 1'b1;
 					end else begin
@@ -150,17 +143,17 @@ always @(posedge aclk) begin
 		if (s_axi.wvalid) begin
 			unique case (s_axi.awaddr[3:0])
 				4'h4: begin
-					gpioinputmask <= s_axi.wdata[18:0];
+					gpioinputmask <= s_axi.wdata[16:0];
 				end
 				4'h8: begin
-					gpiooutputmask <= s_axi.wdata[18:0];
+					gpiooutputmask <= s_axi.wdata[16:0];
 				end
 				4'hC: begin
 					// Can't write to fifo state register
 				end
 				default: begin	// 4'h0 and any other address
 					gpiowe <= 1'b1;
-					gpiodout <= s_axi.wdata[18:0];
+					gpiodout <= s_axi.wdata[16:0];
 				end
 			endcase
 		end

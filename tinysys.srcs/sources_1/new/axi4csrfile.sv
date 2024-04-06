@@ -1,8 +1,7 @@
 `timescale 1ns / 1ps
 
 // NOTE: Each HART has a different base address for their CSR
-// This currently houses 1x4K CSR unit for one HART starting
-// at address range 0x80004000-80004FFF 
+// This currently houses 1x4K CSR unit for one HART
 
 module axi4CSRFile(
 	input wire aclk,
@@ -16,6 +15,7 @@ module axi4CSRFile(
 	input wire keyfifoempty,
 	input wire [1:0] usbirq,
 	input wire gpiofifoempty,
+	input wire uartinterrupt,
 	// Expose certain registers to fetch unit
 	output wire [31:0] mepc,
 	output wire [31:0] mtvec,
@@ -81,7 +81,7 @@ always @(posedge aclk) begin
 
 	softInterruptEna <= mieshadow[0] && mstatusIEshadow; // Software interrupt (The rest of this condition is in fetch unit based on instruction)
 	timerInterrupt <= mieshadow[1] && mstatusIEshadow && (wallclocktime >= timecmpshadow); // Timer interrupt
-	hwInterrupt <= mieshadow[2] && mstatusIEshadow && (~gpiofifoempty || ~keyfifoempty || ~usbirq[1] || ~usbirq[0]); // Machine external interrupts
+	hwInterrupt <= mieshadow[2] && mstatusIEshadow && (uartinterrupt || ~gpiofifoempty || ~keyfifoempty || ~usbirq[1] || ~usbirq[0]); // Machine external interrupts
 
 	if (~aresetn) begin
 		softInterruptEna <= 0;
@@ -204,7 +204,7 @@ always @(posedge aclk) begin
 					`CSR_TIMELO:	s_axi.rdata[31:0] <= wallclocktime[31:0];
 					`CSR_CYCLELO:	s_axi.rdata[31:0] <= cpuclocktime[31:0];
 					// Interrupt states of all hardware devices
-					`CSR_HWSTATE:	s_axi.rdata[31:0] <= {28'd0, ~gpiofifoempty, ~usbirq[1], ~usbirq[0], ~keyfifoempty};
+					`CSR_HWSTATE:	s_axi.rdata[31:0] <= {27'd0, uartinterrupt, ~gpiofifoempty, ~usbirq[1], ~usbirq[0], ~keyfifoempty};
 					// Pass through actual data
 					default:		s_axi.rdata[31:0] <= csrdout;
 				endcase

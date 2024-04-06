@@ -332,6 +332,14 @@ void HandleGPIO(const uint32_t _PC)
 	}
 }
 
+void HandleUART()
+{
+	kprintf("UART handler not implemented\n");
+	// TODO: read from RXD and write to SerialInRingBufferWrite()
+	// Put core to endless sleep
+	while(1) { asm volatile("wfi;"); }
+}
+
 //void __attribute__((aligned(16))) __attribute__((interrupt("machine"))) interrupt_service_routine() // Auto-saves registers
 void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routine() // Manual register save
 {
@@ -409,6 +417,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				else if (hwid&2) HandleUSBSerial();
 				else if (hwid&4) HandleUSBHID();
 				else if (hwid&8) HandleGPIO(PC);
+				else if (hwid&16) HandleUART();
 				else // No familiar bit set, unknown device
 				{
 					kprintf("Unknown hardware device, core halted\n");

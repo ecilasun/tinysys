@@ -49,7 +49,9 @@ module tophat(
 	,output wire usba_resn
 	,input wire usba_int
 	// Coprocessor via ESP32-C6-WROOM-1-N8 (only on rev. 2E boards)
-	,inout wire [18:0] esp_io
+	,inout wire [16:0] esp_io
+	,output wire esp_rxd_out
+	,input wire esp_txd_in
 	// Audio out
 	,output wire au_sdin
 	,output wire au_sclk
@@ -157,6 +159,8 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	// Device wires
 	.leds(leds),
 	.esp_io(esp_io),
+	.esp_rxd_out(esp_rxd_out),
+	.esp_txd_in(esp_txd_in),
 	.ddr3conn(ddr3conn),
 	.i2sconn(i2sconn),
 	.vvsync(vvsync),

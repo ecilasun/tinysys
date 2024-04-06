@@ -16,7 +16,9 @@ module tinysoc #(
 	// LEDs
 	output wire [3:0] leds,
 	// ESP32
-	inout wire [18:0] esp_io,
+	inout wire [16:0] esp_io,
+	output wire esp_rxd_out,
+	input wire esp_txd_in,
 	// Video output
 	output wire vvsync,
 	output wire vhsync,
@@ -59,6 +61,7 @@ axi4if dmaif();					// Sub bus: DMA controller (memcopy)
 axi4if usbcif();				// Sub bus: USB-C controller (usb peripheral interface)
 axi4if audioif();				// Sub bus: APU i2s audio output unit (raw audio)
 axi4if usbaif();				// Sub bus: USB-A controller (usb host interface)
+axi4if uartif();				// Sub bus: UART
 
 // --------------------------------------------------
 // Wall clock
@@ -240,7 +243,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // APUC: 8xx07000  8xx07FFF  8'b0000_0111  4KB	Audio Processing Unit / Mixer
 // USBA: 8xx08000  8xx08FFF  8'b0000_1000  4KB	USB-A Host Interface Unit
 // CSR0: 8xx09000  8xx09FFF  8'b0000_1001  4KB	HART#0
-// ----: 8xx0A000  8xx0AFFF  8'b0000_1010  4KB	Unused
+// UART: 8xx0A000  8xx0AFFF  8'b0000_1010  4KB	UART <-> ESP32-C6
 // ----: 8xx0B000  8xx0BFFF  8'b0000_1011  4KB	Unused
 // ----: 8xx0C000  8xx0CFFF  8'b0000_1100  4KB	Unused
 // ----: 8xx0D000  8xx0DFFF  8'b0000_1101  4KB	Unused
@@ -253,6 +256,7 @@ devicerouter devicerouterinst(
 	.aresetn(aresetn),
     .axi_s(devicebusHart0),				// TODO: Will need this to come from a bus arbiter
     .addressmask({
+    	8'b0000_1010,		// UART
 		8'b0000_1001,		// CRS0 CSR file for HART#0
     	8'b0000_1000,		// USBA USB-A access via SPI
     	8'b0000_0111,		// APUC	Audio Processing Unit Command Fifo
@@ -263,7 +267,7 @@ devicerouter devicerouterinst(
 		8'b0000_0010,		// VPUC Graphics Processing Unit Command Fifo
 		8'b0000_0001,		// LEDS Debug / Status LED interface
 		8'b0000_0000}),		// GPIO Input/output pins to ESP32 module
-    .axi_m({csrif, usbaif, audioif, usbcif, dmaif, xadcif, spiif, vpucmdif, ledif, gpioif}));
+    .axi_m({uartif, csrif, usbaif, audioif, usbcif, dmaif, xadcif, spiif, vpucmdif, ledif, gpioif}));
 
 // --------------------------------------------------
 // Interrupt wires
@@ -272,6 +276,7 @@ devicerouter devicerouterinst(
 wire keyfifoempty;
 wire usbcirq, usbairq;
 wire gpiofifoempty;
+wire uartinterrupt;
 
 // --------------------------------------------------
 // Memory mapped devices
@@ -327,7 +332,7 @@ axi4usbc usbhostport(
 
 // CSR file acts as a region of uncached memory
 // Access to register indices get mapped to LOAD/STORE
-// and addresses get mapped starting at 0x8000B000 + csroffset
+// and addresses get mapped starting at CSRBASE + csroffset
 // CSR module also acts as the interrupt generator
 axi4CSRFile csrfileinstHart0(
 	.aclk(aclk),
@@ -341,7 +346,8 @@ axi4CSRFile csrfileinstHart0(
 	.keyfifoempty(keyfifoempty),
 	.usbirq({usbairq, usbcirq}),
 	.gpiofifoempty(gpiofifoempty),
-	// Soft reset
+	.uartinterrupt(uartinterrupt),
+	// TODO: Reset via ESP32
 	//.sysresetn(sysresetn),
 	// Shadow registers
 	.mepc(mepcHart0),
@@ -349,6 +355,14 @@ axi4CSRFile csrfileinstHart0(
 	.sie(sieHart0),
 	// Bus
 	.s_axi(csrif) );
+
+axi4uart uartinst(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.uartrx(esp_txd_in),
+	.uarttx(esp_rxd_out),
+	.s_axi(uartif),
+	.uartinterrupt(uartinterrupt) );
 
 // XADC
 axi4xadc xadcinst(
