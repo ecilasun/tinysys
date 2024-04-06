@@ -156,23 +156,23 @@ set_property -dict {PACKAGE_PIN J21 IOSTANDARD LVCMOS33} [get_ports esp_io[8]]
 set_property -dict {PACKAGE_PIN J20 IOSTANDARD LVCMOS33} [get_ports esp_io[9]]
 ## IO18
 set_property -dict {PACKAGE_PIN J19 IOSTANDARD LVCMOS33} [get_ports esp_io[10]]
-## IO22
-set_property -dict {PACKAGE_PIN G20 IOSTANDARD LVCMOS33} [get_ports esp_io[11]]
+## RXD0
+set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports esp_io[11]]
 ## IO21
 set_property -dict {PACKAGE_PIN H20 IOSTANDARD LVCMOS33} [get_ports esp_io[12]]
 ## IO15
 set_property -dict {PACKAGE_PIN K22 IOSTANDARD LVCMOS33} [get_ports esp_io[13]]
-## IO23
-set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports esp_io[14]]
+## TXD0
+set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports esp_io[14]]
 ## IO2
 set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports esp_io[15]]
 ## IO3
 set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports esp_io[16]]
 
-## TXD0 - out from ESP in to our pin
-set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports esp_txd_in]
-## RXD0 - in to ESP out from our pin
-set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports esp_rxd_out]
+## IO22 (TXD1)
+set_property -dict {PACKAGE_PIN G20 IOSTANDARD LVCMOS33} [get_ports esp_rxd_in]
+## IO23 (RXD1)
+set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports esp_txd_out]
 
 ## set_property PULLDOWN true [get_ports esp_io[0]]
 ## set_property PULLDOWN true [get_ports esp_io[1]]

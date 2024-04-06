@@ -10378,16 +10378,6 @@
 	)
 	(wire
 		(pts
-			(xy 346.71 214.63) (xy 349.25 214.63)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "190b9bf0-f224-4736-9a9a-7c67bcdb31d0")
-	)
-	(wire
-		(pts
 			(xy 361.95 29.21) (xy 367.03 29.21)
 		)
 		(stroke
@@ -10425,6 +10415,16 @@
 			(type default)
 		)
 		(uuid "1b74dbf9-1f1f-4278-9f3a-d7e31f20de43")
+	)
+	(wire
+		(pts
+			(xy 346.71 212.09) (xy 356.87 212.09)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1c387ce9-ec92-4a38-aaa9-a22915c30965")
 	)
 	(wire
 		(pts
@@ -12178,16 +12178,6 @@
 	)
 	(wire
 		(pts
-			(xy 346.71 212.09) (xy 349.25 212.09)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7f65faa0-3945-49ce-8aaa-9773f81071b2")
-	)
-	(wire
-		(pts
 			(xy 175.26 171.45) (xy 177.8 171.45)
 		)
 		(stroke
@@ -12835,6 +12825,16 @@
 			(type default)
 		)
 		(uuid "a1f6da8f-6a6d-4258-b8cf-6f1b04f6f692")
+	)
+	(wire
+		(pts
+			(xy 346.71 214.63) (xy 356.87 214.63)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a200d612-8ee3-4275-99ad-8429d3788725")
 	)
 	(wire
 		(pts
@@ -14511,9 +14511,9 @@
 		(uuid 2b3ea3b2-2124-4d67-9324-c433869379b0)
 	)
 	(arc
-		(start 364.49 204.47)
-		(mid 360.4816 207.2682)
-		(end 355.6 207.01)
+		(start 355.6 201.93)
+		(mid 361.5819 198.8193)
+		(end 368.3 199.39)
 		(stroke
 			(width 0)
 			(type default)
@@ -14571,6 +14571,19 @@
 		)
 		(uuid 9abf9cd4-a3a1-4d9c-a4de-2568f0ea60da)
 	)
+	(arc
+		(start 363.22 219.71)
+		(mid 361.8487 217.3541)
+		(end 361.95 214.63)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill
+			(type none)
+		)
+		(uuid af966fb0-efa7-4d69-9805-a373dcf1f20c)
+	)
 	(rectangle
 		(start 73.66 156.21)
 		(end 161.29 175.26)
@@ -14621,7 +14634,7 @@
 	)
 	(rectangle
 		(start 273.05 157.48)
-		(end 405.13 261.62)
+		(end 407.67 261.62)
 		(stroke
 			(width 0)
 			(type default)
@@ -14665,9 +14678,9 @@
 		)
 		(uuid "2d5470cf-f85f-4747-a6ed-59fb0cb1f2d0")
 	)
-	(text "NOTE: The following EFUSEs should be\nall set to zero to ignore GPIO pin15\nso that we can use it for our purposes:\n\nEFUSE_DIS_PAD_JTAG\nEFUSE_DIS_USB_JTAG\nEFUSE_JTAG_SEL_ENABLE"
+	(text "NOTE: The following EFUSEs should be\nall set to zero to ignore pin 15\nso that we can use it as generic IO:\n\nEFUSE_DIS_PAD_JTAG\nEFUSE_DIS_USB_JTAG\nEFUSE_JTAG_SEL_ENABLE"
 		(exclude_from_sim no)
-		(at 364.998 208.534 0)
+		(at 368.808 205.994 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -14775,6 +14788,16 @@
 		)
 		(uuid "ed8d12d0-d4fa-4e43-9dc9-ff1b56241c2f")
 	)
+	(text "FPGA interprets these\nas I/O for its UART pins"
+		(exclude_from_sim no)
+		(at 373.888 220.472 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "f01a1671-513a-4f66-bc8f-965c2ef5922e")
+	)
 	(text "HDMI out"
 		(exclude_from_sim no)
 		(at 23.876 112.522 0)
@@ -14785,6 +14808,17 @@
 			(justify left bottom)
 		)
 		(uuid "f0cf4eb7-d5a2-4fd3-b671-3408999a8eef")
+	)
+	(label "TXD1"
+		(at 356.87 214.63 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "1d34f52d-a81d-47e3-be4d-97ee6f2d445e")
 	)
 	(label "AR"
 		(at 255.27 30.48 0)
@@ -14818,6 +14852,17 @@
 			(justify left bottom)
 		)
 		(uuid "7fb462c4-deec-4e53-a36f-d710c0735c70")
+	)
+	(label "RXD1"
+		(at 356.87 212.09 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "a40f3abc-0879-4cac-8089-ae9a245014a2")
 	)
 	(label "AR"
 		(at 189.23 60.96 0)

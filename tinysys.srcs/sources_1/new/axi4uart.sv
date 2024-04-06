@@ -2,34 +2,191 @@
 
 module axi4uart(
 	input wire aclk,
+	input wire uartbaseclock,
 	input wire aresetn,
 	input wire uartrx,
 	output wire uarttx,
-	axi4if.slave s_axi,
-	output wire uartinterrupt );
+	output wire uartfifoempty,
+	axi4if.slave s_axi );
 
-axiuartlite uartinternal (
-  .s_axi_aclk(aclk),
-  .s_axi_aresetn(aresetn),
-  .interrupt(uartinterrupt),
-  .s_axi_awaddr(s_axi.awaddr),
-  .s_axi_awvalid(s_axi.awvalid),
-  .s_axi_awready(s_axi.awready),
-  .s_axi_wdata(s_axi.wdata),
-  .s_axi_wstrb(s_axi.wstrb),
-  .s_axi_wvalid(s_axi.wvalid),
-  .s_axi_wready(s_axi.wready),
-  .s_axi_bresp(s_axi.bresp),
-  .s_axi_bvalid(s_axi.bvalid),
-  .s_axi_bready(s_axi.bready),
-  .s_axi_araddr(s_axi.araddr),
-  .s_axi_arvalid(s_axi.arvalid),
-  .s_axi_arready(s_axi.arready),
-  .s_axi_rdata(s_axi.rdata),
-  .s_axi_rresp(s_axi.rresp),
-  .s_axi_rvalid(s_axi.rvalid),
-  .s_axi_rready(s_axi.rready),
-  .rx(uartrx),
-  .tx(uarttx) );
+logic [1:0] writestate = 2'b00;
+logic [1:0] raddrstate = 2'b00;
+
+// TX
+
+wire [7:0] outfifoout;
+wire uarttxbusy, outfifoempty, outfifovalid;
+logic [7:0] datatotransmit = 8'h00;
+logic transmitbyte = 1'b0;
+logic outfifore = 1'b0;
+
+async_transmitter UART_transmit(
+	.clk(uartbaseclock),
+	.TxD_start(transmitbyte),
+	.TxD_data(datatotransmit),
+	.TxD(uarttx),
+	.TxD_busy(uarttxbusy) );
+
+logic [7:0] outfifodin;
+logic outfifowe;
+wire outfifofull;
+uartoutfifo UART_out_fifo(
+    // In
+    .full(outfifofull),
+    .din(outfifodin),		// Data latched from bus
+    .wr_en(outfifowe),		// Bus controls write, high for one clock
+    // Out
+    .empty(outfifoempty),	// Nothing to read
+    .dout(outfifoout),		// To transmitter
+    .rd_en(outfifore),		// Transmitter can send
+    .wr_clk(aclk),			// Bus write clock
+    .rd_clk(uartbaseclock),	// Transmitter clock runs much slower
+    .valid(outfifovalid),	// Read result valid
+    // Ctl
+    .rst(~aresetn) );
+
+// Fifo output serializer
+always @(posedge uartbaseclock) begin
+	outfifore <= 1'b0; // Stop read request
+	transmitbyte <= 1'b0;
+	if (~uarttxbusy & (transmitbyte == 1'b0) && (~outfifoempty) && outfifovalid) begin
+		datatotransmit <= outfifoout;
+		transmitbyte <= 1'b1;
+		outfifore <= 1'b1;
+	end
+end
+
+// RX
+
+wire [7:0] uartbytein;
+wire infifofull, infifovalid, uartbyteavailable;
+logic [7:0] inuartbyte;
+logic infifowe = 1'b0;
+
+async_receiver UART_receive(
+	.clk(uartbaseclock),
+	.RxD(uartrx),
+	.RxD_data_ready(uartbyteavailable),
+	.RxD_data(uartbytein),
+	.RxD_idle(),
+	.RxD_endofpacket() );
+
+// Input FIFO
+logic infifore;
+wire [7:0] infifodout;
+uartinfifo UART_in_fifo(
+    // In
+    .full(infifofull),
+    .din(inuartbyte),
+    .wr_en(infifowe),
+    // Out
+    .empty(uartfifoempty),
+    .dout(infifodout),
+    .rd_en(infifore),
+    .wr_clk(uartbaseclock),
+    .rd_clk(aclk),
+    .valid(infifovalid),
+    // Ctl
+    .rst(~aresetn) );
+
+// Fifo input control
+always @(posedge uartbaseclock) begin
+	if (uartbyteavailable) begin
+		infifowe <= 1'b1;
+		inuartbyte <= uartbytein;
+	end else begin
+		infifowe <= 1'b0;
+	end
+end
+
+// ----------------------------------------------------------------------------
+// main state machine
+// ----------------------------------------------------------------------------
+
+always @(posedge aclk) begin
+	s_axi.awready <= 1'b0;
+
+	if (s_axi.awvalid) begin
+		s_axi.awready <= 1'b1;
+	end
+
+	if (~aresetn) begin
+		s_axi.awready <= 1'b0;
+	end
+end
+
+always @(posedge aclk) begin
+
+	outfifowe <= 1'b0;
+	s_axi.wready <= 1'b0;
+	s_axi.bvalid <= 1'b0;
+	outfifodin <= 8'h00;
+
+	unique case (writestate)
+		2'b00: begin
+			s_axi.bresp = 2'b00;
+			outfifodin <= 8'd0;
+			outfifowe <= 1'b0;
+			writestate <= 2'b01;
+		end
+		2'b01: begin
+			if (s_axi.wvalid && (~outfifofull)) begin
+				outfifodin <= s_axi.wdata[7:0];
+				outfifowe <= 1'b1; // (|s_axi.wstrb)
+				s_axi.wready <= 1'b1;
+				writestate <= 2'b10;
+			end
+		end
+		2'b10: begin
+			if(s_axi.bready) begin
+				s_axi.bvalid <= 1'b1;
+				writestate <= 2'b01;
+			end
+		end
+	endcase
+
+	if (~aresetn) begin
+		writestate <= 2'b00;
+	end
+end
+
+always @(posedge aclk) begin
+
+	infifore <= 1'b0;
+	s_axi.arready <= 1'b0;
+	s_axi.rvalid <= 1'b0;
+
+	// read address
+	unique case (raddrstate)
+		2'b00: begin
+			s_axi.rlast <= 1'b1;
+			s_axi.arready <= 1'b0;
+			s_axi.rvalid <= 1'b0;
+			s_axi.rresp <= 2'b00;
+			s_axi.rdata <= 32'd0;
+			raddrstate <= 2'b01;
+		end
+		2'b01: begin
+			if (s_axi.arvalid) begin
+				raddrstate <= 2'b10;
+				s_axi.arready <= 1'b1;
+			end
+		end
+		2'b10: begin
+			// master ready to accept and fifo has incoming data
+			if (s_axi.rready && (~uartfifoempty) && infifovalid) begin
+				s_axi.rdata <= {infifodout, infifodout, infifodout, infifodout};
+				s_axi.rvalid <= 1'b1;
+				// Advance FIFO
+				infifore <= 1'b1;
+				raddrstate <= 2'b01;
+			end
+		end
+	endcase
+
+	if (~aresetn) begin
+		raddrstate <= 2'b00;
+	end
+end
 
 endmodule

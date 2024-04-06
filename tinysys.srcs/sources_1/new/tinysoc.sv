@@ -17,8 +17,8 @@ module tinysoc #(
 	output wire [3:0] leds,
 	// ESP32
 	inout wire [16:0] esp_io,
-	output wire esp_rxd_out,
-	input wire esp_txd_in,
+	output wire esp_txd_out,
+	input wire esp_rxd_in,
 	// Video output
 	output wire vvsync,
 	output wire vhsync,
@@ -276,7 +276,7 @@ devicerouter devicerouterinst(
 wire keyfifoempty;
 wire usbcirq, usbairq;
 wire gpiofifoempty;
-wire uartinterrupt;
+wire uartfifoempty;
 
 // --------------------------------------------------
 // Memory mapped devices
@@ -346,7 +346,7 @@ axi4CSRFile csrfileinstHart0(
 	.keyfifoempty(keyfifoempty),
 	.usbirq({usbairq, usbcirq}),
 	.gpiofifoempty(gpiofifoempty),
-	.uartinterrupt(uartinterrupt),
+	.uartfifoempty(uartfifoempty),
 	// TODO: Reset via ESP32
 	//.sysresetn(sysresetn),
 	// Shadow registers
@@ -358,11 +358,12 @@ axi4CSRFile csrfileinstHart0(
 
 axi4uart uartinst(
 	.aclk(aclk),
+	.uartbaseclock(clk10),
 	.aresetn(aresetn),
-	.uartrx(esp_txd_in),
-	.uarttx(esp_rxd_out),
+	.uartrx(esp_rxd_in),
+	.uarttx(esp_txd_out),
 	.s_axi(uartif),
-	.uartinterrupt(uartinterrupt) );
+	.uartfifoempty(uartfifoempty) );
 
 // XADC
 axi4xadc xadcinst(

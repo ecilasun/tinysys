@@ -1,9 +1,11 @@
 #include "rombase.h"
 #include "sdcard.h"
 #include "gpio.h"
+#include "uart.h"
 #include "usbserial.h"
 #include "mini-printf.h"
 #include "usbserialhandler.h"
+#include "serialinringbuffer.h"
 #include "usbhidhandler.h"
 #include "gpioringbuffer.h"
 #include <stdlib.h>
@@ -334,10 +336,9 @@ void HandleGPIO(const uint32_t _PC)
 
 void HandleUART()
 {
-	kprintf("UART handler not implemented\n");
-	// TODO: read from RXD and write to SerialInRingBufferWrite()
-	// Put core to endless sleep
-	while(1) { asm volatile("wfi;"); }
+	// NOTE: If our internal fifo is full, read value is discarded
+	uint8_t data = (uint8_t)(UARTReceiveData() & 0x000000FF);
+	SerialInRingBufferWrite(&data, 1);
 }
 
 //void __attribute__((aligned(16))) __attribute__((interrupt("machine"))) interrupt_service_routine() // Auto-saves registers
