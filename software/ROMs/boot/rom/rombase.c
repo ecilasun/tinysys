@@ -337,8 +337,11 @@ void HandleGPIO(const uint32_t _PC)
 void HandleUART()
 {
 	// NOTE: If our internal fifo is full, read value is discarded
-	uint8_t data = (uint8_t)(UARTReceiveData() & 0x000000FF);
-	SerialInRingBufferWrite(&data, 1);
+	while (UARTGetStatus() & UARTSTA_RXFIFO_VALID)
+	{
+		uint8_t data = (uint8_t)(UARTReceiveData() & 0x000000FF);
+		SerialInRingBufferWrite(&data, 1);
+	}
 }
 
 //void __attribute__((aligned(16))) __attribute__((interrupt("machine"))) interrupt_service_routine() // Auto-saves registers

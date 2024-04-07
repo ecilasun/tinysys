@@ -20,14 +20,7 @@
 //#define UARTSTA_ERR_FRAME			0x00000040
 //#define UARTSTA_ERR_PARITY			0x00000080
 
-// R/W port for LED status access
-extern volatile uint32_t *UARTRXTX;
-//extern volatile uint32_t *UARTRECEIVE;
-//extern volatile uint32_t *UARTTRANSMIT;
-//extern volatile uint32_t *UARTSTATUS;
-//extern volatile uint32_t *UARTCONTROL;
-
-//uint32_t UARTGetStatus();
+uint32_t UARTGetStatus();
 //void UARTSetControl(uint32_t ctl);
 
 uint32_t UARTReceiveData();
