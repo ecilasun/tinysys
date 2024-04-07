@@ -91,11 +91,10 @@ uartinfifo UART_in_fifo(
 
 // Fifo input control
 always @(posedge uartbaseclock) begin
-	if (uartbyteavailable) begin
+	infifowe <= 1'b0;
+	if (~infifofull && uartbyteavailable) begin
 		infifowe <= 1'b1;
 		inuartbyte <= uartbytein;
-	end else begin
-		infifowe <= 1'b0;
 	end
 end
 
@@ -116,7 +115,6 @@ always @(posedge aclk) begin
 end
 
 always @(posedge aclk) begin
-
 	outfifowe <= 1'b0;
 	s_axi.wready <= 1'b0;
 	s_axi.bvalid <= 1'b0;
@@ -152,48 +150,49 @@ end
 
 always @(posedge aclk) begin
 
-	if (~aresetn) begin
-		raddrstate <= 2'b00;
-	end else begin
-		infifore <= 1'b0;
-		s_axi.arready <= 1'b0;
-		s_axi.rvalid <= 1'b0;
-	
-		// read address
-		unique case (raddrstate)
-			2'b00: begin
-				s_axi.rlast <= 1'b1;
-				s_axi.arready <= 1'b0;
-				s_axi.rvalid <= 1'b0;
-				s_axi.rresp <= 2'b00;
-				s_axi.rdata <= 32'd0;
+	infifore <= 1'b0;
+	s_axi.arready <= 1'b0;
+	s_axi.rvalid <= 1'b0;
+
+	// read address
+	unique case (raddrstate)
+		2'b00: begin
+			s_axi.rlast <= 1'b1;
+			s_axi.arready <= 1'b0;
+			s_axi.rvalid <= 1'b0;
+			s_axi.rresp <= 2'b00;
+			s_axi.rdata <= 32'd0;
+			raddrstate <= 2'b01;
+		end
+		2'b01: begin
+			if (s_axi.arvalid) begin
+				case (s_axi.araddr[3:0])
+					4'd00:		raddrstate <= 2'b10;	// Data
+					default:	raddrstate <= 2'b11;	// Status
+				endcase
+				s_axi.arready <= 1'b1;
+			end
+		end
+		2'b10: begin
+			if (s_axi.rready && (~uartfifoempty) && infifovalid) begin
+				s_axi.rdata <= {infifodout, infifodout, infifodout, infifodout};
+				s_axi.rvalid <= 1'b1;
+				// Advance FIFO
+				infifore <= 1'b1;
 				raddrstate <= 2'b01;
 			end
-			2'b01: begin
-				if (s_axi.arvalid) begin
-					case (s_axi.araddr[3:0])
-						4'd00:		raddrstate <= 2'b10;	// Data
-						default:	raddrstate <= 2'b11;	// Status
-					endcase
-					s_axi.arready <= 1'b1;
-				end
-			end
-			2'b10: begin
-				if (s_axi.rready && (~uartfifoempty) && infifovalid) begin
-					s_axi.rdata <= {infifodout, infifodout, infifodout, infifodout};
-					s_axi.rvalid <= 1'b1;
-					// Advance FIFO
-					infifore <= 1'b1;
-					raddrstate <= 2'b01;
-				end
-			end
-			2'b11: begin
+		end
+		2'b11: begin
+			if (s_axi.rready) begin
 				s_axi.rdata <= {31'd0, (~uartfifoempty) && infifovalid};
 				s_axi.rvalid <= 1'b1;
 				raddrstate <= 2'b01;
 			end
-		endcase
+		end
+	endcase
 	
+	if (~aresetn) begin
+		raddrstate <= 2'b00;
 	end
 end
 

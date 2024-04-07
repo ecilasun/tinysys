@@ -25,5 +25,6 @@
 			  "CHERE_INVOKING": "1"
 			}
 		  }
-	}
+	},
+	"idf.portWin": "COM4"
 }

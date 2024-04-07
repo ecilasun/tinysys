@@ -9,9 +9,8 @@
     },
     "idf.espIdfPathWin": "C:\\Users\\ecila\\esp\\v5.2.1\\esp-idf",
     "idf.openOcdConfigs": [
-        "interface/ftdi/esp32_devkitj_v1.cfg",
-        "target/esp32.cfg"
-    ],
+		"board/esp32c6-builtin.cfg"
+	],
     "idf.portWin": "COM4",
     "idf.pythonBinPathWin": "C:\\Users\\ecila\\.espressif\\python_env\\idf5.2_py3.11_env\\Scripts\\python.exe",
 	"idf.toolsPathWin": "C:\\Users\\ecila\\.espressif",

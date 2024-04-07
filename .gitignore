@@ -25,4 +25,4 @@ software/host/build/release/**
 software/host/.lock*
 software/emulator/.waf3-**
 software/ESP32C6/generic_gpio/build/**
-software/ESP32C6/serial/project-name/build/**
+software/ESP32C6/uarttest/build/**
