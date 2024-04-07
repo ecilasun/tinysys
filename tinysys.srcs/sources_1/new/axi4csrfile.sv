@@ -12,10 +12,10 @@ module axi4CSRFile(
 	// IRQ lines to fetch unit
 	output wire [1:0] irqReq,
 	// Incoming hardware interrupt requests
-	input wire keyfifoempty,
+	input wire keyirq,
 	input wire [1:0] usbirq,
-	input wire gpiofifoempty,
-	input wire uartfifoempty,
+	input wire gpioirq,
+	input wire uartirq,
 	// Expose certain registers to fetch unit
 	output wire [31:0] mepc,
 	output wire [31:0] mtvec,
@@ -81,7 +81,7 @@ always @(posedge aclk) begin
 
 	softInterruptEna <= mieshadow[0] && mstatusIEshadow; // Software interrupt (The rest of this condition is in fetch unit based on instruction)
 	timerInterrupt <= mieshadow[1] && mstatusIEshadow && (wallclocktime >= timecmpshadow); // Timer interrupt
-	hwInterrupt <= mieshadow[2] && mstatusIEshadow && (~uartfifoempty || ~gpiofifoempty || ~keyfifoempty || ~usbirq[1] || ~usbirq[0]); // Machine external interrupts
+	hwInterrupt <= mieshadow[2] && mstatusIEshadow && (uartirq || gpioirq || keyirq || usbirq[1] || usbirq[0]); // Machine external interrupts
 
 	if (~aresetn) begin
 		softInterruptEna <= 0;
@@ -204,7 +204,7 @@ always @(posedge aclk) begin
 					`CSR_TIMELO:	s_axi.rdata[31:0] <= wallclocktime[31:0];
 					`CSR_CYCLELO:	s_axi.rdata[31:0] <= cpuclocktime[31:0];
 					// Interrupt states of all hardware devices
-					`CSR_HWSTATE:	s_axi.rdata[31:0] <= {27'd0, ~uartfifoempty, ~gpiofifoempty, ~usbirq[1], ~usbirq[0], ~keyfifoempty};
+					`CSR_HWSTATE:	s_axi.rdata[31:0] <= {27'd0, uartirq, gpioirq, keyirq, usbirq[1], usbirq[0]};
 					// Pass through actual data
 					default:		s_axi.rdata[31:0] <= csrdout;
 				endcase

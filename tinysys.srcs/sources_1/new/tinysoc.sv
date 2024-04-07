@@ -273,10 +273,11 @@ devicerouter devicerouterinst(
 // Interrupt wires
 // --------------------------------------------------
 
-wire keyfifoempty;
-wire usbcirq, usbairq;
-wire gpiofifoempty;
-wire uartfifoempty;
+wire gpioirq;
+wire keyirq;
+wire usbcirq;
+wire usbairq;
+wire uartirq;
 
 // --------------------------------------------------
 // Memory mapped devices
@@ -285,7 +286,7 @@ wire uartfifoempty;
 axi4gpio gpiodevice(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.gpiofifoempty(gpiofifoempty),
+	.gpioirq(gpioirq),
 	.s_axi(gpioif),
 	.gpio(esp_io) );
 
@@ -311,7 +312,7 @@ axi4sdcard sdcardinst(
 	.aresetn(aresetn),
 	.spibaseclock(clk50),
 	.sdconn(sdconn),
-	.keyfifoempty(keyfifoempty),
+	.keyirq(keyirq),
 	.s_axi(spiif));
 
 axi4usbc usbserialport(
@@ -330,32 +331,6 @@ axi4usbc usbhostport(
 	.usbirq(usbairq),
 	.s_axi(usbaif));
 
-// CSR file acts as a region of uncached memory
-// Access to register indices get mapped to LOAD/STORE
-// and addresses get mapped starting at CSRBASE + csroffset
-// CSR module also acts as the interrupt generator
-axi4CSRFile csrfileinstHart0(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.cpuclocktime(cpuclocktimeHart0),
-	.wallclocktime(wallclocktime),
-	.retired(retiredHart0),
-	// IRQ tracking
-	.irqReq(irqReqHart0),
-	// External interrupt wires
-	.keyfifoempty(keyfifoempty),
-	.usbirq({usbairq, usbcirq}),
-	.gpiofifoempty(gpiofifoempty),
-	.uartfifoempty(uartfifoempty),
-	// TODO: Reset via ESP32
-	//.sysresetn(sysresetn),
-	// Shadow registers
-	.mepc(mepcHart0),
-	.mtvec(mtvecHart0),
-	.sie(sieHart0),
-	// Bus
-	.s_axi(csrif) );
-
 axi4uart uartinst(
 	.aclk(aclk),
 	.uartbaseclock(clk10),
@@ -363,7 +338,7 @@ axi4uart uartinst(
 	.uartrx(esp_rxd_in),
 	.uarttx(esp_txd_out),
 	.s_axi(uartif),
-	.uartfifoempty(uartfifoempty) );
+	.uartirq(uartirq) );
 
 // XADC
 axi4xadc xadcinst(
@@ -396,5 +371,31 @@ commandqueue audiocmdinst(
 	.fifore(audiofifore),
 	.fifovalid(audiofifovalid),
     .devicestate(audiobufferswapcount));
+
+// CSR file acts as a region of uncached memory
+// Access to register indices get mapped to LOAD/STORE
+// and addresses get mapped starting at CSRBASE + csroffset
+// CSR module also acts as the interrupt generator
+axi4CSRFile csrfileinstHart0(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.cpuclocktime(cpuclocktimeHart0),
+	.wallclocktime(wallclocktime),
+	.retired(retiredHart0),
+	// IRQ tracking
+	.irqReq(irqReqHart0),
+	// External interrupt wires
+	.keyirq(keyirq),
+	.usbirq({usbairq, usbcirq}),
+	.gpioirq(gpioirq),
+	.uartirq(uartirq),
+	// TODO: Reset via ESP32
+	//.sysresetn(sysresetn),
+	// Shadow registers
+	.mepc(mepcHart0),
+	.mtvec(mtvecHart0),
+	.sie(sieHart0),
+	// Bus
+	.s_axi(csrif) );
 
 endmodule

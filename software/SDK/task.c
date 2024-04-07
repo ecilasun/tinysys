@@ -14,6 +14,7 @@ void TaskInitSystem(struct STaskContext *_ctx)
 	_ctx->currentTask = 0;
 	_ctx->numTasks = 0;
 	_ctx->debugFlags = 0; // For debugger use
+	_ctx->kernelError = 0;
 
 	// Clean out all tasks
 	for (uint32_t i=0; i<TASK_MAX; ++i)

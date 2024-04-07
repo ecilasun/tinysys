@@ -625,7 +625,7 @@ int main()
 
 	// With current layout, OS takes up a very small slices out of whatever is left from other tasks
 	LEDSetState(0x9);
-	TaskAdd(taskctx, "idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+	TaskAdd(taskctx, "sysidle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 	// Command line interpreter task
 	TaskAdd(taskctx, "cmd", _cliTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 
@@ -660,6 +660,18 @@ int main()
 		// Refresh console output
 		if (kernelgfx->m_consoleUpdated)
 			VPUConsoleResolve(kernelgfx);
+
+		// Kernel error, stop everything except sys
+		if (taskctx->kernelError)
+		{
+			for (int i=0;i<taskctx->numTasks;++i)
+			{
+				struct STask *task = &taskctx->tasks[i];
+				task->state = TS_TERMINATING;
+				task->exitCode = -1;
+			}
+			while(1) { asm volatile("wfi;"); }
+		}
 
 		// Yield time as soon as we're done here (disables/enables interrupts)
 		uint64_t currentTime = TaskYield();

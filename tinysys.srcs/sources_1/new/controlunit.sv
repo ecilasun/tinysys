@@ -299,7 +299,7 @@ always_comb begin
 				`F3_DIV:	rdin = quotient;
 				`F3_DIVU:	rdin = quotientu;
 				`F3_REM:	rdin = remainder;
-				`F3_REMU:	rdin = remainderu;
+				default:	rdin = remainderu; // `F3_REMU
 			endcase
 		end else begin
 			rdin = wbdin;

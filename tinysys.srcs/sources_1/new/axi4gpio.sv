@@ -3,7 +3,7 @@
 module axi4gpio(
 	input wire aclk,
 	input wire aresetn,
-	output wire gpiofifoempty,
+	output wire gpioirq,
 	axi4if.slave s_axi,
 	inout wire [16:0] gpio );
 
@@ -67,6 +67,7 @@ always @(posedge aclk) begin
 end
 
 wire gpiofifofull, gpiofifovalid;
+wire gpiofifoempty;
 logic [16:0] gpiofifodin;
 wire [16:0] gpiofifodout;
 logic gpiofifowe, gpiofifore;
@@ -159,5 +160,15 @@ always @(posedge aclk) begin
 		end
 	end
 end
+
+(* async_reg = "true" *) logic gpioirqA = 1'b0;
+(* async_reg = "true" *) logic gpioirqB = 1'b0;
+
+always_ff @(posedge aclk) begin
+	gpioirqA <= (~gpiofifoempty) && gpiofifovalid;
+	gpioirqB <= gpioirqA;
+end
+
+assign gpioirq = gpioirqB;
 
 endmodule

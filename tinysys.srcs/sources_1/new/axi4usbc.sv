@@ -52,7 +52,7 @@ always @(posedge aclk) begin
 	end
 end
 
-assign usbirq = usbirqcdcB;
+assign usbirq = ~usbirqcdcB;
 assign usbcconn.resn = aresetn;	// Low during reset
 
 // ----------------------------------------------------------------------------

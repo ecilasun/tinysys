@@ -6,7 +6,7 @@ module axi4uart(
 	input wire aresetn,
 	input wire uartrx,
 	output wire uarttx,
-	output wire uartfifoempty,
+	output wire uartirq,
 	axi4if.slave s_axi );
 
 logic [1:0] writestate = 2'b00;
@@ -73,6 +73,7 @@ async_receiver UART_receive(
 
 // Input FIFO
 logic infifore;
+wire uartfifoempty;
 wire [7:0] infifodout;
 uartinfifo UART_in_fifo(
     // In
@@ -195,5 +196,15 @@ always @(posedge aclk) begin
 		raddrstate <= 2'b00;
 	end
 end
+
+(* async_reg = "true" *) logic uartirqA = 1'b0;
+(* async_reg = "true" *) logic uartirqB = 1'b0;
+
+always_ff @(posedge aclk) begin
+	uartirqA <= (~uartfifoempty) && infifovalid;
+	uartirqB <= uartirqA;
+end
+
+assign uartirq = uartirqB;
 
 endmodule

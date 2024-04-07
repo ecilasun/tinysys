@@ -95,22 +95,22 @@ void TRURasterizePrimitive(struct ERasterizerContext *_rc)
 		uint32_t prevMaskAcc = 0;
 		for (int32_t x = left; x<=_rc->m_maxx; x+=4)
 		{
-			uint32_t val0 = (w0&w1&w2)<0 ? 0x000000FF : 0x00000000;
+			uint32_t val0 = ((w0&w1&w2)>>31) & 0x000000FF;
 			w0 += _rc->a12;
 			w1 += _rc->a20;
 			w2 += _rc->a01;
 
-			uint32_t val1 = (w0&w1&w2)<0 ? 0x0000FF00 : 0x00000000;
+			uint32_t val1 = ((w0&w1&w2)>>31) & 0x0000FF00;
 			w0 += _rc->a12;
 			w1 += _rc->a20;
 			w2 += _rc->a01;
 
-			uint32_t val2 = (w0&w1&w2)<0 ? 0x00FF0000 : 0x00000000;
+			uint32_t val2 = ((w0&w1&w2)>>31) & 0x00FF0000;
 			w0 += _rc->a12;
 			w1 += _rc->a20;
 			w2 += _rc->a01;
 
-			uint32_t val3 = (w0&w1&w2)<0 ? 0xFF000000 : 0x00000000;
+			uint32_t val3 = ((w0&w1&w2)>>31) & 0xFF000000;
 			w0 += _rc->a12;
 			w1 += _rc->a20;
 			w2 += _rc->a01;
@@ -143,22 +143,22 @@ void TRURasterizePrimitive(struct ERasterizerContext *_rc)
 		prevMaskAcc = 0;
 		for (int32_t x = right; x>=_rc->m_minx; x-=4)
 		{
-			uint32_t val0 = (w0&w1&w2)<0 ? 0xFF000000 : 0x00000000;
+			uint32_t val0 = ((w0&w1&w2)>>31) & 0xFF000000;
 			w0 -= _rc->a12;
 			w1 -= _rc->a20;
 			w2 -= _rc->a01;
 
-			uint32_t val1 = (w0&w1&w2)<0 ? 0x00FF0000 : 0x00000000;
+			uint32_t val1 = ((w0&w1&w2)>>31) & 0x00FF0000;
 			w0 -= _rc->a12;
 			w1 -= _rc->a20;
 			w2 -= _rc->a01;
 
-			uint32_t val2 = (w0&w1&w2)<0 ? 0x0000FF00 : 0x00000000;
+			uint32_t val2 = ((w0&w1&w2)>>31) & 0x0000FF00;
 			w0 -= _rc->a12;
 			w1 -= _rc->a20;
 			w2 -= _rc->a01;
 
-			uint32_t val3 = (w0&w1&w2)<0 ? 0x000000FF : 0x00000000;
+			uint32_t val3 = ((w0&w1&w2)>>31) & 0x000000FF;
 			w0 -= _rc->a12;
 			w1 -= _rc->a20;
 			w2 -= _rc->a01;

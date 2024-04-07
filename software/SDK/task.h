@@ -37,6 +37,7 @@ struct STaskContext {
 	int32_t currentTask;	// Current task index
 	int32_t numTasks;		// Number of tasks
 	int32_t debugFlags;		// Data for debugger
+	int32_t kernelError;	// Current kernel error
 };
 
 // Start up the task system

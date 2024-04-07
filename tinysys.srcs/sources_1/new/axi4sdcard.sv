@@ -7,7 +7,7 @@ module axi4sdcard(
 	input wire clk10,
 	input wire spibaseclock,
 	input wire aresetn,
-	output wire keyfifoempty,
+	output wire keyirq,
     sdcardwires.def sdconn,
 	axi4if.slave s_axi);
 
@@ -40,6 +40,7 @@ end
 
 // Reading this fifo will clear the sd card switch interrupt
 wire keyfifofull, keyfifovalid;
+wire keyfifoempty;
 wire keyfifodout;
 logic keyfifodin;
 logic keyfifowe = 1'b0;
@@ -259,5 +260,15 @@ always @(posedge aclk) begin
 		raddrstate <= 2'b00;
 	end
 end
+
+(* async_reg = "true" *) logic keyirqA = 1'b0;
+(* async_reg = "true" *) logic keyirqB = 1'b0;
+
+always_ff @(posedge aclk) begin
+	keyirqA <= (~keyfifoempty) && keyfifovalid;
+	keyirqB <= keyirqA;
+end
+
+assign keyirq = keyirqB;
 
 endmodule

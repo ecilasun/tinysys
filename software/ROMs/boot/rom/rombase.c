@@ -417,16 +417,15 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				// Bit mask of devices causing the current interrupt
 				uint32_t hwid = read_csr(0xFFF);
 
-				if (hwid&1) HandleSDCardDetect();
-				else if (hwid&2) HandleUSBSerial();
-				else if (hwid&4) HandleUSBHID();
+				if (hwid&1) HandleUSBSerial();
+				else if (hwid&2) HandleUSBHID();
+				else if (hwid&4) HandleSDCardDetect();
 				else if (hwid&8) HandleGPIO(PC);
 				else if (hwid&16) HandleUART();
 				else // No familiar bit set, unknown device
 				{
 					kprintf("Unknown hardware device, core halted\n");
-					// Put core to endless sleep
-					while(1) { asm volatile("wfi;"); }
+					s_taskctx->kernelError = 1;
 					break;
 				}
 
@@ -436,9 +435,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			default:
 			{
 				kprintf("Unknown interrupt type, core halted\n");
-
-				// Put core to endless sleep
-				while(1) { asm volatile("wfi;"); }
+				s_taskctx->kernelError = 1;
 				break;
 			}
 		}
@@ -880,8 +877,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				kprintf("Guru meditation, core halted\n");
 				ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 
-				// Put core to endless sleep
-				while(1) { asm volatile("wfi;"); }
+				s_taskctx->kernelError = 1;
 				break;
 			}
 		}
