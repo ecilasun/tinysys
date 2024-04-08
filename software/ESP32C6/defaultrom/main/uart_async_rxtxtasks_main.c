@@ -16,16 +16,15 @@
 #define PIN_RTS UART_PIN_NO_CHANGE
 #define PIN_CTS UART_PIN_NO_CHANGE
 
-// EnCi: bridge to port #1
+// EnCi: bridge to UART port #1
 #define UART_PORT_NUM 1
-#define UART_BAUD_RATE 115200
-#define TASK_STACK_SIZE 2048
 
 #define BUF_SIZE 1024
 
 static uint8_t *jtag_buffer = NULL;
 static uint8_t *uart_buffer = NULL;
 
+// From (PC to) ESP32 to FPGA
 static void jtag_to_uart1_task(void *arg)
 {
 	do
@@ -39,6 +38,7 @@ static void jtag_to_uart1_task(void *arg)
 	} while(1);
 }
 
+// From FPGA to ESP32 (to PC)
 static void uart1_to_jtag_task(void *arg)
 {
 	do
@@ -58,7 +58,7 @@ void app_main(void)
   ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&usb_serial_config));
 
   uart_config_t uart_config = {
-      .baud_rate = UART_BAUD_RATE,
+      .baud_rate = 115200,
       .data_bits = UART_DATA_8_BITS,
       .parity = UART_PARITY_DISABLE,
       .stop_bits = UART_STOP_BITS_1,
@@ -75,6 +75,6 @@ void app_main(void)
 
   esp_task_wdt_deinit();
 
-  xTaskCreate(jtag_to_uart1_task, "jtag_to_uart1", TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
-  xTaskCreate(uart1_to_jtag_task, "uart1_to_jtag", TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
+  xTaskCreate(jtag_to_uart1_task, "jtag_to_uart1", 1024, NULL, tskIDLE_PRIORITY, NULL);
+  xTaskCreate(uart1_to_jtag_task, "uart1_to_jtag", 1024, NULL, tskIDLE_PRIORITY, NULL);
 }
