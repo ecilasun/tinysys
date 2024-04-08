@@ -337,15 +337,14 @@ void HandleGPIO(const uint32_t _PC)
 void HandleUART()
 {
 	// Incoming EP1 data package
-	//while (UARTGetStatus() & UARTSTA_RXFIFO_VALID)
+	uint32_t currLED = LEDGetState();
+	LEDSetState(currLED | 0x8);
+	while (UARTGetStatus() & UARTSTA_RXFIFO_VALID)
 	{
 		uint8_t rcvData = (uint8_t)(UARTReceiveData() & 0x000000FF);
-		int written = 0;
-		do
-		{
-			written = SerialInRingBufferWrite(&rcvData, 1);
-		} while (!written);
+		SerialInRingBufferWrite(&rcvData, 1);
 	}
+	LEDSetState(currLED);
 }
 
 //void __attribute__((aligned(16))) __attribute__((interrupt("machine"))) interrupt_service_routine() // Auto-saves registers

@@ -208,8 +208,6 @@ void HandleSerialInput()
 			{
 				uint32_t fakeKey = drain;
 				KeyRingBufferWrite(&fakeKey, sizeof(uint32_t));
-				// Echo to serial port
-				USBSerialWriteN((const char*)&drain, 1);
 			}
 		}
 		else

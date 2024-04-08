@@ -12308,7 +12308,7 @@
 	)
 	(wire
 		(pts
-			(xy 346.71 204.47) (xy 349.25 204.47)
+			(xy 346.71 204.47) (xy 359.41 204.47)
 		)
 		(stroke
 			(width 0)
@@ -13158,7 +13158,7 @@
 	)
 	(wire
 		(pts
-			(xy 346.71 201.93) (xy 349.25 201.93)
+			(xy 346.71 201.93) (xy 359.41 201.93)
 		)
 		(stroke
 			(width 0)
@@ -14852,6 +14852,28 @@
 			(justify left bottom)
 		)
 		(uuid "7fb462c4-deec-4e53-a36f-d710c0735c70")
+	)
+	(label "GPIO17"
+		(at 359.41 204.47 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "82ace87e-08c0-4135-a3b7-094108f7dae1")
+	)
+	(label "GPIO16"
+		(at 359.41 201.93 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "a38a9e9e-532e-4358-bd11-ec9df8069f7e")
 	)
 	(label "RXD1"
 		(at 356.87 212.09 0)
