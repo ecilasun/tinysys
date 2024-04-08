@@ -9,19 +9,25 @@ int main()
 
 	do
 	{
-		*UARTRXTX = 'H';
-		*UARTRXTX = 'e';
-		*UARTRXTX = 'l';
-		*UARTRXTX = 'l';
-		*UARTRXTX = 'o';
-		*UARTRXTX = ' ';
-		*UARTRXTX = 'w';
-		*UARTRXTX = 'o';
-		*UARTRXTX = 'r';
-		*UARTRXTX = 'l';
-		*UARTRXTX = 'd';
-		*UARTRXTX = '!';
-		*UARTRXTX = 0;
+		UARTSendData('H');
+		UARTSendData('e');
+		UARTSendData('l');
+		UARTSendData('l');
+		UARTSendData('o');
+		UARTSendData(' ');
+		UARTSendData('w');
+		UARTSendData('o');
+		UARTSendData('r');
+		UARTSendData('l');
+		UARTSendData('d');
+		UARTSendData('!');
+		UARTSendData(0);
+
+		while (UARTGetStatus() & UARTSTA_RXFIFO_VALID)
+		{
+			uint32_t data = UARTReceiveData();
+			printf("%c", char(data&0xFF));
+		}
 
 		E32Sleep(ONE_SECOND_IN_TICKS);
 

@@ -9,8 +9,9 @@ module axi4uart(
 	output wire uartirq,
 	axi4if.slave s_axi );
 
-logic [1:0] writestate = 2'b00;
-logic [1:0] raddrstate = 2'b00;
+logic [1:0] writestate;
+logic [1:0] raddrstate;
+logic [3:0] controlregister;
 
 // TX
 
@@ -123,6 +124,7 @@ always @(posedge aclk) begin
 
 	unique case (writestate)
 		2'b00: begin
+			controlregister <= 4'd0; // [... : intena : reserved1 : reserved0 : resetrxfifo : resettxfifo]
 			s_axi.bresp = 2'b00;
 			outfifodin <= 8'd0;
 			outfifowe <= 1'b0;
@@ -130,14 +132,25 @@ always @(posedge aclk) begin
 		end
 		2'b01: begin
 			if (s_axi.wvalid && (~outfifofull)) begin
-				outfifodin <= s_axi.wdata[7:0];
-				outfifowe <= 1'b1; // (|s_axi.wstrb)
+				case (s_axi.awaddr[3:0])
+					4'h4:		writestate <= 2'b10;	// Transmit
+					4'hC:		writestate <= 2'b11;	// Control
+					default:	writestate <= 2'b01;	// Ignore
+				endcase
 				s_axi.wready <= 1'b1;
-				writestate <= 2'b10;
 			end
 		end
 		2'b10: begin
 			if(s_axi.bready) begin
+				outfifodin <= s_axi.wdata[7:0];
+				outfifowe <= 1'b1;
+				s_axi.bvalid <= 1'b1;
+				writestate <= 2'b01;
+			end
+		end
+		2'b11: begin
+			if(s_axi.bready) begin
+				controlregister <= s_axi.wdata[3:0];
 				s_axi.bvalid <= 1'b1;
 				writestate <= 2'b01;
 			end
@@ -168,8 +181,9 @@ always @(posedge aclk) begin
 		2'b01: begin
 			if (s_axi.arvalid) begin
 				case (s_axi.araddr[3:0])
-					4'd00:		raddrstate <= 2'b10;	// Data
-					default:	raddrstate <= 2'b11;	// Status
+					4'h0:		raddrstate <= 2'b10;	// Receive
+					4'h8:		raddrstate <= 2'b11;	// Status
+					default:	raddrstate <= 2'b01;	// Ignore
 				endcase
 				s_axi.arready <= 1'b1;
 			end
@@ -185,7 +199,7 @@ always @(posedge aclk) begin
 		end
 		2'b11: begin
 			if (s_axi.rready) begin
-				s_axi.rdata <= {31'd0, (~uartfifoempty) && infifovalid};
+				s_axi.rdata <= {27'd0, controlregister[4], outfifofull, outfifoempty, infifofull, (~uartfifoempty) && infifovalid};
 				s_axi.rvalid <= 1'b1;
 				raddrstate <= 2'b01;
 			end
@@ -205,6 +219,6 @@ always_ff @(posedge aclk) begin
 	uartirqB <= uartirqA;
 end
 
-assign uartirq = uartirqB;
+assign uartirq = uartirqB & controlregister[4];
 
 endmodule
