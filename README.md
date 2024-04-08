@@ -25,6 +25,7 @@
 - Supports one USB peripheral for input (keyboard / mouse / gamepad)
 - Custom preemptive multitasking OS, with file I/O and basic memory allocator via syscalls
 - Optionally, a rom.bin image can be loaded from SDCard to replace the OS in ROM
+- ESP32C6 on board for I/O handling (UART serial for CLI)
 
 # Overview of the processing units
 
