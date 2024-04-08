@@ -3,7 +3,7 @@
 ## ------------------------------------------------------------------------------------------------------
 
 ## (C) 2023 Engin Cilasun
-## Applies to expansion board ISSUE-2D/2E
+## Applies to expansion board ISSUE-2D/2E/2F
 ## Please do not change/remove the Clock Groups or False Paths regardless of the warnings during synth
 ## Also note that changing any of the pin positions will change the timing closure of the device
 ## due to changes in placing and routing
@@ -31,7 +31,7 @@ create_clock -period 20.000 -name sys_clk_pin -waveform {0.000 10.000} -add [get
 ## set_property -dict {PACKAGE_PIN N22 IOSTANDARD LVCMOS33} [get_ports {leds[2]}]
 ## set_property -dict {PACKAGE_PIN N20 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
 
-## 2E
+## 2E/2F
 set_property -dict {PACKAGE_PIN N17 IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
 set_property -dict {PACKAGE_PIN R18 IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
 set_property -dict {PACKAGE_PIN Y21 IOSTANDARD LVCMOS33} [get_ports {leds[2]}]
@@ -60,7 +60,7 @@ set_property -dict {PACKAGE_PIN T21 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
 ## DAT[1] -         pin U2:48  [U17]  sdpin#8
 ## SWTCH            pin U2:46  [U20]  sdpin#switch
 
-## 2D/2E
+## 2D/2E/2F
 ## SPI mode - sorted by sdcard pin order
 set_property -dict {PACKAGE_PIN AA19 IOSTANDARD LVCMOS33} [get_ports sdcard_cs_n]
 set_property -dict {PACKAGE_PIN AA20 IOSTANDARD LVCMOS33} [get_ports sdcard_mosi]
@@ -82,7 +82,7 @@ set_property PULLUP true [get_ports sdcard_swtch]
 ## 12bpp (4:4:4) Video output - SII164CTG64
 ## ------------------------------------------------------------------------------------------------------
 
-## 2D/2E
+## 2D/2E/2F
 ## 12bpp output
 set_property -dict {PACKAGE_PIN AA3 IOSTANDARD LVCMOS33} [get_ports vvsync]
 set_property -dict {PACKAGE_PIN Y3 IOSTANDARD LVCMOS33} [get_ports vhsync]
@@ -101,7 +101,7 @@ set_property -dict {PACKAGE_PIN T5 IOSTANDARD LVCMOS33} [get_ports {vdat[9]}]
 set_property -dict {PACKAGE_PIN T4 IOSTANDARD LVCMOS33} [get_ports {vdat[10]}]
 set_property -dict {PACKAGE_PIN R4 IOSTANDARD LVCMOS33} [get_ports {vdat[11]}]
 
-## Add the following if using 24bpp (NOTE: Boards 2D/2E do not have these connected!)
+## Add the following if using 24bpp (NOTE: Boards 2D/2E/2F do not have these connected!)
 ## set_property -dict {PACKAGE_PIN ?? IOSTANDARD LVCMOS33} [get_ports {vdat[12]}]
 ## set_property -dict {PACKAGE_PIN ?? IOSTANDARD LVCMOS33} [get_ports {vdat[13]}]
 ## set_property -dict {PACKAGE_PIN ?? IOSTANDARD LVCMOS33} [get_ports {vdat[14]}]
@@ -119,7 +119,7 @@ set_property -dict {PACKAGE_PIN R4 IOSTANDARD LVCMOS33} [get_ports {vdat[11]}]
 ## Audio output - CS4344-CZZR
 ## ------------------------------------------------------------------------------------------------------
 
-## 2D/2E
+## 2D/2E/2F
 set_property -dict {PACKAGE_PIN H2 IOSTANDARD LVCMOS33} [get_ports au_sdin]
 set_property -dict {PACKAGE_PIN K1 IOSTANDARD LVCMOS33} [get_ports au_sclk]
 set_property -dict {PACKAGE_PIN K2 IOSTANDARD LVCMOS33} [get_ports au_lrclk]
@@ -133,7 +133,7 @@ set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports au_mclk]
 ## IO12 - USB D-
 ## IO13 - USB D+
 
-## 2E
+## 2E/2F
 ## IO11
 set_property -dict {PACKAGE_PIN K14 IOSTANDARD LVCMOS33} [get_ports esp_io[0]]
 ## IO10
@@ -206,22 +206,22 @@ set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports esp_txd_out]
 ## ## set_property -dict {PACKAGE_PIN H19 IOSTANDARD LVCMOS33} [get_ports usbc_gpi]
 
 ## 2E
-set_property -dict {PACKAGE_PIN M2 IOSTANDARD LVCMOS33} [get_ports usbc_resn]
-set_property -dict {PACKAGE_PIN K3 IOSTANDARD LVCMOS33} [get_ports usbc_ss_n]
-set_property -dict {PACKAGE_PIN M3 IOSTANDARD LVCMOS33} [get_ports usbc_clk]
-set_property -dict {PACKAGE_PIN J4 IOSTANDARD LVCMOS33} [get_ports usbc_mosi]
-set_property -dict {PACKAGE_PIN L3 IOSTANDARD LVCMOS33} [get_ports usbc_miso]
-set_property -dict {PACKAGE_PIN L1 IOSTANDARD LVCMOS33} [get_ports usbc_int]
-set_property -dict {PACKAGE_PIN K4 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
+## set_property -dict {PACKAGE_PIN M2 IOSTANDARD LVCMOS33} [get_ports usbc_resn]
+## set_property -dict {PACKAGE_PIN K3 IOSTANDARD LVCMOS33} [get_ports usbc_ss_n]
+## set_property -dict {PACKAGE_PIN M3 IOSTANDARD LVCMOS33} [get_ports usbc_clk]
+## set_property -dict {PACKAGE_PIN J4 IOSTANDARD LVCMOS33} [get_ports usbc_mosi]
+## set_property -dict {PACKAGE_PIN L3 IOSTANDARD LVCMOS33} [get_ports usbc_miso]
+## set_property -dict {PACKAGE_PIN L1 IOSTANDARD LVCMOS33} [get_ports usbc_int]
+## set_property -dict {PACKAGE_PIN K4 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
 
-set_property PULLUP true [get_ports usbc_int]
-set_property PULLUP true [get_ports usbc_resn]
+## set_property PULLUP true [get_ports usbc_int]
+## set_property PULLUP true [get_ports usbc_resn]
 
 ## ------------------------------------------------------------------------------------------------------
 ## USB-A - MAX3421EECJ over SPI interface, USB Host
 ## ------------------------------------------------------------------------------------------------------
 
-## 2D/2E
+## 2D/2E/2F
 set_property -dict {PACKAGE_PIN AB8 IOSTANDARD LVCMOS33} [get_ports usba_resn]
 set_property -dict {PACKAGE_PIN AB6 IOSTANDARD LVCMOS33} [get_ports usba_ss_n]
 set_property -dict {PACKAGE_PIN AA8 IOSTANDARD LVCMOS33} [get_ports usba_clk]
@@ -244,6 +244,7 @@ set_property PULLUP true [get_ports usba_resn]
 ## set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports sysresetn]
 
 ## 2E has no soft reset switch
+## 2F has GPIO which can control a reset sequence depending on firmware
 
 ## set_property PULLUP true [get_ports sysresetn]
 
