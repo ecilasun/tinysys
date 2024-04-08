@@ -44,15 +44,15 @@ int sendData(const char* logName, const char* data)
     return txBytes;
 }
 
-/*static void tx_task(void *arg)
+static void tx_task(void *arg)
 {
     static const char *TX_TASK_TAG = "TX_TASK";
     esp_log_level_set(TX_TASK_TAG, ESP_LOG_INFO);
     while (1) {
-        sendData(TX_TASK_TAG, "Hello world");
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        sendData(TX_TASK_TAG, "ver\n");
     }
-}*/
+}
 
 static void rx_task(void *arg)
 {
@@ -67,8 +67,8 @@ static void rx_task(void *arg)
             ESP_LOG_BUFFER_HEXDUMP(RX_TASK_TAG, data, rxBytes, ESP_LOG_INFO);
 
 			// Echo it back
-		    uart_write_bytes(UART_NUM_1, data, rxBytes-1);
-			uart_write_bytes(UART_NUM_1, "\n", 1);
+		    //uart_write_bytes(UART_NUM_1, data, rxBytes-1);
+			//uart_write_bytes(UART_NUM_1, "\n", 1);
         }
     }
     free(data);
@@ -79,5 +79,5 @@ void app_main(void)
     init();
 	// We only listen for now
     xTaskCreate(rx_task, "uart_rx_task", 1024 * 2, NULL, configMAX_PRIORITIES - 1, NULL);
-    //xTaskCreate(tx_task, "uart_tx_task", 1024 * 2, NULL, configMAX_PRIORITIES - 2, NULL);
+    xTaskCreate(tx_task, "uart_tx_task", 1024 * 2, NULL, configMAX_PRIORITIES - 2, NULL);
 }

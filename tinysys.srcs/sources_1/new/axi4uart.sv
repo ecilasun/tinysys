@@ -11,7 +11,7 @@ module axi4uart(
 
 logic [1:0] writestate;
 logic [1:0] raddrstate;
-logic [3:0] controlregister;
+logic [4:0] controlregister;
 
 // TX
 
@@ -124,7 +124,7 @@ always @(posedge aclk) begin
 
 	unique case (writestate)
 		2'b00: begin
-			controlregister <= 4'd0; // [... : intena : reserved1 : reserved0 : resetrxfifo : resettxfifo]
+			controlregister <= 5'b10000; // [... : intena : reserved1 : reserved0 : resetrxfifo : resettxfifo]
 			s_axi.bresp = 2'b00;
 			outfifodin <= 8'd0;
 			outfifowe <= 1'b0;
@@ -150,7 +150,7 @@ always @(posedge aclk) begin
 		end
 		2'b11: begin
 			if(s_axi.bready) begin
-				controlregister <= s_axi.wdata[3:0];
+				controlregister <= s_axi.wdata[4:0];
 				s_axi.bvalid <= 1'b1;
 				writestate <= 2'b01;
 			end

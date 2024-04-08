@@ -336,11 +336,15 @@ void HandleGPIO(const uint32_t _PC)
 
 void HandleUART()
 {
-	// NOTE: If our internal fifo is full, read value is discarded
-	while (UARTGetStatus() & UARTSTA_RXFIFO_VALID)
+	// Incoming EP1 data package
+	//while (UARTGetStatus() & UARTSTA_RXFIFO_VALID)
 	{
-		uint8_t data = (uint8_t)(UARTReceiveData() & 0x000000FF);
-		SerialInRingBufferWrite(&data, 1);
+		uint8_t rcvData = (uint8_t)(UARTReceiveData() & 0x000000FF);
+		int written = 0;
+		do
+		{
+			written = SerialInRingBufferWrite(&rcvData, 1);
+		} while (!written);
 	}
 }
 
