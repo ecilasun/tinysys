@@ -3,36 +3,51 @@
 #include "task.h"
 #include <stdio.h>
 
-int main()
+int main(int argc, char** argv)
 {
     printf("UART test\n");
 
-	do
+	if (argc > 1)
 	{
-		UARTSendData('H');
-		UARTSendData('e');
-		UARTSendData('l');
-		UARTSendData('l');
-		UARTSendData('o');
-		UARTSendData(' ');
-		UARTSendData('w');
-		UARTSendData('o');
-		UARTSendData('r');
-		UARTSendData('l');
-		UARTSendData('d');
-		UARTSendData('!');
-		UARTSendData(0);
+		UARTSetControl(UARTCTL_ENABLEINTERRUPT);
 
-		while (UARTGetStatus() & UARTSTA_RXFIFO_VALID)
-		{
-			uint32_t data = UARTReceiveData();
-			printf("%c", char(data&0xFF));
-		}
+		UARTSendData('#');
 
 		E32Sleep(ONE_SECOND_IN_TICKS);
 
+		UARTSetControl(0);
+
 		TaskYield();
-	} while (1);
+	}
+	else
+	{
+		do
+		{
+			UARTSendData('H');
+			UARTSendData('e');
+			UARTSendData('l');
+			UARTSendData('l');
+			UARTSendData('o');
+			UARTSendData(' ');
+			UARTSendData('w');
+			UARTSendData('o');
+			UARTSendData('r');
+			UARTSendData('l');
+			UARTSendData('d');
+			UARTSendData('!');
+			UARTSendData(0);
+
+			while (UARTGetStatus() & UARTSTA_RXFIFO_VALID)
+			{
+				uint32_t data = UARTReceiveData();
+				printf("%c", char(data&0xFF));
+			}
+
+			E32Sleep(ONE_SECOND_IN_TICKS);
+
+			TaskYield();
+		} while (1);
+	}
 
     return 0;
 }

@@ -66,7 +66,9 @@ static void rx_task(void *arg)
             ESP_LOGI(RX_TASK_TAG, "Read %d bytes: '%s'", rxBytes, data);
             ESP_LOG_BUFFER_HEXDUMP(RX_TASK_TAG, data, rxBytes, ESP_LOG_INFO);
 
-			sendData(RX_TASK_TAG, "ACK\n");
+			// Echo it back
+		    uart_write_bytes(UART_NUM_1, data, rxBytes-1);
+			uart_write_bytes(UART_NUM_1, "\n", 1);
         }
     }
     free(data);
