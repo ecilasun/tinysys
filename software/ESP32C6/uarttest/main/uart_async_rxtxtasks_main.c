@@ -55,51 +55,11 @@
 #define UBRIDGE_UART_BAUD_RATE 115200
 #define UBRIDGE_TASK_STACK_SIZE 2048
 
-#define BUF_SIZE 512
-
-#define DVAL2(x) #x
-#define DVAL(x) DVAL2(x)
-#define DO_PRAGMA(x) _Pragma(#x)
-#define PRINT_DIRECTIVE(x) DO_PRAGMA(message(#x " = " DVAL(x)))
-PRINT_DIRECTIVE(CONFIG_UBRIDGE_UART_PARITY)
-
-#define GPIO_OUTPUT_IO_NRST 7
-#define GPIO_OUTPUT_IO_BOOT0 8
-#define GPIO_OUTPUT_PIN_SEL                                                    \
-  ((1 << GPIO_OUTPUT_IO_NRST) | (1 << GPIO_OUTPUT_IO_BOOT0))
-
-/* ----------------------------------------------------------- */
-
-void dfu_mode() {
-  gpio_set_level(GPIO_OUTPUT_IO_BOOT0, 1); // BOOT0 = HIGH
-  gpio_set_level(GPIO_OUTPUT_IO_NRST, 0);  // NRST = LOW
-  vTaskDelay(20 / portTICK_PERIOD_MS);
-  gpio_set_level(GPIO_OUTPUT_IO_NRST, 1); // NRST = HIGH
-}
-
-/* ----------------------------------------------------------- */
-
-void run_mode() {
-  gpio_set_level(GPIO_OUTPUT_IO_BOOT0, 0); // BOOT0 = LOW
-  gpio_set_level(GPIO_OUTPUT_IO_NRST, 0);  // NRST = LOW
-  vTaskDelay(20 / portTICK_PERIOD_MS);
-  gpio_set_level(GPIO_OUTPUT_IO_NRST, 1); // NRST = HIGH
-}
+#define BUF_SIZE 1024
 
 /* ----------------------------------------------------------- */
 
 static void bridge_task(void *arg) {
-
-  gpio_config_t io_conf;
-  io_conf.intr_type = GPIO_INTR_DISABLE;
-  io_conf.mode = GPIO_MODE_OUTPUT;
-  io_conf.pin_bit_mask = GPIO_OUTPUT_PIN_SEL;
-  io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-  io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-  ESP_ERROR_CHECK(gpio_config(&io_conf));
-
-  /*Run SMT32 */
-  //dfu_mode();
 
   /* Configure USB-CDC */
   usb_serial_jtag_driver_config_t usb_serial_config = {.tx_buffer_size = 128,
@@ -140,13 +100,13 @@ static void bridge_task(void *arg) {
 
   while (true) {
 
-    int len = usb_serial_jtag_read_bytes(data, BUF_SIZE, 500 / portTICK_PERIOD_MS);
+    int len = usb_serial_jtag_read_bytes(data, BUF_SIZE, 50 / portTICK_PERIOD_MS);
     if (len > 0) {
       uart_write_bytes(UBRIDGE_UART_PORT_NUM, (const char *)data, len);
       uart_flush(UBRIDGE_UART_PORT_NUM);
     }
 
-    len = uart_read_bytes(UBRIDGE_UART_PORT_NUM, data, (BUF_SIZE), 500 / portTICK_PERIOD_MS);
+    len = uart_read_bytes(UBRIDGE_UART_PORT_NUM, data, (BUF_SIZE), 50 / portTICK_PERIOD_MS);
     if (len > 0) {
       usb_serial_jtag_write_bytes(data, len, 500 / portTICK_PERIOD_MS);
       usb_serial_jtag_ll_txfifo_flush();
