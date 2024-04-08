@@ -16,6 +16,7 @@
 	"idf.toolsPathWin": "C:\\Users\\ecila\\.espressif",
 	"idf.flashType": "UART",
 	"files.associations": {
-		"uart.h": "c"
+		"uart.h": "c",
+		"freertos.h": "c"
 	}
 }
