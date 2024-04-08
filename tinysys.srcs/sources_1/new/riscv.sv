@@ -65,7 +65,7 @@ dataunit dataunitinst (
 
 controlunit #(
 	.CID(32'h00000000),
-	.CSRBASE(20'h80009)) controlunitinst (
+	.CSRBASE(20'h80008)) controlunitinst (
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.branchresolved(branchresolved),

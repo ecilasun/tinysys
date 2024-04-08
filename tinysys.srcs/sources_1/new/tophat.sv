@@ -33,14 +33,6 @@ module tophat(
 	,output wire sdcard_clk
 	,output wire sdcard_mosi
 	,input wire sdcard_swtch
-	// USB-C via MAX4320
-	,input wire usbc_miso
-	,output wire usbc_ss_n
-	,output wire usbc_clk
-	,output wire usbc_mosi
-	,output wire usbc_resn
-	,input wire usbc_int
-	,input wire usbc_gpx
 	// USB-A via MAX4321
 	,input wire usba_miso
 	,output wire usba_ss_n
@@ -113,15 +105,6 @@ sdcardwires sdconn(
 	.mosi(sdcard_mosi),
 	.swtch(sdcard_swtch) );
 
-max3420wires usbcconn(
-	.miso(usbc_miso),
-	.cs_n(usbc_ss_n),
-	.clk(usbc_clk),
-	.mosi(usbc_mosi),
-	.resn(usbc_resn),
-	.irq(usbc_int),
-	.gpx(usbc_gpx));
-
 max3420wires usbaconn(
 	.miso(usba_miso),
 	.cs_n(usba_ss_n),
@@ -169,7 +152,6 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.vde(vde),
 	.vdat(vdat),
 	.sdconn(sdconn),
-	.usbcconn(usbcconn),
 	.usbaconn(usbaconn) );
 
 endmodule

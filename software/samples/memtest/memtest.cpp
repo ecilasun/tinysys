@@ -5,7 +5,6 @@
 #include <memory.h>
 
 #include "basesystem.h"
-#include "usbserial.h"
 #include "memtest.h"
 
 int main()

@@ -459,6 +459,7 @@ void sendfile(char *_filename)
 	uint32_t leftoverBytes = filebytesize % packetSize;
 	uint32_t i = 0;
 	uint32_t packetOffset = 0;
+	printf("Packet count: %d\n", numPackets);
 	for (i=0; i<numPackets; ++i)
 	{
 		// Generate checksum
@@ -467,14 +468,17 @@ void sendfile(char *_filename)
 			checksum = AccumulateHash(checksum, filedata[packetOffset+j]);
 
 		// Wait for ready
+		printf("Packet #%d:\n", i);
 		snprintf(tmpstring, 128, "#");
 		serial.Send((uint8_t*)tmpstring, 1);
+		printf(" Waiting for ready to receive packet...\n");
 		WACK(serial, '#');
 
 		// Send data block
 		serial.Send(filedata + packetOffset, packetSize);
 
 		// Wait for block checksum
+		printf(" Waiting for packet checksum...\n");
 		uint64_t extChecksum = WCHK(serial);
 		if (extChecksum != checksum)
 		{
@@ -497,6 +501,7 @@ void sendfile(char *_filename)
 			checksum = AccumulateHash(checksum, filedata[packetOffset+j]);
 
 		// Wait for ready
+		printf(" Waiting for leftover package ready...\n");
 		snprintf(tmpstring, 128, "#");
 		serial.Send((uint8_t*)tmpstring, 1);
 		WACK(serial, '#');
@@ -505,6 +510,7 @@ void sendfile(char *_filename)
 		serial.Send(filedata + packetOffset, leftoverBytes);
 
 		// Wait for block checksum
+		printf(" Waiting for leftover package checksum...\n");
 		uint64_t extChecksum = WCHK(serial);
 		if (extChecksum != checksum)
 		{
@@ -520,6 +526,7 @@ void sendfile(char *_filename)
 	}
 
 	// Wait for done
+	printf(" Waiting for end of file ack...\n");
 	WACK(serial, '!');
 
 	serial.Close();

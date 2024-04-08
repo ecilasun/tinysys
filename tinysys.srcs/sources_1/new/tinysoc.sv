@@ -31,8 +31,6 @@ module tinysoc #(
 	audiowires.def i2sconn,
 	// SDCard
 	sdcardwires.def sdconn,
-	// USB-C (peripheral)
-	max3420wires.def usbcconn,
 	// USB-A (host)
 	max3420wires.def usbaconn );
 
@@ -58,7 +56,6 @@ axi4if spiif();					// Sub bus: SPI control device (sdcard)
 axi4if csrif();					// Sub bus: CSR file device (control registers)
 axi4if xadcif();				// Sub bus: ADC controller (temperature sensor)
 axi4if dmaif();					// Sub bus: DMA controller (memcopy)
-axi4if usbcif();				// Sub bus: USB-C controller (usb peripheral interface)
 axi4if audioif();				// Sub bus: APU i2s audio output unit (raw audio)
 axi4if usbaif();				// Sub bus: USB-A controller (usb host interface)
 axi4if uartif();				// Sub bus: UART
@@ -239,11 +236,11 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // SDCC: 8xx03000  8xx03FFF  8'b0000_0011  4KB	SDCard SPI Unit
 // XADC: 8xx04000  8xx04FFF  8'b0000_0100  4KB	Die Temperature DAC
 // DMAC: 8xx05000  8xx05FFF  8'b0000_0101  4KB	Direct Memory Access / Memcopy
-// USBC: 8xx06000  8xx06FFF  8'b0000_0110  4KB	USB-C Peripheral Interface Unit
-// APUC: 8xx07000  8xx07FFF  8'b0000_0111  4KB	Audio Processing Unit / Mixer
-// USBA: 8xx08000  8xx08FFF  8'b0000_1000  4KB	USB-A Host Interface Unit
-// CSR0: 8xx09000  8xx09FFF  8'b0000_1001  4KB	HART#0
-// UART: 8xx0A000  8xx0AFFF  8'b0000_1010  4KB	UART <-> ESP32-C6
+// APUC: 8xx06000  8xx06FFF  8'b0000_0110  4KB	Audio Processing Unit / Mixer
+// USBA: 8xx07000  8xx07FFF  8'b0000_0111  4KB	USB-A Host Interface Unit
+// CSR0: 8xx08000  8xx08FFF  8'b0000_1000  4KB	HART#0
+// UART: 8xx09000  8xx09FFF  8'b0000_1001  4KB	UART <-> ESP32-C6
+// ----: 8xx0A000  8xx0AFFF  8'b0000_1010  4KB	Unused
 // ----: 8xx0B000  8xx0BFFF  8'b0000_1011  4KB	Unused
 // ----: 8xx0C000  8xx0CFFF  8'b0000_1100  4KB	Unused
 // ----: 8xx0D000  8xx0DFFF  8'b0000_1101  4KB	Unused
@@ -256,18 +253,17 @@ devicerouter devicerouterinst(
 	.aresetn(aresetn),
     .axi_s(devicebusHart0),				// TODO: Will need this to come from a bus arbiter
     .addressmask({
-    	8'b0000_1010,		// UART
-		8'b0000_1001,		// CRS0 CSR file for HART#0
-    	8'b0000_1000,		// USBA USB-A access via SPI
-    	8'b0000_0111,		// APUC	Audio Processing Unit Command Fifo
-        8'b0000_0110,		// USBC USB-C access via SPI
+    	8'b0000_1001,		// UART
+		8'b0000_1000,		// CRS0 CSR file for HART#0
+    	8'b0000_0111,		// USBA USB-A access via SPI
+    	8'b0000_0110,		// APUC	Audio Processing Unit Command Fifo
     	8'b0000_0101,		// DMAC DMA Command Fifo
     	8'b0000_0100,		// XADC Analog / Digital Converter Interface
 		8'b0000_0011,		// SDCC SDCard access via SPI
 		8'b0000_0010,		// VPUC Graphics Processing Unit Command Fifo
 		8'b0000_0001,		// LEDS Debug / Status LED interface
 		8'b0000_0000}),		// GPIO Input/output pins to ESP32 module
-    .axi_m({uartif, csrif, usbaif, audioif, usbcif, dmaif, xadcif, spiif, vpucmdif, ledif, gpioif}));
+    .axi_m({uartif, csrif, usbaif, audioif, dmaif, xadcif, spiif, vpucmdif, ledif, gpioif}));
 
 // --------------------------------------------------
 // Interrupt wires
@@ -275,7 +271,6 @@ devicerouter devicerouterinst(
 
 wire gpioirq;
 wire keyirq;
-wire usbcirq;
 wire usbairq;
 wire uartirq;
 
@@ -314,14 +309,6 @@ axi4sdcard sdcardinst(
 	.sdconn(sdconn),
 	.keyirq(keyirq),
 	.s_axi(spiif));
-
-axi4usbc usbserialport(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.spibaseclock(clk50),
-	.usbcconn(usbcconn),
-	.usbirq(usbcirq),
-	.s_axi(usbcif));
 
 axi4usbc usbhostport(
 	.aclk(aclk),
@@ -386,7 +373,7 @@ axi4CSRFile csrfileinstHart0(
 	.irqReq(irqReqHart0),
 	// External interrupt wires
 	.keyirq(keyirq),
-	.usbirq({usbairq, usbcirq}),
+	.usbirq(usbairq),
 	.gpioirq(gpioirq),
 	.uartirq(uartirq),
 	// TODO: Reset via ESP32

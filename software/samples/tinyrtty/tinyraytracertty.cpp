@@ -5,7 +5,8 @@
 #include <math.h>
 #include "core.h"
 #include "basesystem.h"
-#include "usbserial.h"
+#include "uart.h"
+
 /* A port of Dmitry Sokolov's tiny raytracer to C and to FemtoRV32 */
 /* Displays on the small OLED display and/or HDMI                  */
 /* Bruno Levy, 2020                                                */
@@ -57,14 +58,14 @@ static int bench_run = 0;
 
 // Replace with your own stuff to initialize graphics
 static inline void graphics_init() {
-    USBSerialWrite("\033[48;5;16m\033[H\033[2J");
+    UARTWrite("\033[48;5;16m\033[H\033[2J");
 }
 
 // Replace with your own stuff to terminate graphics or leave empty
 // Here I send <ctrl><D> to the UART, to exit the simulation in Verilator,
 // it is captured by special code in RTL/DEVICES/uart.v
 static inline void graphics_terminate() {
-    USBSerialWrite("\033[48;5;16m\033[38;5;15m");
+    UARTWrite("\033[48;5;16m\033[38;5;15m");
 }
 
 // Replace with your own code.
@@ -79,7 +80,7 @@ void graphics_set_pixel(int x, int y, float r, float g, float b) {
    if(bench_run) {
        if(y & 1) {
 	  if(x == graphics_width-1) {
-	     USBSerialWriteDecimal(y/2);
+	     UARTWriteDecimal(y/2);
 	  }
        }
        return;
@@ -108,15 +109,15 @@ void graphics_set_pixel(int x, int y, float r, float g, float b) {
        prev_B = B;
    }
 #else   
-    USBSerialWrite("\033[48;2;");
-    USBSerialWriteDecimal(R);
-    USBSerialWrite(";");
-    USBSerialWriteDecimal(G);
-    USBSerialWrite(";");
-    USBSerialWriteDecimal(B);
-    USBSerialWrite("m ");
+    UARTWrite("\033[48;2;");
+    UARTWriteDecimal(R);
+    UARTWrite(";");
+    UARTWriteDecimal(G);
+    UARTWrite(";");
+    UARTWriteDecimal(B);
+    UARTWrite("m ");
    if(x==graphics_width-1)
-       USBSerialWrite("\033[48;2;0;0;0m");
+       UARTWrite("\033[48;2;0;0;0m");
 #endif   
 }
 
@@ -139,15 +140,15 @@ static inline void stats_end_pixel() {
 static void printk(uint64_t kx) {
     int intpart  = (int)(kx / 1000);
     int fracpart = (int)(kx % 1000);
-    USBSerialWriteDecimal(intpart);
-    USBSerialWrite(".");
+    UARTWriteDecimal(intpart);
+    UARTWrite(".");
     if(fracpart<100) {
-	    USBSerialWrite("0");
+	    UARTWrite("0");
     }
     if(fracpart<10) {
-	    USBSerialWrite("0");
+	    UARTWrite("0");
     }
-    USBSerialWriteDecimal(fracpart);
+    UARTWriteDecimal(fracpart);
 }
 
 static uint64_t instret_start;
@@ -170,15 +171,15 @@ static inline void stats_end_frame() {
    uint64_t kCPI       = cycles*1000/instret;
    uint64_t pixels     = graphics_width * graphics_height;
    uint64_t kRAYSTONES = (pixels*1000000000)/cycles;
-   USBSerialWrite("\n");
-   USBSerialWriteDecimal(graphics_width);
-   USBSerialWrite("x");
-   USBSerialWriteDecimal(graphics_height);
-   USBSerialWrite("      ");
-   USBSerialWrite(bench_run ? "no gfx output (measurement is accurate)" : "gfx output (measurement is NOT accurate)");
-   USBSerialWrite("CPI="); printk(kCPI); USBSerialWrite("     ");
-   USBSerialWrite("RAYSTONES="); printk(kRAYSTONES);
-   USBSerialWrite("\n");
+   UARTWrite("\n");
+   UARTWriteDecimal(graphics_width);
+   UARTWrite("x");
+   UARTWriteDecimal(graphics_height);
+   UARTWrite("      ");
+   UARTWrite(bench_run ? "no gfx output (measurement is accurate)" : "gfx output (measurement is NOT accurate)");
+   UARTWrite("CPI="); printk(kCPI); UARTWrite("     ");
+   UARTWrite("RAYSTONES="); printk(kRAYSTONES);
+   UARTWrite("\n");
 }
 
 // Normally you will not need to modify anything beyond that point.
@@ -503,7 +504,7 @@ int main()
   bench_run = 1;
   graphics_width  = 40;
   graphics_height = 20;
-  USBSerialWrite("Running without graphic output (for accurate measurement)...\n");
+  UARTWrite("Running without graphic output (for accurate measurement)...\n");
   render(spheres, nb_spheres, lights, nb_lights);
 
   bench_run = 0;

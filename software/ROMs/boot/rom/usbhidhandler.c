@@ -1,6 +1,5 @@
 #include "usbhidhandler.h"
 #include "usbhost.h"
-#include "usbserial.h"
 #include "encoding.h"
 #include "max3421e.h"
 #include "keyringbuffer.h"

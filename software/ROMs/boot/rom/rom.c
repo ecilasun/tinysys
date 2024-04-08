@@ -6,11 +6,9 @@
 #include "apu.h"
 #include "vpu.h"
 #include "dma.h"
-#include "usbserial.h"
+#include "uart.h"
 #include "usbhost.h"
 #include "usbhidhandler.h"
-#include "usbserialhandler.h"
-#include "max3420e.h"
 #include "max3421e.h"
 #include "mini-printf.h"
 #include "keyringbuffer.h"
@@ -49,7 +47,6 @@ static const char *s_taskstates[]={
 	"TERMINATING",
 	"TERMINATED " };
 
-static struct SUSBSerialContext s_usbserialctx;
 static struct SUSBHostContext s_usbhostctx;
 
 void _stubTask()
@@ -140,13 +137,6 @@ void ShowVersion(int waterMark)
 	kprintf(" CPU & bus clock : 150MHz                      \n");
 	kprintf(" HART#0          : rv32im_zicsr_zifencei_zfinx \n");
 	kprintf(" ESP32           : ESP32-C6-WROOM-1-N8         \n");
-
-	// Report USB serial chip version
-	uint8_t m3420rev = MAX3420ReadByte(rREVISION);
-	if (m3420rev != 0xFF)
-		kprintf(" MAX3420(serial) : 0x%X                         \n", m3420rev);
-	else
-		kprintf(" MAX3420(serial) : n/a                         \n");
 
 	// Report USB host chip version
 	uint8_t m3421rev = MAX3421ReadByte(rREVISION);
@@ -635,12 +625,6 @@ int main()
 
 	LEDSetState(0x8);
 
-	// Start USB serial peripheral
-	USBSerialSetContext(&s_usbserialctx);
-	USBSerialInit(1);
-
-	LEDSetState(0x4);
-
 	// Start USB host
 	InitializeUSBHIDData();
 	USBHostSetContext(&s_usbhostctx);
@@ -687,7 +671,7 @@ int main()
 		ProcessUSBDevice(currentTime);
 
 		// Emit outgoing serial data
-		USBEmitBufferedOutput();
+		UARTEmitBufferedOutput();
 
 		// Enable machine interrupts
 		write_csr(mstatus, MSTATUS_MIE);

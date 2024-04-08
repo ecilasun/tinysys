@@ -1,5 +1,5 @@
 #include "basesystem.h"
-#include "usbserial.h"
+#include "uart.h"
 #include <stdio.h>
 
 int main(int argc, char **argv)
@@ -17,9 +17,9 @@ int main(int argc, char **argv)
 		for (uint32_t i=0; i<*desclen; ++i)
 		{
 			printf("%.2x", devdesc[i]);
-			USBSerialWriteHexByte(devdesc[i]);
+			UARTWriteHexByte(devdesc[i]);
 		}
-		USBSerialWrite("\n");
+		UARTWrite("\n");
 		printf("\n");
 	}
 

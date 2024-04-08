@@ -1,7 +1,7 @@
 #include <string.h>
 
 #include "basesystem.h"
-#include "usbserial.h"
+#include "uart.h"
 #include "serialinput.h"
 #include "rombase.h"
 #include "serialinringbuffer.h"
@@ -67,7 +67,7 @@ void HandleFileTransfer(uint8_t input)
 		if (incoming && (s_keystate&1)) // Only see 'down' for ascii queue
 			KeyRingBufferWrite(&incoming, sizeof(uint32_t));
 
-		USBSerialWrite("~");
+		UARTSendByte('~');
 		s_fileTransferMode = 0;
 	}
 	else if (s_fileTransferMode == 1)
@@ -85,11 +85,13 @@ void HandleFileTransfer(uint8_t input)
 		if (input == 0)
 		{
 			s_readlen = 0;
+
 			strcpy(s_filename, "sd:/");
 			strcat(s_filename, s_buffertemp);
 			kprintf("name = %s\nsize = ", s_filename);
+
 			// Ack name received
-			USBSerialWrite("!");
+			UARTSendByte('!');
 			s_fileTransferMode = 3;
 		}
 	}
@@ -110,7 +112,7 @@ void HandleFileTransfer(uint8_t input)
 			s_fileTransferMode = 5;
 
 			// Ack size received
-			USBSerialWrite("!");
+			UARTSendByte('!');
 		}
 	}
 	else if (s_fileTransferMode == 5)
@@ -118,14 +120,16 @@ void HandleFileTransfer(uint8_t input)
 		if (input == '#') // Wait for file block ready signal
 		{
 			s_lastPacketTime = E32ReadTime();
-			USBSerialWrite("#");
+
+			UARTSendByte('#');
+
 			s_checksum = 2166136261U;
 			s_packetCursor = 0;
 			s_fileTransferMode = 6;
 		}
 		if (input == '-') // Last packet had a checksum error, abort
 		{
-			USBSerialWrite("-");
+			UARTSendByte('-');
 			kprintf("\nFile transfer aborted (CRC error)\n", s_filesize);
 			s_fileTransferMode = 0;
 		}
@@ -146,7 +150,7 @@ void HandleFileTransfer(uint8_t input)
 			// Dump the packetSize bytes to disk
 			progress(s_readlen, s_filesize);
 			s_fileTransferMode = 5; // Go to next block
-			USBSerialWriteRawBytes(&s_checksum, 8);
+			UARTSendBlock((uint8_t*)&s_checksum, 8);
 		}
 
 		// End of file
@@ -157,10 +161,10 @@ void HandleFileTransfer(uint8_t input)
 			if (leftover != 0)
 			{
 				progress(s_readlen, s_filesize);
-				USBSerialWriteRawBytes(&s_checksum, 8);
+				UARTSendBlock((uint8_t*)&s_checksum, 8);
 			}
 
-			USBSerialWrite("!");
+			UARTSendByte('!');
 
 			// Dump entire file contents
 			kprintf("\nSaving file...\n");
@@ -196,7 +200,7 @@ void HandleSerialInput()
 		{
 			if (drain == '~') // Enter serial file transfer mode
 			{
-				USBSerialWrite("~");
+				UARTSendByte('~');
 				s_fileTransferMode = 1;
 				s_lastPacketTime = E32ReadTime();
 			}
