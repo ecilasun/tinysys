@@ -454,7 +454,7 @@ void sendfile(char *_filename)
 	WACK(serial, '!');
 
 	// Send the file bytes
-	uint32_t packetSize = 4096;
+	uint32_t packetSize = 512;
 	uint32_t numPackets = filebytesize / packetSize;
 	uint32_t leftoverBytes = filebytesize % packetSize;
 	uint32_t i = 0;

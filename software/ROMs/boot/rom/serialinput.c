@@ -37,7 +37,7 @@ uint64_t AccumulateHash(const uint64_t inhash, const uint8_t byte)
 static uint16_t s_keystate = 0x0000;
 void HandleFileTransfer(uint8_t input)
 {
-	const uint32_t packetSize = 4096; // NOTE: Match this to riscvtool packet size.
+	const uint32_t packetSize = 512; // NOTE: Match this to riscvtool packet size.
 
 	if (s_fileTransferMode == 10) // Modifier state
 	{
@@ -139,7 +139,7 @@ void HandleFileTransfer(uint8_t input)
 		// Read blocksize bytes 16kbytes into app memory
 		uint8_t *filetemp = (uint8_t*)TEMP_FILE_UPLOAD_START;
 		filetemp[s_readlen] = input;
-		
+
 		s_checksum = AccumulateHash(s_checksum, input);
 
 		s_readlen++;
