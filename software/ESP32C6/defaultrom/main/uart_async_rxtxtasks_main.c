@@ -19,7 +19,7 @@
 // EnCi: bridge to UART port #1
 #define UART_PORT_NUM 1
 
-#define BUF_SIZE 1024
+#define BUF_SIZE 4096
 
 static uint8_t *jtag_buffer = NULL;
 static uint8_t *uart_buffer = NULL;
@@ -54,27 +54,27 @@ static void uart1_to_jtag_task(void *arg)
 
 void app_main(void)
 {
-  usb_serial_jtag_driver_config_t usb_serial_config = {.tx_buffer_size = BUF_SIZE, .rx_buffer_size = BUF_SIZE};
-  ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&usb_serial_config));
+	usb_serial_jtag_driver_config_t usb_serial_config = {.tx_buffer_size = BUF_SIZE, .rx_buffer_size = BUF_SIZE};
+	ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&usb_serial_config));
 
-  uart_config_t uart_config = {
-      .baud_rate = 115200,
-      .data_bits = UART_DATA_8_BITS,
-      .parity = UART_PARITY_DISABLE,
-      .stop_bits = UART_STOP_BITS_1,
-      .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-      .source_clk = UART_SCLK_DEFAULT,
-  };
+	uart_config_t uart_config = {
+		.baud_rate = 115200,
+		.data_bits = UART_DATA_8_BITS,
+		.parity = UART_PARITY_DISABLE,
+		.stop_bits = UART_STOP_BITS_1,
+		.flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+		.source_clk = UART_SCLK_DEFAULT,
+	};
 
-  ESP_ERROR_CHECK(uart_driver_install(UART_PORT_NUM, BUF_SIZE * 2, 0, 0, NULL, 0));
-  ESP_ERROR_CHECK(uart_param_config(UART_PORT_NUM, &uart_config));
-  ESP_ERROR_CHECK(uart_set_pin(UART_PORT_NUM, PIN_TXD, PIN_RXD, PIN_RTS, PIN_CTS));
+	ESP_ERROR_CHECK(uart_driver_install(UART_PORT_NUM, BUF_SIZE * 2, 0, 0, NULL, 0));
+	ESP_ERROR_CHECK(uart_param_config(UART_PORT_NUM, &uart_config));
+	ESP_ERROR_CHECK(uart_set_pin(UART_PORT_NUM, PIN_TXD, PIN_RXD, PIN_RTS, PIN_CTS));
 
-  jtag_buffer = (uint8_t *)malloc(BUF_SIZE);
-  uart_buffer = (uint8_t *)malloc(BUF_SIZE);
+	jtag_buffer = (uint8_t *)malloc(BUF_SIZE);
+	uart_buffer = (uint8_t *)malloc(BUF_SIZE);
 
-  esp_task_wdt_deinit();
+	esp_task_wdt_deinit();
 
-  xTaskCreate(jtag_to_uart1_task, "jtag_to_uart1", 1024, NULL, tskIDLE_PRIORITY, NULL);
-  xTaskCreate(uart1_to_jtag_task, "uart1_to_jtag", 1024, NULL, tskIDLE_PRIORITY, NULL);
+	xTaskCreate(jtag_to_uart1_task, "jtag_to_uart1", 1024, NULL, tskIDLE_PRIORITY, NULL);
+	xTaskCreate(uart1_to_jtag_task, "uart1_to_jtag", 1024, NULL, tskIDLE_PRIORITY, NULL);
 }
