@@ -46,7 +46,7 @@ static void uart1_to_jtag_task(void *arg)
 		int len = uart_read_bytes(UART_PORT_NUM, uart_buffer, (BUF_SIZE), 1 / portTICK_PERIOD_MS);
 		if (len > 0)
 		{
-			usb_serial_jtag_write_bytes(uart_buffer, len, 1 / portTICK_PERIOD_MS);
+			usb_serial_jtag_write_bytes(uart_buffer, len, 0);
 			usb_serial_jtag_ll_txfifo_flush();
 		}
 	} while(1);
