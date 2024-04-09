@@ -19,7 +19,7 @@
 // EnCi: bridge to UART port #1
 #define UART_PORT_NUM 1
 
-#define BUF_SIZE 4096
+#define BUF_SIZE 1024
 
 static uint8_t *jtag_buffer = NULL;
 static uint8_t *uart_buffer = NULL;
