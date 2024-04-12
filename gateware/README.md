@@ -43,7 +43,7 @@ Added GPIO hardware to link to the ESP32-C6-WROOM1-N8 on PCB version 2E<br>
 # Changes compatible with version 2F boards:
 <b>r1.06</b><br>
 Removed MAX3420 support for USB communication, offloaded to ESP32-C6 chip<br>
-Address map for devices shifted, which breaks compatibility with earlier software which accesses APU/USBA/CSR (which includes the OS)<br>
+Prepared the device for more than one CPU by adding an uncached, shared mailbox on the address bus<br>
 
 # Device gateware
 
