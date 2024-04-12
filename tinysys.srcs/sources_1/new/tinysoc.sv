@@ -53,12 +53,13 @@ axi4if gpioif();				// Sub bus: GPIO port
 axi4if ledif();					// Sub bus: LED contol device (debug LEDs)
 axi4if vpucmdif();				// Sub bus: VPU command fifo (video scan out logic)
 axi4if spiif();					// Sub bus: SPI control device (sdcard)
-axi4if csrif();					// Sub bus: CSR file device (control registers)
+axi4if csrif0();				// Sub bus: CSR#0 file device (control registers)
 axi4if xadcif();				// Sub bus: ADC controller (temperature sensor)
 axi4if dmaif();					// Sub bus: DMA controller (memcopy)
 axi4if audioif();				// Sub bus: APU i2s audio output unit (raw audio)
 axi4if usbaif();				// Sub bus: USB-A controller (usb host interface)
-axi4if uartif();				// Sub bus: UART
+axi4if uartif();				// Sub bus: UART serial I/O for ESP32 communication
+axi4if mailif();				// Sub bus: MAIL mailbox for HART communication
 
 // --------------------------------------------------
 // Wall clock
@@ -94,7 +95,7 @@ wire [31:0] mepcHart0;
 wire [31:0] mtvecHart0;
 wire [1:0] irqReqHart0;
 
-riscv #(.RESETVECTOR(RESETVECTOR)) hart0(
+riscv #( .HARTID(0), .RESETVECTOR(RESETVECTOR)) hart0(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.romReady(romReady),
@@ -236,11 +237,11 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // SDCC: 8xx03000  8xx03FFF  8'b0000_0011  4KB	SDCard SPI Unit
 // XADC: 8xx04000  8xx04FFF  8'b0000_0100  4KB	Die Temperature DAC
 // DMAC: 8xx05000  8xx05FFF  8'b0000_0101  4KB	Direct Memory Access / Memcopy
-// APUC: 8xx06000  8xx06FFF  8'b0000_0110  4KB	Audio Processing Unit / Mixer
-// USBA: 8xx07000  8xx07FFF  8'b0000_0111  4KB	USB-A Host Interface Unit
-// CSR0: 8xx08000  8xx08FFF  8'b0000_1000  4KB	HART#0
-// UART: 8xx09000  8xx09FFF  8'b0000_1001  4KB	UART <-> ESP32-C6
-// ----: 8xx0A000  8xx0AFFF  8'b0000_1010  4KB	Unused
+// USBA: 8xx06000  8xx06FFF  8'b0000_0110  4KB	USB-A Host Interface Unit
+// APUC: 8xx07000  8xx07FFF  8'b0000_0111  4KB	Audio Processing Unit / Mixer
+// MAIL: 8xx08000  8xx08FFF  8'b0000_1000  4KB	MAIL inter-HART comm
+// UART: 8xx09000  8xx09FFF  8'b0000_1001  4KB	UART HART <-> ESP32-C6 comm
+// CSR0: 8xx0A000  8xx0AFFF  8'b0000_1010  4KB	CSR#0
 // ----: 8xx0B000  8xx0BFFF  8'b0000_1011  4KB	Unused
 // ----: 8xx0C000  8xx0CFFF  8'b0000_1100  4KB	Unused
 // ----: 8xx0D000  8xx0DFFF  8'b0000_1101  4KB	Unused
@@ -253,17 +254,18 @@ devicerouter devicerouterinst(
 	.aresetn(aresetn),
     .axi_s(devicebusHart0),				// TODO: Will need this to come from a bus arbiter
     .addressmask({
-    	8'b0000_1001,		// UART
-		8'b0000_1000,		// CRS0 CSR file for HART#0
-    	8'b0000_0111,		// USBA USB-A access via SPI
-    	8'b0000_0110,		// APUC	Audio Processing Unit Command Fifo
+    	8'b0000_1010,		// CRS0 CSR file for HART#0
+    	8'b0000_1001,		// UART ESP32 to RISC-V UART channel
+		8'b0000_1000,		// MAIL Mailbox for HART-to-HART commmunication
+    	8'b0000_0111,		// APUC	Audio Processing Unit Command Fifo
+    	8'b0000_0110,		// USBA USB-A access via SPI
     	8'b0000_0101,		// DMAC DMA Command Fifo
     	8'b0000_0100,		// XADC Analog / Digital Converter Interface
 		8'b0000_0011,		// SDCC SDCard access via SPI
 		8'b0000_0010,		// VPUC Graphics Processing Unit Command Fifo
 		8'b0000_0001,		// LEDS Debug / Status LED interface
 		8'b0000_0000}),		// GPIO Input/output pins to ESP32 module
-    .axi_m({uartif, csrif, usbaif, audioif, dmaif, xadcif, spiif, vpucmdif, ledif, gpioif}));
+    .axi_m({mailif, uartif, csrif0, audioif, usbaif, dmaif, xadcif, spiif, vpucmdif, ledif, gpioif}));
 
 // --------------------------------------------------
 // Interrupt wires
@@ -310,24 +312,6 @@ axi4sdcard sdcardinst(
 	.keyirq(keyirq),
 	.s_axi(spiif));
 
-axi4usbc usbhostport(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.spibaseclock(clk50),
-	.usbcconn(usbaconn),
-	.usbirq(usbairq),
-	.s_axi(usbaif));
-
-axi4uart uartinst(
-	.aclk(aclk),
-	.uartbaseclock(clk10),
-	.aresetn(aresetn),
-	.uartrx(esp_rxd_in),
-	.uarttx(esp_txd_out),
-	.s_axi(uartif),
-	.uartirq(uartirq) );
-
-// XADC
 axi4xadc xadcinst(
 	.aclk(aclk),
 	.clk10(clk10),
@@ -335,7 +319,6 @@ axi4xadc xadcinst(
 	.s_axi(xadcif),
 	.device_temp(device_temp) );
 
-// DMA command queue
 commandqueue dmacmdinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
@@ -347,7 +330,6 @@ commandqueue dmacmdinst(
 	.fifovalid(dmafifovalid),
     .devicestate({31'd0,dmabusy}));
 
-// Audio command queue
 commandqueue audiocmdinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
@@ -359,11 +341,15 @@ commandqueue audiocmdinst(
 	.fifovalid(audiofifovalid),
     .devicestate(audiobufferswapcount));
 
-// CSR file acts as a region of uncached memory
-// Access to register indices get mapped to LOAD/STORE
-// and addresses get mapped starting at CSRBASE + csroffset
-// CSR module also acts as the interrupt generator
-axi4CSRFile csrfileinstHart0(
+axi4usbc usbhostport(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.spibaseclock(clk50),
+	.usbcconn(usbaconn),
+	.usbirq(usbairq),
+	.s_axi(usbaif));
+
+axi4CSRFile #( .HARTID(0)) csrfile0 (
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.cpuclocktime(cpuclocktimeHart0),
@@ -383,6 +369,20 @@ axi4CSRFile csrfileinstHart0(
 	.mtvec(mtvecHart0),
 	.sie(sieHart0),
 	// Bus
-	.s_axi(csrif) );
+	.s_axi(csrif0) );
+
+axi4uart uartinst(
+	.aclk(aclk),
+	.uartbaseclock(clk10),
+	.aresetn(aresetn),
+	.uartrx(esp_rxd_in),
+	.uarttx(esp_txd_out),
+	.s_axi(uartif),
+	.uartirq(uartirq) );
+
+axi4mail maildevice(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.s_axi(mailif));
 
 endmodule

@@ -77,11 +77,13 @@
 #define DEVICE_SPIC (DEVICE_BASE+0x3000)
 #define DEVICE_XADC (DEVICE_BASE+0x4000)
 #define DEVICE_DMAC (DEVICE_BASE+0x5000)
-#define DEVICE_APUC (DEVICE_BASE+0x6000)
-#define DEVICE_USBA (DEVICE_BASE+0x7000)
-#define DEVICE_CSR0 (DEVICE_BASE+0x8000)
+#define DEVICE_USBA (DEVICE_BASE+0x6000)
+#define DEVICE_APUC (DEVICE_BASE+0x7000)
+#define DEVICE_MAIL (DEVICE_BASE+0x8000)
 #define DEVICE_UART (DEVICE_BASE+0x9000)
-// NOTE: Add more devices after this point
+#define DEVICE_CSR0 (DEVICE_BASE+0xA000)
+// NOTE: Add more device addresses here
+//#define DEVICE_DEV0 (DEVICE_BASE+0xB000)
 
 uint64_t E32ReadTime();
 uint64_t E32ReadCycles();

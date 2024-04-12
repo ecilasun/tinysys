@@ -3,8 +3,8 @@
 `include "shared.vh"
 
 module controlunit #(
-	parameter int CID = 32'h00000000,	// Corresponds to HARTID
-	parameter int CSRBASE = 20'h80009	// TODO: Add CID<<12, for instance HART#1 would be 32'h8000A
+	parameter int HARTID = 4'h0,
+	parameter int CSRBASE = 20'h8000A
 ) (
 	input wire aclk,
 	input wire aresetn,
@@ -20,6 +20,9 @@ module controlunit #(
 	output wire [63:0] retired,
 	// Internal bus to data unit
 	ibusif.master m_ibus);
+
+// HARTID<<12, for instance HART#1 would be 32'h8000A, HART#5 would be 32'h8000E and so on
+localparam bit [19:0] csrbaseaddr = CSRBASE + (HARTID<<12);
 
 logic ififore;
 assign ififord_en = ififore;
@@ -679,7 +682,7 @@ always @(posedge aclk) begin
 	
 			CSROPS: begin
 				if (~pendingwrite || m_ibus.wdone) begin
-					m_ibus.raddr <= {CSRBASE, csroffset};
+					m_ibus.raddr <= {csrbaseaddr, csroffset};
 					m_ibus.rstrobe <= 1'b1;
 					ctlmode <= WCSROP;
 				end else begin
@@ -700,7 +703,7 @@ always @(posedge aclk) begin
 			SYSWBACK: begin
 				if (~pendingwback && (~pendingwrite || m_ibus.wdone)) begin
 					// Update CSR register with read value
-					m_ibus.waddr <= {CSRBASE, csroffset};
+					m_ibus.waddr <= {csrbaseaddr, csroffset};
 					m_ibus.wstrobe <= 4'b1111;
 					pendingwrite <= 1'b1;
 					unique case (func3)

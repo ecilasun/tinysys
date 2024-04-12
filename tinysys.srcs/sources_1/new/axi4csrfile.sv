@@ -3,7 +3,9 @@
 // NOTE: Each HART has a different base address for their CSR
 // This currently houses 1x4K CSR unit for one HART
 
-module axi4CSRFile(
+module axi4CSRFile #(
+	parameter int HARTID = 4'h0
+) (
 	input wire aclk,
 	input wire aresetn,
 	input wire [63:0] cpuclocktime,
@@ -196,7 +198,7 @@ always @(posedge aclk) begin
 				// Some values such as timers and h/w states are dynamic and never end up in the CSR file, so make up a dynamic version for those
 				unique case (csrraddr)
 					// Immutables
-					`CSR_MHARTID:	s_axi.rdata[31:0] <= 0;	// TODO: use HARTID;
+					`CSR_MHARTID:	s_axi.rdata[31:0] <= {28'd0, HARTID}; // 0..15
 					`CSR_RETIHI:	s_axi.rdata[31:0] <= retired[63:32];
 					`CSR_TIMEHI:	s_axi.rdata[31:0] <= wallclocktime[63:32];
 					`CSR_CYCLEHI:	s_axi.rdata[31:0] <= cpuclocktime[63:32];
