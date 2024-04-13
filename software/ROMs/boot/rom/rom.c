@@ -16,6 +16,7 @@
 #include "serialoutringbuffer.h"
 #include "gpioringbuffer.h"
 #include "serialinput.h"
+#include "mailbox.h"
 
 #include <string.h>
 #include <stdbool.h>
@@ -134,7 +135,13 @@ void ShowVersion(int waterMark)
 	// read device versions/presence from.
 	kprintf(" Board           : issue 2E:2024               \n");
 	kprintf(" CPU & bus clock : 150MHz                      \n");
-	kprintf(" HART#0          : rv32im_zicsr_zifencei_zfinx \n");
+	kprintf(" ARCH            : rv32im_zicsr_zifencei_zfinx \n");
+	for (uint32_t i=0;i<16;++i)
+	{
+		uint32_t isalive = MailboxRead(i, 0);
+		if (isalive==0xFAFECAC0)
+			kprintf(" HART%d%s          : alive                       \n", i, i>9 ? "" : " ");
+	}
 	kprintf(" ESP32           : ESP32-C6-WROOM-1-N8         \n");
 
 	// Report USB host chip version
@@ -568,20 +575,38 @@ uint32_t LoadOverlay(const char *filename)
 	return 0;
 }
 
+void workermain()
+{
+	// Mark us alive
+	uint32_t hartid = read_csr(mhartid);
+	MailboxWrite(hartid, 0, 0xFAFECAC0);
+
+	do
+	{
+		// Wait
+		asm volatile("wfi;");
+	} while (1);
+}
+
 int main()
 {
 	LEDSetState(0xF);
+	// Mark us alive
+	uint32_t hartid = read_csr(mhartid);
+	MailboxWrite(hartid, 0, 0xFAFECAC0);
+
+	LEDSetState(0xE);
 	// Set default path before we mount any storage devices
 	f_chdir("sd:/");
 	strncpy(s_workdir, "sd:/", 48);
 
 	// Attempt to mount the FAT volume on micro sd card
 	// NOTE: Loaded executables do not have to worry about this part
-	LEDSetState(0xE);
+	LEDSetState(0xD);
 	MountDrive();
 
 	// Attempt to load ROM overlay, if it exists
-	LEDSetState(0xD);
+	LEDSetState(0xC);
 	// Watermark register is zero on hard boot
 	uint32_t waterMark = read_csr(0xFF0);
 	if ((waterMark == 0) && LoadOverlay("sd:/rom.bin"))
@@ -595,23 +620,23 @@ int main()
 
 	// NOTE: Since we'll loop around here again if we receive a soft reset,
 	// we need to make sure all things are stopped and reset to default states
-	LEDSetState(0xC);
+	LEDSetState(0xB);
 	DeviceDefaultState(1);
 	ShowVersion(waterMark);
 
 	// Set up ring buffers
-	LEDSetState(0xB);
+	LEDSetState(0xA);
 	KeyRingBufferReset();
 	SerialInRingBufferReset();
 	SerialOutRingBufferReset();
 	GPIORingBufferReset();
 
 	// Create task context
-	LEDSetState(0xA);
+	LEDSetState(0x9);
 	struct STaskContext *taskctx = CreateTaskContext();
 
 	// With current layout, OS takes up a very small slices out of whatever is left from other tasks
-	LEDSetState(0x9);
+	LEDSetState(0x8);
 	TaskAdd(taskctx, "sysidle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 	// Command line interpreter task
 	TaskAdd(taskctx, "cmd", _cliTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
@@ -620,7 +645,7 @@ int main()
 	// This is where all task switching and other interrupt handling occurs
 	InstallISR();
 
-	LEDSetState(0x8);
+	LEDSetState(0x7);
 
 	// Start USB host
 	InitializeUSBHIDData();
