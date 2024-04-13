@@ -82,8 +82,9 @@
 #define DEVICE_MAIL (DEVICE_BASE+0x8000)
 #define DEVICE_UART (DEVICE_BASE+0x9000)
 #define DEVICE_CSR0 (DEVICE_BASE+0xA000)
+#define DEVICE_CSR1 (DEVICE_BASE+0xB000)
 // NOTE: Add more device addresses here
-//#define DEVICE_DEV0 (DEVICE_BASE+0xB000)
+//#define DEVICE_DEV0 (DEVICE_BASE+0xC000)
 
 uint64_t E32ReadTime();
 uint64_t E32ReadCycles();

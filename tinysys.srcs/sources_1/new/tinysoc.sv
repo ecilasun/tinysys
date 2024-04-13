@@ -39,8 +39,11 @@ module tinysoc #(
 // --------------------------------------------------
 
 axi4if instructionbusHart0();	// Fetch bus for HART#0
+axi4if instructionbusHart1();	// Fetch bus for HART#1
 axi4if databusHart0();			// Data bus for HART#0
+axi4if databusHart1();			// Data bus for HART#1
 axi4if devicebusHart0();		// Direct access to devices from data unit of HART#0
+axi4if devicebusHart1();		// Direct access to devices from data unit of HART#1
 
 axi4if videobus();				// Video output unit bus
 axi4if dmabus();				// Direct memory access bus
@@ -48,12 +51,14 @@ axi4if romcopybus();			// Bus for boot ROM copy (TODO: switch between ROM types?
 axi4if audiobus();				// Bus for audio device output
 
 axi4if memorybus();				// Arbitrated access to main memory
+axi4if devicebus();				// Arbitrated access to devices
 
 axi4if gpioif();				// Sub bus: GPIO port
 axi4if ledif();					// Sub bus: LED contol device (debug LEDs)
 axi4if vpucmdif();				// Sub bus: VPU command fifo (video scan out logic)
 axi4if spiif();					// Sub bus: SPI control device (sdcard)
 axi4if csrif0();				// Sub bus: CSR#0 file device (control registers)
+axi4if csrif1();				// Sub bus: CSR#1 file device (control registers)
 axi4if xadcif();				// Sub bus: ADC controller (temperature sensor)
 axi4if dmaif();					// Sub bus: DMA controller (memcopy)
 axi4if audioif();				// Sub bus: APU i2s audio output unit (raw audio)
@@ -85,17 +90,23 @@ always @(posedge aclk) begin
 end
 
 // --------------------------------------------------
+// Common wires
+// --------------------------------------------------
+
+wire romReady;
+
+// --------------------------------------------------
 // HART#0
 // --------------------------------------------------
 
-wire romReady, sieHart0;
+wire sieHart0;
 wire [63:0] cpuclocktimeHart0;
 wire [63:0] retiredHart0;
 wire [31:0] mepcHart0;
 wire [31:0] mtvecHart0;
 wire [1:0] irqReqHart0;
 
-riscv #( .HARTID(0), .RESETVECTOR(RESETVECTOR)) hart0(
+riscv #( .HARTID(0), .CSRBASE(20'h8000A), .RESETVECTOR(RESETVECTOR)) hart0(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.romReady(romReady),
@@ -108,6 +119,41 @@ riscv #( .HARTID(0), .RESETVECTOR(RESETVECTOR)) hart0(
 	.devicebus(devicebusHart0),
 	.cpuclocktime(cpuclocktimeHart0),
 	.retired(retiredHart0));
+
+// --------------------------------------------------
+// HART#1
+// --------------------------------------------------
+
+wire sieHart1;
+wire [63:0] cpuclocktimeHart1;
+wire [63:0] retiredHart1;
+wire [31:0] mepcHart1;
+wire [31:0] mtvecHart1;
+wire [1:0] irqReqHart1;
+
+riscv #( .HARTID(1), .CSRBASE(20'h8000B), .RESETVECTOR(RESETVECTOR)) hart1(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.romReady(romReady),
+	.sie(sieHart1),
+	.mepc(mepcHart1),
+	.mtvec(mtvecHart1),
+	.irqReq(irqReqHart1),
+	.instructionbus(instructionbusHart1),
+	.databus(databusHart1),
+	.devicebus(devicebusHart1),
+	.cpuclocktime(cpuclocktimeHart1),
+	.retired(retiredHart1));
+
+// --------------------------------------------------
+// Device bus arbiter
+// --------------------------------------------------
+
+arbiter2x arbiter2x1instdev(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.axi_s({devicebusHart1, devicebusHart0}),
+	.axi_m(devicebus) );
 
 // --------------------------------------------------
 // Video output unit
@@ -196,10 +242,10 @@ axi4i2saudio APU(
 // Traffic arbiter between master units and memory
 // --------------------------------------------------
 
-arbiter arbiter6x1instSDRAM(
+arbiter arbiter8x1instSDRAM(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.axi_s({romcopybus, audiobus, dmabus, videobus, databusHart0, instructionbusHart0}),
+	.axi_s({romcopybus, audiobus, dmabus, videobus, databusHart1, databusHart0, instructionbusHart1, instructionbusHart0}),
 	.axi_m(memorybus) );
 
 // --------------------------------------------------
@@ -242,7 +288,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // MAIL: 8xx08000  8xx08FFF  8'b0000_1000  4KB	MAIL inter-HART comm
 // UART: 8xx09000  8xx09FFF  8'b0000_1001  4KB	UART HART <-> ESP32-C6 comm
 // CSR0: 8xx0A000  8xx0AFFF  8'b0000_1010  4KB	CSR#0
-// ----: 8xx0B000  8xx0BFFF  8'b0000_1011  4KB	Unused
+// CSR1: 8xx0B000  8xx0BFFF  8'b0000_1011  4KB	CSR#1
 // ----: 8xx0C000  8xx0CFFF  8'b0000_1100  4KB	Unused
 // ----: 8xx0D000  8xx0DFFF  8'b0000_1101  4KB	Unused
 // ----: 8xx0E000  8xx0EFFF  8'b0000_1110  4KB	Unused
@@ -252,8 +298,9 @@ axi4ddr3sdram axi4ddr3sdraminst(
 devicerouter devicerouterinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
-    .axi_s(devicebusHart0),				// TODO: Will need this to come from a bus arbiter
+    .axi_s(devicebus),
     .addressmask({
+    	8'b0000_1011,		// CRS1 CSR file for HART#1
     	8'b0000_1010,		// CRS0 CSR file for HART#0
     	8'b0000_1001,		// UART ESP32 to RISC-V UART channel
 		8'b0000_1000,		// MAIL Mailbox for HART-to-HART commmunication
@@ -265,7 +312,7 @@ devicerouter devicerouterinst(
 		8'b0000_0010,		// VPUC Graphics Processing Unit Command Fifo
 		8'b0000_0001,		// LEDS Debug / Status LED interface
 		8'b0000_0000}),		// GPIO Input/output pins to ESP32 module
-    .axi_m({mailif, uartif, csrif0, audioif, usbaif, dmaif, xadcif, spiif, vpucmdif, ledif, gpioif}));
+    .axi_m({csrif1, csrif0, uartif, mailif, audioif, usbaif, dmaif, xadcif, spiif, vpucmdif, ledif, gpioif}));
 
 // --------------------------------------------------
 // Interrupt wires
@@ -370,6 +417,28 @@ axi4CSRFile #( .HARTID(0)) csrfile0 (
 	.sie(sieHart0),
 	// Bus
 	.s_axi(csrif0) );
+
+axi4CSRFile #( .HARTID(1)) csrfile1 (
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.cpuclocktime(cpuclocktimeHart1),
+	.wallclocktime(wallclocktime),
+	.retired(retiredHart1),
+	// IRQ tracking
+	.irqReq(irqReqHart1),
+	// External interrupt wires
+	.keyirq(keyirq),
+	.usbirq(usbairq),
+	.gpioirq(gpioirq),
+	.uartirq(uartirq),
+	// TODO: Reset via ESP32
+	//.sysresetn(sysresetn),
+	// Shadow registers
+	.mepc(mepcHart1),
+	.mtvec(mtvecHart1),
+	.sie(sieHart1),
+	// Bus
+	.s_axi(csrif1) );
 
 axi4uart uartinst(
 	.aclk(aclk),
