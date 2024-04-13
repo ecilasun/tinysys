@@ -14,7 +14,10 @@
 		"xtr1common": "cpp",
 		"xutility": "cpp",
 		"serialinput.h": "c",
-		"keyringbuffer.h": "c"
+		"keyringbuffer.h": "c",
+		"stdlib.h": "c",
+		"basesystem.h": "c",
+		"mailbox.h": "c"
 	},
 	"terminal.integrated.profiles.windows": {
 		"MSYS2": {

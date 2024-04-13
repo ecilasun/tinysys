@@ -136,9 +136,9 @@ void ShowVersion(int waterMark)
 	kprintf(" Board           : issue 2E:2024               \n");
 	kprintf(" CPU & bus clock : 150MHz                      \n");
 	kprintf(" ARCH            : rv32im_zicsr_zifencei_zfinx \n");
-	for (uint32_t i=0;i<16;++i)
+	for (uint32_t i=0; i<16; ++i)
 	{
-		uint32_t isalive = MailboxRead(i, 0);
+		uint32_t isalive = MailboxRead(i, MAILSLOT_HART_AWAKE);
 		if (isalive==0xFAFECAC0)
 			kprintf(" HART%d%s          : alive                       \n", i, i>9 ? "" : " ");
 	}
@@ -578,13 +578,44 @@ uint32_t LoadOverlay(const char *filename)
 void workermain()
 {
 	// Mark us alive
-	uint32_t hartid = read_csr(mhartid);
-	MailboxWrite(hartid, 0, 0xFAFECAC0);
+	uint32_t self = read_csr(mhartid);
+	MailboxWrite(self, MAILSLOT_HART_AWAKE, 0xFAFECAC0);
 
 	do
 	{
-		// Wait
+		// Wait for a mailbox write to trigger an interrupt
 		asm volatile("wfi;");
+
+		// Read request command
+		uint32_t request = MailboxRead(self, MAILSLOT_HART_COMMAND);
+
+		// Process requests
+		switch (request)
+		{
+			case MAIL_CMD_RUN_JOB:
+			{
+				// Run job at address param0
+				uint32_t branchtarget = MailboxRead(self, MAILSLOT_HART_PARAM0);
+
+				asm volatile(
+					".word 0xFC000073;"	// Invalidate & Write Back D$ (CFLUSH.D.L1)
+					"fence.i;"			// Invalidate I$
+					"lw s0, %0;"		// Target branch address
+					"jalr s0;"			// Branch to the entry point
+					: "=m" (branchtarget)
+					: 
+					: "s0"
+				);
+			}
+			break;
+
+			default:
+			{
+				// NOOP
+			}
+			break;
+		}
+
 	} while (1);
 }
 
@@ -593,7 +624,7 @@ int main()
 	LEDSetState(0xF);
 	// Mark us alive
 	uint32_t hartid = read_csr(mhartid);
-	MailboxWrite(hartid, 0, 0xFAFECAC0);
+	MailboxWrite(hartid, MAILSLOT_HART_AWAKE, 0xFAFECAC0);
 
 	LEDSetState(0xE);
 	// Set default path before we mount any storage devices
