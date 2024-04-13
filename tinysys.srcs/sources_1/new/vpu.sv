@@ -25,15 +25,6 @@ module videocore(
 // - Memory mapped command buffer interface
 
 // --------------------------------------------------
-// Scanline and scan pixel cdc registers
-// --------------------------------------------------
-
-(* async_reg = "true" *) logic [9:0] scanlinepre = 'd0;
-(* async_reg = "true" *) logic [9:0] scanline = 'd0;
-(* async_reg = "true" *) logic [9:0] scanpixelpre = 'd0;
-(* async_reg = "true" *) logic [9:0] scanpixel = 'd0;
-
-// --------------------------------------------------
 // Scan setup
 // --------------------------------------------------
 
@@ -41,7 +32,7 @@ module videocore(
 logic [31:0] scanaddr;
 logic [31:0] scanoffset;
 logic [10:0] scaninc;
-logic scanenable = 1'b0;
+logic scanenable;
 
 // --------------------------------------------------
 // Common
@@ -50,7 +41,7 @@ logic scanenable = 1'b0;
 wire [11:0] video_x;
 wire [11:0] video_y;
 
-logic cmdre = 1'b0;
+logic cmdre;
 assign vpufifore = cmdre;
 
 // --------------------------------------------------
@@ -225,119 +216,114 @@ assign m_axi.wlast = 0;
 assign m_axi.wdata = 'd0;
 assign m_axi.bready = 0;
 
-typedef enum logic [2:0] {SINIT, DETECTFRAMESTART, STARTLOAD, TRIGGERBURST, DATABURST, ADVANCESCANLINEADDRESS} scanstatetype;
-scanstatetype scanstate = SINIT;
-
-logic [6:0] rdata_cnt = 'd0;
-
 // --------------------------------------------------
 // Command FIFO
 // --------------------------------------------------
 
 typedef enum logic [2:0] {
-	CINIT,
 	WCMD, DISPATCH,
 	SETVPAGE,
 	SETPAL,
 	VMODE, VSCANSIZE,
 	FINALIZE } vpucmdmodetype;
-vpucmdmodetype cmdmode = CINIT;
+vpucmdmodetype cmdmode = WCMD;
 
-logic [31:0] vpucmd = 'd0;
+logic [31:0] vpucmd;
 
 always_ff @(posedge aclk) begin
-	cmdre <= 1'b0;
-	palettewe <= 1'b0;
-
-	case (cmdmode)
-		CINIT: begin
-			scanaddr <= 32'd0;
-			burstlen <= 'd19;
-			lastscanline <= 10'd0;
-			palettedin <= 24'd0;
-			cmdmode <= WCMD;
-		end
-
-		WCMD: begin
-			if (vpufifovalid && ~vpufifoempty) begin
-				vpucmd <= vpufifodout;
-				// Advance FIFO
-				cmdre <= 1'b1;
-				// Dispatch cmd
-				cmdmode <= DISPATCH;
-			end
-		end
-
-		DISPATCH: begin
-			case (vpucmd)
-				32'h00000000:	cmdmode <= SETVPAGE;	// Set the scanout start address (followed by 32bit cached memory address, 64 byte cache aligned)
-				32'h00000001:	cmdmode <= SETPAL;		// Set 24 bit color palette entry (followed by 8bit address+24bit color in next word)
-				32'h00000002:	cmdmode <= VMODE;		// Set up video mode or turn off scan logic (default is 320x240*8bit paletted)
-				default:		cmdmode <= FINALIZE;	// Invalid command, wait one clock and try next
-			endcase
-		end
-
-		SETVPAGE: begin
-			if (vpufifovalid && ~vpufifoempty) begin
-				scanaddr <= vpufifodout;	// Set new video scanout address (64 byte cache aligned, as we read in bursts)
-				// Advance FIFO
-				cmdre <= 1'b1;
-				cmdmode <= FINALIZE;
-			end
-		end
-
-		SETPAL: begin
-			if (vpufifovalid && ~vpufifoempty) begin
-				palettewe <= 1'b1;
-				palettewa <= vpufifodout[31:24];	// 8 bit palette index
-				//??? <= vpufifodout[23:16];		// 8 bit extra data, unused
-				//??? <= vpufifodout[15:11];		// 4 bit extra data, alpha perhaps?
-				palettedin <= vpufifodout[11:0];	// 12 bit color
-				// Advance FIFO
-				cmdre <= 1'b1;
-				cmdmode <= FINALIZE;
-			end
-		end
-
-		VMODE: begin
-			if (vpufifovalid && ~vpufifoempty) begin
-				scanenable <= vpufifodout[0];	// 0:video output disabled, 1:video output enabled
-				scanwidth <= vpufifodout[1];	// 0:320-wide, 1:640-wide
-				colormode <= vpufifodout[2];	// 0:8bit indexed, 1:16bit rgb
-				lastscanline <= vpufifodout[1] ? 10'd524 : 10'd523;
-				// ? <= vpufifodout[31:3] unused for now
-
-				// Set up burst count to 20 / 40 / 80 depending on video mode
-				unique case ({vpufifodout[2], vpufifodout[1]})
-					2'b00: burstlen <= 'd19;	// 320*240 8bpp
-					2'b01: burstlen <= 'd39;	// 640*480 8bpp
-					2'b10: burstlen <= 'd39;	// 320*240 16bpp
-					2'b11: burstlen <= 'd79;	// 640*480 16bpp
-				endcase
-
-				// Advance FIFO
-				cmdre <= 1'b1;
-				cmdmode <= VSCANSIZE;
-			end
-		end
-
-		VSCANSIZE: begin
-			unique case ({vpufifodout[2], vpufifodout[1]})
-				2'b00: scaninc <= 11'd320;	// 320*240 8bpp
-				2'b01: scaninc <= 11'd640;	// 640*480 8bpp
-				2'b10: scaninc <= 11'd640;	// 320*240 16bpp
-				2'b11: scaninc <= 11'd1280;	// 640*480 16bpp
-			endcase
-			cmdmode <= FINALIZE;
-		end
-		
-		FINALIZE: begin
-			cmdmode <= WCMD;
-		end
-	endcase
-
 	if (~aresetn) begin
-		cmdmode <= CINIT;
+		vpucmd <= 32'd0;
+		scanaddr <= 32'd0;
+		burstlen <= 'd19;
+		lastscanline <= 10'd0;
+		palettedin <= 24'd0;
+		scanenable <= 1'b0;
+		cmdre <= 1'b0;
+		palettewe <= 1'b0;
+		cmdmode <= WCMD;
+	end else begin
+		cmdre <= 1'b0;
+		palettewe <= 1'b0;
+
+		case (cmdmode)
+			WCMD: begin
+				if (vpufifovalid && ~vpufifoempty) begin
+					vpucmd <= vpufifodout;
+					// Advance FIFO
+					cmdre <= 1'b1;
+					// Dispatch cmd
+					cmdmode <= DISPATCH;
+				end
+			end
+
+			DISPATCH: begin
+				case (vpucmd)
+					32'h00000000:	cmdmode <= SETVPAGE;	// Set the scanout start address (followed by 32bit cached memory address, 64 byte cache aligned)
+					32'h00000001:	cmdmode <= SETPAL;		// Set 24 bit color palette entry (followed by 8bit address+24bit color in next word)
+					32'h00000002:	cmdmode <= VMODE;		// Set up video mode or turn off scan logic (default is 320x240*8bit paletted)
+					default:		cmdmode <= FINALIZE;	// Invalid command, wait one clock and try next
+				endcase
+			end
+
+			SETVPAGE: begin
+				if (vpufifovalid && ~vpufifoempty) begin
+					scanaddr <= vpufifodout;	// Set new video scanout address (64 byte cache aligned, as we read in bursts)
+					// Advance FIFO
+					cmdre <= 1'b1;
+					cmdmode <= FINALIZE;
+				end
+			end
+
+			SETPAL: begin
+				if (vpufifovalid && ~vpufifoempty) begin
+					palettewe <= 1'b1;
+					palettewa <= vpufifodout[31:24];	// 8 bit palette index
+					//??? <= vpufifodout[23:16];		// 8 bit extra data, unused
+					//??? <= vpufifodout[15:11];		// 4 bit extra data, alpha perhaps?
+					palettedin <= vpufifodout[11:0];	// 12 bit color
+					// Advance FIFO
+					cmdre <= 1'b1;
+					cmdmode <= FINALIZE;
+				end
+			end
+
+			VMODE: begin
+				if (vpufifovalid && ~vpufifoempty) begin
+					scanenable <= vpufifodout[0];	// 0:video output disabled, 1:video output enabled
+					scanwidth <= vpufifodout[1];	// 0:320-wide, 1:640-wide
+					colormode <= vpufifodout[2];	// 0:8bit indexed, 1:16bit rgb
+					lastscanline <= vpufifodout[1] ? 10'd524 : 10'd523;
+					// ? <= vpufifodout[31:3] unused for now
+
+					// Set up burst count to 20 / 40 / 80 depending on video mode
+					unique case ({vpufifodout[2], vpufifodout[1]})
+						2'b00: burstlen <= 'd19;	// 320*240 8bpp
+						2'b01: burstlen <= 'd39;	// 640*480 8bpp
+						2'b10: burstlen <= 'd39;	// 320*240 16bpp
+						2'b11: burstlen <= 'd79;	// 640*480 16bpp
+					endcase
+
+					// Advance FIFO
+					cmdre <= 1'b1;
+					cmdmode <= VSCANSIZE;
+				end
+			end
+
+			VSCANSIZE: begin
+				unique case ({vpufifodout[2], vpufifodout[1]})
+					2'b00: scaninc <= 11'd320;	// 320*240 8bpp
+					2'b01: scaninc <= 11'd640;	// 640*480 8bpp
+					2'b10: scaninc <= 11'd640;	// 320*240 16bpp
+					2'b11: scaninc <= 11'd1280;	// 640*480 16bpp
+				endcase
+				cmdmode <= FINALIZE;
+			end
+
+			FINALIZE: begin
+				cmdmode <= WCMD;
+			end
+		endcase
+
 	end
 end
 
@@ -349,122 +335,118 @@ wire startofrowp = video_x == 12'd0;
 wire endofcolumnp = video_y == 12'd490;
 wire vsyncnow = startofrowp && endofcolumnp;
 
-logic blankt = 1'b0;
-
+logic blankt;
 always_ff @(posedge clk25) begin
-	blankt <= vsyncnow ? ~blankt : blankt;
-
 	if (~aresetn) begin
 		blankt <= 1'b0;
+	end else begin
+		blankt <= vsyncnow ? ~blankt : blankt;
 	end
 end
 
-(* async_reg = "true" *) logic blanktogglepre = 1'b0;
-(* async_reg = "true" *) logic blanktoggle = 1'b0;
+(* async_reg = "true" *) logic [9:0] scanlinepre;
+(* async_reg = "true" *) logic [9:0] scanline;
+(* async_reg = "true" *) logic [9:0] scanpixelpre;
+(* async_reg = "true" *) logic [9:0] scanpixel;
+(* async_reg = "true" *) logic blanktogglepre;
+(* async_reg = "true" *) logic blanktoggle;
 
-// Vertical blanking counter
-logic smode = 1'b0;
+// Vertical blanking and pixel tracking
 always_ff @(posedge aclk) begin
-
-	smode <= 1'b1;
-
-	case (smode)
-		1'b0: begin
-			scanline <= 10'd0;
-			scanlinepre <= 10'd0;
-			scanpixelpre <= 10'd0;
-			scanpixel <= 10'd0;
-        end
-        1'b1: begin
-			scanlinepre <= video_y;
-			scanline <= scanlinepre;
-			scanpixelpre <= video_x;
-			scanpixel <= scanpixelpre;
-			blanktogglepre <= blankt;
-			blanktoggle <= blanktogglepre;
-        end
-    endcase
-
 	if (~aresetn) begin
-        smode <= 1'b0;
+		scanline <= 10'd0;
+		scanlinepre <= 10'd0;
+		scanpixelpre <= 10'd0;
+		scanpixel <= 10'd0;
+		blanktogglepre <= 1'b0;
+		blanktoggle <= 1'b0;
+	end else begin
+		scanlinepre <= video_y;
+		scanline <= scanlinepre;
+		scanpixelpre <= video_x;
+		scanpixel <= scanpixelpre;
+		blanktogglepre <= blankt;
+		blanktoggle <= blanktogglepre;
 	end
 end
 
 assign vpustate = {31'd0, blanktoggle};
 
+typedef enum logic [2:0] {DETECTFRAMESTART, STARTLOAD, TRIGGERBURST, DATABURST, ADVANCESCANLINEADDRESS} scanstatetype;
+scanstatetype scanstate = DETECTFRAMESTART;
+
+logic [6:0] rdata_cnt;
+
 always_ff @(posedge aclk) begin
-	scanlinewe <= 1'b0;
-
-	case (scanstate)
-		SINIT: begin
-			m_axi.arvalid <= 0;
-			m_axi.rready <= 0;
-			scanstate <= DETECTFRAMESTART;
-		end
-
-		DETECTFRAMESTART: begin
-			// When we reach the last odd scanline, start loading the cache
-			if (scanenable && (scanline == lastscanline)) begin
-				scanoffset <= scanaddr;
-				scanstate <= STARTLOAD;
-			end else begin
-				scanstate <= DETECTFRAMESTART;
-			end
-		end
-
-		STARTLOAD: begin
-			// Only read on odd lines in 320-wide, or every other line in 640-wide mode
-			// The trick here: we'll initially hit odd-even-even-odd sequence which means
-			// the cache line we loaded on line 523 will only reload on line 1 after it's been displayed twice in 320 mode
-			if ((scanpixel == 640) && (scanline[0] || scanwidth)) begin
-				// This has to be a 64 byte cache aligned address to match cache burst reads we're running
-				// Each scanline is a multiple of 64 bytes, so no need to further align here unless we have an odd output size (320 and 640 work just fine)
-				m_axi.arlen <= burstlen;
-				m_axi.araddr <= scanoffset;
-				m_axi.arvalid <= (scanline == 10'd479) ? 1'b0 : 1'b1;
-				// Keep reading as long as we're not on last line
-				scanstate <= scanline == 10'd479 ? DETECTFRAMESTART : TRIGGERBURST;
-			end else begin
-				scanstate <= STARTLOAD;
-			end
-		end
-
-		TRIGGERBURST: begin
-			if (/*m_axi.arvalid && */m_axi.arready) begin
-				rdata_cnt <= 0;
-				m_axi.arvalid <= 0;
-				m_axi.rready <= 1;
-				scanstate <= DATABURST;
-			end else begin
-				scanstate <= TRIGGERBURST;
-			end
-		end
-
-		DATABURST: begin
-			if (m_axi.rvalid  /*&& m_axi.rready*/) begin
-				// Load data into scanline cache in 128bit chunks (16 pixels at 8bpp, 20 of them)
-				// NOTE: video mode control sets up burst length to either 40 or 80
-				scanlinewe <= 1'b1;
-				scanlinewa <= rdata_cnt;
-				scanlinedin <= m_axi.rdata;
-				rdata_cnt <= rdata_cnt + 'd1;
-				m_axi.rready <= ~m_axi.rlast;
-				scanstate <= m_axi.rlast ? ADVANCESCANLINEADDRESS : DATABURST;
-			end else begin
-				scanstate <= DATABURST;
-			end
-		end
-
-		ADVANCESCANLINEADDRESS: begin
-			// Wait for and load next scanline
-			scanoffset <= scanoffset + scaninc;
-			scanstate <= STARTLOAD;
-		end
-
-	endcase
-
 	if (~aresetn) begin
-		scanstate <= SINIT;
+		scanlinewe <= 1'b0;
+		m_axi.arvalid <= 0;
+		m_axi.rready <= 0;
+		rdata_cnt <= 7'd0;
+		scanstate <= DETECTFRAMESTART;
+	end else begin
+		scanlinewe <= 1'b0;
+		case (scanstate)
+			DETECTFRAMESTART: begin
+				// When we reach the last odd scanline, start loading the cache
+				if (scanenable && (scanline == lastscanline)) begin
+					scanoffset <= scanaddr;
+					scanstate <= STARTLOAD;
+				end else begin
+					scanstate <= DETECTFRAMESTART;
+				end
+			end
+
+			STARTLOAD: begin
+				// Only read on odd lines in 320-wide, or every other line in 640-wide mode
+				// The trick here: we'll initially hit odd-even-even-odd sequence which means
+				// the cache line we loaded on line 523 will only reload on line 1 after it's been displayed twice in 320 mode
+				if ((scanpixel == 640) && (scanline[0] || scanwidth)) begin
+					// This has to be a 64 byte cache aligned address to match cache burst reads we're running
+					// Each scanline is a multiple of 64 bytes, so no need to further align here unless we have an odd output size (320 and 640 work just fine)
+					m_axi.arlen <= burstlen;
+					m_axi.araddr <= scanoffset;
+					m_axi.arvalid <= (scanline == 10'd479) ? 1'b0 : 1'b1;
+					// Keep reading as long as we're not on last line
+					scanstate <= scanline == 10'd479 ? DETECTFRAMESTART : TRIGGERBURST;
+				end else begin
+					scanstate <= STARTLOAD;
+				end
+			end
+
+			TRIGGERBURST: begin
+				if (/*m_axi.arvalid && */m_axi.arready) begin
+					rdata_cnt <= 0;
+					m_axi.arvalid <= 0;
+					m_axi.rready <= 1;
+					scanstate <= DATABURST;
+				end else begin
+					scanstate <= TRIGGERBURST;
+				end
+			end
+
+			DATABURST: begin
+				if (m_axi.rvalid  /*&& m_axi.rready*/) begin
+					// Load data into scanline cache in 128bit chunks (16 pixels at 8bpp, 20 of them)
+					// NOTE: video mode control sets up burst length to either 40 or 80
+					scanlinewe <= 1'b1;
+					scanlinewa <= rdata_cnt;
+					scanlinedin <= m_axi.rdata;
+					rdata_cnt <= rdata_cnt + 'd1;
+					m_axi.rready <= ~m_axi.rlast;
+					scanstate <= m_axi.rlast ? ADVANCESCANLINEADDRESS : DATABURST;
+				end else begin
+					scanstate <= DATABURST;
+				end
+			end
+
+			ADVANCESCANLINEADDRESS: begin
+				// Wait for and load next scanline
+				scanoffset <= scanoffset + scaninc;
+				scanstate <= STARTLOAD;
+			end
+
+		endcase
 	end
 end
 

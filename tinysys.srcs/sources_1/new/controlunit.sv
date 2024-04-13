@@ -24,8 +24,8 @@ module controlunit #(
 logic ififore;
 assign ififord_en = ififore;
 
-(* extract_reset = "yes" *) logic [63:0] cyclecount;
-(* extract_reset = "yes" *) logic [63:0] retiredcount;
+logic [63:0] cyclecount;
+logic [63:0] retiredcount;
 assign cpuclocktime = cyclecount;
 assign retired = retiredcount;
 
@@ -53,10 +53,10 @@ assign branchresolved = btready;
 assign branchtarget = btarget;
 
 // Operands for exec
-(* extract_reset = "yes" *) logic [31:0] A; // rval1
-(* extract_reset = "yes" *) logic [31:0] B; // rval2
-(* extract_reset = "yes" *) logic [31:0] D; // immed
-(* extract_reset = "yes" *) logic [31:0] E; // rval3
+logic [31:0] A; // rval1
+logic [31:0] B; // rval2
+logic [31:0] D; // immed
+logic [31:0] E; // rval3
 
 // Writeback data
 logic [31:0] wbdin;
@@ -157,23 +157,23 @@ integerdividersigned IDIVS (
 // Floating point math
 // ------------------------------------------------------------------------------------
 
-logic fmaddstrobe = 1'b0;
-logic fmsubstrobe = 1'b0;
-logic fnmsubstrobe = 1'b0;
-logic fnmaddstrobe = 1'b0;
-logic faddstrobe = 1'b0;
-logic fsubstrobe = 1'b0;
-logic fmulstrobe = 1'b0;
-logic fdivstrobe = 1'b0;
-logic fi2fstrobe = 1'b0;
-logic fui2fstrobe = 1'b0;
-logic ff2istrobe = 1'b0;
-logic ff2uistrobe = 1'b0;
-logic ff2ui4satstrobe = 1'b0;
-logic fsqrtstrobe = 1'b0;
-logic feqstrobe = 1'b0;
-logic fltstrobe = 1'b0;
-logic flestrobe = 1'b0;
+logic fmaddstrobe;
+logic fmsubstrobe;
+logic fnmsubstrobe;
+logic fnmaddstrobe;
+logic faddstrobe;
+logic fsubstrobe;
+logic fmulstrobe;
+logic fdivstrobe;
+logic fi2fstrobe;
+logic fui2fstrobe;
+logic ff2istrobe;
+logic ff2uistrobe;
+logic ff2ui4satstrobe;
+logic fsqrtstrobe;
+logic feqstrobe;
+logic fltstrobe;
+logic flestrobe;
 
 wire fpuresultvalid;
 wire [31:0] fpuresult;
@@ -226,20 +226,20 @@ controlunitmode ctlmode = INIT;
 
 //logic cpurunning;
 always @(posedge aclk) begin
-	// TODO: Stop this if CPU's halted for debug i.e. + {63'd0, cpurunning}
-	cyclecount <= cyclecount + 64'd1;
-
 	if (~aresetn) begin
 		cyclecount <= 64'd0;
+	end else begin
+		// TODO: Stop this if CPU's halted for debug i.e. + {63'd0, cpurunning}
+		cyclecount <= cyclecount + 64'd1;
 	end
 end
 
 logic retiredstrobe;
 always @(posedge aclk) begin
-	retiredcount <= retiredcount + {63'd0, retiredstrobe};
-
 	if (~aresetn) begin
 		retiredcount <= 64'd0;
+	end else begin
+		retiredcount <= retiredcount + {63'd0, retiredstrobe};
 	end
 end
 
@@ -331,6 +331,23 @@ always @(posedge aclk) begin
 		pendingload <= 1'b0;
 		pendingwrite <= 1'b0;
 		wbdin <= 32'd0;
+		fmaddstrobe <= 1'b0;	// Stop floating point strobe
+		fmsubstrobe <= 1'b0;
+		fnmsubstrobe <= 1'b0;
+		fnmaddstrobe <= 1'b0;
+		faddstrobe <= 1'b0;
+		fsubstrobe <= 1'b0;
+		fmulstrobe <= 1'b0;
+		fdivstrobe <= 1'b0;
+		fi2fstrobe <= 1'b0;
+		fui2fstrobe <= 1'b0;
+		ff2istrobe <= 1'b0;
+		ff2uistrobe <= 1'b0;
+		ff2ui4satstrobe <= 1'b0;
+		fsqrtstrobe <= 1'b0;
+		feqstrobe <= 1'b0;
+		fltstrobe <= 1'b0;
+		flestrobe <= 1'b0;
 		ctlmode <= INIT;
 	end else begin
 		btready <= 1'b0;	// Stop branch target ready strobe
