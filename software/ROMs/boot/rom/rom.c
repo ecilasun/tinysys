@@ -27,8 +27,8 @@
 // On-storage version
 #define DEVVERSIONSTRING "r1.06"
 
-static char s_execName[32] = "ROM";
-static char s_execParam0[32] = "auto";
+static char s_execName[32] = "                               ";
+static char s_execParam0[32] = "                               ";
 static uint32_t s_execParamCount = 1;
 static uint32_t s_userTaskID = 2;
 
@@ -38,7 +38,6 @@ static char s_pathtmp[48];
 static int32_t s_cmdLen = 0;
 static uint32_t s_startAddress = 0;
 static int s_refreshConsoleOut = 1;
-static int s_relocOffset = 0;
 
 static const char *s_taskstates[]={
 	"UNKNOWN    ",
@@ -154,11 +153,11 @@ void ShowVersion(int waterMark)
 	VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 }
 
-void ExecuteCmd(char *_cmd)
+uint32_t ExecuteCmd(char *_cmd)
 {
 	const char *command = strtok(_cmd, " ");
 	if (!command)
-		return;
+		return 1;
 
 	uint32_t loadELF = 0;
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
@@ -183,25 +182,14 @@ void ExecuteCmd(char *_cmd)
 	{
 		VPUConsoleClear(kernelgfx);
 	}
-	else if (!strcmp(command, "reloc"))
-	{
-		const char *offset = strtok(NULL, " ");
-		if (!offset)
-		{
-			kprintf("Relocation offset reset\n");
-			s_relocOffset = 0;
-		}
-		else
-		{
-			s_relocOffset = atoi(offset);
-		}
-	}
 	else if (!strcmp(command, "reboot"))
 	{
-		// Blank
+		// TODO: Instead, talk to ESP32-C6 to get it to hard-reboot us
 		VPUConsoleClear(kernelgfx);
-		VPUClear(kernelgfx, 0x00000000);
+		// Clear to reboot color
+		VPUClear(kernelgfx, 0x0C0C0C0C);
 		VPUSetVMode(kernelgfx, EVS_Disable);
+		// Jump to start of ROM
 		asm volatile(
 			"li s0, 0x0FFE0000;"
 			"jalr s0;"
@@ -237,7 +225,13 @@ void ExecuteCmd(char *_cmd)
 		if (!path)
 			kprintf("usage: rm fname\n");
 		else
-			remove(path);
+		{
+			int res = remove(path);
+			if (res < 0)
+				kprintf("file '%s' not found\n", path);
+			else
+				kprintf("file '%s' removed\n", path);
+		}
 	}
 	else if (!strcmp(command, "kill"))
 	{
@@ -320,7 +314,7 @@ void ExecuteCmd(char *_cmd)
 		kprintf(" dir [path]   | Show list of files in cwd or path \n");
 		kprintf(" mem          | Show available memory             \n");
 		kprintf(" pwd          | Show current work directory       \n");
-		kprintf(" reboot       | Soft reboot                       \n");
+		kprintf(" reboot       | Reboot the device                 \n");
 		kprintf(" ren old new  | Rename file from old to new name  \n");
 		kprintf(" ver          | Show version info                 \n");
 
@@ -334,7 +328,6 @@ void ExecuteCmd(char *_cmd)
 			kprintf(" kill pid     | Kill process with id pid          \n");
 			kprintf(" mount        | Mount drive sd:                   \n");
 			kprintf(" proc         | Show process info                 \n");
-			kprintf(" reloc        | Set ELF relocation offset (test)  \n");
 			kprintf(" unmount      | Unmount drive sd:                 \n");
 		}
 
@@ -362,7 +355,7 @@ void ExecuteCmd(char *_cmd)
 
 			// First parameter is excutable name
 			// TODO: ELF relocation on load to avoid exec+data+stack overlap
-			s_startAddress = LoadExecutable(filename, s_relocOffset, true);
+			s_startAddress = LoadExecutable(filename, 0, true);
 			// TODO: Scan and push all argv and the correct argc onto stack
 
 			// If we succeeded in loading the executable, the trampoline task can branch into it.
@@ -388,9 +381,12 @@ void ExecuteCmd(char *_cmd)
 				}
 
 				s_userTaskID = TaskAdd(tctx, command, _runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+				return 0;
 			}
 		}
 	}
+
+	return 1;
 }
 
 void _cliTask()
@@ -408,7 +404,6 @@ void _cliTask()
 		{
 			uint8_t asciicode = (uint8_t)(uartData&0xFF);
 
-			++s_refreshConsoleOut;
 			switch (asciicode)
 			{
 				case 10:
@@ -420,14 +415,16 @@ void _cliTask()
 
 				case 3:		// EXT (Ctrl+C)
 				{
+					++s_refreshConsoleOut;
 					execcmd++;
-					// TODO: This has to be handled differently and terminate active task not hardcoded one
+					// TODO: This has to be handled differently and terminate the active task, not the hardcoded one
 					TaskExitTaskWithID(taskctx, s_userTaskID, 0); // Sig:0, terminate process if no debugger is attached
 				}
 				break;
 
 				case 8:		// Backspace
 				{
+					++s_refreshConsoleOut;
 					s_cmdLen--;
 					if (s_cmdLen<0)
 						s_cmdLen = 0;
@@ -436,6 +433,7 @@ void _cliTask()
 
 				case 27:	// ESC
 				{
+					++s_refreshConsoleOut;
 					s_cmdLen = 0;
 					// TODO: Erase current line
 				}
@@ -446,9 +444,10 @@ void _cliTask()
 					// Do not enqueue characters into command string if we're running some app
 					if(taskctx->numTasks <= 2)
 					{
+						++s_refreshConsoleOut;
 						s_cmdString[s_cmdLen++] = (char)asciicode;
-						if (s_cmdLen > 63)
-							s_cmdLen = 63;
+						if (s_cmdLen > 62)
+							s_cmdLen = 62;
 					}
 				}
 				break;
@@ -460,7 +459,6 @@ void _cliTask()
 		if (task->state == TS_TERMINATED)
 		{
 			task->state = TS_UNKNOWN;
-			//kprintf("\n'%s' terminated (0x%x)\n", task->name, task->exitCode);
 			++s_refreshConsoleOut;
 			DeviceDefaultState(0);
 		}
@@ -470,9 +468,8 @@ void _cliTask()
 		{
 			if (execcmd)
 			{
-				++s_refreshConsoleOut;
 				kprintf("\n");
-				ExecuteCmd(s_cmdString);
+				s_refreshConsoleOut += ExecuteCmd(s_cmdString);
 				// Rewind
 				s_cmdLen = 0;
 				s_cmdString[0] = 0;
