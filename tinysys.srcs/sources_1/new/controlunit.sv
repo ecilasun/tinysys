@@ -4,7 +4,7 @@
 
 module controlunit #(
 	parameter int HARTID = 4'h0,
-	parameter int CSRBASE = 20'h8000A
+	parameter int CSRBASE = 16'h800A
 ) (
 	input wire aclk,
 	input wire aresetn,
@@ -696,7 +696,8 @@ always @(posedge aclk) begin
 	
 			CSROPS: begin
 				if (~pendingwrite || m_ibus.wdone) begin
-					m_ibus.raddr <= {CSRBASE, csroffset};
+					// 16 byte aligned
+					m_ibus.raddr <= {CSRBASE, csroffset, 4'h0};
 					m_ibus.rstrobe <= 1'b1;
 					ctlmode <= WCSROP;
 				end else begin
@@ -716,10 +717,11 @@ always @(posedge aclk) begin
 	
 			SYSWBACK: begin
 				if (~pendingwback && (~pendingwrite || m_ibus.wdone)) begin
-					// Update CSR register with read value
-					m_ibus.waddr <= {CSRBASE, csroffset};
+					// 16 byte aligned
+					m_ibus.waddr <= {CSRBASE, csroffset, 4'h0};
 					m_ibus.wstrobe <= 4'b1111;
 					pendingwrite <= 1'b1;
+					// Update CSR register with result of the operation
 					unique case (func3)
 						3'b001: begin // CSRRW
 							m_ibus.wdata <= A;

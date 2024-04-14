@@ -24,9 +24,9 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "r1.06"
+#define VERSIONSTRING "r1.07"
 // On-storage version
-#define DEVVERSIONSTRING "r1.06"
+#define DEVVERSIONSTRING "r1.07"
 
 static char s_execName[32] = "                               ";
 static char s_execParam0[32] = "                               ";

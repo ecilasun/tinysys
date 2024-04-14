@@ -156,7 +156,7 @@ always @(posedge aclk) begin
 			2'b01: begin
 				if (s_axi.wvalid) begin
 					csrdin <= s_axi.wdata[31:0];
-					cswraddr <= s_axi.awaddr[11:0];
+					cswraddr <= s_axi.awaddr[15:4]; // 16 byte aligned
 					csrwe <= 1'b1;
 					writestate <= 2'b10;
 					s_axi.wready <= 1'b1;
@@ -200,7 +200,7 @@ always @(posedge aclk) begin
 			2'b01: begin
 				if (s_axi.arvalid) begin
 					s_axi.arready <= 1'b1;
-					csrraddr <= s_axi.araddr[11:0];
+					csrraddr <= s_axi.araddr[15:4]; // 16 byte aligned
 					raddrstate <= 2'b10;
 				end
 			end

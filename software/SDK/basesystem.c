@@ -82,3 +82,19 @@ void E32SetTimeCompare(const uint64_t future)
    swap_csr(0x801, ((future&0xFFFFFFFF00000000)>>32));         // CSR_TIMECMPHI
    swap_csr(0x800, ((uint32_t)(future&0x00000000FFFFFFFF)));   // CSR_TIMECMPLO
 }
+
+void E32WriteMemMappedCSR(uint32_t _hart, uint32_t _csr, uint32_t _value)
+{
+	if (_hart == 0)
+		*(uint32_t*)(DEVICE_CSR0 + (_csr<<4)) = _value;
+	else
+		*(uint32_t*)(DEVICE_CSR1 + (_csr<<4)) = _value;
+}
+
+uint32_t E32ReadMemMappedCSR(uint32_t _hart, uint32_t _csr)
+{
+	if (_hart == 0)
+		return *(uint32_t*)(DEVICE_CSR0 + (_csr<<4));
+	else
+		return *(uint32_t*)(DEVICE_CSR1 + (_csr<<4));
+}

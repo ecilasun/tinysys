@@ -106,7 +106,7 @@ wire [31:0] mepcHart0;
 wire [31:0] mtvecHart0;
 wire [1:0] irqReqHart0;
 
-riscv #( .HARTID(0), .CSRBASE(20'h8000A), .RESETVECTOR(RESETVECTOR)) hart0(
+riscv #( .HARTID(0), .CSRBASE(16'h800A), .RESETVECTOR(RESETVECTOR)) hart0(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.romReady(romReady),
@@ -131,7 +131,7 @@ wire [31:0] mepcHart1;
 wire [31:0] mtvecHart1;
 wire [1:0] irqReqHart1;
 
-riscv #( .HARTID(1), .CSRBASE(20'h8000B), .RESETVECTOR(RESETVECTOR)) hart1(
+riscv #( .HARTID(1), .CSRBASE(16'h800B), .RESETVECTOR(RESETVECTOR)) hart1(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.romReady(romReady),
@@ -275,43 +275,42 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // address space is for 4Kbytes of data yet we can
 // access 16KBytes worth of data.
 
-// 12bit (4K) address space reserved for each memory mapped device (255 devices max)
-// dev   start     end       addrs[19:12]  size  notes
-// GPIO: 80000000  8xx00FFF  8'b0000_0000  4KB	GPIO pins
-// LEDS: 8xx01000  8xx01FFF  8'b0000_0001  4KB	Debug LEDs
-// VPUC: 8xx02000  8xx02FFF  8'b0000_0010  4KB	Video Processing Unit
-// SDCC: 8xx03000  8xx03FFF  8'b0000_0011  4KB	SDCard SPI Unit
-// XADC: 8xx04000  8xx04FFF  8'b0000_0100  4KB	Die Temperature DAC
-// DMAC: 8xx05000  8xx05FFF  8'b0000_0101  4KB	Direct Memory Access / Memcopy
-// USBA: 8xx06000  8xx06FFF  8'b0000_0110  4KB	USB-A Host Interface Unit
-// APUC: 8xx07000  8xx07FFF  8'b0000_0111  4KB	Audio Processing Unit / Mixer
-// MAIL: 8xx08000  8xx08FFF  8'b0000_1000  4KB	MAIL inter-HART comm
-// UART: 8xx09000  8xx09FFF  8'b0000_1001  4KB	UART HART <-> ESP32-C6 comm
-// CSR0: 8xx0A000  8xx0AFFF  8'b0000_1010  4KB	CSR#0
-// CSR1: 8xx0B000  8xx0BFFF  8'b0000_1011  4KB	CSR#1
-// ----: 8xx0C000  8xx0CFFF  8'b0000_1100  4KB	Unused
-// ----: 8xx0D000  8xx0DFFF  8'b0000_1101  4KB	Unused
-// ----: 8xx0E000  8xx0EFFF  8'b0000_1110  4KB	Unused
-// ----: 8xx0F000  8xx0FFFF  8'b0000_1111  4KB	Unused
-// ----: 8xx10000  8xx10FFF  8'b0001_0000  4KB	Unused
+// 16bit (16K) address space reserved for each memory mapped device (255 devices max)
+// dev   start     end       addrs[19:16]  size  notes
+// GPIO: 80000000  8xx0FFFF  4'b0000  16KB	 GPIO pins
+// LEDS: 8xx10000  8xx1FFFF  4'b0001  16KB	 Debug LEDs
+// VPUC: 8xx20000  8xx2FFFF  4'b0010  16KB	 Video Processing Unit
+// SDCC: 8xx30000  8xx3FFFF  4'b0011  16KB	 SDCard SPI Unit
+// XADC: 8xx40000  8xx4FFFF  4'b0100  16KB	 Die Temperature DAC
+// DMAC: 8xx50000  8xx5FFFF  4'b0101  16KB	 Direct Memory Access / Memcopy
+// USBA: 8xx60000  8xx6FFFF  4'b0110  16KB	 USB-A Host Interface Unit
+// APUC: 8xx70000  8xx7FFFF  4'b0111  16KB	 Audio Processing Unit / Mixer
+// MAIL: 8xx80000  8xx8FFFF  4'b1000  16KB	 MAIL inter-HART comm
+// UART: 8xx90000  8xx9FFFF  4'b1001  16KB	 UART HART <-> ESP32-C6 comm
+// CSR0: 8xxA0000  8xxAFFFF  4'b1010  16KB	 CSR#0
+// CSR1: 8xxB0000  8xxBFFFF  4'b1011  16KB	 CSR#1
+// ----: 8xxC0000  8xxCFFFF  4'b1100  16KB	 Unused
+// ----: 8xxD0000  8xxDFFFF  4'b1101  16KB	 Unused
+// ----: 8xxE0000  8xxEFFFF  4'b1110  16KB	 Unused
+// ----: 8xxF0000  8xxFFFFF  4'b1111  16KB	 Unused
 
 devicerouter devicerouterinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
     .axi_s(devicebus),
     .addressmask({
-    	8'b0000_1011,		// CRS1 CSR file for HART#1
-    	8'b0000_1010,		// CRS0 CSR file for HART#0
-    	8'b0000_1001,		// UART ESP32 to RISC-V UART channel
-		8'b0000_1000,		// MAIL Mailbox for HART-to-HART commmunication
-    	8'b0000_0111,		// APUC	Audio Processing Unit Command Fifo
-    	8'b0000_0110,		// USBA USB-A access via SPI
-    	8'b0000_0101,		// DMAC DMA Command Fifo
-    	8'b0000_0100,		// XADC Analog / Digital Converter Interface
-		8'b0000_0011,		// SDCC SDCard access via SPI
-		8'b0000_0010,		// VPUC Graphics Processing Unit Command Fifo
-		8'b0000_0001,		// LEDS Debug / Status LED interface
-		8'b0000_0000}),		// GPIO Input/output pins to ESP32 module
+    	4'b1011,		// CRS1 CSR file for HART#1
+    	4'b1010,		// CRS0 CSR file for HART#0
+    	4'b1001,		// UART ESP32 to RISC-V UART channel
+		4'b1000,		// MAIL Mailbox for HART-to-HART commmunication
+    	4'b0111,		// APUC	Audio Processing Unit Command Fifo
+    	4'b0110,		// USBA USB-A access via SPI
+    	4'b0101,		// DMAC DMA Command Fifo
+    	4'b0100,		// XADC Analog / Digital Converter Interface
+		4'b0011,		// SDCC SDCard access via SPI
+		4'b0010,		// VPUC Graphics Processing Unit Command Fifo
+		4'b0001,		// LEDS Debug / Status LED interface
+		4'b0000}),		// GPIO Input/output pins to ESP32 module
     .axi_m({csrif1, csrif0, uartif, mailif, audioif, usbaif, dmaif, xadcif, spiif, vpucmdif, ledif, gpioif}));
 
 // --------------------------------------------------

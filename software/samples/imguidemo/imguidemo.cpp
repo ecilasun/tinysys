@@ -107,9 +107,9 @@ int main()
 					uint32_t img = imguiframebuffer[x+W];
 
 					// img <= {a,b,g,r};
-					uint8_t B = img>>20;
-					uint8_t G = img>>12;
-					uint8_t R = img>>4;
+					uint8_t B = img>>18;
+					uint8_t G = img>>10;
+					uint8_t R = img>>2;
 
 					writepage[x+W] = MAKECOLORRGB12(R,G,B);
 				}

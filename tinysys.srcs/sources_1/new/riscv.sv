@@ -1,6 +1,6 @@
 module riscv #(
 	parameter int HARTID = 4'h0,
-	parameter int CSRBASE = 20'h8000A,
+	parameter int CSRBASE = 16'h800A,
 	parameter int RESETVECTOR = 32'd0
 ) (
 	input wire aclk,

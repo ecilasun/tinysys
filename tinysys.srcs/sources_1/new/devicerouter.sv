@@ -6,7 +6,7 @@ module devicerouter(
 	input wire aclk,
 	input wire aresetn,
     axi4if.slave axi_s,
-    wire [7:0] addressmask[11:0], // Bits [30:12] of the physical address
+    wire [3:0] addressmask[11:0], // Bits [19:16] of the physical address
     axi4if.master axi_m[11:0]);
 
 // ------------------------------------------------------------------------------------
@@ -16,7 +16,7 @@ module devicerouter(
 logic [11:0] validwaddr = 12'd0;
 
 always_comb begin
-	unique case(axi_s.awaddr[19:12])
+	unique case(axi_s.awaddr[19:16])
 		addressmask[0]:  validwaddr = 12'b000000000001;
 		addressmask[1]:  validwaddr = 12'b000000000010;
 		addressmask[2]:  validwaddr = 12'b000000000100;
@@ -142,7 +142,7 @@ end
 logic [11:0] validraddr = 12'd0;
 
 always_comb begin
-	unique case(axi_s.araddr[19:12])
+	unique case(axi_s.araddr[19:16])
 		addressmask[0]:  validraddr = 12'b000000000001;
 		addressmask[1]:  validraddr = 12'b000000000010;
 		addressmask[2]:  validraddr = 12'b000000000100;

@@ -492,6 +492,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				// Builtin
 				// 0			io_setup	long io_setup(unsigned int nr_events, aio_context_t *ctx_idp);
 				// 17			getcwd		char *getcwd(char *buf, size_t size);
+				// 29			ioctl		ioctl(unsigned int fd, unsigned int cmd, unsigned long arg);
 				// 50			chdir		chdir(const char *path);
 				// 57			close		int sys_close(unsigned int fd);
 				// 62			lseek		off_t sys_lseek(int fd, off_t offset, int whence);
@@ -524,6 +525,12 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					else
 						write_csr(0x8AA, 0x0); // nullptr
 				}
+				else if (value==29) // ioctl
+				{
+					// TODO: device io control commands
+					errno = EINVAL;
+					write_csr(0x8AA, 0xFFFFFFFF);
+				}
 				else if (value==50) // chdir
 				{
 					//chdir(const char *path);
@@ -541,6 +548,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				}
 				else if (value==57) // close()
 				{
+					// TODO: route to /dev/ if one is open
+
 					uint32_t file = read_csr(0x8AA); // A0
 
 					if (file > STDERR_FILENO) // Won't let stderr, stdout and stdin be closed
@@ -587,6 +596,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				}
 				else if (value==63) // read()
 				{
+					// TODO: route to /dev/ if one is open
+
 					uint32_t file = read_csr(0x8AA); // A0
 					uint32_t ptr = read_csr(0x8AB); // A1
 					uint32_t len = read_csr(0x8AC); // A2
@@ -631,6 +642,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				}
 				else if (value==64) // write()
 				{
+					// TODO: route to /dev/ if one is open
+
 					uint32_t file = read_csr(0x8AA); // A0
 					uint32_t ptr = read_csr(0x8AB); // A1
 					uint32_t count = read_csr(0x8AC); // A2
@@ -756,6 +769,30 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				}
 				else if (value==1024) // open()
 				{
+					// TODO: support devices (i.e. names starting with /dev/)
+					// /dev/file -> file i/o
+					// /dev/gpio -> DEVICE_GPIO
+					// /dev/leds -> DEVICE_LEDS
+					// /dev/vpuc -> DEVICE_VPUC
+					// /dev/spic -> DEVICE_SPIC
+					// /dev/xadc -> DEVICE_XADC
+					// /dev/dmac -> DEVICE_DMAC
+					// /dev/usba -> DEVICE_USBA
+					// /dev/apuc -> DEVICE_APUC
+					// /dev/mail -> DEVICE_MAIL
+					// /dev/uart -> DEVICE_UART
+					// /dev/csr0 -> DEVICE_CSR0
+					// /dev/csr1 -> DEVICE_CSR1
+
+					// Some other thoughts
+					// /dev/mem -> physical memory access
+					// /dev/kmsg -> goes to kprintf()
+					// /dev/tty -> virtual console (UART in our case?)
+					// /dev/kbd -> raw keyboard device
+					// /dev/input/js0 -> first joystick
+					// /dev/input/mouse0 -> first mouse
+					// /dev/fb0 -> first framebuffer (maps to kernel framebuffer)
+
 					uint32_t nptr = read_csr(0x8AA); // A0
 					uint32_t oflags = read_csr(0x8AB); // A1
 					//uint32_t pmode = read_csr(0x8AC); // A2 - permission mode unused for now
@@ -774,6 +811,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					}
 					ff_flags |= (oflags&100) ? FA_CREATE_ALWAYS : 0; // O_CREAT
 					ff_flags |= (oflags&2000) ? FA_OPEN_APPEND : 0; // O_APPEND
+
+					// /dev/file/...
 
 					// Grab lowest zero bit's index
 					int currenthandle = FindFreeFileHandle(s_handleAllocMask);

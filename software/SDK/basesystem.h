@@ -70,19 +70,19 @@
 // Device address base
 #define DEVICE_BASE 0x80000000
 
-// Each device has 4 Kbytes of continous, uncached memory region mapped to it
-#define DEVICE_GPIO (DEVICE_BASE+0x0000)
-#define DEVICE_LEDS (DEVICE_BASE+0x1000)
-#define DEVICE_VPUC (DEVICE_BASE+0x2000)
-#define DEVICE_SPIC (DEVICE_BASE+0x3000)
-#define DEVICE_XADC (DEVICE_BASE+0x4000)
-#define DEVICE_DMAC (DEVICE_BASE+0x5000)
-#define DEVICE_USBA (DEVICE_BASE+0x6000)
-#define DEVICE_APUC (DEVICE_BASE+0x7000)
-#define DEVICE_MAIL (DEVICE_BASE+0x8000)
-#define DEVICE_UART (DEVICE_BASE+0x9000)
-#define DEVICE_CSR0 (DEVICE_BASE+0xA000)
-#define DEVICE_CSR1 (DEVICE_BASE+0xB000)
+// Each device has 16 Kbytes of continous, uncached memory region mapped to it (not all is necessarily accessible)
+#define DEVICE_GPIO (DEVICE_BASE+0x00000)
+#define DEVICE_LEDS (DEVICE_BASE+0x10000)
+#define DEVICE_VPUC (DEVICE_BASE+0x20000)
+#define DEVICE_SPIC (DEVICE_BASE+0x30000)
+#define DEVICE_XADC (DEVICE_BASE+0x40000)
+#define DEVICE_DMAC (DEVICE_BASE+0x50000)
+#define DEVICE_USBA (DEVICE_BASE+0x60000)
+#define DEVICE_APUC (DEVICE_BASE+0x70000)
+#define DEVICE_MAIL (DEVICE_BASE+0x80000)
+#define DEVICE_UART (DEVICE_BASE+0x90000)
+#define DEVICE_CSR0 (DEVICE_BASE+0xA0000)
+#define DEVICE_CSR1 (DEVICE_BASE+0xB0000)
 // NOTE: Add more device addresses here
 //#define DEVICE_DEV0 (DEVICE_BASE+0xC000)
 
@@ -96,3 +96,6 @@ uint32_t ClockToUs(uint64_t clk);
 void ClockMsToHMS(uint32_t ms, uint32_t *hours, uint32_t *minutes, uint32_t *seconds);
 
 void E32Sleep(uint64_t ticks);
+
+void E32WriteMemMappedCSR(uint32_t _hart, uint32_t _csr, uint32_t _value);
+uint32_t E32ReadMemMappedCSR(uint32_t _hart, uint32_t _csr);
