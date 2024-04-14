@@ -586,36 +586,6 @@ void workermain()
 		// Wait for a mailbox write to trigger an interrupt
 		asm volatile("wfi;");
 
-		// Read request command
-		uint32_t request = MailboxRead(self, MAILSLOT_HART_COMMAND);
-
-		// Process requests
-		switch (request)
-		{
-			case MAIL_CMD_RUN_JOB:
-			{
-				// Run job at address param0
-				uint32_t branchtarget = MailboxRead(self, MAILSLOT_HART_PARAM0);
-
-				asm volatile(
-					".word 0xFC000073;"	// Invalidate & Write Back D$ (CFLUSH.D.L1)
-					"fence.i;"			// Invalidate I$
-					"lw s0, %0;"		// Target branch address
-					"jalr s0;"			// Branch to the entry point
-					: "=m" (branchtarget)
-					: 
-					: "s0"
-				);
-			}
-			break;
-
-			default:
-			{
-				// NOOP
-			}
-			break;
-		}
-
 	} while (1);
 }
 

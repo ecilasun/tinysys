@@ -17,7 +17,10 @@
 		"keyringbuffer.h": "c",
 		"stdlib.h": "c",
 		"basesystem.h": "c",
-		"mailbox.h": "c"
+		"mailbox.h": "c",
+		"rombase.h": "c",
+		"coroutine": "c",
+		"xmemory": "c"
 	},
 	"terminal.integrated.profiles.windows": {
 		"MSYS2": {
