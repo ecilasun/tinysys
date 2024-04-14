@@ -20,7 +20,8 @@
 		"mailbox.h": "c",
 		"rombase.h": "c",
 		"coroutine": "c",
-		"xmemory": "c"
+		"xmemory": "c",
+		"task.h": "c"
 	},
 	"terminal.integrated.profiles.windows": {
 		"MSYS2": {

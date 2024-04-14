@@ -1,5 +1,4 @@
 module riscv #(
-	parameter int HARTID = 4'h0,
 	parameter int CSRBASE = 16'h800A,
 	parameter int RESETVECTOR = 32'd0
 ) (
@@ -10,6 +9,7 @@ module riscv #(
 	input wire [1:0] irqReq,
 	input wire [31:0] mepc,
 	input wire [31:0] mtvec,
+	output wire [31:0] pcshadow,
 	output wire [63:0] cpuclocktime,
 	output wire [63:0] retired,
 	axi4if.master instructionbus,
@@ -44,6 +44,7 @@ fetchunit #(.RESETVECTOR(RESETVECTOR)) fetchdecodeinst (
 	.ififodout(ififodout),
 	.ififord_en(ififord_en),
 	.irqReq(irqReq),
+	.pcshadow(pcshadow),
 	.mepc(mepc),
 	.mtvec(mtvec),
 	.sie(sie),
@@ -66,7 +67,6 @@ dataunit dataunitinst (
 // --------------------------------------------------
 
 controlunit #(
-	.HARTID(HARTID),
 	.CSRBASE(CSRBASE)) controlunitinst (
 	.aclk(aclk),
 	.aresetn(aresetn),

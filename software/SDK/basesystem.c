@@ -86,15 +86,15 @@ void E32SetTimeCompare(const uint64_t future)
 void E32WriteMemMappedCSR(uint32_t _hart, uint32_t _csr, uint32_t _value)
 {
 	if (_hart == 0)
-		*(uint32_t*)(DEVICE_CSR0 + (_csr<<4)) = _value;
+		*(uint32_t*)(DEVICE_CSR0 + (_csr<<2)) = _value;
 	else
-		*(uint32_t*)(DEVICE_CSR1 + (_csr<<4)) = _value;
+		*(uint32_t*)(DEVICE_CSR1 + (_csr<<2)) = _value;
 }
 
 uint32_t E32ReadMemMappedCSR(uint32_t _hart, uint32_t _csr)
 {
 	if (_hart == 0)
-		return *(uint32_t*)(DEVICE_CSR0 + (_csr<<4));
+		return *(uint32_t*)(DEVICE_CSR0 + (_csr<<2));
 	else
-		return *(uint32_t*)(DEVICE_CSR1 + (_csr<<4));
+		return *(uint32_t*)(DEVICE_CSR1 + (_csr<<2));
 }

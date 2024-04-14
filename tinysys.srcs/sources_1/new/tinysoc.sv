@@ -47,7 +47,7 @@ axi4if devicebusHart1();		// Direct access to devices from data unit of HART#1
 
 axi4if videobus();				// Video output unit bus
 axi4if dmabus();				// Direct memory access bus
-axi4if romcopybus();			// Bus for boot ROM copy (TODO: switch between ROM types?)
+axi4if romcopybus();			// Bus for boot ROM copy
 axi4if audiobus();				// Bus for audio device output
 
 axi4if memorybus();				// Arbitrated access to main memory
@@ -100,17 +100,19 @@ wire romReady;
 // --------------------------------------------------
 
 wire sieHart0;
+wire [31:0] pcshadow0;
 wire [63:0] cpuclocktimeHart0;
 wire [63:0] retiredHart0;
 wire [31:0] mepcHart0;
 wire [31:0] mtvecHart0;
 wire [1:0] irqReqHart0;
 
-riscv #( .HARTID(0), .CSRBASE(16'h800A), .RESETVECTOR(RESETVECTOR)) hart0(
+riscv #( .CSRBASE(16'h800A), .RESETVECTOR(RESETVECTOR)) hart0(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.romReady(romReady),
 	.sie(sieHart0),
+	.pcshadow(pcshadow0),
 	.mepc(mepcHart0),
 	.mtvec(mtvecHart0),
 	.irqReq(irqReqHart0),
@@ -125,17 +127,19 @@ riscv #( .HARTID(0), .CSRBASE(16'h800A), .RESETVECTOR(RESETVECTOR)) hart0(
 // --------------------------------------------------
 
 wire sieHart1;
+wire [31:0] pcshadow1;
 wire [63:0] cpuclocktimeHart1;
 wire [63:0] retiredHart1;
 wire [31:0] mepcHart1;
 wire [31:0] mtvecHart1;
 wire [1:0] irqReqHart1;
 
-riscv #( .HARTID(1), .CSRBASE(16'h800B), .RESETVECTOR(RESETVECTOR)) hart1(
+riscv #( .CSRBASE(16'h800B), .RESETVECTOR(RESETVECTOR)) hart1(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.romReady(romReady),
 	.sie(sieHart1),
+	.pcshadow(pcshadow1),
 	.mepc(mepcHart1),
 	.mtvec(mtvecHart1),
 	.irqReq(irqReqHart1),
@@ -245,7 +249,7 @@ axi4i2saudio APU(
 arbiter arbiter8x1instSDRAM(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.axi_s({romcopybus, audiobus, dmabus, videobus, databusHart1, databusHart0, instructionbusHart1, instructionbusHart0}),
+	.axi_s({romcopybus, audiobus, dmabus, videobus, databusHart1, instructionbusHart1, databusHart0, instructionbusHart0}),
 	.axi_m(memorybus) );
 
 // --------------------------------------------------
@@ -395,12 +399,13 @@ axi4usbc usbhostport(
 	.usbirq(usbairq),
 	.s_axi(usbaif));
 
-axi4CSRFile #( .HARTID(0)) csrfile0 (
+axi4CSRFile #( .HARTID(4'd0)) csrfile0 (
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.cpuclocktime(cpuclocktimeHart0),
 	.wallclocktime(wallclocktime),
 	.retired(retiredHart0),
+	.pcshadow(pcshadow0),
 	// IRQ tracking
 	.irqReq(irqReqHart0),
 	// External interrupt wires
@@ -417,12 +422,13 @@ axi4CSRFile #( .HARTID(0)) csrfile0 (
 	// Bus
 	.s_axi(csrif0) );
 
-axi4CSRFile #( .HARTID(1)) csrfile1 (
+axi4CSRFile #( .HARTID(4'd1)) csrfile1 (
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.cpuclocktime(cpuclocktimeHart1),
 	.wallclocktime(wallclocktime),
 	.retired(retiredHart1),
+	.pcshadow(pcshadow1),
 	// IRQ tracking
 	.irqReq(irqReqHart1),
 	// External interrupt wires

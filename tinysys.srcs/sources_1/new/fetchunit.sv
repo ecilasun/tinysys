@@ -14,6 +14,7 @@ module fetchunit #(
 	output wire ififoempty,
 	output wire ififovalid,
 	output wire [131:0] ififodout,
+	output wire [31:0] pcshadow,
 	input wire ififord_en,
 	// IRQ lines from CSR unit
 	input wire [1:0] irqReq,
@@ -37,6 +38,8 @@ logic [31:0] emitPC;
 wire rready;
 wire [31:0] instruction;
 logic icacheflush;
+
+assign pcshadow = PC;
 
 // --------------------------------------------------
 // Instruction cache

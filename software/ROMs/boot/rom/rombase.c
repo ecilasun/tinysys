@@ -270,17 +270,16 @@ static UINT tmpresult = 0;
 
 struct STaskContext *GetTaskContext(uint32_t _hartid)
 {
-	struct STaskContext *ctx = (struct STaskContext *)KERNEL_TASK_CONTEXT;
-	struct STaskContext *self = &ctx[_hartid];
-	return self;
+	// Each task starts at 1Kbyte boundary
+	// We have >80Kbytes in the task space so this should support plenty of cores
+	return (struct STaskContext *)(KERNEL_TASK_CONTEXT + 1024*_hartid);
 }
 
 void InitializeTaskContext(uint32_t _hartid)
 {
 	// Initialize task context memory
-	struct STaskContext *ctx = (struct STaskContext *)KERNEL_TASK_CONTEXT;
-	struct STaskContext *self = &ctx[_hartid];
-	TaskInitSystem(self, _hartid);
+	struct STaskContext *ctx = GetTaskContext(_hartid);
+	TaskInitSystem(ctx, _hartid);
 }
 
 void HandleSDCardDetect()

@@ -55,17 +55,18 @@
 // Heap
 #define HEAP_END_CONSOLEMEM_START		0x0FF00000 // Heap space above this
 // Kernel console text+attrib/scratch
-#define CONSOLEMEM_END_KERNEL_VRAM_TOP	0x0FF10000 // Console text+attrib+scratch memory above this (64KBytes)
+#define CONSOLEMEM_END_KERNEL_VRAM_TOP	0x0FF10000 // Console text+attrib+scratch memory above this (64 KBytes)
 // Kernel VRAM/scratch
-#define VRAM_END_TASKMEM_START			0x0FF30000 // Kernel VRAM above this (128KBytes)
+#define VRAM_END_TASKMEM_START			0x0FF30000 // Kernel VRAM above this (128 KBytes)
 // Task stack space
 #define TASKMEM_END_STACK_END			0x0FFD0000 // Tasks stack space above this
-//  Kernel stack
-#define STACK_BASE						0x0FFDFFFC // Kernel stack above this
+//  Kernel stacks for all cores, 256 bytes each
+#define STACK_BASE_HART1				0x0FFDFEF0 // Kernel stack above these (65264 bytes)
+#define STACK_BASE_HART0				0x0FFDFFF0
 // 4 byte gap
 #define ROMSHADOW_START					0x0FFE0000 // Gap above this (4Bytes)
 // ROM SHADOW
-#define ROMSHADOW_END_MEM_END			0x0FFFFFFF // ROM shadow copy above this (128KBytes, ROM OS fits in upper 64KBytes)
+#define ROMSHADOW_END_MEM_END			0x0FFFFFFF // ROM shadow copy above this (128 KBytes, but normally OS ROM fits in upper 64 KByte half)
 
 // Device address base
 #define DEVICE_BASE 0x80000000

@@ -24,14 +24,15 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "r1.07"
+#define VERSIONSTRING "r1.08"
 // On-storage version
-#define DEVVERSIONSTRING "r1.07"
+#define DEVVERSIONSTRING "r1.08"
 
 static char s_execName[32] = "                               ";
 static char s_execParam0[32] = "                               ";
 static uint32_t s_execParamCount = 1;
-static uint32_t s_userTaskID = 2;
+// ID of task executing on hart#1
+static uint32_t s_userTaskID = 0;
 
 static char s_cmdString[64] = "";
 static char s_workdir[48];
@@ -139,7 +140,7 @@ void ShowVersion(int waterMark)
 	for (uint32_t i=0; i<16; ++i)
 	{
 		uint32_t isalive = MailboxRead(i, MAILSLOT_HART_AWAKE);
-		if (isalive==0xFAFECAC0)
+		if (isalive==0xCAFEB000)
 			kprintf(" HART%d%s          : alive                       \n", i, i>9 ? "" : " ");
 	}
 	kprintf(" ESP32           : ESP32-C6-WROOM-1-N8         \n");
@@ -222,11 +223,15 @@ uint32_t ExecuteCmd(char *_cmd)
 		else
 		{
 			uint32_t hartid = atoi(cpuindex);
+			// TODO: We need atomics here to accurately view memory contents written by another core
 			struct STaskContext *ctx = GetTaskContext(hartid);
-			if (ctx->numTasks<=1)
+			if (ctx->numTasks == 0)
+			{
 				kprintf("No tasks running on core #%d\n", hartid);
+			}
 			else
 			{
+				kprintf("%d tasks running on core #%d\n", ctx->numTasks, hartid);
 				for (int i=0;i<ctx->numTasks;++i)
 				{
 					struct STask *task = &ctx->tasks[i];
@@ -444,7 +449,6 @@ void _cliTask()
 				{
 					++s_refreshConsoleOut;
 					execcmd++;
-					// TODO: This has to be handled differently and terminate the active task, not the hardcoded one
 					TaskExitTaskWithID(taskctx, s_userTaskID, 0); // Sig:0, terminate process if no debugger is attached
 				}
 				break;
@@ -482,7 +486,7 @@ void _cliTask()
 		}
 
 		// Report task termination
-		struct STask *task = &taskctx->tasks[2];
+		struct STask *task = &taskctx->tasks[s_userTaskID];
 		if (task->state == TS_TERMINATED)
 		{
 			task->state = TS_UNKNOWN;
@@ -490,7 +494,7 @@ void _cliTask()
 			DeviceDefaultState(0);
 		}
 
-		// Process or echo input only when we have no ELF running
+		// Process or echo input only when we have no ELF running on hart#1
 		if(taskctx->numTasks <= 2)
 		{
 			if (execcmd)
@@ -587,6 +591,7 @@ uint32_t LoadOverlay(const char *filename)
 		// Watermark register will retain this value on soft boot
 		// so that when we load the overlay (which is the same code as this)
 		// we won't attempt to re-load the overlay over and over.
+		// NOTE: Only hart#0 updates its watermark register
 		write_csr(0xFF0, 0xFFFFFFFF);
 
 		return 1;
@@ -595,26 +600,46 @@ uint32_t LoadOverlay(const char *filename)
 	return 0;
 }
 
-void workermain()
+int workermain()
 {
-	// Mark us alive
+	// Play dead
 	uint32_t self = read_csr(mhartid);
-	MailboxWrite(self, MAILSLOT_HART_AWAKE, 0xFAFECAC0);
+	MailboxWrite(self, MAILSLOT_HART_AWAKE, 0x00000000);
 
-	do
+	// Worker cores do not handle hardware interrupts by default,
+	// only task switching (timer) and software (illegal instruction)
+	InitializeTaskContext(self);
+	InstallISR(self, false, true);
+
+	struct STaskContext *taskctx = GetTaskContext(self);
+	TaskAdd(taskctx, "hart1idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+
+	// Mark us alive
+	MailboxWrite(self, MAILSLOT_HART_AWAKE, 0xCAFEB000);
+
+	while(1)
 	{
-		// Wait for a mailbox write to trigger an interrupt
-		asm volatile("wfi;");
+		// Blinky loop
+		uint32_t oldstate = LEDGetState();
+		LEDSetState(0xFFFFFFFF);
+		E32Sleep(TWO_HUNDRED_MILLISECONDS_IN_TICKS);
+		LEDSetState(oldstate);
+		E32Sleep(TWO_HUNDRED_MILLISECONDS_IN_TICKS);
 
-	} while (1);
+		// Yield time back to any tasks running on this core after handling an interrupt
+		/*uint64_t currentTime =*/ TaskYield();
+	}
+
+	return 0;
 }
 
 int main()
 {
 	LEDSetState(0xF);
-	// Mark us alive
+
+	// Play dead
 	uint32_t self = read_csr(mhartid);
-	MailboxWrite(self, MAILSLOT_HART_AWAKE, 0xFAFECAC0);
+	MailboxWrite(self, MAILSLOT_HART_AWAKE, 0x00000000);
 
 	LEDSetState(0xE);
 	// Set default path before we mount any storage devices
@@ -643,7 +668,6 @@ int main()
 	// we need to make sure all things are stopped and reset to default states
 	LEDSetState(0xB);
 	DeviceDefaultState(1);
-	ShowVersion(waterMark);
 
 	// Set up ring buffers
 	LEDSetState(0xA);
@@ -659,7 +683,7 @@ int main()
 
 	// With current layout, OS takes up a very small slices out of whatever is left from other tasks
 	LEDSetState(0x8);
-	TaskAdd(taskctx, "sysidle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+	TaskAdd(taskctx, "hart0idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 	// Command line interpreter task
 	TaskAdd(taskctx, "cmd", _cliTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 
@@ -674,8 +698,13 @@ int main()
 	USBHostSetContext(&s_usbhostctx);
 	USBHostInit(1);
 
+	// Mark us alive
+	MailboxWrite(self, MAILSLOT_HART_AWAKE, 0xCAFEB000);
+
 	// Ready to start, silence LED activity since other systems need it
 	LEDSetState(0x0);
+
+	ShowVersion(waterMark);
 
 	// Main CLI loop
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();

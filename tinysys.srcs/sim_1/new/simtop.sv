@@ -14,8 +14,6 @@ wire [3:0] ledout;
 
 wire sdcard_mosi;
 wire sdcard_miso = sdcard_mosi; // nul device
-wire usbc_mosi;
-wire usbc_miso = usbc_mosi; // nul device
 wire usba_mosi;
 wire usba_miso = usba_mosi; // nul device
 
@@ -84,14 +82,6 @@ tophat main(
 	.sdcard_clk(),
 	.sdcard_mosi(sdcard_mosi),
 	.sdcard_swtch(1'b0),
-	// USB-C via MAX4320
-	.usbc_miso(usbc_miso),
-	.usbc_ss_n(),
-	.usbc_clk(),
-	.usbc_mosi(usbc_mosi),
-	.usbc_resn(),
-	.usbc_int(1'b0),
-	.usbc_gpx(1'b0),
 	// USB-A via MAX4321
 	.usba_miso(usba_miso),
 	.usba_ss_n(),
@@ -99,6 +89,10 @@ tophat main(
 	.usba_mosi(usba_mosi),
 	.usba_resn(),
 	.usba_int(1'b0),
+	// Coprocessor via ESP32-C6-WROOM-1-N8 (only on rev. 2E boards)
+	.esp_io(),
+	.esp_txd_out(),
+	.esp_rxd_in(),
 	// Audio out
 	.au_sdin(),
 	.au_sclk(),

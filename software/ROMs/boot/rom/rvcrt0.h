@@ -33,13 +33,14 @@ extern "C"
 		"mul s2, s1, s0;"			// stepback = hartid * __stack_size;
 		"sub sp, sp, s2;"			// stacktop = base - stepback;
 		"mv s0, sp;"				// Set frame pointer to current stack pointer
-
-		"bnez s1, gotoworkermain;"	// Shortcut directly to worker hart entry point (mhartid != 0)
 #else
 		// Single hardware thread simply needs to use the setup address
 		"mv s0, sp;"				// Set frame pointer to current stack pointer
 #endif
 
+#if defined(TIMELORD)
+		"bnez s1, _gotoworkermain;"	// Skip over and go to entry point
+#endif
 		// Clear BSS - NOTE: can skip for hardware debug builds
 		"la a0, __malloc_max_total_mem;"
 		"la a2, __BSS_END__$;"
@@ -49,7 +50,7 @@ extern "C"
 
 		// Skip if there's no atexit function
 		"la a0, atexit;"
-		"beqz a0, noatexitfound;"
+		"beqz a0, _noatexitfound;"
 
 		// Register finiarray with atexit
 		"auipc	a0,0x1;"
@@ -57,25 +58,20 @@ extern "C"
 		"jal ra, atexit;"
 
 		// call initarray
-		"noatexitfound: "
+		"_noatexitfound: "
 		"jal ra, __libc_init_array;"
-
-		"lw a0,0(sp);"
-		"addi	a1,sp,4;"
-		"li a2,0;"
 
 		// Jump to main
 		"j main;"
 
-		// Stop at breakpoint / no return / _exit is useless
-		"ebreak;"
+		// Put main hardware thread to sleep if its main() exits
+		"_mainfreeze: "
+		"wfi;"
+		"j _mainfreeze;"
 
 #if defined(TIMELORD)
 		// Set up and branch to worker hardware thread entry point
-		"gotoworkermain:"
-		"lw a0,0(sp);"
-		"addi	a1,sp,4;"
-		"li a2,0;"
+		"_gotoworkermain: "
 		"j workermain;"
 
 		// Put worker hardware thread to sleep if its workermain() exits

@@ -8,6 +8,7 @@ module axi4CSRFile #(
 ) (
 	input wire aclk,
 	input wire aresetn,
+	input wire [31:0] pcshadow,
 	input wire [63:0] cpuclocktime,
 	input wire [63:0] wallclocktime,
 	input wire [63:0] retired,
@@ -156,7 +157,7 @@ always @(posedge aclk) begin
 			2'b01: begin
 				if (s_axi.wvalid) begin
 					csrdin <= s_axi.wdata[31:0];
-					cswraddr <= s_axi.awaddr[15:4]; // 16 byte aligned
+					cswraddr <= s_axi.awaddr[13:2]; // 4 byte aligned
 					csrwe <= 1'b1;
 					writestate <= 2'b10;
 					s_axi.wready <= 1'b1;
@@ -200,7 +201,7 @@ always @(posedge aclk) begin
 			2'b01: begin
 				if (s_axi.arvalid) begin
 					s_axi.arready <= 1'b1;
-					csrraddr <= s_axi.araddr[15:4]; // 16 byte aligned
+					csrraddr <= s_axi.araddr[13:2]; // 4 byte aligned
 					raddrstate <= 2'b10;
 				end
 			end
@@ -217,6 +218,7 @@ always @(posedge aclk) begin
 						`CSR_RETILO:	s_axi.rdata[31:0] <= retired[31:0];
 						`CSR_TIMELO:	s_axi.rdata[31:0] <= wallclocktime[31:0];
 						`CSR_CYCLELO:	s_axi.rdata[31:0] <= cpuclocktime[31:0];
+						`CSR_PCSHADOW:	s_axi.rdata[31:0] <= pcshadow;
 						// Interrupt states of all hardware devices
 						`CSR_HWSTATE:	s_axi.rdata[31:0] <= {28'd0, uartirq, gpioirq, keyirq, usbirq};
 						// Pass through actual data

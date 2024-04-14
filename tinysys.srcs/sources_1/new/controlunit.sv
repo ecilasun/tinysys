@@ -3,7 +3,6 @@
 `include "shared.vh"
 
 module controlunit #(
-	parameter int HARTID = 4'h0,
 	parameter int CSRBASE = 16'h800A
 ) (
 	input wire aclk,
@@ -696,8 +695,8 @@ always @(posedge aclk) begin
 	
 			CSROPS: begin
 				if (~pendingwrite || m_ibus.wdone) begin
-					// 16 byte aligned
-					m_ibus.raddr <= {CSRBASE, csroffset, 4'h0};
+					// 4 byte aligned
+					m_ibus.raddr <= {CSRBASE, 2'b00, csroffset, 2'b00};
 					m_ibus.rstrobe <= 1'b1;
 					ctlmode <= WCSROP;
 				end else begin
@@ -717,8 +716,8 @@ always @(posedge aclk) begin
 	
 			SYSWBACK: begin
 				if (~pendingwback && (~pendingwrite || m_ibus.wdone)) begin
-					// 16 byte aligned
-					m_ibus.waddr <= {CSRBASE, csroffset, 4'h0};
+					// 4 byte aligned
+					m_ibus.waddr <= {CSRBASE, 2'b00, csroffset, 2'b00};
 					m_ibus.wstrobe <= 4'b1111;
 					pendingwrite <= 1'b1;
 					// Update CSR register with result of the operation

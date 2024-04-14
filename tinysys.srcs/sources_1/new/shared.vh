@@ -296,6 +296,9 @@
 `define CSR_MIP			12'h344
 `define CSR_TIMECMPLO	12'h800
 `define CSR_TIMECMPHI	12'h801
+
+`define CSR_REGISTERSHADOW	12'h8A0 // These are used to store shadow copies of registers from ISRs
+
 `define CSR_CYCLELO		12'hC00	// 12'hB00
 `define CSR_TIMELO		12'hC01
 `define CSR_RETILO		12'hC02 // 12'hB02 
@@ -305,11 +308,10 @@
 `define CSR_MARCHID		12'hF12
 `define CSR_MIMPID		12'hF13
 `define CSR_MHARTID		12'hF14 // immutable
+
+`define CSR_PCSHADOW	12'hFEF // PC shadow
+`define CSR_WATERMARK	12'hFF0 // Machine boot state (watermark) register, survives soft reboot intact
 `define CSR_HWSTATE		12'hFFF // immutable, custom hardware state bits
-
-`define CSR_REGISTERSHADOW	12'h8A0 // These are used to store shadow copies of registers from ISRs
-
-`define CSR_WATERMARK		12'hFF0 // Machine boot state (watermark) register, survives soft reboot intact
 
 //`define CSR_MCONFIGPTR  12'hF15
 // `define CSR_DSCRATCH    12'h340
