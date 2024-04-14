@@ -40,6 +40,7 @@ static char s_pathtmp[48];
 static int32_t s_cmdLen = 0;
 static uint32_t s_startAddress = 0;
 static int s_refreshConsoleOut = 1;
+static int s_runOnCPU = 0;
 
 static const char *s_taskstates[]={
 	"UNKNOWN    ",
@@ -332,6 +333,15 @@ uint32_t ExecuteCmd(char *_cmd)
 		uint32_t waterMark = read_csr(0xFF0);
 		ShowVersion(waterMark);
 	}
+	else if(!strcmp(command, "runon"))
+	{
+		const char *runcpu = strtok(NULL, " ");
+		if (!runcpu)
+			kprintf("usage: runon cpu\n");
+		else
+			s_runOnCPU = atoi(runcpu);
+		kprintf("Run on cpu: #%d", s_runOnCPU);
+	}
 	else if (!strcmp(command, "help"))
 	{
 		VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
@@ -358,6 +368,7 @@ uint32_t ExecuteCmd(char *_cmd)
 			kprintf(" kill pid cpu | Kill process with id pid on CPU   \n");
 			kprintf(" mount        | Mount drive sd:                   \n");
 			kprintf(" proc cpu     | Show process info for given CPU   \n");
+			kprintf(" runon cpu    | Run ELF files on given cpu        \n");
 			kprintf(" unmount      | Unmount drive sd:                 \n");
 		}
 
@@ -380,15 +391,23 @@ uint32_t ExecuteCmd(char *_cmd)
 		}
 		else
 		{
-			char filename[32];
+			char filename[64];
 			strcpy(filename, s_workdir);	// Current path already contains a trailing slash
 			strcat(filename, command);		// User supplied string
 			strcat(filename, ".elf");		// We don't expect command to contain the .elf extension
 
 			// First parameter is excutable name
-			// TODO: ELF relocation on load to avoid exec+data+stack overlap
-			s_startAddress = LoadExecutable(filename, 0, true);
+			s_startAddress = LoadExecutable(filename, 0, false);
 			// TODO: Scan and push all argv and the correct argc onto stack
+
+			// If we could not find the executable where we are, look into the 'sys/bin' directory
+			if (s_startAddress == 0x0)
+			{
+				strcpy(filename, "sd:/sys/bin/");
+				strcat(filename, command);
+				strcat(filename, ".elf");
+				s_startAddress = LoadExecutable(filename, 0, false);
+			}
 
 			// If we succeeded in loading the executable, the trampoline task can branch into it.
 			// NOTE: Without code relocation or virtual memory, two executables will ovelap when loaded
@@ -412,9 +431,15 @@ uint32_t ExecuteCmd(char *_cmd)
 					s_execParamCount = 2;
 				}
 
-				s_userTaskID = TaskAdd(tctx, command, _runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+				if (s_runOnCPU == 0)
+					s_userTaskID = TaskAdd(tctx, command, _runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+				else
+					MailboxWrite(1, MAILSLOT_HART_EXEC, s_startAddress);
+
 				return 0;
 			}
+			else
+				kprintf("Executable not found\n");
 		}
 	}
 
@@ -425,7 +450,7 @@ void _cliTask()
 {
 	while(1)
 	{
-		struct STaskContext *taskctx = GetTaskContext(0);
+		struct STaskContext *taskctx = GetTaskContext(s_runOnCPU==0 ? 0 : 1);
 
 		// Echo all of the characters we can find back to the sender
 		uint32_t uartData = 0;
@@ -449,7 +474,10 @@ void _cliTask()
 				{
 					++s_refreshConsoleOut;
 					execcmd++;
-					TaskExitTaskWithID(taskctx, s_userTaskID, 0); // Sig:0, terminate process if no debugger is attached
+					if (s_runOnCPU == 0)
+						TaskExitTaskWithID(taskctx, s_userTaskID, 0); // Sig:0, terminate process if no debugger is attached
+					else
+						MailboxWrite(1, MAILSLOT_HART_STOP, 1); // taskid + 1
 				}
 				break;
 
@@ -619,12 +647,21 @@ int workermain()
 
 	while(1)
 	{
-		// Blinky loop
-		uint32_t oldstate = LEDGetState();
-		LEDSetState(0xFFFFFFFF);
-		E32Sleep(TWO_HUNDRED_MILLISECONDS_IN_TICKS);
-		LEDSetState(oldstate);
-		E32Sleep(TWO_HUNDRED_MILLISECONDS_IN_TICKS);
+		uint32_t startAddress = MailboxRead(self, MAILSLOT_HART_EXEC);
+		uint32_t stopTask = MailboxRead(self, MAILSLOT_HART_STOP);
+
+		if (stopTask != 0)
+		{
+			MailboxWrite(self, MAILSLOT_HART_STOP, 0x0);
+			TaskExitTaskWithID(taskctx, s_userTaskID, 0); // Sig:0, terminate process if no debugger is attached
+		}
+
+		if (startAddress != 0)
+		{
+			MailboxWrite(self, MAILSLOT_HART_EXEC, 0x0);
+			s_startAddress = startAddress;
+			s_userTaskID = TaskAdd(taskctx, "ELF", _runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+		}
 
 		// Yield time back to any tasks running on this core after handling an interrupt
 		/*uint64_t currentTime =*/ TaskYield();
@@ -655,7 +692,7 @@ int main()
 	LEDSetState(0xC);
 	// Watermark register is zero on hard boot
 	uint32_t waterMark = read_csr(0xFF0);
-	if ((waterMark == 0) && LoadOverlay("sd:/rom.bin"))
+	if ((waterMark == 0) && LoadOverlay("sd:/sys/rom.bin"))
 	{
 		// Point of no return. Literally.
 		CopyPayloadAndChainOverlay(CopyOverlayToROM);

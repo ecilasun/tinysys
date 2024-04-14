@@ -8,7 +8,6 @@ module axi4CSRFile #(
 ) (
 	input wire aclk,
 	input wire aresetn,
-	input wire [31:0] pcshadow,
 	input wire [63:0] cpuclocktime,
 	input wire [63:0] wallclocktime,
 	input wire [63:0] retired,
@@ -218,7 +217,6 @@ always @(posedge aclk) begin
 						`CSR_RETILO:	s_axi.rdata[31:0] <= retired[31:0];
 						`CSR_TIMELO:	s_axi.rdata[31:0] <= wallclocktime[31:0];
 						`CSR_CYCLELO:	s_axi.rdata[31:0] <= cpuclocktime[31:0];
-						`CSR_PCSHADOW:	s_axi.rdata[31:0] <= pcshadow;
 						// Interrupt states of all hardware devices
 						`CSR_HWSTATE:	s_axi.rdata[31:0] <= {28'd0, uartirq, gpioirq, keyirq, usbirq};
 						// Pass through actual data

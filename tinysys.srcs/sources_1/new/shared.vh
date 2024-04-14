@@ -33,12 +33,6 @@
 `define OPCODE_FLOAT_NMSUB  7'b1001011
 `define OPCODE_FLOAT_NMADD  7'b1001111
 
-//`define OPCODE_FLOAT_LDW    7'b0000111
-//`define OPCODE_FLOAT_STW    7'b0100111
-//`define OPCODE_CUSTOM_RMASK 7'b0101011
-//`define OPCODE_CUSTOM_RWAIT 7'b1001011
-
-
 // ------------------------------------------
 // Uncompressed instruction subgroups
 // ------------------------------------------
@@ -245,8 +239,6 @@
 `define O_H_SYSTEM			5
 
 `define O_H_FLOAT_OP		4
-//`define O_H_FLOAT_LDW		5
-//`define O_H_FLOAT_STW		4
 `define O_H_FLOAT_MADD		3
 `define O_H_FLOAT_MSUB		2
 `define O_H_FLOAT_NMSUB		1
@@ -309,11 +301,10 @@
 `define CSR_MIMPID		12'hF13
 `define CSR_MHARTID		12'hF14 // immutable
 
-`define CSR_PCSHADOW	12'hFEF // PC shadow
 `define CSR_WATERMARK	12'hFF0 // Machine boot state (watermark) register, survives soft reboot intact
 `define CSR_HWSTATE		12'hFFF // immutable, custom hardware state bits
 
-//`define CSR_MCONFIGPTR  12'hF15
+// `define CSR_MCONFIGPTR  12'hF15
 // `define CSR_DSCRATCH    12'h340
 // `define CSR_ISAEXMISA   12'h301
 // `define CSR_DCONTROL    12'h7B0
