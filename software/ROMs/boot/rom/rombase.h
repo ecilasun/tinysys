@@ -15,7 +15,7 @@
 struct STaskContext *GetTaskContext(uint32_t _hartid);
 void InitializeTaskContext(uint32_t _hartid);
 
-void InstallISR();
+void InstallISR(uint32_t _hartid, bool _allowMachineHwInt, bool _allowMachineSwInt);
 
 uint32_t MountDrive();
 void UnmountDrive();

@@ -83,7 +83,7 @@ int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum E
 		return 0;
 
 	// Stop timer interrupts on this core during this operation
-	write_csr(mie, MIP_MSIP | MIP_MEIP);
+	clear_csr(mie, MIP_MTIP);
 
 	++_ctx->numTasks;
 
@@ -111,7 +111,7 @@ int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum E
 	task->state = _initialState;
 
 	// Resume timer interrupts on this core
-	write_csr(mie, MIP_MSIP | MIP_MEIP | MIP_MTIP);
+	set_csr(mie, MIP_MTIP);
 
 	return prevcount;
 }
@@ -141,10 +141,10 @@ uint64_t TaskYield()
 {
 	// Set up the next task switch interrupt to now
 	// so we can yield as soon as possible.
-	write_csr(mstatus, 0);
+	clear_csr(mstatus, MSTATUS_MIE);
 	uint64_t now = E32ReadTime();
 	E32SetTimeCompare(now);
-	write_csr(mstatus, MSTATUS_MIE);
+	set_csr(mstatus, MSTATUS_MIE);
 	return now;
 }
 

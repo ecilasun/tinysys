@@ -665,7 +665,7 @@ int main()
 
 	// Start the timer and hardware interrupt handlers.
 	// This is where all task switching and other interrupt handling occurs
-	InstallISR();
+	InstallISR(self, true, true);
 
 	LEDSetState(0x7);
 
@@ -708,8 +708,8 @@ int main()
 		// High level maintenance tasks which should not be interrupted
 		// ----------------------------------------------------------------
 
-		// Disable machine interrupts
-		write_csr(mstatus, 0);
+		// Disable machine interrupts on this core
+		clear_csr(mstatus, MSTATUS_MIE);
 
 		// Deal with USB peripheral setup and data traffic
 		ProcessUSBDevice(currentTime);
@@ -717,8 +717,8 @@ int main()
 		// Emit outgoing serial data
 		UARTEmitBufferedOutput();
 
-		// Enable machine interrupts
-		write_csr(mstatus, MSTATUS_MIE);
+		// Enable machine interrupts on this core
+		set_csr(mstatus, MSTATUS_MIE);
 
 		// ----------------------------------------------------------------
 		// GDB stub / serial keyboard input / file transfer handler

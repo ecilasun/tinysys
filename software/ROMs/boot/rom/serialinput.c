@@ -168,7 +168,7 @@ void HandleFileTransfer(uint8_t input)
 
 			// Dump entire file contents
 			kprintf("\nSaving file...\n");
-			write_csr(mstatus, 0);
+			clear_csr(mstatus, MSTATUS_MIE);
 			FRESULT re = f_open(&s_outfp, s_filename, FA_CREATE_ALWAYS | FA_WRITE);
 			if (re == FR_OK)
 			{
@@ -181,7 +181,7 @@ void HandleFileTransfer(uint8_t input)
 				f_sync(&s_outfp);
 				f_close(&s_outfp);
 			}
-			write_csr(mstatus, MSTATUS_MIE);
+			set_csr(mstatus, MSTATUS_MIE);
 
 			s_readlen = 0;
 			s_fileTransferMode = 0; // File transfer done

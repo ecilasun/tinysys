@@ -967,7 +967,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 	");
 }
 
-void InstallISR()
+void InstallISR(uint32_t _hartid, bool _allowMachineHwInt, bool _allowMachineSwInt)
 {
 	// Set machine trap vector
 	write_csr(mtvec, interrupt_service_routine);
@@ -977,10 +977,10 @@ void InstallISR()
 	uint64_t future = now + TWO_HUNDRED_FIFTY_MILLISECONDS_IN_TICKS;
 	E32SetTimeCompare(future);
 
-	// Enable machine software interrupts (breakpoint/illegal instruction)
-	// Enable machine hardware interrupts
-	// Enable machine timer interrupts
-	write_csr(mie, MIP_MSIP | MIP_MEIP | MIP_MTIP);
+	// Enable machine software interrupts (breakpoint/illegal instruction) if this core handles them
+	// Enable machine hardware interrupts if this core should handle them
+	// Enable machine timer interrupts for all cores
+	write_csr(mie, (_allowMachineHwInt ? MIP_MEIP : 0) | (_allowMachineSwInt ? MIP_MSIP : 0) | MIP_MTIP);
 
 	// Allow all machine interrupts to trigger (thus also enabling task system)
 	write_csr(mstatus, MSTATUS_MIE);

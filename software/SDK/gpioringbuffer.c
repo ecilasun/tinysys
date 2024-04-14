@@ -25,11 +25,11 @@ void __attribute__ ((noinline)) GPIORingBufferReset()
 void __attribute__ ((noinline)) GPIORingBufferFlush()
 {
 	// Disable machine interrupts
-	write_csr(mstatus, 0);
+	clear_csr(mstatus, MSTATUS_MIE);
 	// Reset FIFO
 	GPIORingBufferReset();
 	// Enable machine interrupts
-	write_csr(mstatus, MSTATUS_MIE);
+	set_csr(mstatus, MSTATUS_MIE);
 }
 
 uint32_t __attribute__ ((noinline)) GPIORingBufferRead(void* pvDest, const uint32_t cbDest)
