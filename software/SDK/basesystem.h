@@ -84,7 +84,7 @@
 #define DEVICE_CSR0 (DEVICE_BASE+0xA0000)
 #define DEVICE_CSR1 (DEVICE_BASE+0xB0000)
 // NOTE: Add more device addresses here
-//#define DEVICE_DEV0 (DEVICE_BASE+0xC000)
+//#define DEVICE_DEV0 (DEVICE_BASE+0xC0000)
 
 uint64_t E32ReadTime();
 uint64_t E32ReadCycles();
