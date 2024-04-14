@@ -214,15 +214,24 @@ uint32_t ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "proc"))
 	{
-		struct STaskContext *ctx = GetTaskContext();
-		if (ctx->numTasks==1)
-			kprintf("No tasks running\n");
+		const char *cpuindex = strtok(NULL, " ");
+		if (!cpuindex)
+		{
+			kprintf("usage: proc cpu\n");
+		}
 		else
 		{
-			for (int i=0;i<ctx->numTasks;++i)
+			uint32_t hartid = atoi(cpuindex);
+			struct STaskContext *ctx = GetTaskContext(hartid);
+			if (ctx->numTasks<=1)
+				kprintf("No tasks running on core #%d\n", hartid);
+			else
 			{
-				struct STask *task = &ctx->tasks[i];
-				kprintf("#%d:%s PC:0x%x name:'%s'\n", i, s_taskstates[task->state], task->regs[0], task->name);
+				for (int i=0;i<ctx->numTasks;++i)
+				{
+					struct STask *task = &ctx->tasks[i];
+					kprintf("#%d:%s PC:0x%x name:'%s'\n", i, s_taskstates[task->state], task->regs[0], task->name);
+				}
 			}
 		}
 	}
@@ -244,13 +253,22 @@ uint32_t ExecuteCmd(char *_cmd)
 	{
 		const char *processid = strtok(NULL, " ");
 		if (!processid)
-			kprintf("usage: kill processid\n");
+			kprintf("usage: kill processid cpu\n");
 		else
 		{
-			// Warning! This can also kill PID(1) which is the CLI
-			struct STaskContext *ctx = GetTaskContext();
-			int taskid = atoi(processid);
-			TaskExitTaskWithID(ctx, taskid, 0);
+			const char *hartindex = strtok(NULL, " ");
+			if (!hartindex)
+			{
+				kprintf("usage: kill processid cpu\n");
+			}
+			else
+			{
+				uint32_t hartid = atoi(hartindex);
+				// Warning! This can also kill PID(1) which is the CLI
+				struct STaskContext *ctx = GetTaskContext(hartid);
+				int taskid = atoi(processid);
+				TaskExitTaskWithID(ctx, taskid, 0);
+			}
 		}
 	}
 	else if (!strcmp(command, "ren"))
@@ -332,9 +350,9 @@ uint32_t ExecuteCmd(char *_cmd)
 			kprintf("--------------------------------------------------\n");
 			kprintf(" DEV MODE SPECIFIC - USE AT YOUR OWN RISK         \n");
 			kprintf(" COMMAND      | USAGE                             \n");
-			kprintf(" kill pid     | Kill process with id pid          \n");
+			kprintf(" kill pid cpu | Kill process with id pid on CPU   \n");
 			kprintf(" mount        | Mount drive sd:                   \n");
-			kprintf(" proc         | Show process info                 \n");
+			kprintf(" proc cpu     | Show process info for given CPU   \n");
 			kprintf(" unmount      | Unmount drive sd:                 \n");
 		}
 
@@ -346,7 +364,9 @@ uint32_t ExecuteCmd(char *_cmd)
 
 	if (loadELF)
 	{
-		struct STaskContext* tctx = GetTaskContext();
+		// TODO: load user ELF files on HART#1.
+		struct STaskContext* tctx = GetTaskContext(0);
+
 		// Temporary measure to avoid loading another executable while the first one is running
 		// until we get a virtual memory device
 		if (tctx->numTasks > 2)
@@ -400,7 +420,7 @@ void _cliTask()
 {
 	while(1)
 	{
-		struct STaskContext *taskctx = GetTaskContext();
+		struct STaskContext *taskctx = GetTaskContext(0);
 
 		// Echo all of the characters we can find back to the sender
 		uint32_t uartData = 0;
@@ -593,8 +613,8 @@ int main()
 {
 	LEDSetState(0xF);
 	// Mark us alive
-	uint32_t hartid = read_csr(mhartid);
-	MailboxWrite(hartid, MAILSLOT_HART_AWAKE, 0xFAFECAC0);
+	uint32_t self = read_csr(mhartid);
+	MailboxWrite(self, MAILSLOT_HART_AWAKE, 0xFAFECAC0);
 
 	LEDSetState(0xE);
 	// Set default path before we mount any storage devices
@@ -634,7 +654,8 @@ int main()
 
 	// Create task context
 	LEDSetState(0x9);
-	struct STaskContext *taskctx = CreateTaskContext();
+	InitializeTaskContext(self);
+	struct STaskContext *taskctx = GetTaskContext(self);
 
 	// With current layout, OS takes up a very small slices out of whatever is left from other tasks
 	LEDSetState(0x8);

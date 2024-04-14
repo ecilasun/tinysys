@@ -38,10 +38,11 @@ struct STaskContext {
 	int32_t numTasks;		// Number of tasks
 	int32_t debugFlags;		// Data for debugger
 	int32_t kernelError;	// Current kernel error
+	int32_t hartID;			// Id of the HART where this task context runs
 };
 
 // Start up the task system
-void TaskInitSystem(struct STaskContext *_ctx);
+void TaskInitSystem(struct STaskContext *_ctx, uint32_t _hartid);
 
 // Add a new task to the pool
 int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength);

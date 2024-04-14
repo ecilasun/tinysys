@@ -266,20 +266,21 @@ static char s_fileNames[MAX_HANDLES][MAXFILENAMELEN+1] = {
 	{"                                                "},
 	{"                                                "},};
 
-static struct STaskContext *s_taskctx = (struct STaskContext *)KERNEL_TASK_CONTEXT;
 static UINT tmpresult = 0;
 
-struct STaskContext *CreateTaskContext()
+struct STaskContext *GetTaskContext(uint32_t _hartid)
 {
-	// Initialize task context memory
-	TaskInitSystem(s_taskctx);
-
-	return s_taskctx;
+	struct STaskContext *ctx = (struct STaskContext *)KERNEL_TASK_CONTEXT;
+	struct STaskContext *self = &ctx[_hartid];
+	return self;
 }
 
-struct STaskContext *GetTaskContext()
+void InitializeTaskContext(uint32_t _hartid)
 {
-	return s_taskctx;
+	// Initialize task context memory
+	struct STaskContext *ctx = (struct STaskContext *)KERNEL_TASK_CONTEXT;
+	struct STaskContext *self = &ctx[_hartid];
+	TaskInitSystem(self, _hartid);
 }
 
 void HandleSDCardDetect()
@@ -392,6 +393,10 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 	uint32_t PC = read_csr(mepc);		// Return address == crash PC
 	uint32_t code = cause & 0x7FFFFFFF;
 
+	// Grab the task context that belongs to this HART
+	uint32_t hartid = read_csr(mhartid);
+	struct STaskContext *taskctx = GetTaskContext(hartid);
+
 	if (cause & 0x80000000) // Hardware interrupts
 	{
 		switch (code)
@@ -403,7 +408,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 
 				// Switch between running tasks
 				// TODO: Return time slice request of current task
-				uint32_t runLength = TaskSwitchToNext(s_taskctx);
+				uint32_t runLength = TaskSwitchToNext(taskctx);
 
 				// Task scheduler will re-visit after we've filled run length of this task
 				uint64_t now = E32ReadTime();
@@ -425,7 +430,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				else // No familiar bit set, unknown device
 				{
 					kprintf("Unknown hardware device, core halted\n");
-					s_taskctx->kernelError = 1;
+					taskctx->kernelError = 1;
 					break;
 				}
 
@@ -435,7 +440,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			default:
 			{
 				kprintf("Unknown interrupt type, core halted\n");
-				s_taskctx->kernelError = 1;
+				taskctx->kernelError = 1;
 				break;
 			}
 		}
@@ -467,9 +472,9 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 						kprintf("Illegal instruction 0x%X at 0x%X, terminating\n", instA, PC);
 				}
 				// Terminate task on first chance and remove from list of running tasks
-				TaskExitCurrentTask(s_taskctx);
+				TaskExitCurrentTask(taskctx);
 				// Force switch to next task
-				TaskSwitchToNext(s_taskctx);
+				TaskSwitchToNext(taskctx);
 
 				break;
 			}
@@ -479,9 +484,9 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				// Where there's no debugger loaded, simply exit since we're not supposed to run past ebreak commands
 				kprintf("Encountered breakpoint with no debugger attached\n");
 				// Exit task in non-debug mode
-				TaskExitCurrentTask(s_taskctx);
+				TaskExitCurrentTask(taskctx);
 				// Force switch to next task
-				TaskSwitchToNext(s_taskctx);
+				TaskSwitchToNext(taskctx);
 
 				break;
 			}
@@ -742,7 +747,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				else if (value==93) // exit()
 				{
 					// Terminate and remove from list of running tasks
-					TaskExitCurrentTask(s_taskctx);
+					TaskExitCurrentTask(taskctx);
 					write_csr(0x8AA, 0x0);
 				}
 				else if (value==95) // wait()
@@ -757,7 +762,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					// Signal process to terminate
 					uint32_t pid = read_csr(0x8AA); // A0
 					uint32_t sig = read_csr(0x8AB); // A1
-					TaskExitTaskWithID(s_taskctx, pid, sig);
+					TaskExitTaskWithID(taskctx, pid, sig);
 					kprintf("\nSIG:0x%x PID:0x%x\n", sig, pid);
 					write_csr(0x8AA, sig);
 				}
@@ -916,7 +921,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				kprintf("Guru meditation, core halted\n");
 				ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 
-				s_taskctx->kernelError = 1;
+				taskctx->kernelError = 1;
 				break;
 			}
 		}

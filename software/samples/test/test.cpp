@@ -25,9 +25,12 @@ int main()
 	}
 	// Read retired instruction count
 	{
-		unsigned int valh = E32ReadMemMappedCSR(0, CSR_INSTRETH);
-		unsigned int vall = E32ReadMemMappedCSR(0, CSR_INSTRET);
-		printf("instructions retired: %.8x%.8x\n", valh,vall);
+		unsigned int val0h = E32ReadMemMappedCSR(0, CSR_INSTRETH);
+		unsigned int val0l = E32ReadMemMappedCSR(0, CSR_INSTRET);
+		unsigned int val1h = E32ReadMemMappedCSR(1, CSR_INSTRETH);
+		unsigned int val1l = E32ReadMemMappedCSR(1, CSR_INSTRET);
+		printf("instructions retired on core 0: %.8x%.8x\n", val0h,val0l);
+		printf("instructions retired on core 1: %.8x%.8x\n", val1h,val1l);
 	}
 
     return 0;
