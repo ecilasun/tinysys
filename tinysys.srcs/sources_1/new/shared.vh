@@ -282,6 +282,7 @@
 `define CSR_MISA		12'h301
 `define CSR_MIE		    12'h304
 `define CSR_MTVEC		12'h305
+`define CSR_MSCRATCH    12'h340
 `define CSR_MEPC		12'h341
 `define CSR_MCAUSE		12'h342
 `define CSR_MTVAL		12'h343
@@ -301,11 +302,13 @@
 `define CSR_MIMPID		12'hF13
 `define CSR_MHARTID		12'hF14 // immutable
 
+`define CSR_CPURESET	12'hFEF // Set lowest bit to 1'b1 to trigger reset, 1'b0 to stop reset
 `define CSR_WATERMARK	12'hFF0 // Machine boot state (watermark) register, survives soft reboot intact
 `define CSR_HWSTATE		12'hFFF // immutable, custom hardware state bits
 
 // `define CSR_MCONFIGPTR  12'hF15
-// `define CSR_DSCRATCH    12'h340
+// `define CSR_DSCRATCH0   12'h7B2
+// `define CSR_DSCRATCH1   12'h7B3
 // `define CSR_ISAEXMISA   12'h301
 // `define CSR_DCONTROL    12'h7B0
 // `define CSR_DPC         12'h7B1

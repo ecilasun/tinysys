@@ -14,7 +14,7 @@ extern "C"
 		// If we're loaded from storage as a ROM overlay,
 		// this ensures that the instruction cache now sees
 		// the new set of instructions.
-		"csrw mstatus,0;"			// Disable all interrupts
+		"csrw mstatus,0;"			// Disable all interrupts (mstatus:mie=0)
 		"fence.i;"					// Invalidate I$
 
 		// Set up global pointer - NOTE: ROM does not use GP
@@ -40,7 +40,7 @@ extern "C"
 #endif
 
 #if defined(TIMELORD)
-		"bnez s1, _gotoworkermain;"	// Skip over and go to entry point
+		"bnez s1, _workerfreeze;"	// Worker core can't do anything yet
 #endif
 		// Clear BSS - NOTE: can skip for hardware debug builds
 		"la a0, __malloc_max_total_mem;"
@@ -65,17 +65,13 @@ extern "C"
 		// Jump to main
 		"j main;"
 
-		// Put main hardware thread to sleep if its main() exits
+		// Put main hardware thread to sleep if main() somehow manages to exit
 		"_mainfreeze: "
-		"wfi;"
-		"j _mainfreeze;"
+		"csrw mstatus, 0;"	// Disable all interrupts (mstatus:mie=0)
+		"wfi;"				// Therefore we'll never get out of this WFI (unless another core sets mstatus:mie=1)
 
 #if defined(TIMELORD)
-		// Set up and branch to worker hardware thread entry point
-		"_gotoworkermain: "
-		"j workermain;"
-
-		// Put worker hardware thread to sleep if its workermain() exits
+		// Put worker hardware thread to sleep until we reset it with the proper branch address
 		"_workerfreeze: "
 		"wfi;"
 		"j _workerfreeze;"

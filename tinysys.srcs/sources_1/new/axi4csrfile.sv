@@ -81,6 +81,10 @@ logic timerInterrupt;
 logic hwInterrupt;
 logic softInterruptEna;
 
+// Last bit of resetcpu CSR triggers a reset irq.
+// Handler has to clear this bit to recover from reset, then branch to address in mscratch register. 
+logic resetirq;
+
 always @(posedge aclk) begin
 	if (~aresetn) begin
 		softInterruptEna <= 0;
@@ -91,7 +95,7 @@ always @(posedge aclk) begin
 		// Fetch isn't holding an IRQ, specific interrups are enabled, and global machine interrupts are enabled
 		softInterruptEna <= mieshadow[0] && mstatusIEshadow; // Software interrupt (The rest of this condition is in fetch unit based on instruction)
 		timerInterrupt <= mieshadow[1] && mstatusIEshadow && (wallclocktime >= timecmpshadow); // Timer interrupt
-		hwInterrupt <= mieshadow[2] && mstatusIEshadow && (uartirq || gpioirq || keyirq || usbirq); // Machine external interrupts
+		hwInterrupt <= mieshadow[2] && mstatusIEshadow && (uartirq || gpioirq || keyirq || usbirq || resetirq); // Machine external interrupts
 	end
 end
 
@@ -139,6 +143,7 @@ always @(posedge aclk) begin
 		dummyshadow <= 1'b0;
 		mstatusIEshadow <= 1'b0;
 		timecmpshadow <= 64'hFFFFFFFFFFFFFFFF;
+		resetirq <= 1'b0;
 		mieshadow <= 3'b000;
 		csrwe <= 1'b0;
 	end else begin
@@ -175,7 +180,8 @@ always @(posedge aclk) begin
 					`CSR_MEPC:		mepcshadow <= csrdin;
 					`CSR_MIE:		mieshadow <= {csrdin[11], csrdin[7], csrdin[3]};	// Only store MEIE, MTIE and MSIE bits
 					`CSR_MSTATUS:	mstatusIEshadow <= csrdin[3];						// Global interrupt enable (MIE) bit
-					`CSR_MTVEC:		mtvecshadow <= csrdin;
+					`CSR_MTVEC:		mtvecshadow <= csrdin;								// Interrupt vector
+					`CSR_CPURESET:	resetirq <= csrdin[0];								// Set reset IRQ state
 					default:		dummyshadow <= csrdin[0];							// Unused - sink
 				endcase
 				writestate <= 2'b01;
@@ -218,7 +224,7 @@ always @(posedge aclk) begin
 						`CSR_TIMELO:	s_axi.rdata[31:0] <= wallclocktime[31:0];
 						`CSR_CYCLELO:	s_axi.rdata[31:0] <= cpuclocktime[31:0];
 						// Interrupt states of all hardware devices
-						`CSR_HWSTATE:	s_axi.rdata[31:0] <= {28'd0, uartirq, gpioirq, keyirq, usbirq};
+						`CSR_HWSTATE:	s_axi.rdata[31:0] <= {27'd0, resetirq, uartirq, gpioirq, keyirq, usbirq};
 						// Pass through actual data
 						default:		s_axi.rdata[31:0] <= csrdout;
 					endcase

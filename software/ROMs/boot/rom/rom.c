@@ -594,7 +594,6 @@ void __attribute__((aligned(64), noinline)) CopyOverlayToROM()
 		"addi s2,s2,-1;"
 		"bnez s2, copyoverlayloop;"
 		".word 0xFC000073;"		// Invalidate & Write Back D$ (CFLUSH.D.L1)
-		// TODO: Notify CPU#1 to make sure it also branches to the reset vector (we could use a memory mapped CSR or other means)
 		"lui s0, 0x0FFE0;"		// Branch to reset vector: 0x0FFE0000
 		"jalr s0;"				// NOTE: ROM must invalidate I$ on entry
 	);
@@ -629,8 +628,16 @@ uint32_t LoadOverlay(const char *filename)
 	return 0;
 }
 
-int workermain()
+void __attribute__((aligned(64), noinline)) workermain()
 {
+	// Boot sequence for CPU#1
+	asm volatile(
+		"csrw mstatus,0;"		// Disable all interrupts (mstatus:mie=0)
+		"fence.i;"				// Invalidate I$
+		"li sp, 0x0FFDFEF0;"	// Stack is at near end of BRAM
+		"mv s0, sp;"			// Set frame pointer to current stack pointer
+	);
+
 	// Play dead
 	uint32_t self = read_csr(mhartid);
 	MailboxWrite(self, MAILSLOT_HART_AWAKE, 0x00000000);
@@ -667,12 +674,26 @@ int workermain()
 		// Yield time back to any tasks running on this core after handling an interrupt
 		/*uint64_t currentTime =*/ TaskYield();
 	}
+}
 
-	return 0;
+void __attribute__((aligned(16))) __attribute__((naked)) resetISR()
+{
+	asm volatile(
+		"csrw 0xFEF, 0x0;"		// Clear cpu reset request
+		".word 0xFC000073;"		// Flush D$ to memory
+		"csrr s0, mscratch;"	// Grab address from scratch register
+		"jalr s0;");			// Jump to reset vector
 }
 
 int main()
 {
+	// Boot CPU#1
+	E32WriteMemMappedCSR(1, CSR_MTVEC, (uint32_t)resetISR);
+	E32WriteMemMappedCSR(1, CSR_MIE, MIP_MEIP);
+	E32WriteMemMappedCSR(1, CSR_MSTATUS, MSTATUS_MIE);
+	E32WriteMemMappedCSR(1, CSR_MSCRATCH, (uint32_t)workermain);
+	E32WriteMemMappedCSR(1, 0xFEF, 0x1);
+
 	LEDSetState(0xF);
 
 	// Play dead
