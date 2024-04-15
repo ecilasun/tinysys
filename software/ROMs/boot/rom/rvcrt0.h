@@ -14,6 +14,7 @@ extern "C"
 		// If we're loaded from storage as a ROM overlay,
 		// this ensures that the instruction cache now sees
 		// the new set of instructions.
+		"csrw mstatus,0;"			// Disable all interrupts
 		"fence.i;"					// Invalidate I$
 
 		// Set up global pointer - NOTE: ROM does not use GP

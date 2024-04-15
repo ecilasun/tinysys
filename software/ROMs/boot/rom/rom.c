@@ -450,7 +450,7 @@ void _cliTask()
 {
 	while(1)
 	{
-		struct STaskContext *taskctx = GetTaskContext(s_runOnCPU==0 ? 0 : 1);
+		struct STaskContext *taskctx = GetTaskContext(0);
 
 		// Echo all of the characters we can find back to the sender
 		uint32_t uartData = 0;
@@ -594,6 +594,7 @@ void __attribute__((aligned(64), noinline)) CopyOverlayToROM()
 		"addi s2,s2,-1;"
 		"bnez s2, copyoverlayloop;"
 		".word 0xFC000073;"		// Invalidate & Write Back D$ (CFLUSH.D.L1)
+		// TODO: Notify CPU#1 to make sure it also branches to the reset vector (we could use a memory mapped CSR or other means)
 		"lui s0, 0x0FFE0;"		// Branch to reset vector: 0x0FFE0000
 		"jalr s0;"				// NOTE: ROM must invalidate I$ on entry
 	);

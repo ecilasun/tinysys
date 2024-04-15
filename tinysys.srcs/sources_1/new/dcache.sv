@@ -122,8 +122,8 @@ typedef enum logic [4:0] {
 	UCWRITE, UCWRITEDELAY, UCREAD, UCREADDELAY,
 	CWBACK, CWBACKWAIT,
 	CPOPULATE, CPOPULATEWAIT, CUPDATE, CUPDATEDELAY,
-	CDATANOFLUSHBEGIN, CDATANOFLUSHSTEP,
-	CDATAFLUSHBEGIN, CDATAFLUSHWAITCREAD, CDATAFLUSH, CDATAFLUSHSKIP, CDATAFLUSHWAIT } cachestatetype;
+	CDISCARDBEGIN, CDISCARDSTEP,
+	CFLUSHBEGIN, CFLUSHWAITCREAD, CFLUSH, CFLUSHSKIP, CFLUSHWAIT } cachestatetype;
 cachestatetype cachestate = CRESET;
 
 always_ff @(posedge aclk) begin
@@ -156,41 +156,41 @@ always_ff @(posedge aclk) begin
 				4'b0110: cachestate <= CREAD;
 				4'b0001: cachestate <= UCWRITE;
 				4'b0010: cachestate <= UCREAD;
-				4'b1xxx: cachestate <= dcacheop[1] ? CDATAFLUSHBEGIN : CDATANOFLUSHBEGIN;
+				4'b1xxx: cachestate <= dcacheop[1] ? CFLUSHBEGIN : CDISCARDBEGIN;
 				default: cachestate <= IDLE;
 			endcase
 		end
 
-		CDATANOFLUSHBEGIN: begin
+		CDISCARDBEGIN: begin
 			// Clear and invalidate cache line
 			cachelinewb[dccount] <= 1'b0;
 			cachelinetags[dccount] <= 'd0;
-			cachestate <= CDATANOFLUSHSTEP;
+			cachestate <= CDISCARDSTEP;
 		end
 
-		CDATANOFLUSHSTEP: begin
+		CDISCARDSTEP: begin
 			// Go to next line (wraps around to 0 at 511)
 			dccount <= dccount + 9'd1;
 			// Finish our mock 'write' operation
 			wready <= dccount == 9'h1FF;
 			// Repeat until we process line 0xFF and go back to idle state
-			cachestate <= dccount == 9'h1FF ? IDLE : CDATANOFLUSHBEGIN;
-		end
-		
-		CDATAFLUSHBEGIN: begin
-			// Switch cache address to use flush counter
-			flushing <= 1'b1;
-			cachestate <= CDATAFLUSHWAITCREAD;
+			cachestate <= dccount == 9'h1FF ? IDLE : CDISCARDBEGIN;
 		end
 
-		CDATAFLUSHWAITCREAD: begin
+		CFLUSHBEGIN: begin
+			// Switch cache address to use flush counter
+			flushing <= 1'b1;
+			cachestate <= CFLUSHWAITCREAD;
+		end
+
+		CFLUSHWAITCREAD: begin
 			// We keep the tag same, since we only want to make sure data is written back, not evicted
 			flushtag <= cachelinetags[dccount];
 			// One clock delay to read cache value at {dccount}
-			cachestate <= CDATAFLUSH;
+			cachestate <= CFLUSH;
 		end
 
-		CDATAFLUSH: begin
+		CFLUSH: begin
 			// Nothing to write back for next time around
 			cachelinewb[dccount] <= 1'b0;
 			// Either write back to memory or skip
@@ -200,14 +200,14 @@ always_ff @(posedge aclk) begin
 				cachedout <= {cdout[127:0], cdout[255:128], cdout[383:256], cdout[511:384]};
 				memwritestrobe <= 1'b1;
 				// We're done if this was the last write
-				cachestate <= CDATAFLUSHWAIT;
+				cachestate <= CFLUSHWAIT;
 			end else begin // Otherwise, skip write back
 				// Skip this line if it doesn't need a write back operation
-				cachestate <= CDATAFLUSHSKIP;
+				cachestate <= CFLUSHSKIP;
 			end
 		end
 
-		CDATAFLUSHSKIP: begin
+		CFLUSHSKIP: begin
 			// Go to next line (wraps around to 0 at 511)
 			dccount <= dccount + 9'd1;
 			// Stop 'flushing' mode if we're done
@@ -215,10 +215,10 @@ always_ff @(posedge aclk) begin
 			// Finish our mock 'write' operation if we're done
 			wready <= dccount == 9'h1FF;
 			// Repeat until we process line 0x1FF and go back to idle state
-			cachestate <= dccount == 9'h1FF ? IDLE : CDATAFLUSHWAITCREAD;
+			cachestate <= dccount == 9'h1FF ? IDLE : CFLUSHWAITCREAD;
 		end
 
-		CDATAFLUSHWAIT: begin
+		CFLUSHWAIT: begin
 			if (wdone) begin
 				// Go to next line (wraps around to 0 at 511)
 				dccount <= dccount + 9'd1;
@@ -227,10 +227,10 @@ always_ff @(posedge aclk) begin
 				// Finish our mock 'write' operation if we're done
 				wready <= dccount == 9'h1FF;
 				// Repeat until we process line 0x1FF and go back to idle state
-				cachestate <= dccount == 9'h1FF ? IDLE : CDATAFLUSHWAITCREAD;
+				cachestate <= dccount == 9'h1FF ? IDLE : CFLUSHWAITCREAD;
 			end else begin
 				// Memory write didn't complete yet
-				cachestate <= CDATAFLUSHWAIT;
+				cachestate <= CFLUSHWAIT;
 			end
 		end
 

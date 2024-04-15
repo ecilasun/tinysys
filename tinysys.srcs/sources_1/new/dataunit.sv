@@ -48,32 +48,34 @@ always_comb begin
 end
 
 always @(posedge aclk) begin
-	datare <= 1'b0;
-	datawe <= 1'b0;
-	dcacheop <= 2'b00;
-
-	unique case(datamode)
-		WCMD: begin
-			addrs <= s_ibus.rstrobe ? s_ibus.raddr : s_ibus.waddr;
-			datain <= s_ibus.wdata;
-			datare <= s_ibus.rstrobe;
-			datawe <= s_ibus.wstrobe;
-			dcacheop <= s_ibus.cstrobe ? s_ibus.dcacheop : 2'b00;
-			datamode <= s_ibus.cstrobe ? WCACHEOP : (s_ibus.rstrobe ? WREAD : (s_ibus.wstrobe ? WWRITE : WCMD));
-		end
-		WREAD: begin
-			datamode <= rready ? WCMD : WREAD;
-		end
-		WWRITE: begin
-			datamode <= wready ? WCMD : WWRITE;
-		end
-		WCACHEOP: begin
-			datamode <= wready ? WCMD : WCACHEOP;
-		end
-	endcase
-
 	if (~aresetn) begin
+		datare <= 1'b0;
+		datawe <= 1'b0;
+		dcacheop <= 2'b00;
 		datamode <= WCMD;
+	end else begin
+		datare <= 1'b0;
+		datawe <= 1'b0;
+		dcacheop <= 2'b00;
+		unique case(datamode)
+			WCMD: begin
+				addrs <= s_ibus.rstrobe ? s_ibus.raddr : s_ibus.waddr;
+				datain <= s_ibus.wdata;
+				datare <= s_ibus.rstrobe;
+				datawe <= s_ibus.wstrobe;
+				dcacheop <= s_ibus.cstrobe ? s_ibus.dcacheop : 2'b00;
+				datamode <= s_ibus.cstrobe ? WCACHEOP : (s_ibus.rstrobe ? WREAD : (s_ibus.wstrobe ? WWRITE : WCMD));
+			end
+			WREAD: begin
+				datamode <= rready ? WCMD : WREAD;
+			end
+			WWRITE: begin
+				datamode <= wready ? WCMD : WWRITE;
+			end
+			WCACHEOP: begin
+				datamode <= wready ? WCMD : WCACHEOP;
+			end
+		endcase
 	end
 end
 
