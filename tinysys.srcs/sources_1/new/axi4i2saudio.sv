@@ -231,7 +231,8 @@ end
 // I2S output
 // ------------------------------------------------------------------------------------
 
-logic [1:0] sampleRateCounter = 2'b00;	// Sample rate counter
+logic [1:0] sampleRateCounter;	// Sample rate counter
+
 always@(posedge audioclock) begin
 	if (~aresetn) begin
 		tx_data_lr <= 0;
@@ -286,7 +287,7 @@ always@(posedge audioclock) begin
 	end
 end
 
-always@(count, tx_data_l_shift, tx_data_r_shift) begin
+always@(count, tx_data_l_shift, tx_data_r_shift, aresetn) begin
 	if (~aresetn) begin
 		tx_sdout = 1'b0;
 	end else begin
