@@ -98,3 +98,21 @@ uint32_t E32ReadMemMappedCSR(uint32_t _hart, uint32_t _csr)
 	else
 		return *(uint32_t*)(DEVICE_CSR1 + (_csr<<2));
 }
+
+void __attribute__((aligned(16))) __attribute__((naked)) resetISR()
+{
+	asm volatile(
+		"csrw 0xFEF, 0x0;"		// Clear cpu reset request
+		".word 0xFC000073;"		// Flush D$ to memory
+		"csrr s0, mscratch;"	// Grab address from scratch register
+		"jalr s0;");			// Jump to reset vector
+}
+
+void E32ResetCPU(uint32_t hartid, void *workerThread)
+{
+	E32WriteMemMappedCSR(hartid, CSR_MTVEC, (uint32_t)resetISR);
+	E32WriteMemMappedCSR(hartid, CSR_MIE, MIP_MEIP);
+	E32WriteMemMappedCSR(hartid, CSR_MSTATUS, MSTATUS_MIE);
+	E32WriteMemMappedCSR(hartid, CSR_MSCRATCH, (uint32_t)workerThread);
+	E32WriteMemMappedCSR(hartid, 0xFEF, 0x1);
+}

@@ -24,9 +24,9 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "r1.08"
+#define VERSIONSTRING "r1.09"
 // On-storage version
-#define DEVVERSIONSTRING "r1.08"
+#define DEVVERSIONSTRING "r1.09"
 
 static char s_execName[32] = "                               ";
 static char s_execParam0[32] = "                               ";
@@ -198,7 +198,9 @@ uint32_t ExecuteCmd(char *_cmd)
 		// Clear to reboot color
 		VPUClear(kernelgfx, 0x0C0C0C0C);
 		VPUSetVMode(kernelgfx, EVS_Disable);
-		// Jump to start of ROM
+		// Remove watermark since we might have deleted / changed the rom image before reboot
+		write_csr(0xFF0, 0x0);
+		// Jump to start of ROM for CPU#0, which then reboots CPU#1 accordingly
 		asm volatile(
 			"li s0, 0x0FFE0000;"
 			"jalr s0;"
@@ -628,7 +630,8 @@ uint32_t LoadOverlay(const char *filename)
 	return 0;
 }
 
-void __attribute__((aligned(64), noinline)) workermain()
+// Core task for worker CPUs
+void __attribute__((aligned(64), noinline)) workerMain()
 {
 	// Boot sequence for CPU#1
 	asm volatile(
@@ -676,23 +679,10 @@ void __attribute__((aligned(64), noinline)) workermain()
 	}
 }
 
-void __attribute__((aligned(16))) __attribute__((naked)) resetISR()
-{
-	asm volatile(
-		"csrw 0xFEF, 0x0;"		// Clear cpu reset request
-		".word 0xFC000073;"		// Flush D$ to memory
-		"csrr s0, mscratch;"	// Grab address from scratch register
-		"jalr s0;");			// Jump to reset vector
-}
-
 int main()
 {
-	// Boot CPU#1
-	E32WriteMemMappedCSR(1, CSR_MTVEC, (uint32_t)resetISR);
-	E32WriteMemMappedCSR(1, CSR_MIE, MIP_MEIP);
-	E32WriteMemMappedCSR(1, CSR_MSTATUS, MSTATUS_MIE);
-	E32WriteMemMappedCSR(1, CSR_MSCRATCH, (uint32_t)workermain);
-	E32WriteMemMappedCSR(1, 0xFEF, 0x1);
+	// Reset all helper CPUs
+	E32ResetCPU(1, workerMain);
 
 	LEDSetState(0xF);
 
@@ -714,7 +704,7 @@ int main()
 	LEDSetState(0xC);
 	// Watermark register is zero on hard boot
 	uint32_t waterMark = read_csr(0xFF0);
-	if ((waterMark == 0) && LoadOverlay("sd:/sys/rom.bin"))
+	if ((waterMark == 0) && LoadOverlay("sd:/boot/rom.bin"))
 	{
 		// Point of no return. Literally.
 		CopyPayloadAndChainOverlay(CopyOverlayToROM);

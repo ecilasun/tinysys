@@ -100,3 +100,6 @@ void E32Sleep(uint64_t ticks);
 
 void E32WriteMemMappedCSR(uint32_t _hart, uint32_t _csr, uint32_t _value);
 uint32_t E32ReadMemMappedCSR(uint32_t _hart, uint32_t _csr);
+
+// Reset given hardware thread and start executing the supplied task
+void E32ResetCPU(uint32_t hartid, void *workerThread);
