@@ -12,6 +12,12 @@
 // DMA read/write operations are in increments of 16 byte blocks
 #define DMA_BLOCK_SIZE 16
 
+enum ECPUCoherency
+{
+	CPUCoherent,		// CPU can see all DMA writes
+	CPUIncoherent,		// CPU doesn't care about seeing DMA writes
+};
+
 // Regular 16 byte aligned DMA
 void DMACopy4K(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned);
 void DMACopy(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned, const uint8_t _blockCountInMultiplesOf16bytes);
@@ -22,5 +28,5 @@ void DMACopyAutoByteMask(const uint32_t _sourceAddress16ByteAligned, const uint3
 
 void DMATag(const uint32_t _tag);
 void DMAResolveTiles(const uint32_t _rpuTileBuffer16ByteAligned, const uint32_t _vpuWritePage16ByteAligned);
-void DMAWait();
+void DMAWait(enum ECPUCoherency _cpucoherency);
 uint32_t DMAPending();

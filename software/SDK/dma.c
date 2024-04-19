@@ -100,7 +100,17 @@ uint32_t DMAPending()
 	return *DMAIO;
 }
 
-void DMAWait()
+void DMAWait(enum ECPUCoherency _cpucoherency)
 {
 	while (*DMAIO) { asm volatile("nop;"); }
+
+	if (_cpucoherency == CPUCoherent)
+	{
+		// Make sure we flush the cache to memory to make sure we don't lose anything.
+		CFLUSH_D_L1;
+		// Then we discard cache contents.
+		// This allows the CPU to reload cache lines so it can
+		// see the DMA writes
+		CDISCARD_D_L1;
+	}
 }

@@ -101,20 +101,19 @@ int main(int argc, char *argv[])
 		DMATag(0x0);
 
 		// Wait until there are no more DMA operations in flight
-		DMAWait();
+		DMAWait(CPUCoherent);
 
 		// Try to overlay some CPU image onto the DMA surface
-		// Discard cache contents, writing back any dirty lines
-		CDISCARD_D_L1;
 		for (int y = oy+0; y<oy+96; ++y)
 			for (int x = ox; x<ox+96; ++x)
 				bufferC[x+y*320] = x^y;
-		// Make sure everything is in RAM for scan-out
-		CFLUSH_D_L1;
 		ox += dx;
 		oy += dy;
 		if (ox>222 || ox<0) dx = -dx;
 		if (oy>142 || oy<0) dy = -dy;
+
+		// Make sure everything is in RAM for scan-out
+		CFLUSH_D_L1;
 
 		// Wait for vsync on the CPU side
 		// Ideally one would install a vsync handler and swap pages based on that instead of stalling like this
