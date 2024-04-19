@@ -603,17 +603,13 @@ bool agnes_restore_state(agnes_t *agnes, const agnes_state_t *state) {
     return true;
 }
 
-bool agnes_tick(agnes_t *agnes, bool *out_new_frame) {
+bool agnes_tick(agnes_t *agnes, bool *out_new_frame)
+{
     int cpu_cycles = cpu_tick(&agnes->cpu);
-    if (cpu_cycles == 0) {
-        return false;
-    }
-
     int ppu_cycles = cpu_cycles * 3;
     for (int i = 0; i < ppu_cycles; i++) {
         ppu_tick(&agnes->ppu, out_new_frame);
     }
-    
     return true;
 }
 

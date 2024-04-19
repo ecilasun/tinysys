@@ -27,6 +27,17 @@ static uint32_t *s_framebuffer = NULL;
 
 int main(int argc, char *argv[])
 {
+	// Start video (single buffered for now)
+	s_framebuffer = (uint32_t*)VPUAllocateBuffer(320 * AGNES_SCREEN_HEIGHT);
+	VPUSetWriteAddress(&s_vx, (uint32_t)s_framebuffer);
+	VPUSetScanoutAddress(&s_vx, (uint32_t)s_framebuffer);
+	VPUSetDefaultPalette(&s_vx);
+
+    s_vx.m_vmode = EVM_320_Wide;
+    s_vx.m_cmode = ECM_8bit_Indexed;
+	VPUSetVMode(&s_vx, EVS_Enable);
+	VPUClear(&s_vx, 0xFFFFFFFF);
+
     if (argc != 2) {
         fprintf(stderr, "Usage: %s game.nes\n", argv[0]);
         return 1;
@@ -53,17 +64,6 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-	// Start video (single buffered for now)
-	s_framebuffer = (uint32_t*)VPUAllocateBuffer(320 * AGNES_SCREEN_HEIGHT);
-	VPUSetWriteAddress(&s_vx, (uint32_t)s_framebuffer);
-	VPUSetScanoutAddress(&s_vx, (uint32_t)s_framebuffer);
-	VPUSetDefaultPalette(&s_vx);
-
-    s_vx.m_vmode = EVM_320_Wide;
-    s_vx.m_cmode = ECM_8bit_Indexed;
-	VPUSetVMode(&s_vx, EVS_Enable);
-	VPUClear(&s_vx, 0xFFFFFFFF);
-
 	// Apply the NES color palette to our 12bit device
 	agnes_color_t *palette = agnes_get_palette(agnes);
 	for (uint32_t i=0; i<256; ++i)
@@ -83,9 +83,10 @@ int main(int argc, char *argv[])
 
 		ledState ^= 0xFFFFFFFF;
 
+		// show centered
 		uint32_t source = agnes_get_raw_screen_buffer(agnes);
 		for (uint32_t y = 0; y<AGNES_SCREEN_HEIGHT; ++y)
-			__builtin_memcpy(s_framebuffer+80*y, (void*)(source+256*y), 256);
+			__builtin_memcpy(s_framebuffer+80*y+8, (void*)(source+256*y), 256);
 		CFLUSH_D_L1;
 	}
 
