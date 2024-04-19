@@ -63,11 +63,10 @@ int main(int argc, char *argv[])
 	int32_t outstats = 0;
 	uint64_t starttime = E32ReadTime();
 	uint32_t prevvsync = VPUReadVBlankCounter();
+	int ox = 32, dx = 1;
+	int oy = 32, dy = 2;
 	while (1)
 	{
-		// Wait until there are no more DMA operations in flight
-		DMAWait();
-
 		uint64_t endtime = E32ReadTime();
 		averagetime = (averagetime + (uint32_t)(endtime-starttime))/2;
 
@@ -100,6 +99,22 @@ int main(int argc, char *argv[])
 
 		// Tag for DMA sync (essentially an item in FIFO after last DMA so we can check if DMA is complete when this drains)
 		DMATag(0x0);
+
+		// Wait until there are no more DMA operations in flight
+		DMAWait();
+
+		// Try to overlay some CPU image onto the DMA surface
+		// Discard cache contents, writing back any dirty lines
+		CDISCARD_D_L1;
+		for (int y = oy+0; y<oy+96; ++y)
+			for (int x = ox; x<ox+96; ++x)
+				bufferC[x+y*320] = x^y;
+		// Make sure everything is in RAM for scan-out
+		CFLUSH_D_L1;
+		ox += dx;
+		oy += dy;
+		if (ox>222 || ox<0) dx = -dx;
+		if (oy>142 || oy<0) dy = -dy;
 
 		// Wait for vsync on the CPU side
 		// Ideally one would install a vsync handler and swap pages based on that instead of stalling like this
