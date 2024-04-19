@@ -96,7 +96,7 @@ void DeviceDefaultState(int _bootTime)
 	// TODO: Wait for any pending raster ops to complete
 
 	// Wait for any pending DMA to complete
-	DMAWait();
+	DMAWait(CPUIncoherent);
 
 	// Set up console view
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
