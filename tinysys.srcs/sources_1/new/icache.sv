@@ -17,16 +17,15 @@ wire [13:0] tag = addr[27:14];	// Cache tag
 wire [7:0] line = addr[13:6];	// Cache line
 wire [3:0] offset = addr[5:2];	// Cache word offset
 
-logic readdone = 1'b0;
+logic readdone;
 assign rready = readdone;
 
-logic [31:0] dataout = 32'd0;
+logic [31:0] dataout;
 assign dout = dataout;
 
 logic [31:0] cacheaddress;
 data_t cachedin[0:3];
-logic memwritestrobe = 1'b0;
-logic memreadstrobe = 1'b0;
+logic memreadstrobe;
 
 logic [13:0] ctag = 14'd0;			// current cache tag (14 bits)
 logic [3:0] coffset = 4'd0;			// current word offset 0..15
@@ -34,12 +33,12 @@ logic [7:0] clineaddr = 8'd0;		// current cache line 0..256
 
 logic [14:0] cachelinetags[0:255];	// cache line tags (14 bits) + 1 bit for valid flag
 
-logic cachewe = 1'b0;				// write control
+logic cachewe;						// write control
 logic [511:0] cdin;					// input data to write to cache
 wire [511:0] cdout;					// output data read from cache
 
-logic flushing = 1'b0;				// high during cache flush operation
-logic [7:0] dccount = 8'h00;		// line counter for cache flush/invalidate ops
+logic flushing;						// high during cache flush operation
+logic [7:0] dccount;				// line counter for cache flush/invalidate ops
 logic [13:0] flushline = 14'd0;		// contents of line being flushed
 
 logic [7:0] cacheaccess;
@@ -64,7 +63,7 @@ initial begin
 	end
 end
 
-logic ctagwe = 1'b0;
+logic ctagwe;
 logic [14:0] clinedin;
 always @(posedge aclk) begin
 	if (ctagwe)
@@ -107,85 +106,92 @@ wire prevhit = ren && ({1'b1, tag} == prevtag) && (line == prevline);
 wire countdone = (dccount == 8'hFF);
 
 always_ff @(posedge aclk) begin
-	memreadstrobe <= 1'b0;
-	readdone <= 1'b0;
-	cachewe <= 1'b0;
-	ctagwe <= 1'b0;
-	
-	unique case(cachestate)
-		IDLE : begin
-			coffset <= offset;	// Cache offset 0..15
-			clineaddr <= line;	// Cache line
-			ctag <= tag;		// Cache tag 0000..3fff
-			dccount <= 8'h00;
-
-			if (prevhit) begin
-				// Return hit one clock earlier if this is the same cache line as before
-				dataout <= prevdata[offset*32 +: 32];
-				readdone <= 1'b1;
-			end else begin
-				casex ({icacheflush, ren})
-					2'b1x: cachestate <= INVALIDATEBEGIN;
-					2'bx1: cachestate <= CREAD;
-					default: cachestate <= IDLE;
-				endcase
-			end
-		end
-		
-		INVALIDATEBEGIN: begin
-			// Invalidate
-			prevtag <= 15'd0;
-			prevline <= 8'd0;
-			clineaddr <= dccount;
-			clinedin <= 15'd0; // invalid + zero tag
-			ctagwe <= 1'b1;
-			cachestate <= INVALIDATESTEP;
-		end
-
-		INVALIDATESTEP: begin
-			dccount <= dccount + 8'd1;
-			readdone <= countdone;
-			cachestate <= countdone ? IDLE : INVALIDATEBEGIN;
-		end
-
-		CREAD: begin
-			if (cachehit) begin
-				// Cache hit
-				dataout <= cdout[coffset*32 +: 32];
-				prevdata <= cdout;
-				prevtag <= ctagdout;
-				prevline <= clineaddr;
-				readdone <= 1'b1;
-				cachestate <= IDLE;
-			end else begin
-				// Cache miss
-				cachestate <= CPOPULATE;
-			end
-		end
-
-		CPOPULATE : begin
-			// Same as current memory address with device selector, aligned to cache boundary, top bit ignored (cached address)
-			cacheaddress <= {4'b0, ctag, clineaddr, 6'd0};
-			memreadstrobe <= 1'b1;
-			clinedin <= {1'b1, ctag}; // update valid + tag
-			ctagwe <= 1'b1;
-			cachestate <= CUPDATE;
-		end
-
-		CUPDATE: begin
-			cdin <= {cachedin[3], cachedin[2], cachedin[1], cachedin[0]}; // Data from memory
-			cachewe <= rdone;
-			cachestate <= rdone ? CWRITEDELAY : CUPDATE;
-		end
-
-		CWRITEDELAY: begin
-			// Delay state for tag write completion
-			cachestate <= CREAD;
-		end
-	endcase
-
 	if (~aresetn) begin
-		cachestate <= IDLE;
+		memreadstrobe <= 1'b0;
+		readdone <= 1'b0;
+		cachewe <= 1'b0;
+		ctagwe <= 1'b0;
+		flushing <= 1'b0;
+		dccount <= 8'h00;
+		dataout <= 32'd0;
+	end else begin
+		memreadstrobe <= 1'b0;
+		readdone <= 1'b0;
+		cachewe <= 1'b0;
+		ctagwe <= 1'b0;
+		
+		unique case(cachestate)
+			IDLE : begin
+				coffset <= offset;	// Cache offset 0..15
+				clineaddr <= line;	// Cache line
+				ctag <= tag;		// Cache tag 0000..3fff
+				dccount <= 8'h00;
+	
+				if (prevhit) begin
+					// Return hit one clock earlier if this is the same cache line as before
+					dataout <= prevdata[offset*32 +: 32];
+					readdone <= 1'b1;
+				end else begin
+					casex ({icacheflush, ren})
+						2'b1x: cachestate <= INVALIDATEBEGIN;
+						2'bx1: cachestate <= CREAD;
+						default: cachestate <= IDLE;
+					endcase
+				end
+			end
+			
+			INVALIDATEBEGIN: begin
+				// Invalidate
+				prevtag <= 15'd0;
+				prevline <= 8'd0;
+				clineaddr <= dccount;
+				clinedin <= 15'd0; // invalid + zero tag
+				ctagwe <= 1'b1;
+				cachestate <= INVALIDATESTEP;
+			end
+	
+			INVALIDATESTEP: begin
+				dccount <= dccount + 8'd1;
+				readdone <= countdone;
+				cachestate <= countdone ? IDLE : INVALIDATEBEGIN;
+			end
+	
+			CREAD: begin
+				if (cachehit) begin
+					// Cache hit
+					dataout <= cdout[coffset*32 +: 32];
+					prevdata <= cdout;
+					prevtag <= ctagdout;
+					prevline <= clineaddr;
+					readdone <= 1'b1;
+					cachestate <= IDLE;
+				end else begin
+					// Cache miss
+					cachestate <= CPOPULATE;
+				end
+			end
+	
+			CPOPULATE : begin
+				// Same as current memory address with device selector, aligned to cache boundary, top bit ignored (cached address)
+				cacheaddress <= {4'b0, ctag, clineaddr, 6'd0};
+				memreadstrobe <= 1'b1;
+				clinedin <= {1'b1, ctag}; // update valid + tag
+				ctagwe <= 1'b1;
+				cachestate <= CUPDATE;
+			end
+	
+			CUPDATE: begin
+				cdin <= {cachedin[3], cachedin[2], cachedin[1], cachedin[0]}; // Data from memory
+				cachewe <= rdone;
+				cachestate <= rdone ? CWRITEDELAY : CUPDATE;
+			end
+	
+			CWRITEDELAY: begin
+				// Delay state for tag write completion
+				cachestate <= CREAD;
+			end
+		endcase
+
 	end
 end
 
