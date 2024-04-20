@@ -5,16 +5,9 @@
 #include <stdio.h>
 #include <string.h>
 
-static const char *s_taskstates[]={
-	"UNKNOWN    ",
-	"PAUSED     ",
-	"RUNNING    ",
-	"TERMINATING",
-	"TERMINATED " };
-
 struct STaskContext *GetTaskContextOfCPU(uint32_t _hartid)
 {
-	return (struct STaskContext *)(KERNEL_TASK_CONTEXT + 1024*_hartid);
+	return (struct STaskContext *)(DEVICE_MAIL + sizeof(struct STaskContext)*_hartid);
 }
 
 void MyTask()

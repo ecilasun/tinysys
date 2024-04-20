@@ -272,7 +272,8 @@ struct STaskContext *GetTaskContext(uint32_t _hartid)
 {
 	// Each task starts at 1Kbyte boundary
 	// We have >80Kbytes in the task space so this should support plenty of cores
-	return (struct STaskContext *)(KERNEL_TASK_CONTEXT + 1024*_hartid);
+	struct STaskContext *contextpool = (struct STaskContext *)DEVICE_MAIL;
+	return &contextpool[_hartid];
 }
 
 void InitializeTaskContext(uint32_t _hartid)

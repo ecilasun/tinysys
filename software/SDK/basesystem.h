@@ -48,8 +48,6 @@
 #define SERIN_RINGBUFFER_STATE			0x0205C010 // Serial input state
 #define SEROUT_RINGBUFFER_STATE			0x0205C020 // Serial output state
 #define GPIO_RINGBUFFER_STATE			0x0205C030 // GPIO input state
-// ETC
-#define KERNEL_TASK_CONTEXT				0x0205C040 // Task context memory (81856 bytes)
 // Executable
 #define HEAP_START_APPMEM_END			0x02070000 // Executable space above this
 // Heap
@@ -71,7 +69,7 @@
 // Device address base
 #define DEVICE_BASE 0x80000000
 
-// Each device has 16 Kbytes of continous, uncached memory region mapped to it (not all is necessarily accessible)
+// Each device has 64 Kbytes of uncached memory region mapped to it (not all is guaranteed to be accessible)
 #define DEVICE_GPIO (DEVICE_BASE+0x00000)
 #define DEVICE_LEDS (DEVICE_BASE+0x10000)
 #define DEVICE_VPUC (DEVICE_BASE+0x20000)
@@ -84,8 +82,10 @@
 #define DEVICE_UART (DEVICE_BASE+0x90000)
 #define DEVICE_CSR0 (DEVICE_BASE+0xA0000)
 #define DEVICE_CSR1 (DEVICE_BASE+0xB0000)
-// NOTE: Add more device addresses here
 //#define DEVICE_DEV0 (DEVICE_BASE+0xC0000)
+//#define DEVICE_DEV1 (DEVICE_BASE+0xD0000)
+//#define DEVICE_DEV2 (DEVICE_BASE+0xE0000)
+//#define DEVICE_DEV3 (DEVICE_BASE+0xF0000)
 
 uint64_t E32ReadTime();
 uint64_t E32ReadCycles();

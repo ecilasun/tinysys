@@ -16,7 +16,6 @@
 #include "serialoutringbuffer.h"
 #include "gpioringbuffer.h"
 #include "serialinput.h"
-#include "mailbox.h"
 
 #include <string.h>
 #include <stdbool.h>
@@ -24,9 +23,9 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "r1.09"
+#define VERSIONSTRING "r1.10"
 // On-storage version
-#define DEVVERSIONSTRING "r1.09"
+#define DEVVERSIONSTRING "r1.10"
 
 static char s_execName[32] = "                               ";
 static char s_execParam0[32] = "                               ";
@@ -138,12 +137,6 @@ void ShowVersion(int waterMark)
 	kprintf(" Board           : issue 2E:2024               \n");
 	kprintf(" CPU & bus clock : 150MHz                      \n");
 	kprintf(" ARCH            : rv32im_zicsr_zifencei_zfinx \n");
-	for (uint32_t i=0; i<16; ++i)
-	{
-		uint32_t isalive = MailboxRead(i, MAILSLOT_HART_AWAKE);
-		if (isalive==0xCAFEB000)
-			kprintf(" HART%d%s          : alive                       \n", i, i>9 ? "" : " ");
-	}
 	kprintf(" ESP32           : ESP32-C6-WROOM-1-N8         \n");
 
 	// Report USB host chip version
@@ -436,7 +429,10 @@ uint32_t ExecuteCmd(char *_cmd)
 				if (s_runOnCPU == 0)
 					s_userTaskID = TaskAdd(tctx, command, _runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 				else
-					MailboxWrite(1, MAILSLOT_HART_EXEC, s_startAddress);
+				{
+					struct STaskContext* tctx1 = GetTaskContext(1);
+					s_userTaskID = TaskAdd(tctx1, command, _runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+				}
 
 				return 0;
 			}
@@ -479,7 +475,10 @@ void _cliTask()
 					if (s_runOnCPU == 0)
 						TaskExitTaskWithID(taskctx, s_userTaskID, 0); // Sig:0, terminate process if no debugger is attached
 					else
-						MailboxWrite(1, MAILSLOT_HART_STOP, 1); // taskid + 1
+					{
+						struct STaskContext* tctx1 = GetTaskContext(1);
+						TaskExitTaskWithID(tctx1, s_userTaskID, 0);
+					}
 				}
 				break;
 
@@ -641,39 +640,18 @@ void __attribute__((aligned(64), noinline)) workerMain()
 		"mv s0, sp;"			// Set frame pointer to current stack pointer
 	);
 
-	// Play dead
-	uint32_t self = read_csr(mhartid);
-	MailboxWrite(self, MAILSLOT_HART_AWAKE, 0x00000000);
-
 	// Worker cores do not handle hardware interrupts by default,
 	// only task switching (timer) and software (illegal instruction)
+	uint32_t self = read_csr(mhartid);
 	InitializeTaskContext(self);
-	InstallISR(self, false, true);
 
 	struct STaskContext *taskctx = GetTaskContext(self);
 	TaskAdd(taskctx, "hart1idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 
-	// Mark us alive
-	MailboxWrite(self, MAILSLOT_HART_AWAKE, 0xCAFEB000);
+	InstallISR(self, false, true);
 
 	while(1)
 	{
-		uint32_t startAddress = MailboxRead(self, MAILSLOT_HART_EXEC);
-		uint32_t stopTask = MailboxRead(self, MAILSLOT_HART_STOP);
-
-		if (stopTask != 0)
-		{
-			MailboxWrite(self, MAILSLOT_HART_STOP, 0x0);
-			TaskExitTaskWithID(taskctx, s_userTaskID, 0); // Sig:0, terminate process if no debugger is attached
-		}
-
-		if (startAddress != 0)
-		{
-			MailboxWrite(self, MAILSLOT_HART_EXEC, 0x0);
-			s_startAddress = startAddress;
-			s_userTaskID = TaskAdd(taskctx, "ELF", _runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
-		}
-
 		// Yield time back to any tasks running on this core after handling an interrupt
 		/*uint64_t currentTime =*/ TaskYield();
 	}
@@ -681,14 +659,7 @@ void __attribute__((aligned(64), noinline)) workerMain()
 
 int main()
 {
-	// Reset all helper CPUs
-	E32ResetCPU(1, workerMain);
-
 	LEDSetState(0xF);
-
-	// Play dead
-	uint32_t self = read_csr(mhartid);
-	MailboxWrite(self, MAILSLOT_HART_AWAKE, 0x00000000);
 
 	LEDSetState(0xE);
 	// Set default path before we mount any storage devices
@@ -727,6 +698,7 @@ int main()
 
 	// Create task context
 	LEDSetState(0x9);
+	uint32_t self = read_csr(mhartid);
 	InitializeTaskContext(self);
 	struct STaskContext *taskctx = GetTaskContext(self);
 
@@ -742,13 +714,13 @@ int main()
 
 	LEDSetState(0x7);
 
+	// Reset helper CPUs
+	E32ResetCPU(1, workerMain);
+
 	// Start USB host
 	InitializeUSBHIDData();
 	USBHostSetContext(&s_usbhostctx);
 	USBHostInit(1);
-
-	// Mark us alive
-	MailboxWrite(self, MAILSLOT_HART_AWAKE, 0xCAFEB000);
 
 	// Ready to start, silence LED activity since other systems need it
 	LEDSetState(0x0);

@@ -2,7 +2,7 @@
 
 #include <inttypes.h>
 
-#define TASK_MAX 8
+#define TASK_MAX 4
 
 typedef void(*taskfunc)();
 
@@ -29,16 +29,16 @@ struct STask {
 	uint32_t regs[32];		// Integer registers - NOTE: register zero here is actually the PC
 
 	// Debug support - this will probably move somewhere else
-	char name[16];				// Name of this task
+	char name[16];			// Name of this task
 };
 
 struct STaskContext {
 	struct STask tasks[TASK_MAX];	// List of all the tasks
-	int32_t currentTask;	// Current task index
-	int32_t numTasks;		// Number of tasks
-	int32_t debugFlags;		// Data for debugger
-	int32_t kernelError;	// Current kernel error
-	int32_t hartID;			// Id of the HART where this task context runs
+	int32_t currentTask;			// Current task index
+	int32_t numTasks;				// Number of tasks
+	int32_t debugFlags;				// Data for debugger
+	int32_t kernelError;			// Current kernel error
+	int32_t hartID;					// Id of the HART where this task context runs
 };
 
 // Start up the task system

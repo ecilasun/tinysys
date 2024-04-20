@@ -21,17 +21,13 @@ void TaskInitSystem(struct STaskContext *_ctx, uint32_t _hartid)
 	for (uint32_t i=0; i<TASK_MAX; ++i)
 	{
 		struct STask *task = &_ctx->tasks[i];
-		task->HART = 0x1;				// Default affinity mask is HART#0
+		task->HART = 0x0;				// Default affinity mask is HART#0
 		task->regs[0] = 0x0;			// Initial PC
 		task->regs[2] = 0x0;			// Initial stack pointer
 		task->regs[8] = 0x0;			// Frame pointer
 		task->state = TS_UNKNOWN;
 		task->name[0] = 0; // No name
 	}
-
-	// Make this visible to other cores
-	// TODO: This won't be necessary once we support atomics
-	CFLUSH_D_L1;
 }
 
 uint32_t TaskRead4Bytes(const uint32_t _address)
@@ -116,10 +112,6 @@ int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum E
 
 	// Resume timer interrupts on this core
 	set_csr(mie, MIP_MTIP);
-
-	// Make this visible to other cores
-	// TODO: This won't be necessary once we support atomics
-	CFLUSH_D_L1;
 
 	return prevcount;
 }

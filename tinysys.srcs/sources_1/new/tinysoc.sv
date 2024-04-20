@@ -275,24 +275,24 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // address space is for 4Kbytes of data yet we can
 // access 16KBytes worth of data.
 
-// 16bit (16K) address space reserved for each memory mapped device (255 devices max)
+// 16bit (64K) address space for up to 255 devices
 // dev   start     end       addrs[19:16]  size  notes
-// GPIO: 80000000  8xx0FFFF  4'b0000  16KB	 GPIO pins
-// LEDS: 8xx10000  8xx1FFFF  4'b0001  16KB	 Debug LEDs
-// VPUC: 8xx20000  8xx2FFFF  4'b0010  16KB	 Video Processing Unit
-// SDCC: 8xx30000  8xx3FFFF  4'b0011  16KB	 SDCard SPI Unit
-// XADC: 8xx40000  8xx4FFFF  4'b0100  16KB	 Die Temperature DAC
-// DMAC: 8xx50000  8xx5FFFF  4'b0101  16KB	 Direct Memory Access / Memcopy
-// USBA: 8xx60000  8xx6FFFF  4'b0110  16KB	 USB-A Host Interface Unit
-// APUC: 8xx70000  8xx7FFFF  4'b0111  16KB	 Audio Processing Unit / Mixer
-// MAIL: 8xx80000  8xx8FFFF  4'b1000  16KB	 MAIL inter-HART comm
-// UART: 8xx90000  8xx9FFFF  4'b1001  16KB	 UART HART <-> ESP32-C6 comm
-// CSR0: 8xxA0000  8xxAFFFF  4'b1010  16KB	 CSR#0
-// CSR1: 8xxB0000  8xxBFFFF  4'b1011  16KB	 CSR#1
-// ----: 8xxC0000  8xxCFFFF  4'b1100  16KB	 Unused
-// ----: 8xxD0000  8xxDFFFF  4'b1101  16KB	 Unused
-// ----: 8xxE0000  8xxEFFFF  4'b1110  16KB	 Unused
-// ----: 8xxF0000  8xxFFFFF  4'b1111  16KB	 Unused
+// GPIO: 80000000  8xx0FFFF  4'b0000  64KB	 GPIO pins
+// LEDS: 8xx10000  8xx1FFFF  4'b0001  64KB	 Debug LEDs
+// VPUC: 8xx20000  8xx2FFFF  4'b0010  64KB	 Video Processing Unit
+// SDCC: 8xx30000  8xx3FFFF  4'b0011  64KB	 SDCard SPI Unit
+// XADC: 8xx40000  8xx4FFFF  4'b0100  64KB	 Die Temperature DAC
+// DMAC: 8xx50000  8xx5FFFF  4'b0101  64KB	 Direct Memory Access / Memcopy
+// USBA: 8xx60000  8xx6FFFF  4'b0110  64KB	 USB-A Host Interface Unit
+// APUC: 8xx70000  8xx7FFFF  4'b0111  64KB	 Audio Processing Unit / Mixer
+// MAIL: 8xx80000  8xx8FFFF  4'b1000  64KB	 MAIL inter-HART comm
+// UART: 8xx90000  8xx9FFFF  4'b1001  64KB	 UART HART <-> ESP32-C6 comm
+// CSR0: 8xxA0000  8xxAFFFF  4'b1010  64KB	 CSR#0
+// CSR1: 8xxB0000  8xxBFFFF  4'b1011  64KB	 CSR#1
+// ----: 8xxC0000  8xxCFFFF  4'b1100  64KB	 Unused
+// ----: 8xxD0000  8xxDFFFF  4'b1101  64KB	 Unused
+// ----: 8xxE0000  8xxEFFFF  4'b1110  64KB	 Unused
+// ----: 8xxF0000  8xxFFFFF  4'b1111  64KB	 Unused
 
 devicerouter devicerouterinst(
 	.aclk(aclk),
