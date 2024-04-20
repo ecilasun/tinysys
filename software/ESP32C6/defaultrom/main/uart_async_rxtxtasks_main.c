@@ -1,15 +1,19 @@
+// Based on parts from https://github.com/nopnop2002/esp-idf-uart2bt
+
 #include <fcntl.h>
 #include <stdio.h>
 
 #include "driver/gpio.h"
 #include "driver/uart.h"
-#include "driver/usb_serial_jtag.h"
 #include "esp_task_wdt.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "hal/usb_serial_jtag_ll.h"
 #include "sdkconfig.h"
 #include "esp_log.h"
+#include "nvs.h"
+#include "nvs_flash.h"
+#include "freertos/queue.h"
+#include "cmd.h"
 
 // EnCi: See schematic of tinysys board 2E for UART pin locations
 #define PIN_TXD GPIO_NUM_22
@@ -20,98 +24,47 @@
 // EnCi: bridge to UART port #1
 #define UART_PORT_NUM 1
 
-#define BUF_SIZE 1024
-
-static QueueHandle_t uart_queue;
-
-static uint8_t *jtag_buffer = NULL;
-static uint8_t *uart_buffer = NULL;
-
-static const char *TAG = "uart_events";
+QueueHandle_t uart_queue;
+QueueHandle_t ble_queue;
 
 // From (PC to) ESP32 to FPGA
-static void jtag_to_uart1_task(void *arg)
+static void ble_to_uart1_task(void *arg)
 {
+	CMD_t cmdBuf;
 	do
 	{
-		int len = usb_serial_jtag_read_bytes(jtag_buffer, BUF_SIZE, portMAX_DELAY);
-		if (len > 0)
-		{
-			uart_write_bytes(UART_PORT_NUM, (const char *)jtag_buffer, len);
-			uart_flush(UART_PORT_NUM);
-		}
+		xQueueReceive(uart_queue, &cmdBuf, portMAX_DELAY);
+		int txBytes = uart_write_bytes(UART_PORT_NUM, cmdBuf.payload, cmdBuf.length);
+		if (txBytes != cmdBuf.length)
+			ESP_LOGE(pcTaskGetName(NULL), "uart_write_bytes Fail. txBytes=%d cmdBuf.length=%d", txBytes, cmdBuf.length);
+		//uart_flush(UART_PORT_NUM); // ??
 	} while(1);
 }
 
 // From FPGA to ESP32 (to PC)
-static void uart1_to_jtag_task(void *arg)
+static void uart1_to_ble_task(void *arg)
 {
-	do
+	CMD_t cmdBuf;
+	cmdBuf.BLE_event_id = BLE_UART_EVT;
+	while (1)
 	{
-		uart_event_t event;
-		if (xQueueReceive(uart_queue, (void *)&event, (TickType_t)portMAX_DELAY))
-		{
-			switch (event.type)
-			{
-				case UART_DATA:
-				{
-					uart_read_bytes(UART_PORT_NUM, uart_buffer, event.size, portMAX_DELAY);
-					usb_serial_jtag_write_bytes(uart_buffer, event.size, portMAX_DELAY);
-					usb_serial_jtag_ll_txfifo_flush();
-				}
-				break;
-
-				case UART_FIFO_OVF:
-				{
-					ESP_LOGI(TAG, "hw fifo overflow");
-					uart_flush_input(UART_PORT_NUM);
-					xQueueReset(uart_queue);
-				}
-				break;
-
-				case UART_BUFFER_FULL:
-				{
-					ESP_LOGI(TAG, "ring buffer full");
-					// If buffer full happened, you should consider increasing your buffer size
-					// As an example, we directly flush the rx buffer here in order to read more data.
-					uart_flush_input(UART_PORT_NUM);
-					xQueueReset(uart_queue);
-				}
-				break;
-
-				case UART_BREAK:
-				{
-					ESP_LOGI(TAG, "uart rx break");
-				}
-				break;
-
-				case UART_PARITY_ERR:
-				{
-					ESP_LOGI(TAG, "uart parity error");
-				}
-				break;
-
-				case UART_FRAME_ERR:
-				{
-					ESP_LOGI(TAG, "uart frame error");
-				}
-				break;
-
-				default:
-				{
-					ESP_LOGI(TAG, "uart event type: %d", event.type);
-				}
-				break;
-			}
-		}
-
-	} while(1);
+		cmdBuf.length = uart_read_bytes(UART_PORT_NUM, cmdBuf.payload, PAYLOAD_SIZE, portMAX_DELAY);
+		if (cmdBuf.length > 0)
+			xQueueSend(ble_queue, &cmdBuf, portMAX_DELAY);
+	}
 }
+
+void ble_task(void * arg);
 
 void app_main(void)
 {
-	usb_serial_jtag_driver_config_t usb_serial_config = {.tx_buffer_size = BUF_SIZE, .rx_buffer_size = BUF_SIZE};
-	ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&usb_serial_config));
+	// Initialize NVS.
+	esp_err_t ret = nvs_flash_init();
+	if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+		ESP_ERROR_CHECK(nvs_flash_erase());
+		ret = nvs_flash_init();
+	}
+	ESP_ERROR_CHECK( ret );
 
 	uart_config_t uart_config = {
 		.baud_rate = 115200,
@@ -122,15 +75,16 @@ void app_main(void)
 		.source_clk = UART_SCLK_DEFAULT,
 	};
 
-	ESP_ERROR_CHECK(uart_driver_install(UART_PORT_NUM, BUF_SIZE * 2, BUF_SIZE * 2, 20, &uart_queue, 0));
+	ble_queue = xQueueCreate(10, sizeof(CMD_t));
+	uart_queue = xQueueCreate(10, sizeof(CMD_t));
+
+	ESP_ERROR_CHECK(uart_driver_install(UART_PORT_NUM, PAYLOAD_SIZE * 2, 0, 0, NULL, 0));
 	ESP_ERROR_CHECK(uart_param_config(UART_PORT_NUM, &uart_config));
 	ESP_ERROR_CHECK(uart_set_pin(UART_PORT_NUM, PIN_TXD, PIN_RXD, PIN_RTS, PIN_CTS));
 
-	jtag_buffer = (uint8_t *)malloc(BUF_SIZE);
-	uart_buffer = (uint8_t *)malloc(BUF_SIZE);
-
 	esp_task_wdt_deinit();
 
-	xTaskCreate(jtag_to_uart1_task, "jtag_to_uart1", 1024, NULL, 5, NULL);
-	xTaskCreate(uart1_to_jtag_task, "uart1_to_jtag", 1024, NULL, 7, NULL);
+	xTaskCreate(ble_to_uart1_task, "ble_to_uart1", 1024, NULL, 2, NULL);
+	xTaskCreate(uart1_to_ble_task, "uart1_to_ble", 1024, NULL, 2, NULL);
+	xTaskCreate(ble_task, "BLE", 1024*4, NULL, 2, NULL);
 }
