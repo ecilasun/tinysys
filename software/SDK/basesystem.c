@@ -108,11 +108,26 @@ void __attribute__((aligned(16))) __attribute__((naked)) resetISR()
 		"jalr s0;");			// Jump to reset vector
 }
 
+void __attribute__((aligned(64), noinline)) voidWorkerThread()
+{
+	// Boot sequence for CPU#1
+	asm volatile(
+		"csrw mstatus,0;"		// Disable all interrupts (mstatus:mie=0)
+		"fence.i;"				// Invalidate I$
+		"li sp, 0x0FFDFEF0;"	// Stack is at near end of BRAM
+		"mv s0, sp;"			// Set frame pointer to current stack pointer
+		"infloop:"
+		"wfi;"					// Halt core
+		"j infloop;"
+	);
+}
+
 void E32ResetCPU(uint32_t hartid, void *workerThread)
 {
+	// Call with null workerthread pointer to use default thread on this core
 	E32WriteMemMappedCSR(hartid, CSR_MTVEC, (uint32_t)resetISR);
 	E32WriteMemMappedCSR(hartid, CSR_MIE, MIP_MEIP);
 	E32WriteMemMappedCSR(hartid, CSR_MSTATUS, MSTATUS_MIE);
-	E32WriteMemMappedCSR(hartid, CSR_MSCRATCH, (uint32_t)workerThread);
+	E32WriteMemMappedCSR(hartid, CSR_MSCRATCH, workerThread ? (uint32_t)workerThread : (uint32_t)voidWorkerThread);
 	E32WriteMemMappedCSR(hartid, 0xFEF, 0x1);
 }
