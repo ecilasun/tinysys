@@ -36,8 +36,10 @@ static void ble_to_uart1_task(void *arg)
 		xQueueReceive(uart_queue, &cmdBuf, portMAX_DELAY);
 		int txBytes = uart_write_bytes(UART_PORT_NUM, cmdBuf.payload, cmdBuf.length);
 		if (txBytes != cmdBuf.length)
+		{
+			uart_flush(UART_PORT_NUM);
 			ESP_LOGE(pcTaskGetName(NULL), "uart_write_bytes Fail. txBytes=%d cmdBuf.length=%d", txBytes, cmdBuf.length);
-		//uart_flush(UART_PORT_NUM); // ??
+		}
 	} while(1);
 }
 
