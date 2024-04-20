@@ -1,6 +1,7 @@
 #include "basesystem.h"
 #include "core.h"
 #include "task.h"
+#include "leds.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -12,9 +13,11 @@ struct STaskContext *GetTaskContextOfCPU(uint32_t _hartid)
 
 void MyTask()
 {
+	uint32_t state = 0;
 	while(1)
 	{
-		printf("!");
+		LEDSetState(state++);
+		E32Sleep(100*ONE_MILLISECOND_IN_TICKS);
 		TaskYield();
 	}
 }
