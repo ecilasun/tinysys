@@ -66,6 +66,9 @@
 		"xtr1common": "cpp",
 		"variant": "cpp",
 		"array": "cpp",
-		"functional": "cpp"
+		"functional": "cpp",
+		"serialinringbuffer.h": "c",
+		"stdlib.h": "c",
+		"inttypes.h": "c"
 	}
 }

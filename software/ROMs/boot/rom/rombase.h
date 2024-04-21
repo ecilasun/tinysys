@@ -26,3 +26,6 @@ struct EVideoContext *GetKernelGfxContext();
 int kprintf(const char *fmt, ...);
 void kgetcursor(int *_x, int *_y);
 void ksetcursor(const int _x, const int _y);
+
+#define PATH_MAX 64
+char *krealpath(const char *path, char resolved[PATH_MAX]);

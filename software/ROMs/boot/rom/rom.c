@@ -33,9 +33,9 @@ static uint32_t s_execParamCount = 1;
 // ID of task executing on hart#1
 static uint32_t s_userTaskID = 0;
 
-static char s_cmdString[64] = "";
-static char s_workdir[48];
-static char s_pathtmp[48];
+static char s_cmdString[128] = "";
+static char s_workdir[PATH_MAX];
+static char s_pathtmp[PATH_MAX];
 static int32_t s_cmdLen = 0;
 static uint32_t s_startAddress = 0;
 static int s_refreshConsoleOut = 1;
@@ -293,34 +293,27 @@ uint32_t ExecuteCmd(char *_cmd)
 			kprintf("usage: cd path\n");
 		else
 		{
-			// Path has to follow the format: sd:/path/
-
-			if (strstr(path, "/") == path)		// Attempt to go to root directory?
-				strncpy(s_pathtmp, "sd:/", 47);	// Prepend if not
-
-			if (strstr(path, "sd:") != path)	// Does it begin with device name?
+			if (krealpath(path, s_pathtmp))
 			{
-				strncpy(s_pathtmp, "sd:/", 47);	// Prepend if not
-				strcat(s_pathtmp, path);		// Rest of the path
+				// Append missing trailing slash
+				int L = (int)strlen(s_pathtmp);
+				if (L != 0 && s_pathtmp[L-1] != '/')
+					strcat(s_pathtmp, "/");
+
+				// Finally, change to this new path
+				FRESULT cwdres = f_chdir(s_pathtmp);
+				if (cwdres == FR_OK)
+				{
+					// Save for later
+					strncpy(s_workdir, s_pathtmp, PATH_MAX);
+				}
+				else
+				{
+					kprintf("invalid path(0) '%s'\n", s_pathtmp);
+				}
 			}
 			else
-				strncpy(s_pathtmp, path, 47);
-
-			int L = strlen(s_pathtmp)-1;
-			if (s_pathtmp[L] != '/')		// Does it end with a slash?
-				strcat(s_pathtmp, "/");		// Append one if not
-
-			// Finally, change to this new path
-			FRESULT cwdres = f_chdir(s_pathtmp);
-			if (cwdres == FR_OK)
-			{
-				// Save for later
-				strncpy(s_workdir, s_pathtmp, 48);
-			}
-			else
-			{
-				kprintf("invalid path '%s'\n", s_pathtmp);
-			}
+				kprintf("invalid path(1) '%s'\n", s_pathtmp);
 		}
 	}
 	else if (!strcmp(command, "ver"))
@@ -506,8 +499,8 @@ void _cliTask()
 					{
 						++s_refreshConsoleOut;
 						s_cmdString[s_cmdLen++] = (char)asciicode;
-						if (s_cmdLen > 62)
-							s_cmdLen = 62;
+						if (s_cmdLen > 126)
+							s_cmdLen = 126;
 					}
 				}
 				break;
@@ -659,20 +652,15 @@ void __attribute__((aligned(64), noinline)) workerMain()
 
 int main()
 {
-	LEDSetState(0xF);
-
-	LEDSetState(0xE);
-	// Set default path before we mount any storage devices
-	f_chdir("sd:/");
-	strncpy(s_workdir, "sd:/", 48);
 
 	// Attempt to mount the FAT volume on micro sd card
 	// NOTE: Loaded executables do not have to worry about this part
-	LEDSetState(0xD);
+	LEDSetState(0xF);
 	MountDrive();
+	strncpy(s_workdir, "sd:/", PATH_MAX);
 
 	// Attempt to load ROM overlay, if it exists
-	LEDSetState(0xC);
+	LEDSetState(0xE);
 	// Watermark register is zero on hard boot
 	uint32_t waterMark = read_csr(0xFF0);
 	if ((waterMark == 0) && LoadOverlay("sd:/boot/rom.bin"))
@@ -686,24 +674,24 @@ int main()
 
 	// NOTE: Since we'll loop around here again if we receive a soft reset,
 	// we need to make sure all things are stopped and reset to default states
-	LEDSetState(0xB);
+	LEDSetState(0xD);
 	DeviceDefaultState(1);
 
 	// Set up ring buffers
-	LEDSetState(0xA);
+	LEDSetState(0xC);
 	KeyRingBufferReset();
 	SerialInRingBufferReset();
 	SerialOutRingBufferReset();
 	GPIORingBufferReset();
 
 	// Create task context
-	LEDSetState(0x9);
+	LEDSetState(0xB);
 	uint32_t self = read_csr(mhartid);
 	InitializeTaskContext(self);
 	struct STaskContext *taskctx = GetTaskContext(self);
 
 	// With current layout, OS takes up a very small slices out of whatever is left from other tasks
-	LEDSetState(0x8);
+	LEDSetState(0xA);
 	TaskAdd(taskctx, "hart0idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 	// Command line interpreter task
 	TaskAdd(taskctx, "cmd", _cliTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
@@ -712,10 +700,12 @@ int main()
 	// This is where all task switching and other interrupt handling occurs
 	InstallISR(self, true, true);
 
-	LEDSetState(0x7);
+	LEDSetState(0x9);
 
 	// Reset helper CPUs
 	E32ResetCPU(1, workerMain);
+
+	LEDSetState(0x8);
 
 	// Start USB host
 	InitializeUSBHIDData();
