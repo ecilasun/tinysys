@@ -369,11 +369,13 @@ uint32_t ExecuteCmd(char *_cmd)
 	if (loadELF)
 	{
 		// TODO: load user ELF files on HART#1.
-		struct STaskContext* tctx = GetTaskContext(0);
+		struct STaskContext* tctx[2] = {GetTaskContext(0), GetTaskContext(1)};
+		int32_t taskcounts[2] = {tctx[0]->numTasks, tctx[1]->numTasks};
+		int32_t maxcounts[2] = {2, 1};
 
 		// Temporary measure to avoid loading another executable while the first one is running
 		// until we get a virtual memory device
-		if (tctx->numTasks > 2)
+		if (taskcounts[s_runOnCPU] > maxcounts[s_runOnCPU])
 		{
 			kprintf("Virtual memory / code relocator not implemented.\n");
 		}
@@ -419,13 +421,7 @@ uint32_t ExecuteCmd(char *_cmd)
 					s_execParamCount = 2;
 				}
 
-				if (s_runOnCPU == 0)
-					s_userTaskID = TaskAdd(tctx, command, _runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
-				else
-				{
-					struct STaskContext* tctx1 = GetTaskContext(1);
-					s_userTaskID = TaskAdd(tctx1, command, _runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
-				}
+				s_userTaskID = TaskAdd(tctx[s_runOnCPU], command, _runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 
 				return 0;
 			}
