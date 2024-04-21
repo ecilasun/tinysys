@@ -5,9 +5,11 @@
 
 #include "driver/gpio.h"
 #include "driver/uart.h"
+#include "driver/usb_serial_jtag.h"
 #include "esp_task_wdt.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "hal/usb_serial_jtag_ll.h"
 #include "sdkconfig.h"
 #include "esp_log.h"
 #include "nvs.h"
@@ -28,6 +30,21 @@ QueueHandle_t uart_queue;
 QueueHandle_t ble_queue;
 
 // From (PC to) ESP32 to FPGA
+static void jtag_to_uart1_task(void *arg)
+{
+	char *jtag_buffer = (char*)malloc(PAYLOAD_SIZE*2);
+	do
+	{
+		int len = usb_serial_jtag_read_bytes(jtag_buffer, PAYLOAD_SIZE, portMAX_DELAY);
+		if (len > 0)
+		{
+			int txbytes = uart_write_bytes(UART_PORT_NUM, (char *)jtag_buffer, len);
+			if (txbytes != len)
+				uart_flush(UART_PORT_NUM);
+		}
+	} while(1);
+}
+
 static void ble_to_uart1_task(void *arg)
 {
 	CMD_t cmdBuf;
@@ -36,10 +53,7 @@ static void ble_to_uart1_task(void *arg)
 		xQueueReceive(uart_queue, &cmdBuf, portMAX_DELAY);
 		int txBytes = uart_write_bytes(UART_PORT_NUM, cmdBuf.payload, cmdBuf.length);
 		if (txBytes != cmdBuf.length)
-		{
 			uart_flush(UART_PORT_NUM);
-			ESP_LOGE(pcTaskGetName(NULL), "uart_write_bytes Fail. txBytes=%d cmdBuf.length=%d", txBytes, cmdBuf.length);
-		}
 	} while(1);
 }
 
@@ -52,7 +66,13 @@ static void uart1_to_ble_task(void *arg)
 	{
 		cmdBuf.length = uart_read_bytes(UART_PORT_NUM, cmdBuf.payload, PAYLOAD_SIZE, portMAX_DELAY);
 		if (cmdBuf.length > 0)
+		{
+			// To JTAG/USB
+			usb_serial_jtag_write_bytes(cmdBuf.payload, cmdBuf.length, portMAX_DELAY);
+			usb_serial_jtag_ll_txfifo_flush();
+			// To BLE
 			xQueueSend(ble_queue, &cmdBuf, portMAX_DELAY);
+		}
 	}
 }
 
@@ -67,6 +87,9 @@ void app_main(void)
 		ret = nvs_flash_init();
 	}
 	ESP_ERROR_CHECK( ret );
+
+	usb_serial_jtag_driver_config_t usb_serial_config = {.tx_buffer_size = PAYLOAD_SIZE, .rx_buffer_size = PAYLOAD_SIZE};
+	ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&usb_serial_config));
 
 	uart_config_t uart_config = {
 		.baud_rate = 115200,
@@ -86,6 +109,7 @@ void app_main(void)
 
 	esp_task_wdt_deinit();
 
+	xTaskCreate(jtag_to_uart1_task, "jtag_to_uart1", 1024, NULL, 2, NULL);
 	xTaskCreate(ble_to_uart1_task, "ble_to_uart1", 1024, NULL, 2, NULL);
 	xTaskCreate(uart1_to_ble_task, "uart1_to_ble", 1024, NULL, 2, NULL);
 	xTaskCreate(ble_task, "BLE", 1024*4, NULL, 2, NULL);

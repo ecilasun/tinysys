@@ -30,17 +30,7 @@ static const char *TAG = "BLE";
 #define BLE_PROFILE_APP_IDX 0
 #define ESP_BLE_APP_ID 0x56
 
-#ifdef CONFIG_IDF_TARGET_ESP32
-#define DEVICE_NAME "ESP32_BLE_SERVER" //The Device Name Characteristics in GAP
-#elif defined CONFIG_IDF_TARGET_ESP32S3
-#define DEVICE_NAME "ESP32S3_BLE_SERVER" //The Device Name Characteristics in GAP
-#elif defined CONFIG_IDF_TARGET_ESP32C2
-#define DEVICE_NAME "ESP32C2_BLE_SERVER" //The Device Name Characteristics in GAP
-#elif defined CONFIG_IDF_TARGET_ESP32C3
-#define DEVICE_NAME "ESP32C3_BLE_SERVER" //The Device Name Characteristics in GAP
-#elif defined CONFIG_IDF_TARGET_ESP32C6
-#define DEVICE_NAME "ESP32C6_BLE_SERVER" //The Device Name Characteristics in GAP
-#endif
+#define DEVICE_NAME "TinysysBLEServer" //The Device Name Characteristics in GAP
 
 #define BLE_SVC_INST_ID 0
 #define BLE_DATA_MAX_LEN (512)
@@ -65,13 +55,13 @@ static const uint16_t BLE_service_uuid = 0xABF0;
 #define ESP_GATT_UUID_BLE_DATA_RECEIVE 0xABF1
 #define ESP_GATT_UUID_BLE_DATA_NOTIFY 0xABF2
 
-static const uint8_t BLE_adv_data[23] = {
+static const uint8_t BLE_adv_data[25] = {
 	/* Flags */
 	0x02,0x01,0x06,
 	/* Complete List of 16-bit Service Class UUIDs */
 	0x03,0x03,0xF0,0xAB,
 	/* Complete Local Name in advertising */
-	0x0F,0x09, 'E', 'S', 'P', '_', 'S', 'P', 'P', '_', 'S', 'E', 'R','V', 'E', 'R'
+	0x11,0x09, 'T', 'i', 'n', 'y', 's', 'y', 's', 'B', 'L', 'E', 'S', 'e', 'r', 'v', 'e', 'r'
 };
 
 extern QueueHandle_t ble_queue;
@@ -206,7 +196,7 @@ static const esp_gatts_attr_db_t BLE_gatt_db[BLE_IDX_NB] =
 	sizeof(uint16_t),sizeof(BLE_data_notify_ccc), (uint8_t *)BLE_data_notify_ccc}},
 };
 
-static char *esp_key_type_to_str(esp_ble_key_type_t key_type)
+/*static char *esp_key_type_to_str(esp_ble_key_type_t key_type)
 {
    char *key_str = NULL;
    switch(key_type) {
@@ -244,9 +234,9 @@ static char *esp_key_type_to_str(esp_ble_key_type_t key_type)
    }
 
    return key_str;
-}
+}*/
 
-static char *esp_auth_req_to_str(esp_ble_auth_req_t auth_req)
+/*static char *esp_auth_req_to_str(esp_ble_auth_req_t auth_req)
 {
    char *auth_str = NULL;
    switch(auth_req) {
@@ -280,7 +270,7 @@ static char *esp_auth_req_to_str(esp_ble_auth_req_t auth_req)
    }
 
    return auth_str;
-}
+}*/
 
 static void show_bonded_devices(void)
 {
@@ -288,18 +278,18 @@ static void show_bonded_devices(void)
 
 	esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
 	esp_ble_get_bond_device_list(&dev_num, dev_list);
-	ESP_LOGI(__FUNCTION__, "Bonded devices number : %d", dev_num);
+	/*ESP_LOGI(__FUNCTION__, "Bonded devices number : %d", dev_num);
 	ESP_LOGI(__FUNCTION__, "Bonded devices list : %d", dev_num);
 	for (int i = 0; i < dev_num; i++) {
 		esp_log_buffer_hex(__FUNCTION__, (void *)dev_list[i].bd_addr, sizeof(esp_bd_addr_t));
-	}
+	}*/
 
 	free(dev_list);
 }
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
-	ESP_LOGI(__FUNCTION__, "GAP_EVT, event %d", event);
+	//ESP_LOGI(__FUNCTION__, "GAP_EVT, event %d", event);
 	CMD_t cmdBuf;
 	BaseType_t err;
 
@@ -319,33 +309,33 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
 	case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
 		//advertising start complete event to indicate advertising start successfully or failed
 		if (param->adv_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-			ESP_LOGE(__FUNCTION__, "advertising start failed, error status = %x", param->adv_start_cmpl.status);
+			;//ESP_LOGE(__FUNCTION__, "advertising start failed, error status = %x", param->adv_start_cmpl.status);
 			break;
 		}
-		ESP_LOGI(__FUNCTION__, "advertising start success");
+		//ESP_LOGI(__FUNCTION__, "advertising start success");
 		break;
 	case ESP_GAP_BLE_PASSKEY_REQ_EVT:							/* passkey request event */
-		ESP_LOGI(__FUNCTION__, "ESP_GAP_BLE_PASSKEY_REQ_EVT");
+		//ESP_LOGI(__FUNCTION__, "ESP_GAP_BLE_PASSKEY_REQ_EVT");
 		/* Call the following function to input the passkey which is displayed on the remote device */
 		//esp_ble_passkey_reply(BLE_profile_tab[BLE_PROFILE_APP_IDX].remote_bda, true, 0x00);
 		break;
 	case ESP_GAP_BLE_OOB_REQ_EVT: {
-		ESP_LOGI(__FUNCTION__, "ESP_GAP_BLE_OOB_REQ_EVT");
+		//ESP_LOGI(__FUNCTION__, "ESP_GAP_BLE_OOB_REQ_EVT");
 		uint8_t tk[16] = {1}; //If you paired with OOB, both devices need to use the same tk
 		esp_ble_oob_req_reply(param->ble_security.ble_req.bd_addr, tk, sizeof(tk));
 		break;
 	}
 	case ESP_GAP_BLE_LOCAL_IR_EVT:								 /* BLE local IR event */
-		ESP_LOGI(__FUNCTION__, "ESP_GAP_BLE_LOCAL_IR_EVT");
+		//ESP_LOGI(__FUNCTION__, "ESP_GAP_BLE_LOCAL_IR_EVT");
 		break;
 	case ESP_GAP_BLE_LOCAL_ER_EVT:								 /* BLE local ER event */
-		ESP_LOGI(__FUNCTION__, "ESP_GAP_BLE_LOCAL_ER_EVT");
+		//ESP_LOGI(__FUNCTION__, "ESP_GAP_BLE_LOCAL_ER_EVT");
 		break;
 	case ESP_GAP_BLE_NC_REQ_EVT:
 		/* The app will receive this evt when the IO has DisplayYesNO capability and the peer device IO also has DisplayYesNo capability.
 		show the passkey number to the user to confirm it with the number displayed by peer device. */
 		esp_ble_confirm_reply(param->ble_security.ble_req.bd_addr, true);
-		ESP_LOGI(__FUNCTION__, "ESP_GAP_BLE_NC_REQ_EVT, the passkey Notify number:%"PRIu32, param->ble_security.key_notif.passkey);
+		//ESP_LOGI(__FUNCTION__, "ESP_GAP_BLE_NC_REQ_EVT, the passkey Notify number:%"PRIu32, param->ble_security.key_notif.passkey);
 		break;
 	case ESP_GAP_BLE_SEC_REQ_EVT:
 		/* send the positive(true) security response to the peer device to accept the security request.
@@ -354,16 +344,16 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
 		break;
 	case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:  ///the app will receive this evt when the IO  has Output capability and the peer device IO has Input capability.
 		///show the passkey number to the user to input it in the peer device.
-		ESP_LOGI(__FUNCTION__, "The passkey Notify number:%06"PRIu32, param->ble_security.key_notif.passkey);
+		//ESP_LOGI(__FUNCTION__, "The passkey Notify number:%06"PRIu32, param->ble_security.key_notif.passkey);
 		break;
 	case ESP_GAP_BLE_KEY_EVT:
 		//shows the ble key info share with peer device to the user.
-		ESP_LOGI(__FUNCTION__, "key type = %s", esp_key_type_to_str(param->ble_security.ble_key.key_type));
+		//ESP_LOGI(__FUNCTION__, "key type = %s", esp_key_type_to_str(param->ble_security.ble_key.key_type));
 		break;
 	case ESP_GAP_BLE_AUTH_CMPL_EVT: {
 		esp_bd_addr_t bd_addr;
 		memcpy(bd_addr, param->ble_security.auth_cmpl.bd_addr, sizeof(esp_bd_addr_t));
-		ESP_LOGI(__FUNCTION__, "remote BD_ADDR: %08x%04x",\
+		/*ESP_LOGI(__FUNCTION__, "remote BD_ADDR: %08x%04x",\
 				(bd_addr[0] << 24) + (bd_addr[1] << 16) + (bd_addr[2] << 8) + bd_addr[3],
 				(bd_addr[4] << 8) + bd_addr[5]);
 		ESP_LOGI(__FUNCTION__, "address type = %d", param->ble_security.auth_cmpl.addr_type);
@@ -372,40 +362,40 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
 			ESP_LOGI(__FUNCTION__, "fail reason = 0x%x",param->ble_security.auth_cmpl.fail_reason);
 		} else {
 			ESP_LOGI(__FUNCTION__, "auth mode = %s",esp_auth_req_to_str(param->ble_security.auth_cmpl.auth_mode));
-		}
+		}*/
 		show_bonded_devices();
 
 		cmdBuf.BLE_event_id = BLE_AUTH_EVT;
 		err = xQueueSendFromISR(ble_queue, &cmdBuf, NULL);
 		if (err != pdTRUE) {
-			ESP_LOGE(TAG, "xQueueSendFromISR Fail");
+			//ESP_LOGE(TAG, "xQueueSendFromISR Fail");
 		}
 		break;
 	}
 	case ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT: {
-		ESP_LOGD(__FUNCTION__, "ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT status = %d", param->remove_bond_dev_cmpl.status);
+		/*ESP_LOGD(__FUNCTION__, "ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT status = %d", param->remove_bond_dev_cmpl.status);
 		ESP_LOGI(__FUNCTION__, "ESP_GAP_BLE_REMOVE_BOND_DEV");
 		ESP_LOGI(__FUNCTION__, "-----ESP_GAP_BLE_REMOVE_BOND_DEV----");
 		esp_log_buffer_hex(__FUNCTION__, (void *)param->remove_bond_dev_cmpl.bd_addr, sizeof(esp_bd_addr_t));
-		ESP_LOGI(__FUNCTION__, "------------------------------------");
+		ESP_LOGI(__FUNCTION__, "------------------------------------");*/
 		break;
 	}
 	case ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT:
 		if (param->local_privacy_cmpl.status != ESP_BT_STATUS_SUCCESS){
-			ESP_LOGE(__FUNCTION__, "config local privacy failed, error status = %x", param->local_privacy_cmpl.status);
+			//ESP_LOGE(__FUNCTION__, "config local privacy failed, error status = %x", param->local_privacy_cmpl.status);
 			break;
 		}
 
 		esp_err_t ret = esp_ble_gap_config_adv_data(&BLE_adv_config);
 		if (ret){
-			ESP_LOGE(__FUNCTION__, "config adv data failed, error code = %x", ret);
+			//ESP_LOGE(__FUNCTION__, "config adv data failed, error code = %x", ret);
 		}else{
 			adv_config_done |= ADV_CONFIG_FLAG;
 		}
 
 		ret = esp_ble_gap_config_adv_data(&BLE_scan_rsp_config);
 		if (ret){
-			ESP_LOGE(__FUNCTION__, "config adv data failed, error code = %x", ret);
+			//ESP_LOGE(__FUNCTION__, "config adv data failed, error code = %x", ret);
 		}else{
 			adv_config_done |= SCAN_RSP_CONFIG_FLAG;
 		}
@@ -435,7 +425,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
 	CMD_t cmdBuf;
 	BaseType_t err;
 
-	ESP_LOGI(__FUNCTION__, "event = %d",event);
+	//ESP_LOGI(__FUNCTION__, "event = %d",event);
 	switch (event) {
 		case ESP_GATTS_REG_EVT:
 			esp_ble_gap_set_device_name(DEVICE_NAME);
@@ -447,18 +437,18 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
 		case ESP_GATTS_READ_EVT:
 			break;
 		case ESP_GATTS_WRITE_EVT:
-			ESP_LOGI(__FUNCTION__, "ESP_GATTS_WRITE_EVT");
+			//ESP_LOGI(__FUNCTION__, "ESP_GATTS_WRITE_EVT");
 			uint8_t res = find_char_and_desr_index(p_data->write.handle);
-			ESP_LOGI(__FUNCTION__, "find_char_and_desr_index=%d", res);
+			//ESP_LOGI(__FUNCTION__, "find_char_and_desr_index=%d", res);
 			if (res == BLE_IDX_BLE_DATA_RECV_VAL) {
-				esp_log_buffer_hex(__FUNCTION__, param->write.value, param->write.len);
+				//esp_log_buffer_hex(__FUNCTION__, param->write.value, param->write.len);
 				cmdBuf.BLE_event_id = BLE_WRITE_EVT;
 				cmdBuf.length = param->write.len;
 				if (cmdBuf.length > PAYLOAD_SIZE) cmdBuf.length = PAYLOAD_SIZE;
 				memcpy(cmdBuf.payload, (char *)param->write.value, cmdBuf.length);
 				err = xQueueSendFromISR(ble_queue, &cmdBuf, NULL);
 				if (err != pdTRUE) {
-					ESP_LOGE(TAG, "xQueueSendFromISR Fail");
+					//ESP_LOGE(TAG, "xQueueSendFromISR Fail");
 				}
 			}
 			break;
@@ -477,7 +467,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
 		case ESP_GATTS_STOP_EVT:
 			break;
 		case ESP_GATTS_CONNECT_EVT:
-			ESP_LOGI(__FUNCTION__, "ESP_GATTS_CONNECT_EVT");
+			//ESP_LOGI(__FUNCTION__, "ESP_GATTS_CONNECT_EVT");
 			/* start security connect with peer device when receive the connect event sent by the master */
 			esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT_MITM);
 			cmdBuf.BLE_event_id = BLE_CONNECT_EVT;
@@ -485,15 +475,15 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
 			cmdBuf.BLE_gatts_if = gatts_if;
 			err = xQueueSendFromISR(ble_queue, &cmdBuf, NULL);
 			if (err != pdTRUE) {
-				ESP_LOGE(TAG, "xQueueSendFromISR Fail");
+				//ESP_LOGE(TAG, "xQueueSendFromISR Fail");
 			}
 			break;
 		case ESP_GATTS_DISCONNECT_EVT:
-			ESP_LOGI(__FUNCTION__, "ESP_GATTS_DISCONNECT_EVT, disconnect reason 0x%x", param->disconnect.reason);
+			//ESP_LOGI(__FUNCTION__, "ESP_GATTS_DISCONNECT_EVT, disconnect reason 0x%x", param->disconnect.reason);
 			cmdBuf.BLE_event_id = BLE_DISCONNECT_EVT;
 			err = xQueueSendFromISR(ble_queue, &cmdBuf, NULL);
 			if (err != pdTRUE) {
-				ESP_LOGE(TAG, "xQueueSendFromISR Fail");
+				//ESP_LOGE(TAG, "xQueueSendFromISR Fail");
 			}
 			/* start advertising again when missing the connect */
 			esp_ble_gap_start_advertising(&BLE_adv_params);
@@ -509,12 +499,12 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
 		case ESP_GATTS_CONGEST_EVT:
 			break;
 		case ESP_GATTS_CREAT_ATTR_TAB_EVT:
-			ESP_LOGI(__FUNCTION__, "The number handle =%x",param->add_attr_tab.num_handle);
+			//ESP_LOGI(__FUNCTION__, "The number handle =%x",param->add_attr_tab.num_handle);
 			if (param->add_attr_tab.status != ESP_GATT_OK){
-				ESP_LOGE(__FUNCTION__, "Create attribute table failed, error code=0x%x", param->add_attr_tab.status);
+				//ESP_LOGE(__FUNCTION__, "Create attribute table failed, error code=0x%x", param->add_attr_tab.status);
 			}
 			else if (param->add_attr_tab.num_handle != BLE_IDX_NB){
-				ESP_LOGE(__FUNCTION__, "Create attribute table abnormally, num_handle (%d) doesn't equal to HRS_IDX_NB(%d)", param->add_attr_tab.num_handle, BLE_IDX_NB);
+				//ESP_LOGE(__FUNCTION__, "Create attribute table abnormally, num_handle (%d) doesn't equal to HRS_IDX_NB(%d)", param->add_attr_tab.num_handle, BLE_IDX_NB);
 			}
 			else {
 				memcpy(BLE_handle_table, param->add_attr_tab.handles, sizeof(BLE_handle_table));
@@ -535,9 +525,9 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
 		if (param->reg.status == ESP_GATT_OK) {
 			BLE_profile_tab[BLE_PROFILE_APP_IDX].gatts_if = gatts_if;
 		} else {
-			ESP_LOGI(__FUNCTION__, "Reg app failed, app_id %04x, status %d\n",
+			/*ESP_LOGI(__FUNCTION__, "Reg app failed, app_id %04x, status %d\n",
 					param->reg.app_id,
-					param->reg.status);
+					param->reg.status);*/
 			return;
 		}
 	}
@@ -643,27 +633,27 @@ void ble_task(void * arg)
 
 	while(1){
 		xQueueReceive(ble_queue, &cmdBuf, portMAX_DELAY);
-		ESP_LOGI(pcTaskGetName(NULL), "cmdBuf.BLE_event_id=%d connected=%d", cmdBuf.BLE_event_id, connected);
+		//ESP_LOGI(pcTaskGetName(NULL), "cmdBuf.BLE_event_id=%d connected=%d", cmdBuf.BLE_event_id, connected);
 		if (cmdBuf.BLE_event_id == BLE_CONNECT_EVT) {
-			ESP_LOGI(pcTaskGetName(NULL), "BLE_CONNECT_EVT");
+			//ESP_LOGI(pcTaskGetName(NULL), "BLE_CONNECT_EVT");
 			BLE_conn_id = cmdBuf.BLE_conn_id;
 			BLE_gatts_if = cmdBuf.BLE_gatts_if;
 		} else if (cmdBuf.BLE_event_id == BLE_AUTH_EVT) {
-			ESP_LOGI(pcTaskGetName(NULL), "BLE_AUTH_EVT");
+			//ESP_LOGI(pcTaskGetName(NULL), "BLE_AUTH_EVT");
 			connected = true;
 		} else if (cmdBuf.BLE_event_id == BLE_DISCONNECT_EVT) {
-			ESP_LOGI(pcTaskGetName(NULL), "BLE_DISCONNECT_EVT");
+			//ESP_LOGI(pcTaskGetName(NULL), "BLE_DISCONNECT_EVT");
 			connected = false;
 		} else if (cmdBuf.BLE_event_id == BLE_UART_EVT) {
 			if (connected) {
-				ESP_LOG_BUFFER_HEXDUMP(pcTaskGetName(NULL), cmdBuf.payload, cmdBuf.length, ESP_LOG_DEBUG);
+				//ESP_LOG_BUFFER_HEXDUMP(pcTaskGetName(NULL), cmdBuf.payload, cmdBuf.length, ESP_LOG_DEBUG);
 				esp_ble_gatts_send_indicate(BLE_gatts_if, BLE_conn_id, BLE_handle_table[BLE_IDX_BLE_DATA_NOTIFY_VAL], cmdBuf.length, cmdBuf.payload, false);
 			}
 		} else if (cmdBuf.BLE_event_id == BLE_WRITE_EVT) {
-			ESP_LOG_BUFFER_HEXDUMP(pcTaskGetName(NULL), cmdBuf.payload, cmdBuf.length, ESP_LOG_INFO);
+			//ESP_LOG_BUFFER_HEXDUMP(pcTaskGetName(NULL), cmdBuf.payload, cmdBuf.length, ESP_LOG_INFO);
 			BaseType_t err = xQueueSend(uart_queue, &cmdBuf, portMAX_DELAY);
 			if (err != pdTRUE) {
-				ESP_LOGE(pcTaskGetName(NULL), "xQueueSend Fail");
+				//ESP_LOGE(pcTaskGetName(NULL), "xQueueSend Fail");
 			}
 		}
 	} // end while
