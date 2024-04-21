@@ -17,7 +17,7 @@ void MyTask()
 	while(1)
 	{
 		LEDSetState(state++);
-		E32Sleep(100*ONE_MILLISECOND_IN_TICKS);
+		E32Sleep(300*ONE_MILLISECOND_IN_TICKS);
 		TaskYield();
 	}
 }
@@ -36,11 +36,11 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	for (uint32_t i=0; i<2000; ++i)
+	for (uint32_t i=0; i<50; ++i)
 	{
-		printf(".");
+		printf("tick:%ld\n", i);
 		TaskYield();
-		E32Sleep(HALF_SECOND_IN_TICKS);
+		E32Sleep(250*ONE_MILLISECOND_IN_TICKS);
 	}
 
 	// We're done with the test, remove our task

@@ -12,7 +12,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-static struct EVideoContext s_kernelgfxcontext;
+static struct EVideoContext *s_kernelgfxcontext = (struct EVideoContext *)KERNEL_GFX_CONTEXT;
 static FATFS Fs;
 
 int kprintfn(const int count, const char *fmt, ...)
@@ -1104,5 +1104,5 @@ void InstallISR(uint32_t _hartid, bool _allowMachineHwInt, bool _allowMachineSwI
 
 struct EVideoContext *GetKernelGfxContext()
 {
-	return &s_kernelgfxcontext;
+	return s_kernelgfxcontext;
 }

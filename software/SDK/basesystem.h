@@ -48,6 +48,7 @@
 #define SERIN_RINGBUFFER_STATE			0x0205C010 // Serial input state
 #define SEROUT_RINGBUFFER_STATE			0x0205C020 // Serial output state
 #define GPIO_RINGBUFFER_STATE			0x0205C030 // GPIO input state
+#define KERNEL_GFX_CONTEXT				0x0205C040 // Kernel terminal graphics context
 // Executable
 #define HEAP_START_APPMEM_END			0x02070000 // Executable space above this
 // Heap
