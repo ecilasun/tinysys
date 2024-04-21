@@ -64,8 +64,8 @@ static const uint8_t BLE_adv_data[25] = {
 	0x11,0x09, 'T', 'i', 'n', 'y', 's', 'y', 's', 'B', 'L', 'E', 'S', 'e', 'r', 'v', 'e', 'r'
 };
 
-extern QueueHandle_t ble_queue;
-extern QueueHandle_t uart_queue;
+extern QueueHandle_t ble_send_queue;
+extern QueueHandle_t uart_send_queue;
 
 static uint16_t BLE_handle_table[BLE_IDX_NB];
 
@@ -366,7 +366,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
 		show_bonded_devices();
 
 		cmdBuf.BLE_event_id = BLE_AUTH_EVT;
-		err = xQueueSendFromISR(ble_queue, &cmdBuf, NULL);
+		err = xQueueSendFromISR(ble_send_queue, &cmdBuf, NULL);
 		if (err != pdTRUE) {
 			//ESP_LOGE(TAG, "xQueueSendFromISR Fail");
 		}
@@ -446,7 +446,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
 				cmdBuf.length = param->write.len;
 				if (cmdBuf.length > PAYLOAD_SIZE) cmdBuf.length = PAYLOAD_SIZE;
 				memcpy(cmdBuf.payload, (char *)param->write.value, cmdBuf.length);
-				err = xQueueSendFromISR(ble_queue, &cmdBuf, NULL);
+				err = xQueueSendFromISR(ble_send_queue, &cmdBuf, NULL);
 				if (err != pdTRUE) {
 					//ESP_LOGE(TAG, "xQueueSendFromISR Fail");
 				}
@@ -473,7 +473,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
 			cmdBuf.BLE_event_id = BLE_CONNECT_EVT;
 			cmdBuf.BLE_conn_id = p_data->connect.conn_id;
 			cmdBuf.BLE_gatts_if = gatts_if;
-			err = xQueueSendFromISR(ble_queue, &cmdBuf, NULL);
+			err = xQueueSendFromISR(ble_send_queue, &cmdBuf, NULL);
 			if (err != pdTRUE) {
 				//ESP_LOGE(TAG, "xQueueSendFromISR Fail");
 			}
@@ -481,7 +481,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
 		case ESP_GATTS_DISCONNECT_EVT:
 			//ESP_LOGI(__FUNCTION__, "ESP_GATTS_DISCONNECT_EVT, disconnect reason 0x%x", param->disconnect.reason);
 			cmdBuf.BLE_event_id = BLE_DISCONNECT_EVT;
-			err = xQueueSendFromISR(ble_queue, &cmdBuf, NULL);
+			err = xQueueSendFromISR(ble_send_queue, &cmdBuf, NULL);
 			if (err != pdTRUE) {
 				//ESP_LOGE(TAG, "xQueueSendFromISR Fail");
 			}
@@ -545,7 +545,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
 	} while (0);
 }
 
-void ble_task(void * arg)
+void ble_server_task(void * arg)
 {
 	ESP_LOGI(pcTaskGetName(0), "Start");
 
@@ -632,7 +632,7 @@ void ble_task(void * arg)
 	bool connected = false;
 
 	while(1){
-		xQueueReceive(ble_queue, &cmdBuf, portMAX_DELAY);
+		xQueueReceive(ble_send_queue, &cmdBuf, portMAX_DELAY);
 		//ESP_LOGI(pcTaskGetName(NULL), "cmdBuf.BLE_event_id=%d connected=%d", cmdBuf.BLE_event_id, connected);
 		if (cmdBuf.BLE_event_id == BLE_CONNECT_EVT) {
 			//ESP_LOGI(pcTaskGetName(NULL), "BLE_CONNECT_EVT");
@@ -646,12 +646,10 @@ void ble_task(void * arg)
 			connected = false;
 		} else if (cmdBuf.BLE_event_id == BLE_UART_EVT) {
 			if (connected) {
-				//ESP_LOG_BUFFER_HEXDUMP(pcTaskGetName(NULL), cmdBuf.payload, cmdBuf.length, ESP_LOG_DEBUG);
 				esp_ble_gatts_send_indicate(BLE_gatts_if, BLE_conn_id, BLE_handle_table[BLE_IDX_BLE_DATA_NOTIFY_VAL], cmdBuf.length, cmdBuf.payload, false);
 			}
 		} else if (cmdBuf.BLE_event_id == BLE_WRITE_EVT) {
-			//ESP_LOG_BUFFER_HEXDUMP(pcTaskGetName(NULL), cmdBuf.payload, cmdBuf.length, ESP_LOG_INFO);
-			BaseType_t err = xQueueSend(uart_queue, &cmdBuf, portMAX_DELAY);
+			BaseType_t err = xQueueSend(uart_send_queue, &cmdBuf, portMAX_DELAY);
 			if (err != pdTRUE) {
 				//ESP_LOGE(pcTaskGetName(NULL), "xQueueSend Fail");
 			}

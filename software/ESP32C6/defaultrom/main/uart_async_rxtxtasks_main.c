@@ -26,39 +26,46 @@
 // EnCi: bridge to UART port #1
 #define UART_PORT_NUM 1
 
-QueueHandle_t uart_queue;
-QueueHandle_t ble_queue;
+QueueHandle_t uart_send_queue;
+QueueHandle_t ble_send_queue;
+QueueHandle_t jtag_send_queue;
 
-// From (PC to) ESP32 to FPGA
-static void jtag_to_uart1_task(void *arg)
-{
-	char *jtag_buffer = (char*)malloc(PAYLOAD_SIZE*2);
-	do
-	{
-		int len = usb_serial_jtag_read_bytes(jtag_buffer, PAYLOAD_SIZE, portMAX_DELAY);
-		if (len > 0)
-		{
-			int txbytes = uart_write_bytes(UART_PORT_NUM, (char *)jtag_buffer, len);
-			if (txbytes != len)
-				uart_flush(UART_PORT_NUM);
-		}
-	} while(1);
-}
-
-static void ble_to_uart1_task(void *arg)
+static void jtag_rx_task(void *arg)
 {
 	CMD_t cmdBuf;
 	do
 	{
-		xQueueReceive(uart_queue, &cmdBuf, portMAX_DELAY);
+		cmdBuf.length = usb_serial_jtag_read_bytes(cmdBuf.payload, PAYLOAD_SIZE, portMAX_DELAY);
+		if (cmdBuf.length > 0)
+			/*BaseType_t err =*/ xQueueSendFromISR(uart_send_queue, &cmdBuf, NULL);
+	} while(1);
+}
+
+static void jtag_tx_task(void *arg)
+{
+	CMD_t cmdBuf;
+	do
+	{
+		xQueueReceive(jtag_send_queue, &cmdBuf, portMAX_DELAY);
+		/*int txBytes =*/ usb_serial_jtag_write_bytes(cmdBuf.payload, cmdBuf.length, portMAX_DELAY);
+		//if (txBytes != cmdBuf.length)
+			usb_serial_jtag_ll_txfifo_flush();
+	} while(1);
+}
+
+static void uart_tx_task(void *arg)
+{
+	CMD_t cmdBuf;
+	do
+	{
+		xQueueReceive(uart_send_queue, &cmdBuf, portMAX_DELAY);
 		int txBytes = uart_write_bytes(UART_PORT_NUM, cmdBuf.payload, cmdBuf.length);
 		if (txBytes != cmdBuf.length)
 			uart_flush(UART_PORT_NUM);
 	} while(1);
 }
 
-// From FPGA to ESP32 (to PC)
-static void uart1_to_ble_task(void *arg)
+static void uart_rx_task(void *arg)
 {
 	CMD_t cmdBuf;
 	cmdBuf.BLE_event_id = BLE_UART_EVT;
@@ -67,16 +74,15 @@ static void uart1_to_ble_task(void *arg)
 		cmdBuf.length = uart_read_bytes(UART_PORT_NUM, cmdBuf.payload, PAYLOAD_SIZE, portMAX_DELAY);
 		if (cmdBuf.length > 0)
 		{
-			// To JTAG/USB
-			usb_serial_jtag_write_bytes(cmdBuf.payload, cmdBuf.length, portMAX_DELAY);
-			usb_serial_jtag_ll_txfifo_flush();
-			// To BLE
-			xQueueSend(ble_queue, &cmdBuf, portMAX_DELAY);
+			// Queue to JTAG/USB
+			xQueueSendFromISR(jtag_send_queue, &cmdBuf, NULL);
+			// Queue to BLE
+			xQueueSendFromISR(ble_send_queue, &cmdBuf, NULL);
 		}
 	}
 }
 
-void ble_task(void * arg);
+void ble_server_task(void * arg);
 
 void app_main(void)
 {
@@ -100,8 +106,9 @@ void app_main(void)
 		.source_clk = UART_SCLK_DEFAULT,
 	};
 
-	ble_queue = xQueueCreate(10, sizeof(CMD_t));
-	uart_queue = xQueueCreate(10, sizeof(CMD_t));
+	ble_send_queue = xQueueCreate(10, sizeof(CMD_t));
+	uart_send_queue = xQueueCreate(10, sizeof(CMD_t));
+	jtag_send_queue = xQueueCreate(10, sizeof(CMD_t));
 
 	ESP_ERROR_CHECK(uart_driver_install(UART_PORT_NUM, PAYLOAD_SIZE * 2, 0, 0, NULL, 0));
 	ESP_ERROR_CHECK(uart_param_config(UART_PORT_NUM, &uart_config));
@@ -109,8 +116,9 @@ void app_main(void)
 
 	esp_task_wdt_deinit();
 
-	xTaskCreate(jtag_to_uart1_task, "jtag_to_uart1", 1024, NULL, 2, NULL);
-	xTaskCreate(ble_to_uart1_task, "ble_to_uart1", 1024, NULL, 2, NULL);
-	xTaskCreate(uart1_to_ble_task, "uart1_to_ble", 1024, NULL, 2, NULL);
-	xTaskCreate(ble_task, "BLE", 1024*4, NULL, 2, NULL);
+	xTaskCreate(jtag_rx_task, "jtag_rx", 1024, NULL, 2, NULL);
+	xTaskCreate(jtag_tx_task, "jtag_tx", 1024, NULL, 3, NULL);
+	xTaskCreate(uart_rx_task, "uart_rx", 1024, NULL, 2, NULL);
+	xTaskCreate(uart_tx_task, "uart_tx", 1024, NULL, 3, NULL);
+	xTaskCreate(ble_server_task, "ble_server", 1024*4, NULL, 4, NULL);
 }
