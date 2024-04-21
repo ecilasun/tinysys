@@ -85,8 +85,6 @@ int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum E
 	// Stop timer interrupts on this core during this operation
 	clear_csr(mie, MIP_MTIP);
 
-	++_ctx->numTasks;
-
 	// Task stacks
 	const uint32_t stacksizeword = 1024;
 	uint32_t stackpointer = TASKMEM_END_STACK_END - (prevcount*stacksizeword);
@@ -109,6 +107,8 @@ int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum E
 
 	// We assume running state as soon as we start
 	task->state = _initialState;
+
+	++_ctx->numTasks;
 
 	// Resume timer interrupts on this core
 	set_csr(mie, MIP_MTIP);

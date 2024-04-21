@@ -328,7 +328,7 @@ uint32_t ExecuteCmd(char *_cmd)
 			kprintf("usage: runon cpu\n");
 		else
 			s_runOnCPU = atoi(runcpu);
-		kprintf("Run on cpu: #%d", s_runOnCPU);
+		kprintf("Will run next task on CPU#%d\n", s_runOnCPU);
 	}
 	else if (!strcmp(command, "help"))
 	{
