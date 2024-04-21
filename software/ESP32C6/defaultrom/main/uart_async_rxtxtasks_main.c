@@ -1,5 +1,3 @@
-// Based on parts from https://github.com/nopnop2002/esp-idf-uart2bt
-
 #include <fcntl.h>
 #include <stdio.h>
 
@@ -121,4 +119,5 @@ void app_main(void)
 	xTaskCreate(uart_rx_task, "uart_rx", 1024, NULL, 2, NULL);
 	xTaskCreate(uart_tx_task, "uart_tx", 1024, NULL, 3, NULL);
 	xTaskCreate(ble_server_task, "ble_server", 1024*4, NULL, 4, NULL);
+	ESP_LOGI(pcTaskGetName(0), "TinySys ready");
 }

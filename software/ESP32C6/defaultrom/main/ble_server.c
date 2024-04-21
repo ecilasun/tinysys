@@ -1,3 +1,6 @@
+
+// Based on parts from https://github.com/nopnop2002/esp-idf-uart2bt
+
 /*	BLE SPP Server Example
 
 	This example code is in the Public Domain (or CC0 licensed, at your option.)
