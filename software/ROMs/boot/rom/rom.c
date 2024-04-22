@@ -23,9 +23,9 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "r1.10"
+#define VERSIONSTRING "v1.00"
 // On-storage version
-#define DEVVERSIONSTRING "r1.10"
+#define DEVVERSIONSTRING "v1.00"
 
 static char s_execName[32] = "                               ";
 static char s_execParam0[32] = "                               ";
@@ -34,7 +34,6 @@ static uint32_t s_execParamCount = 1;
 static uint32_t s_userTaskID = 0;
 
 static char s_cmdString[128] = "";
-static char s_workdir[PATH_MAX];
 static char s_pathtmp[PATH_MAX];
 static int32_t s_cmdLen = 0;
 static uint32_t s_startAddress = 0;
@@ -122,36 +121,37 @@ void ShowVersion(int waterMark)
 {
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
 	VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
-	kprintf("\n                                               \n");
-	kprintf(" tinysys                                       \n");
+	kprintf("\n                                                   \n");
 
 	if (waterMark == 0)
-		kprintf(" ROM             : " VERSIONSTRING "                       \n");
+		kprintf(" OS version          : " VERSIONSTRING "                       \n");
 	else
-		kprintf(" ROM             : " DEVVERSIONSTRING "                       \n");
+		kprintf(" OS version          : " DEVVERSIONSTRING "                       \n");
 
 	// TODO: These two values need to come from a CSR,
 	// pointing at a memory location with device config data (machineconfig?)
 	// That memory location will in turn point at an onboard EEPROM we can
 	// read device versions/presence from.
-	kprintf(" Board           : issue 2E:2024               \n");
-	kprintf(" CPU & bus clock : 150MHz                      \n");
-	kprintf(" ARCH            : rv32im_zicsr_zifencei_zfinx \n");
-	kprintf(" ESP32           : ESP32-C6-WROOM-1-N8         \n");
+	kprintf(" Board               : issue 2E:2024               \n");
+	kprintf(" CPU & bus clock     : 150MHz                      \n");
+	kprintf(" ARCH                : rv32im_zicsr_zifencei_zfinx \n");
+	kprintf(" ESP32               : ESP32-C6-WROOM-1-N8         \n");
 
 	// Report USB host chip version
 	uint8_t m3421rev = MAX3421ReadByte(rREVISION);
 	if (m3421rev != 0xFF)
-		kprintf(" MAX3421(host)   : 0x%X                        \n", m3421rev);
+		kprintf(" MAX3421(USB Host)   : 0x%X                        \n", m3421rev);
 	else
-		kprintf(" MAX3421(host)   : n/a                         \n");
+		kprintf(" MAX3421(USB Host)   : n/a                         \n");
 
 	// Video circuit on 2B has no info we can read so this is hardcoded
-	kprintf(" SII164(video)   : 12bpp DVI                   \n");
-	kprintf(" CS4344(audio)   : 11/22/44KHz stereo          \n");
-	kprintf("                                               \n");
-	kprintf(" Run HELP for a list of available commands     \n");
-	kprintf("                                               \n\n");
+	kprintf(" SII164(video)       : 12bpp DVI                   \n");
+	kprintf(" CS4344(audio)       : 11/22/44KHz stereo          \n");
+	kprintf("                                                   \n");
+	kprintf(" Run HELP for a list of available commands         \n");
+	kprintf("                                                   \n");
+	kprintf(" tinysys (c)2024 Engin Cilasun                     \n");
+	kprintf("                                                   \n\n");
 	VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 }
 
@@ -168,12 +168,13 @@ uint32_t ExecuteCmd(char *_cmd)
 	{
 		const char *path = strtok(NULL, " ");
 		if (!path)
-			ListFiles(s_workdir);
+			ListFiles(GetWorkDir());
 		else
 			ListFiles(path);
 	}
 	else if (!strcmp(command, "mount"))
 	{
+		SetWorkDir("sd:/");
 		MountDrive();
 	}
 	else if (!strcmp(command, "unmount"))
@@ -283,7 +284,7 @@ uint32_t ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "pwd"))
 	{
-		kprintf("%s\n", s_workdir);
+		kprintf("%s\n", GetWorkDir());
 	}
 	else if (!strcmp(command, "cd"))
 	{
@@ -303,10 +304,7 @@ uint32_t ExecuteCmd(char *_cmd)
 				// Finally, change to this new path
 				FRESULT cwdres = f_chdir(s_pathtmp);
 				if (cwdres == FR_OK)
-				{
-					// Save for later
-					strncpy(s_workdir, s_pathtmp, PATH_MAX);
-				}
+					SetWorkDir(s_pathtmp);
 				else
 				{
 					kprintf("invalid path(0) '%s'\n", s_pathtmp);
@@ -334,33 +332,33 @@ uint32_t ExecuteCmd(char *_cmd)
 	{
 		VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
 
-		kprintf("\n                                                  \n");
-		kprintf(" COMMAND      | USAGE                             \n");
-		kprintf(" cls          | Clear terminal                    \n");
-		kprintf(" cd path      | Change working directory          \n");
-		kprintf(" del fname    | Delete file                       \n");
-		kprintf(" dir [path]   | Show list of files in cwd or path \n");
-		kprintf(" mem          | Show available memory             \n");
-		kprintf(" pwd          | Show current work directory       \n");
-		kprintf(" reboot       | Reboot the device                 \n");
-		kprintf(" ren old new  | Rename file from old to new name  \n");
-		kprintf(" ver          | Show version info                 \n");
+		kprintf("\n                                                   \n");
+		kprintf(" COMMAND      | USAGE                              \n");
+		kprintf(" cls          | Clear terminal                     \n");
+		kprintf(" cd path      | Change working directory           \n");
+		kprintf(" del fname    | Delete file                        \n");
+		kprintf(" dir [path]   | Show list of files in cwd or path  \n");
+		kprintf(" mem          | Show available memory              \n");
+		kprintf(" pwd          | Show current work directory        \n");
+		kprintf(" reboot       | Reboot the device                  \n");
+		kprintf(" ren old new  | Rename file from old to new name   \n");
+		kprintf(" ver          | Show version info                  \n");
 
 		// Hidden commands for dev mode reveal when running from overlay
 		uint32_t waterMark = read_csr(0xFF0);
 		if (waterMark != 0)
 		{
-			kprintf("--------------------------------------------------\n");
-			kprintf(" DEV MODE SPECIFIC - USE AT YOUR OWN RISK         \n");
-			kprintf(" COMMAND      | USAGE                             \n");
-			kprintf(" kill pid cpu | Kill process with id pid on CPU   \n");
-			kprintf(" mount        | Mount drive sd:                   \n");
-			kprintf(" proc cpu     | Show process info for given CPU   \n");
-			kprintf(" runon cpu    | Run ELF files on given cpu        \n");
-			kprintf(" unmount      | Unmount drive sd:                 \n");
+			kprintf("---------------------------------------------------\n");
+			kprintf(" DEV MODE SPECIFIC - USE AT YOUR OWN RISK          \n");
+			kprintf(" COMMAND      | USAGE                              \n");
+			kprintf(" kill pid cpu | Kill process with id pid on CPU    \n");
+			kprintf(" mount        | Mount drive sd:                    \n");
+			kprintf(" proc cpu     | Show process info for given CPU    \n");
+			kprintf(" runon cpu    | Run ELF files on given cpu         \n");
+			kprintf(" unmount      | Unmount drive sd:                  \n");
 		}
 
-		kprintf("                                                  \n\n");
+		kprintf("                                                   \n\n");
 		VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 	}
 	else // Anything else defers to being a command on storage
@@ -382,7 +380,7 @@ uint32_t ExecuteCmd(char *_cmd)
 		else
 		{
 			char filename[64];
-			strcpy(filename, s_workdir);	// Current path already contains a trailing slash
+			strcpy(filename, GetWorkDir());	// Current path already contains a trailing slash
 			strcat(filename, command);		// User supplied string
 			strcat(filename, ".elf");		// We don't expect command to contain the .elf extension
 
@@ -532,7 +530,7 @@ void _cliTask()
 				int cx,cy;
 				kgetcursor(&cx, &cy);
 				ksetcursor(0, cy);
-				kprintf("%s>%s ", s_workdir, s_cmdString);
+				kprintf("%s>%s ", GetWorkDir(), s_cmdString);
 			}
 		}
 
@@ -618,8 +616,8 @@ uint32_t LoadOverlay(const char *filename)
 	return 0;
 }
 
-// Core task for worker CPUs
-void __attribute__((aligned(64), noinline)) workerMain()
+// Core task for CPU#1 onwards
+void __attribute__((aligned(64), noinline)) UserMain()
 {
 	// Boot sequence for CPU#1
 	asm volatile(
@@ -646,19 +644,26 @@ void __attribute__((aligned(64), noinline)) workerMain()
 	}
 }
 
-int main()
+// Core task for CPU#0
+void __attribute__((aligned(64), noinline)) KernelMain()
 {
+	// Boot sequence for CPU#1
+	asm volatile(
+		"csrw mstatus,0;"		// Disable all interrupts (mstatus:mie=0)
+		"fence.i;"				// Invalidate I$
+		"li sp, 0x0FFDFEF0;"	// Stack is at near end of BRAM
+		"mv s0, sp;"			// Set frame pointer to current stack pointer
+	);
 
-	// Attempt to mount the FAT volume on micro sd card
-	// NOTE: Loaded executables do not have to worry about this part
-	LEDSetState(0xF);
+	LEDSetState(0x1);
+	SetWorkDir("sd:/");
 	MountDrive();
-	strncpy(s_workdir, "sd:/", PATH_MAX);
 
 	// Attempt to load ROM overlay, if it exists
-	LEDSetState(0xE);
 	// Watermark register is zero on hard boot
+	LEDSetState(0x2);
 	uint32_t waterMark = read_csr(0xFF0);
+	LEDSetState(0x2);
 	if ((waterMark == 0) && LoadOverlay("sd:/boot/rom.bin"))
 	{
 		// Point of no return. Literally.
@@ -668,49 +673,34 @@ int main()
 		while(1) {}
 	}
 
-	// NOTE: Since we'll loop around here again if we receive a soft reset,
-	// we need to make sure all things are stopped and reset to default states
-	LEDSetState(0xD);
+	// Reset buffers
+	LEDSetState(0x4);
 	DeviceDefaultState(1);
-
-	// Set up ring buffers
-	LEDSetState(0xC);
 	KeyRingBufferReset();
 	SerialInRingBufferReset();
 	SerialOutRingBufferReset();
 	GPIORingBufferReset();
 
-	// Create task context
-	LEDSetState(0xB);
-	uint32_t self = read_csr(mhartid);
-	InitializeTaskContext(self);
-	struct STaskContext *taskctx = GetTaskContext(self);
-
-	// With current layout, OS takes up a very small slices out of whatever is left from other tasks
-	LEDSetState(0xA);
-	TaskAdd(taskctx, "hart0idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
-	// Command line interpreter task
-	TaskAdd(taskctx, "cmd", _cliTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
-
-	// Start the timer and hardware interrupt handlers.
-	// This is where all task switching and other interrupt handling occurs
-	InstallISR(self, true, true);
-
-	LEDSetState(0x9);
-
-	// Reset helper CPUs
-	E32ResetCPU(1, workerMain);
-
+	// Start HID driver
 	LEDSetState(0x8);
-
-	// Start USB host
 	InitializeUSBHIDData();
 	USBHostSetContext(&s_usbhostctx);
 	USBHostInit(1);
 
-	// Ready to start, silence LED activity since other systems need it
-	LEDSetState(0x0);
+	// Worker cores do not handle hardware interrupts by default,
+	// only task switching (timer) and software (illegal instruction)
+	LEDSetState(0xC);
+	uint32_t self = read_csr(mhartid);
+	InitializeTaskContext(self);
 
+	LEDSetState(0x3);
+	struct STaskContext *taskctx = GetTaskContext(self);
+	TaskAdd(taskctx, "hart0idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+	TaskAdd(taskctx, "cmd", _cliTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+
+	InstallISR(self, true, true);
+
+	LEDSetState(0x0);
 	ShowVersion(waterMark);
 
 	// Main CLI loop
@@ -759,9 +749,16 @@ int main()
 		// ----------------------------------------------------------------
 		// GDB stub / serial keyboard input / file transfer handler
 		// ----------------------------------------------------------------
-
 		HandleSerialInput();
 	}
+}
 
-	return 0;
+int main()
+{
+	// Reset CPUs
+	E32ResetCPU(1, UserMain);
+	E32ResetCPU(0, KernelMain);
+
+	// Will never be reached
+	while(1){}
 }

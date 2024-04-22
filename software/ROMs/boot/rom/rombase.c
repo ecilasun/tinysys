@@ -14,6 +14,7 @@
 
 static struct EVideoContext *s_kernelgfxcontext = (struct EVideoContext *)KERNEL_GFX_CONTEXT;
 static FATFS Fs;
+static char s_workdir[PATH_MAX] = "sd:/";
 
 int kprintfn(const int count, const char *fmt, ...)
 {
@@ -81,7 +82,7 @@ uint32_t MountDrive()
 		FRESULT cdattempt = f_chdrive("sd:");
 		if (cdattempt != FR_OK)
 			return 0;
-		f_chdir("sd:/");
+		f_chdir(s_workdir);
 	}
 
 	return 1;
@@ -399,6 +400,16 @@ void HandleSDCardDetect()
 		UnmountDrive();
 	else					// Inserted
 		MountDrive();
+}
+
+void SetWorkDir(const char *_workdir)
+{
+	strncpy(s_workdir, _workdir, PATH_MAX);
+}
+
+const char* GetWorkDir()
+{
+	return s_workdir;
 }
 
 uint32_t FindFreeFileHandle(const uint32_t _input)

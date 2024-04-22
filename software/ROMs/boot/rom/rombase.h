@@ -17,6 +17,8 @@ void InitializeTaskContext(uint32_t _hartid);
 
 void InstallISR(uint32_t _hartid, bool _allowMachineHwInt, bool _allowMachineSwInt);
 
+void SetWorkDir(const char *_workdir);
+const char* GetWorkDir();
 uint32_t MountDrive();
 void UnmountDrive();
 void ListFiles(const char *path);
