@@ -276,10 +276,12 @@ void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _
 	uint32_t stride = _context->m_consoleWidth;
 	int cx = _context->m_cursorX;
 	int cy = _context->m_cursorY;
+	const uint16_t W = _context->m_consoleWidth;
+	const uint16_t H_1 = _context->m_consoleHeight - 1;
+	uint8_t currentcolor = _context->m_consoleColor;
 
 	int i=0;
 	int isNotTab = 1;
-	uint8_t currentcolor = _context->m_consoleColor;
 	while (_message[i] != 0 && i<_length)
 	{
 		int currentchar = _message[i];
@@ -306,28 +308,28 @@ void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _
 			cx++;
 		}
 
-		if (cx >= _context->m_consoleWidth)
+		if (cx >= W)
 		{
 			cx = 0;
 			cy += isNotTab; // TAB won't wrap to next line, it's just walks between tap stops on current line
 		}
 
-		if (cy >= _context->m_consoleHeight)
+		if (cy > H_1)
 		{
 			// We're trying to write past end of console; scroll up the contents of the console
 			uint32_t targettext = CONSOLE_CHARACTERBUFFER_START;
 			uint32_t targetcolor = CONSOLE_COLORBUFFER_START;
-			uint32_t sourcetext = CONSOLE_CHARACTERBUFFER_START + _context->m_consoleWidth;
-			uint32_t sourcecolor = CONSOLE_COLORBUFFER_START + _context->m_consoleWidth;
-			uint32_t lasttextrow = CONSOLE_CHARACTERBUFFER_START + _context->m_consoleWidth*(_context->m_consoleHeight-1);
-			uint32_t lastcolorrow = CONSOLE_COLORBUFFER_START + _context->m_consoleWidth*(_context->m_consoleHeight-1);
-			__builtin_memcpy((void*)targettext, (void*)sourcetext, _context->m_consoleWidth*(_context->m_consoleHeight-1));
-			__builtin_memcpy((void*)targetcolor, (void*)sourcecolor, _context->m_consoleWidth*(_context->m_consoleHeight-1));
+			uint32_t sourcetext = CONSOLE_CHARACTERBUFFER_START + W;
+			uint32_t sourcecolor = CONSOLE_COLORBUFFER_START + W;
+			uint32_t lasttextrow = CONSOLE_CHARACTERBUFFER_START + W*H_1;
+			uint32_t lastcolorrow = CONSOLE_COLORBUFFER_START + W*H_1;
+			__builtin_memcpy((void*)targettext, (void*)sourcetext, W*H_1);
+			__builtin_memcpy((void*)targetcolor, (void*)sourcecolor, W*H_1);
 			// Fill last row with spaces
-			__builtin_memset((void*)lasttextrow, 0x20, _context->m_consoleWidth);
+			__builtin_memset((void*)lasttextrow, 0x20, W);
 			// Fill last row with default background
-			__builtin_memset((void*)lastcolorrow, (CONSOLEDEFAULTBG<<4) | (CONSOLEDEFAULTFG), _context->m_consoleWidth);
-			cy = _context->m_consoleHeight - 1;
+			__builtin_memset((void*)lastcolorrow, (CONSOLEDEFAULTBG<<4) | (CONSOLEDEFAULTFG), W);
+			cy = H_1;
 		}
 
 		++i;
@@ -344,10 +346,12 @@ void VPUConsoleResolve(struct EVideoContext *_context)
 	uint8_t *colorBase = (uint8_t*)CONSOLE_COLORBUFFER_START;
 	uint32_t stride = _context->m_strideInWords;
 	uint32_t charstride = _context->m_consoleWidth;
+	const uint16_t H = _context->m_consoleHeight;
+	const uint16_t W = _context->m_consoleWidth;
 
-	for (uint16_t cy=0; cy<_context->m_consoleHeight; ++cy)
+	for (uint16_t cy=0; cy<H; ++cy)
 	{
-		for (uint16_t cx=0; cx<_context->m_consoleWidth; ++cx)
+		for (uint16_t cx=0; cx<W; ++cx)
 		{
 			int currentchar = characterBase[cx+cy*charstride];
 			if (currentchar<32)

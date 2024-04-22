@@ -623,7 +623,7 @@ void __attribute__((aligned(64), noinline)) UserMain()
 	asm volatile(
 		"csrw mstatus,0;"		// Disable all interrupts (mstatus:mie=0)
 		"fence.i;"				// Invalidate I$
-		"li sp, 0x0FFDFEF0;"	// Stack is at near end of BRAM
+		"li sp, 0x0FFDFEF0;"	// Stack pointer for CPU#1 (256 bytes above CPU#0)
 		"mv s0, sp;"			// Set frame pointer to current stack pointer
 	);
 
@@ -664,7 +664,7 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	asm volatile(
 		"csrw mstatus,0;"		// Disable all interrupts (mstatus:mie=0)
 		"fence.i;"				// Invalidate I$
-		"li sp, 0x0FFDFEF0;"	// Stack is at near end of BRAM
+		"li sp, 0x0FFDFFF0;"	// Stack poiner for CPU#0
 		"mv s0, sp;"			// Set frame pointer to current stack pointer
 	);
 
