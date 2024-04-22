@@ -1,5 +1,6 @@
-# Gateware build r1.06
+# Latest Gateware Build is: v1.00 for version 2F boards
 
+# Gateware binary
 The gateware binary contains latest version of the device.
 There is no need for a ROM file.<br>
 If you have an older one, you can simply delete it, or use a `rom.bin` file with this version or higher.
@@ -41,7 +42,10 @@ r1.01<br>
 Added GPIO hardware to link to the ESP32-C6-WROOM1-N8 on PCB version 2E<br>
 
 # Changes compatible with version 2F boards:
-<b>r1.06</b><br>
+<b>v1.00</b>
+This version adds two CPU cores, and has some changes to allow user tasks to be able to use the<br>
+second core via the task interface.<br>
+r1.06<br>
 Removed MAX3420 support for USB communication, offloaded to ESP32-C6 chip<br>
 Prepared the device for more than one CPU by adding an uncached, shared mailbox on the address bus<br>
 
