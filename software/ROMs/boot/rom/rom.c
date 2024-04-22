@@ -639,6 +639,19 @@ void __attribute__((aligned(64), noinline)) UserMain()
 
 	while(1)
 	{
+		// Kernel error
+		if (taskctx->kernelError)
+		{
+			// Skip this task
+			for (int i=1;i<taskctx->numTasks;++i)
+			{
+				struct STask *task = &taskctx->tasks[i];
+				task->state = TS_TERMINATING;
+				task->exitCode = -1;
+			}
+			while(1) { asm volatile("wfi;"); }
+		}
+
 		// Yield time back to any tasks running on this core after handling an interrupt
 		/*uint64_t currentTime =*/ TaskYield();
 	}
@@ -715,10 +728,11 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 		if (kernelgfx->m_consoleUpdated)
 			VPUConsoleResolve(kernelgfx);
 
-		// Kernel error, stop everything except sys
+		// Kernel error
 		if (taskctx->kernelError)
 		{
-			for (int i=0;i<taskctx->numTasks;++i)
+			// Skip this task
+			for (int i=1;i<taskctx->numTasks;++i)
 			{
 				struct STask *task = &taskctx->tasks[i];
 				task->state = TS_TERMINATING;
