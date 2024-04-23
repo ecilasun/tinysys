@@ -21,7 +21,7 @@
 #define PIN_RTS UART_PIN_NO_CHANGE
 #define PIN_CTS UART_PIN_NO_CHANGE
 
-// EnCi: bridge to UART port #1
+// EnCi: bridge to UART port
 #define UART_PORT_NUM 1
 
 QueueHandle_t uart_send_queue;
@@ -111,6 +111,7 @@ void app_main(void)
 	ESP_ERROR_CHECK(uart_driver_install(UART_PORT_NUM, PAYLOAD_SIZE * 2, 0, 0, NULL, 0));
 	ESP_ERROR_CHECK(uart_param_config(UART_PORT_NUM, &uart_config));
 	ESP_ERROR_CHECK(uart_set_pin(UART_PORT_NUM, PIN_TXD, PIN_RXD, PIN_RTS, PIN_CTS));
+	ESP_ERROR_CHECK(uart_disable_pattern_det_intr(UART_PORT_NUM));
 
 	esp_task_wdt_deinit();
 
