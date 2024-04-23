@@ -656,15 +656,15 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 		"mv s0, sp;"			// Set frame pointer to current stack pointer
 	);
 
-	LEDSetState(0x1);
+	// Mount FAT32 file system on SDcard, if one exists
+	LEDSetState(0x1);															// xxxO
 	SetWorkDir("sd:/");
 	uint32_t mountSuccess = MountDrive();
 
 	// Attempt to load ROM overlay, if it exists
 	// Watermark register is zero on hard boot
-	LEDSetState(0x2);
+	LEDSetState(0x2);															// xxOx
 	uint32_t waterMark = read_csr(0xFF0);
-	LEDSetState(0x2);
 	if (mountSuccess && (waterMark == 0) && LoadOverlay("sd:/boot/rom.bin"))
 	{
 		// Point of no return. Literally.
@@ -675,34 +675,43 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	}
 
 	// Reset buffers
-	LEDSetState(0x4);
-	DeviceDefaultState(1);
+	LEDSetState(0x4);															// xOxx
 	KeyRingBufferReset();
 	SerialInRingBufferReset();
 	SerialOutRingBufferReset();
 	GPIORingBufferReset();
 
+	// Reset peripherals to default states
+	LEDSetState(0x8);															// Oxxx
+	DeviceDefaultState(1);
+
 	// Start HID driver
-	LEDSetState(0x8);
+	LEDSetState(0xC);															// OOxx
 	InitializeUSBHIDData();
 	USBHostSetContext(&s_usbhostctx);
 	USBHostInit(1);
 
 	// Worker cores do not handle hardware interrupts by default,
 	// only task switching (timer) and software (illegal instruction)
-	LEDSetState(0xC);
+	LEDSetState(0x6);															// xOOx
 	uint32_t self = read_csr(mhartid);
 	InitializeTaskContext(self);
 
-	LEDSetState(0x3);
+	LEDSetState(0x3);			// xxOO
 	struct STaskContext *taskctx = GetTaskContext(self);
 	TaskAdd(taskctx, "hart0idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 	TaskAdd(taskctx, "cmd", _cliTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 
+	LEDSetState(0x7);															// xOOO
 	InstallISR(self, true, true);
 
-	LEDSetState(0x0);
+	LEDSetState(0xE);															// OOOx
 	ShowVersion(waterMark);
+
+	LEDSetState(0xF);															// OOOO
+	// ...
+
+	LEDSetState(0x0);															// xxxx
 
 	// Main CLI loop
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
@@ -716,7 +725,7 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 		// TODO: Catch kernerl errors on CPU#1 onwards
 		if (taskctx->kernelError)
 		{
-			ksetcolor(CONSOLEDIMGRAY, CONSOLERED);
+			ksetcolor(CONSOLEMAGENTA, CONSOLEDIMGRAY);
 			switch (taskctx->kernelError)
 			{
 				case 1: kprintf("Unknown hardware device\n"); break;
@@ -726,11 +735,11 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 				case 5: kprintf("Breakpoint with no debugger attached\n"); break;
 				default: kprintf("Unknown kernel error\n"); break;
 			};
-			ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 
 			// Dump task registers
 			if (taskctx->kernelError == 4)
 			{
+				ksetcolor(CONSOLEGREEN, CONSOLEDIMGRAY);
 				uint32_t taskid = taskctx->kernelErrorData[0];
 				struct STask *task = &taskctx->tasks[taskid];
 				// Skip zero register and emit '0' since we save PC there
@@ -739,6 +748,7 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 					kprintf("%s=0x%x%c", s_regnames[i], task->regs[i], i%4==0?'\n':' ');
 				kprintf("\n");
 			}
+			ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 
 			// Clear error once handled and reported
 			taskctx->kernelError = 0;
