@@ -40,12 +40,8 @@ static uint32_t s_startAddress = 0;
 static int s_refreshConsoleOut = 1;
 static int s_runOnCPU = 0;
 
-static const char *s_taskstates[]={
-	"UNKNOWN    ",
-	"PAUSED     ",
-	"RUNNING    ",
-	"TERMINATING",
-	"TERMINATED " };
+static const char *s_taskstates[]={ "UNKNOWN    ", "PAUSED     ", "RUNNING    ", "TERMINATING", "TERMINATED "};
+static const char *s_regnames[]={"zero", "ra", "sp", "gp", "tp", "t0", "t1", "t2", "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s1", "s1", "t3", "t4", "t5", "t6"};
 
 static struct SUSBHostContext s_usbhostctx;
 
@@ -639,18 +635,10 @@ void __attribute__((aligned(64), noinline)) UserMain()
 
 	while(1)
 	{
-		// Kernel error
+		// Kernel error halts all CPUs other than CPU#0
+		// It is up to CPU#0 to detect errors and report/reset others
 		if (taskctx->kernelError)
-		{
-			// Skip this task
-			for (int i=1;i<taskctx->numTasks;++i)
-			{
-				struct STask *task = &taskctx->tasks[i];
-				task->state = TS_TERMINATING;
-				task->exitCode = -1;
-			}
 			while(1) { asm volatile("wfi;"); }
-		}
 
 		// Yield time back to any tasks running on this core after handling an interrupt
 		/*uint64_t currentTime =*/ TaskYield();
@@ -670,14 +658,14 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 
 	LEDSetState(0x1);
 	SetWorkDir("sd:/");
-	MountDrive();
+	uint32_t mountSuccess = MountDrive();
 
 	// Attempt to load ROM overlay, if it exists
 	// Watermark register is zero on hard boot
 	LEDSetState(0x2);
 	uint32_t waterMark = read_csr(0xFF0);
 	LEDSetState(0x2);
-	if ((waterMark == 0) && LoadOverlay("sd:/boot/rom.bin"))
+	if (mountSuccess && (waterMark == 0) && LoadOverlay("sd:/boot/rom.bin"))
 	{
 		// Point of no return. Literally.
 		CopyPayloadAndChainOverlay(CopyOverlayToROM);
@@ -724,22 +712,41 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 		// Tasks which can be interrupted go here
 		// ----------------------------------------------------------------
 
+		// Kernel error / crash handler for this CPU
+		// TODO: Catch kernerl errors on CPU#1 onwards
+		if (taskctx->kernelError)
+		{
+			ksetcolor(CONSOLEDIMGRAY, CONSOLERED);
+			switch (taskctx->kernelError)
+			{
+				case 1: kprintf("Unknown hardware device\n"); break;
+				case 2: kprintf("Unknown interrupt type\n"); break;
+				case 3: kprintf("Guru meditation\n"); break;
+				case 4: kprintf("Illegal instruction\n"); break;
+				case 5: kprintf("Breakpoint with no debugger attached\n"); break;
+				default: kprintf("Unknown kernel error\n"); break;
+			};
+			ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
+
+			// Dump task registers
+			if (taskctx->kernelError == 4)
+			{
+				uint32_t taskid = taskctx->kernelErrorData[0];
+				struct STask *task = &taskctx->tasks[taskid];
+				// Skip zero register and emit '0' since we save PC there
+				kprintf("Task: '%s', instruction 0x%x @ 0x%x\nzero=0x0 ", task->name, taskctx->kernelErrorData[1], taskctx->kernelErrorData[2]);
+				for (uint32_t i=1; i<32; ++i)
+					kprintf("%s=0x%x%c", s_regnames[i], task->regs[i], i%4==0?'\n':' ');
+				kprintf("\n");
+			}
+
+			// Clear error once handled and reported
+			taskctx->kernelError = 0;
+		}
+
 		// Refresh console output
 		if (kernelgfx->m_consoleUpdated)
 			VPUConsoleResolve(kernelgfx);
-
-		// Kernel error
-		if (taskctx->kernelError)
-		{
-			// Skip this task
-			for (int i=1;i<taskctx->numTasks;++i)
-			{
-				struct STask *task = &taskctx->tasks[i];
-				task->state = TS_TERMINATING;
-				task->exitCode = -1;
-			}
-			while(1) { asm volatile("wfi;"); }
-		}
 
 		// Yield time as soon as we're done here (disables/enables interrupts)
 		uint64_t currentTime = TaskYield();

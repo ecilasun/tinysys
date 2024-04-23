@@ -51,5 +51,12 @@ int main()
 		}
 	}
 
+	// Attempt a few crashes
+
+	// Illegal instruction
+	{
+		asm volatile( ".word 0x00000000;");
+	}
+
     return 0;
 }

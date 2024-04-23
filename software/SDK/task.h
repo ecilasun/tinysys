@@ -38,6 +38,7 @@ struct STaskContext {
 	int32_t numTasks;				// Number of tasks
 	int32_t debugFlags;				// Data for debugger
 	int32_t kernelError;			// Current kernel error
+	int32_t kernelErrorData[3];		// Data relevant to the crash
 	int32_t hartID;					// Id of the HART where this task context runs
 };
 

@@ -83,9 +83,9 @@ uint32_t MountDrive()
 		if (cdattempt != FR_OK)
 			return 0;
 		f_chdir(s_workdir);
+		return 1;
 	}
-
-	return 1;
+	return 0;
 }
 
 // Based on https://opensource.apple.com/source/Libc/Libc-391.2.3/stdlib/FreeBSD/realpath.c.auto.html
@@ -556,8 +556,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				}
 				else // No familiar bit set, unknown device
 				{
-					kprintf("Unknown hardware device, core halted\n");
 					taskctx->kernelError = 1;
+					taskctx->kernelErrorData[0] = hwid;	// The unknown hardwareid received
 					break;
 				}
 
@@ -566,8 +566,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 
 			default:
 			{
-				kprintf("Unknown interrupt type, core halted\n");
-				taskctx->kernelError = 1;
+				taskctx->kernelError = 2;
+				taskctx->kernelErrorData[0] = code;	// The unknown IRQ code received
 				break;
 			}
 		}
@@ -578,26 +578,12 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 		{
 			case CAUSE_ILLEGAL_INSTRUCTION:
 			{
-				// Report and terminate
-				if ((PC&0x2) == 0) // Aligned
-				{
-					uint32_t instruction = *((uint32_t*)PC);
-					if ((instruction&3)==3) // uncompressed
-						kprintf("Illegal instruction 0x%X at 0x%X, terminating\n", instruction, PC);
-					else
-						kprintf("Illegal instruction 0x%X at 0x%X, terminating\n", instruction&0x0000FFFF, PC);
-				}
-				else // Misaligned
-				{
-					// NOTE: This RISC-V CPU by default can't read misaligned 32bit data so we need to
-					// read it in two 16bit aligned chunks and combine
-					uint16_t instA = *((uint16_t*)PC);
-					uint16_t instB = *((uint16_t*)(PC+2));
-					if ((instA&3)==3) // uncompressed
-						kprintf("Illegal instruction 0x%X%X at 0x%X, terminating\n", instB, instA, PC);
-					else // compressed
-						kprintf("Illegal instruction 0x%X at 0x%X, terminating\n", instA, PC);
-				}
+				// Capture error
+				taskctx->kernelError = 4;
+				taskctx->kernelErrorData[0] = taskctx->currentTask;	// Task that crashed
+				taskctx->kernelErrorData[1] = *((uint32_t*)PC);		// Instruction
+				taskctx->kernelErrorData[2] = PC;					// Program counter
+
 				// Terminate task on first chance and remove from list of running tasks
 				TaskExitCurrentTask(taskctx);
 				// Force switch to next task
@@ -608,8 +594,11 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 
 			case CAUSE_BREAKPOINT:
 			{
-				// Where there's no debugger loaded, simply exit since we're not supposed to run past ebreak commands
-				kprintf("Encountered breakpoint with no debugger attached\n");
+				taskctx->kernelError = 5;
+				taskctx->kernelErrorData[0] = taskctx->currentTask;	// Task that invoked ebreak
+				taskctx->kernelErrorData[1] = *((uint32_t*)PC);		// Instruction
+				taskctx->kernelErrorData[2] = PC;					// Program counter
+
 				// Exit task in non-debug mode
 				TaskExitCurrentTask(taskctx);
 				// Force switch to next task
@@ -1043,12 +1032,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			case CAUSE_STORE_PAGE_FAULT:*/
 			default:
 			{
-				// Code contains the CAUSE_ code
-				ksetcolor(CONSOLEDIMGRAY, CONSOLERED);
-				kprintf("Guru meditation, core halted\n");
-				ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
-
-				taskctx->kernelError = 1;
+				taskctx->kernelError = 3;
+				taskctx->kernelErrorData[0] = code;	// The unknown cause code
 				break;
 			}
 		}
