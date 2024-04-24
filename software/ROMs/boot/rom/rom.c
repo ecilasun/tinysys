@@ -23,9 +23,9 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "v1.00"
+#define VERSIONSTRING "v1.01"
 // On-storage version
-#define DEVVERSIONSTRING "v1.00"
+#define DEVVERSIONSTRING "v1.01"
 
 static char s_execName[32] = "                               ";
 static char s_execParam0[32] = "                               ";
@@ -50,7 +50,10 @@ void _stubTask()
 	// NOTE: This task won't actually run
 	// It is a stub routine which will be stomped over by main()
 	// on first entry to the timer ISR
-	asm volatile("nop;");
+	while(1)
+	{
+		asm volatile("nop;");
+	}
 }
 
 // This task is a trampoline to the loaded executable
@@ -617,8 +620,8 @@ void __attribute__((aligned(64), noinline)) UserMain()
 {
 	// Boot sequence for CPU#1
 	asm volatile(
+		"fence.i;"
 		"csrw mstatus,0;"		// Disable all interrupts (mstatus:mie=0)
-		"fence.i;"				// Invalidate I$
 		"li sp, 0x0FFDFEF0;"	// Stack pointer for CPU#1 (256 bytes above CPU#0)
 		"mv s0, sp;"			// Set frame pointer to current stack pointer
 	);
@@ -629,7 +632,7 @@ void __attribute__((aligned(64), noinline)) UserMain()
 	InitializeTaskContext(self);
 
 	struct STaskContext *taskctx = GetTaskContext(self);
-	TaskAdd(taskctx, "hart1idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+	TaskAdd(taskctx, "cpu1idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 
 	InstallISR(self, false, true);
 
@@ -650,8 +653,8 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 {
 	// Boot sequence for CPU#1
 	asm volatile(
+		"fence.i;"
 		"csrw mstatus,0;"		// Disable all interrupts (mstatus:mie=0)
-		"fence.i;"				// Invalidate I$
 		"li sp, 0x0FFDFFF0;"	// Stack poiner for CPU#0
 		"mv s0, sp;"			// Set frame pointer to current stack pointer
 	);
@@ -665,13 +668,13 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	// Watermark register is zero on hard boot
 	LEDSetState(0x2);															// xxOx
 	uint32_t waterMark = read_csr(0xFF0);
-	if (mountSuccess && (waterMark == 0) && LoadOverlay("sd:/boot/rom.bin"))
+	if (mountSuccess && (waterMark == 0))
 	{
-		// Point of no return. Literally.
-		CopyPayloadAndChainOverlay(CopyOverlayToROM);
-
-		// We should never come back here
-		while(1) {}
+		if (LoadOverlay("sd:/boot/rom.bin"))
+		{
+			CopyPayloadAndChainOverlay(CopyOverlayToROM);
+			while(1) {}
+		}
 	}
 
 	// Reset buffers
@@ -699,7 +702,7 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 
 	LEDSetState(0x3);			// xxOO
 	struct STaskContext *taskctx = GetTaskContext(self);
-	TaskAdd(taskctx, "hart0idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+	TaskAdd(taskctx, "cpu0idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 	TaskAdd(taskctx, "cmd", _cliTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 
 	LEDSetState(0x7);															// xOOO
@@ -708,9 +711,7 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	LEDSetState(0xE);															// OOOx
 	ShowVersion(waterMark);
 
-	LEDSetState(0xF);															// OOOO
-	// ...
-
+	// Reset secondary CPUs
 	LEDSetState(0x0);															// xxxx
 
 	// Main CLI loop
@@ -786,10 +787,18 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 
 int main()
 {
-	// Reset CPUs
-	E32ResetCPU(1, UserMain);
-	E32ResetCPU(0, KernelMain);
+	LEDSetState(0xF);
+	ClearTaskMemory();
+
+	// Set up all CPUs
+	E32SetupCPU(1, UserMain);
+	E32SetupCPU(0, KernelMain);
+
+	// Reset all CPUs
+	E32ResetCPU(1);
+	E32ResetCPU(0);
 
 	// Will never be reached
-	while(1){}
-}
+	while(1){ }
+	return 0;
+} 

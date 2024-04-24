@@ -13,6 +13,7 @@
 #include <stdbool.h>
 
 // Task related
+void ClearTaskMemory();
 struct STaskContext *GetTaskContext(uint32_t _hartid);
 void InitializeTaskContext(uint32_t _hartid);
 void InstallISR(uint32_t _hartid, bool _allowMachineHwInt, bool _allowMachineSwInt);

@@ -377,6 +377,13 @@ static char s_fileNames[MAX_HANDLES][MAXFILENAMELEN+1] = {
 
 static UINT tmpresult = 0;
 
+void ClearTaskMemory()
+{
+	void *taskmem = (void *)DEVICE_MAIL;
+	// Clear the task space used by two CPUs
+	__builtin_memset(taskmem, 0, sizeof(struct STaskContext)*2);
+}
+
 struct STaskContext *GetTaskContext(uint32_t _hartid)
 {
 	// Each task starts at 1Kbyte boundary
