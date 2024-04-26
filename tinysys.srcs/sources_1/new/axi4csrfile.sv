@@ -39,7 +39,7 @@ logic mstatusIEshadow;   		// Global interrupts disabled on by default
 logic [31:0] mtvecshadow;
 logic dummyshadow;
 
-logic csrwe = 1'b0;
+logic csrwe;
 logic [11:0] cswraddr; // NOTE: Vivado seems to have trouble synthesizing BRAM when this is initialized
 logic [11:0] csrraddr;
 logic [31:0] csrdin;
@@ -136,7 +136,6 @@ always @(posedge aclk) begin
 end
 
 always @(posedge aclk) begin
-
 	if (~aresetn) begin
 		csrdin <= 32'd0;
 		writestate <= 2'b00;

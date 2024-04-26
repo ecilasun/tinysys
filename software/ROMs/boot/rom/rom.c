@@ -637,7 +637,8 @@ void __attribute__((aligned(64), noinline)) UserMain()
 {
 	// Boot sequence for CPU#1
 	asm volatile(
-		"fence.i;"
+		"fence.i;"				// Discard I$
+		"csrw 0xFEE, 0;"		// Stop reset
 		"csrw mstatus,0;"		// Disable all interrupts (mstatus:mie=0)
 		"li sp, 0x0FFDFEF0;"	// Stack pointer for CPU#1 (256 bytes above CPU#0)
 		"mv s0, sp;"			// Set frame pointer to current stack pointer
@@ -670,7 +671,8 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 {
 	// Boot sequence for CPU#1
 	asm volatile(
-		"fence.i;"
+		"fence.i;"				// Discard I$
+		"csrw 0xFEE, 0;"		// Stop reset
 		"csrw mstatus,0;"		// Disable all interrupts (mstatus:mie=0)
 		"li sp, 0x0FFDFFF0;"	// Stack poiner for CPU#0
 		"mv s0, sp;"			// Set frame pointer to current stack pointer
@@ -730,6 +732,9 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 
 	// Reset secondary CPUs
 	LEDSetState(0x0);															// xxxx
+
+	kprintf("CPU1:\n");
+	kprintf("entry:%x mtvec:%x rst:%x\n", (uint32_t)UserMain, E32ReadMemMappedCSR(1, CSR_MTVEC), E32ReadMemMappedCSR(1, CSR_CPURESET));
 
 	// Main CLI loop
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
