@@ -18,29 +18,31 @@ end
 assign led = ledbits;
 
 always @(posedge aclk) begin
-	s_axi.awready <= s_axi.awvalid;
-	s_axi.arready <= s_axi.arvalid;
-	s_axi.bvalid <= s_axi.bready;
-	s_axi.rvalid <= s_axi.rready;
-	s_axi.wready <= s_axi.wvalid;
-	ledwe <= 1'b0;
-
-	if (s_axi.rready) begin
-		s_axi.rdata[31:0] <= {28'd0, ledstate};
-		s_axi.rlast <= 1'b1;
-	end
-
-	if (s_axi.wvalid) begin
-		ledwe <= 1'b1;
-		ledstate <= s_axi.wdata[3:0];
-	end
-
 	if (~aresetn) begin
 		s_axi.awready <= 1'b0;
 		s_axi.arready <= 1'b0;
 		s_axi.wready <= 1'b0;
 		s_axi.bvalid <= 1'b0;
+		s_axi.rresp <= 2'b00;
 		s_axi.bresp <= 2'b00;
+		ledwe <= 1'b0;
+	end else begin
+		s_axi.awready <= s_axi.awvalid;
+		s_axi.arready <= s_axi.arvalid;
+		s_axi.bvalid <= s_axi.bready;
+		s_axi.rvalid <= s_axi.rready;
+		s_axi.wready <= s_axi.wvalid;
+		ledwe <= 1'b0;
+	
+		if (s_axi.rready) begin
+			s_axi.rdata[31:0] <= {28'd0, ledstate};
+			s_axi.rlast <= 1'b1;
+		end
+	
+		if (s_axi.wvalid) begin
+			ledwe <= 1'b1;
+			ledstate <= s_axi.wdata[3:0];
+		end
 	end
 end
 

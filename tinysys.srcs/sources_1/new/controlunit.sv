@@ -52,10 +52,11 @@ assign branchresolved = btready;
 assign branchtarget = btarget;
 
 // Operands for exec
-logic [31:0] A; // rval1
-logic [31:0] B; // rval2
-logic [31:0] D; // immed
-logic [31:0] E; // rval3
+logic [31:0] A;	// rval1
+logic [31:0] B;	// rval2
+logic [31:0] D;	// immed
+logic [31:0] E;	// rval3
+logic F;		// selectimmedasrval2
 
 // Writeback data
 logic [31:0] wbdin;
@@ -104,8 +105,8 @@ arithmeticlogic ALU(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.aluout(aluout),
-	.val1(rval1),
-	.val2(selectimmedasrval2 ? immed : rval2),
+	.val1(A),
+	.val2(F ? D : B),
 	.aluop(aluop) );
 
 // --------------------------------------------------
@@ -417,6 +418,7 @@ always @(posedge aclk) begin
 					B <= rval2;
 					D <= immed;
 					E <= rval3;
+					F <= selectimmedasrval2;
 					wbdest <= rd;
 					rwaddress <= rval1 + immed;
 					offsetPC <= PC + immed;

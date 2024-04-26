@@ -106,6 +106,7 @@ always @(posedge aclk) begin
 		s_axi.arready <= 1'b0;
 		s_axi.wready <= 1'b0;
 		s_axi.bvalid <= 1'b0;
+		s_axi.rresp <= 2'b00;
 		s_axi.bresp <= 2'b00;
 	end else begin
 
