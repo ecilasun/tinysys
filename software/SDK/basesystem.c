@@ -95,51 +95,14 @@ uint32_t E32ReadMemMappedCSR(uint32_t _hart, uint32_t _csr)
 	return *(uint32_t*)(csrbase[_hart] + (_csr<<2));
 }
 
-void __attribute__((aligned(16))) __attribute__((naked)) resetISR()
-{
-	asm volatile(
-		"fence.i;"				// Clear I$
-		"csrw 0xFEF, 0x0;"		// Clear cpu reset request
-		"csrr s0, mscratch;"	// Grab address from scratch register
-		"jalr s0;");			// Jump to reset vector
-}
-
-void __attribute__((aligned(64), noinline)) voidThread1()
-{
-	// Boot sequence for CPU#1
-	asm volatile(
-		"fence.i;"				// Invalidate I$
-		"csrw mstatus,0;"		// Disable all interrupts (mstatus:mie=0)
-		"li sp, 0x0FFDFEF0;"	// User CPU#1 stack
-		"mv s0, sp;"			// Set frame pointer to current stack pointer
-		"infloopcpu1:"
-		"wfi;"					// Halt core
-		"j infloopcpu1;" );
-}
-
-void __attribute__((aligned(64), noinline)) voidThread0()
-{
-	// Boot sequence for CPU#1
-	asm volatile(
-		"fence.i;"				// Invalidate I$
-		"csrw mstatus,0;"		// Disable all interrupts (mstatus:mie=0)
-		"li sp, 0x0FFDFFF0;"	// User CPU#0 stack
-		"mv s0, sp;"			// Set frame pointer to current stack pointer
-		"infloopcpu0:"
-		"wfi;"					// Halt core
-		"j infloopcpu0;" );
-}
-
 void E32SetupCPU(uint32_t hartid, void *workerThread)
 {
-	// Call with null workerthread pointer to use default thread on this core
-	E32WriteMemMappedCSR(hartid, CSR_MSCRATCH, workerThread ? (uint32_t)workerThread : (hartid==0 ? (uint32_t)voidThread0 : (uint32_t)voidThread1));
-	E32WriteMemMappedCSR(hartid, CSR_MTVEC, (uint32_t)resetISR);
-	E32WriteMemMappedCSR(hartid, CSR_MIE, MIP_MEIP);
-	E32WriteMemMappedCSR(hartid, CSR_MSTATUS, MSTATUS_MIE);
+	// Set up reset vector as if it's an ISR
+	E32WriteMemMappedCSR(hartid, CSR_MTVEC, (uint32_t)workerThread);
 }
 
 void E32ResetCPU(uint32_t hartid)
 {
-	E32WriteMemMappedCSR(hartid, 0xFEF, 0x1);
+	// This triggers a hardware jump to mtvec after all queued instructions execute
+	E32WriteMemMappedCSR(hartid, CSR_CPURESET, 0x1);
 }

@@ -35,9 +35,9 @@ extern "C"
 
 			"j main;"							// Jump to main
 
-			"_freezecore: "						// Put main hardware thread to sleep if main() somehow manages to exit
-			"nop;"
-			"j _freezecore;"					// Do not use WFI here to avoid deadlock (fetch unit won't service hw reset IRQ while in WFI)
+			"_freezecore: "						// Put hardware thread to sleep (NOTE: even with MIE disabled we can reset this core later)
+			"wfi;"
+			"j _freezecore;"
 		);
 	}
 
@@ -46,7 +46,7 @@ extern "C"
 		asm (
 			"_romfreeze: "						// Halt if we ever attempt to exit ROM
 			"csrw mstatus, 0;"
-			"wfi;"								// NOTE: This will deadlock the CPU (fetch unit won't service hw reset IRQ while in WFI)
+			"wfi;"
 			"j _romfreeze;"
 		);
 	}

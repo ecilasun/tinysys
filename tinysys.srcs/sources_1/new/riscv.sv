@@ -6,6 +6,7 @@ module riscv #(
 	input wire aresetn,
 	input wire romReady,
 	input wire sie,
+	input wire cpuresetreq,
 	input wire [1:0] irqReq,
 	input wire [31:0] mepc,
 	input wire [31:0] mtvec,
@@ -46,6 +47,7 @@ fetchunit #(.RESETVECTOR(RESETVECTOR)) fetchdecodeinst (
 	.mepc(mepc),
 	.mtvec(mtvec),
 	.sie(sie),
+	.cpuresetreq(cpuresetreq),
 	.romReady(romReady),
 	.m_axi(instructionbus) );
 

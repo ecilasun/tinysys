@@ -553,14 +553,6 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				else if (hwid&2) HandleSDCardDetect();
 				else if (hwid&4) HandleGPIO(PC);
 				else if (hwid&8) HandleUART();
-				else if (hwid&16)
-				{
-					asm volatile(
-						"csrw 0xFEF, 0x0;"		// Clear cpu reset request
-						".word 0xFC000073;"		// Flush D$ to memory
-						"csrr s0, mscratch;"	// Grab address from scratch register
-						"jalr s0;");			// Jump to reset vector
-				}
 				else // No familiar bit set, unknown device
 				{
 					taskctx->kernelError = 1;

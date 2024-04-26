@@ -20,6 +20,8 @@ module fetchunit #(
 	input wire [31:0] mepc,
 	input wire [31:0] mtvec,
 	input wire sie,
+	// CPU reset
+	input wire cpuresetreq,
 	// ROM copy done
 	input wire romReady,
 	// To system bus
@@ -29,7 +31,9 @@ module fetchunit #(
 // Internal states
 // --------------------------------------------------
 
+logic resetrequest;
 logic fetchena;
+logic [3:0] wficount;
 logic [31:0] prevPC;
 logic [31:0] PC;
 logic [31:0] emitPC;
@@ -171,19 +175,27 @@ fetchstate fetchmode = INIT;
 fetchstate postInject = FETCH;	// Where to go after injection ends
 
 always @(posedge aclk) begin
-
 	if (~aresetn) begin
+		resetrequest <= 1'b0;
 		PC <= 32'd0;
 		prevPC <= 32'd0;
 		emitPC <= 32'd0;
 		injectAddr <= 7'd0;
 		injectStop <= 7'd0;
 		entryState <= 5'd0;
+		wficount <= 4'd0;
 		fetchmode <= INIT;
 	end else begin
 		fetchena <= 1'b0;
 		ififowr_en <= 1'b0;
 		icacheflush <= 1'b0;
+
+		if (cpuresetreq) begin
+			// External reset request
+			// This will cause the following FETCH to branch to mtvec
+			// instead of resuming normal operation
+			resetrequest <= 1'b1;
+		end
 
 		unique case(fetchmode)
 			INIT: begin
@@ -193,10 +205,17 @@ always @(posedge aclk) begin
 			end
 
 			FETCH: begin
-				// NOTE: Stall when instruction fifo is full (currently unlikely but possible)
-				fetchmode <= (rready && ~ififofull) ? STREAMOUT : FETCH;
-				IR <= instruction;
-				prevPC <= PC;
+				if (resetrequest) begin
+					resetrequest <= 1'b0;
+					PC <= mtvec;
+					fetchena <= 1'b1;
+					fetchmode <= FETCH;
+				end else begin
+					// Stalls when instruction fifo is full (unlikely but possible)
+					fetchmode <= (rready && ~ififofull) ? STREAMOUT : FETCH;
+					IR <= instruction;
+					prevPC <= PC;
+				end
 			end
 
 			STREAMOUT: begin
@@ -389,15 +408,13 @@ always @(posedge aclk) begin
 			end
 
 			WFI: begin
-				// NOTE: When global interrupts or machine external interrupts are disabled,
-				// this will end up holding the core in a suspended state.
-				fetchena <= (|irqReq);
-				fetchmode <= (|irqReq) ? FETCH : WFI;
+				// Wait for 16 clocks at most
+				wficount <= wficount + 4'd1;
+				fetchena <= ((|irqReq) || wficount == 4'd0);
+				fetchmode <= ((|irqReq) || wficount == 4'd0) ? FETCH : WFI;
 			end
-
 		endcase
 	end
-
 end
 
 endmodule

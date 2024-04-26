@@ -302,7 +302,7 @@
 `define CSR_MIMPID		12'hF13
 `define CSR_MHARTID		12'hF14 // immutable
 
-`define CSR_CPURESET	12'hFEF // Set lowest bit to 1'b1 to trigger reset, 1'b0 to stop reset
+`define CSR_CPURESET	12'hFEE // Set lowest bit to 1'b1 to trigger reset, 1'b0 to stop reset
 `define CSR_WATERMARK	12'hFF0 // Machine boot state (watermark) register, survives soft reboot intact
 `define CSR_HWSTATE		12'hFFF // immutable, custom hardware state bits
 

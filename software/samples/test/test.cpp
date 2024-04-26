@@ -44,11 +44,6 @@ int main()
 			unsigned int cycl = E32ReadMemMappedCSR(core, CSR_CYCLE);
 			printf("cycles elapsed: %.8x%.8x\n", cych,cycl);
 		}
-		// PC shadow
-		{
-			unsigned int pcshadow = E32ReadMemMappedCSR(core, 0xFEF);
-			printf("PC: %.8x\n", pcshadow);
-		}
 	}
 
 	// Attempt a few crashes

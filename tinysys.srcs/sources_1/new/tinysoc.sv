@@ -99,7 +99,7 @@ wire romReady;
 // HART#0
 // --------------------------------------------------
 
-wire sieHart0;
+wire sieHart0, cpuresetreq0;
 wire [63:0] cpuclocktimeHart0;
 wire [63:0] retiredHart0;
 wire [31:0] mepcHart0;
@@ -113,6 +113,7 @@ riscv #( .CSRBASE(16'h800A), .RESETVECTOR(RESETVECTOR)) hart0(
 	.sie(sieHart0),
 	.mepc(mepcHart0),
 	.mtvec(mtvecHart0),
+	.cpuresetreq(cpuresetreq0),
 	.irqReq(irqReqHart0),
 	.instructionbus(instructionbusHart0),
 	.databus(databusHart0),
@@ -124,7 +125,7 @@ riscv #( .CSRBASE(16'h800A), .RESETVECTOR(RESETVECTOR)) hart0(
 // HART#1
 // --------------------------------------------------
 
-wire sieHart1;
+wire sieHart1, cpuresetreq1;
 wire [63:0] cpuclocktimeHart1;
 wire [63:0] retiredHart1;
 wire [31:0] mepcHart1;
@@ -138,6 +139,7 @@ riscv #( .CSRBASE(16'h800B), .RESETVECTOR(RESETVECTOR)) hart1(
 	.sie(sieHart1),
 	.mepc(mepcHart1),
 	.mtvec(mtvecHart1),
+	.cpuresetreq(cpuresetreq1),
 	.irqReq(irqReqHart1),
 	.instructionbus(instructionbusHart1),
 	.databus(databusHart1),
@@ -408,8 +410,8 @@ axi4CSRFile #( .HARTID(4'd0)) csrfile0 (
 	.usbirq(usbairq),
 	.gpioirq(gpioirq),
 	.uartirq(uartirq),
-	// TODO: Reset via ESP32
-	//.sysresetn(sysresetn),
+	// CPU reset (mepcHart0 contains reset vector)
+	.cpuresetreq(cpuresetreq0),
 	// Shadow registers
 	.mepc(mepcHart0),
 	.mtvec(mtvecHart0),
@@ -430,8 +432,8 @@ axi4CSRFile #( .HARTID(4'd1)) csrfile1 (
 	.usbirq(usbairq),
 	.gpioirq(gpioirq),
 	.uartirq(uartirq),
-	// TODO: Reset via ESP32
-	//.sysresetn(sysresetn),
+	// CPU reset (mepcHart1 contains reset vector)
+	.cpuresetreq(cpuresetreq1),
 	// Shadow registers
 	.mepc(mepcHart1),
 	.mtvec(mtvecHart1),

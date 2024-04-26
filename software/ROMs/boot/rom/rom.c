@@ -125,7 +125,7 @@ void ShowVersion(int waterMark)
 	if (waterMark == 0)
 		kprintf(" OS version          : " VERSIONSTRING "                       \n");
 	else
-		kprintf(" OS version          : " DEVVERSIONSTRING "                       \n");
+		kprintf(" OS version (dev)    : " DEVVERSIONSTRING "                       \n");
 
 	// TODO: These two values need to come from a CSR,
 	// pointing at a memory location with device config data (machineconfig?)
@@ -183,6 +183,19 @@ uint32_t ExecuteCmd(char *_cmd)
 	else if (!strcmp(command, "cls"))
 	{
 		VPUConsoleClear(kernelgfx);
+	}
+	else if (!strcmp(command, "resetcpu"))
+	{
+		const char *whichcpu = strtok(NULL, " ");
+		if (!whichcpu)
+			kprintf("usage: resetcpu cpuid\n");
+		else
+		{
+			int cpuid = atoi(whichcpu);
+			if (cpuid == 0)
+				E32SetupCPU(0, (void*)0x0FFE0000);
+			E32ResetCPU(cpuid);
+		}
 	}
 	else if (!strcmp(command, "reboot"))
 	{
@@ -353,6 +366,7 @@ uint32_t ExecuteCmd(char *_cmd)
 			kprintf(" kill pid cpu | Kill process with id pid on CPU    \n");
 			kprintf(" mount        | Mount drive sd:                    \n");
 			kprintf(" proc cpu     | Show process info for given CPU    \n");
+			kprintf(" resetcpu cpu | Hard reset given CPU               \n");
 			kprintf(" runon cpu    | Run ELF files on given cpu         \n");
 			kprintf(" unmount      | Unmount drive sd:                  \n");
 		}
@@ -566,10 +580,13 @@ void __attribute__((aligned(64), noinline)) CopyPayloadAndChainOverlay(void *sou
 	);
 }
 
-// This is the payload to copy (34 bytes but we can copy 64 to cover both compressed and uncompressed variants)
+// This is the payload to copy (56 bytes the copy loop copies over 64 in total, adjust to cover all code)
 void __attribute__((aligned(64), noinline)) CopyOverlayToROM()
 {
+	// NOTE: Chained ROM must invalidate I$ on entry!
 	asm volatile(
+		"csrw mie, 0;"			// Disable all interrupt types
+		"csrw mstatus, 0;"		// Disable machine interrupts
 		"lui s0, 0x00010;"		// Source: 0x00010000
 		"lui s1, 0x0FFE0;"		// Target: 0x0FFE0000
 		"lui s2, 0x4;"			// Count:  65536/4 (0x4000)
@@ -790,12 +807,10 @@ int main()
 	LEDSetState(0xF);
 	ClearTaskMemory();
 
-	// Set up all CPUs
+	// Reset all CPUs, CPU#0 last
 	E32SetupCPU(1, UserMain);
-	E32SetupCPU(0, KernelMain);
-
-	// Reset all CPUs
 	E32ResetCPU(1);
+	E32SetupCPU(0, KernelMain);
 	E32ResetCPU(0);
 
 	// Will never be reached

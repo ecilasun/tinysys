@@ -18,6 +18,8 @@ module axi4CSRFile #(
 	input wire usbirq,
 	input wire gpioirq,
 	input wire uartirq,
+	// CPU reset line
+	output wire cpuresetreq,
 	// Expose certain registers to fetch unit
 	output wire [31:0] mepc,
 	output wire [31:0] mtvec,
@@ -81,9 +83,9 @@ logic timerInterrupt;
 logic hwInterrupt;
 logic softInterruptEna;
 
-// Last bit of resetcpu CSR triggers a reset irq.
-// Handler has to clear this bit to recover from reset, then branch to address in mscratch register. 
-logic resetirq;
+// This will stay high untill CPU responds with an ack
+logic cpuresetreq_r;
+assign cpuresetreq = cpuresetreq_r;
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
@@ -93,9 +95,9 @@ always @(posedge aclk) begin
 	end else begin
 		// Common condition to fire an IRQ:
 		// Fetch isn't holding an IRQ, specific interrups are enabled, and global machine interrupts are enabled
-		softInterruptEna <= mieshadow[0] && mstatusIEshadow; // Software interrupt (The rest of this condition is in fetch unit based on instruction)
-		timerInterrupt <= mieshadow[1] && mstatusIEshadow && (wallclocktime >= timecmpshadow); // Timer interrupt
-		hwInterrupt <= mieshadow[2] && mstatusIEshadow && (uartirq || gpioirq || keyirq || usbirq || resetirq); // Machine external interrupts
+		softInterruptEna <= mieshadow[0] && mstatusIEshadow;										// Software interrupt
+		timerInterrupt <= mieshadow[1] && mstatusIEshadow && (wallclocktime >= timecmpshadow);		// Timer interrupt
+		hwInterrupt <= mieshadow[2] && mstatusIEshadow && (uartirq || gpioirq || keyirq || usbirq);	// Machine external interrupts
 	end
 end
 
@@ -143,14 +145,16 @@ always @(posedge aclk) begin
 		dummyshadow <= 1'b0;
 		mstatusIEshadow <= 1'b0;
 		timecmpshadow <= 64'hFFFFFFFFFFFFFFFF;
-		resetirq <= 1'b0;
+		cpuresetreq_r <= 1'b0;
 		mieshadow <= 3'b000;
 		csrwe <= 1'b0;
 	end else begin
+		// Clear reset request
+		cpuresetreq_r <= 1'b0;
 		s_axi.wready <= 1'b0;
 		s_axi.bvalid <= 1'b0;
 		csrwe <= 1'b0;
-	
+
 		unique case(writestate)
 			2'b00: begin
 				s_axi.bresp <= 2'b00; // okay
@@ -175,19 +179,18 @@ always @(posedge aclk) begin
 			end
 			2'b11: begin // Generate a shadow copy of some registers as well as their true version in the CSR file
 				unique case (cswraddr)
-					`CSR_TIMECMPLO:	timecmpshadow[31:0] <= csrdin;
-					`CSR_TIMECMPHI:	timecmpshadow[63:32] <= csrdin;
-					`CSR_MEPC:		mepcshadow <= csrdin;
-					`CSR_MIE:		mieshadow <= {csrdin[11], csrdin[7], csrdin[3]};	// Only store MEIE, MTIE and MSIE bits
-					`CSR_MSTATUS:	mstatusIEshadow <= csrdin[3];						// Global interrupt enable (MIE) bit
-					`CSR_MTVEC:		mtvecshadow <= csrdin;								// Interrupt vector
-					`CSR_CPURESET:	resetirq <= csrdin[0];								// Set reset IRQ state
-					default:		dummyshadow <= csrdin[0];							// Unused - sink
+					`CSR_TIMECMPLO:		timecmpshadow[31:0] <= csrdin;
+					`CSR_TIMECMPHI:		timecmpshadow[63:32] <= csrdin;
+					`CSR_MEPC:			mepcshadow <= csrdin;
+					`CSR_MIE:			mieshadow <= {csrdin[11], csrdin[7], csrdin[3]};	// Only store MEIE, MTIE and MSIE bits
+					`CSR_MSTATUS:		mstatusIEshadow <= csrdin[3];						// Global interrupt enable (MIE) bit
+					`CSR_MTVEC:			mtvecshadow <= csrdin;								// Interrupt vector
+					`CSR_CPURESET:		cpuresetreq_r <= csrdin[0];							// CPU reset request needs to be high for one clock only (reset vector is in mtvec)
+					default:			dummyshadow <= csrdin[0];							// Unused - sink
 				endcase
 				writestate <= 2'b01;
 			end
 		endcase
-	
 	end
 end
 
@@ -224,7 +227,7 @@ always @(posedge aclk) begin
 						`CSR_TIMELO:	s_axi.rdata[31:0] <= wallclocktime[31:0];
 						`CSR_CYCLELO:	s_axi.rdata[31:0] <= cpuclocktime[31:0];
 						// Interrupt states of all hardware devices
-						`CSR_HWSTATE:	s_axi.rdata[31:0] <= {27'd0, resetirq, uartirq, gpioirq, keyirq, usbirq};
+						`CSR_HWSTATE:	s_axi.rdata[31:0] <= {28'd0, uartirq, gpioirq, keyirq, usbirq};
 						// Pass through actual data
 						default:		s_axi.rdata[31:0] <= csrdout;
 					endcase
