@@ -10,6 +10,7 @@ extern "C"
 			// If we're loaded from storage as a ROM overlay, this ensures
 			// that the I$ sees the new set of instructions.
 			"fence.i;"							// Invalidate I$
+			"csrw mie,0;"						// No external (hardware) interrupts
 			"csrw mstatus,0;"					// Disable all interrupts (mstatus:mie=0)
 			"csrr a3, mhartid;"					// Check the index of this processor
 			"bnez a3, _freezecore;"				// Halt if we're anything other than CPU#0

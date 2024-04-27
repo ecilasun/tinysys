@@ -733,8 +733,7 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	// Reset secondary CPUs
 	LEDSetState(0x0);															// xxxx
 
-	kprintf("CPU1:\n");
-	kprintf("entry:%x mtvec:%x rst:%x\n", (uint32_t)UserMain, E32ReadMemMappedCSR(1, CSR_MTVEC), E32ReadMemMappedCSR(1, CSR_CPURESET));
+	//kprintf("CPU1 entry:%x mtvec:%x rst:%x\n", (uint32_t)UserMain, E32ReadMemMappedCSR(1, CSR_MTVEC), E32ReadMemMappedCSR(1, CSR_CPURESET));
 
 	// Main CLI loop
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
@@ -812,7 +811,7 @@ int main()
 	LEDSetState(0xF);
 	ClearTaskMemory();
 
-	// Reset all CPUs, CPU#0 last
+	// Reset and wake up all CPUs, main CPU last
 	E32SetupCPU(1, UserMain);
 	E32ResetCPU(1);
 	E32SetupCPU(0, KernelMain);

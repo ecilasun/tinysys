@@ -22,7 +22,8 @@
 		"coroutine": "c",
 		"xmemory": "c",
 		"task.h": "c",
-		"agnes.h": "c"
+		"agnes.h": "c",
+		"max3421e.h": "c"
 	},
 	"terminal.integrated.profiles.windows": {
 		"MSYS2": {
