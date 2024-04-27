@@ -14,9 +14,9 @@ See expansionboardA.cv file for the list of components required for a fully popu
 
 For hardware, visit https://github.com/ecilasun/tinysys. The project files require a recent version of Vivado suite to work.
 
-For software, visit https://github.com/ecilasun/riscvtool and check the tinysys directory for the default ROM image and samples. The ROM image comes in two parts: the actual executable ROM and another one (fetch) that contains instruction sequences to inject on hardware/software interrupts. Samples demonstrate majority of the capabilities of the tinysys SoC itself.
+For software, check the source/samples or source/ROMs/boot directories. The default ROM image comes in two parts: the actual executable ROM and another one (fetch) that contains instruction sequences to inject on hardware/software interrupts. Samples demonstrate majority of the capabilities of the tinysys SoC itself.
 
-# Device manual:
+# Device manual (WiP):
 - Populating the board
     - USB-C power and serial
     - SD card reader
