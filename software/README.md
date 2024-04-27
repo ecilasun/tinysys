@@ -2,12 +2,19 @@ This folder contains the riscvtool helper utility, the ROM image, sample code an
 
 # Prerequisites
 
+If you wish to actually run things on a real piece of hardware:
+- If you did not acquire / build one, please find the KiCad files for the board and go through the paces to build one
+- Next step is to acquire (or use an existing) QMTECH A7200T core board (I'll build my own single board computer later, promise!)
+
+If you wish to work on software:
 - To be able to compile your own executables, or ROM images, you'll need a prebuilt gcc risc-v toolchain from:
 https://www.embecosm.com/resources/tool-chain-downloads/
 - If you wish to build your own ROM images, you'll also need a working python3 install to make sure the waf build system functions as intended.
 - To be able to compile riscvtool, you'll also need a working cpp compiler targeting the platform you're going to build on (windows/linux/macos etc)
 - I advise using Visual Studio Code, but it's optional (all step below try to show both VSC and command line usage)
 - To compile the ROM image and program the ESP32-C6 device (our communication module) for the first time, you'll need to install ESP-IDF addon for your Visual Studio Code
+
+Or if you wish to simply browse / copy code or hardware details, feel free to do so, and don't forget to credit me or other people for their respective work!
 
 # Build riscvtool (optional)
 
@@ -80,5 +87,14 @@ Please refer to the [README.md](./samples/starthere/README.md) file in `starther
 
 NOTE: All software has been tested with and geared to use a gcc-riscv 32bit environment under Windows and Linux, but as always one might fall behind the other at times.
 
+# Acknowledgements
+
+I'd like to thank Wade Brainer for help in getting this device tested thoroughly in a live environment, and for the awesome saturated float to integer conversion instruction.
+
+Also thanks goes to Ben Stragnell for greate advice and pointers in how audio hardware should work.
+
+Further thanks goes to everyone who's build something on this machine at least once to put it through its paces.
+
+Peace.
 Copyright 2024 Engin Cilasun
 Please see license.txt file for details

@@ -1,4 +1,5 @@
-# Latest Gateware Build is: v1.00 for version 2F boards
+# Latest Gateware Build is: v1.00
+# Latest Board version is: 2F
 
 # Gateware binary
 The gateware binary contains latest version of the device.
@@ -8,46 +9,8 @@ If you have an older one, you can simply delete it, or use a `rom.bin` file with
 # Current device architecture
 This is the current architecture to use with gcc13 and higher: `rv32im_zicsr_zifencei_zfinx`
 
-# Changes compatible with version 2D boards:
-For version 2D boards<br>
-s1.04:<br>
-Single precision FPU added<br>
-s1.05:<br>
-Auto-byte masked DMA support added<br>
-saturate instruction by Wade Brainerd added<br>
-compressed instruction support removed<br>
-s1.06:<br>
-fixed the saturate instruction<br>
-s1.07<br>
-dropped core speed to 150MHz<br>
-made I$ return one clock earlier<br>
-overall device speed is slightly better (coremark 0.6667 versus coremark 0.60) <br>
-overall tight loop memory write speed is better (37.7mb/sec vs 35.4mb/sec)<br>
-s1.08<br>
-device now drops 'f' extension and used ZFix (floats in integer registers extension)<br>
-all samples and ROM changed to reflect this change<br>
-s1.09<br>
-audio hardware fixes as suggested by Ben Stragnell<br>
-updated built-in ROM with new audio halt on exit<br>
-memory locations modified for task data<br>
-small checks added to directory switch logic<br>
-added 5 second timeout between upload packages to not hang the device<br>
-r1.00<br>
-post-programming competition release version<br>
-OPL2 hardware removed<br>
-final stable release version of tinysys<br>
-
-# Changes compatible with version 2E boards:
-r1.01<br>
-Added GPIO hardware to link to the ESP32-C6-WROOM1-N8 on PCB version 2E<br>
-
-# Changes compatible with version 2F boards:
-<b>v1.00</b>
-This version adds two CPU cores, and has some changes to allow user tasks to be able to use the<br>
-second core via the task interface.<br>
-r1.06<br>
-Removed MAX3420 support for USB communication, offloaded to ESP32-C6 chip<br>
-Prepared the device for more than one CPU by adding an uncached, shared mailbox on the address bus<br>
+# ROM history
+r1.01: Initial release version<br>
 
 # Device gateware
 
