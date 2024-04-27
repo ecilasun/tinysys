@@ -1,5 +1,7 @@
 # tinysys
 
+![tinysys](./tinysys.jpg "tinysys")
+
 # What is it?
 
 Tinysys started out as a hobby project. It now has two RISC-V cores, and several other facilities listed below, and can happily run most software with minimal tweaks.
