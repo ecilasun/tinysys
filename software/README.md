@@ -2,22 +2,23 @@ This folder contains the riscvtool helper utility, the ROM image, sample code an
 
 # Prerequisites
 
-First, you'll need the risc-v toolchain from https://github.com/riscv/riscv-gnu-toolchain or its precompiled version (make sure to have support for 32bit ELF and rv32im variant)
-You'll also need a working Python so that the WAF build system can build the riscvtool.
+- To be able to compile your own executables, or ROM images, you'll need a prebuilt gcc risc-v toolchain from:
+https://www.embecosm.com/resources/tool-chain-downloads/
+- If you wish to build your own ROM images, you'll also need a working python3 install to make sure the waf build system functions as intended.
+- To be able to compile riscvtool, you'll also need a working cpp compiler targeting the platform you're going to build on (windows/linux/macos etc)
+- I advise using Visual Studio Code, but it's optional (all step below try to show both VSC and command line usage)
+- To compile the ROM image and program the ESP32-C6 device (our communication module) for the first time, you'll need to install ESP-IDF addon for your Visual Studio Code
 
-There's a convenience script in this directory that will automate this task for you. Simply run:
+# Build riscvtool (optional)
 
-```
-./buildrisctoolchain.sh
-```
+If you wish to build new ROM images to experiment with, you'll need riscvtool which will generate the ROM binary format required by tinysys. You'll need a working python3 install for the following steps to work.
 
-Please see the last section for risc-v compiler toolchain on Windows.
+To build in Visual Studio Code:
+- Open the 'software' directory in Visual Studio Code so that the root path is now /tinysys/software
+- Use the ctrl+shift+b shortcut in Visual Studio Code and select 'configure'
+- You can now ctrl+shift+b again select 'build', which will compile and generate the riscvtool for your platform
 
-# Build riscvtool
-
-For this purpose, you may first want to open the 'software' directory in Visual Studio Code so that the root path is now /tinysys/software.
-Before you can build the riscvtool itself, use the ctrl+shift+b shortcut in Visual Studio Code and select 'configure'. After this initial step you can use the same shortcut and select 'build'.
-Alternatively, you can use the following command sequences:
+Alternatively, you can use the following command line sequences:
 ```
 # To configure (required only once):
 python waf --out='build/release' configure
@@ -30,115 +31,54 @@ python waf clean
 ```
 PS: The build process for riscvtool is the same on Linux and Windows.
 
-# Build samples (and optionally the ROM image)
+# Building ELF executables
 
-To build the ROM file and the samples, either switch to the 'ROMs/boot' or 'samples' directory and use this on the command line:
+To build the samples, switch to 'software/samples' directory then simply type:
 
 ```
 make
 ```
 
-Note that some samples have a different path layout, for instance DOOM makefile is placed in 'samples/doom/src/riscv' or 'samples/imguidemo' which is where you'd run make from.
+This will produce .elf binaries in each of the sample folders, which you can then copy onto an sdcard and run on the device.
 
-Ordinarily you don't need to build ROM images. But if for some reason you'd like to do that, please note that you'll get two files generated: rom.mem and rom.bin.
-rom.mem file is the one to use in the hardware design (to be copied over the contents of the existing romimage.mem file) and the .bin file is the same binary in overlay format, which can be copied to the root folder of the SDCard and will replace the device ROM at device boot time.
+# Building ROM images
 
-The rom image generated from the fetch folder is a set of instructions to be used by the fetch unit when it encounters an interrupt or other event, and you should not have to change it in most cases (and I can't recommend that you do). If you really need to, please make sure to go over the hardware fetch unit and update the device to match the contents of the ROM image, with correct instruction offsets and sizes. Currently there's no automation to provide you with a correct offset & length table to aid in this, but is something that's planned for the future.
+NOTE: Ordinarily you don't need to build ROM images, there is one built into the gateware provided in the /gateware directory.
 
-# Adding tinysys as a generic serial device over USB - Linux
-
-Until an actual driver is built for this device, it can happily work as a generic serial device using the built-in generic USB serial driver. The device has no VID/PID assigned to it at this point, and currently uses VID:FFFF and PID:0001 for testing purposes, thus Linux won't pick a driver for it automatically.
-
-To add it as a generic USB serial devie, follow this process:
-
-- Unplug tinysys board's USB cable
-- Type following in a terminal
-```
-sudo nano /sys/bus/usb-serial/drivers/generic/new_id
-```
-- Enter & save the following VID/PID pair onto the new_id file
-```
-FFFF 0001
-```
-- Re-plug tinysys board's USB cable. Now that the device has been associated with the generic serial driver, it should enumerate automatically.
-- At this point, to see which ttyUSB device we're assigned to, type the following
-```
- sudo dmesg
-```
-- This will return a line similar to: "generic converter now attached to ttyUSB0"
-- You can now start PuTTY or another serial terminal program, connect to ttyUSB* port provided above, and send commands and receive responses from the device.
-
-NOTE: Run the following to diagnose if the device is indeed present and visible by the system:
-```
-lsusb
-```
-You should see "FFFF:0001 ENGIN tinysys usb serial" as part of the output
-
-NOTE:
-If for some reason the path to generic usb serial driver isn't there try the following:
-```
-sudo modprobe usbserial vendor=0xFFFF product=0x0001
-logout/login
-then check the path to see if it's there
-```
-
-# Adding tinysys as a generic serial device over USB - Windows
-
-This is rather simpler on windows. All one needs to do is plug in the device and find it in the list under the Device Manager control panel. It should be displayed as 'tinysys USB serial'
-Once you locate the device, right click and select Update Driver, then Browse my computer for drivers, and finally Let me pick from a list of available drivers on my computer.
-
-What we're looking for is now the generic usb serial driver, which is listed under USB Serial Device / Microsoft / USB Serial Device. Select this, then hit Next. If any warning pop up, accept and you should have the device ready. This will be confirmed by a USB device plug sound, and you should now see a USB Serial Device (COMx) listed under Ports, where x is usually COM9 on Windows 11
-
-NOTE: The serial device will be only accepting 115200 bauds,8bits,1stopbit,noparity settings and may not function with any other, even though you change the settings on the control panel. This is because the device side driver is not going to cope with traffic throttling to keep it small and simple.
-
-# Uploading executables to the device - WiP
-
-To upload files to the device, first make sure you've got serial communication working. This can be tested by setting up the serial driver for the board as described above, then starting a terminal connected to that port set to 115200 baud, 8 bits, 1 stop bit, no parity.
-After the terminal connects to the board, you can try typing 'help' and the display attached to the board should display the help text, while also echoing back what you're typing to the terminal.
-
-Once the above is confirmed working, uploading binaries is straighforward. For example on Windows, simply run a command similar to the following, with the port and file names set to the ones on your local device:
+This is similar to building the samples, simply switch to 'ROMs/boot' directory and type:
 
 ```
-upload.bat test.elf
-```
-or for Linux, use:
-```
-./upload.sh test.elf
+make
 ```
 
-If you have issues running the above, you can always use the following on Windows:
-```
-build\release\riscvtool.exe test.elf -sendfile \\.\COM9
-```
-or this one on Linux:
-```
-./build/release/riscvtool test.elf -sendfile /dev/ttyUSB0
-```
+This will give you one .mem file, and .elf file and a .bin file. The .elf file is not useful as a ROM image in this case, so you can ignore it.
 
-During the upload process the device will show the upload progress, followed by a success or failure notice. The file is not written to disk if the transfer was somehow incomplete or had an error, so the previous binary with the same name should still be intact in those situations.
+The .bin image goes onto the sdcard, inside the '/boot' directory at the root of your FAT32 formatted sdcard. This image will be loaded by the resident ROM image and the device will chain to the code you've placed in this file, which is essentially how an OS update works for tinysys.
 
-NOTE: Please note that whatever path you provide as part of the file name will become a full path on the device. For instance if you run './upload.sh modplayer/modplayer.elf' it'll be copied to 'SD:\modplayer\modplayer.elf'
+The .mem image is the actual physical ROM version of the same binary. If you don't plan to use an sdcard, the contents of the .mem file should be pasted over the 'Memory File/romimage.mem' file you can find in the project view. After replacing it, don't forget to 'Reset Runs' / 'Generate Bitstream' to generate your new gateware. (I recommend doing development using the .bin image and only replace the .mem once you're sure it's working to avoid lengthy development times, gateware usually takes about 20 minutes each run on a modetately fast desktop PC)
+
+# Communicating with tinysys
+
+Tinysys uses an ESP32-C6 to communucate with the outside world. For this to function properly, the ROM image for the ESP chip has to be build. You need first plug in the previously-unprogrammed tinysys device, then open 'software/ESP32C6/defaultrom' in Visual Studio Code, and Hit the ESP-IDF 'Build, Flash and Monitor' button (looks like a little flame) to build and deploy it to the device.
+
+# Default SDCard layout
+
+Tinysys OS expects to find certain files in certain paths to function as expected. For instance, the 'rom.bin' file is expected to be in the '/boot' directory at the root of SDCard. Tinysys OS supports commands that can be executed from any directory (sort of a fixed $PATH if you will), and this is always expected to be 'sys/bin' Anything in that directory can be run from anywhere. Therefore it's a good place to put OS utilities or any used code that you might want to run from any path.
+
+Therefore the default layout is:
+
+sd:/sys/bin/... <- utility binaries, accessible from anywhere
+sd:/boot/rom.bin <- ROM overlay is always located here
 
 # Creating your own project
 
-To make your own project, the recommended way is to copy the `starthere` sample directory to a new one and make your changes as needed. In that directory you will find a Makefile, and upload shell script/batch file to help get you started.
+To make your own project, the recommended way is to copy the 'starthere' sample directory to a new one and make your changes as needed. In that directory you will find a Makefile, and upload shell script/batch file to help get you started.
 
 Please refer to the [README.md](./samples/starthere/README.md) file in `starthere` folder for more assistance.
 
-# More details on RISC-V compiler toolchain
-
-NOTE: If the RISC-V compiler binaries (riscv64-unknown-elf-gcc or riscv64-unknown-elf-g++) are missing from your system, please follow the instructions at https://github.com/riscv/riscv-gnu-toolchain
-It is advised to build the rv32i / rv32im / rv32imf libraries
-
-If you want to work on Windows and don't want to compile the toolchain, you can use the following link and download the latest RISC-V Embedded stable release compilers -> gcc13.2.0 (Windows) zip file from the following page:
-
-https://www.embecosm.com/resources/tool-chain-downloads/
-
-Unpack the bin, include, lib etc directories from the above archive to a folder called C:\gcc\risc-v and make sure to have C:\gcc\risc-v\bin added to your %PATH%. After this point you can use these compilers to generate binaries for tinysys on Windows.
-
 # Other notes
 
-Be advised that all software has been tested with and geared to use a gcc-riscv 32bit environment under Linux, therefore any compiler changes and/or bit width changes are untested at this moment, as well as some glitches / mismatches that might occur under Windows setups.
+NOTE: All software has been tested with and geared to use a gcc-riscv 32bit environment under Windows and Linux, but as always one might fall behind the other at times.
 
 Copyright 2024 Engin Cilasun
 Please see license.txt file for details

@@ -24,4 +24,4 @@ SOFTWARE.
 
 -------------------
 
-Please see respective source files/readme.txt files for code used from other opensource projects
+Please see respective source files & readme.txt files for code used from other opensource projects
