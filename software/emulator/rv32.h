@@ -11,17 +11,23 @@ enum CPUState{
 	ECPURetire
 };
 
-#define OP_OP		    0b0110011
-#define OP_OP_IMM 	    0b0010011
-#define OP_AUIPC	    0b0010111
-#define OP_LUI		    0b0110111
-#define OP_STORE	    0b0100011
-#define OP_LOAD		    0b0000011
-#define OP_JAL		    0b1101111
-#define OP_JALR		    0b1100111
-#define OP_BRANCH	    0b1100011
-#define OP_FENCE	    0b0001111
-#define OP_SYSTEM	    0b1110011
+#define OP_OP			0b0110011
+#define OP_OP_IMM		0b0010011
+#define OP_AUIPC		0b0010111
+#define OP_LUI			0b0110111
+#define OP_STORE		0b0100011
+#define OP_LOAD			0b0000011
+#define OP_JAL			0b1101111
+#define OP_JALR			0b1100111
+#define OP_BRANCH		0b1100011
+#define OP_FENCE		0b0001111
+#define OP_SYSTEM		0b1110011
+
+#define OPCODE_FLOAT_OP		0b1010011
+#define OPCODE_FLOAT_MADD	0b1000011
+#define OPCODE_FLOAT_MSUB	0b1000111
+#define OPCODE_FLOAT_NMSUB	0b1001011
+#define OPCODE_FLOAT_NMADD	0b1001111
 
 // Integer base
 #define ALU_NONE		0
