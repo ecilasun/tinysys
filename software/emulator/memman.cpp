@@ -61,6 +61,7 @@ uint32_t CMemMan::FetchInstruction(uint32_t address)
 	uint32_t *wordmem = (uint32_t*)m_devicemem;
 
 	// TODO: Handle interrupts and route to different code path as with the actual hardware
+	//  irqreq[1:0], sie, cpuresetreq
 
 	instruction = wordmem[address>>2];
 	return instruction;

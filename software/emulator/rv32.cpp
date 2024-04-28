@@ -387,23 +387,29 @@ bool CRV32::Tick(CClock& cpuclock)
 					case OP_SYSTEM:
 						if (m_decoded.m_f12 == F12_CDISCARD)
 						{
+							// cacheop=0b01
 						}
 						else if (m_decoded.m_f12 == F12_CFLUSH)
 						{
+							// cacheop=0b11
 						}
-						else if (m_decoded.m_f12 == F12_MRET)
+						/*else if (m_decoded.m_f12 == F12_MRET)
 						{
+							// This is handled by fetch unit in hardware
 						}
 						else if (m_decoded.m_f12 == F12_WFI)
 						{
+							// This is handled by fetch unit in hardware
 						}
 						else if (m_decoded.m_f12 == F12_EBREAK)
 						{
+							// This is handled by fetch unit in hardware
 						}
 						else if (m_decoded.m_f12 == F12_ECALL)
 						{
-						}
-						else
+							// This is handled by fetch unit in hardware
+						}*/
+						else // CSROP
 						{
 							// Read previous value
 							uint32_t base = m_idx == 0 ? CSR0BASE : CSR1BASE;
