@@ -288,12 +288,12 @@ bool CRV32::Tick(CClock& cpuclock)
 		// We hack our way around with these CSR register
 		// Normally they're shadowed to hardware counters
 		// in the device so we don't have to emulate any latency here
-		m_mem->m_csrmem[CSR_CYCLELO] = (uint32_t)(m_cyclecounter&0x00000000FFFFFFFFU);
-		m_mem->m_csrmem[CSR_CYCLEHI] = (uint32_t)((m_cyclecounter&0xFFFFFFFF00000000U) >> 32);
-		m_mem->m_csrmem[CSR_RETILO] = (uint32_t)(m_retired&0x00000000FFFFFFFFU);
-		m_mem->m_csrmem[CSR_RETIHI] = (uint32_t)((m_retired&0xFFFFFFFF00000000U) >> 32);
-		m_mem->m_csrmem[CSR_TIMELO] = (uint32_t)(m_wallclock&0x00000000FFFFFFFFU);
-		m_mem->m_csrmem[CSR_TIMEHI] = (m_wallclock&0xFFFFFFFF00000000U) >> 32;
+		m_mem->m_csrmem[m_idx][CSR_CYCLELO] = (uint32_t)(m_cyclecounter&0x00000000FFFFFFFFU);
+		m_mem->m_csrmem[m_idx][CSR_CYCLEHI] = (uint32_t)((m_cyclecounter&0xFFFFFFFF00000000U) >> 32);
+		m_mem->m_csrmem[m_idx][CSR_RETILO] = (uint32_t)(m_retired&0x00000000FFFFFFFFU);
+		m_mem->m_csrmem[m_idx][CSR_RETIHI] = (uint32_t)((m_retired&0xFFFFFFFF00000000U) >> 32);
+		m_mem->m_csrmem[m_idx][CSR_TIMELO] = (uint32_t)(m_wallclock&0x00000000FFFFFFFFU);
+		m_mem->m_csrmem[m_idx][CSR_TIMEHI] = (m_wallclock&0xFFFFFFFF00000000U) >> 32;
 
 		++m_cyclecounter;
 		if (m_cyclecounter%15 == 0) // 150MHz vs 10Mhz
@@ -406,11 +406,14 @@ bool CRV32::Tick(CClock& cpuclock)
 						else
 						{
 							// Read previous value
-							uint32_t csrprevval = m_mem->FetchDataWord(CSRBASE + m_decoded.m_csroffset);
+							uint32_t base = m_idx == 0 ? CSR0BASE : CSR1BASE;
+							uint32_t csraddress = base + (m_decoded.m_csroffset << 2);
+							uint32_t csrprevval = m_mem->FetchDataWord(csraddress);
 
 							// Keep it in a register
 							rwen = 1;
 							rdin = csrprevval;
+							rwaddress = csraddress;
 
 							// Apply operation
 							wstrobe = 0b1111;

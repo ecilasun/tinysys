@@ -13,23 +13,30 @@ CMemMan::CMemMan()
 {
 	// Warning! Allocating 256Mbytes in one go!
 	m_devicemem = malloc(256*1024*1024);
-	m_csrmem = (uint32_t*)malloc(4*1024*sizeof(uint32_t));
+	m_csrmem[0] = (uint32_t*)malloc(4 * 1024 * sizeof(uint32_t));
+	m_csrmem[1] = (uint32_t*)malloc(4 * 1024 * sizeof(uint32_t));
 
 	// Clear memory
-	memset(m_devicemem, 0, 256*1024*1024);
-	memset(m_csrmem, 0, 4*1024*sizeof(uint32_t));
+	memset(m_devicemem, 0, 256 * 1024 * 1024);
+	memset(m_csrmem[0], 0, 4 * 1024 * sizeof(uint32_t));
+	memset(m_csrmem[1], 0, 4 * 1024 * sizeof(uint32_t));
 
 	// Set default CSR contents
-	m_csrmem[CSR_TIMECMPLO] = 0xFFFFFFFF;
-	m_csrmem[CSR_TIMECMPHI] = 0xFFFFFFFF;
-	m_csrmem[CSR_MISA] = 0x00801100;
-	m_csrmem[CSR_MARCHID] = 0x80000000;
+	m_csrmem[0][CSR_TIMECMPLO] = 0xFFFFFFFF;
+	m_csrmem[0][CSR_TIMECMPHI] = 0xFFFFFFFF;
+	m_csrmem[0][CSR_MISA] = 0x00801100;
+	m_csrmem[0][CSR_MARCHID] = 0x80000000;
+	m_csrmem[1][CSR_TIMECMPLO] = 0xFFFFFFFF;
+	m_csrmem[1][CSR_TIMECMPHI] = 0xFFFFFFFF;
+	m_csrmem[1][CSR_MISA] = 0x00801100;
+	m_csrmem[1][CSR_MARCHID] = 0x80000000;
 }
 
 CMemMan::~CMemMan()
 {
-	free(m_csrmem);
-    free(m_devicemem);
+	free(m_csrmem[0]);
+	free(m_csrmem[1]);
+	free(m_devicemem);
 }
 
 void CMemMan::Tick(CClock& cpuclock)
@@ -65,13 +72,13 @@ uint32_t CMemMan::FetchDataWord(uint32_t address)
 		// Memory mapped devices
 		// See header file for device map
 
-		uint32_t dev = (address&0xF000) >> 12;
+		uint32_t dev = (address&0xF0000) >> 16;
 		switch(dev)
 		{
 			case 0:
 			{
-				// DEVICE_TRUC
-				printf("<-TRU\n");
+				// DEVICE_GPIO
+				printf("<-GPIO\n");
 				data = 0;
 			}
 			break;
@@ -91,7 +98,7 @@ uint32_t CMemMan::FetchDataWord(uint32_t address)
 			break;
 			case 3:
 			{
-				// DEVICE_SPIC
+				// DEVICE_SDCC
 				data = m_sdcard.Read(address);
 			}
 			break;
@@ -111,8 +118,8 @@ uint32_t CMemMan::FetchDataWord(uint32_t address)
 			break;
 			case 6:
 			{
-				// DEVICE_USBC
-				printf("<-USB-C\n");
+				// DEVICE_USBA
+				printf("<-USB-A\n");
 				data = 0;
 			}
 			break;
@@ -125,19 +132,35 @@ uint32_t CMemMan::FetchDataWord(uint32_t address)
 			break;
 			case 8:
 			{
-				// DEVICE_USBA
-				printf("<-USB-A\n");
+				// DEVICE_MAIL
+				printf("<-MAIL\n");
 				data = 0;
 			}
 			break;
 			case 9:
 			{
-				// DEVICE_CSR0
-				uint32_t csrindex = address&0xFFF;
+				// DEVICE_UART
+				printf("<-UART\n");
+				data = 0;
+			}
+			break;
+			case 0xA:
+			{
 				// All CSRs acts like regular memory on emulator
 				// CPU fills in the immutable data
-				data = m_csrmem[csrindex];
+				uint32_t csrindex = (address>>2) & 0xFFF;
+				data = m_csrmem[0][csrindex];
+				printf("0x%.8x<-CSR0[%d]\n", data, csrindex);
 			}
+			break;
+			case 0xB:
+			{
+				// DEVICE_CSR1
+				uint32_t csrindex = (address>>2) & 0xFFF;
+				data = m_csrmem[1][csrindex];
+				printf("0x%.8x<-CSR1[%d]\n", data, csrindex);
+			}
+			break;
 			break;
 		}
 	}
@@ -159,70 +182,86 @@ void CMemMan::WriteDataWord(uint32_t address, uint32_t word, uint32_t wstrobe)
 		// Memory mapped devices
 		// See header file for device map
 
-		uint32_t dev = (address&0xF000) >> 12;
+		uint32_t dev = (address&0xF0000) >> 16;
 		switch(dev)
 		{
 			case 0:
 			{
-				// DEVICE_TRUC
-				printf("TRU:%.8x\n", word);
+				// DEVICE_GPIO
+				printf("GPIO@0x%.8X<-0x%.8x\n", address, word);
 			}
 			break;
 			case 1:
 			{
 				// DEVICE_LEDS
-				printf("LED:%.8x\n", word);
+				printf("LEDS@0x%.8X<-0x%.8x\n", address, word);
 			}
 			break;
 			case 2:
 			{
 				// DEVICE_VPUC
-				printf("VPU:%.8x\n", word);
+				printf("VPUC@0x%.8X<-0x%.8x\n", address, word);
 			}
 			break;
 			case 3:
 			{
-				// DEVICE_SPIC
+				// DEVICE_SDCC
 				m_sdcard.Write(address, word);
+				printf("SDCC@0x%.8X<-0x%.8x\n", address, word);
 			}
 			break;
 			case 4:
 			{
 				// DEVICE_XADC
-				printf("ADC:%.8x\n", word);
+				printf("XADC@0x%.8X<-0x%.8x\n", address, word);
 			}
 			break;
 			case 5:
 			{
 				// DEVICE_DMAC
-				printf("DMA:%.8x\n", word);
+				printf("DMAC@0x%.8X<-0x%.8x\n", address, word);
 			}
 			break;
 			case 6:
 			{
-				// DEVICE_USBC
-				printf("USB-C:%.8x\n", word);
+				// DEVICE_USBA
+				printf("USB-A@0x%.8X<-0x%.8x\n", address, word);
 			}
 			break;
 			case 7:
 			{
 				// DEVICE_APUC
-				printf("APU:%.8x\n", word);
+				printf("APUC@0x%.8X<-0x%.8x\n", address, word);
 			}
 			break;
 			case 8:
 			{
-				// DEVICE_USBA
-				printf("USB-A:%.8x\n", word);
+				// DEVICE_MAIL
+				printf("MAIL@0x%.8X<-0x%.8x\n", address, word);
 			}
 			break;
 			case 9:
 			{
-				// DEVICE_CSR0
-				uint32_t csrindex = address&0xFFF;
+				// DEVICE_UART
+				printf("UART@0x%.8X<-0x%.8x\n", address, word);
+			}
+			break;
+			case 0xA:
+			{
 				// All CSRs acts like regular memory on emulator
 				// CPU fills in the immutable data
-				m_csrmem[csrindex] = word;
+				uint32_t csrindex = (address>>2) & 0xFFF;
+				m_csrmem[0][csrindex] = word;
+				printf("CSR0[%d]<-0x%.8x\n", csrindex, word);
+			}
+			break;
+			case 0xB:
+			{
+				// All CSRs acts like regular memory on emulator
+				// CPU fills in the immutable data
+				uint32_t csrindex = (address>>2) & 0xFFF;
+				m_csrmem[1][csrindex] = word;
+				printf("CSR1[%d]<-0x%.8x\n", csrindex, word);
 			}
 			break;
 		}
@@ -240,5 +279,7 @@ void CMemMan::WriteDataWord(uint32_t address, uint32_t word, uint32_t wstrobe)
 
 		// Mask and mix incoming and old data
 		wordmem[address>>2] = (olddata&invfullmask) | (word&fullmask);
+
+		printf("RAM@0x%.8X<-0x%.8x\n", address, word);
 	}
 }

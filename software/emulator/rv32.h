@@ -57,7 +57,8 @@ enum CPUState{
 #define F12_EBREAK     0x001
 #define F12_ECALL      0x000
 
-#define CSRBASE 0x8000A000
+#define CSR0BASE 0x800A0000
+#define CSR1BASE 0x800B0000
 
 #if defined(CAT_WINDOWS) || defined(CAT_LINUX)
 #define FINLINE __forceinline
@@ -137,6 +138,9 @@ public:
 	uint64_t m_cyclecounter = 0;
 	uint64_t m_wallclock = 0;
 	uint64_t m_retired = 0;
+
+	// HART0 by default
+	uint32_t m_idx = 0;
 
     uint32_t m_resetvector = 0x0FFE0000;
 

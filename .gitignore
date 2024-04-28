@@ -26,3 +26,6 @@ software/host/.lock*
 software/emulator/.waf3-**
 software/ESP32C6/generic_gpio/build/**
 software/ESP32C6/defaultrom/build/**
+software/emulator/emulator/emulator/x64/**
+software/emulator/emulator/x64/**
+software/emulator/emulator/.vs/**

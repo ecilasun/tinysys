@@ -11,7 +11,12 @@ bool CEmulator::Reset(const char* romFile)
 
     if (romFile)
     {
-        FILE *fp = fopen(romFile, "rb");
+#if defined(CAT_WINDOWS)
+        FILE* fp;
+        errno_t x = fopen_s(&fp, romFile, "rb");
+#else
+        FILE* fp = fopen(romFile, "rb");
+#endif
         if (!fp)
             return false;
         fseek(fp, 0, SEEK_END);
