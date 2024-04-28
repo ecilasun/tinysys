@@ -57,9 +57,11 @@ void CMemMan::CopyROM(uint32_t resetvector, uint8_t *bin, uint32_t size)
 
 uint32_t CMemMan::FetchInstruction(uint32_t address)
 {
-	// TODO: Return from I$ instead for consistency of simulation
 	uint32_t instruction;
 	uint32_t *wordmem = (uint32_t*)m_devicemem;
+
+	// TODO: Handle interrupts and route to different code path as with the actual hardware
+
 	instruction = wordmem[address>>2];
 	return instruction;
 }
