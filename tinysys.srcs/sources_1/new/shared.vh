@@ -135,6 +135,12 @@
 //`define INSTR_CSDSP		5'b11110
 
 // ------------------------------------------
+// Manually assembled instructions
+// ------------------------------------------
+
+`define ERESET_MTVEC		32'h30504073
+
+// ------------------------------------------
 // Sub-instructions
 // ------------------------------------------
 
@@ -214,6 +220,7 @@
 `define F7_FMVXW       7'b1110000
 `define F7_FMVWX       7'b1111000
 
+`define F12_RESET      12'hFFF
 `define F12_CDISCARD   12'hFC2
 `define F12_CFLUSH     12'hFC0
 `define F12_MRET       12'h302

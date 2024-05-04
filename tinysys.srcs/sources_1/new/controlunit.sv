@@ -32,7 +32,7 @@ logic [31:0] PC;
 logic [31:0] immed;
 logic [31:0] csrprevval;
 logic [15:0] instrOneHotOut;
-logic [1:0] sysop;
+logic [3:0] sysop;
 logic [11:0] csroffset;
 logic [4:0] rs1;
 logic [4:0] rs2;
@@ -220,9 +220,10 @@ typedef enum logic [4:0] {
 	STORE, LOAD, DISPATCH,
 	FPUOP, FUSEDMATHSTALL, FLOATMATHSTALL,
 	SYSOP, SYSWBACK, SYSWAIT,
-	CSROPS, WCSROP,
-	SYSCDISCARD, SYSCFLUSH, WCACHE} controlunitmode;
+	CSROPS, SYSCDISCARD, SYSCFLUSH,
+	SYSRESET, WCSROP, WCACHE} controlunitmode;
 controlunitmode ctlmode = INIT;
+controlunitmode sysmode = INIT;
 
 //logic cpurunning;
 always @(posedge aclk) begin
@@ -331,6 +332,10 @@ always @(posedge aclk) begin
 		pendingload <= 1'b0;
 		pendingwrite <= 1'b0;
 		wbdin <= 32'd0;
+		A <= 32'd0;
+		B <= 32'd0;
+		D <= 32'd0;
+		E <= 32'd0;
 		fmaddstrobe <= 1'b0;	// Stop floating point strobe
 		fmsubstrobe <= 1'b0;
 		fnmsubstrobe <= 1'b0;
@@ -349,6 +354,7 @@ always @(posedge aclk) begin
 		fltstrobe <= 1'b0;
 		flestrobe <= 1'b0;
 		ctlmode <= INIT;
+		sysmode <= INIT;
 	end else begin
 		btready <= 1'b0;	// Stop branch target ready strobe
 		ififore <= 1'b0;	// Stop instruction fifo read enable strobe
@@ -399,7 +405,8 @@ always @(posedge aclk) begin
 					instrOneHotOut,
 					bluop, aluop,
 					rs1, rs2, rs3, rd,
-					immed, PC} <= ififodout;
+					immed, PC[31:2]} <= ififodout;
+				PC[1:0] <= 2'b00;
 
 				// HAZARD#0: Wait for fetch fifo to populate
 				ififore <= (ififovalid && ~ififoempty);
@@ -659,10 +666,10 @@ always @(posedge aclk) begin
 	
 			SYSOP: begin
 				unique case (sysop)
-					2'b00,
-					2'b11 : ctlmode <= CSROPS;
-					2'b10 : ctlmode <= SYSCDISCARD;
-					2'b01 : ctlmode <= SYSCFLUSH;
+					4'b0100 : begin ctlmode <= CSROPS;		sysmode <= SYSRESET; end
+					4'b0010 : begin ctlmode <= SYSCDISCARD;	sysmode <= WCACHE; end
+					4'b0001 : begin ctlmode <= SYSCFLUSH;	sysmode <= WCACHE; end
+					default : begin ctlmode <= CSROPS;		sysmode <= WCSROP; end
 				endcase
 			end
 	
@@ -670,7 +677,7 @@ always @(posedge aclk) begin
 				if (~pendingwrite || m_ibus.wdone) begin
 					m_ibus.dcacheop <= 2'b01; // {nowb,iscachecmd}
 					m_ibus.cstrobe <= 1'b1;
-					ctlmode <= WCACHE;
+					ctlmode <= sysmode;
 				end else begin
 					// HAZARD#3: Wait for pending read or write before cache discard
 					ctlmode <= SYSCDISCARD;
@@ -681,18 +688,11 @@ always @(posedge aclk) begin
 				if (~pendingwrite || m_ibus.wdone) begin
 					m_ibus.dcacheop <= 2'b11; // {wb,iscachecmd}
 					m_ibus.cstrobe <= 1'b1;
-					ctlmode <= WCACHE;
+					ctlmode <= sysmode;
 				end else begin
 					// HAZARD#3: Wait for pending read or write before cache flush
 					ctlmode <= SYSCFLUSH;
 				end
-			end
-	
-			WCACHE: begin
-				// Wait for pending cache operation to complete and unblock fetch unit
-				btarget <= adjacentPC;
-				btready <= m_ibus.cdone;
-				ctlmode <= m_ibus.cdone ? READINSTR : WCACHE;
 			end
 	
 			CSROPS: begin
@@ -700,13 +700,29 @@ always @(posedge aclk) begin
 					// 4 byte aligned
 					m_ibus.raddr <= {CSRBASE, 2'b00, csroffset, 2'b00};
 					m_ibus.rstrobe <= 1'b1;
-					ctlmode <= WCSROP;
+					ctlmode <= sysmode;
 				end else begin
 					// HAZARD#3: Wait for pending write before CSR read
 					ctlmode <= CSROPS;
 				end
 			end
-	
+
+			SYSRESET: begin
+				if (m_ibus.rdone) begin
+					btarget <= m_ibus.rdata;
+					btready <= 1'b1;
+					ctlmode <= READINSTR;
+				end
+				ctlmode <= m_ibus.rdone ? READINSTR : SYSRESET;
+			end
+
+			WCACHE: begin
+				// Wait for pending cache operation to complete and unblock fetch unit
+				btarget <= adjacentPC;
+				btready <= m_ibus.cdone;
+				ctlmode <= m_ibus.cdone ? READINSTR : WCACHE;
+			end
+
 			WCSROP: begin
 				if (m_ibus.rdone) begin
 					csrprevval <= m_ibus.rdata;
