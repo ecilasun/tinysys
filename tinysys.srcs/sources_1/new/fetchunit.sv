@@ -31,7 +31,6 @@ module fetchunit #(
 // Internal states
 // --------------------------------------------------
 
-logic resetrequest;
 logic fetchena;
 logic [3:0] wficount;
 logic [31:0] prevPC;
@@ -178,7 +177,6 @@ fetchstate postInject = FETCH;	// Where to go after injection ends
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
-		resetrequest <= 1'b0;
 		PC <= 32'd0;
 		prevPC <= 32'd0;
 		emitPC <= 32'd0;
@@ -192,32 +190,20 @@ always @(posedge aclk) begin
 		ififowr_en <= 1'b0;
 		icacheflush <= 1'b0;
 
-		if (cpuresetreq) begin
-			// External reset request
-			// This will cause the following FETCH to branch to mtvec
-			// instead of resuming normal operation
-			resetrequest <= 1'b1;
-		end
-
 		unique case(fetchmode)
 			INIT: begin
 				PC <= RESETVECTOR;
-				fetchena <= romReady;
-				fetchmode <= romReady ? FETCH : INIT;
+				// We do not proceed until the instruction fifo has been drained (soft reboot)
+				// or the ROM has been copied over (hard reboot)
+				fetchena <= romReady && ififoempty;
+				fetchmode <= (romReady && ififoempty) ? FETCH : INIT;
 			end
 
 			FETCH: begin
-				if (resetrequest) begin
-					resetrequest <= 1'b0;
-					PC <= mtvec;
-					fetchena <= 1'b1;
-					fetchmode <= FETCH;
-				end else begin
-					// Stalls when instruction fifo is full (unlikely but possible)
-					fetchmode <= (rready && ~ififofull) ? STREAMOUT : FETCH;
-					IR <= instruction;
-					prevPC <= PC;
-				end
+				// Stalls when instruction fifo is full (unlikely but possible)
+				fetchmode <= (rready && ~ififofull) ? STREAMOUT : FETCH;
+				IR <= instruction;
+				prevPC <= PC;
 			end
 
 			STREAMOUT: begin
@@ -418,6 +404,13 @@ always @(posedge aclk) begin
 				fetchmode <= ((|irqReq) || wficount == 4'd0) ? FETCH : WFI;
 			end
 		endcase
+
+		if (cpuresetreq) begin
+			// This will cause this core to jump directly to the reset vector,
+			// after waiting for the pendin instructions to drain from the FIFO
+			fetchmode <= INIT;
+		end
+
 	end
 end
 

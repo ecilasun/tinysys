@@ -184,19 +184,6 @@ uint32_t ExecuteCmd(char *_cmd)
 	{
 		VPUConsoleClear(kernelgfx);
 	}
-	else if (!strcmp(command, "resetcpu"))
-	{
-		const char *whichcpu = strtok(NULL, " ");
-		if (!whichcpu)
-			kprintf("usage: resetcpu cpuid\n");
-		else
-		{
-			int cpuid = atoi(whichcpu);
-			if (cpuid == 0)
-				E32SetupCPU(0, (void*)0x0FFE0000);
-			E32ResetCPU(cpuid);
-		}
-	}
 	else if (!strcmp(command, "reboot"))
 	{
 		// TODO: Instead, talk to ESP32-C6 to get it to hard-reboot us
@@ -206,11 +193,12 @@ uint32_t ExecuteCmd(char *_cmd)
 		VPUSetVMode(kernelgfx, EVS_Disable);
 		// Remove watermark since we might have deleted / changed the rom image before reboot
 		write_csr(0xFF0, 0x0);
-		// Jump to start of ROM for CPU#0, which then reboots CPU#1 accordingly
-		asm volatile(
-			"li s0, 0x0FFE0000;"
-			"jalr s0;"
-		);
+
+		// Reset to default ROM entry points without override (thus ending up in main())
+		E32SetupCPU(1, (void*)0x0);
+		E32ResetCPU(1);
+		E32SetupCPU(0, (void*)0x0);
+		E32ResetCPU(0);
 	}
 	else if (!strcmp(command, "mem"))
 	{
@@ -366,7 +354,6 @@ uint32_t ExecuteCmd(char *_cmd)
 			kprintf(" kill pid cpu | Kill process with id pid on CPU    \n");
 			kprintf(" mount        | Mount drive sd:                    \n");
 			kprintf(" proc cpu     | Show process info for given CPU    \n");
-			kprintf(" resetcpu cpu | Hard reset given CPU               \n");
 			kprintf(" runon cpu    | Run ELF files on given cpu         \n");
 			kprintf(" unmount      | Unmount drive sd:                  \n");
 		}
@@ -811,7 +798,7 @@ int main()
 	LEDSetState(0xF);
 	ClearTaskMemory();
 
-	// Reset and wake up all CPUs, main CPU last
+	// Reset and wake up all CPUs again, this time with their correct entry points
 	E32SetupCPU(1, UserMain);
 	E32ResetCPU(1);
 	E32SetupCPU(0, KernelMain);

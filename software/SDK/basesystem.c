@@ -98,11 +98,11 @@ uint32_t E32ReadMemMappedCSR(uint32_t _hart, uint32_t _csr)
 void E32SetupCPU(uint32_t hartid, void *workerThread)
 {
 	// Set up reset vector as if it's an ISR
-	E32WriteMemMappedCSR(hartid, CSR_MTVEC, (uint32_t)workerThread);
+	E32WriteMemMappedCSR(hartid, CSR_MSCRATCH, (uint32_t)workerThread);
 }
 
 void E32ResetCPU(uint32_t hartid)
 {
-	// This triggers a hardware jump to mtvec after all queued instructions execute
+	// This triggers a hardware jump to mscratch after all queued instructions execute
 	E32WriteMemMappedCSR(hartid, CSR_CPURESET, 0x1);
 }

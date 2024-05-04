@@ -10,6 +10,15 @@ extern "C"
 			// If we're loaded from storage as a ROM overlay, this ensures
 			// that the I$ sees the new set of instructions.
 			"fence.i;"							// Invalidate I$
+
+			// Detect boot override address in mscratch register
+			"csrr a3, mscratch;"				// Check if we have a boot addres override (defaults to zero on hard reset)
+			"beqz a3, _defaultboot;"			// Skip if it's zero
+			"jalr a3;"							// Otherwise branch to the override code
+			"j _freezecore;"					// Lock just in case we manage to return from override
+
+			// Normal boot procedure
+			"_defaultboot: "
 			"csrw mie,0;"						// No external (hardware) interrupts
 			"csrw mstatus,0;"					// Disable all interrupts (mstatus:mie=0)
 			"csrr a3, mhartid;"					// Check the index of this processor
