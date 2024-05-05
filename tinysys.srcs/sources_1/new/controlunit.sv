@@ -32,7 +32,7 @@ logic [31:0] PC;
 logic [31:0] immed;
 logic [31:0] csrprevval;
 logic [15:0] instrOneHotOut;
-logic [3:0] sysop;
+logic [1:0] sysop;
 logic [11:0] csroffset;
 logic [4:0] rs1;
 logic [4:0] rs2;
@@ -221,7 +221,8 @@ typedef enum logic [4:0] {
 	FPUOP, FUSEDMATHSTALL, FLOATMATHSTALL,
 	SYSOP, SYSWBACK, SYSWAIT,
 	CSROPS, SYSCDISCARD, SYSCFLUSH,
-	SYSRESET, WCSROP, WCACHE} controlunitmode;
+	WCSROP, WCACHE} controlunitmode;
+
 controlunitmode ctlmode = INIT;
 controlunitmode sysmode = INIT;
 
@@ -405,8 +406,7 @@ always @(posedge aclk) begin
 					instrOneHotOut,
 					bluop, aluop,
 					rs1, rs2, rs3, rd,
-					immed, PC[31:2]} <= ififodout;
-				PC[1:0] <= 2'b00;
+					immed, PC} <= ififodout;
 
 				// HAZARD#0: Wait for fetch fifo to populate
 				ififore <= (ififovalid && ~ififoempty);
@@ -666,9 +666,8 @@ always @(posedge aclk) begin
 	
 			SYSOP: begin
 				unique case (sysop)
-					4'b0100 : begin ctlmode <= CSROPS;		sysmode <= SYSRESET; end
-					4'b0010 : begin ctlmode <= SYSCDISCARD;	sysmode <= WCACHE; end
-					4'b0001 : begin ctlmode <= SYSCFLUSH;	sysmode <= WCACHE; end
+					2'b10 : begin ctlmode <= SYSCDISCARD;	sysmode <= WCACHE; end
+					2'b01 : begin ctlmode <= SYSCFLUSH;		sysmode <= WCACHE; end
 					default : begin ctlmode <= CSROPS;		sysmode <= WCSROP; end
 				endcase
 			end
@@ -705,15 +704,6 @@ always @(posedge aclk) begin
 					// HAZARD#3: Wait for pending write before CSR read
 					ctlmode <= CSROPS;
 				end
-			end
-
-			SYSRESET: begin
-				if (m_ibus.rdone) begin
-					btarget <= m_ibus.rdata;
-					btready <= 1'b1;
-					ctlmode <= READINSTR;
-				end
-				ctlmode <= m_ibus.rdone ? READINSTR : SYSRESET;
 			end
 
 			WCACHE: begin

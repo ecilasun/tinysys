@@ -153,9 +153,7 @@ wire isebreak = sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_EBREAK);
 wire isecall = sie && instrOneHotOut[`O_H_SYSTEM] && (func12 == `F12_ECALL);
 wire isillegalinstruction = sie && ~(|instrOneHotOut);
 
-wire [3:0] sysop = {
-	1'b0,
-	func3 == 3'b100 ? 1'b1 : 1'b0,
+wire [1:0] sysop = {
 	{func3, func12} == {3'b000, `F12_CDISCARD} ? 1'b1 : 1'b0,
 	{func3, func12} == {3'b000, `F12_CFLUSH} ? 1'b1 : 1'b0 };
 
@@ -222,7 +220,7 @@ always @(posedge aclk) begin
 					instrOneHotOut,
 					bluop, aluop,
 					rs1, rs2, rs3, rd,
-					immed, prevPC[31:2]};
+					immed, prevPC};
 
 				unique case (1'b1)
 					// IRQ/EBREAK/ILLEGAL don't step the PC (since we need the PC intact during those operations)
@@ -361,7 +359,7 @@ always @(posedge aclk) begin
 					instrOneHotOut,
 					bluop, aluop,
 					rs1, rs2, rs3, rd,
-					immed, emitPC[31:2]};
+					immed, emitPC};
 
 				// WARNING: Injection ignores all instruction handling and never advances the PC
 				// NOTE: We will spin here if instruction fifo is full
@@ -407,7 +405,7 @@ always @(posedge aclk) begin
 
 		if (cpuresetreq) begin
 			// This will cause this core to jump directly to the reset vector,
-			// after waiting for the pendin instructions to drain from the FIFO
+			// after waiting for the pending instructions to drain from the FIFO
 			fetchmode <= INIT;
 		end
 

@@ -720,7 +720,7 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	// Reset secondary CPUs
 	LEDSetState(0x0);															// xxxx
 
-	//kprintf("CPU1 entry:%x mtvec:%x rst:%x\n", (uint32_t)UserMain, E32ReadMemMappedCSR(1, CSR_MTVEC), E32ReadMemMappedCSR(1, CSR_CPURESET));
+	//kprintf("CPU1 entry:%x mtvec:%x rst:%x\n", (uint32_t)UserMain, E32ReadMemMappedCSR(1, CSR_MSCRATCH), E32ReadMemMappedCSR(1, CSR_CPURESET));
 
 	// Main CLI loop
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
