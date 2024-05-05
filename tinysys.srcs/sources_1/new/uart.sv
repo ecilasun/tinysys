@@ -10,11 +10,11 @@
 
 ////////////////////////////////////////////////////////
 module async_transmitter(
-	input clk,
-	input TxD_start,
-	input [7:0] TxD_data,
-	output TxD,
-	output TxD_busy
+	input wire clk,
+	input wire TxD_start,
+	input wire [7:0] TxD_data,
+	output wire TxD,
+	output wire TxD_busy
 );
 
 // Assert TxD_start for (at least) one clock cycle to start transmission of TxD_data
@@ -63,15 +63,15 @@ endmodule
 
 ////////////////////////////////////////////////////////
 module async_receiver(
-	input clk,
-	input RxD,
+	input wire clk,
+	input wire RxD,
 	output wire RxD_data_ready,
 	output wire [7:0] RxD_data,  // data received, valid only (for one clock cycle) when RxD_data_ready is asserted
 
 	// We also detect if a gap occurs in the received stream of characters
 	// That can be useful if multiple characters are sent in burst
 	//  so that multiple characters can be treated as a "packet"
-	output RxD_idle,  // asserted when no data has been received for a while
+	output wire RxD_idle,  // asserted when no data has been received for a while
 	output wire RxD_endofpacket  // asserted for one clock cycle when a packet has been detected (i.e. RxD_idle is going high)
 );
 
@@ -158,8 +158,9 @@ endmodule
 
 ////////////////////////////////////////////////////////
 module BaudTickGen(
-	input clk, enable,
-	output tick  // generate a tick at the specified baud rate * oversampling
+	input wire clk,
+	input wire enable,
+	output wire tick  // generate a tick at the specified baud rate * oversampling
 );
 
 parameter ClkFrequency = 10000000;	// 10MHz

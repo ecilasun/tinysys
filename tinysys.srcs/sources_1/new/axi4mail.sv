@@ -3,7 +3,7 @@ module axi4mail(
 	input wire aresetn,
 	axi4if.slave s_axi);
 
-mailbox mailboxinst(
+maildeviceram mailboxinst(
   .s_aclk(aclk),
   .s_aresetn(aresetn),
   .s_axi_awid(4'd0),

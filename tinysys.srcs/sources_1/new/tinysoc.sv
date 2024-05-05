@@ -148,16 +148,6 @@ riscv #( .CSRBASE(16'h800B), .RESETVECTOR(RESETVECTOR)) hart1(
 	.retired(retiredHart1));
 
 // --------------------------------------------------
-// Device bus arbiter
-// --------------------------------------------------
-
-arbiter2x arbiter2x1instdev(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.axi_s({devicebusHart1, devicebusHart0}),
-	.axi_m(devicebus) );
-
-// --------------------------------------------------
 // Video output unit
 // --------------------------------------------------
 
@@ -241,8 +231,14 @@ axi4i2saudio APU(
     .tx_sdout(i2sconn.sdin) );
 
 // --------------------------------------------------
-// Traffic arbiter between master units and memory
+// Traffic between master units / memory / devices
 // --------------------------------------------------
+
+arbiter2x arbiter2x1instdev(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.axi_s({devicebusHart1, devicebusHart0}),
+	.axi_m(devicebus) );
 
 arbiter arbiter8x1instSDRAM(
 	.aclk(aclk),

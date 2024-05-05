@@ -86,13 +86,13 @@ void E32SetTimeCompare(const uint64_t future)
 void E32WriteMemMappedCSR(uint32_t _hart, uint32_t _csr, uint32_t _value)
 {
 	uint32_t csrbase[] = {DEVICE_CSR0, DEVICE_CSR1};
-	*(uint32_t*)(csrbase[_hart] + (_csr<<2)) = _value;
+	*(uint32_t*)(csrbase[_hart] | (_csr<<2)) = _value;
 }
 
 uint32_t E32ReadMemMappedCSR(uint32_t _hart, uint32_t _csr)
 {
 	uint32_t csrbase[] = {DEVICE_CSR0, DEVICE_CSR1};
-	return *(uint32_t*)(csrbase[_hart] + (_csr<<2));
+	return *(uint32_t*)(csrbase[_hart] | (_csr<<2));
 }
 
 void E32SetupCPU(uint32_t hartid, void *workerThread)
