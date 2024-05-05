@@ -13,8 +13,8 @@ module commandqueue(
     input wire [31:0] devicestate);
 
 wire fifofull;
-logic fifowe = 1'b0;
-logic [31:0] fifodin = 'd0;
+logic fifowe;
+logic [31:0] fifodin;
 
 // Device command FIFO
 
@@ -63,6 +63,7 @@ always @(posedge aclk) begin
 	if (~aresetn) begin
 		fifowe <= 1'b0;
 		writestate <= 2'b00;
+		fifodin <= 32'd0;
 	end else begin
 		fifowe <= 1'b0;
 		s_axi.wready <= 1'b0;
@@ -73,7 +74,6 @@ always @(posedge aclk) begin
 				s_axi.bresp <= 2'b00; // okay
 				s_axi.bvalid <= 1'b0;
 				s_axi.wready <= 1'b0;
-				fifodin <= 32'd0;
 				writestate <= 2'b01;
 			end
 			2'b01: begin

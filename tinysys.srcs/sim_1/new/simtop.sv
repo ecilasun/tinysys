@@ -88,7 +88,7 @@ tophat main(
 	.usba_clk(),
 	.usba_mosi(usba_mosi),
 	.usba_resn(),
-	.usba_int(1'b0),
+	.usba_int(1'b0), // no irq
 	// Coprocessor via ESP32-C6-WROOM-1-N8 (only on rev. 2E boards)
 	.esp_io(),
 	.esp_txd_out(),

@@ -10,38 +10,31 @@ module axi4usbc(
     max3420wires.def usbcconn,
 	axi4if.slave s_axi);
 
-logic writestate = 1'b0;
-logic [1:0] raddrstate = 2'b00;
+logic writestate;
+logic [1:0] raddrstate;
 
-logic [7:0] writedata = 7'd0;
-logic we = 1'b0;
+logic [7:0] writedata;
+logic we;
 
 // ----------------------------------------------------------------------------
 // GPX cdc from usb to aclk domain and other usb wiring
 // ----------------------------------------------------------------------------
 
 // cdc for usb interrupt line
-(* async_reg = "true" *) logic usbgpxcdcA = 1'b0;
-(* async_reg = "true" *) logic usbgpxcdcB = 1'b0;
+(* async_reg = "true" *) logic usbgpxcdcA;
+(* async_reg = "true" *) logic usbgpxcdcB;
 
 // cdc for usb interrupt line
-(* async_reg = "true" *) logic usbirqcdcA = 1'b1;
-(* async_reg = "true" *) logic usbirqcdcB = 1'b1;
+(* async_reg = "true" *) logic usbirqcdcA;
+(* async_reg = "true" *) logic usbirqcdcB;
 
 // cdc for outfifoempty line
-(* async_reg = "true" *) logic outfifoemptycdcA = 1'b1;
-(* async_reg = "true" *) logic outfifoemptycdcB = 1'b1;
+(* async_reg = "true" *) logic outfifoemptycdcA;
+(* async_reg = "true" *) logic outfifoemptycdcB;
 
 wire outfifoempty; // Used after this section in output fifo
 
 always @(posedge aclk) begin
-	usbgpxcdcA <= usbcconn.gpx;
-	usbgpxcdcB <= usbgpxcdcA;
-	usbirqcdcA <= usbcconn.irq;
-	usbirqcdcB <= usbirqcdcA;
-	outfifoemptycdcA <= outfifoempty;
-	outfifoemptycdcB <= outfifoemptycdcA;
-
 	if (~aresetn) begin
 		usbgpxcdcA <= 1'b0;
 		usbgpxcdcB <= 1'b0;
@@ -49,6 +42,13 @@ always @(posedge aclk) begin
 		usbirqcdcB <= 1'b0;
 		outfifoemptycdcA <= 1'b0;
 		outfifoemptycdcB <= 1'b0;
+	end else begin
+		usbgpxcdcA <= usbcconn.gpx;
+		usbgpxcdcB <= usbgpxcdcA;
+		usbirqcdcA <= usbcconn.irq;
+		usbirqcdcB <= usbirqcdcA;
+		outfifoemptycdcA <= outfifoempty;
+		outfifoemptycdcB <= outfifoemptycdcA;
 	end
 end
 
@@ -64,7 +64,7 @@ wire cansend;
 wire hasvaliddata;
 wire [7:0] spiincomingdata;
 
-logic cs_n = 1'b1;
+logic cs_n;
 assign usbcconn.cs_n = cs_n;
 
 SPI_Master usbspi(
@@ -87,8 +87,9 @@ SPI_Master usbspi(
    .o_SPI_MOSI(usbcconn.mosi) );
 
 wire infifofull, infifoempty, infifovalid;
-logic infifowe = 1'b0, infifore = 1'b0;
-logic [7:0] infifodin = 8'h00;
+logic infifowe;
+logic infifore;
+logic [7:0] infifodin;
 wire [7:0] infifodout;
 
 spimasterinfifo usbspiinputfifo(
@@ -106,21 +107,21 @@ spimasterinfifo usbspiinputfifo(
 	.rst(~aresetn) );
 
 always @(posedge spibaseclock) begin
-	infifowe <= 1'b0;
-
-	if (hasvaliddata & (~infifofull)) begin // make sure to drain the fifo!
-		// stash incoming byte in fifo
-		infifowe <= 1'b1;
-		infifodin <= spiincomingdata;
-	end
-
 	if (~aresetn) begin
 		infifowe <= 1'b0;
+		infifodin <= 8'd0;
+	end else begin
+		infifowe <= 1'b0;
+		if (hasvaliddata & (~infifofull)) begin // make sure to drain the fifo!
+			// stash incoming byte in fifo
+			infifowe <= 1'b1;
+			infifodin <= spiincomingdata;
+		end
 	end
 end
 
 wire outfifofull, outfifovalid;
-logic outfifowe = 1'b0, outfifore = 1'b0;
+logic outfifowe, outfifore;
 logic [8:0] outfifodin;
 wire [8:0] outfifodout;
 
@@ -139,28 +140,29 @@ usbcspififo usboutputfifo(
 	.rst(~aresetn) );
 
 always @(posedge spibaseclock) begin
-
-	outfifore <= 1'b0;
-	we <= 1'b0;
-
-	if ((~outfifoempty) && outfifovalid && cansend) begin
-		unique case (outfifodout[8])
-			1'b0: begin
-				// Control output data
-				writedata <= outfifodout[7:0];
-				we <= 1'b1;
-			end
-			1'b1: begin
-				// Control CSn
-				cs_n <= outfifodout[0];
-			end
-		endcase
-		// Advance FIFO
-		outfifore <= 1'b1;
-	end
-
 	if (~aresetn) begin
 		cs_n <= 1'b1;
+		writedata <= 8'd0;
+		outfifore <= 1'b0;
+		we <= 1'b0;
+	end else begin
+		outfifore <= 1'b0;
+		we <= 1'b0;
+		if ((~outfifoempty) && outfifovalid && cansend) begin
+			unique case (outfifodout[8])
+				1'b0: begin
+					// Control output data
+					writedata <= outfifodout[7:0];
+					we <= 1'b1;
+				end
+				1'b1: begin
+					// Control CSn
+					cs_n <= outfifodout[0];
+				end
+			endcase
+			// Advance FIFO
+			outfifore <= 1'b1;
+		end
 	end
 end
 
@@ -169,90 +171,86 @@ end
 // ----------------------------------------------------------------------------
 
 always @(posedge aclk) begin
-
-	s_axi.awready <= 1'b0;
-
-	if (s_axi.awvalid) begin
-		s_axi.awready <= 1'b1;
-	end
-
 	if (~aresetn) begin
 		s_axi.awready <= 1'b0;
+	end else begin
+		s_axi.awready <= 1'b0;
+		if (s_axi.awvalid) begin
+			s_axi.awready <= 1'b1;
+		end
 	end
 end
 
 always @(posedge aclk) begin
-
-	outfifowe <= 1'b0;
-	s_axi.wready <= 1'b0;
-	s_axi.bvalid <= 1'b0;
-	s_axi.bresp <= 2'b00;
-
-	unique case (writestate)
-		1'b0: begin
-			if (s_axi.wvalid && (~outfifofull)) begin
-				// SPI 0x8000?000
-				outfifodin <= s_axi.wdata[8:0];
-				outfifowe <= 1'b1;
-				s_axi.wready <= 1'b1;
-				writestate <= 1'b1;
-			end
-		end
-		1'b1: begin
-			if(s_axi.bready) begin
-				s_axi.bvalid <= 1'b1;
-				writestate <= 1'b0;
-			end
-		end
-	endcase
-
 	if (~aresetn) begin
 		writestate <= 1'b0;
+		outfifowe <= 1'b0;
+	end else begin
+		outfifowe <= 1'b0;
+		s_axi.wready <= 1'b0;
+		s_axi.bvalid <= 1'b0;
+		s_axi.bresp <= 2'b00;
+		unique case (writestate)
+			1'b0: begin
+				if (s_axi.wvalid && (~outfifofull)) begin
+					// SPI 0x8000?000
+					outfifodin <= s_axi.wdata[8:0];
+					outfifowe <= 1'b1;
+					s_axi.wready <= 1'b1;
+					writestate <= 1'b1;
+				end
+			end
+			1'b1: begin
+				if(s_axi.bready) begin
+					s_axi.bvalid <= 1'b1;
+					writestate <= 1'b0;
+				end
+			end
+		endcase
 	end
 end
 
 always @(posedge aclk) begin
-
-	infifore <= 1'b0;
-	s_axi.arready <= 1'b0;
-	s_axi.rvalid <= 1'b0;
-	s_axi.rlast <= 1'b0;
-	s_axi.rresp <= 2'b00;
-
-	// read address
-	unique case (raddrstate)
-		2'b00: begin
-			if (s_axi.arvalid) begin
-				unique case (s_axi.araddr[3:0])
-					4'h0: raddrstate <= 2'b01; // SPI        0x8000?000
-					4'h4: raddrstate <= 2'b10; // FIFO state 0x8000?004
-				endcase
-				s_axi.arready <= 1'b1;
-			end
-		end
-		2'b01: begin
-			// master ready to accept and fifo has incoming data
-			if (s_axi.rready && (~infifoempty) && infifovalid) begin
-				s_axi.rdata <= {infifodout, infifodout, infifodout, infifodout};
-				s_axi.rvalid <= 1'b1;
-				s_axi.rlast <= 1'b1;
-				// Advance FIFO
-				infifore <= 1'b1;
-				raddrstate <= 2'b00;
-			end
-		end
-		2'b10: begin
-			if (s_axi.rready) begin
-				s_axi.rdata <= {29'd0, usbgpxcdcB, ~outfifoemptycdcB, ~infifoempty};
-				s_axi.rvalid <= 1'b1;
-				s_axi.rlast <= 1'b1;
-				raddrstate <= 2'b00;
-			end
-		end
-	endcase
-
 	if (~aresetn) begin
 		raddrstate <= 2'b00;
+		infifore <= 1'b0;
+	end else begin
+		infifore <= 1'b0;
+		s_axi.arready <= 1'b0;
+		s_axi.rvalid <= 1'b0;
+		s_axi.rlast <= 1'b0;
+		s_axi.rresp <= 2'b00;
+		// read address
+		unique case (raddrstate)
+			2'b00: begin
+				if (s_axi.arvalid) begin
+					unique case (s_axi.araddr[3:0])
+						4'h0: raddrstate <= 2'b01; // SPI        0x8000?000
+						4'h4: raddrstate <= 2'b10; // FIFO state 0x8000?004
+					endcase
+					s_axi.arready <= 1'b1;
+				end
+			end
+			2'b01: begin
+				// master ready to accept and fifo has incoming data
+				if (s_axi.rready && (~infifoempty) && infifovalid) begin
+					s_axi.rdata <= {infifodout, infifodout, infifodout, infifodout};
+					s_axi.rvalid <= 1'b1;
+					s_axi.rlast <= 1'b1;
+					// Advance FIFO
+					infifore <= 1'b1;
+					raddrstate <= 2'b00;
+				end
+			end
+			2'b10: begin
+				if (s_axi.rready) begin
+					s_axi.rdata <= {29'd0, usbgpxcdcB, ~outfifoemptycdcB, ~infifoempty};
+					s_axi.rvalid <= 1'b1;
+					s_axi.rlast <= 1'b1;
+					raddrstate <= 2'b00;
+				end
+			end
+		endcase
 	end
 end
 
