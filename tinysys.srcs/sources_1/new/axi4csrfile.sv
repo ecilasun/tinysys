@@ -11,6 +11,7 @@ module axi4CSRFile #(
 	input wire [63:0] cpuclocktime,
 	input wire [63:0] wallclocktime,
 	input wire [63:0] retired,
+	input wire [31:0] pc_in,
 	// IRQ lines to fetch unit
 	output wire [1:0] irqReq,
 	// Incoming hardware interrupt requests
@@ -218,17 +219,19 @@ always @(posedge aclk) begin
 					// Some values such as timers and h/w states are dynamic and never end up in the CSR file, so make up a dynamic version for those
 					unique case (csrraddr)
 						// Immutables
-						`CSR_MHARTID:	s_axi.rdata[31:0] <= {28'd0, HARTID}; // 0..15
-						`CSR_RETIHI:	s_axi.rdata[31:0] <= retired[63:32];
-						`CSR_TIMEHI:	s_axi.rdata[31:0] <= wallclocktime[63:32];
-						`CSR_CYCLEHI:	s_axi.rdata[31:0] <= cpuclocktime[63:32];
-						`CSR_RETILO:	s_axi.rdata[31:0] <= retired[31:0];
-						`CSR_TIMELO:	s_axi.rdata[31:0] <= wallclocktime[31:0];
-						`CSR_CYCLELO:	s_axi.rdata[31:0] <= cpuclocktime[31:0];
+						`CSR_MHARTID:			s_axi.rdata[31:0] <= {28'd0, HARTID}; // 0..15
+						`CSR_RETIHI:			s_axi.rdata[31:0] <= retired[63:32];
+						`CSR_TIMEHI:			s_axi.rdata[31:0] <= wallclocktime[63:32];
+						`CSR_CYCLEHI:			s_axi.rdata[31:0] <= cpuclocktime[63:32];
+						`CSR_RETILO:			s_axi.rdata[31:0] <= retired[31:0];
+						`CSR_TIMELO:			s_axi.rdata[31:0] <= wallclocktime[31:0];
+						`CSR_CYCLELO:			s_axi.rdata[31:0] <= cpuclocktime[31:0];
 						// Interrupt states of all hardware devices
-						`CSR_HWSTATE:	s_axi.rdata[31:0] <= {28'd0, uartirq, gpioirq, keyirq, usbirq};
+						`CSR_HWSTATE:			s_axi.rdata[31:0] <= {28'd0, uartirq, gpioirq, keyirq, usbirq};
+						// Shadow of current program counter
+						`CSR_PROGRAMCOUNTER:	s_axi.rdata[31:0] <= pc_in;
 						// Pass through actual data
-						default:		s_axi.rdata[31:0] <= csrdout;
+						default:				s_axi.rdata[31:0] <= csrdout;
 					endcase
 					s_axi.rvalid <= 1'b1;
 					raddrstate <= 2'b01;

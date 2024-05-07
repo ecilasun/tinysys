@@ -10,6 +10,7 @@ module riscv #(
 	input wire [1:0] irqReq,
 	input wire [31:0] mepc,
 	input wire [31:0] mtvec,
+	output wire [31:0] pc_out,
 	output wire [63:0] cpuclocktime,
 	output wire [63:0] retired,
 	axi4if.master instructionbus,
@@ -78,6 +79,7 @@ controlunit #(
 	.ififord_en(ififord_en), 
 	.cpuclocktime(cpuclocktime),
 	.retired(retired),
+	.pc_out(pc_out),
 	.m_ibus(internaldatabus));
 
 endmodule

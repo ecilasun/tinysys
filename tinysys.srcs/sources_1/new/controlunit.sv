@@ -17,6 +17,7 @@ module controlunit #(
 	// CPU cycle / retired instruction counts
 	output wire [63:0] cpuclocktime,
 	output wire [63:0] retired,
+	output wire [31:0] pc_out,
 	// Internal bus to data unit
 	ibusif.master m_ibus);
 
@@ -44,6 +45,9 @@ logic [2:0] func3;
 logic [6:0] func7;
 logic [2:0] rfunc3;
 logic selectimmedasrval2;
+
+// Program counter of currently executing instruction
+assign pc_out = PC;
 
 logic btready;
 logic [31:0] btarget;

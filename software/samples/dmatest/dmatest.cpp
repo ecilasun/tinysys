@@ -100,23 +100,28 @@ int main(int argc, char *argv[])
 		// Tag for DMA sync (essentially an item in FIFO after last DMA so we can check if DMA is complete when this drains)
 		DMATag(0x0);
 
-		// Wait until there are no more DMA operations in flight
+		// Wait until there are no more DMA operations in flight.
+		// Since we need all writes visible by the CPU we need to use 'cpucoherent' flag here.
 		DMAWait(CPUCoherent);
 
-		// Try to overlay some CPU image onto the DMA surface
-		for (int y = oy+0; y<oy+96; ++y)
-			for (int x = ox; x<ox+96; ++x)
-				bufferC[x+y*320] = x^y;
+		// Try to overlay some CPU image onto the DMA surface.
+		// At this point the 'cpucoherent' flag has invalidated the data cache so we can
+		// reload what the DMA has written, and add our data on top.
+		for (int y = 0; y<96; ++y)
+			for (int x = 0; x<96; ++x)
+				bufferC[(x+ox)+(y+oy)*320] = x^y;
 		ox += dx;
 		oy += dy;
 		if (ox>222 || ox<0) dx = -dx;
 		if (oy>142 || oy<0) dy = -dy;
 
-		// Make sure everything is in RAM for scan-out
+		// Scan-out hardware can only see the actual RAM contents so we need to make sure
+		// we've flushed everything in cache to RAM before we can see a stable image.
 		CFLUSH_D_L1;
 
-		// Wait for vsync on the CPU side
-		// Ideally one would install a vsync handler and swap pages based on that instead of stalling like this
+		// Wait for vsync on the CPU side.
+		// Ideally one would install a vsync handler and swap pages based on that instead of stalling.
+		// TODO: vblank interrupt support.
 		if (argc<=1)
 		{
 			uint32_t currentvsync;
@@ -126,7 +131,7 @@ int main(int argc, char *argv[])
 			prevvsync = currentvsync;
 		}
 
-		// Handle Scroll
+		// Handle scroll of the inner region
 		offset = (offset+dir);
 		if (offset == 0 || offset == H*2-2) dir = -dir;
 	}

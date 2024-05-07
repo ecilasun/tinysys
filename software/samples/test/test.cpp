@@ -11,6 +11,11 @@ int main()
 	for (int core= 0; core<2; ++core)
 	{
 		printf("\nCPU#%d\n", core);
+		// PC
+		{
+			unsigned int val = E32ReadMemMappedCSR(core, CSR_PROGRAMCOUNTER);
+			printf("PC: %.8x\n", val);
+		}
 		// Watermark
 		{
 			unsigned int val = E32ReadMemMappedCSR(core, CSR_WATERMARK);

@@ -104,6 +104,7 @@ wire [63:0] cpuclocktimeHart0;
 wire [63:0] retiredHart0;
 wire [31:0] mepcHart0;
 wire [31:0] mtvecHart0;
+wire [31:0] PCHart0;
 wire [1:0] irqReqHart0;
 
 riscv #( .CSRBASE(16'h800A), .RESETVECTOR(RESETVECTOR)) hart0(
@@ -113,6 +114,7 @@ riscv #( .CSRBASE(16'h800A), .RESETVECTOR(RESETVECTOR)) hart0(
 	.sie(sieHart0),
 	.mepc(mepcHart0),
 	.mtvec(mtvecHart0),
+	.pc_out(PCHart0),
 	.cpuresetreq(cpuresetreq0),
 	.irqReq(irqReqHart0),
 	.instructionbus(instructionbusHart0),
@@ -130,6 +132,7 @@ wire [63:0] cpuclocktimeHart1;
 wire [63:0] retiredHart1;
 wire [31:0] mepcHart1;
 wire [31:0] mtvecHart1;
+wire [31:0] PCHart1;
 wire [1:0] irqReqHart1;
 
 riscv #( .CSRBASE(16'h800B), .RESETVECTOR(RESETVECTOR)) hart1(
@@ -139,6 +142,7 @@ riscv #( .CSRBASE(16'h800B), .RESETVECTOR(RESETVECTOR)) hart1(
 	.sie(sieHart1),
 	.mepc(mepcHart1),
 	.mtvec(mtvecHart1),
+	.pc_out(PCHart1),
 	.cpuresetreq(cpuresetreq1),
 	.irqReq(irqReqHart1),
 	.instructionbus(instructionbusHart1),
@@ -399,14 +403,15 @@ axi4CSRFile #( .HARTID(4'd0)) csrfile0 (
 	.cpuclocktime(cpuclocktimeHart0),
 	.wallclocktime(wallclocktime),
 	.retired(retiredHart0),
-	// IRQ tracking
+	.pc_in(PCHart0),
+	// IRQ state for hardware or timer
 	.irqReq(irqReqHart0),
-	// External interrupt wires
+	// External hardware interrupt wires
 	.keyirq(keyirq),
 	.usbirq(usbairq),
 	.gpioirq(gpioirq),
 	.uartirq(uartirq),
-	// CPU reset (mepcHart0 contains reset vector)
+	// CPU reset
 	.cpuresetreq(cpuresetreq0),
 	// Shadow registers
 	.mepc(mepcHart0),
@@ -421,14 +426,15 @@ axi4CSRFile #( .HARTID(4'd1)) csrfile1 (
 	.cpuclocktime(cpuclocktimeHart1),
 	.wallclocktime(wallclocktime),
 	.retired(retiredHart1),
-	// IRQ tracking
+	.pc_in(PCHart1),
+	// IRQ state for hardware or timer
 	.irqReq(irqReqHart1),
-	// External interrupt wires
+	// External hardware interrupt wires
 	.keyirq(keyirq),
 	.usbirq(usbairq),
 	.gpioirq(gpioirq),
 	.uartirq(uartirq),
-	// CPU reset (mepcHart1 contains reset vector)
+	// CPU reset
 	.cpuresetreq(cpuresetreq1),
 	// Shadow registers
 	.mepc(mepcHart1),

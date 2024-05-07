@@ -297,27 +297,33 @@
 `define CSR_TIMECMPLO	12'h800
 `define CSR_TIMECMPHI	12'h801
 
-`define CSR_REGISTERSHADOW	12'h8A0 // These are used to store shadow copies of registers from ISRs
+// 32 of these registers are used to store shadow copies of GRPs by ISRs
+`define CSR_REGISTERSHADOW	12'h8A0
 
-`define CSR_CYCLELO		12'hC00	// 12'hB00
+`define CSR_CYCLELO		12'hC00
 `define CSR_TIMELO		12'hC01
-`define CSR_RETILO		12'hC02 // 12'hB02 
-`define CSR_CYCLEHI		12'hC80	// 12'hB80
+`define CSR_RETILO		12'hC02
+`define CSR_CYCLEHI		12'hC80
 `define CSR_TIMEHI		12'hC81
-`define CSR_RETIHI		12'hC82 // 12'hB82
+`define CSR_RETIHI		12'hC82
 `define CSR_MARCHID		12'hF12
 `define CSR_MIMPID		12'hF13
-`define CSR_MHARTID		12'hF14 // immutable
+`define CSR_MHARTID		12'hF14
 
-`define CSR_CPURESET	12'hFEE // Set lowest bit to 1'b1 to trigger reset, 1'b0 to stop reset
-`define CSR_WATERMARK	12'hFF0 // Machine boot state (watermark) register, survives soft reboot intact
-`define CSR_HWSTATE		12'hFFF // immutable, custom hardware state bits
+// Set lowest bit to 1'b1 to trigger reset, 1'b0 to stop reset
+`define CSR_CPURESET		12'hFEE
+// Machine boot state (watermark) register, survives soft reboot intact
+`define CSR_WATERMARK		12'hFF0
+// Contains a shadow copy of the current PC
+`define CSR_PROGRAMCOUNTER	12'hFFC
+// immutable, custom hardware state bits
+`define CSR_HWSTATE			12'hFFF
 
+// machine config data
 // `define CSR_MCONFIGPTR  12'hF15
+
 // `define CSR_DSCRATCH0   12'h7B2
 // `define CSR_DSCRATCH1   12'h7B3
 // `define CSR_ISAEXMISA   12'h301
 // `define CSR_DCONTROL    12'h7B0
 // `define CSR_DPC         12'h7B1
-// `define CSR_DSCRATCH0   12'h7B2
-// `define CSR_DSCRATCH1   12'h7B3
