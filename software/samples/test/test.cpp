@@ -10,11 +10,21 @@ int main()
 
 	for (int core= 0; core<2; ++core)
 	{
-		printf("core # %d\n", core);
+		printf("\nCPU#%d\n", core);
 		// Watermark
 		{
-			unsigned int val = E32ReadMemMappedCSR(core, 0xFF0);
+			unsigned int val = E32ReadMemMappedCSR(core, CSR_WATERMARK);
 			printf("watermark: %.8x\n", val);
+		}
+		// CPU Reset
+		{
+			unsigned int val = E32ReadMemMappedCSR(core, CSR_CPURESET);
+			printf("cpureset: %.8x\n", val);
+		}
+		// Scratch
+		{
+			unsigned int val = E32ReadMemMappedCSR(core, CSR_MSCRATCH);
+			printf("mscratch: %.8x\n", val);
 		}
 		// Architecture ID
 		{
@@ -46,10 +56,11 @@ int main()
 		}
 	}
 
-	// Attempt a few crashes
+	// Attempt a crash
 
 	// Illegal instruction
 	{
+		printf("\nCrash test\n");
 		asm volatile( ".word 0x00000000;");
 	}
 

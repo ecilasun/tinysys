@@ -16,6 +16,7 @@
 #define ONE_MICROSECOND_IN_TICKS				10
 
 #define CSR_CPURESET					0xFEE
+#define CSR_WATERMARK					0xFF0
 
 // Physical address map for no-MMU raw mode at boot time
 #define APPMEM_START					0x00000000 // Top of RAM
