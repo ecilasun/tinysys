@@ -707,9 +707,11 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	InitializeTaskContext(self);
 
 	LEDSetState(0x3);			// xxOO
-	struct STaskContext *taskctx = GetTaskContext(self);
-	TaskAdd(taskctx, "cpu0idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
-	TaskAdd(taskctx, "cmd", _cliTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+	struct STaskContext *taskctx[2];
+	taskctx[0] = GetTaskContext(self);
+	taskctx[1] = GetTaskContext(1);
+	TaskAdd(taskctx[0], "cpu0idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+	TaskAdd(taskctx[0], "cmd", _cliTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 
 	LEDSetState(0x7);															// xOOO
 	InstallISR(self, true, true);
@@ -732,35 +734,40 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 
 		// Kernel error / crash handler for this CPU
 		// TODO: Catch kernerl errors on CPU#1 onwards
-		if (taskctx->kernelError)
+		for (int cpu=0;cpu<2;++cpu)
 		{
-			ksetcolor(CONSOLEMAGENTA, CONSOLEDIMGRAY);
-			switch (taskctx->kernelError)
+			if (taskctx[cpu]->kernelError)
 			{
-				case 1: kprintf("Unknown hardware device\n"); break;
-				case 2: kprintf("Unknown interrupt type\n"); break;
-				case 3: kprintf("Guru meditation\n"); break;
-				case 4: kprintf("Illegal instruction\n"); break;
-				case 5: kprintf("Breakpoint with no debugger attached\n"); break;
-				default: kprintf("Unknown kernel error\n"); break;
-			};
+				struct STaskContext *ctx = taskctx[cpu];
+				ksetcolor(CONSOLEMAGENTA, CONSOLEDIMGRAY);
+				kprintf("CPU#%d: ", cpu);
+				switch (ctx->kernelError)
+				{
+					case 1: kprintf("Unknown hardware device\n"); break;
+					case 2: kprintf("Unknown interrupt type\n"); break;
+					case 3: kprintf("Guru meditation\n"); break;
+					case 4: kprintf("Illegal instruction\n"); break;
+					case 5: kprintf("Breakpoint with no debugger attached\n"); break;
+					default: kprintf("Unknown kernel error\n"); break;
+				};
 
-			// Dump task registers
-			if (taskctx->kernelError == 4)
-			{
-				ksetcolor(CONSOLEGREEN, CONSOLEDIMGRAY);
-				uint32_t taskid = taskctx->kernelErrorData[0];
-				struct STask *task = &taskctx->tasks[taskid];
-				// Skip zero register and emit '0' since we save PC there
-				kprintf("Task: '%s', instruction 0x%x @ 0x%x\nzero=0x0 ", task->name, taskctx->kernelErrorData[1], taskctx->kernelErrorData[2]);
-				for (uint32_t i=1; i<32; ++i)
-					kprintf("%s=0x%x%c", s_regnames[i], task->regs[i], i%4==0?'\n':' ');
-				kprintf("\n");
+				// Dump task registers
+				if (ctx->kernelError == 4)
+				{
+					ksetcolor(CONSOLEGREEN, CONSOLEDIMGRAY);
+					uint32_t taskid = ctx->kernelErrorData[0];
+					struct STask *task = &ctx->tasks[taskid];
+					// Skip zero register and emit '0' since we save PC there
+					kprintf("Task: '%s', instruction 0x%x @ 0x%x\nzero=0x0 ", task->name, ctx->kernelErrorData[1], ctx->kernelErrorData[2]);
+					for (uint32_t i=1; i<32; ++i)
+						kprintf("%s=0x%x%c", s_regnames[i], task->regs[i], i%4==0?'\n':' ');
+					kprintf("\n");
+				}
+				ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
+
+				// Clear error once handled and reported
+				ctx->kernelError = 0;
 			}
-			ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
-
-			// Clear error once handled and reported
-			taskctx->kernelError = 0;
 		}
 
 		// Refresh console output
