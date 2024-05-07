@@ -461,10 +461,12 @@ void _cliTask()
 					execcmd++;
 					if (s_runOnCPU == 0)
 						TaskExitTaskWithID(taskctx, s_userTaskID, 0); // Sig:0, terminate process if no debugger is attached
-					else
+
+					// Stop all other tasks on helper CPUs
 					{
 						struct STaskContext* tctx1 = GetTaskContext(1);
-						TaskExitTaskWithID(tctx1, s_userTaskID, 0);
+						for (uint32_t i=1; i<tctx1->numTasks; ++i)
+							TaskExitTaskWithID(tctx1, i, 0);
 					}
 				}
 				break;
