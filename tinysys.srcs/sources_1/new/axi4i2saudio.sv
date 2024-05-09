@@ -3,6 +3,7 @@
 module axi4i2saudio(
 	input wire aclk,
 	input wire aresetn,
+	input wire rstaudion,
     input wire audioclock,				// 22.591MHz master clock
 	axi4if.master m_axi,				// Direct memory access for burst reads
 	input wire abempty,					// Command fifo empty
@@ -31,7 +32,7 @@ COUNTER_LOAD_MACRO #(
 	.CLK(audioclock),
 	.CE(counterenabled),
 	.DIRECTION(1'b1),
-	.LOAD(~aresetn),
+	.LOAD(~rstaudion),
 	.LOAD_DATA(9'd0),
 	.RST(1'b0) );
 
@@ -234,7 +235,7 @@ end
 logic [1:0] sampleRateCounter;	// Sample rate counter
 
 always@(posedge audioclock) begin
-	if (~aresetn) begin
+	if (~rstaudion) begin
 		tx_data_lr <= 0;
 		readCursor <= 10'd0;
 		bufferSwap <= 1'd0;
@@ -271,7 +272,7 @@ logic [23:0] tx_data_l_shift;
 logic [23:0] tx_data_r_shift;
 
 always@(posedge audioclock) begin
-	if (~aresetn) begin
+	if (~rstaudion) begin
 		tx_data_r_shift <= 24'd0;
 		tx_data_l_shift <= 24'd0;
 	end else begin
@@ -287,8 +288,8 @@ always@(posedge audioclock) begin
 	end
 end
 
-always@(count, tx_data_l_shift, tx_data_r_shift, aresetn) begin
-	if (~aresetn) begin
+always@(count, tx_data_l_shift, tx_data_r_shift, rstaudion) begin
+	if (~rstaudion) begin
 		tx_sdout = 1'b0;
 	end else begin
 		if (count[7:3] <= 5'd24 && count[7:3] >= 4'd1)

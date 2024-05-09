@@ -7,6 +7,7 @@ module axi4sdcard(
 	input wire clk10,
 	input wire spibaseclock,
 	input wire aresetn,
+	input wire rst50n,
 	output wire keyirq,
     sdcardwires.def sdconn,
 	axi4if.slave s_axi);
@@ -82,7 +83,7 @@ wire [7:0] spiincomingdata;
 
 SPI_Master sdcardspi(
    // control/data signals,
-   .i_Rst_L(aresetn),
+   .i_Rst_L(rst50n),
    .i_Clk(spibaseclock),
 
    // tx (mosi) signals
@@ -119,11 +120,15 @@ spimasterinfifo sdcardspiinputfifo(
 	.rst(~aresetn) );
 
 always @(posedge spibaseclock) begin
-	infifowe <= 1'b0;
-	if (hasvaliddata & (~infifofull)) begin // make sure to drain the fifo!
-		// stash incoming byte in fifo
-		infifowe <= 1'b1;
-		infifodin <= spiincomingdata;
+	if (~rst50n) begin
+		infifowe <= 1'b0;
+	end else begin
+		infifowe <= 1'b0;
+		if (hasvaliddata & (~infifofull)) begin // make sure to drain the fifo!
+			// stash incoming byte in fifo
+			infifowe <= 1'b1;
+			infifodin <= spiincomingdata;
+		end
 	end
 end
 
@@ -148,13 +153,18 @@ spimasteroutfifo sdcardoutputfifo(
 	.rst(~aresetn) );
 
 always @(posedge spibaseclock) begin
-	outfifore <= 1'b0;
-	we <= 1'b0;
-	if ((~outfifoempty) && outfifovalid && cansend) begin
-		writedata <= outfifodout;
-		we <= 1'b1;
-		// Advance FIFO
-		outfifore <= 1'b1;
+	if (~rst50n) begin
+		outfifore <= 1'b0;
+		we <= 1'b0;
+	end else begin
+		outfifore <= 1'b0;
+		we <= 1'b0;
+		if ((~outfifoempty) && outfifovalid && cansend) begin
+			writedata <= outfifodout;
+			we <= 1'b1;
+			// Advance FIFO
+			outfifore <= 1'b1;
+		end
 	end
 end
 

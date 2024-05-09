@@ -8,10 +8,12 @@ module tinysoc #(
 	input wire clkaudio,
 	input wire clk25,
 	input wire clk50,
-	input wire clk100,
 	input wire clk166,
 	input wire clk200,
 	input wire aresetn,
+	input wire rst25n,
+	input wire rst50n,
+	input wire rstaudion,
 	input wire preresetn,
 	// LEDs
 	output wire [3:0] leds,
@@ -164,6 +166,7 @@ videocore VPU(
 	.aclk(aclk),
 	.clk25(clk25),
 	.aresetn(aresetn),
+	.rst25n(rst25n),
 	.m_axi(videobus),
 	.vvsync(vvsync),
 	.vhsync(vhsync),
@@ -219,6 +222,7 @@ wire [31:0] audiobufferswapcount;
 axi4i2saudio APU(
 	.aclk(aclk),				// Bus clock
 	.aresetn(aresetn),
+	.rstaudion(rstaudion),
     .audioclock(clkaudio),		// 22.591MHz master clock
 
 	.m_axi(audiobus),			// Memory access
@@ -355,6 +359,7 @@ axi4sdcard sdcardinst(
 	.aclk(aclk),
 	.clk10(clk10),
 	.aresetn(aresetn),
+	.rst50n(rst50n),
 	.spibaseclock(clk50),
 	.sdconn(sdconn),
 	.keyirq(keyirq),
@@ -392,6 +397,7 @@ commandqueue audiocmdinst(
 axi4usbc usbhostport(
 	.aclk(aclk),
 	.aresetn(aresetn),
+	.rst50n(rst50n),
 	.spibaseclock(clk50),
 	.usbcconn(usbaconn),
 	.usbirq(usbairq),

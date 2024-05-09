@@ -6,6 +6,7 @@ module axi4usbc(
 	input wire aclk,
 	input wire spibaseclock,
 	input wire aresetn,
+	input wire rst50n,
 	output wire usbirq,
     max3420wires.def usbcconn,
 	axi4if.slave s_axi);
@@ -69,7 +70,7 @@ assign usbcconn.cs_n = cs_n;
 
 SPI_Master usbspi(
    // control/data signals,
-   .i_Rst_L(aresetn),
+   .i_Rst_L(rst50n),
    .i_Clk(spibaseclock),
 
    // tx (mosi) signals
@@ -107,7 +108,7 @@ spimasterinfifo usbspiinputfifo(
 	.rst(~aresetn) );
 
 always @(posedge spibaseclock) begin
-	if (~aresetn) begin
+	if (~rst50n) begin
 		infifowe <= 1'b0;
 		infifodin <= 8'd0;
 	end else begin
@@ -140,7 +141,7 @@ usbcspififo usboutputfifo(
 	.rst(~aresetn) );
 
 always @(posedge spibaseclock) begin
-	if (~aresetn) begin
+	if (~rst50n) begin
 		cs_n <= 1'b1;
 		writedata <= 8'd0;
 		outfifore <= 1'b0;

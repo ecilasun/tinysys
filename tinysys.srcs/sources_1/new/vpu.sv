@@ -6,6 +6,7 @@ module videocore(
 	input wire aclk,
 	input wire clk25,
 	input wire aresetn,
+	input wire rst25n,
 	axi4if.master m_axi,
 	output wire vvsync,
 	output wire vhsync,
@@ -48,10 +49,10 @@ assign vpufifore = cmdre;
 // Setup
 // --------------------------------------------------
 
-logic [7:0] burstlen;
-logic scanwidth = 1'b0;			// 0:320 pixel wide, 1:640 pixel wide
-logic colormode = 1'b0;			// 0:indexed color, 1:16bit color
 logic [9:0] lastscanline;
+logic [7:0] burstlen;
+logic scanwidth;			// 0:320 pixel wide, 1:640 pixel wide
+logic colormode;			// 0:indexed color, 1:16bit color
 
 
 // --------------------------------------------------
@@ -62,16 +63,17 @@ logic [127:0] scanlinecache [0:127];
 
 wire [127:0] scanlinedout;
 logic [127:0] scanlinedin;
-logic scanlinewe = 1'b0;
+logic scanlinewe;
 logic [6:0] scanlinewa;
 logic [6:0] scanlinera;
 
 always @(posedge aclk) begin
-	if (scanlinewe)
-		scanlinecache[scanlinewa] <= scanlinedin;
-
-	// if (~aresetn) begin
-	// end
+	/*if (~aresetn) begin
+		
+	end else begin*/
+		if (scanlinewe)
+			scanlinecache[scanlinewa] <= scanlinedin;
+	/*end*/
 end
 assign scanlinedout = scanlinecache[scanlinera];
 
@@ -138,9 +140,9 @@ end
 // Palette RAM
 // --------------------------------------------------
 
+logic [11:0] palettedin;
 logic [7:0] palettewa;
 logic palettewe;
-logic [11:0] palettedin;
 
 logic [11:0] paletteentries[0:255];
 
@@ -155,13 +157,17 @@ always @(posedge aclk) begin
 end
 
 // Read port
-logic [11:0] paletteout = 0;
+logic [11:0] paletteout;
 always @(posedge clk25) begin
-	case ({scanenable, colormode})
-		2'b10: paletteout <= paletteentries[paletteindex];
-		2'b11: paletteout <= rgbcolor;
-		default: paletteout <= 0;
-	endcase
+	if (~rst25n) begin
+		paletteout <= 12'd0;
+	end else begin
+		case ({scanenable, colormode})
+			2'b10: paletteout <= paletteentries[paletteindex];
+			2'b11: paletteout <= rgbcolor;
+			default: paletteout <= 0;
+		endcase
+	end
 end
 
 // --------------------------------------------------
@@ -179,14 +185,21 @@ vgatimer VideoScanout(
 	.vsynctrigger_o(),
 	.vsynccounter() );
 
-logic hsync_d, vsync_d, vde_d;
 logic [11:0] paletteout_d;
+logic hsync_d, vsync_d, vde_d;
 wire notblank = (video_x < 12'd640) && (video_y < 12'd480);
 always @(posedge clk25) begin
-	hsync_d <= hsync;
-	vsync_d <= vsync;
-	vde_d <= notblank;
-	paletteout_d <= notblank ? paletteout : 12'd0;
+	if (~rst25n) begin
+		hsync_d <= 1'b0;
+		vsync_d <= 1'b0;
+		vde_d <= 1'b0;
+		paletteout_d <= 12'd0;
+	end else begin
+		hsync_d <= hsync;
+		vsync_d <= vsync;
+		vde_d <= notblank;
+		paletteout_d <= notblank ? paletteout : 12'd0;
+	end
 end
 
 assign vhsync = hsync_d;
@@ -239,6 +252,8 @@ always_ff @(posedge aclk) begin
 		palettedin <= 24'd0;
 		scanenable <= 1'b0;
 		cmdre <= 1'b0;
+		scanwidth <= 1'b0;
+		colormode <= 1'b0;
 		palettewe <= 1'b0;
 		cmdmode <= WCMD;
 	end else begin
@@ -337,7 +352,7 @@ wire vsyncnow = startofrowp && endofcolumnp;
 
 logic blankt;
 always_ff @(posedge clk25) begin
-	if (~aresetn) begin
+	if (~rst25n) begin
 		blankt <= 1'b0;
 	end else begin
 		blankt <= vsyncnow ? ~blankt : blankt;

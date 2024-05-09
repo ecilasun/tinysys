@@ -321,3 +321,11 @@ set_clock_groups -name grpM -asynchronous -group [get_clocks -of_objects [get_pi
 set_clock_groups -name grpN -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT0]] -group [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT5]]
 set_clock_groups -name grpO -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1]] -group [get_clocks -of_objects [get_pins socinstance/axi4ddr3sdraminst/ddr3instance/u_mig_7series_0_mig/u_ddr3_infrastructure/gen_mmcm.mmcm_i/CLKFBOUT]]
 set_clock_groups -name grpP -asynchronous -group [get_clocks -of_objects [get_pins socinstance/axi4ddr3sdraminst/ddr3instance/u_mig_7series_0_mig/u_ddr3_infrastructure/gen_mmcm.mmcm_i/CLKFBOUT]] -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1]]
+
+create_pblock pblock_hart1
+add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list socinstance/hart1]]
+resize_pblock [get_pblocks pblock_hart1] -add {CLOCKREGION_X1Y2:CLOCKREGION_X1Y2}
+
+create_pblock pblock_hart0
+add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list socinstance/hart0]]
+resize_pblock [get_pblocks pblock_hart0] -add {CLOCKREGION_X1Y3:CLOCKREGION_X1Y3}
