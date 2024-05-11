@@ -89,7 +89,7 @@ NOTE: All software has been tested with and geared to use a gcc-riscv 32bit envi
 
 # Acknowledgements
 
-I'd like to thank Wade Brainer for help in getting this device tested thoroughly in a live environment, and for the awesome saturated float to integer conversion instruction.
+I'd like to thank Wade Brainerd for help in getting this device tested thoroughly in a live environment, and for the awesome saturated float to integer conversion instruction.
 
 Also thanks goes to Ben Stragnell for greate advice and pointers in how audio hardware should work.
 
