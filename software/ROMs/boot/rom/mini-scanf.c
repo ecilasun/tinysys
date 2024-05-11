@@ -130,7 +130,7 @@ int	c_isdigit(int c)
 					if (save)
 						*(int*)va_arg(ap, int*) = value * sign;
 					//if (save) // ignore %* (std)
-						count++;
+					count++;
 					break;
 				}
 				case ']':

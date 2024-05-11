@@ -77,7 +77,8 @@ int MAX3421CtlReset()
 	E32Sleep(3*ONE_MILLISECOND_IN_TICKS);
 
 	// Wait for oscillator OK interrupt for the 12MHz external clock
-	uint8_t rd = 0, cnt = 0;
+	uint8_t rd = 0;
+	uint32_t cnt = 0;
 	while ((rd & bmOSCOKIRQ) == 0 && cnt != 512)
 	{
 		rd = MAX3421ReadByte(rUSBIRQ);
