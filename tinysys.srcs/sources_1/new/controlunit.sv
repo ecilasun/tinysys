@@ -263,6 +263,7 @@ wire pendingwback = rwen;
 always_comb begin
 	if (~aresetn) begin
 		rwen = 1'b0;
+		rdin = 32'd0;
 	end else begin
 		if (m_ibus.rdone) begin
 			unique case(rfunc3)
