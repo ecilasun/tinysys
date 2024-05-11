@@ -4,6 +4,7 @@ module axi4uart(
 	input wire aclk,
 	input wire uartbaseclock,
 	input wire aresetn,
+	input wire rst10n,
 	input wire uartrx,
 	output wire uarttx,
 	output wire uartirq,
@@ -48,7 +49,7 @@ uartoutfifo UART_out_fifo(
 
 // Fifo output serializer
 always @(posedge uartbaseclock) begin
-	if (~aresetn) begin
+	if (~rst10n) begin
 		outfifore <= 1'b0;
 		transmitbyte <= 1'b0;
 		datatotransmit <= 8'h00;
@@ -99,7 +100,7 @@ uartinfifo UART_in_fifo(
 
 // Fifo input control
 always @(posedge uartbaseclock) begin
-	if (~aresetn) begin
+	if (~rst10n) begin
 		inuartbyte <= 8'd0;
 		infifowe <= 1'b0;
 	end else begin

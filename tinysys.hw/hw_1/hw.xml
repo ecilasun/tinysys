@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Product Version: Vivado v2023.2 (64-bit)                                     -->
+<!-- Product Version: Vivado v2023.2.2 (64-bit)                                   -->
 <!--                                                                              -->
 <!-- Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.                        -->
-<!-- Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.        -->
+<!-- Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.        -->
 
 <hwsession version="1" minor="2">
   <device name="xc7a200t_0" gui_info="dashboard1=dashboard_1[xc7a200t_0/XADC=XADC_PLOT_1;]"/>

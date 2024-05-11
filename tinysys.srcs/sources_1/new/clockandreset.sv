@@ -11,6 +11,7 @@ module clockandreset(
 	output wire clk166,
 	output wire clk200,
 	output wire aresetn,
+	output wire rst10n,
 	output wire rst25n,
 	output wire rst50n,
 	output wire rstaudion,
@@ -88,6 +89,13 @@ always @(posedge clk166) begin
 	regpreresetn <= sysRdyB;
 end
 
+(* async_reg = "true" *) logic rstn10A = 1'b1;
+(* async_reg = "true" *) logic rstn10B = 1'b1;
+always @(posedge clk25) begin
+	rstn10A <= regaresetn;
+	rstn10B <= rstn10A;
+end
+
 (* async_reg = "true" *) logic rstn25A = 1'b1;
 (* async_reg = "true" *) logic rstn25B = 1'b1;
 always @(posedge clk25) begin
@@ -109,6 +117,7 @@ always @(posedge clkaudio) begin
 	rstaudionB <= rstaudionA;
 end
 
+assign rst10n = rstn10B;
 assign rst25n = rstn25B;
 assign rst50n = rstn50B;
 assign rstaudion = rstaudionB;
