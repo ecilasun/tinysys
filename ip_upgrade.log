@@ -1,3 +1,297 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2023.2.2 (lin64) Build 4126759 Thu Feb  8 23:52:05 MST 2024
+| Date         : Fri May 10 21:11:07 2024
+| Host         : microbe running 64-bit Ubuntu 20.04.6 LTS
+| Command      : upgrade_ip
+| Device       : xc7a200tfbg484-1
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Upgrade Log for IP 'mult_gen_0'
+
+1. Summary
+----------
+
+SUCCESS in the upgrade of mult_gen_0 (xilinx.com:ip:mult_gen:12.0) from (Rev. 19) to (Rev. 20)
+
+
+
+
+
+
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2023.2.2 (lin64) Build 4126759 Thu Feb  8 23:52:05 MST 2024
+| Date         : Fri May 10 21:11:05 2024
+| Host         : microbe running 64-bit Ubuntu 20.04.6 LTS
+| Command      : upgrade_ip
+| Device       : xc7a200tfbg484-1
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Upgrade Log for IP 'fp_ui2f'
+
+1. Summary
+----------
+
+SUCCESS in the upgrade of fp_ui2f (xilinx.com:ip:floating_point:7.1) from (Rev. 16) to (Rev. 17)
+
+
+
+
+
+
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2023.2.2 (lin64) Build 4126759 Thu Feb  8 23:52:05 MST 2024
+| Date         : Fri May 10 21:11:03 2024
+| Host         : microbe running 64-bit Ubuntu 20.04.6 LTS
+| Command      : upgrade_ip
+| Device       : xc7a200tfbg484-1
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Upgrade Log for IP 'fp_sub'
+
+1. Summary
+----------
+
+SUCCESS in the upgrade of fp_sub (xilinx.com:ip:floating_point:7.1) from (Rev. 16) to (Rev. 17)
+
+
+
+
+
+
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2023.2.2 (lin64) Build 4126759 Thu Feb  8 23:52:05 MST 2024
+| Date         : Fri May 10 21:11:00 2024
+| Host         : microbe running 64-bit Ubuntu 20.04.6 LTS
+| Command      : upgrade_ip
+| Device       : xc7a200tfbg484-1
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Upgrade Log for IP 'fp_sqrt'
+
+1. Summary
+----------
+
+SUCCESS in the upgrade of fp_sqrt (xilinx.com:ip:floating_point:7.1) from (Rev. 16) to (Rev. 17)
+
+
+
+
+
+
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2023.2.2 (lin64) Build 4126759 Thu Feb  8 23:52:05 MST 2024
+| Date         : Fri May 10 21:10:58 2024
+| Host         : microbe running 64-bit Ubuntu 20.04.6 LTS
+| Command      : upgrade_ip
+| Device       : xc7a200tfbg484-1
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Upgrade Log for IP 'fp_mul'
+
+1. Summary
+----------
+
+SUCCESS in the upgrade of fp_mul (xilinx.com:ip:floating_point:7.1) from (Rev. 16) to (Rev. 17)
+
+
+
+
+
+
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2023.2.2 (lin64) Build 4126759 Thu Feb  8 23:52:05 MST 2024
+| Date         : Fri May 10 21:10:56 2024
+| Host         : microbe running 64-bit Ubuntu 20.04.6 LTS
+| Command      : upgrade_ip
+| Device       : xc7a200tfbg484-1
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Upgrade Log for IP 'fp_msub'
+
+1. Summary
+----------
+
+SUCCESS in the upgrade of fp_msub (xilinx.com:ip:floating_point:7.1) from (Rev. 16) to (Rev. 17)
+
+
+
+
+
+
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2023.2.2 (lin64) Build 4126759 Thu Feb  8 23:52:05 MST 2024
+| Date         : Fri May 10 21:10:53 2024
+| Host         : microbe running 64-bit Ubuntu 20.04.6 LTS
+| Command      : upgrade_ip
+| Device       : xc7a200tfbg484-1
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Upgrade Log for IP 'fp_madd'
+
+1. Summary
+----------
+
+SUCCESS in the upgrade of fp_madd (xilinx.com:ip:floating_point:7.1) from (Rev. 16) to (Rev. 17)
+
+
+
+
+
+
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2023.2.2 (lin64) Build 4126759 Thu Feb  8 23:52:05 MST 2024
+| Date         : Fri May 10 21:10:51 2024
+| Host         : microbe running 64-bit Ubuntu 20.04.6 LTS
+| Command      : upgrade_ip
+| Device       : xc7a200tfbg484-1
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Upgrade Log for IP 'fp_lt'
+
+1. Summary
+----------
+
+SUCCESS in the upgrade of fp_lt (xilinx.com:ip:floating_point:7.1) from (Rev. 16) to (Rev. 17)
+
+
+
+
+
+
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2023.2.2 (lin64) Build 4126759 Thu Feb  8 23:52:05 MST 2024
+| Date         : Fri May 10 21:10:49 2024
+| Host         : microbe running 64-bit Ubuntu 20.04.6 LTS
+| Command      : upgrade_ip
+| Device       : xc7a200tfbg484-1
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Upgrade Log for IP 'fp_le'
+
+1. Summary
+----------
+
+SUCCESS in the upgrade of fp_le (xilinx.com:ip:floating_point:7.1) from (Rev. 16) to (Rev. 17)
+
+
+
+
+
+
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2023.2.2 (lin64) Build 4126759 Thu Feb  8 23:52:05 MST 2024
+| Date         : Fri May 10 21:10:46 2024
+| Host         : microbe running 64-bit Ubuntu 20.04.6 LTS
+| Command      : upgrade_ip
+| Device       : xc7a200tfbg484-1
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Upgrade Log for IP 'fp_i2f'
+
+1. Summary
+----------
+
+SUCCESS in the upgrade of fp_i2f (xilinx.com:ip:floating_point:7.1) from (Rev. 16) to (Rev. 17)
+
+
+
+
+
+
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2023.2.2 (lin64) Build 4126759 Thu Feb  8 23:52:05 MST 2024
+| Date         : Fri May 10 21:10:44 2024
+| Host         : microbe running 64-bit Ubuntu 20.04.6 LTS
+| Command      : upgrade_ip
+| Device       : xc7a200tfbg484-1
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Upgrade Log for IP 'fp_f2i'
+
+1. Summary
+----------
+
+SUCCESS in the upgrade of fp_f2i (xilinx.com:ip:floating_point:7.1) from (Rev. 16) to (Rev. 17)
+
+
+
+
+
+
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2023.2.2 (lin64) Build 4126759 Thu Feb  8 23:52:05 MST 2024
+| Date         : Fri May 10 21:10:42 2024
+| Host         : microbe running 64-bit Ubuntu 20.04.6 LTS
+| Command      : upgrade_ip
+| Device       : xc7a200tfbg484-1
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Upgrade Log for IP 'fp_eq'
+
+1. Summary
+----------
+
+SUCCESS in the upgrade of fp_eq (xilinx.com:ip:floating_point:7.1) from (Rev. 16) to (Rev. 17)
+
+
+
+
+
+
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2023.2.2 (lin64) Build 4126759 Thu Feb  8 23:52:05 MST 2024
+| Date         : Fri May 10 21:10:40 2024
+| Host         : microbe running 64-bit Ubuntu 20.04.6 LTS
+| Command      : upgrade_ip
+| Device       : xc7a200tfbg484-1
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Upgrade Log for IP 'fp_div'
+
+1. Summary
+----------
+
+SUCCESS in the upgrade of fp_div (xilinx.com:ip:floating_point:7.1) from (Rev. 16) to (Rev. 17)
+
+
+
+
+
+
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2023.2.2 (lin64) Build 4126759 Thu Feb  8 23:52:05 MST 2024
+| Date         : Fri May 10 21:10:37 2024
+| Host         : microbe running 64-bit Ubuntu 20.04.6 LTS
+| Command      : upgrade_ip
+| Device       : xc7a200tfbg484-1
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Upgrade Log for IP 'fp_add'
+
+1. Summary
+----------
+
+SUCCESS in the upgrade of fp_add (xilinx.com:ip:floating_point:7.1) from (Rev. 16) to (Rev. 17)
+
+
+
+
+
+
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
 ---------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2023.2 (win64) Build 4029153 Fri Oct 13 20:14:34 MDT 2023

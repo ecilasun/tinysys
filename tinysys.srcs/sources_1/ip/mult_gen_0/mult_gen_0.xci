@@ -3,7 +3,7 @@
   "ip_inst": {
     "xci_name": "mult_gen_0",
     "component_reference": "xilinx.com:ip:mult_gen:12.0",
-    "ip_revision": "19",
+    "ip_revision": "20",
     "gen_directory": "../../../../tinysys.gen/sources_1/ip/mult_gen_0",
     "parameters": {
       "component_parameters": {
@@ -68,12 +68,12 @@
       },
       "runtime_parameters": {
         "IPCONTEXT": [ { "value": "IP_Flow" } ],
-        "IPREVISION": [ { "value": "19" } ],
+        "IPREVISION": [ { "value": "20" } ],
         "MANAGED": [ { "value": "TRUE" } ],
         "OUTPUTDIR": [ { "value": "../../../../tinysys.gen/sources_1/ip/mult_gen_0" } ],
         "SELECTEDSIMMODEL": [ { "value": "" } ],
         "SHAREDDIR": [ { "value": "." } ],
-        "SWVERSION": [ { "value": "2023.2" } ],
+        "SWVERSION": [ { "value": "2023.2.2" } ],
         "SYNTHESISFLOW": [ { "value": "OUT_OF_CONTEXT" } ]
       }
     },

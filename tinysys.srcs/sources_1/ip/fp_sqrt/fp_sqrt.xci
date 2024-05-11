@@ -3,7 +3,7 @@
   "ip_inst": {
     "xci_name": "fp_sqrt",
     "component_reference": "xilinx.com:ip:floating_point:7.1",
-    "ip_revision": "16",
+    "ip_revision": "17",
     "gen_directory": "../../../../tinysys.gen/sources_1/ip/fp_sqrt",
     "parameters": {
       "component_parameters": {
@@ -147,12 +147,12 @@
       },
       "runtime_parameters": {
         "IPCONTEXT": [ { "value": "IP_Flow" } ],
-        "IPREVISION": [ { "value": "16" } ],
+        "IPREVISION": [ { "value": "17" } ],
         "MANAGED": [ { "value": "TRUE" } ],
         "OUTPUTDIR": [ { "value": "../../../../tinysys.gen/sources_1/ip/fp_sqrt" } ],
         "SELECTEDSIMMODEL": [ { "value": "" } ],
         "SHAREDDIR": [ { "value": "." } ],
-        "SWVERSION": [ { "value": "2023.2" } ],
+        "SWVERSION": [ { "value": "2023.2.2" } ],
         "SYNTHESISFLOW": [ { "value": "GLOBAL" } ]
       }
     },
