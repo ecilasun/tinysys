@@ -66,7 +66,7 @@ int main()
 	// Illegal instruction
 	{
 		printf("\nCrash test\n");
-		asm volatile( ".word 0x00000000;");
+		asm volatile( ".word 0x00000000;"); // Illegal opcode
 	}
 
     return 0;

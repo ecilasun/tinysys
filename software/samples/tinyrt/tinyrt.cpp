@@ -77,7 +77,7 @@ inline uint32_t ftoui4sat(float value)
   uint32_t retval;
   asm (
     "mv a1, %1;"
-    ".word 0xc2058553;" // fcvtswu4sat a0, a1 // note A0==cpu.x10, A1==cpu.x11
+    ".insn 0xc2058553;" // fcvtswu4sat a0, a1 // note A0==cpu.x10, A1==cpu.x11
     "mv %0, a0; "
     : "=r" (retval)
     : "r" (value)

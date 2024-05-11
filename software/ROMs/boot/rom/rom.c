@@ -45,6 +45,23 @@ static const char *s_regnames[]={"zero", "ra", "sp", "gp", "tp", "t0", "t1", "t2
 
 static struct SUSBHostContext s_usbhostctx;
 
+void UnrecoverableError()
+{
+	asm volatile(
+		"csrw mie, 0;"			// Disable all interrupt types
+		"csrw mstatus, 0;"		// Disable machine interrupts
+	);
+
+	// We have experienced a situation which requires a hard-boot
+	while (1)
+	{
+		LEDSetState(0xF);
+		E32Sleep(ONE_SECOND_IN_TICKS);
+		LEDSetState(0x0);
+		E32Sleep(ONE_SECOND_IN_TICKS);
+	}
+}
+
 void _stubTask()
 {
 	// NOTE: This task won't actually run
@@ -66,7 +83,7 @@ void _runExecTask()
 		"sw %1, 4(sp);"		// Store argv[1] (path to exec)
 		"sw %2, 8(sp);"		// Store argv[2] (exec params0)
 		"sw zero, 12(sp);"	// Store argv[3] (nullptr)
-		".word 0xFC000073;"	// Invalidate & Write Back D$ (CFLUSH.D.L1)
+		".insn 0xFC000073;"	// Invalidate & Write Back D$ (CFLUSH.D.L1)
 		"fence.i;"			// Invalidate I$
 		"lw s0, %0;"		// Target branch address
 		"jalr s0;"			// Branch to the entry point
@@ -545,6 +562,8 @@ void __attribute__((aligned(64), noinline)) CopyPayloadAndChainOverlay(void *sou
 {
 	// Copy this code outside ROM area
 	asm volatile(
+		"csrw mie, 0;"			// Disable all interrupt types
+		"csrw mstatus, 0;"		// Disable machine interrupts
 		"mv s0, %0;"			// Payload address: @payload
 		"lui s1, 0x0;"			// Target: 0x00000000
 		"addi s2, zero, 0x10;"	// Count:  64/4 (0x10)
@@ -555,9 +574,9 @@ void __attribute__((aligned(64), noinline)) CopyPayloadAndChainOverlay(void *sou
 		"addi s1,s1,4;"
 		"addi s2,s2,-1;"
 		"bnez s2, copypayloadloop;"
-		".word 0xFC000073;"		// Invalidate D$ and I$
-		"fence.i;"
-		"lui s0, 0x0;"			// Branch to copy of payload at 0x00000000 which will then load the ROM overlay from storage
+		".insn 0xFC000073;"		// Invalidate D$ and I$ (CFLUSH_D_L1)
+		"fence.i;"				// Discard anything previously in I$ which might point at the CopyOverlayToROM function's new location
+		"lui s0, 0x0;"			// Branch to 0x00000000 which will then copy the ROM from its temporary position onto ROM shadow area
 		"jalr s0;"
 		:
 		// Return values
@@ -574,11 +593,9 @@ void __attribute__((aligned(64), noinline)) CopyOverlayToROM()
 {
 	// NOTE: Chained ROM must invalidate I$ on entry!
 	asm volatile(
-		"csrw mie, 0;"			// Disable all interrupt types
-		"csrw mstatus, 0;"		// Disable machine interrupts
-		"lui s0, 0x00010;"		// Source: 0x00010000
-		"lui s1, 0x0FFE0;"		// Target: 0x0FFE0000
-		"lui s2, 0x4;"			// Count:  65536/4 (0x4000)
+		"lui s0, 0x00010;"		// Source: 0x00010000 (Overlay buffer)
+		"lui s1, 0x0FFE0;"		// Target: 0x0FFE0000 (ROM Shadow)
+		"lui s2, 0x4;"			// Count:  65536/4 (0x4000, 64Kbytes)
 		"copyoverlayloop:"
 		"lw a0, 0(s0);"			// Read source word
 		"sw a0, 0(s1);"			// Store target word
@@ -586,7 +603,7 @@ void __attribute__((aligned(64), noinline)) CopyOverlayToROM()
 		"addi s1,s1,4;"
 		"addi s2,s2,-1;"
 		"bnez s2, copyoverlayloop;"
-		".word 0xFC000073;"		// Invalidate & Write Back D$ (CFLUSH.D.L1)
+		".insn 0xFC000073;"		// Invalidate & Write Back D$ (CFLUSH.D.L1)
 		"lui s0, 0x0FFE0;"		// Branch to reset vector: 0x0FFE0000
 		"jalr s0;"				// NOTE: ROM must invalidate I$ on entry
 	);
@@ -600,16 +617,24 @@ uint32_t LoadOverlay(const char *filename)
 	// If the binary blob exists, load it into memory
 	if (fr == FR_OK)
 	{
-		// Reset to overlay time defaults and unmount SDCard
+		// Reset device to overlay time defaults
 		DeviceDefaultState(2);
 
 		FSIZE_t fileSize = f_size(&fp);
 		UINT readsize = 0;
-		uint32_t *overlay = (uint32_t *)0x00010000; // Overlay
-		f_read(&fp, overlay, fileSize, &readsize);
-		f_close(&fp);
+		uint32_t *overlay = (uint32_t *)0x00010000; // Overlay buffer
+		__builtin_memset(overlay, 0, 65536);		// Clear overlay buffer to zeros
+		f_read(&fp, overlay, fileSize, &readsize);	// Load the overlay binary
+		f_close(&fp);								// Done with file access
+		f_mount(NULL, "sd:", 1);					// Unmount the SD card
+		CFLUSH_D_L1;								// Flush D$ to RAM
 
-		// Watermark register will retain this value on soft boot
+		// New ROM image will do its own thing to initialize the CPUs,
+		// remove our previous function pointers to branch to on reboot.
+		E32SetupCPU(1, (void*)0x0);
+		E32SetupCPU(0, (void*)0x0);
+
+		// Watermark register will retain this value on soft reboot
 		// so that when we load the overlay (which is the same code as this)
 		// we won't attempt to re-load the overlay over and over.
 		// NOTE: Only hart#0 updates its watermark register
@@ -680,8 +705,10 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	{
 		if (LoadOverlay("sd:/boot/rom.bin"))
 		{
+			// Copy and branch into CopyOverlayToROM which will then chain back into the new ROM
 			CopyPayloadAndChainOverlay(CopyOverlayToROM);
-			while(1) {}
+			// We should never arrive here
+			UnrecoverableError();
 		}
 	}
 
@@ -804,7 +831,7 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 
 int main()
 {
-	LEDSetState(0xF);
+	// Zero out the task memory (this will survive a soft reboot)
 	ClearTaskMemory();
 
 	// Reset and wake up all CPUs again, this time with their correct entry points
@@ -813,7 +840,7 @@ int main()
 	E32SetupCPU(0, KernelMain);
 	E32ResetCPU(0);
 
-	// Will never be reached
-	while(1){ }
+	// We should never arrive here
+	UnrecoverableError();
 	return 0;
 } 
