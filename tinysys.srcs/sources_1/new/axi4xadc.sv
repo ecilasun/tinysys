@@ -2,7 +2,6 @@
 
 module axi4xadc(
 	input wire aclk,
-	input wire clk10,
 	input wire aresetn,
 	axi4if.slave s_axi,
 	output wire [11:0] device_temp);
@@ -12,8 +11,8 @@ module axi4xadc(
 // --------------------------------------------------
 
 // TEMP is a MSB aligned 12 bit values
-(* async_reg = "true" *) logic [11:0] tmp0 = 12'd0;
-(* async_reg = "true" *) logic [11:0] devicetemperature = 12'd0;
+(* async_reg = "true" *) logic [11:0] tmp0;
+(* async_reg = "true" *) logic [11:0] devicetemperature;
 
 // Accodring to Xilinx documentation the 12 MSB correspond to temperature
 // voltage = 10 * (kT/q) * ln(10);
@@ -50,12 +49,13 @@ xadc_wiz_0 XADC (
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
-		//
+		tmp0 <= 12'd0;
+		devicetemperature <= 12'd0;
 	end else begin
 		if (ready) begin
 			tmp0 <= xadc_data[15:4];			// 1'b0 - TEMPERATURE
+			devicetemperature <= tmp0;
 		end
-		devicetemperature <= tmp0;
 	end
 end
 
@@ -69,49 +69,51 @@ assign s_axi.wready = 1'b1;
 assign s_axi.bvalid = 1'b1;
 assign s_axi.bresp = 2'b00;
 
-logic [1:0] raddrstate = 2'b00;
-logic [2:0] chsel = 3'b000;
+logic [1:0] raddrstate;
+logic [2:0] chsel;
 
 always @(posedge aclk) begin
 
-	s_axi.rvalid <= 1'b0;
-	s_axi.arready <= 1'b0;
-	s_axi.rlast <= 1'b0;
-	s_axi.rresp <= 2'b00;
-
-	unique case (raddrstate)
-		2'b00: begin
-			if (s_axi.arvalid) begin
-				s_axi.arready <= 1'b1;
-
-				// Channel index mapping
-				//5 432 10.0
-				//0_000_00 0x00 CH0
-				//0_001_00 0x04 CH1
-				//0_010_00 0x08 CH2
-				//0_011_00 0x0C CH3
-				//0_100_00 0x10 CH4
-				//0_101_00 0x14 CH5
-				//0_110_00 0x18 CH6
-				//0_111_00 0x1C CH7
-				//1_000_00 0x20 TMP
-
-				chsel <= s_axi.araddr[4:2];
-				raddrstate <= 2'b01;
-			end
-		end
-		2'b01: begin
-			if (s_axi.rready) begin
-				s_axi.rdata <= {116'd0, devicetemperature};
-				s_axi.rlast <= 1'b1;
-				s_axi.rvalid <= 1'b1;
-				raddrstate <= 2'b00;
-			end
-		end
-	endcase
-
 	if (~aresetn) begin
 		raddrstate <= 2'b00;
+		chsel <= 3'b000;
+	end else begin
+		s_axi.rvalid <= 1'b0;
+		s_axi.arready <= 1'b0;
+		s_axi.rlast <= 1'b0;
+		s_axi.rresp <= 2'b00;
+
+		unique case (raddrstate)
+			2'b00: begin
+				if (s_axi.arvalid) begin
+					s_axi.arready <= 1'b1;
+
+					// Channel index mapping
+					//5 432 10.0
+					//0_000_00 0x00 CH0
+					//0_001_00 0x04 CH1
+					//0_010_00 0x08 CH2
+					//0_011_00 0x0C CH3
+					//0_100_00 0x10 CH4
+					//0_101_00 0x14 CH5
+					//0_110_00 0x18 CH6
+					//0_111_00 0x1C CH7
+					//1_000_00 0x20 TMP
+
+					chsel <= s_axi.araddr[4:2];
+					raddrstate <= 2'b01;
+				end
+			end
+			2'b01: begin
+				if (s_axi.rready) begin
+					s_axi.rdata <= {116'd0, devicetemperature};
+					s_axi.rlast <= 1'b1;
+					s_axi.rvalid <= 1'b1;
+					raddrstate <= 2'b00;
+				end
+			end
+		endcase
+
 	end
 end
 

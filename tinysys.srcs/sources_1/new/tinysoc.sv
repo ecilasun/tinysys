@@ -368,7 +368,6 @@ axi4sdcard sdcardinst(
 
 axi4xadc xadcinst(
 	.aclk(aclk),
-	.clk10(clk10),
 	.aresetn(aresetn),
 	.s_axi(xadcif),
 	.device_temp(device_temp) );

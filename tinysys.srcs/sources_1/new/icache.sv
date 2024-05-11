@@ -49,13 +49,18 @@ always_comb begin
 		cacheaccess = line;
 end
 
+logic memreset;
+always_ff @(posedge aclk) begin
+	memreset <= ~aresetn;
+end
+
 cachememhalf CacheMemory256Lines(
 	.addra(cacheaccess),		// current cache line
 	.clka(aclk),				// cache clock
 	.dina(cdin),				// updated cache data to write
 	.wea(cachewe),				// write strobe for current cache line
 	.douta(cdout),				// output of currently selected cache line
-	.rsta(~aresetn));			// Reset
+	.rsta(memreset));			// Reset
 
 initial begin
 	for (int i=0; i<256; i=i+1) begin	// 256 lines total
