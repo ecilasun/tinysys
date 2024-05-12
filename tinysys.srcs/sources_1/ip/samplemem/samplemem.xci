@@ -40,7 +40,7 @@
         "Write_Width_B": [ { "value": "32", "value_src": "user", "resolve_type": "user", "usage": "all" } ],
         "Read_Width_B": [ { "value": "32", "value_src": "user", "resolve_type": "user", "usage": "all" } ],
         "Operating_Mode_B": [ { "value": "WRITE_FIRST", "resolve_type": "user", "enabled": false, "usage": "all" } ],
-        "Enable_B": [ { "value": "Always_Enabled", "value_src": "user", "resolve_type": "user", "usage": "all" } ],
+        "Enable_B": [ { "value": "Use_ENB_Pin", "value_src": "user", "resolve_type": "user", "usage": "all" } ],
         "Register_PortA_Output_of_Memory_Primitives": [ { "value": "false", "value_src": "user", "resolve_type": "user", "format": "bool", "enabled": false, "usage": "all" } ],
         "Register_PortA_Output_of_Memory_Core": [ { "value": "false", "resolve_type": "user", "format": "bool", "enabled": false, "usage": "all" } ],
         "Use_REGCEA_Pin": [ { "value": "false", "resolve_type": "user", "format": "bool", "enabled": false, "usage": "all" } ],
@@ -119,7 +119,7 @@
         "C_RST_PRIORITY_B": [ { "value": "CE", "resolve_type": "generated", "usage": "all" } ],
         "C_RSTRAM_B": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "C_INITB_VAL": [ { "value": "0", "resolve_type": "generated", "usage": "all" } ],
-        "C_HAS_ENB": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
+        "C_HAS_ENB": [ { "value": "1", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "C_HAS_REGCEB": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "C_USE_BYTE_WEB": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "C_WEB_WIDTH": [ { "value": "1", "resolve_type": "generated", "format": "long", "usage": "all" } ],
@@ -177,7 +177,7 @@
         "OUTPUTDIR": [ { "value": "../../../../tinysys.gen/sources_1/ip/samplemem" } ],
         "SELECTEDSIMMODEL": [ { "value": "" } ],
         "SHAREDDIR": [ { "value": "." } ],
-        "SWVERSION": [ { "value": "2023.2" } ],
+        "SWVERSION": [ { "value": "2023.2.2" } ],
         "SYNTHESISFLOW": [ { "value": "OUT_OF_CONTEXT" } ]
       }
     },
@@ -188,6 +188,7 @@
         "addra": [ { "direction": "in", "size_left": "8", "size_right": "0", "driver_value": "0" } ],
         "dina": [ { "direction": "in", "size_left": "127", "size_right": "0", "driver_value": "0" } ],
         "clkb": [ { "direction": "in", "driver_value": "0" } ],
+        "enb": [ { "direction": "in", "driver_value": "0" } ],
         "addrb": [ { "direction": "in", "size_left": "10", "size_right": "0", "driver_value": "0" } ],
         "doutb": [ { "direction": "out", "size_left": "31", "size_right": "0" } ]
       },
@@ -250,7 +251,8 @@
           "port_maps": {
             "ADDR": [ { "physical_name": "addrb" } ],
             "CLK": [ { "physical_name": "clkb" } ],
-            "DOUT": [ { "physical_name": "doutb" } ]
+            "DOUT": [ { "physical_name": "doutb" } ],
+            "EN": [ { "physical_name": "enb" } ]
           }
         }
       },

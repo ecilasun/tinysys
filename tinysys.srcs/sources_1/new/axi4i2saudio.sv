@@ -77,15 +77,20 @@ logic samplewe;
 logic [7:0] writeCursor;
 logic [9:0] readCursor;
 logic [127:0] sampleIn;
+logic samplere;
 wire [31:0] sampleOut;
+
+wire [8:0] inaddr = {writeBufferSelect, writeCursor};
+wire [10:0] outaddr = {~writeBufferSelect, readCursor};
 
 samplemem samplememinst (
   .clka(aclk),
   .wea(samplewe),
-  .addra({writeBufferSelect, writeCursor}),
+  .addra(inaddr),
   .dina(sampleIn),
   .clkb(audioclock),
-  .addrb({~writeBufferSelect, readCursor}),
+  .addrb(outaddr),
+  .enb(samplere),
   .doutb(sampleOut) );
 
 // Number of buffer swaps so far (CDC from audio clock to bus clock)
@@ -241,10 +246,15 @@ always@(posedge audioclock) begin
 		bufferSwap <= 1'd0;
 		writeBufferSelect <= 1'b0;
 		sampleRateCounter <= 2'd0;
+		samplere <= 1'b0;
 	end else begin
+		samplere <= 1'b0;
 		if (count==9'h0ff) begin
 			// New sample
 			tx_data_lr <= (sampleoutputrate==2'b11) ? 0 : sampleOut;
+
+			// Read next sample if sample output is not disabled
+			samplere <= (sampleoutputrate==2'b11) ? 1'b0 : 1'b1;
 
 			// Increment read cursor based on sample rate, or rewind at end of buffer
 			// We always run at 44KHz but duplicate samples to emulate 22KHz or 11KHz
