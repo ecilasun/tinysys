@@ -37,17 +37,8 @@ logic cachewe;						// write control
 logic [511:0] cdin;					// input data to write to cache
 wire [511:0] cdout;					// output data read from cache
 
-logic flushing;						// high during cache flush operation
 logic [7:0] dccount;				// line counter for cache flush/invalidate ops
 logic [13:0] flushline = 14'd0;		// contents of line being flushed
-
-logic [7:0] cacheaccess;
-always_comb begin
-	if (flushing)
-		cacheaccess = dccount;
-	else
-		cacheaccess = line;
-end
 
 logic memreset;
 always_ff @(posedge aclk) begin
@@ -55,7 +46,7 @@ always_ff @(posedge aclk) begin
 end
 
 cachememhalf CacheMemory256Lines(
-	.addra(cacheaccess),		// current cache line
+	.addra(line),				// current cache line
 	.clka(aclk),				// cache clock
 	.dina(cdin),				// updated cache data to write
 	.wea(cachewe),				// write strobe for current cache line
@@ -111,7 +102,6 @@ always_ff @(posedge aclk) begin
 		readdone <= 1'b0;
 		cachewe <= 1'b0;
 		ctagwe <= 1'b0;
-		flushing <= 1'b0;
 		dccount <= 8'h00;
 		dataout <= 32'd0;
 	end else begin
