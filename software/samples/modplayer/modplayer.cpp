@@ -7,16 +7,19 @@
 #include "apu.h"
 #include "vpu.h"
 
-#include "micromod/micromod.h"
+#include "xm.h"
+#include "micromod.h"
 
 #define SAMPLING_FREQ  44100	// 44.1khz
 #define REVERB_BUF_LEN 4110		// 100ms
 #define OVERSAMPLE     2		// 2x oversampling
 #define NUM_CHANNELS   2		// Stereo
 #define BUFFER_SAMPLES 1024		// buffer size (max: 2048 bytes i.e. 1024 words)
+#define BUFFER_SAMPLES_F 2048
 
 static short mix_buffer[ BUFFER_SAMPLES * NUM_CHANNELS * OVERSAMPLE ];
 static short reverb_buffer[ REVERB_BUF_LEN ];
+float *mix_buffer_f;
 static short *apubuffer;
 static long reverb_len = REVERB_BUF_LEN, reverb_idx = 0, filt_l = 0, filt_r = 0;
 static long samples_remaining = 0;
@@ -39,6 +42,17 @@ static void downsample( short *input, short *output, long count ) {
 		filt_r = input[ in_idx++ ] >> 2;
 		output[ out_idx++ ] = out_l + filt_l;
 		output[ out_idx++ ] = out_r + filt_r;
+	}
+}
+
+static void downsample_f( float *input, short *output, long count )
+{
+	long in_idx, out_idx, out_l, out_r;
+	in_idx = out_idx = 0;
+	while( out_idx < count )
+	{
+		output[out_idx++] = (short)(input[in_idx++]*32768.f);
+		output[out_idx++] = (short)(input[in_idx++]*32768.f);
 	}
 }
 
@@ -130,11 +144,30 @@ void draw_wave()
 		int16_t R = 120 + (apubuffer[i*2+1]>>8);
 		L = L<0 ? 0 : (L>239 ? 239 : L);
 		R = R<0 ? 0 : (R>239 ? 239 : R);
-		sc.writepage[i + L*320] = 0x37;
-		sc.writepage[i + R*320] = 0x27;
+		sc.writepage[i+32 + L*320] = 0x37;
+		sc.writepage[i+32 + R*320] = 0x27;
 	}
 
-	VPUWaitVSync();
+	//VPUWaitVSync();
+	CFLUSH_D_L1;
+	VPUSwapPages(&vx, &sc);
+}
+
+void draw_wave_f()
+{
+	VPUClear(&vx, 0x00000000);
+
+	for (uint32_t i=0; i<256; ++i)
+	{
+		int16_t L = 120 + (int16_t)(mix_buffer_f[i*2+0]*128.f);
+		int16_t R = 120 + (int16_t)(mix_buffer_f[i*2+1]*128.f);
+		L = L<0 ? 0 : (L>239 ? 239 : L);
+		R = R<0 ? 0 : (R>239 ? 239 : R);
+		sc.writepage[i+32 + L*320] = 0x37;
+		sc.writepage[i+32 + R*320] = 0x27;
+	}
+
+	//VPUWaitVSync();
 	CFLUSH_D_L1;
 	VPUSwapPages(&vx, &sc);
 }
@@ -163,7 +196,6 @@ static long play_module( signed char *module )
 			if( count > samples_remaining )
 				count = samples_remaining;
 
-			// Anything above 19ms stalls this
 			__builtin_memset( mix_buffer, 0, BUFFER_SAMPLES * NUM_CHANNELS * OVERSAMPLE * sizeof( short ) );
 			micromod_get_audio( mix_buffer, count );
 			downsample( mix_buffer, apubuffer, BUFFER_SAMPLES * OVERSAMPLE );
@@ -220,6 +252,7 @@ void PlayMODFile(const char *fname)
 	length = read_module_length( fname );
 	if( length > 0 )
 	{
+		printf( "Playing %s\n", fname);
 		printf( "Module Data Length: %li bytes.\n", length );
 		module = (signed char*)calloc( length, 1 );
 		if( module != NULL )
@@ -233,9 +266,81 @@ void PlayMODFile(const char *fname)
 	}
 }
 
+void PlayXMFile(const char *fname)
+{
+	FILE *fp = fopen(fname, "rb");
+	if (fp)
+	{
+		unsigned int filebytesize = 0;
+		fpos_t pos, endpos;
+		fgetpos(fp, &pos);
+		fseek(fp, 0, SEEK_END);
+		fgetpos(fp, &endpos);
+		fsetpos(fp, &pos);
+		filebytesize = (unsigned int)endpos;
+
+		char *xmfile = (char*)calloc(filebytesize, 1);
+		fread(xmfile, 1, filebytesize, fp);
+		fclose(fp);
+
+		// Set up buffer size for all future transfers
+		APUSetBufferSize(BUFFER_SAMPLES_F/2); // word size, i.e. number of stereo sample pairs
+		APUSetSampleRate(ASR_22_050_Hz);
+		uint32_t prevframe = APUFrame();
+
+		struct xm_context_s *ctx;
+		int res = xm_create_context_safe(&ctx, xmfile, filebytesize, 22050);
+		if (res == 0)
+		{
+			xm_set_max_loop_count(ctx, 1);
+			uint16_t num_patterns = xm_get_number_of_patterns(ctx);
+			uint16_t num_channels = xm_get_number_of_channels(ctx);
+			uint16_t length = xm_get_module_length(ctx);
+
+			const char* module_name = xm_get_module_name(ctx);
+			const char* tracker_name = xm_get_tracker_name(ctx);
+			printf("==> Playing: %s\n", module_name == NULL ? fname : module_name);
+			if(tracker_name != NULL) printf("==> Tracker: %s\n", tracker_name);
+
+			while(xm_get_loop_count(ctx) < 1)
+			{
+				xm_generate_samples(ctx, mix_buffer_f, BUFFER_SAMPLES_F);
+				downsample_f(mix_buffer_f, apubuffer, BUFFER_SAMPLES_F);
+
+				// Make sure the writes are visible by the DMA
+				CFLUSH_D_L1;
+
+				// Fill current write buffer with new mix data
+				APUStartDMA((uint32_t)apubuffer);
+
+				// Draw the waveform in the mix buffer so we don't clash with apu buffer
+				//draw_wave_f();
+
+				// Wait for the APU to finish playing back current read buffer
+				// Meanwhile the playback buffer will still be going without interruptions
+				uint32_t currframe;
+				do
+				{
+					// Still working on same frame?
+					currframe = APUFrame();
+				} while (currframe == prevframe);
+
+				// At this point the APU has switched
+				// playback to the other buffer, we can
+				// now fill the previous buffer.
+
+				// Remember this frame
+				prevframe = currframe;
+			}
+		}
+		xm_free_context(ctx);
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	apubuffer = (short*)APUAllocateBuffer(BUFFER_SAMPLES*NUM_CHANNELS*sizeof(short));
+	mix_buffer_f = (float*)APUAllocateBuffer(BUFFER_SAMPLES_F*NUM_CHANNELS*sizeof(float));
 	printf("\nAPU mix buffer: 0x%.8x\n", (unsigned int)apubuffer);
 
 	char currpath[48] = "sd:/";
@@ -251,8 +356,6 @@ int main(int argc, char *argv[])
 	else
 		strcat(fullpath, argv[1]);
 
-	printf("Loading and playing module %s\n", fullpath);
-
 	uint8_t *bufferB = VPUAllocateBuffer(320*240);
 	uint8_t *bufferA = VPUAllocateBuffer(320*240);
 
@@ -264,8 +367,14 @@ int main(int argc, char *argv[])
 	sc.framebufferA = bufferA;
 	sc.framebufferB = bufferB;
 	VPUSwapPages(&vx, &sc);
+	VPUClear(&vx, 0x00000000);
+	VPUSwapPages(&vx, &sc);
+	VPUClear(&vx, 0x00000000);
 
-	PlayMODFile(fullpath);
+	if (strstr(fullpath,".mod"))
+		PlayMODFile(fullpath);
+	else
+		PlayXMFile(fullpath);
 
 	printf("Playback complete\n");
 

@@ -1,0 +1,1 @@
+Please use your own manually assembled ROM images to test this NES emulator. I'm not going to distribute any copyrighted material, so please don't ask.

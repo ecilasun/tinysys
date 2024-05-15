@@ -16,7 +16,7 @@ default: all
 
 src_dir = .
 corelib_dir = ../../SDK
-thirdparty_libs = ../../3rdparty
+# my_3rdparty_libs = ../../3rdparty/libfoldernamehere
 
 # Rules
 
@@ -30,8 +30,10 @@ RISCV_GCC ?= $(RISCV_PREFIX)g++
 RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++20 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Ofast -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
 endif
 
-incs  += -I$(src_dir) -I$(corelib_dir)/ -I$(thirdparty_libs)/ -I$(src_dir)/.
-libs += $(wildcard $(corelib_dir)/*.c) $(wildcard $(thirdparty_libs)/**/*.c)
+# add your third party include folder here before src_dir as -I$(my_3rdparty_libs)/
+incs  += -I$(src_dir) -I$(corelib_dir)/ -I$(src_dir)/.
+# add your third party libs / sources here at the end as $(wildcard $(my_3rdparty_libs)/*.c) or *.cpp
+libs += $(wildcard $(corelib_dir)/*.c)
 objs  := starthere.elf
 
 $(foreach folder,$(folders),$(eval $(call compile_template,$(folder))))

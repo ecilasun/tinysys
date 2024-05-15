@@ -5,8 +5,8 @@
 #include "task.h"
 #include "basesystem.h"
 
-#include "imgui/imgui.h"
-#include "imgui/imgui_sw.h"
+#include "imgui.h"
+#include "imgui_sw.h"
 #include <stdio.h>
 
 #define min(_x_,_y_) (_x_) < (_y_) ? (_x_) : (_y_)

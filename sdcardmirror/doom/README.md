@@ -1,0 +1,1 @@
+Please place a doom.wad file here to run doom on tinysys.
