@@ -14,15 +14,15 @@ module axi4i2saudio(
     output wire tx_mclk,				// Audio bus output
     output wire tx_lrck,				// L/R select
     output wire tx_sclk,				// Stream clock
-    output logic tx_sdout );			// Stream out
+    output bit tx_sdout );			// Stream out
 
 // ------------------------------------------------------------------------------------
 // Clock divider
 // ------------------------------------------------------------------------------------
 
 // Counter for generating other divided clocks
-logic [8:0] count;
-logic counterenabled;
+bit [8:0] count;
+bit counterenabled;
 
 COUNTER_LOAD_MACRO #(
 	.COUNT_BY(48'd1),		// Count by 1
@@ -43,15 +43,15 @@ assign tx_sclk = sclk;			// Sample clock 2.823MHz (/8)
 assign tx_mclk = audioclock;	// Master clock 22.519MHz
 
 // Internal L/R copies to stream out
-logic [31:0] tx_data_lr;
-logic re;
+bit [31:0] tx_data_lr;
+bit re;
 assign audiore = re;
 
 // ------------------------------------------------------------------------------------
 // Command dispatch
 // ------------------------------------------------------------------------------------
 
-typedef enum logic [3:0] {
+typedef enum bit [3:0] {
 	INIT,
 	WCMD, DISPATCH,
 	APUSTART,
@@ -61,23 +61,24 @@ typedef enum logic [3:0] {
 	FINALIZE } apucmdmodetype;
 apucmdmodetype cmdmode = INIT;
 
-logic [31:0] apucmd;			// Command code
-logic [31:0] apusourceaddr;		// Memory address to DMA the audio samples from
-logic [9:0] apuwordcount;		// Number of words to playback, minus one
-logic [7:0] apuburstcount;		// Number of 16byte DMA reads, minus one
+bit [31:0] apucmd;			// Command code
+bit [31:0] apusourceaddr;		// Memory address to DMA the audio samples from
+bit [9:0] apuwordcount;		// Number of words to playback, minus one
+bit [7:0] apuburstcount;		// Number of 16byte DMA reads, minus one
 
 // Buffer address high bit to control DMA write page
-logic writeBufferSelect;
+bit writeBufferSelect;
 
 // Internal sample buffers with up to 1K 32 bit(L/R) samples each (2x4096 bytes)
 // This means each buffer has: 1024 stereo samples max, 256 bursts to read max
 // e.g. for 512x16bit stereo samples  we have 512 pairs to read, 128 bursts to make
 // Read and Write regions always alternate between offset 0 and offset 256
-logic samplewe;
-logic [7:0] writeCursor;
-logic [9:0] readCursor;
-logic [127:0] sampleIn;
-logic samplere;
+bit samplewe;
+bit [7:0] writeCursor;
+bit [9:0] readCursor;
+bit [1:0] readLowbits;
+bit [127:0] sampleIn;
+bit samplere;
 wire [31:0] sampleOut;
 
 wire [8:0] inaddr = {writeBufferSelect, writeCursor};
@@ -94,11 +95,11 @@ samplemem samplememinst (
   .doutb(sampleOut) );
 
 // Number of buffer swaps so far (CDC from audio clock to bus clock)
-logic bufferSwap;
-(* async_reg = "true" *) logic bufferSwapCDC1;
-(* async_reg = "true" *) logic bufferSwapCDC2;
+bit bufferSwap;
+(* async_reg = "true" *) bit bufferSwapCDC1;
+(* async_reg = "true" *) bit bufferSwapCDC2;
 
-logic [1:0] sampleoutputrate;
+bit [3:0] sampleoutputrateselector;
 
 always_ff @(posedge aclk) begin
 	if (~aresetn) begin
@@ -129,7 +130,7 @@ always_ff @(posedge aclk) begin
 		samplewe <= 1'b0;
 		counterenabled <= 1'b0;
 		writeCursor <= 8'd0;
-		sampleoutputrate <= 2'b00;
+		sampleoutputrateselector <= 4'b0000;
 		apuwordcount <= 10'd1023;
 		apuburstcount <= 8'd255;
 		cmdmode <= INIT;
@@ -182,7 +183,7 @@ always_ff @(posedge aclk) begin
 	
 			APUBUFFERSIZE: begin
 				if (abvalid && ~abempty) begin
-					apuwordcount <= audiodin[9:0];		// wordcount-1 (0..1023), typically 1023
+					apuwordcount <= audiodin[9:0];		// wordcount-1 (0..1023), typically 1023, times 4 for rate matching
 					apuburstcount <= audiodin[10:2];	// burstcount = wordcount>>2, typically 255
 					// Advance FIFO
 					re <= 1'b1;
@@ -192,7 +193,13 @@ always_ff @(posedge aclk) begin
 	
 			APUSETRATE: begin
 				if (abvalid && ~abempty) begin
-					sampleoutputrate <= audiodin[1:0]; // 2'b00:x1, 2'b01:x2, 2'b10:x4, 2'b11:quiet
+					// 2'b00:x1, 2'b01:x2, 2'b10:x4, 2'b11:quiet
+					unique case(audiodin[1:0])
+						2'b00: sampleoutputrateselector <= 4'b0100;
+						2'b01: sampleoutputrateselector <= 4'b0010;
+						2'b10: sampleoutputrateselector <= 4'b0001;
+						2'b11: sampleoutputrateselector <= 4'b0000;
+					endcase
 					// Advance FIFO
 					re <= 1'b1;
 					cmdmode <= FINALIZE;
@@ -237,49 +244,43 @@ end
 // I2S output
 // ------------------------------------------------------------------------------------
 
-logic [1:0] sampleRateCounter;	// Sample rate counter
+wire endofsamples = readCursor == apuwordcount;
+wire isquiet = sampleoutputrateselector == 4'd0;
 
 always@(posedge audioclock) begin
 	if (~rstaudion) begin
 		tx_data_lr <= 0;
 		readCursor <= 10'd0;
+		readLowbits <= 2'd0;
 		bufferSwap <= 1'd0;
 		writeBufferSelect <= 1'b0;
-		sampleRateCounter <= 2'd0;
 		samplere <= 1'b0;
 	end else begin
+
 		samplere <= 1'b0;
+
 		if (count==9'h0ff) begin
-			// New sample
-			tx_data_lr <= (sampleoutputrate==2'b11) ? 0 : sampleOut;
+			// Step cursor based on playback rate
+			{readCursor, readLowbits} <= {readCursor, readLowbits} + {8'd0, sampleoutputrateselector};
 
-			// Read next sample if sample output is not disabled
-			samplere <= (sampleoutputrate==2'b11) ? 1'b0 : 1'b1;
+			// New sample and read enable control
+			tx_data_lr <= isquiet ? 32'd0 : sampleOut;
+			samplere <= isquiet ? 1'b0 : 1'b1;
+		end
 
-			// Increment read cursor based on sample rate, or rewind at end of buffer
-			// We always run at 44KHz but duplicate samples to emulate 22KHz or 11KHz
-			unique case (sampleoutputrate)
-				2'b00:		readCursor <= readCursor + 10'd1;
-				2'b01:		readCursor <= readCursor + {9'd0, sampleRateCounter[0]};
-				2'b10:		readCursor <= readCursor + {9'd0, sampleRateCounter[1]};
-				2'b11:		readCursor <= 0;	// Halt output
-			endcase
-
-			// Increment swap count at end of buffer
-			if (readCursor == apuwordcount) begin
-				// Switch plaback buffer and also swap CPU side r/w page ID
-				bufferSwap <= ~bufferSwap;
-				writeBufferSelect <= ~writeBufferSelect;
-				readCursor <= 0;
-			end
-
-			sampleRateCounter <= sampleRateCounter + 2'd1;
+		// Increment swap count at end of buffer
+		if (endofsamples) begin
+			// Switch playback buffer and also swap CPU side r/w page ID
+			bufferSwap <= ~bufferSwap;
+			writeBufferSelect <= ~writeBufferSelect;
+			readCursor <= 10'd0;
+			readLowbits <= 2'd0;
 		end
 	end
 end
 
-logic [23:0] tx_data_l_shift;
-logic [23:0] tx_data_r_shift;
+bit [23:0] tx_data_l_shift;
+bit [23:0] tx_data_r_shift;
 
 always@(posedge audioclock) begin
 	if (~rstaudion) begin

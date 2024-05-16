@@ -15,11 +15,10 @@
 #define OVERSAMPLE     2		// 2x oversampling
 #define NUM_CHANNELS   2		// Stereo
 #define BUFFER_SAMPLES 1024		// buffer size (max: 2048 bytes i.e. 1024 words)
-#define BUFFER_SAMPLES_F 2048
 
-static short mix_buffer[ BUFFER_SAMPLES * NUM_CHANNELS * OVERSAMPLE ];
+static short *mix_buffer;
 static short reverb_buffer[ REVERB_BUF_LEN ];
-float *mix_buffer_f;
+static float *mix_buffer_f;
 static short *apubuffer;
 static long reverb_len = REVERB_BUF_LEN, reverb_idx = 0, filt_l = 0, filt_r = 0;
 static long samples_remaining = 0;
@@ -45,7 +44,7 @@ static void downsample( short *input, short *output, long count ) {
 	}
 }
 
-static void downsample_f( float *input, short *output, long count )
+static void convert_f(float *input, short *output, long count )
 {
 	long in_idx, out_idx, out_l, out_r;
 	in_idx = out_idx = 0;
@@ -284,7 +283,7 @@ void PlayXMFile(const char *fname)
 		fclose(fp);
 
 		// Set up buffer size for all future transfers
-		APUSetBufferSize(BUFFER_SAMPLES_F/2); // word size, i.e. number of stereo sample pairs
+		APUSetBufferSize(BUFFER_SAMPLES); // word count = sample count/2 (i.e. number of stereo sample pairs)
 		APUSetSampleRate(ASR_22_050_Hz);
 		uint32_t prevframe = APUFrame();
 
@@ -304,8 +303,8 @@ void PlayXMFile(const char *fname)
 
 			while(xm_get_loop_count(ctx) < 1)
 			{
-				xm_generate_samples(ctx, mix_buffer_f, BUFFER_SAMPLES_F);
-				downsample_f(mix_buffer_f, apubuffer, BUFFER_SAMPLES_F);
+				xm_generate_samples(ctx, mix_buffer_f, BUFFER_SAMPLES*2);
+				convert_f(mix_buffer_f, apubuffer, BUFFER_SAMPLES*2);
 
 				// Make sure the writes are visible by the DMA
 				CFLUSH_D_L1;
@@ -339,8 +338,9 @@ void PlayXMFile(const char *fname)
 
 int main(int argc, char *argv[])
 {
-	apubuffer = (short*)APUAllocateBuffer(BUFFER_SAMPLES*NUM_CHANNELS*sizeof(short));
-	mix_buffer_f = (float*)APUAllocateBuffer(BUFFER_SAMPLES_F*NUM_CHANNELS*sizeof(float));
+	apubuffer = (short*)APUAllocateBuffer(BUFFER_SAMPLES*NUM_CHANNELS*2*sizeof(short));
+	mix_buffer = (short*)APUAllocateBuffer(BUFFER_SAMPLES*NUM_CHANNELS*OVERSAMPLE*sizeof(short));
+	mix_buffer_f = (float*)APUAllocateBuffer(BUFFER_SAMPLES*NUM_CHANNELS*2*sizeof(float));
 	printf("\nAPU mix buffer: 0x%.8x\n", (unsigned int)apubuffer);
 
 	char currpath[48] = "sd:/";
