@@ -73,7 +73,7 @@ void PlayXMP(const char *fname)
 			APUStartDMA((uint32_t)apubuffer);
 
 			// Draw the waveform in the mix buffer so we don't clash with apu buffer
-			//draw_wave();
+			draw_wave();
 
 			// Wait for the APU to finish playing back current read buffer
 			// Meanwhile the playback buffer will still be going without interruptions
