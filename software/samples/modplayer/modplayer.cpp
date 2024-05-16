@@ -9,9 +9,9 @@
 
 #include "xmp.h"
 
-#define BUFFER_SAMPLES 1024		// buffer size (max: 2048 bytes i.e. 1024 words)
+#define BUFFER_WORD_COUNT 1024		// buffer size (max: 2048 bytes i.e. 1024 words)
+#define BUFFER_SIZE_IN_BYTES (BUFFER_WORD_COUNT*2*sizeof(short))
 
-static short *mix_buffer;
 static short *apubuffer;
 
 static EVideoContext vx;
@@ -51,7 +51,7 @@ void PlayXMP(const char *fname)
 		return;
 	}
 
-	APUSetBufferSize(BUFFER_SAMPLES); // word count = sample count/2 (i.e. number of stereo sample pairs)
+	APUSetBufferSize(BUFFER_WORD_COUNT); // word count = sample count/2 (i.e. number of stereo sample pairs)
 	APUSetSampleRate(ASR_22_050_Hz);
 	uint32_t prevframe = APUFrame();
 
@@ -62,9 +62,9 @@ void PlayXMP(const char *fname)
 
 		row = -1;
 		int playing = 1;
-		while (playing) // size == 2*BUFFER_SAMPLES, in bytes
+		while (playing) // size == 2*BUFFER_WORD_COUNT, in bytes
 		{
-			playing = xmp_play_buffer(ctx, apubuffer, BUFFER_SAMPLES*2*sizeof(short), 0) == 0;
+			playing = xmp_play_buffer(ctx, apubuffer, BUFFER_SIZE_IN_BYTES, 0) == 0;
 
 			// Make sure the writes are visible by the DMA
 			CFLUSH_D_L1;
@@ -75,18 +75,15 @@ void PlayXMP(const char *fname)
 			// Draw the waveform in the mix buffer so we don't clash with apu buffer
 			draw_wave();
 
-			// Wait for the APU to finish playing back current read buffer
-			// Meanwhile the playback buffer will still be going without interruptions
+			// Wait for the APU to be done with current read buffer which is still playing
 			uint32_t currframe;
 			do
 			{
-				// Still working on same frame?
+				// APU will return a different 'frame' as soon as the current buffer reaches the end
 				currframe = APUFrame();
 			} while (currframe == prevframe);
 
-			// At this point the APU has switched
-			// playback to the other buffer, we can
-			// now fill the previous buffer.
+			// Once we reach this point, the APU has switched to the other buffer we just filled, and playback resumes uninterrupted
 
 			// Remember this frame
 			prevframe = currframe;
@@ -100,8 +97,7 @@ void PlayXMP(const char *fname)
 
 int main(int argc, char *argv[])
 {
-	apubuffer = (short*)APUAllocateBuffer(BUFFER_SAMPLES*2*sizeof(short));
-	mix_buffer = (short*)APUAllocateBuffer(BUFFER_SAMPLES*2*sizeof(short));
+	apubuffer = (short*)APUAllocateBuffer(BUFFER_SIZE_IN_BYTES);
 	printf("\nAPU mix buffer: 0x%.8x\n", (unsigned int)apubuffer);
 
 	char currpath[48] = "sd:/";
