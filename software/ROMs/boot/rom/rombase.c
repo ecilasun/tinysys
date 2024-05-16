@@ -610,21 +610,23 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			{
 				// See: https://jborza.com/post/2021-05-11-riscv-linux-syscalls/
 				// Builtin
-				// 0			io_setup	long io_setup(unsigned int nr_events, aio_context_t *ctx_idp);
-				// 17			getcwd		char *getcwd(char *buf, size_t size);
-				// 29			ioctl		ioctl(unsigned int fd, unsigned int cmd, unsigned long arg);
-				// 50			chdir		chdir(const char *path);
-				// 57			close		int sys_close(unsigned int fd);
-				// 62			lseek		off_t sys_lseek(int fd, off_t offset, int whence);
-				// 63			read		ssize_t read(int fd, void *buf, size_t count);
-				// 64			write		ssize_t write(int fd, const void *buf, size_t count);
-				// 80			newfstat	long sys_newfstat(unsigned int fd, struct stat __user *statbuf);
-				// 93			exit		noreturn void _exit(int status);
-				// 129			kill		int kill(pid_t pid, int sig);
-				// 214			brk			int brk(void *addr); / void *sbrk(intptr_t increment);
-				// 1024			open		long sys_open(const char __user * filename, int flags, umode_t mode); open/create file
-				// 1025			rename		int rename(const char *oldpath, const char *newpath);
-				// 1026			remove		remove(const char *fname);
+				// 0			io_setup		long io_setup(unsigned int nr_events, aio_context_t *ctx_idp);
+				// 17			getcwd			char *getcwd(char *buf, size_t size);
+				// 29			ioctl			ioctl(unsigned int fd, unsigned int cmd, unsigned long arg);
+				// 50			chdir			chdir(const char *path);
+				// 57			close			int sys_close(unsigned int fd);
+				// 62			lseek			off_t sys_lseek(int fd, off_t offset, int whence);
+				// 63			read			ssize_t read(int fd, void *buf, size_t count);
+				// 64			write			ssize_t write(int fd, const void *buf, size_t count);
+				// 80			newfstat		long sys_newfstat(unsigned int fd, struct stat __user *statbuf);
+				// 93			exit			noreturn void _exit(int status);
+				// 129			kill			int kill(pid_t pid, int sig);
+				// 214			brk				int brk(void *addr); / void *sbrk(intptr_t increment);
+				// 403			gettimeofday	int gettimeofday(struct timeval *tv, struct timezone *tz);
+				// 1024			open			long sys_open(const char __user * filename, int flags, umode_t mode); open/create file
+				// 1025			rename			int rename(const char *oldpath, const char *newpath);
+				// 1026			remove			remove(const char *fname);
+				// 1038 		_stat			int stat(const char *path, struct stat *buf);
 				// Custom
 				// 0xFFFFFFFF	setdebugger	void *setdebugger(unsigned int flags); // flags: connect/disconnect
 
@@ -887,6 +889,15 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					uint32_t retval = core_brk(addrs);
 					write_csr(0x8AA, retval);
 				}
+				else if (value==403) // gettimeofday()
+				{
+					uint32_t ptr = read_csr(0x8AA); // A0
+					struct timeval *tv = (struct timeval *)ptr;
+					uint64_t now = E32ReadTime();
+					tv->tv_sec = now / 1000000;
+					tv->tv_usec = now % 1000000;
+					write_csr(0x8AA, 0x0);
+				}
 				else if (value==1024) // open()
 				{
 					// TODO: support devices (i.e. names starting with /dev/)
@@ -1001,6 +1012,41 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					{
 						errno = ENOENT;
 						write_csr(0x8AA, 0xFFFFFFFF);
+					}
+				}
+				else if (value==1038) // _stat()
+				{
+					uint32_t nptr = read_csr(0x8AA); // A0
+					uint32_t ptr = read_csr(0x8AB); // A1
+					struct stat *buf = (struct stat *)ptr;
+
+					FILINFO finf;
+					FRESULT fr = f_stat((char*)nptr, &finf);
+
+					if (fr != FR_OK)
+					{
+						errno = ENOENT;
+						write_csr(0x8AA, 0xFFFFFFFF);
+					}
+					else
+					{
+						buf->st_dev = 1;
+						buf->st_ino = 0;
+						buf->st_mode = S_IFREG; // regular file
+						buf->st_nlink = 0;
+						buf->st_uid = 0;
+						buf->st_gid = 0;
+						buf->st_rdev = 0;
+						buf->st_size = finf.fsize;
+						buf->st_blksize = 512;
+						buf->st_blocks = (finf.fsize+511)/512;
+						buf->st_atim.tv_sec = finf.ftime;
+						buf->st_atim.tv_nsec = 0;
+						buf->st_mtim.tv_sec = 0;
+						buf->st_mtim.tv_nsec = 0;
+						buf->st_ctim.tv_sec = 0;
+						buf->st_ctim.tv_nsec = 0;
+						write_csr(0x8AA, 0x0);
 					}
 				}
 				else if (value==0xFFFFFFFF) // setdebugger()

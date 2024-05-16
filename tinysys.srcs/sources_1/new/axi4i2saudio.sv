@@ -244,9 +244,6 @@ end
 // I2S output
 // ------------------------------------------------------------------------------------
 
-wire endofsamples = readCursor == apuwordcount;
-wire isquiet = sampleoutputrateselector == 4'd0;
-
 always@(posedge audioclock) begin
 	if (~rstaudion) begin
 		tx_data_lr <= 0;
@@ -264,12 +261,12 @@ always@(posedge audioclock) begin
 			{readCursor, readLowbits} <= {readCursor, readLowbits} + {8'd0, sampleoutputrateselector};
 
 			// New sample and read enable control
-			tx_data_lr <= isquiet ? 32'd0 : sampleOut;
-			samplere <= isquiet ? 1'b0 : 1'b1;
+			tx_data_lr <= sampleoutputrateselector == 4'd0 ? 32'd0 : sampleOut;
+			samplere <= sampleoutputrateselector == 4'd0 ? 1'b0 : 1'b1;
 		end
 
 		// Increment swap count at end of buffer
-		if (endofsamples) begin
+		if (readCursor == apuwordcount) begin
 			// Switch playback buffer and also swap CPU side r/w page ID
 			bufferSwap <= ~bufferSwap;
 			writeBufferSelect <= ~writeBufferSelect;
