@@ -11,7 +11,7 @@ This is the current architecture to use with gcc13 and higher: `rv32im_zicsr_zif
 
 # ROM history
 r1.01: Initial release version<br>
-r1.03: Improvements for dual core boot stability<br>
+r1.03: Improvements for dual core boot stability, fixed audio hardware playback rate issue<br>
 
 # Device gateware
 
