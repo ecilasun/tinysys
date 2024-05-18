@@ -18,10 +18,14 @@ module riscv #(
 	axi4if.master devicebus );
 
 // --------------------------------------------------
-// Internal buses
+// Reset delay line
 // --------------------------------------------------
 
-ibusif internaldatabus();
+wire delayedresetn;
+delayreset delayresetinst(
+	.aclk(aclk),
+	.inputresetn(aresetn),
+	.delayedresetn(delayedresetn) );
 
 // --------------------------------------------------
 // Fetch unit
@@ -37,7 +41,7 @@ wire ififord_en;
 // Reset vector at last 64K of DDR3 SDRAM
 fetchunit #(.RESETVECTOR(RESETVECTOR)) fetchdecodeinst (
 	.aclk(aclk),
-	.aresetn(aresetn),
+	.aresetn(delayedresetn),
 	.branchresolved(branchresolved),
 	.branchtarget(branchtarget),
 	.ififoempty(ififoempty),
@@ -56,9 +60,11 @@ fetchunit #(.RESETVECTOR(RESETVECTOR)) fetchdecodeinst (
 // Data unit
 // --------------------------------------------------
 
+ibusif internaldatabus();
+
 dataunit dataunitinst (
 	.aclk(aclk),
-	.aresetn(aresetn),
+	.aresetn(delayedresetn),
 	.s_ibus(internaldatabus), 	// CPU access for r/w
 	.databus(databus),			// Access to memory
 	.devicebus(devicebus) );	// Access to devices
@@ -70,7 +76,7 @@ dataunit dataunitinst (
 controlunit #(
 	.CSRBASE(CSRBASE)) controlunitinst (
 	.aclk(aclk),
-	.aresetn(aresetn),
+	.aresetn(delayedresetn),
 	.branchresolved(branchresolved),
 	.branchtarget(branchtarget),
 	.ififoempty(ififoempty),

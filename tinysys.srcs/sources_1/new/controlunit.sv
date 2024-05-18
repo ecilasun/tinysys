@@ -21,6 +21,20 @@ module controlunit #(
 	// Internal bus to data unit
 	ibusif.master m_ibus);
 
+// --------------------------------------------------
+// Reset delay line
+// --------------------------------------------------
+
+wire delayedresetn;
+delayreset delayresetinst(
+	.aclk(aclk),
+	.inputresetn(aresetn),
+	.delayedresetn(delayedresetn) );
+
+// --------------------------------------------------
+// Internal
+// --------------------------------------------------
+
 logic ififore;
 assign ififord_en = ififore;
 
@@ -94,7 +108,7 @@ integerregisterfile GPR(
 
 wire branchout;
 branchlogic BLU(
-	.aresetn(aresetn),
+	.aresetn(delayedresetn),
 	.branchout(branchout),
 	.val1(A),
 	.val2(B),
@@ -107,7 +121,7 @@ branchlogic BLU(
 wire [31:0] aluout;
 arithmeticlogic ALU(
 	.aclk(aclk),
-	.aresetn(aresetn),
+	.aresetn(delayedresetn),
 	.aluout(aluout),
 	.val1(A),
 	.val2(F ? D : B),
@@ -125,7 +139,7 @@ wire [31:0] product;
 logic [2:0] mfunc3;
 integermultiplier IMULSU(
     .aclk(aclk),
-    .aresetn(aresetn),
+    .aresetn(delayedresetn),
     .start(mulstrobe),
     .ready(mulready),
     .func3(mfunc3),
@@ -137,7 +151,7 @@ wire divuready;
 wire [31:0] quotientu, remainderu;
 integerdividerunsigned IDIVU (
 	.aclk(aclk),
-	.aresetn(aresetn),
+	.aresetn(delayedresetn),
 	.start(divstrobe),
 	.ready(divuready),
 	.dividend(A),
@@ -149,7 +163,7 @@ wire divready;
 wire [31:0] quotient, remainder;
 integerdividersigned IDIVS (
 	.aclk(aclk),
-	.aresetn(aresetn),
+	.aresetn(delayedresetn),
 	.start(divstrobe),
 	.ready(divready),
 	.dividend(A),
@@ -184,7 +198,7 @@ wire [31:0] fpuresult;
 
 floatingpointunit FPU(
 	.clock(aclk),
-	.aresetn(aresetn),
+	.aresetn(delayedresetn),
 
 	// inputs
 	.frval1(A),
@@ -232,7 +246,7 @@ controlunitmode sysmode = INIT;
 
 //logic cpurunning;
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		cyclecount <= 64'd0;
 	end else begin
 		// TODO: Stop this if CPU's halted for debug i.e. + {63'd0, cpurunning}
@@ -242,7 +256,7 @@ end
 
 logic retiredstrobe;
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		retiredcount <= 64'd0;
 	end else begin
 		retiredcount <= retiredcount + {63'd0, retiredstrobe};
@@ -261,7 +275,7 @@ logic pendingwrite = 1'b0;
 wire pendingwback = rwen;
 
 always_comb begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		rwen = 1'b0;
 		rdin = 32'd0;
 	end else begin

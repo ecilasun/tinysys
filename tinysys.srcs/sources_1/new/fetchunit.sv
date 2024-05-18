@@ -28,6 +28,16 @@ module fetchunit #(
 	axi4if.master m_axi );
 
 // --------------------------------------------------
+// Reset delay line
+// --------------------------------------------------
+
+wire delayedresetn;
+delayreset delayresetinst(
+	.aclk(aclk),
+	.inputresetn(aresetn),
+	.delayedresetn(delayedresetn) );
+
+// --------------------------------------------------
 // Internal states
 // --------------------------------------------------
 
@@ -47,7 +57,7 @@ logic icacheflush;
 
 instructioncache instructioncacheinst(
 	.aclk(aclk),
-	.aresetn(aresetn),
+	.aresetn(delayedresetn),
 	.addr(PC),
 	.icacheflush(icacheflush),
 	.dout(instruction),
@@ -128,7 +138,7 @@ wire ififofull;
 
 instructinfifo instructionfifoinst (
   .clk(aclk),
-  .rst(~aresetn),
+  .rst(~delayedresetn),
   .din(ififodin),
   .wr_en(ififowr_en),
   .rd_en(ififord_en),

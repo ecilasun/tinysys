@@ -74,20 +74,24 @@ always_comb begin
 end
 
 always_comb begin
-	priority case(1'b1)
-		// integer ops
-		aluonehot[0]:	aluout = vand;
-		aluonehot[1]:	aluout = vsum;
-		aluonehot[2]:	aluout = vsra;
-		aluonehot[3]:	aluout = vshr;
-		aluonehot[4]:	aluout = vxor;
-		aluonehot[5]:	aluout = vless;
-		aluonehot[6]:	aluout = vsless;
-		aluonehot[7]:	aluout = vshl;
-		aluonehot[8]:	aluout = vdiff;
-		aluonehot[9]:	aluout = vor;
-		default:		aluout = 32'd0;
-	endcase
+	if (~aresetn) begin
+		aluout = 32'd0;
+	end else begin
+		priority case(1'b1)
+			// integer ops
+			aluonehot[0]:	aluout = vand;
+			aluonehot[1]:	aluout = vsum;
+			aluonehot[2]:	aluout = vsra;
+			aluonehot[3]:	aluout = vshr;
+			aluonehot[4]:	aluout = vxor;
+			aluonehot[5]:	aluout = vless;
+			aluonehot[6]:	aluout = vsless;
+			aluonehot[7]:	aluout = vshl;
+			aluonehot[8]:	aluout = vdiff;
+			aluonehot[9]:	aluout = vor;
+			default:		aluout = 32'd0;
+		endcase
+	end
 end
 
 endmodule
