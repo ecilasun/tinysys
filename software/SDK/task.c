@@ -1,3 +1,9 @@
+/**
+ * @file task.c
+ * 
+ * @brief Task management for the SDK
+ */
+
 #include "core.h"
 #include "basesystem.h"
 #include "task.h"
@@ -5,10 +11,15 @@
 
 #include <stdlib.h>
 
-// NOTE: Tasks are core local at this point, and won't migrate between cores.
-
-// NOTE: Call with memory allocated for task tracking purposes
-// with sufficient space for MAX_TASKS*sizeof(STaskContext) bytes
+/**
+ * @brief Initialize the task system
+ * 
+ * Initialize the task system with the given task context and HART ID.
+ * @note Tasks are core local at this point, and won't migrate between cores.
+ * 
+ * @param _ctx Task context
+ * @param _hartid HART ID
+ */
 void TaskInitSystem(struct STaskContext *_ctx, uint32_t _hartid)
 {
 	_ctx->currentTask = 0;
@@ -30,52 +41,61 @@ void TaskInitSystem(struct STaskContext *_ctx, uint32_t _hartid)
 	}
 }
 
-uint32_t TaskRead4Bytes(const uint32_t _address)
-{
-	uint8_t *source = (uint8_t*)_address;
-	uint32_t retVal = 0;
-
-	retVal |= source[0];
-	retVal |= (source[1]<<8);
-	retVal |= (source[2]<<16);
-	retVal |= (source[3]<<24);
-
-	return retVal;
-}
-
-void TaskWrite4Bytes(const uint32_t _address, const uint32_t _bytes)
-{
-	uint8_t *target = (uint8_t*)_address;
-
-	target[0] = (_bytes&0x000000FF);
-	target[1] = (_bytes&0x0000FF00)>>8;
-	target[2] = (_bytes&0x00FF0000)>>16;
-	target[3] = (_bytes&0xFF000000)>>24;
-}
-
-void TaskWrite2Bytes(const uint32_t _address, const uint16_t _bytes)
-{
-	uint8_t *target = (uint8_t*)_address;
-
-	target[0] = (_bytes&0x00FF);
-	target[1] = (_bytes&0xFF00)>>8;
-}
-
+/**
+ * @brief Set the state of a task
+ * 
+ * Transition a task to a new state.
+ * 
+ * @param _ctx Task context
+ * @param _taskid Task ID
+ * @param _state New state
+ */
 void TaskSetState(struct STaskContext *_ctx, const uint32_t _taskid, enum ETaskState _state)
 {
 	_ctx->tasks[_taskid].state = _state;
 }
 
+/**
+ * @brief Get the state of a task
+ * 
+ * Get the current state of a task.
+ * 
+ * @param _ctx Task context
+ * @param _taskid Task ID
+ * @return Task state
+ */
 enum ETaskState TaskGetState(struct STaskContext *_ctx, const uint32_t _taskid)
 {
 	return _ctx->tasks[_taskid].state;
 }
 
+/**
+ * @brief Get the program counter of a task
+ * 
+ * Get the program counter of a task.
+ * 
+ * @param _ctx Task context
+ * @param _taskid Task ID
+ * @return Program counter
+ *
+*/
 uint32_t TaskGetPC(struct STaskContext *_ctx, const uint32_t _taskid)
 {
 	return _ctx->tasks[_taskid].regs[0];
 }
 
+/**
+ * @brief Add a new task to the task pool
+ * 
+ * This function adds a new task to the task pool of the given task context which belongs to a specific HART.
+ * 
+ * @param _ctx Task context
+ * @param _name Task name
+ * @param _task Task function
+ * @param _initialState Initial state
+ * @param _runLength Time slice dedicated to this task (can be overriden by calling TaskYield())
+ * @return Task ID
+ */
 int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength)
 {
 	int32_t prevcount = _ctx->numTasks;
@@ -116,6 +136,15 @@ int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum E
 	return prevcount;
 }
 
+/**
+ * @brief Exit the current task
+ * 
+ * Exit the current task as soon as possible by marking it as 'terminating'.
+ * The scheduler will take care of the rest on next task switch.
+ * 
+ * @param _ctx Task context
+ * @see TaskExitTaskWithID
+ */
 void TaskExitCurrentTask(struct STaskContext *_ctx)
 {
 	uint32_t taskid = _ctx->currentTask;
@@ -124,9 +153,20 @@ void TaskExitCurrentTask(struct STaskContext *_ctx)
 
 	struct STask *task = &_ctx->tasks[taskid];
 	task->state = TS_TERMINATING;
-	task->exitCode = 0;
+	task->exitCode = 0; // Default exit code
 }
 
+/**
+ * @brief Exit a specific task
+ * 
+ * Exit a specific task by marking it as 'terminating'.
+ * The scheduler will take care of the rest on next task switch.
+ * 
+ * @param _ctx Task context
+ * @param _taskid Task ID
+ * @param _signal Exit code to return from the task
+ * @see TaskExitCurrentTask
+ */
 void TaskExitTaskWithID(struct STaskContext *_ctx, uint32_t _taskid, uint32_t _signal)
 {
 	if (_taskid == 0) // Can not exit taskid 0
@@ -137,6 +177,15 @@ void TaskExitTaskWithID(struct STaskContext *_ctx, uint32_t _taskid, uint32_t _s
 	task->exitCode = _signal;
 }
 
+/**
+ * @brief Yield leftover time back to the next task in chain
+ * 
+ * Yield leftover time back to the next task in chain.
+ * Also returns the current time in clock ticks.
+ * 
+ * @return Current time in ticks
+ * @see TaskSwitchToNext
+ */
 uint64_t TaskYield()
 {
 	// Set up the next task switch interrupt to now
@@ -148,6 +197,19 @@ uint64_t TaskYield()
 	return now;
 }
 
+/**
+ * @brief Switch to next task and return its total time slice
+ * 
+ * Switch to the next task in the task pool and return time slice of the next task.
+ * This function is called by the scheduler to switch between tasks.
+ * The current task's registers are stored in the task structure before switching.
+ * 
+ * @note Please call TaskYield() from user code to yield leftover time back to the next task instead.
+ * 
+ * @param _ctx Task context
+ * @return Time slice of the next task
+ * @see TaskYield
+ */
 uint32_t TaskSwitchToNext(struct STaskContext *_ctx)
 {
 	// Load current process ID from TP register

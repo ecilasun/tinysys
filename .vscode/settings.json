@@ -23,7 +23,25 @@
 		"xmemory": "c",
 		"task.h": "c",
 		"agnes.h": "c",
-		"max3421e.h": "c"
+		"max3421e.h": "c",
+		"string.h": "c",
+		"serialinringbuffer.h": "c",
+		"atomic": "c",
+		"bit": "c",
+		"charconv": "c",
+		"compare": "c",
+		"cstddef": "c",
+		"format": "c",
+		"iterator": "c",
+		"limits": "c",
+		"memory": "c",
+		"sstream": "c",
+		"vector": "c",
+		"xiosbase": "c",
+		"xlocale": "c",
+		"xlocbuf": "c",
+		"xloctime": "c",
+		"xstring": "c"
 	},
 	"terminal.integrated.profiles.windows": {
 		"MSYS2": {

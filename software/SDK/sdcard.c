@@ -1,3 +1,9 @@
+/**
+ * @file sdcard.c
+ * 
+ * @brief This file contains the functions and commands to interface with the SD card
+ */
+
 #include "basesystem.h"
 #include "sdcard.h"
 #include "leds.h"
@@ -50,6 +56,13 @@ typedef enum {
 
 #define G_SPI_TIMEOUT 65536
 
+/**
+ * @brief Calculate the CRC7 checksum for a given data buffer
+ * 
+ * @param data Data buffer
+ * @param n Length of the data buffer
+ * @return CRC7 checksum
+ */
 static uint8_t CRC7(const uint8_t* data, uint8_t n) {
   uint8_t crc = 0;
   for (uint8_t i = 0; i < n; i++) {
@@ -76,6 +89,13 @@ uint16_t CRC16_one(uint16_t crcIn, uint8_t data)
 	return crcIn;
 }
 
+/**
+ * @brief Calculate the CRC16 checksum for a given data buffer
+ * 
+ * @param pData Data buffer
+ * @param len Length of the data buffer
+ * @return CRC16 checksum
+ */
 static uint16_t CRC16(const uint8_t *pData, uint16_t len)
 {
 	uint16_t crc = 0;
@@ -85,13 +105,29 @@ static uint16_t CRC16(const uint8_t *pData, uint16_t len)
 	return crc;
 }
 
-// A single SPI transaction is a write from master followed by a read from slave's output
+/**
+ * @brief Perform a SPI transaction
+ * 
+ * This function performs a SPI transaction by writing a byte to the SPI slave and reading a byte from the SPI slave.
+ * 
+ * @param outbyte Byte to write
+ * @return Byte read from the SPI slave
+ */
 uint8_t __attribute__ ((noinline)) SPITxRx(const uint8_t outbyte)
 {
    *IO_SPIRXTX = outbyte;
    return *IO_SPIRXTX;
 }
 
+/**
+ * @brief Send a command to the SD card
+ * 
+ * This function sends a command to the SD card and returns the response.
+ * 
+ * @param cmd Command to send
+ * @param args Arguments for the command
+ * @return Response from the SD card
+ */
 uint8_t __attribute__ ((noinline)) SDCmd(const SDCardCommand cmd, uint32_t args)
 {
    uint8_t buf[8];
@@ -113,6 +149,13 @@ uint8_t __attribute__ ((noinline)) SDCmd(const SDCardCommand cmd, uint32_t args)
    return incoming;
 }
 
+/**
+ * @brief Wait for the SD card to become idle
+ * 
+ * This function waits for the SD card to become idle by sending 0xFF until the SD card responds with 0x00.
+ * 
+ * @return Response from the SD card
+ */
 uint8_t __attribute__ ((noinline)) SDWaitNotBusy()
 {
 	uint8_t res = 0xFF;
@@ -125,6 +168,13 @@ uint8_t __attribute__ ((noinline)) SDWaitNotBusy()
 	return res;
 }
 
+/**
+ * @brief Get the single value response from the SD card
+ * 
+ * This function gets the single value response from the SD card by sending 0xFF until the SD card responds with a non-0xFF value.
+ * 
+ * @return Response from the SD card
+ */
 uint8_t __attribute__ ((noinline)) SDResponse1()
 {
    uint8_t res1 = 0xFF;
@@ -139,6 +189,15 @@ uint8_t __attribute__ ((noinline)) SDResponse1()
    return res1;
 }
 
+/**
+ * @brief Get the 4 byte response from the SD card
+ * 
+ * This function gets the 4 byte response from the SD card by sending 0xFF until the SD card responds with a non-0xFF value.
+ * It will then read the next 4 bytes and store them in the data pointer provided.
+ * 
+ * @param data Pointer to store the 4 byte response
+ * @return Response from the SD card
+ */
 uint8_t __attribute__ ((noinline)) SDResponse7(uint32_t *data)
 {
    *data = 0x00000000;
@@ -156,7 +215,13 @@ uint8_t __attribute__ ((noinline)) SDResponse7(uint32_t *data)
    return res1;
 }
 
-// Enter idle state
+/** 
+ * @brief Put the SD card into idle mode
+ * 
+ * This function puts the SD card into idle mode by sending the CMD0_GO_IDLE_STATE command.
+ * 
+ * @return Response from the SD card
+ */
 uint8_t __attribute__ ((noinline)) SDIdle()
 {
    E32Sleep(1); // Wait for at least 1ms after power-on
@@ -173,6 +238,13 @@ uint8_t __attribute__ ((noinline)) SDIdle()
    return response;
 }
 
+/**
+ * @brief Check the voltage range of the SD card
+ * 
+ * This function checks the voltage range of the SD card by sending the CMD8_SEND_IF_COND command.
+ * 
+ * @return Response from the SD card
+ */
 uint8_t __attribute__ ((noinline)) SDCheckVoltageRange()
 {
    SDCmd(CMD8_SEND_IF_COND, 0x000001AA);
@@ -184,6 +256,13 @@ uint8_t __attribute__ ((noinline)) SDCheckVoltageRange()
    return response;
 }
 
+/**
+ * @brief Initialize the SD card
+ * 
+ * This function initializes the SD card by sending the ACMD41_SD_SEND_OP_COND command.
+ * 
+ * @return Response from the SD card
+ */
 uint8_t __attribute__ ((noinline)) SDCardInit()
 {
    // Set high capacity mode on
@@ -201,6 +280,14 @@ uint8_t __attribute__ ((noinline)) SDCardInit()
    return rB;
 }
 
+/**
+ * @brief Set the block size of the SD card to 512 bytes
+ * 
+ * This function sets the block size of the SD card to 512 bytes by sending the CMD16_SET_BLOCKLEN command.
+ * For modern cards this is the default block size.
+ * 
+ * @return Response from the SD card
+ */
 uint8_t __attribute__ ((noinline)) SDSetBlockSize512()
 {
    // Set block length
@@ -210,6 +297,17 @@ uint8_t __attribute__ ((noinline)) SDSetBlockSize512()
    return response;
 }
 
+/**
+ * @brief Read a single block from the SD card
+ * 
+ * This function reads a single block from the SD card at given sector.
+ * It will read but ignore any checksum errors for now.
+ * 
+ * @param sector Sector to read
+ * @param datablock Pointer to store the data block
+ * @param checksum Pointer to store the checksum
+ * @return Response from the SD card
+ */
 uint8_t __attribute__ ((noinline)) SDReadSingleBlock(uint32_t sector, uint8_t *datablock, uint8_t checksum[2])
 {
    uint32_t oldstate = LEDGetState();
@@ -241,28 +339,21 @@ uint8_t __attribute__ ((noinline)) SDReadSingleBlock(uint32_t sector, uint8_t *d
 
    LEDSetState(oldstate);
 
-   // Error
-   /*if (!(response&0xF0))
-   {
-      if (response&0x01)
-         UARTWrite("SDReadSingleBlock: error response = 'error'\n");
-      if (response&0x02)
-         UARTWrite("SDReadSingleBlock: error response = 'CC error'\n");
-      if (response&0x04)
-         UARTWrite("SDReadSingleBlock: error response = 'Card ECC failed'\n");
-      if (response&0x08)
-      {
-         UARTWrite("SDReadSingleBlock: error response = 'Out of range' sector: 0x");
-         UARTWriteHex(sector);
-         UARTWrite("\n");
-      }
-      if (response&0x10)
-         UARTWrite("SDReadSingleBlock: error response = 'Card locked'\n");
-   }*/
-
    return response;
 }
 
+/**
+ * @brief Read multiple blocks from the SD card
+ * 
+ * This function reads multiple blocks from the SD card starting at the given block address.
+ * However, it will use repeated calls to SDReadSingleBlock to read the blocks, so it is less efficient.
+ * Ideally, if the SD card supports CMD18_READ_MULTIPLE_BLOCK command, this function should be modified to use it.
+ * 
+ * @param datablock Pointer to store the data blocks
+ * @param numblocks Number of blocks to read
+ * @param blockaddress Block address to start reading from
+ * @return 0 on success, -1 on failure
+ */
 int __attribute__ ((noinline)) SDReadMultipleBlocks(uint8_t *datablock, uint32_t numblocks, uint32_t blockaddress)
 {
 	if (numblocks == 0)
@@ -284,6 +375,17 @@ int __attribute__ ((noinline)) SDReadMultipleBlocks(uint8_t *datablock, uint32_t
 	return 0;
 }
 
+/**
+ * @brief Write a single block to the SD card
+ * 
+ * This function writes a single block to the SD card at the given sector.
+ * It will calculate the checksum and send it along with the data block.
+ * However, it will not check for any checksum errors for now.
+ * 
+ * @param sector Sector to write
+ * @param datablock Pointer to the data block
+ * @return Response from the SD card
+ */
 uint8_t __attribute__ ((noinline)) SDWriteSingleBlock(uint32_t sector, uint8_t *datablock)
 {
 	uint32_t oldstate = LEDGetState();
@@ -349,6 +451,18 @@ uint8_t __attribute__ ((noinline)) SDWriteSingleBlock(uint32_t sector, uint8_t *
 	return response;
 }
 
+/**
+ * @brief Write multiple blocks to the SD card
+ * 
+ * This function writes multiple blocks to the SD card starting at the given block address.
+ * It will use repeated calls to SDWriteSingleBlock to write the blocks, so it is less efficient.
+ * Ideally, if the SD card supports CMD25_WRITE_MULTIPLE_BLOCK command, this function should be modified to use it.
+ * 
+ * @param datablock Pointer to the data blocks
+ * @param numblocks Number of blocks to write
+ * @param blockaddress Block address to start writing from
+ * @return 0 on success, -1 on failure
+ */
 int __attribute__ ((noinline)) SDWriteMultipleBlocks(const uint8_t *datablock, uint32_t numblocks, uint32_t blockaddress)
 {
 	if (numblocks == 0)
@@ -368,6 +482,17 @@ int __attribute__ ((noinline)) SDWriteMultipleBlocks(const uint8_t *datablock, u
 	return 0;
 }
 
+/**
+ * @brief Pass an I/O control command to the SD card
+ * 
+ * This function controls the SD card by sending an I/O command.
+ *
+ * @note This function is a stub and does nothing.
+ * 
+ * @param cmd Command to send
+ * @param buffer Buffer to store the data
+ * @return 0 on success, -1 on failure
+ */
 int __attribute__ ((noinline)) SDIOControl(const uint8_t cmd, void *buffer)
 {
 //CTRL_SYNC			   0	/* Complete pending write process (needed at FF_FS_READONLY == 0) */
@@ -407,6 +532,17 @@ int __attribute__ ((noinline)) SDIOControl(const uint8_t cmd, void *buffer)
    return 0;
 }
 
+/**
+ * @brief Initialize the SD card
+ * 
+ * This function initializes the SD card by performing the following steps:
+ * 1. Put the SD card into idle mode
+ * 2. Check the voltage range of the SD card
+ * 3. Initialize the SD card
+ * 4. Set the block size of the SD card to 512 bytes
+ * 
+ * @return 0 on success, -1 on failure
+ */
 int __attribute__ ((noinline)) SDCardStartup()
 {
    uint8_t response[4];

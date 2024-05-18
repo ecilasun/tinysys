@@ -1,3 +1,10 @@
+/** @file uart.c
+ * 
+ *  @brief UART driver
+ *
+ *  This file contains functions for UART communication.
+ */
+
 #include "basesystem.h"
 #include "serialoutringbuffer.h"
 #include "leds.h"
@@ -7,31 +14,67 @@ volatile uint32_t *UARTTRANSMIT = (volatile uint32_t* ) (DEVICE_UART+0x04);
 volatile uint32_t *UARTSTATUS = (volatile uint32_t* ) (DEVICE_UART+0x08);
 volatile uint32_t *UARTCONTROL = (volatile uint32_t* ) (DEVICE_UART+0x0C);
 
+/**
+ * @brief Receive a byte from the UART
+ * 
+ * Receive a byte from the memory mapped UART device.
+ * 
+ * @return Byte received from the UART
+ */
 uint32_t UARTReceiveData()
 {
 	return *UARTRECEIVE;
 }
 
+/**
+ * @brief Send a byte over the UART
+ * 
+ * Write a byte to the serial output ring buffer to be sent over the UART at a later time.
+ */
 void UARTSendByte(uint8_t data)
 {
 	SerialOutRingBufferWrite(&data, 1);
 }
 
+/**
+ * @brief Send a block of data over the UART
+ * 
+ * Write a block of data to the serial output ring buffer to be sent over the UART at a later time.
+ */
 void UARTSendBlock(uint8_t *data, uint32_t numBytes)
 {
 	SerialOutRingBufferWrite(data, numBytes);
 }
 
+/**
+ * @brief Get the status register of the UART
+ * 
+ * Get the status control register of the UART.
+ * 
+ * @return Status register value
+ */
 uint32_t UARTGetStatus()
 {
  	return *UARTSTATUS;
 }
 
+/**
+ * @brief Set the control register of the UART
+ * 
+ * Set some control bits of the UART.
+ */
 void UARTSetControl(uint32_t ctl)
 {
 	*UARTCONTROL = ctl;
 }
 
+/**
+ * @brief Write a string to the UART
+ * 
+ * Write a string to the serial output ring buffer to be sent over the UART at a later time.
+ * 
+ * @return Number of bytes written
+ */
 int UARTWrite(const char *outstring)
 {
 	uint32_t count = 0;
@@ -39,6 +82,13 @@ int UARTWrite(const char *outstring)
 	return SerialOutRingBufferWrite(outstring, count);
 }
 
+/**
+ * @brief Write a byte in hexadecimal format to the UART
+ * 
+ * Write a byte in hexadecimal format to the serial output ring buffer to be sent over the UART at a later time.
+ * 
+ * @return Number of bytes written
+ */
 int UARTWriteHexByte(const uint8_t i)
 {
 	const char hexdigits[] = "0123456789ABCDEF";
@@ -50,6 +100,13 @@ int UARTWriteHexByte(const uint8_t i)
 	return SerialOutRingBufferWrite(msg, 2);
 }
 
+/**
+ * @brief Write a 32-bit integer in hexadecimal format to the UART
+ * 
+ * Write a 32-bit integer in hexadecimal format to the serial output ring buffer to be sent over the UART at a later time.
+ * 
+ * @return Number of bytes written
+ */
 int UARTWriteHex(const uint32_t i)
 {
 	const char hexdigits[] = "0123456789ABCDEF";
@@ -67,6 +124,13 @@ int UARTWriteHex(const uint32_t i)
 	return SerialOutRingBufferWrite(msg, 8);
 }
 
+/**
+ * @brief Write a 32-bit integer in decimal format to the UART
+ * 
+ * Write a 32-bit integer in decimal format to the serial output ring buffer to be sent over the UART at a later time.
+ * 
+ * @return Number of bytes written
+ */
 int UARTWriteDecimal(const int32_t i)
 {
 	const char digits[] = "0123456789";
@@ -95,6 +159,12 @@ int UARTWriteDecimal(const int32_t i)
 	return UARTWrite(msg);
 }
 
+/**
+ * @brief Dump serial output ring buffer to UART
+ * 
+ * Write everything in the serial output ring buffer to the memory mapped UART device.
+ * It will consume the entire buffer in one go.
+ */
 void UARTEmitBufferedOutput()
 {
 	// Copy out from FIFO to send buffer

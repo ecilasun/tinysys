@@ -1,3 +1,10 @@
+/** @file vpuc.c
+ * 
+ *  @brief Video processing unit interface
+ *
+ *  This file contains interfaces to the video processing unit.
+ */
+
 #include "basesystem.h"
 #include "vpu.h"
 #include "core.h"
@@ -6,8 +13,12 @@
 // Video mode control word
 #define MAKEVMODEINFO(_cmode, _vmode, _scanEnable) ((_cmode&0x1)<<2) | ((_vmode&0x1)<<1) | (_scanEnable&0x1)
 
-// 'vga2_8x8', 128x128px 1bpp
-// Note that each byte's nibbles are flipped for easy access
+/**
+ * @brief ROM resident font
+ * 
+ * ROM resident font for the VGA2_8x8 video mode based on vga2_8x8.
+ * @note Each byte is a column of 8 pixels. Each nibble of the byte is a row of 8 pixels and are flipped for easy access.
+ */
 const uint8_t residentfont[] __attribute__((aligned(16))) = {
 0x00, 0xe7, 0xe7, 0xc6, 0x01, 0x83, 0x01, 0x00, 0xff, 0x00, 0xff, 0xf0, 0xc3, 0xf3, 0xf7, 0x81, 
 0x00, 0x18, 0xff, 0xef, 0x83, 0xc7, 0x83, 0x00, 0xff, 0xc3, 0x3c, 0x70, 0x66, 0x33, 0x36, 0xbd, 
@@ -138,7 +149,9 @@ const uint8_t residentfont[] __attribute__((aligned(16))) = {
 0x00, 0xe7, 0xe7, 0xe7, 0x81, 0x8d, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc3, 0x00, 0x00, 0x00, 0x00, 
 0x00, 0x00, 0x00, 0x00, 0x81, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc1, 0x00, 0x00, 0x00, 0x00};
 
-// Expansion table from 4bit mask to 4byte mask - reversed bit order
+/** @brief Font nibble expansion table
+ * @note Used for expanding 4bit mask to 4byte mask, bit order is reversed.
+ */
 const uint32_t quadexpand[] __attribute__((aligned(16))) = {
 	0x00000000, 0xFF000000, 0x00FF0000, 0xFFFF0000,
 	0x0000FF00, 0xFF00FF00, 0x00FFFF00, 0xFFFFFF00,
@@ -146,7 +159,9 @@ const uint32_t quadexpand[] __attribute__((aligned(16))) = {
 	0x0000FFFF, 0xFF00FFFF, 0x00FFFFFF, 0xFFFFFFFF,
 };
 
-// Byte order: [_,R,B,G]
+/** @brief Standard VGA palette
+ * @note 16bit RGB565 palette, byte order is [_,R,G,B]
+ */
 const uint16_t vgapalette[] __attribute__((aligned(16))) = {
 0x0000, 0x00A0, 0x000A, 0x00AA, 0x0A00, 0x0AA0, 0x0A05, 0x0AAA,
 0x0555, 0x05F5, 0x055F, 0x05FF, 0x0F55, 0x0FF5, 0x0F5F, 0x0FFF,
@@ -185,13 +200,25 @@ const uint16_t vgapalette[] __attribute__((aligned(16))) = {
 // NOTE: Reads from this address will return the vblank counter
 volatile uint32_t *VPUIO = (volatile uint32_t* ) DEVICE_VPUC;
 
-// VPU buffers are allocated aligned to 4K boundaries
+/**
+ * @brief Allocate buffer for VPU use
+ * 
+ * VPU buffers are allocated aligned to 4K boundaries to ensure that they match cache lines.
+ * 
+ * @param _size Size of the buffer
+ * @return Pointer to the allocated buffer
+ */
 uint8_t *VPUAllocateBuffer(const uint32_t _size)
 {
    void *buffer = (uint8_t*)malloc(_size + 4096);
    return (uint8_t*)E32AlignUp((uint32_t)buffer, 4096);
 }
 
+/**
+ * @brief Set color table to default VGA palette
+ * 
+ * @param _context Video context
+ */
 void VPUSetDefaultPalette(struct EVideoContext *_context)
 {
 	for (uint32_t i=0; i<256; ++i)
@@ -201,12 +228,30 @@ void VPUSetDefaultPalette(struct EVideoContext *_context)
 	}
 }
 
+/**
+ * @brief Get dimensions for given video mode
+ * 
+ * @param _mode Video mode
+ * @param _width Pointer to store width
+ * @param _height Pointer to store height
+ */
 void VPUGetDimensions(const enum EVideoMode _mode, uint32_t *_width, uint32_t *_height)
 {
 	*_width = _mode == EVM_640_Wide ? 640 : 320;
 	*_height = _mode == EVM_640_Wide ? 480 : 240;
 }
 
+/**
+ * @brief Set video mode
+ * 
+ * Scanout enable is used to control whether video is displayed on screen or not.
+ * Setting scanout enable to ESE_Disable will disable video output as well as
+ * reads from current frame buffer. Use this to pause video output and save power
+ * or bandwidth during expensive operations.
+ * 
+ * @param _context Video context
+ * @param _scanEnable Scanout enable
+ */
 void VPUSetVMode(struct EVideoContext *_context, const enum EVideoScanoutEnable _scanEnable)
 {
 	// NOTE: Caller sets vmode/cmode fields
@@ -225,6 +270,21 @@ void VPUSetVMode(struct EVideoContext *_context, const enum EVideoScanoutEnable 
 	*VPUIO = MAKEVMODEINFO((uint32_t)_context->m_cmode, (uint32_t)_context->m_vmode, (uint32_t)_scanEnable);
 }
 
+/**
+ * @brief Set video scanout address
+ * 
+ * The address, which has to be aligned to 64 bytes, is the current frame buffer that
+ * will be displayed on screen. The address is cached in the video context for repeated use.
+ * 
+ * This value can be changed to animate the screen or switch between different frame buffers,
+ * however please take care to use VPUSwapPages() unless absolutely necessary.
+ * 
+ * One use of manually shifting scanout addresses would be to implement vertical scrolling effects.
+ * 
+ * @param _context Video context
+ * @param _pageAddress64ByteAligned Page address aligned to 64 bytes
+ * @see VPUSetWriteAddress
+ */
 void VPUSetScanoutAddress(struct EVideoContext *_context, const uint32_t _scanOutAddress64ByteAligned)
 {
 	_context->m_scanoutAddressCacheAligned = _scanOutAddress64ByteAligned;
@@ -234,23 +294,62 @@ void VPUSetScanoutAddress(struct EVideoContext *_context, const uint32_t _scanOu
 	*VPUIO = _scanOutAddress64ByteAligned;
 }
 
+/**
+ * @brief Set video write address
+ * 
+ * The address, which has to be aligned to 64 bytes, is the current back buffer that
+ * the CPU, DMA or rasterizer writes will go to. The address is cached in the video
+ * context for repeated use.
+ * 
+ * @param _context Video context
+ * @param _writeAddress64ByteAligned Page address aligned to 64 bytes
+ * @see VPUSetScanoutAddress
+ */
 void VPUSetWriteAddress(struct EVideoContext *_context, const uint32_t _writeAddress64ByteAligned)
 {
 	_context->m_cpuWriteAddressCacheAligned = _writeAddress64ByteAligned;
 	//EAssert((_writeAddress64ByteAligned&0x3F) == 0, "Video CPU write address has to be aligned to 64 bytes\n");
 }
 
+/** @brief Set palette color
+ * 
+ * The palette index is a number between 0 and 255, and the color is a 12bit RGB value.
+ * Uses the macro MAKECOLORRGB12 to create the color value.
+ * Each color is assumed to be 4 bits wide, with the most significant nibble of each byte being ignored.
+ * 
+ * @param _paletteIndex Palette index
+ * @param _red Red component
+ * @param _green Green component
+ * @param _blue Blue component
+ * @see MAKECOLORRGB12
+ */
 void VPUSetPal(const uint8_t _paletteIndex, const uint32_t _red, const uint32_t _green, const uint32_t _blue)
 {
 	*VPUIO = VPUCMD_SETPAL;
 	*VPUIO = (_paletteIndex<<24) | (MAKECOLORRGB12(_red, _green, _blue)&0x0000000FFF);
 }
 
+/** @brief Set console colors
+ * 
+ * Sets the foreground and background colors used by the console. The colors are palette indices.
+ * 
+ * @param _context Video context
+ * @param _foregroundIndex Foreground color index
+ * @param _backgroundIndex Background color index
+ * @see VPUSetPal
+ */
 void VPUConsoleSetColors(struct EVideoContext *_context, const uint8_t _foregroundIndex, const uint8_t _backgroundIndex)
 {
 	_context->m_consoleColor = ((_backgroundIndex&0x0F)<<4) | (_foregroundIndex&0x0F);
 }
 
+/** @brief Clear console
+ * 
+ * Fills the console with spaces and sets the cursor to the top left corner.
+ * It also sets the console updated flag to 1 to enforce a redraw.
+ * 
+ * @param _context Video context
+ */
 void VPUConsoleClear(struct EVideoContext *_context)
 {
 	uint8_t *characterBase = (uint8_t*)CONSOLE_CHARACTERBUFFER_START;
@@ -263,12 +362,30 @@ void VPUConsoleClear(struct EVideoContext *_context)
 	_context->m_cursorY = 0;
 }
 
+/** @brief Set console cursor position
+ * 
+ * Sets the console cursor position to the given coordinates.
+ * 
+ * @param _context Video context
+ * @param _x X coordinate
+ * @param _y Y coordinate
+ */
 void VPUConsoleSetCursor(struct EVideoContext *_context, const uint16_t _x, const uint16_t _y)
 {
 	_context->m_cursorX = _x;
 	_context->m_cursorY = _y;
 }
 
+/** @brief Print to console
+ * 
+ * Prints a string to the console at the current cursor position.
+ * The string wraps around at horizontal edges and scrolls the page up at the bottom edge.
+ * 
+ * @param _context Video context
+ * @param _message Message to print
+ * @param _length Length of the message
+ * @see VPUConsoleClear
+ */
 void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _length)
 {
 	uint8_t *characterBase = (uint8_t*)CONSOLE_CHARACTERBUFFER_START;
@@ -339,6 +456,15 @@ void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _
 	_context->m_consoleUpdated = 1;
 }
 
+/** @brief Resolve console to VRAM
+ * 
+ * This function will generate the actual pixel data from character indices
+ * and current console colors.
+ * Output is written to the current back buffer as set by VPUSetWriteAddress.
+ * 
+ * @param _context Video context
+ * @see VPUSetWriteAddress
+ */
 void VPUConsoleResolve(struct EVideoContext *_context)
 {
 	uint32_t *vramBase = (uint32_t*)_context->m_cpuWriteAddressCacheAligned;
@@ -392,6 +518,22 @@ void VPUConsoleResolve(struct EVideoContext *_context)
 	CFLUSH_D_L1;
 }
 
+/** @brief Print string directly to VRAM
+ * 
+ * This function will print a string to the current back buffer as set by VPUSetWriteAddress.
+ * The string is printed at the given coordinates with the given colors and does not require
+ * a console resolve to be visible on screen.
+ * 
+ * @param _context Video context
+ * @param _foregroundIndex Foreground color index
+ * @param _backgroundIndex Background color index
+ * @param _x X coordinate
+ * @param _y Y coordinate
+ * @param _message Message to print
+ * @param _length Length of the message
+ * @see VPUSetWriteAddress
+ * @see VPUConsoleResolve
+ */
 void VPUPrintString(struct EVideoContext *_context, const uint8_t _foregroundIndex, const uint8_t _backgroundIndex, const uint16_t _x, const uint16_t _y, const char *_message, int _length)
 {
 	uint32_t *vramBase = (uint32_t*)_context->m_cpuWriteAddressCacheAligned;
@@ -440,6 +582,14 @@ void VPUPrintString(struct EVideoContext *_context, const uint8_t _foregroundInd
 	CFLUSH_D_L1;	
 }
 
+/** @brief Fill VRAM with color
+ * 
+ * This function will fill the current back buffer as set by VPUSetWriteAddress with the given color.
+ * 
+ * @param _context Video context
+ * @param _colorWord Color to fill with
+ * @see VPUSetWriteAddress
+ */
 void VPUClear(struct EVideoContext *_context, const uint32_t _colorWord)
 {
 	uint32_t *vramBaseAsWord = (uint32_t*)_context->m_cpuWriteAddressCacheAligned;
@@ -449,12 +599,42 @@ void VPUClear(struct EVideoContext *_context, const uint32_t _colorWord)
 	CFLUSH_D_L1;
 }
 
+/** @brief Read vblank counter
+ * 
+ * This function reads the current vblank counter value from the VPU.
+ * It can be used to synchronize with the vertical blanking interval from CPU
+ * side or any other device with access to device memory.
+ * 
+ * The counter is a 32bit value that alternates between 0 and 1 for each vertical blanking interval.
+ * 
+ * Most common usage is to wait for the counter to flip and then continue with the next frame by 
+ * calling VPUSwapPages(). For convenience, VPUWaitVSync() is provided to block and wait for the
+ * counter to change.
+ * 
+ * @return Current vblank counter value
+ * @see VPUSwapPages
+ * @see VPUWaitVSync
+ */
 uint32_t VPUReadVBlankCounter()
 {
 	// vblank counter lives at this address
 	return *VPUIO;
 }
 
+/** @brief Swap video buffers
+ * 
+ * This function swaps the current frame buffer with the back buffer.
+ * It is used to implement double buffering and page flipping.
+ * 
+ * Ideally while the frame buffer is displayed the backbuffer is populated with new data
+ * by the CPU, DMA or rasterizer. Once the back buffer is ready, the buffers are swapped
+ * and the new frame is displayed.
+ * 
+ * @param _vx Video context
+ * @param _sc Swap context
+ * @see VPUSetWriteAddress
+ * @see VPUSetScanoutAddress
+ */
 void VPUSwapPages(struct EVideoContext* _vx, struct EVideoSwapContext *_sc)
 {
 	_sc->readpage = ((_sc->cycle)%2) ? _sc->framebufferA : _sc->framebufferB;
@@ -464,6 +644,18 @@ void VPUSwapPages(struct EVideoContext* _vx, struct EVideoSwapContext *_sc)
 	_sc->cycle = _sc->cycle+1;
 }
 
+/** @brief Wait for vertical blanking interval
+ * 
+ * This is a convenience function that waits for the vertical blanking interval
+ * by blocking the CPU until the vblank counter changes.
+ * 
+ * It utilizes VPUReadVBlankCounter() to read the current counter value.
+ * 
+ * In normal operation this function is called before VPUSwapPages() to synchronize
+ * the CPU with the vertical blanking interval.
+ * 
+ * @see VPUReadVBlankCounter
+ */
 void VPUWaitVSync()
 {
 	uint32_t prevvsync = VPUReadVBlankCounter();

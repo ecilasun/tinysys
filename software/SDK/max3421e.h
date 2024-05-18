@@ -11,7 +11,7 @@ uint8_t MAX3421ReceiveFifoEmpty();
 int MAX3421CtlReset();
 uint8_t MAX3421ReadByte(uint8_t command);
 void MAX3421WriteByte(uint8_t command, uint8_t data);
-int MAX3421ReadBytes(uint8_t command, uint8_t length, uint8_t *buffer);
+void MAX3421ReadBytes(uint8_t command, uint8_t length, uint8_t *buffer);
 void MAX3421WriteBytes(uint8_t command, uint8_t length, uint8_t *buffer);
 void MAX3421EnableIRQs();
 

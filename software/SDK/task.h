@@ -64,8 +64,3 @@ uint64_t TaskYield();
 void TaskSetState(struct STaskContext *_ctx, const uint32_t _taskid, enum ETaskState _state);
 enum ETaskState TaskGetState(struct STaskContext *_ctx, const uint32_t _taskid);
 uint32_t TaskGetPC(struct STaskContext *_ctx, const uint32_t _taskid);
-
-// Utilities
-uint32_t TaskRead4Bytes(const uint32_t _address);
-void TaskWrite4Bytes(const uint32_t _address, const uint32_t _bytes);
-void TaskWrite2Bytes(const uint32_t _address, const uint16_t _bytes);

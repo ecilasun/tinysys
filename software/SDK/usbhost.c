@@ -1,11 +1,19 @@
+/** @file
+ * 
+ *  @brief USB Host driver
+ *
+ *  This file contains the USB Host driver for the MAX3421E USB Host controller.
+ *  It is used to communicate with USB devices.
+ *
+ *  The driver is based on the MAX3421E datasheet and the USB 2.0 specification
+ *  The MAX3421E specification can be found at https://www.analog.com/media/en/technical-documentation/user-guides/max3421erevisions-1-and-2-host-out-transfers.pdf
+*/
+
 #include "usbhost.h"
 #include "max3421e.h"
 #include <string.h>
 
 //#define DEBUG_USB_HOST
-
-// Please see:
-// https://www.analog.com/media/en/technical-documentation/user-guides/max3421erevisions-1-and-2-host-out-transfers.pdf
 
 #define MAXDEVICES 2
 static struct USBDeviceRecord s_deviceTable[MAXDEVICES];
@@ -19,16 +27,40 @@ static uint8_t s_HIDDescriptorLen = 64;
 // EBusState
 static uint32_t *s_probe_result = (uint32_t*)USB_HOST_STATE;
 
+/**
+ * @brief Set the USB Host context
+ * 
+ * Set the USB Host context to be used by the USB Host driver.
+ * 
+ * @param ctx USB Host context
+ */
 void USBHostSetContext(struct SUSBHostContext *ctx)
 {
 	s_usbhost = ctx;
 }
 
+/**
+ * @brief Get the USB Host context
+ * 
+ * Get the USB Host context used by the USB Host driver.
+ * 
+ * @return USB Host context
+ */
 struct SUSBHostContext *USBHostGetContext()
 {
 	return s_usbhost;
 }
 
+/**
+ * @brief Probe the USB bus
+ * 
+ * Probe the USB bus to determine the state of the bus.
+ * This function is primarily used to determine if a device is connected to the bus.
+ * If a device is connected, the function will determine if the device is a full-speed or low-speed device.
+ * After determining the device speed, the function will set the MAX3421E to the appropriate mode for access.
+ * 
+ * @return Bus state
+ */
 enum EBusState USBBusProbe()
 {
 	uint8_t bus_sample;
@@ -72,6 +104,13 @@ enum EBusState USBBusProbe()
 	return BUSUNKNOWN;
 }
 
+/** @brief Initialize the MAX3421E USB Host controller
+ * 
+ * Initialize the MAX3421E USB Host controller and the internal structures.
+ * 
+ * @param enableInterrupts Enable interrupts
+ * @return Initial bus state
+ */
 enum EBusState USBHostInit(uint32_t enableInterrupts)
 {
 	// Must set context first
@@ -156,6 +195,15 @@ enum EBusState USBHostInit(uint32_t enableInterrupts)
 	return probe_result;
 }
 
+/**
+ * @brief Send a packet to the USB Host controller
+ * 
+ * Send a packet to the USB Host controller and wait for the response.
+ * 
+ * @param _token Token
+ * @param _ep Endpoint
+ * @param _nak_limit Maximum number of NAKs
+ */
 uint8_t USBDispatchPacket(uint8_t _token, uint8_t _ep, unsigned int _nak_limit)
 {
 	uint64_t timeout = E32ReadTime() + 200*ONE_MILLISECOND_IN_TICKS;
@@ -217,6 +265,15 @@ uint8_t USBDispatchPacket(uint8_t _token, uint8_t _ep, unsigned int _nak_limit)
 	return rcode;
 }
 
+/**
+ * @brief Send a control request to the USB Host controller
+ * 
+ * Send a control request to the USB Host controller and return the response.
+ * 
+ * @param _ep Endpoint
+ * @param _direction Direction
+ * @param _nak_limit Maximum number of NAKs
+ */
 uint8_t USBControlStatus(uint8_t _ep, uint8_t _direction, unsigned int _nak_limit)
 {
 	uint8_t rcode;
@@ -228,6 +285,18 @@ uint8_t USBControlStatus(uint8_t _ep, uint8_t _direction, unsigned int _nak_limi
 	return rcode;
 }
 
+/**
+ * @brief Transfer data from a USB host controller
+ * 
+ * Read data from a USB host controller and return the status.
+ * 
+ * @param _addr Address
+ * @param _ep Endpoint
+ * @param _nbytes Number of bytes to read
+ * @param _data Data pointer to write to
+ * @param _nak_limit Maximum number of NAKs
+ * @return Status
+ */
 uint8_t USBInTransfer(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _data, unsigned int _nak_limit)
 {
 	uint8_t rcode;
@@ -263,6 +332,18 @@ uint8_t USBInTransfer(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _d
 	return 0;
 }
 
+/**
+ * @brief Transfer data to a USB host controller
+ * 
+ * Write data to a USB host controller and return the status.
+ * 
+ * @param _addr Address
+ * @param _ep Endpoint
+ * @param _nbytes Number of bytes to write
+ * @param _data Data pointer to write from
+ * @param _nak_limit Maximum number of NAKs
+ * @return Status
+ */
 uint8_t USBOutTransfer(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _data, unsigned int nak_limit)
 {
 	uint8_t rcode = 0xFD, retry_count;
@@ -334,6 +415,20 @@ uint8_t USBOutTransfer(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _
 	return rcode;
 }
 
+/**
+ * @brief Read a report from a HID device
+ * 
+ * Read a report from a HID device and return the status.
+ * 
+ * @param _addr Address
+ * @param _ep Endpoint
+ * @param _dataLen Data length
+ * @param _data Data pointer to write to
+ * @param _reportIndex Report index
+ * @param _reportType Report type
+ * @param _hidClass HID class
+ * @return Status
+ */
 uint8_t USBControlData(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _dataptr, uint8_t _direction, unsigned int _nak_limit)
 {
 	uint8_t rcode;
@@ -351,6 +446,13 @@ uint8_t USBControlData(uint8_t _addr, uint8_t _ep, unsigned int _nbytes, char* _
 	}
 }
 
+/**
+ * @brief Output an error string in debug builds
+ * 
+ * Output an error string in debug builds matching the error code.
+ * 
+ * @param rcode Error code
+ */
 void USBErrorString(uint8_t rcode)
 {
 #ifdef DEBUG_USB_HOST
@@ -395,6 +497,23 @@ void USBErrorString(uint8_t rcode)
 #endif
 }
 
+/**
+ * @brief Send a control request to a USB host controller
+ * 
+ * Send a control request to a USB host controller and return the status.
+ * 
+ * @param _addr Address
+ * @param _ep Endpoint
+ * @param _bmReqType Request type
+ * @param _bRequest Request
+ * @param _wValLo Value low
+ * @param _wValHi Value high
+ * @param _wInd Index
+ * @param _nbytes Number of bytes
+ * @param _dataptr Data pointer
+ * @param _nak_limit Maximum number of NAKs
+ * @return Status
+ */
 uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_t _bRequest, uint8_t _wValLo, uint8_t _wValHi, unsigned int _wInd, unsigned int _nbytes, char* _dataptr, unsigned int _nak_limit)
 {
 	uint8_t direction = 0;
@@ -433,6 +552,18 @@ uint8_t USBControlRequest(uint8_t _addr, uint8_t _ep, uint8_t _bmReqType, uint8_
 	return rcode;
 }
 
+/**
+ * @brief Get a device descriptor from a USB host controller
+ * 
+ * Get a device descriptor from a USB host controller and return the status.
+ * 
+ * @param _addr Address
+ * @param _ep Endpoint
+ * @param _hidclass HID class
+ * @param _output Output pointer
+ * @param _outlen Output length
+ * @return Status
+ */
 uint8_t USBParseDescriptor(uint8_t _addr, uint8_t *_desc, uint8_t* _dtype, uint8_t* _offset, uint8_t* _hidclass)
 {
 	uint8_t stringCount = 0;
@@ -587,6 +718,19 @@ uint8_t USBParseDescriptor(uint8_t _addr, uint8_t *_desc, uint8_t* _dtype, uint8
 	return stringCount;
 }
 
+/**
+ * @brief Get a device descriptor from a USB host controller
+ * 
+ * Get a device descriptor from a USB host controller and return the status.
+ * The HID class is also returned in addition to the device descriptor.
+ * 
+ * @param _addr Address
+ * @param _ep Endpoint
+ * @param _hidclass HID class
+ * @param _output Output pointer
+ * @param _outlen Output length
+ * @return Status
+ */
 uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, void* _output, uint32_t *_outlen)
 {
 	s_protosubclass = 0;
@@ -732,6 +876,15 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, v
 	return 0;
 }
 
+/**
+ * @brief Attach a USB device to the USB host controller
+ * 
+ * Attach a USB device to the USB host controller by assigning an address to it.
+ * 
+ * @param _paddr Address pointer
+ * @param _pep Endpoint pointer
+ * @return Status
+ */
 uint8_t USBAttach(uint8_t *_paddr, uint8_t *_pep)
 {
 	for (int i=1; i<8; ++i)
@@ -756,6 +909,14 @@ uint8_t USBAttach(uint8_t *_paddr, uint8_t *_pep)
 	return 0xFF; // Can't assign address
 }
 
+/**
+ * @brief Detach a USB device from the USB host controller
+ * 
+ * Detach a USB device from the USB host controller by removing it from the device table.
+ * 
+ * @param _addr Address
+ * @return Status
+ */
 uint8_t USBDetach(uint8_t _addr)
 {
 	// Can't detach device at default address (0)
@@ -777,6 +938,17 @@ uint8_t USBDetach(uint8_t _addr)
 	return 0;
 }
 
+/**
+ * @brief Configure a HID device
+ * 
+ * Configure a HID device using control requests.
+ * It will also try to set the protocol to boot protocol if the HID class is a mouse.
+ * 
+ * @param _hidClass HID class
+ * @param _addr Address
+ * @param _ep Endpoint
+ * @return Status
+ */
 uint8_t USBConfigHID(uint8_t _hidClass, uint8_t _addr, uint8_t _ep)
 {
 	uint8_t config = s_cval; // Usually 1
@@ -807,16 +979,24 @@ uint8_t USBConfigHID(uint8_t _hidClass, uint8_t _addr, uint8_t _ep)
 	return rcode;
 }
 
+/**
+ * @brief Get a HID descriptor from a USB host controller
+ * 
+ * Get a HID descriptor from a USB host controller and return the status.
+ * This data can be parsed using http://eleccelerator.com/usbdescreqparser/
+ * (Just remember to click USB HID Report Descriptor to parse)
+ * 
+ * For a keyboard we expect to start with:
+ * 0501 (generic keyboard)
+ * 0906 (usage keyboard)
+ * 
+ * @param _addr Address
+ * @param _ep Endpoint
+ * @param _protocol Protocol
+ * @return Status
+ */
 uint8_t USBGetHIDDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_protocol)
 {
-	// NOTE: You can parse this data using
-	// http://eleccelerator.com/usbdescreqparser/
-	// Remember to click USB HID Report Descriptor to parse!
-
-	// For a keyboard we expect to start with:
-	// 0501 (generic keyboard)
-	// 0906 (usage keyboard)
-
 	// TODO: We need kalloc() for this kind of unknown data pool
 	char *tmpdata = (char*)KERNEL_TEMP_MEMORY;
     uint8_t rcode = USBControlRequest(_addr, _ep, bmREQ_HIDREPORT, USB_REQUEST_GET_DESCRIPTOR, 0x00, HID_DESCRIPTOR_REPORT, 0x0000, s_HIDDescriptorLen, tmpdata, 64);
@@ -863,6 +1043,14 @@ uint8_t USBGetHIDDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_protocol)
 	return 0;
 }
 
+/**
+ * @brief Set the address of a USB device
+ * 
+ * Set the address of a USB device using a direct write to the MAX3421E.
+ * 
+ * @param _addr Address
+ * @param _ep Endpoint
+ */
 void USBSetAddress(uint8_t _addr, uint8_t _ep)
 {
 	MAX3421WriteByte(rPERADDR, _addr);
@@ -872,6 +1060,23 @@ void USBSetAddress(uint8_t _addr, uint8_t _ep)
 	//MAX3421WriteByte(rMODE, mode | bmHUBPRE);
 }
 
+/**
+ * @brief Read HID data from a USB host controller
+ * 
+ * Read HID data from a USB host controller and return the status.
+ * The HID data for a given report type contains bytes that represent the state of the device.
+ * For a keyboard, this could be the state of the keys.
+ * For a mouse, this could be the state of the buttons and the movement of the mouse.
+ * 
+ * @param _addr Address
+ * @param _ep Endpoint
+ * @param _dataLen Data length
+ * @param _data Data pointer
+ * @param _reportIndex Report index
+ * @param _reportType Report type
+ * @param _hidClass HID class
+ * @return Status
+ */
 uint8_t USBReadHIDData(uint8_t _addr, uint8_t _ep, uint8_t _dataLen, uint8_t *_data, uint8_t _reportIndex, uint8_t _reportType, uint8_t _hidClass)
 {
 	uint8_t rcode;
@@ -893,6 +1098,17 @@ uint8_t USBReadHIDData(uint8_t _addr, uint8_t _ep, uint8_t _dataLen, uint8_t *_d
 	return rcode;
 }
 
+/**
+ * @brief Write HID data to a USB host controller
+ * 
+ * Write HID data to a USB host controller and return the status.
+ * For a keyboard, this could be the state of the LEDs, such as caps lock.
+ * 
+ * @param _addr Address
+ * @param _ep Endpoint
+ * @param _data Data pointer
+ * @return Status
+ */
 uint8_t USBWriteHIDData(uint8_t _addr, uint8_t _ep, uint8_t *_data)
 {
 	uint8_t reportID = 0;

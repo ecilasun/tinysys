@@ -104,9 +104,9 @@ void app_main(void)
 		.source_clk = UART_SCLK_DEFAULT,
 	};
 
-	ble_send_queue = xQueueCreate(10, sizeof(CMD_t));
-	uart_send_queue = xQueueCreate(10, sizeof(CMD_t));
-	jtag_send_queue = xQueueCreate(10, sizeof(CMD_t));
+	ble_send_queue = xQueueCreate(32, sizeof(CMD_t));
+	uart_send_queue = xQueueCreate(32, sizeof(CMD_t));
+	jtag_send_queue = xQueueCreate(32, sizeof(CMD_t));
 
 	ESP_ERROR_CHECK(uart_driver_install(UART_PORT_NUM, PAYLOAD_SIZE * 2, 0, 0, NULL, 0));
 	ESP_ERROR_CHECK(uart_param_config(UART_PORT_NUM, &uart_config));

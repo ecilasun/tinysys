@@ -1,3 +1,17 @@
+/**
+ * @file tru.c
+ * 
+ * @brief TRU rasterizer driver
+ *
+ * This file contains the software driver for the TRU rasterizer.
+ *
+ * The TRU rasterizer is a hardware rasterizer that is capable of rendering
+ * triangles to a 320x240 framebuffer. The rasterizer is controlled by writing
+ * commands to the TRUCMDIO register.
+ * 
+ * @note This code is work in progress and not yet functioning with high accuracy.
+ */
+
 #include "basesystem.h"
 #include "tru.h"
 #include "core.h"
@@ -12,6 +26,18 @@ volatile uint32_t *TRUCMDIO = (volatile uint32_t* ) DEVICE_TRUC;
 #endif
 
 #ifndef TRU_HARDWARE
+/**
+ * @brief Calculate edge function for a point
+ * 
+ * Calculate the edge function for a point relative to a line.
+ * 
+ * @param v0 First vertex of the line
+ * @param v1 Second vertex of the line
+ * @param A Pointer to the A coefficient
+ * @param B Pointer to the B coefficient
+ * @param p Point to calculate edge function for
+ * @return Edge function value
+ */
 int32_t TRUEdgeFunction(const struct TRUVec2 *v0, const struct TRUVec2 *v1, int32_t *A, int32_t *B, const struct TRUVec2 *p)
 {
 	*A = v0->y - v1->y;
@@ -24,6 +50,14 @@ int32_t TRUEdgeFunction(const struct TRUVec2 *v0, const struct TRUVec2 *v1, int3
 }
 #endif
 
+/**
+ * @brief Set the rasterizer tile buffer address
+ * 
+ * Set the address of the rasterizer tile buffer.
+ * 
+ * @param _rc Rasterizer context
+ * @param _TRUWriteAddress16ByteAligned 16-byte aligned address of the tile buffer
+ */
 void TRUSetTileBuffer(struct ERasterizerContext *_rc, const uint32_t _TRUWriteAddress16ByteAligned)
 {
 #ifndef TRU_HARDWARE
@@ -34,6 +68,19 @@ void TRUSetTileBuffer(struct ERasterizerContext *_rc, const uint32_t _TRUWriteAd
 #endif
 }
 
+/**
+ * @brief Push a primitive to the rasterizer queue
+ * 
+ * Push a primitive to the rasterizer queue. The primitive is a triangle defined by
+ * three vertices.
+ * This function will calculate the bounding box of the triangle and generate edge
+ * functions at the min corner of the bounding box.
+ * The min corner of the bounding box is rounded to the nearest 4-pixel boundary
+ * so that it aligns to a 4x4 tile.
+ * 
+ * @param _rc Rasterizer context
+ * @param _primitive Primitive to push
+ */
 void TRUPushPrimitive(struct ERasterizerContext *_rc, struct SPrimitive* _primitive)
 {
 #ifndef TRU_HARDWARE
@@ -78,6 +125,19 @@ void TRUPushPrimitive(struct ERasterizerContext *_rc, struct SPrimitive* _primit
 #endif
 }
 
+/**
+ * @brief Rasterize the primitive
+ * 
+ * Rasterize the primitive that was pushed to the rasterizer queue.
+ * This function will sweep the triangle and fill the pixels that are inside the
+ * primitive, one tile at a time.
+ * 
+ * It will first scan right to find the right edge of the primitive, then scan
+ * left to find the left edge of the primitive. This way it can fill the pixels
+ * without going outside the primitive too much and wasting cycles.
+ * 
+ * @param _rc Rasterizer context
+ */
 void TRURasterizePrimitive(struct ERasterizerContext *_rc)
 {
 #ifndef TRU_HARDWARE
@@ -192,6 +252,17 @@ void TRURasterizePrimitive(struct ERasterizerContext *_rc)
 #endif
 }
 
+/**
+ * @brief Set the primitive color
+ * 
+ * Set the color to be used when rasterizing the following primitives.
+ * The color is an 8 bit index to a color palette, and is replicated to all bytes of a word.
+ * This makes it possible to write the color to the framebuffer in a single write for 4 adjacent pixels.
+ * @note Hardware rasterizer will use masked memory writes to avoid read-modify-write cycles and can emit all 4 pixels in a single write, hence the replication.
+ * 
+ * @param _rc Rasterizer context
+ * @param _colorIndex Color index
+ */
 void TRUSetColor(struct ERasterizerContext *_rc, const uint8_t _colorIndex)
 {
 #ifndef TRU_HARDWARE
@@ -202,6 +273,13 @@ void TRUSetColor(struct ERasterizerContext *_rc, const uint8_t _colorIndex)
 #endif
 }
 
+/**
+ * @brief Flush the rasterizer cache
+ * 
+ * Flush the rasterizer cache. This will write any pending data from rasterizer to system memory.
+ * 
+ * @param _rc Rasterizer context
+ */
 void TRUFlushCache(struct ERasterizerContext *_rc)
 {
 #ifndef TRU_HARDWARE
@@ -211,6 +289,13 @@ void TRUFlushCache(struct ERasterizerContext *_rc)
 #endif
 }
 
+/**
+ * @brief Invalidate the rasterizer cache
+ * 
+ * Invalidate the rasterizer cache. This will discard any pending data from rasterizer.
+ * 
+ * @param _rc Rasterizer context
+ */
 void TRUInvalidateCache(struct ERasterizerContext *_rc)
 {
 #ifndef TRU_HARDWARE
@@ -220,6 +305,13 @@ void TRUInvalidateCache(struct ERasterizerContext *_rc)
 #endif
 }
 
+/**
+ * @brief Rasterizer wait barrier
+ * 
+ * This will insert a barrier in the rasterizer command stream which the CPU can wait for.
+ * 
+ * @param _rc Rasterizer context
+ */
 void TRUBarrier(struct ERasterizerContext *_rc)
 {
 #ifndef TRU_HARDWARE
@@ -229,6 +321,15 @@ void TRUBarrier(struct ERasterizerContext *_rc)
 #endif
 }
 
+/**
+ * @brief Check if there are pending commands in the rasterizer
+ * 
+ * Check if there are pending commands in the rasterizer.
+ * 
+ * @param _rc Rasterizer context
+ * @return Number of pending commands
+ * @see TRUWait
+ */
 uint32_t TRUPending(struct ERasterizerContext *_rc)
 {
 #ifndef TRU_HARDWARE
@@ -238,6 +339,14 @@ uint32_t TRUPending(struct ERasterizerContext *_rc)
 #endif
 }
 
+/**
+ * @brief Wait for the rasterizer to finish
+ * 
+ * Wait for the rasterizer to finish.
+ * 
+ * @param _rc Rasterizer context
+ * @see TRUPending
+ */
 void TRUWait(struct ERasterizerContext *_rc)
 {
 #ifndef TRU_HARDWARE

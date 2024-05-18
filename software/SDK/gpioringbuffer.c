@@ -1,9 +1,14 @@
+/**
+ * @file gpioringbuffer.c
+ * 
+ * @brief GPIO ring buffer implementation
+ * 
+ * Adapted from DXUT locklesspipe (c) Microsoft
+ */
+
 #include "gpioringbuffer.h"
 #include "encoding.h"
 #include <string.h>
-
-// Simple ringbuffer
-// Adapted from DXUT locklesspipe (c) Microsoft
 
 const static uint32_t cbBufferSizeLog2 = 14; // 16384
 const static uint8_t c_cbBufferSizeLog2 = cbBufferSizeLog2 < 31 ? cbBufferSizeLog2 : 31;
@@ -16,12 +21,18 @@ const static uint32_t c_sizeMask = c_cbBufferSize - 1;
 volatile uint32_t *m_gpio_readOffset  = (volatile uint32_t*)(GPIO_RINGBUFFER_STATE+4);
 volatile uint32_t *m_gpio_writeOffset = (volatile uint32_t*)(GPIO_RINGBUFFER_STATE+8);
 
+/**
+ * @brief Reset the ring buffer to empty state
+ */
 void __attribute__ ((noinline)) GPIORingBufferReset()
 {
     *m_gpio_readOffset  = 0;
     *m_gpio_writeOffset = 0;
 }
 
+/** 
+ * @brief Flush the ring buffer contents
+ */
 void __attribute__ ((noinline)) GPIORingBufferFlush()
 {
 	// Disable machine interrupts
@@ -32,6 +43,16 @@ void __attribute__ ((noinline)) GPIORingBufferFlush()
 	set_csr(mstatus, MSTATUS_MIE);
 }
 
+/**
+ * @brief Read from the ring buffer
+ * 
+ * Read from the ring buffer into a destination buffer of cbDest bytes.
+ * If there are less than cbDest bytes available, no bytes are read.
+ * 
+ * @param pvDest Destination buffer
+ * @param cbDest Number of bytes to read
+ * @return Number of bytes read
+ */
 uint32_t __attribute__ ((noinline)) GPIORingBufferRead(void* pvDest, const uint32_t cbDest)
 {
     uint8_t *ringbuffer = (uint8_t *)GPIO_RINGBUFFER_BASE;
@@ -62,6 +83,16 @@ uint32_t __attribute__ ((noinline)) GPIORingBufferRead(void* pvDest, const uint3
     return 1;
 }
 
+/**
+ * @brief Write to the ring buffer
+ * 
+ * Write to the ring buffer from a source buffer of cbSrc bytes.
+ * If the ring buffer is full, no bytes are written.
+ * 
+ * @param pvSrc Source buffer
+ * @param cbSrc Number of bytes to write
+ * @return Number of bytes written
+ */
 uint32_t __attribute__ ((noinline)) GPIORingBufferWrite( const void* pvSrc, const uint32_t cbSrc)
 {
     uint8_t *ringbuffer = (uint8_t *)GPIO_RINGBUFFER_BASE;

@@ -87,6 +87,13 @@ void InitializeUSBHIDData()
 	for (int i=0; i<8; ++i)
 		s_devicecontrol[i] = 0;
 
+	// Mouse data
+	{
+		s_mposxy_buttons[0] = 0;
+		s_mposxy_buttons[1] = 0;
+		s_mposxy_buttons[2] = 0;
+	}
+
 	// Reset descriptor length
 	uint32_t *desclen = (uint32_t*)(KERNEL_TEMP_MEMORY + 4096);
 	*desclen = 0;
