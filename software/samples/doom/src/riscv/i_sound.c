@@ -96,14 +96,15 @@ void I_SoundDelTimer( void );
 
 
 // Needed for calling the actual sound output.
-#define SAMPLECOUNT             1024
+#define SAMPLECOUNT             512
 #define NUM_CHANNELS            6
-// It is 2 for 16bit, and 2 for two channels.
-#define BUFMUL                  4
+// It is 2 for 16bit, and 2 for stereo
+#define SAMPLESTEREO            2
+#define SAMPLESIZE              2
+#define BUFMUL                  (SAMPLESTEREO*SAMPLESIZE)
 #define MIXBUFFERSIZE           (SAMPLECOUNT*BUFMUL)
 
 #define SAMPLERATE              11025   // Hz
-#define SAMPLESIZE              2       // 16bit
 
 // The actual lengths of all sound effects.
 int             lengths[NUMSFX];
@@ -578,7 +579,7 @@ void I_UpdateSound( void )
     //  are in global mixbuffer, alternating.
     leftout = mixbuffer;
     rightout = mixbuffer+1;
-    step = 2;
+    step = SAMPLESTEREO;
 
     // Determine end, for left channel only
     //  (right channel is implicit).
@@ -820,15 +821,14 @@ I_InitSound()
     fprintf(stderr, "Could not play signed 16 data\n");*/
 
   // swap: mixbuffer = (currentmixbuffer%2)==0 ?  mixbufferA : mixbufferB;
-  mixbufferA = (short*)APUAllocateBuffer(MIXBUFFERSIZE*SAMPLESIZE);
-  mixbufferB = (short*)APUAllocateBuffer(MIXBUFFERSIZE*SAMPLESIZE);
+  mixbufferA = (short*)APUAllocateBuffer(MIXBUFFERSIZE);
+  mixbufferB = (short*)APUAllocateBuffer(MIXBUFFERSIZE); // Size of mix buffer in bytes (16-bit stereo)
   mixbuffer = mixbufferA;
   playbackbuffer = mixbufferB;
-  APUSetBufferSize(MIXBUFFERSIZE*SAMPLESIZE);
+  APUSetBufferSize(SAMPLECOUNT); // Number of stereo sample pairs in buffer
   APUSetSampleRate(ASR_11_025_Hz);
 
   fprintf(stderr, " configured audio device\n" );
-
 
   // Initialize external data (all sounds) at start, keep static.
   fprintf( stderr, "I_InitSound: ");
@@ -851,8 +851,8 @@ I_InitSound()
 
   fprintf( stderr, " pre-cached all sound data\n");
 
-  // Now initialize mixbuffer with zero.
-  for ( i = 0; i< MIXBUFFERSIZE; i++ )
+  // Now initialize mix buffers with zero.
+  for ( i = 0; i< SAMPLECOUNT*SAMPLESTEREO; i++ )
   {
     mixbufferA[i] = 0;
     mixbufferB[i] = 0;
