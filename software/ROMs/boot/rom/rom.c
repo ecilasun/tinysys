@@ -23,12 +23,12 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "v1.03"
+#define VERSIONSTRING "v1.04"
 // On-storage version
-#define DEVVERSIONSTRING "v1.03"
+#define DEVVERSIONSTRING "v1.04"
 
-static char s_execName[32] = "                               ";
-static char s_execParam0[32] = "                               ";
+static char s_execName[33] = "";
+static char s_execParam0[33] = "";
 static uint32_t s_execParamCount = 1;
 // ID of task executing on hart#1
 static uint32_t s_userTaskID = 0;
@@ -40,8 +40,8 @@ static uint32_t s_startAddress = 0;
 static int s_refreshConsoleOut = 1;
 static int s_runOnCPU = 0;
 
-static const char *s_taskstates[]={ "UNKNOWN    ", "PAUSED     ", "RUNNING    ", "TERMINATING", "TERMINATED "};
-static const char *s_regnames[]={"zero", "ra", "sp", "gp", "tp", "t0", "t1", "t2", "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s1", "s1", "t3", "t4", "t5", "t6"};
+static const char *s_taskstates[]={ "????", "HALT", "EXEC", "TERM", "DEAD"};
+static const char *s_regnames[]={"PC", "ra", "sp", "gp", "tp", "t0", "t1", "t2", "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s1", "s1", "t3", "t4", "t5", "t6"};
 
 static struct SUSBHostContext s_usbhostctx;
 
@@ -249,7 +249,7 @@ uint32_t ExecuteCmd(char *_cmd)
 				for (int i=0;i<ctx->numTasks;++i)
 				{
 					struct STask *task = &ctx->tasks[i];
-					kprintf("#%d:%s PC:0x%x name:'%s'\n", i, s_taskstates[task->state], task->regs[0], task->name);
+					kprintf("#%d:%s PC=0x%08X Name:'%s'\n", i, s_taskstates[task->state], task->regs[0], task->name);
 				}
 			}
 		}
@@ -432,7 +432,7 @@ uint32_t ExecuteCmd(char *_cmd)
 					s_execParamCount = 1;
 				else
 				{
-					strncpy(s_execParam0, param, 31);
+					strncpy(s_execParam0, param, 32);
 					s_execParamCount = 2;
 				}
 
@@ -787,9 +787,9 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 					uint32_t taskid = ctx->kernelErrorData[0];
 					struct STask *task = &ctx->tasks[taskid];
 					// Skip zero register and emit '0' since we save PC there
-					kprintf("Task: '%s', instruction 0x%x @ 0x%x\nzero=0x0 ", task->name, ctx->kernelErrorData[1], ctx->kernelErrorData[2]);
-					for (uint32_t i=1; i<32; ++i)
-						kprintf("%s=0x%x%c", s_regnames[i], task->regs[i], i%4==0?'\n':' ');
+					kprintf("Task: '%s'\nIR=0x%08X\n", task->name, ctx->kernelErrorData[1]);
+					for (uint32_t i=0; i<32; ++i)
+						kprintf("%s=0x%08X%c", s_regnames[i], task->regs[i], (i+1)%4==0 ? '\n':' ');
 					kprintf("\n");
 				}
 				ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);

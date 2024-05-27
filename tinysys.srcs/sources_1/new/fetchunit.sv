@@ -41,15 +41,15 @@ delayreset delayresetinst(
 // Internal states
 // --------------------------------------------------
 
-logic fetchena;
-logic [3:0] wficount;
-logic [31:0] prevPC;
-logic [31:0] PC;
-logic [31:0] emitPC;
-(* extract_reset = "yes" *) logic [31:0] IR;
+bit fetchena;
+bit [3:0] wficount;
+bit [31:0] prevPC;
+bit [31:0] PC;
+bit [31:0] emitPC;
+(* extract_reset = "yes" *) bit [31:0] IR;
 wire rready;
 wire [31:0] instruction;
-logic icacheflush;
+bit icacheflush;
 
 // --------------------------------------------------
 // Instruction cache
@@ -97,8 +97,7 @@ decoder decoderinst(
 	.selectimmedasrval2(selectimmedasrval2) );	// 1	+ -> 18+4+3+3+7+12+5+5+5+5+12+32+1+PC[31:1]+1(stepsize) = 144 bits (Exact *8 of 18)
 
 // --------------------------------------------------
-// Microcode ROM
-// NOTE: Not yet 'microcode' but eventually will be
+// Instruction injection address table
 // --------------------------------------------------
 
 /*
@@ -116,11 +115,23 @@ decoder decoderinst(
 	leaveIllegalISR    93          100
 */
 
-logic [6:0] injectAddr;	// Instruction injection start and read address
-logic [6:0] injectStop;	// Instruction injection stop address
-logic [4:0] entryState;	// State at entry time
+bit [6:0] enterStartStop[0:11];
+bit [6:0] exitStartStop[0:11];
 
-logic [31:0] injectionROM [0:100];
+initial begin
+	$readmemh("entryoffsets.mem", enterStartStop);
+	$readmemh("exitoffsets.mem", exitStartStop);
+end
+
+// --------------------------------------------------
+// Instruction injection ROM
+// --------------------------------------------------
+
+bit [6:0] injectAddr;	// Instruction injection start and read address
+bit [6:0] injectStop;	// Instruction injection stop address
+bit [4:0] entryState;	// State at entry time
+
+bit [31:0] injectionROM [0:100];
 
 initial begin
 	$readmemh("microcoderom.mem", injectionROM);
@@ -132,8 +143,8 @@ wire [31:0] injectInstruction = injectionROM[injectAddr];
 // Instruction output FIFO
 // --------------------------------------------------
 
-logic [131:0] ififodin;
-logic ififowr_en = 1'b0;
+bit [131:0] ififodin;
+bit ififowr_en = 1'b0;
 wire ififofull;
 
 instructinfifo instructionfifoinst (
@@ -147,7 +158,7 @@ instructinfifo instructionfifoinst (
   .empty(ififoempty),
   .valid(ififovalid) );
 
-  // --------------------------------------------------
+// --------------------------------------------------
 // Instruction classification and halt detection
 // --------------------------------------------------
 
@@ -168,7 +179,7 @@ wire [1:0] sysop = {
 	{func3, func12} == {3'b000, `F12_CFLUSH} ? 1'b1 : 1'b0 };
 
 // --------------------------------------------------
-// Fetch logic
+// Fetch state machine
 // --------------------------------------------------
 
 typedef enum logic [3:0] {
@@ -284,28 +295,28 @@ always @(posedge aclk) begin
 				// Inject entry instruction sequence (see table at microcode ROM section)
 				priority case (1'b1)
 					irqReq[0]: begin			// Interrupt: Timer
-						injectAddr <= 7'd0;
-						injectStop <= 7'd12;
+						injectAddr <= enterStartStop[0];
+						injectStop <= enterStartStop[1];
 					end
 					irqReq[1]: begin			// Interrupt: Ext (UART)
-						injectAddr <= 7'd19;
-						injectStop <= 7'd33;
+						injectAddr <= enterStartStop[2];
+						injectStop <= enterStartStop[3];
 					end
 					isecall: begin				// Exception: Environment call
-						injectAddr <= 7'd41;
-						injectStop <= 7'd53;
+						injectAddr <= enterStartStop[4];
+						injectStop <= enterStartStop[5];
 					end
 					isebreak: begin				// Exception: Debug breakpoint
-						injectAddr <= 7'd61;
-						injectStop <= 7'd73;
+						injectAddr <= enterStartStop[6];
+						injectStop <= enterStartStop[7];
 					end
 					isillegalinstruction: begin	// Exception: Illegal instruction
-						injectAddr <= 7'd81;
-						injectStop <= 7'd93;
+						injectAddr <= enterStartStop[8];
+						injectStop <= enterStartStop[9];
 					end
 					default: begin
-						injectAddr <= 7'd0;		// Do nothing
-						injectStop <= 7'd0;
+						injectAddr <= enterStartStop[10];
+						injectStop <= enterStartStop[11];
 					end
 				endcase
 
@@ -322,28 +333,28 @@ always @(posedge aclk) begin
 				// Inject exit instruction sequence (see table at microcode ROM section)
 				priority case (1'b1)
 					entryState[4]: begin		// Interrupt: Timer
-						injectAddr <= 7'd12;
-						injectStop <= 7'd19;
+						injectAddr <= exitStartStop[0];
+						injectStop <= exitStartStop[1];
 					end
 					entryState[3]: begin		// Interrupt: Ext(UART)
-						injectAddr <= 7'd33;
-						injectStop <= 7'd41;
+						injectAddr <= exitStartStop[2];
+						injectStop <= exitStartStop[3];
 					end
 					entryState[2]: begin		// Exception: Environment call
-						injectAddr <= 7'd53;
-						injectStop <= 7'd61;
+						injectAddr <= exitStartStop[4];
+						injectStop <= exitStartStop[5];
 					end
 					entryState[1]: begin		// Exception: Debug breakpoint
-						injectAddr <= 7'd73;
-						injectStop <= 7'd81;
+						injectAddr <= exitStartStop[6];
+						injectStop <= exitStartStop[7];
 					end
 					entryState[0]: begin		// Exception: Illegal instruction
-						injectAddr <= 7'd93;
-						injectStop <= 7'd101;
+						injectAddr <= exitStartStop[8];
+						injectStop <= exitStartStop[9];
 					end
 					default: begin
-						injectAddr <= 7'd0;		// Do nothing
-						injectStop <= 7'd0;
+						injectAddr <= exitStartStop[10];
+						injectStop <= exitStartStop[11];
 					end
 				endcase
 

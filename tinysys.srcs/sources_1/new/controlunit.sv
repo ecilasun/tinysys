@@ -35,51 +35,51 @@ delayreset delayresetinst(
 // Internal
 // --------------------------------------------------
 
-logic ififore;
+bit ififore;
 assign ififord_en = ififore;
 
-logic [63:0] cyclecount;
-logic [63:0] retiredcount;
+bit [63:0] cyclecount;
+bit [63:0] retiredcount;
 assign cpuclocktime = cyclecount;
 assign retired = retiredcount;
 
-logic [31:0] PC;
-logic [31:0] immed;
-logic [31:0] csrprevval;
-logic [15:0] instrOneHotOut;
-logic [1:0] sysop;
-logic [11:0] csroffset;
-logic [4:0] rs1;
-logic [4:0] rs2;
-logic [4:0] rs3;
-logic [4:0] rd;
-logic [3:0] aluop;
-logic [2:0] bluop;
-logic [2:0] func3;
-logic [6:0] func7;
-logic [2:0] rfunc3;
-logic selectimmedasrval2;
+bit [31:0] PC;
+bit [31:0] immed;
+bit [31:0] csrprevval;
+bit [15:0] instrOneHotOut;
+bit [1:0] sysop;
+bit [11:0] csroffset;
+bit [4:0] rs1;
+bit [4:0] rs2;
+bit [4:0] rs3;
+bit [4:0] rd;
+bit [3:0] aluop;
+bit [2:0] bluop;
+bit [2:0] func3;
+bit [6:0] func7;
+bit [2:0] rfunc3;
+bit immsel;
 
 // Program counter of currently executing instruction
 assign pc_out = PC;
 
-logic btready;
-logic [31:0] btarget;
+bit btready;
+bit [31:0] btarget;
 
 assign branchresolved = btready;
 assign branchtarget = btarget;
 
 // Operands for exec
-logic [31:0] A;	// rval1
-logic [31:0] B;	// rval2
-logic [31:0] D;	// immed
-logic [31:0] E;	// rval3
-logic F;		// selectimmedasrval2
+bit [31:0] A;	// rval1
+bit [31:0] B;	// rval2
+bit [31:0] D;	// immed
+bit [31:0] E;	// rval3
+bit F;		// immsel
 
 // Writeback data
-logic [31:0] wbdin;
-logic [4:0] wbdest;
-logic wback;
+bit [31:0] wbdin;
+bit [4:0] wbdest;
+bit wback;
 
 // --------------------------------------------------
 // Integer register file
@@ -88,8 +88,8 @@ logic wback;
 wire [31:0] rval1;
 wire [31:0] rval2;
 wire [31:0] rval3;
-logic [31:0] rdin;
-logic rwen;
+bit [31:0] rdin;
+bit rwen;
 integerregisterfile GPR(
 	.clock(aclk),
 	.rs1(rs1),
@@ -131,12 +131,12 @@ arithmeticlogic ALU(
 // IMUL/IDIV
 // --------------------------------------------------
 
-logic mulstrobe = 1'b0;
-logic divstrobe = 1'b0;
+bit mulstrobe;
+bit divstrobe;
 
 wire mulready;
 wire [31:0] product;
-logic [2:0] mfunc3;
+bit [2:0] mfunc3;
 integermultiplier IMULSU(
     .aclk(aclk),
     .aresetn(delayedresetn),
@@ -175,23 +175,23 @@ integerdividersigned IDIVS (
 // Floating point math
 // ------------------------------------------------------------------------------------
 
-logic fmaddstrobe;
-logic fmsubstrobe;
-logic fnmsubstrobe;
-logic fnmaddstrobe;
-logic faddstrobe;
-logic fsubstrobe;
-logic fmulstrobe;
-logic fdivstrobe;
-logic fi2fstrobe;
-logic fui2fstrobe;
-logic ff2istrobe;
-logic ff2uistrobe;
-logic ff2ui4satstrobe;
-logic fsqrtstrobe;
-logic feqstrobe;
-logic fltstrobe;
-logic flestrobe;
+bit fmaddstrobe;
+bit fmsubstrobe;
+bit fnmsubstrobe;
+bit fnmaddstrobe;
+bit faddstrobe;
+bit fsubstrobe;
+bit fmulstrobe;
+bit fdivstrobe;
+bit fi2fstrobe;
+bit fui2fstrobe;
+bit ff2istrobe;
+bit ff2uistrobe;
+bit ff2ui4satstrobe;
+bit fsqrtstrobe;
+bit feqstrobe;
+bit fltstrobe;
+bit flestrobe;
 
 wire fpuresultvalid;
 wire [31:0] fpuresult;
@@ -244,7 +244,7 @@ typedef enum logic [4:0] {
 controlunitmode ctlmode = INIT;
 controlunitmode sysmode = INIT;
 
-//logic cpurunning;
+//bit cpurunning;
 always @(posedge aclk) begin
 	if (~delayedresetn) begin
 		cyclecount <= 64'd0;
@@ -254,7 +254,7 @@ always @(posedge aclk) begin
 	end
 end
 
-logic retiredstrobe;
+bit retiredstrobe;
 always @(posedge aclk) begin
 	if (~delayedresetn) begin
 		retiredcount <= 64'd0;
@@ -267,11 +267,11 @@ end
 // Writeback
 // --------------------------------------------------
 
-logic [31:0] rwaddress;
-logic pendingmul = 1'b0;
-logic pendingdiv = 1'b0;
-logic pendingload = 1'b0;
-logic pendingwrite = 1'b0;
+bit [31:0] rwaddress;
+bit pendingmul;
+bit pendingdiv;
+bit pendingload;
+bit pendingwrite;
 wire pendingwback = rwen;
 
 always_comb begin
@@ -333,8 +333,8 @@ end
 // Main
 // --------------------------------------------------
 
-logic [31:0] offsetPC;
-logic [31:0] adjacentPC;
+bit [31:0] offsetPC;
+bit [31:0] adjacentPC;
 
 // EXEC
 always @(posedge aclk) begin
@@ -356,7 +356,10 @@ always @(posedge aclk) begin
 		B <= 32'd0;
 		D <= 32'd0;
 		E <= 32'd0;
-		fmaddstrobe <= 1'b0;	// Stop floating point strobe
+		F <= 1'd0;
+		mulstrobe <= 1'b0;
+		divstrobe <= 1'b0;
+		fmaddstrobe <= 1'b0;
 		fmsubstrobe <= 1'b0;
 		fnmsubstrobe <= 1'b0;
 		fnmaddstrobe <= 1'b0;
@@ -421,7 +424,7 @@ always @(posedge aclk) begin
 				// Grab next decoded instruction if there's something in the FIFO
 				{	csroffset,
 					sysop, func3, func7,
-					selectimmedasrval2,
+					immsel,
 					instrOneHotOut,
 					bluop, aluop,
 					rs1, rs2, rs3, rd,
@@ -444,7 +447,7 @@ always @(posedge aclk) begin
 					B <= rval2;
 					D <= immed;
 					E <= rval3;
-					F <= selectimmedasrval2;
+					F <= immsel;
 					wbdest <= rd;
 					rwaddress <= rval1 + immed;
 					offsetPC <= PC + immed;

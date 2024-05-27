@@ -59,7 +59,7 @@
     <DataMask>1</DataMask>
     <ECC>Disabled</ECC>
     <Ordering>Normal</Ordering>
-    <BankMachineCnt>4</BankMachineCnt>
+    <BankMachineCnt>3</BankMachineCnt>
     <CustomPart>TRUE</CustomPart>
     <NewPartName>MT41K128M16JT-125</NewPartName>
     <RowAddress>14</RowAddress>
