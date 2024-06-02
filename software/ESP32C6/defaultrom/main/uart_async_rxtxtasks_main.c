@@ -45,8 +45,8 @@ static void jtag_tx_task(void *arg)
 	do
 	{
 		xQueueReceive(jtag_send_queue, &cmdBuf, portMAX_DELAY);
-		/*int txBytes =*/ usb_serial_jtag_write_bytes(cmdBuf.payload, cmdBuf.length, portMAX_DELAY);
-		//if (txBytes != cmdBuf.length)
+		int txBytes = usb_serial_jtag_write_bytes(cmdBuf.payload, cmdBuf.length, portMAX_DELAY);
+		if (txBytes)
 			usb_serial_jtag_ll_txfifo_flush();
 	} while(1);
 }
@@ -92,7 +92,7 @@ void app_main(void)
 	}
 	ESP_ERROR_CHECK( ret );
 
-	usb_serial_jtag_driver_config_t usb_serial_config = {.tx_buffer_size = PAYLOAD_SIZE, .rx_buffer_size = PAYLOAD_SIZE};
+	usb_serial_jtag_driver_config_t usb_serial_config = {.tx_buffer_size = PAYLOAD_SIZE * 2, .rx_buffer_size = PAYLOAD_SIZE * 2};
 	ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&usb_serial_config));
 
 	uart_config_t uart_config = {
