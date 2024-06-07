@@ -184,7 +184,7 @@ wire [1:0] sysop = {
 
 typedef enum logic [3:0] {
 	INIT,										// Startup
-	FETCH, STREAMOUT,				// Instuction fetch + stream loop
+	FETCH, STREAMOUT,							// Instuction fetch + stream loop
 	WAITNEWBRANCHTARGET, WAITIFENCE,			// Branch and fence handling
 	ENTERISR, EXITISR,							// ISR handling
 	STARTINJECT, INJECT, POSTENTER, POSTEXIT,	// ISR entry/exit instruction injection

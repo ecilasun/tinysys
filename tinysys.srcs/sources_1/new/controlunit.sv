@@ -376,19 +376,20 @@ always @(posedge aclk) begin
 		feqstrobe <= 1'b0;
 		fltstrobe <= 1'b0;
 		flestrobe <= 1'b0;
+		retiredstrobe <= 1'b0;
 		ctlmode <= INIT;
 		sysmode <= INIT;
 	end else begin
-		btready <= 1'b0;	// Stop branch target ready strobe
-		ififore <= 1'b0;	// Stop instruction fifo read enable strobe
-		wback <= 1'b0;		// Stop register writeback shadow strobe
+		btready <= 1'b0;		// Stop branch target ready strobe
+		ififore <= 1'b0;		// Stop instruction fifo read enable strobe
+		wback <= 1'b0;			// Stop register writeback shadow strobe
 
 		m_ibus.rstrobe <= 1'b0;	// Stop data read strobe
 		m_ibus.wstrobe <= 4'h0;	// Stop data write strobe
 		m_ibus.cstrobe <= 1'b0;	// Stop data cache strobe
 
-		mulstrobe <= 1'b0;	// Stop integer mul strobe 
-		divstrobe <= 1'b0;	// Stop integer div/rem strobe
+		mulstrobe <= 1'b0;		// Stop integer mul strobe 
+		divstrobe <= 1'b0;		// Stop integer div/rem strobe
 
 		fmaddstrobe <= 1'b0;	// Stop floating point strobe
 		fmsubstrobe <= 1'b0;
