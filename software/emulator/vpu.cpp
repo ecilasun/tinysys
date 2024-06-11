@@ -141,7 +141,7 @@ void CVPU::Tick()
 		{
 			// SETVPAGE
 			m_scanoutpointer = m_data;
-			printf("scanout @%.8X\n", m_scanoutpointer);
+			//printf("scanout @%.8X\n", m_scanoutpointer);
 			m_state = 0;
 		}
 		break;
@@ -152,10 +152,10 @@ void CVPU::Tick()
 			uint32_t addrs = SelectBitRange(m_data, 31, 24);
 			uint32_t color = SelectBitRange(m_data, 11, 0);
 			// Convert 12bpp color to 32bpp ARGB
-			uint32_t G = SelectBitRange(color, 3, 0) << 2;
+			uint32_t G = SelectBitRange(color, 3, 0) << 4;
 			uint32_t B = SelectBitRange(color, 7, 4) << 4;
 			uint32_t R = SelectBitRange(color, 11, 8) << 4;
-			m_vgapalette[addrs] = 0xFF000000 | (R << 24) | (G << 16) | (B << 8);
+			m_vgapalette[addrs] = 0xFF000000 | (R << 16) | (G << 8) | (B);
 			m_state = 0;
 		}
 		break;
