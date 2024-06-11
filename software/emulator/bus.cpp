@@ -36,7 +36,10 @@ uint32_t CBus::Tick(CClock& cpuclock, CRV32* cpu)
 uint32_t* CBus::GetHostAddress(uint32_t address)
 {
 	// Convert to emulator host address from emulated device memory address
-	return m_mem.GetHostAddress(address);
+	if (address & 0x80000000)
+		return nullptr;
+	else
+		return m_mem.GetHostAddress(address);
 }
 
 void CBus::Read(uint32_t address, uint32_t& data)

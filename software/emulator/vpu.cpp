@@ -16,40 +16,49 @@ void CVPU::Reset()
 {
 	m_scanoutpointer = 0x0;
 	m_videoscanoutenable = 0;
+	m_count = 0;
 }
 
 void CVPU::UpdateVideoLink(uint32_t* pixels, CBus* bus)
 {
 	if (m_scanoutpointer)
 	{
-		if (m_videoscanoutenable)
+		uint32_t* devicemem = bus->GetHostAddress(m_scanoutpointer);
+		if (m_videoscanoutenable && devicemem)
 		{
 			// Copy vram scan out pointer contents to SDL surface
 			if (m_indexedcolormode)
 			{
 				// 16bpp
-				uint32_t* devicemem = bus->GetHostAddress(m_scanoutpointer);
 				for (uint32_t i = 0; i < 640 * 480; i++)
 					pixels[i] = devicemem[i];
 			}
 			else
 			{
+				// 8bpp
+				uint8_t* devicememas8bpp = (uint8_t*)devicemem;
 				for (uint32_t i = 0; i < 640 * 480; i++)
 				{
-					// 8bpp
-					uint8_t* devicemem = (uint8_t*)bus->GetHostAddress(m_scanoutpointer);
-					uint32_t color = m_vgapalette[devicemem[i]];
+					uint32_t color = m_vgapalette[devicememas8bpp[i]];
 					pixels[i] = color;
 				}
 			}
+		}
+		else
+		{
+			for (uint32_t i = 0; i < 640 * 480; i++)
+				pixels[i] = (i%2) ? 0xFF201515 : 0xFF001515;
 		}
 	}
 
 	if (m_scanoutpointer == 0x0 || m_videoscanoutenable == 0x0)
 	{
 		for (uint32_t i = 0; i < 640 * 480; i++)
-			pixels[i] = 0xFF0000FF;
+			pixels[i] = ((i/640)%2) ? 0xFF151515 : 0xFF000015;
 	}
+
+	// TODO: vsync will be tied to this counter
+	++m_count;
 }
 
 void CVPU::Tick(CClock& cpuclock)
@@ -118,6 +127,7 @@ void CVPU::Tick(CClock& cpuclock)
 		{
 			// SETVPAGE
 			m_scanoutpointer = m_data;
+			printf("scanout @%.8X\n", m_scanoutpointer);
 			m_state = 0;
 		}
 		break;
@@ -127,7 +137,11 @@ void CVPU::Tick(CClock& cpuclock)
 			// SETPAL
 			uint32_t addrs = SelectBitRange(m_data, 31, 24);
 			uint32_t color = SelectBitRange(m_data, 11, 0);
-			m_vgapalette[addrs] = color; // TODO: boost to 32 bit color
+			// Convert 12bpp color to 32bpp ARGB
+			uint32_t G = SelectBitRange(color, 3, 0) << 4;
+			uint32_t B = SelectBitRange(color, 7, 4) << 4;
+			uint32_t R = SelectBitRange(color, 11, 8) << 4;
+			m_vgapalette[addrs] = 0xFF000000 | (R << 24) | (G << 16) | (B << 8);
 			m_state = 0;
 		}
 		break;

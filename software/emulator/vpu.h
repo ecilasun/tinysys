@@ -29,6 +29,7 @@ private:
 	uint32_t m_indexedcolormode{ 0 };
 	uint32_t m_scanoutpointer{ 0 };
 	uint32_t m_scanwidth{ 320 };
+	uint32_t m_count{ 0 };
 	uint32_t m_vgapalette[256];
 	std::queue<uint32_t> m_fifo;
 };
