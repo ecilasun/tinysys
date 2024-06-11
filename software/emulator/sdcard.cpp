@@ -14,8 +14,7 @@ void CSDCard::Read(uint32_t address, uint32_t& data)
 {
 	// TODO: Implement SD card SPI read
 
-	// Return illegal data so OS detects that the sdcard reader is not working
-	data = 0xFF;
+	data = 0xFF; // SPI access should return FF for no device present
 }
 
 void CSDCard::Write(uint32_t address, uint32_t word, uint32_t wstrobe)

@@ -98,7 +98,7 @@ void CBus::Read(uint32_t address, uint32_t& data)
 				// DEVICE_USBA
 				//m_usba->Read(address, data);
 				printf("<-USB-A\n");
-				data = 0;
+				data = 0xFF; // SPI access should return FF for no device present
 			}
 			break;
 			case 7:
