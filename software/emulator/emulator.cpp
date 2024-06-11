@@ -45,7 +45,7 @@ bool CEmulator::Step()
 	return retval;
 }
 
-void CEmulator::UpdateVideoLink(uint32_t *pixels)
+void CEmulator::UpdateVideoLink(uint32_t *pixels, int pitch)
 {
-	m_bus.UpdateVideoLink(pixels);
+	m_bus.UpdateVideoLink(pixels, pitch);
 }

@@ -12,9 +12,9 @@ void CBus::Reset(uint32_t resetvector, uint8_t* rombin, uint32_t romsize)
 	m_mem.CopyROM(resetvector, rombin, romsize);
 }
 
-void CBus::UpdateVideoLink(uint32_t *pixels)
+void CBus::UpdateVideoLink(uint32_t *pixels, int pitch)
 {
-	m_vpuc.UpdateVideoLink(pixels, this);
+	m_vpuc.UpdateVideoLink(pixels, pitch, this);
 }
 
 uint32_t CBus::Tick(CClock& cpuclock, CRV32* cpu)

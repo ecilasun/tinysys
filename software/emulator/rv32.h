@@ -41,6 +41,10 @@ enum CPUState{
 #define ALU_SRA			8
 #define ALU_OR			9
 #define ALU_AND			10
+// Mul/Div extension
+#define ALU_MUL			11
+#define ALU_DIV			12
+#define ALU_REM			13
 
 #define BLU_NONE		0
 #define BLU_EQ			1

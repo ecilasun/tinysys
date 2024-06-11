@@ -90,6 +90,39 @@ uint32_t CRV32::ALU()
 		case ALU_AND:
 			aluout = m_rval1_next & selected;
 		break;
+		case ALU_MUL:
+		{
+			uint64_t a, b;
+			int64_t sign1ext = (int32_t)m_rval1_next;
+			int64_t sign2ext = (int32_t)m_rval2_next;
+			switch (m_decoded_next.m_f3)
+			{
+				case 0b000:
+				case 0b001: { a = sign1ext; b = sign2ext; } break; // mul/mulh
+				case 0b010: { a = sign1ext; b = m_rval2_next; } break; // mulhsu
+				case 0b011: { a = m_rval1_next; b = m_rval2_next; } break; // mulhu
+				default: { a = 0; b = 0; } break;
+			}
+			uint64_t result = a * b;
+			aluout = m_decoded_next.m_f3 == 0b000 ? (uint32_t)((a*b)&0xFFFFFFFF) : (uint32_t)(((a*b)&0xFFFFFFFF00000000)>>32);
+		}
+		break;
+		case ALU_DIV:
+		case ALU_REM:
+		{
+			uint64_t a, b;
+			int64_t sign1ext = (int32_t)m_rval1_next;
+			int64_t sign2ext = (int32_t)m_rval2_next;
+			switch (m_decoded_next.m_f3)
+			{
+				case 0b100: { a = sign1ext; b = sign2ext; aluout = (uint32_t)(a / b); } break; //  div
+				case 0b101: { a = m_rval1_next; b = m_rval2_next; aluout = (uint32_t)(a / b); } break; // divu
+				case 0b110: { a = sign1ext; b = sign2ext; aluout = (uint32_t)(a % b); } break; // rem
+				case 0b111: { a = m_rval1_next; b = m_rval2_next; aluout = (uint32_t)(a % b); } break; // remu
+				default: { a = 0; b = 1; } break;
+			}
+		}
+		break;
 	}
 
 	return aluout;
@@ -225,19 +258,38 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 	dec.m_bluop = BLU_NONE;
 
 	uint32_t mathopsel = SelectBitRange(instr, 30, 30);
+	uint32_t muldiv = SelectBitRange(instr, 25, 25);
 	if (dec.m_opcode == OP_OP)
 	{
 		switch (dec.m_f3)
 		{
-			case 0b000:	dec.m_aluop = mathopsel ? ALU_SUB : ALU_ADD; break;
-			case 0b001:	dec.m_aluop = ALU_SLL; break;
-			case 0b011:	dec.m_aluop = ALU_SLTU; break;
-			case 0b010:	dec.m_aluop = ALU_SLT; break;
-			case 0b110:	dec.m_aluop = ALU_OR; break;
-			case 0b111:	dec.m_aluop = ALU_AND; break;
-			case 0b101:	dec.m_aluop = mathopsel ? ALU_SRA : ALU_SRL; break;
-			case 0b100:	dec.m_aluop = ALU_XOR; break;
-			default:	dec.m_aluop = ALU_NONE; break;
+			case 0b000:
+				dec.m_aluop = muldiv ? ALU_MUL : (mathopsel ? ALU_SUB : ALU_ADD);
+			break;
+			case 0b001:
+				dec.m_aluop = muldiv ? ALU_MUL : ALU_SLL;
+			break;
+			case 0b011:
+				dec.m_aluop = muldiv ? ALU_MUL : ALU_SLTU;
+			break;
+			case 0b010:
+				dec.m_aluop = muldiv ? ALU_MUL : ALU_SLT;
+			break;
+			case 0b110:
+				dec.m_aluop = muldiv ? ALU_REM : ALU_OR;
+			break;
+			case 0b111:
+				dec.m_aluop = muldiv ? ALU_REM : ALU_AND;
+			break;
+			case 0b101:
+				dec.m_aluop = muldiv ? ALU_DIV : (mathopsel ? ALU_SRA : ALU_SRL);
+			break;
+			case 0b100:
+				dec.m_aluop = muldiv ? ALU_DIV : ALU_XOR;
+			break;
+			default:
+				dec.m_aluop = ALU_NONE;
+			break;
 		}
 	}
 
@@ -392,16 +444,19 @@ bool CRV32::Tick(CClock& cpuclock, CBus& bus, uint32_t irq)
 					break;
 
 					case OP_FENCE:
+						// NOOP for now
 					break;
 
 					case OP_SYSTEM:
 						if (m_decoded.m_f12 == F12_CDISCARD)
 						{
 							// cacheop=0b01
+							// NOOP for now
 						}
 						else if (m_decoded.m_f12 == F12_CFLUSH)
 						{
 							// cacheop=0b11
+							// NOOP for now
 						}
 						/*else if (m_decoded.m_f12 == F12_MRET)
 						{
@@ -457,14 +512,14 @@ bool CRV32::Tick(CClock& cpuclock, CBus& bus, uint32_t irq)
 							case 0b001:	wdata = (half<<16)|half; break;
 							default:	wdata = m_rval2; break;
 						}
-						uint32_t ab = SelectBitRange(rwaddress, 0, 0);
 						uint32_t ah = SelectBitRange(rwaddress, 1, 1);
-						uint32_t wordmask = (ah<<3)|(ah<<2)|((1-ah)<<1)|(1-ah);
-						uint32_t bytemask = wordmask & ((ab<<3)|((1-ab)<<2)|(ab<<1)|(1-ab));
+						uint32_t ab = SelectBitRange(rwaddress, 0, 0);
+						uint32_t himask = (ah << 3) | (ah << 2) | ((1 - ah) << 1) | (1 - ah);
+						uint32_t lomask = ((ab << 3) | ((1 - ab) << 2) | (ab << 1) | (1 - ab));
 						switch (m_decoded.m_f3)
 						{
-							case 0b000:	wstrobe = bytemask; break;
-							case 0b001:	wstrobe = wordmask; break;
+							case 0b000:	wstrobe = himask & lomask; break;
+							case 0b001:	wstrobe = himask; break;
 							default:	wstrobe = 0b1111; break;
 						}
 					}

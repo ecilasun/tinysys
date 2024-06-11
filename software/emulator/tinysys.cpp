@@ -60,7 +60,7 @@ int SDL_main(int argc, char** argv)
             uint32_t *pixels = (uint32_t*)surface->pixels;
             if (SDL_MUSTLOCK(surface))
                 SDL_LockSurface(surface);
-            emulator.UpdateVideoLink(pixels);
+            emulator.UpdateVideoLink(pixels, surface->pitch);
             if (SDL_MUSTLOCK(surface))
                 SDL_UnlockSurface(surface);
             SDL_UpdateWindowSurface(window);

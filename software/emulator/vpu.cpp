@@ -19,29 +19,43 @@ void CVPU::Reset()
 	m_count = 0;
 }
 
-void CVPU::UpdateVideoLink(uint32_t* pixels, CBus* bus)
+void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 {
 	if (m_scanoutpointer)
 	{
 		uint32_t* devicemem = bus->GetHostAddress(m_scanoutpointer);
 		if (m_videoscanoutenable && devicemem)
 		{
-			// Copy vram scan out pointer contents to SDL surface
-			if (m_indexedcolormode)
+			if (m_scanwidth == 640)
 			{
-				// 16bpp
-				for (uint32_t i = 0; i < 640 * 480; i++)
-					pixels[i] = devicemem[i];
-			}
-			else
-			{
-				// 8bpp
-				uint8_t* devicememas8bpp = (uint8_t*)devicemem;
-				for (uint32_t i = 0; i < 640 * 480; i++)
+				// Copy vram scan out pointer contents to SDL surface
+				if (m_indexedcolormode)
 				{
-					uint32_t color = m_vgapalette[devicememas8bpp[i]];
-					pixels[i] = color;
+					// 16bpp
+					for (uint32_t i = 0; i < 640 * 480; i++)
+						pixels[i] = 0xFFFFFF00;// devicemem[i]; // TODO: convert to 16 bit
 				}
+				else
+				{
+					// 8bpp
+					uint8_t* devicememas8bpp = (uint8_t*)devicemem;
+					const int W = pitch / 4;
+					for (uint32_t y = 0; y < 480; y++)
+					{
+						const int linetop = W * y;
+						for (uint32_t x = 0; x < 640; ++x)
+						{
+							uint32_t color = m_vgapalette[devicememas8bpp[640 * y + x]];
+							pixels[linetop + x] = color;
+						}
+					}
+				}
+			}
+			else // 320
+			{
+				// not implemented yet
+				for (uint32_t i = 0; i < 640 * 480; i++)
+					pixels[i] = 0xFFFF0000;
 			}
 		}
 		else
@@ -149,9 +163,9 @@ void CVPU::Tick(CClock& cpuclock)
 		case 4:
 		{
 			// VMODE
-			m_videoscanoutenable = m_data & 0x1;	// 0:video output disabled, 1:video output enabled
-			m_indexedcolormode = m_data & 0x4;		// 0:8bit indexed, 1:16bit rgb
-			m_scanwidth = m_data&0x2 ? 320 : 640;	// 0:320-wide, 1:640-wide
+			m_videoscanoutenable = m_data & 0x1 ? 1 : 0;	// 0:video output disabled, 1:video output enabled
+			m_indexedcolormode = m_data & 0x4 ? 1 : 0;		// 0:8bit indexed, 1:16bit rgb
+			m_scanwidth = m_data&0x2 ? 640 : 320;			// 0:320-wide, 1:640-wide
 			m_state = 0;
 		}
 		break;

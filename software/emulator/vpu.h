@@ -19,7 +19,7 @@ public:
 	void Read(uint32_t address, uint32_t& data);
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe);
 
-	void UpdateVideoLink(uint32_t* pixels, CBus* bus);
+	void UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus);
 
 private:
 	uint32_t m_cmd{ 0 };

@@ -32,7 +32,7 @@ public:
 	void Write(uint32_t address, uint32_t data, uint32_t wstrobe);
 	uint32_t* GetHostAddress(uint32_t address);
 
-	void UpdateVideoLink(uint32_t* pixels);
+	void UpdateVideoLink(uint32_t* pixels, int pitch);
 
 private:
 	CSysMem m_mem;
