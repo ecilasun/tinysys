@@ -1,9 +1,11 @@
 #pragma once
 
 #include "clock.h"
+#include "rv32.h"
 #include "sysmem.h"
 #include "csrmem.h"
 #include "sdcard.h"
+#include "mailmem.h"
 
 #define DEVICE_BASE 0x80000000
 #define DEVICE_TRUC (DEVICE_BASE+0x0000)
@@ -24,12 +26,13 @@ public:
 	~CBus() {}
 
 	void Reset(uint32_t resetvector, uint8_t* rombin, uint32_t romsize);
-	void Tick(CClock& cpuclock);
+	void Tick(CClock& cpuclock, CRV32& cpu);
 	void Read(uint32_t address, uint32_t& data);
 	void Write(uint32_t address, uint32_t data, uint32_t wstrobe);
 
 private:
 	CSysMem m_mem;
 	CCSRMem m_csr[2];
+	CMailMem m_mail;
 	CSDCard m_sdcc;
 };

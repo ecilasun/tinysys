@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "clock.h"
+#include "rv32.h"
 
 #define CSR_MSTATUS			0x300
 #define CSR_MISA			0x301
@@ -25,7 +26,12 @@
 #define CSR_MHARTID			0xF14
 #define CSR_HWSTATE			0xFFF
 #define CSR_REGISTERSHADOW	0x8A0
+
+// Custom CSRs
+#define CSR_CPURESET		0xFEE
 #define CSR_WATERMARK		0xFF0
+#define CSR_PROGRAMCOUNTER	0xFFC
+#define CSR_HWSTATE			0xFFF
 
 class CCSRMem
 {
@@ -36,7 +42,7 @@ public:
 	uint32_t *m_csrmem;
 
 	void Reset();
-	void Tick(CClock& cpuclock);
+	void Tick(CClock& cpuclock, CRV32& cpu);
 	void Read(uint32_t address, uint32_t& data);
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe);
 };

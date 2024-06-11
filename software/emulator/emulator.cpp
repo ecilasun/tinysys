@@ -40,7 +40,7 @@ bool CEmulator::Step()
 {
     m_clock.Step();
 
-    m_bus.Tick(m_clock);
+    m_bus.Tick(m_clock, m_cpu);
 
     // Wire up the clocks to each device
 	bool retval = m_cpu.Tick(m_clock, m_bus);

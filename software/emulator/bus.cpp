@@ -11,9 +11,15 @@ void CBus::Reset(uint32_t resetvector, uint8_t* rombin, uint32_t romsize)
 	m_mem.CopyROM(resetvector, rombin, romsize);
 }
 
-void CBus::Tick(CClock& cpuclock)
+void CBus::Tick(CClock& cpuclock, CRV32& cpu)
 {
+	// TODO: Update device interrupt state
+	//Write(csrbase + (CSR_HWSTATE << 2), 0, 0xFFFFFFFF);
+
 	m_mem.Tick(cpuclock);
+	m_csr[0].Tick(cpuclock, cpu);
+	m_csr[1].Tick(cpuclock, cpu);
+	m_sdcc.Tick(cpuclock);
 }
 
 void CBus::Read(uint32_t address, uint32_t& data)
@@ -89,8 +95,7 @@ void CBus::Read(uint32_t address, uint32_t& data)
 			case 8:
 			{
 				// DEVICE_MAIL
-				//m_mail->Read(address, data);
-				printf("<-MAIL\n");
+				m_mail.Read(address, data);
 				data = 0;
 			}
 			break;
@@ -184,8 +189,7 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 			case 8:
 			{
 				// DEVICE_MAIL
-				//m_mail->Write(address, data, wstrobe);
-				printf("MAIL@0x%.8X<-0x%.8x\n", address, data);
+				m_mail.Write(address, data, wstrobe);
 			}
 			break;
 			case 9:

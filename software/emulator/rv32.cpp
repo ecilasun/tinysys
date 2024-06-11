@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "rv32.h"
+#include "bus.h"
 
 const char *opnames[] = {
 	"illegal",
@@ -297,11 +298,18 @@ bool CRV32::Tick(CClock& cpuclock, CBus& bus)
 			bus.Write(csrbase + (CSR_RETIHI << 2), (uint32_t)((m_retired & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
 			bus.Write(csrbase + (CSR_TIMELO << 2), (uint32_t)(m_wallclock & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
 			bus.Write(csrbase + (CSR_TIMEHI << 2), (uint32_t)((m_wallclock & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
+			bus.Write(csrbase + (CSR_PROGRAMCOUNTER << 2), m_PC, 0xFFFFFFFF);
 		}
 
 		++m_cyclecounter;
 		if (m_cyclecounter%15 == 0) // 150MHz vs 10Mhz
 			++m_wallclock;
+
+		if (m_pendingCPUReset)
+		{
+			m_state_next = ECPUReset;
+			m_pendingCPUReset = false;
+		}
 
 		// Process input and prepare intermediates
 		switch (m_state)

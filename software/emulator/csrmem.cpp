@@ -29,23 +29,34 @@ void CCSRMem::Reset()
 	m_csrmem[CSR_TIMECMPHI] = 0xFFFFFFFF;
 	m_csrmem[CSR_MISA] = 0x00801100;
 	m_csrmem[CSR_MARCHID] = 0x80000000;
+
+	m_csrmem[CSR_CPURESET] = 0x00000000;
+	m_csrmem[CSR_WATERMARK] = 0x00000000; // NOTE: Always preserve contents past soft reset
+	m_csrmem[CSR_PROGRAMCOUNTER] = 0x00000000;
+	m_csrmem[CSR_HWSTATE] = 0x00000000;
 }
 
-void CCSRMem::Tick(CClock& cpuclock)
+void CCSRMem::Tick(CClock& cpuclock, CRV32& cpu)
 {
-
+	// Detect reset request
+	if (m_csrmem[CSR_CPURESET])
+	{
+		m_csrmem[CSR_CPURESET] = 0; // Ignore after first reset
+		cpu.m_pendingCPUReset = true;
+		cpu.m_resetvector = m_csrmem[CSR_MTVEC];
+	}
 }
 
 void CCSRMem::Read(uint32_t address, uint32_t& data)
 {
 	uint32_t csrindex = (address >> 2) & 0xFFF;
 	data = m_csrmem[csrindex];
-	printf("CSR0[%d]->data\n", csrindex);
+	//printf("CSR0[%d]->data\n", csrindex);
 }
 
 void CCSRMem::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 {
 	uint32_t csrindex = (address>>2) & 0xFFF;
 	m_csrmem[csrindex] = word;
-	printf("CSR0[%d]<-0x%.8x\n", csrindex, word);
+	//printf("CSR0[%d]<-0x%.8x\n", csrindex, word);
 }

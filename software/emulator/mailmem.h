@@ -1,13 +1,16 @@
 #pragma once
 
+#include <stdlib.h>
 #include <stdint.h>
 #include "clock.h"
 
-class CSDCard
+class CMailMem
 {
 public:
-	CSDCard() {}
-	~CSDCard() {}
+	CMailMem();
+	~CMailMem();
+
+	uint32_t * m_mailmem;
 
 	void Reset();
 	void Tick(CClock& cpuclock);

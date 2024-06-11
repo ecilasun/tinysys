@@ -1,7 +1,6 @@
 #pragma once
 
 #include "clock.h"
-#include "bus.h"
 
 enum CPUState{
 	ECPUReset,
@@ -103,6 +102,8 @@ struct SDecodedInstruction
 #endif
 };
 
+class CBus;
+
 class CRV32
 {
 public:
@@ -142,6 +143,7 @@ public:
 	uint32_t m_idx = 0;
 
 	uint32_t m_resetvector = 0x0FFE0000;
+	bool m_pendingCPUReset{ false };
 
 	void Reset();
 	bool Tick(CClock& cpuclock, CBus& bus);
