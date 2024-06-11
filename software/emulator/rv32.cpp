@@ -365,24 +365,18 @@ bool CRV32::Tick(CClock& cpuclock, CBus& bus, uint32_t irq)
 				m_PC_next = m_resetvector;
 				for (int i=0;i<32;++i)
 					m_GPR_next[i] = 0;
-				m_state_next = ECPUFetch;
+				m_state_next = ECPUFetchDecode;
 			}
 			break;
 
-			case ECPUFetch:
+			case ECPUFetchDecode:
 			{
 				bus.Read(m_PC, m_instruction_next);
 
 				// TODO: Handle interrupts and inject instruction sequence from ISR ROM as with real hardware
 				//  irqreq[1:0], sie, cpuresetreq
 
-				m_state_next = ECPUDecode;
-			}
-			break;
-
-			case ECPUDecode:
-			{
-				DecodeInstruction(m_instruction, m_decoded_next);
+				DecodeInstruction(m_instruction_next, m_decoded_next);
 
 				// NOTE: Register reads happen at end of this clock in hardware
 				m_rval1_next = m_GPR[m_decoded_next.m_rs1];
@@ -615,13 +609,9 @@ bool CRV32::Tick(CClock& cpuclock, CBus& bus, uint32_t irq)
 				if(rwen && m_decoded.m_rd != 0)
 					m_GPR_next[m_decoded.m_rd] = rdin;
 
-				m_state_next = ECPURetire;
-			}
-			break;
-
-			case ECPURetire:
 				++m_retired;
-				m_state_next = ECPUFetch;
+				m_state_next = ECPUFetchDecode;
+			}
 			break;
 
 			default:

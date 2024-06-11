@@ -5,10 +5,8 @@
 
 enum CPUState{
 	ECPUReset,
-	ECPUFetch,
-	ECPUDecode,
-	ECPUExecute,
-	ECPURetire
+	ECPUFetchDecode,
+	ECPUExecute
 };
 
 #define OP_OP			0b0110011
