@@ -2,7 +2,6 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "clock.h"
 #include "rv32.h"
 
 #define CSR_MSTATUS			0x300
@@ -41,7 +40,7 @@ public:
 	~CCSRMem();
 
 	void Reset();
-	uint32_t Tick(CClock& cpuclock, CRV32* cpu);
+	uint32_t Tick(CRV32* cpu);
 	void Read(uint32_t address, uint32_t& data);
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe);
 

@@ -29,7 +29,7 @@ void CCSRMem::Reset()
 	m_csrmem[CSR_HWSTATE] = 0x00000000;
 }
 
-uint32_t CCSRMem::Tick(CClock& cpuclock, CRV32* cpu)
+uint32_t CCSRMem::Tick(CRV32* cpu)
 {
 	uint32_t irq = 0;
 

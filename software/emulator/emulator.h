@@ -1,6 +1,5 @@
 #pragma once
 
-#include "clock.h"
 #include "bus.h"
 #include "rv32.h"
 
@@ -14,7 +13,6 @@ public:
 	bool Step();
 	void UpdateVideoLink(uint32_t* pixels, int pitch);
 
-	CClock m_clock;
 	CBus m_bus;
 	CRV32 m_cpu;
 

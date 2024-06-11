@@ -136,7 +136,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\bus.cpp" />
-    <ClCompile Include="..\clock.cpp" />
     <ClCompile Include="..\csrmem.cpp" />
     <ClCompile Include="..\emulator.cpp" />
     <ClCompile Include="..\mailmem.cpp" />
@@ -149,7 +148,6 @@
   <ItemGroup>
     <ClInclude Include="..\bitutil.h" />
     <ClInclude Include="..\bus.h" />
-    <ClInclude Include="..\clock.h" />
     <ClInclude Include="..\csrmem.h" />
     <ClInclude Include="..\emulator.h" />
     <ClInclude Include="..\mailmem.h" />

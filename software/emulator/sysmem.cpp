@@ -26,7 +26,7 @@ void CSysMem::Reset()
 	memset(m_devicemem, 0, 256 * 1024 * 1024);
 }
 
-void CSysMem::Tick(CClock& cpuclock)
+void CSysMem::Tick()
 {
 	// TODO:
 }

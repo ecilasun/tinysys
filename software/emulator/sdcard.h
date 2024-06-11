@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stdint.h>
-#include "clock.h"
 
 class CSDCard
 {
@@ -10,7 +9,7 @@ public:
 	~CSDCard() {}
 
 	void Reset();
-	void Tick(CClock& cpuclock);
+	void Tick();
 	void Read(uint32_t address, uint32_t& data);
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe);
 };

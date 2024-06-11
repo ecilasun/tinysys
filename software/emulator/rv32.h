@@ -1,6 +1,5 @@
 #pragma once
 
-#include "clock.h"
 #include "bitutil.h"
 
 enum CPUState{
@@ -125,7 +124,7 @@ public:
 	bool m_pendingCPUReset{ false };
 
 	void Reset();
-	bool Tick(CClock& cpuclock, CBus& bus, uint32_t irq);
+	bool Tick(CBus& bus, uint32_t irq);
 
 private:
 	void DecodeInstruction(uint32_t instr, SDecodedInstruction& dec);

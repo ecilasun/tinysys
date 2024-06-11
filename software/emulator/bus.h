@@ -1,6 +1,5 @@
 #pragma once
 
-#include "clock.h"
 #include "rv32.h"
 #include "sysmem.h"
 #include "csrmem.h"
@@ -27,7 +26,7 @@ public:
 	~CBus() {}
 
 	void Reset(uint32_t resetvector, uint8_t* rombin, uint32_t romsize);
-	uint32_t Tick(CClock& cpuclock, CRV32* cpu);
+	uint32_t Tick(CRV32* cpu);
 	void Read(uint32_t address, uint32_t& data);
 	void Write(uint32_t address, uint32_t data, uint32_t wstrobe);
 	uint32_t* GetHostAddress(uint32_t address);

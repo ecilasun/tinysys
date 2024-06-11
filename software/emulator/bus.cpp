@@ -17,18 +17,18 @@ void CBus::UpdateVideoLink(uint32_t *pixels, int pitch)
 	m_vpuc.UpdateVideoLink(pixels, pitch, this);
 }
 
-uint32_t CBus::Tick(CClock& cpuclock, CRV32* cpu)
+uint32_t CBus::Tick(CRV32* cpu)
 {
 	// TODO: Update device interrupt state
 	//Write(csrbase + (CSR_HWSTATE << 2), 0, 0xFFFFFFFF);
 
 	uint32_t irq = 0;
 
-	m_mem.Tick(cpuclock);
-	irq |= m_csr[0].Tick(cpuclock, cpu);
-	irq |= m_csr[1].Tick(cpuclock, nullptr); // TODO: This CSR has no CPU to talk to yet
-	m_sdcc.Tick(cpuclock);
-	m_vpuc.Tick(cpuclock);
+	m_mem.Tick();
+	irq |= m_csr[0].Tick(cpu);
+	irq |= m_csr[1].Tick(nullptr); // TODO: This CSR has no CPU to talk to yet
+	m_sdcc.Tick();
+	m_vpuc.Tick();
 
 	return irq;
 }

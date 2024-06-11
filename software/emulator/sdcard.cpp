@@ -1,12 +1,11 @@
 #include <stdio.h>
 #include "sdcard.h"
-#include "clock.h"
 
 void CSDCard::Reset()
 {
 }
 
-void CSDCard::Tick(CClock& cpuclock)
+void CSDCard::Tick()
 {
 	// Run the SPI bus
 }

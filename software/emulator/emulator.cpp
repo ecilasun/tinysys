@@ -3,8 +3,6 @@
 
 bool CEmulator::Reset(const char* romFile)
 {
-	m_clock.Reset();
-
 	if (m_rombin)
 		delete []m_rombin;
 
@@ -38,9 +36,8 @@ bool CEmulator::Reset(const char* romFile)
 
 bool CEmulator::Step()
 {
-	m_clock.Step();
-	uint32_t irq = m_bus.Tick(m_clock, &m_cpu); // TODO: Pass list of all CPUs on the system
-	bool retval = m_cpu.Tick(m_clock, m_bus, irq);
+	uint32_t irq = m_bus.Tick(&m_cpu); // TODO: Pass list of all CPUs on the system
+	bool retval = m_cpu.Tick(m_bus, irq);
 
 	return retval;
 }

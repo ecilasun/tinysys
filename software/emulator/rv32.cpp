@@ -332,7 +332,7 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 #endif
 }
 
-bool CRV32::Tick(CClock& cpuclock, CBus& bus, uint32_t irq)
+bool CRV32::Tick(CBus& bus, uint32_t irq)
 {
 	bool retval = true;
 

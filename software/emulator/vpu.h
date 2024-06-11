@@ -2,7 +2,6 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "clock.h"
 #include "rv32.h"
 #include <queue>
 
@@ -15,7 +14,7 @@ public:
 	~CVPU();
 
 	void Reset();
-	void Tick(CClock& cpuclock);
+	void Tick();
 	void Read(uint32_t address, uint32_t& data);
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe);
 
