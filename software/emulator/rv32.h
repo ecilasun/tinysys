@@ -1,7 +1,7 @@
 #pragma once
 
 #include "clock.h"
-#include "memman.h"
+#include "bus.h"
 
 enum CPUState{
 	ECPUReset,
@@ -132,7 +132,6 @@ public:
 	// Internal state
 	CPUState m_state = ECPUReset;
 	CPUState m_state_next = ECPUReset;
-	CMemMan *m_mem = nullptr;
 
 	// Internal counters
 	uint64_t m_cyclecounter = 0;
@@ -142,11 +141,13 @@ public:
 	// HART0 by default
 	uint32_t m_idx = 0;
 
-    uint32_t m_resetvector = 0x0FFE0000;
+	uint32_t m_resetvector = 0x0FFE0000;
 
-	void SetMemManager(CMemMan *mem);
+	void Reset();
+	bool Tick(CClock& cpuclock, CBus& bus);
+
+private:
 	void DecodeInstruction(uint32_t instr, SDecodedInstruction& dec);
-	bool Tick(CClock& cpuclock);
 	uint32_t ALU();
 	uint32_t BLU();
 };

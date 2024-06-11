@@ -21,7 +21,7 @@
     <ClCompile Include="..\emulator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\memman.cpp">
+    <ClCompile Include="..\sysmem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\rv32.cpp">
@@ -33,22 +33,34 @@
     <ClCompile Include="..\tinysys.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\csrmem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\bus.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\csrmem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\clock.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\emulator.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\memman.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="..\sysmem.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\rv32.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\sdcard.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bus.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

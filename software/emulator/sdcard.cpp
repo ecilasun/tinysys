@@ -1,14 +1,19 @@
 #include <stdio.h>
 #include "sdcard.h"
 
-uint32_t CSDCard::Read(uint32_t address)
+void CSDCard::Reset()
 {
-	// printf("SDCard read 0x%.8X\n", address);
-	return 0xFF;
 }
 
-void CSDCard::Write(uint32_t address, uint32_t word)
+void CSDCard::Read(uint32_t address, uint32_t& data)
 {
-	// TODO:
-	// printf("SDCard write 0x%.8X, 0x%.8X\n", address, word);
+	// TODO: Implement SD card SPI read
+
+	// Return illegal data so OS detects that the sdcard reader is not working
+	data = 0xFF;
+}
+
+void CSDCard::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
+{
+	// TODO: Implement SD card SPI write
 }

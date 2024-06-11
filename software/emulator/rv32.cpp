@@ -46,9 +46,9 @@ CRV32::~CRV32()
 {
 }
 
-void CRV32::SetMemManager(CMemMan *mem)
+void CRV32::Reset()
 {
-	m_mem = mem;
+	m_state_next = m_state = ECPUReset;
 }
 
 uint32_t CRV32::ALU()
@@ -279,7 +279,7 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 #endif
 }
 
-bool CRV32::Tick(CClock& cpuclock)
+bool CRV32::Tick(CClock& cpuclock, CBus& bus)
 {
 	bool retval = true;
 
@@ -288,12 +288,16 @@ bool CRV32::Tick(CClock& cpuclock)
 		// We hack our way around with these CSR register
 		// Normally they're shadowed to hardware counters
 		// in the device so we don't have to emulate any latency here
-		m_mem->m_csrmem[m_idx][CSR_CYCLELO] = (uint32_t)(m_cyclecounter&0x00000000FFFFFFFFU);
-		m_mem->m_csrmem[m_idx][CSR_CYCLEHI] = (uint32_t)((m_cyclecounter&0xFFFFFFFF00000000U) >> 32);
-		m_mem->m_csrmem[m_idx][CSR_RETILO] = (uint32_t)(m_retired&0x00000000FFFFFFFFU);
-		m_mem->m_csrmem[m_idx][CSR_RETIHI] = (uint32_t)((m_retired&0xFFFFFFFF00000000U) >> 32);
-		m_mem->m_csrmem[m_idx][CSR_TIMELO] = (uint32_t)(m_wallclock&0x00000000FFFFFFFFU);
-		m_mem->m_csrmem[m_idx][CSR_TIMEHI] = (m_wallclock&0xFFFFFFFF00000000U) >> 32;
+
+		{
+			uint32_t csrbase = m_idx == 0 ? CSR0BASE : CSR1BASE;
+			bus.Write(csrbase + (CSR_CYCLELO << 2), (uint32_t)(m_cyclecounter & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
+			bus.Write(csrbase + (CSR_CYCLEHI << 2), (uint32_t)((m_cyclecounter & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
+			bus.Write(csrbase + (CSR_RETILO << 2), (uint32_t)(m_retired & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
+			bus.Write(csrbase + (CSR_RETIHI << 2), (uint32_t)((m_retired & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
+			bus.Write(csrbase + (CSR_TIMELO << 2), (uint32_t)(m_wallclock & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
+			bus.Write(csrbase + (CSR_TIMEHI << 2), (uint32_t)((m_wallclock & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
+		}
 
 		++m_cyclecounter;
 		if (m_cyclecounter%15 == 0) // 150MHz vs 10Mhz
@@ -313,7 +317,11 @@ bool CRV32::Tick(CClock& cpuclock)
 
 			case ECPUFetch:
 			{
-				m_instruction_next = m_mem->FetchInstruction(m_PC);
+				bus.Read(m_PC, m_instruction_next);
+
+				// TODO: Handle interrupts and inject instruction sequence from ISR ROM as with real hardware
+				//  irqreq[1:0], sie, cpuresetreq
+
 				m_state_next = ECPUDecode;
 			}
 			break;
@@ -414,7 +422,8 @@ bool CRV32::Tick(CClock& cpuclock)
 							// Read previous value
 							uint32_t base = m_idx == 0 ? CSR0BASE : CSR1BASE;
 							uint32_t csraddress = base + (m_decoded.m_csroffset << 2);
-							uint32_t csrprevval = m_mem->FetchDataWord(csraddress);
+							uint32_t csrprevval;
+							bus.Read(csraddress, csrprevval);
 
 							// Keep it in a register
 							rwen = 1;
@@ -461,7 +470,8 @@ bool CRV32::Tick(CClock& cpuclock)
 
 					case OP_LOAD:
 					{
-						uint32_t dataword = m_mem->FetchDataWord(rwaddress);
+						uint32_t dataword;
+						bus.Read(rwaddress, dataword);
 
 						uint32_t range1 = SelectBitRange(rwaddress,1,1);
 						uint32_t range2 = SelectBitRange(rwaddress,1,0);
@@ -542,7 +552,7 @@ bool CRV32::Tick(CClock& cpuclock)
 				}
 
 				if(wstrobe)
-					m_mem->WriteDataWord(rwaddress, wdata, wstrobe);
+					bus.Write(rwaddress, wdata, wstrobe);
 
 				if(rwen && m_decoded.m_rd != 0)
 					m_GPR_next[m_decoded.m_rd] = rdin;
