@@ -305,12 +305,6 @@ bool CRV32::Tick(CClock& cpuclock, CBus& bus)
 		if (m_cyclecounter%15 == 0) // 150MHz vs 10Mhz
 			++m_wallclock;
 
-		if (m_pendingCPUReset)
-		{
-			m_state_next = ECPUReset;
-			m_pendingCPUReset = false;
-		}
-
 		// Process input and prepare intermediates
 		switch (m_state)
 		{
@@ -579,6 +573,12 @@ bool CRV32::Tick(CClock& cpuclock, CBus& bus)
 				printf("  ! ILLEGAL CPU STATE !\n");
 #endif
 			break;
+		}
+
+		if (m_pendingCPUReset)
+		{
+			m_state_next = ECPUReset;
+			m_pendingCPUReset = false;
 		}
 	}
 	else
