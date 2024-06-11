@@ -9,6 +9,7 @@
 #define CSR_MISA			0x301
 #define CSR_MIE		    	0x304
 #define CSR_MTVEC			0x305
+#define CSR_MSCRATCH		0x340
 #define CSR_MEPC			0x341
 #define CSR_MCAUSE			0x342
 #define CSR_MTVAL			0x343
@@ -39,10 +40,14 @@ public:
 	CCSRMem();
 	~CCSRMem();
 
-	uint32_t *m_csrmem;
-
 	void Reset();
-	void Tick(CClock& cpuclock, CRV32& cpu);
+	uint32_t Tick(CClock& cpuclock, CRV32* cpu);
 	void Read(uint32_t address, uint32_t& data);
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe);
+
+private:
+	uint32_t* m_csrmem = nullptr;
+	uint32_t m_cpuresetreq{ 0 };
+	uint32_t m_mieshadow{ 0 };
+	uint32_t m_mstatusIEshadow{ 0 };
 };

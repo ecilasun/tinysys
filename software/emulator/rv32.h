@@ -146,7 +146,7 @@ public:
 	bool m_pendingCPUReset{ false };
 
 	void Reset();
-	bool Tick(CClock& cpuclock, CBus& bus);
+	bool Tick(CClock& cpuclock, CBus& bus, uint32_t irq);
 
 private:
 	void DecodeInstruction(uint32_t instr, SDecodedInstruction& dec);

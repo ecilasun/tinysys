@@ -276,11 +276,11 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 	dec.m_selimm = (dec.m_opcode==OP_JALR) || (dec.m_opcode==OP_OP_IMM) || (dec.m_opcode==OP_LOAD) || (dec.m_opcode==OP_STORE);
 
 #if defined(DEBUG)
-	// printf("%.8X: %s%s %s %s -> %s I=%d\n", m_PC, opnames[dec.m_opindex], alunames[dec.m_aluop], regnames[dec.m_rs1], regnames[dec.m_rs2], regnames[dec.m_rd], dec.m_immed);
+	printf("%.8X: %s%s %s %s -> %s I=%d\n", m_PC, opnames[dec.m_opindex], alunames[dec.m_aluop], regnames[dec.m_rs1], regnames[dec.m_rs2], regnames[dec.m_rd], dec.m_immed);
 #endif
 }
 
-bool CRV32::Tick(CClock& cpuclock, CBus& bus)
+bool CRV32::Tick(CClock& cpuclock, CBus& bus, uint32_t irq)
 {
 	bool retval = true;
 
@@ -545,7 +545,7 @@ bool CRV32::Tick(CClock& cpuclock, CBus& bus)
 					default:
 						// TODO: trap illegal instruction
 #if defined(DEBUG)
-						printf("ILLEGAL_INSTRUCTION @PC 0x%.8X\n", m_PC);
+						printf("ILLEGAL_INSTRUCTION %.8X @PC 0x%.8X\n", m_instruction, m_PC);
 						for (int i=0; i<32; ++i)
 							printf("%s=%.8X ", regnames[i], m_GPR[i]);
 						retval = false;

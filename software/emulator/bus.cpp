@@ -11,15 +11,19 @@ void CBus::Reset(uint32_t resetvector, uint8_t* rombin, uint32_t romsize)
 	m_mem.CopyROM(resetvector, rombin, romsize);
 }
 
-void CBus::Tick(CClock& cpuclock, CRV32& cpu)
+uint32_t CBus::Tick(CClock& cpuclock, CRV32* cpu)
 {
 	// TODO: Update device interrupt state
 	//Write(csrbase + (CSR_HWSTATE << 2), 0, 0xFFFFFFFF);
 
+	uint32_t irq = 0;
+
 	m_mem.Tick(cpuclock);
-	m_csr[0].Tick(cpuclock, cpu);
-	m_csr[1].Tick(cpuclock, cpu);
+	irq |= m_csr[0].Tick(cpuclock, cpu);
+	irq |= m_csr[1].Tick(cpuclock, nullptr); // TODO: This CSR has no CPU to talk to yet
 	m_sdcc.Tick(cpuclock);
+
+	return irq;
 }
 
 void CBus::Read(uint32_t address, uint32_t& data)
