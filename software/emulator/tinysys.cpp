@@ -7,6 +7,21 @@
 #include <SDL2/SDL.h>
 #endif
 
+static bool s_alive = true;
+
+int emulatorthread(void* data)
+{
+	CEmulator* emulator = (CEmulator*)data;
+    bool kicking;
+	do
+	{
+        kicking = emulator->Step();
+	} while(kicking);
+
+    s_alive = false;
+	return 0;
+}
+
 #if defined(CAT_LINUX) || defined(CAT_DARWIN)
 int main(int argc, char** argv)
 #else
@@ -44,6 +59,8 @@ int SDL_main(int argc, char** argv)
 
     SDL_Surface* surface = SDL_GetWindowSurface(window);
 
+    SDL_Thread* thread = SDL_CreateThread(emulatorthread, "emulator", &emulator);
+
     bool alive = true;
     SDL_Event ev;
     int ticks = 0;
@@ -66,10 +83,7 @@ int SDL_main(int argc, char** argv)
             SDL_UpdateWindowSurface(window);
         }
         ++ticks;
-
-        // TODO: Move emulator part to a thread
-        alive = emulator.Step();
-    } while(alive);
+    } while(s_alive);
 
     SDL_FreeSurface(surface);
     SDL_DestroyRenderer(renderer);
