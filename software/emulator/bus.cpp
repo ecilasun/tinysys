@@ -159,7 +159,6 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 			{
 				// DEVICE_SDCC
 				m_sdcc.Write(address, data, wstrobe);
-				printf("SDCC@0x%.8X<-0x%.8x\n", address, data);
 			}
 			break;
 			case 4:
