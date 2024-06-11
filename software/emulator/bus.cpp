@@ -7,6 +7,7 @@ void CBus::Reset(uint32_t resetvector, uint8_t* rombin, uint32_t romsize)
 	m_csr[0].Reset();
 	m_csr[1].Reset();
 	m_sdcc.Reset();
+	m_vpuc.Reset();
 
 	m_mem.CopyROM(resetvector, rombin, romsize);
 }
@@ -22,6 +23,7 @@ uint32_t CBus::Tick(CClock& cpuclock, CRV32* cpu)
 	irq |= m_csr[0].Tick(cpuclock, cpu);
 	irq |= m_csr[1].Tick(cpuclock, nullptr); // TODO: This CSR has no CPU to talk to yet
 	m_sdcc.Tick(cpuclock);
+	m_vpuc.Tick(cpuclock);
 
 	return irq;
 }
@@ -53,8 +55,7 @@ void CBus::Read(uint32_t address, uint32_t& data)
 			case 2:
 			{
 				// DEVICE_VPUC
-				//m_vpuc->Read(address, data);
-				printf("<-VPU\n");
+				m_vpuc.Read(address, data);
 				data = 0;
 			}
 			break;
@@ -151,8 +152,7 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 			case 2:
 			{
 				// DEVICE_VPUC
-				//m_vpuc->Write(address, data, wstrobe);
-				printf("VPUC@0x%.8X<-0x%.8x\n", address, data);
+				m_vpuc.Write(address, data, wstrobe);
 			}
 			break;
 			case 3:

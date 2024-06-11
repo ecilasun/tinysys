@@ -44,6 +44,7 @@ int SDL_main(int argc, char** argv)
 
     bool alive = true;
     SDL_Event ev;
+    int ticks = 0;
     do
     {
         if (SDL_PollEvent(&ev) != 0)
@@ -52,8 +53,18 @@ int SDL_main(int argc, char** argv)
                 alive = false;
         }
 
-        //SDL_UpdateWindowSurface(window);
+        if ((ticks % 8192) == 0) // TODO: Tune this to 60Hz-ish
+        {
+            //SDL_BlitSurface(mysurface, NULL, SDL_GetWindowSurface(window), NULL);
+            SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+            SDL_RenderDrawLine(renderer, 0, 0, 640, 480);
+            SDL_RenderDrawLine(renderer, 640, 0, 0, 480);
+            SDL_RenderPresent(renderer);
+            SDL_UpdateWindowSurface(window);
+        }
+
         alive = emulator.Step();
+        ++ticks;
     } while(alive);
 
     SDL_DestroyRenderer(renderer);
