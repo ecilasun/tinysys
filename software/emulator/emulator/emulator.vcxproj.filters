@@ -74,5 +74,8 @@
     <ClInclude Include="..\vpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\bitutil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

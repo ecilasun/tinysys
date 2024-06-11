@@ -15,6 +15,7 @@ public:
 	void Reset();
 	void Tick(CClock& cpuclock);
 	void CopyROM(uint32_t resetvector, uint8_t *bin, uint32_t size);
+	uint32_t* GetHostAddress(uint32_t address);
 	void Read(uint32_t address, uint32_t& data);
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe);
 };

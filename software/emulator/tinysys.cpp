@@ -42,6 +42,8 @@ int SDL_main(int argc, char** argv)
     window = SDL_CreateWindow("tinysys emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
+    SDL_Surface* surface = SDL_GetWindowSurface(window);
+
     bool alive = true;
     SDL_Event ev;
     int ticks = 0;
@@ -53,20 +55,23 @@ int SDL_main(int argc, char** argv)
                 alive = false;
         }
 
-        if ((ticks % 8192) == 0) // TODO: Tune this to 60Hz-ish
+        if ((ticks % 65536) == 0) // TODO: Tune this to 60Hz-ish
         {
-            //SDL_BlitSurface(mysurface, NULL, SDL_GetWindowSurface(window), NULL);
-            SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-            SDL_RenderDrawLine(renderer, 0, 0, 640, 480);
-            SDL_RenderDrawLine(renderer, 640, 0, 0, 480);
-            SDL_RenderPresent(renderer);
+            uint32_t *pixels = (uint32_t*)surface->pixels;
+            if (SDL_MUSTLOCK(surface))
+                SDL_LockSurface(surface);
+            emulator.UpdateVideoLink(pixels);
+            if (SDL_MUSTLOCK(surface))
+                SDL_UnlockSurface(surface);
             SDL_UpdateWindowSurface(window);
         }
-
-        alive = emulator.Step();
         ++ticks;
+
+        // TODO: Move emulator part to a thread
+        alive = emulator.Step();
     } while(alive);
 
+    SDL_FreeSurface(surface);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();

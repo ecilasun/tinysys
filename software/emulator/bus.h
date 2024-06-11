@@ -30,6 +30,9 @@ public:
 	uint32_t Tick(CClock& cpuclock, CRV32* cpu);
 	void Read(uint32_t address, uint32_t& data);
 	void Write(uint32_t address, uint32_t data, uint32_t wstrobe);
+	uint32_t* GetHostAddress(uint32_t address);
+
+	void UpdateVideoLink(uint32_t* pixels);
 
 private:
 	CSysMem m_mem;

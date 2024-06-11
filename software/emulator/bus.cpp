@@ -12,6 +12,11 @@ void CBus::Reset(uint32_t resetvector, uint8_t* rombin, uint32_t romsize)
 	m_mem.CopyROM(resetvector, rombin, romsize);
 }
 
+void CBus::UpdateVideoLink(uint32_t *pixels)
+{
+	m_vpuc.UpdateVideoLink(pixels, this);
+}
+
 uint32_t CBus::Tick(CClock& cpuclock, CRV32* cpu)
 {
 	// TODO: Update device interrupt state
@@ -26,6 +31,12 @@ uint32_t CBus::Tick(CClock& cpuclock, CRV32* cpu)
 	m_vpuc.Tick(cpuclock);
 
 	return irq;
+}
+
+uint32_t* CBus::GetHostAddress(uint32_t address)
+{
+	// Convert to emulator host address from emulated device memory address
+	return m_mem.GetHostAddress(address);
 }
 
 void CBus::Read(uint32_t address, uint32_t& data)

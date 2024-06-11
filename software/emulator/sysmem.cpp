@@ -31,14 +31,20 @@ void CSysMem::Tick(CClock& cpuclock)
 	// TODO:
 }
 
+uint32_t* CSysMem::GetHostAddress(uint32_t address)
+{
+	uint32_t* wordmem = (uint32_t*)m_devicemem;
+	return &wordmem[address>>2];
+}
+
 void CSysMem::CopyROM(uint32_t resetvector, uint8_t *bin, uint32_t size)
 {
-	uint32_t *ddr3 = (uint32_t*)m_devicemem;
+	uint32_t * wordmem = (uint32_t*)m_devicemem;
 	uint32_t *rom = (uint32_t*)bin;
 	// Convert from cache byte order to memory byte order
 	uint32_t base = resetvector>>2;
 	for (uint32_t i=0; i<size/4; ++i)
-		ddr3[base+i] = rom[i];
+		wordmem[base+i] = rom[i];
 }
 
 void CSysMem::Read(uint32_t address, uint32_t& data)

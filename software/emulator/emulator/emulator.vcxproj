@@ -143,6 +143,7 @@
     <ClCompile Include="..\vpu.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\bitutil.h" />
     <ClInclude Include="..\bus.h" />
     <ClInclude Include="..\clock.h" />
     <ClInclude Include="..\csrmem.h" />

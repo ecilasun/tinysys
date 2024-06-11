@@ -284,7 +284,7 @@ bool CRV32::Tick(CClock& cpuclock, CBus& bus, uint32_t irq)
 {
 	bool retval = true;
 
-	if (cpuclock.m_edge == RisingEdge)
+	//if (cpuclock.m_edge == RisingEdge)
 	{
 		// We hack our way around with these CSR register
 		// Normally they're shadowed to hardware counters
@@ -532,6 +532,7 @@ bool CRV32::Tick(CClock& cpuclock, CBus& bus, uint32_t irq)
 									case 0b0: rdin = h0; break;
 								}
 							}
+							break;
 							default: // WORD - 0b010
 							{
 								rdin = dataword;
@@ -581,7 +582,7 @@ bool CRV32::Tick(CClock& cpuclock, CBus& bus, uint32_t irq)
 			m_pendingCPUReset = false;
 		}
 	}
-	else
+	//else
 	{
 		// Propagate state
 		m_state = m_state_next;
