@@ -61,9 +61,7 @@ void CBus::Read(uint32_t address, uint32_t& data)
 			case 1:
 			{
 				// DEVICE_LEDS
-				//m_leds->Read(address, data);
-				printf("<-LED\n");
-				data = 0;
+				m_leds.Read(address, data);
 			}
 			break;
 			case 2:
@@ -159,8 +157,7 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 			case 1:
 			{
 				// DEVICE_LEDS
-				//m_leds->Write(address, data, wstrobe);
-				printf("LEDS@0x%.8X<-0x%.8x\n", address, data);
+				m_leds.Write(address, data, wstrobe);
 			}
 			break;
 			case 2:

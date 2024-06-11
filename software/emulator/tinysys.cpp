@@ -16,7 +16,7 @@ int emulatorthread(void* data)
 	do
 	{
         kicking = emulator->Step();
-	} while(kicking);
+	} while(s_alive && kicking);
 
     s_alive = false;
 	return 0;
@@ -61,7 +61,6 @@ int SDL_main(int argc, char** argv)
 
     SDL_Thread* thread = SDL_CreateThread(emulatorthread, "emulator", &emulator);
 
-    bool alive = true;
     SDL_Event ev;
     int ticks = 0;
     do
@@ -69,10 +68,10 @@ int SDL_main(int argc, char** argv)
         if (SDL_PollEvent(&ev) != 0)
         {
             if (ev.type == SDL_QUIT)
-                alive = false;
+                s_alive = false;
         }
 
-        if ((ticks % 65536) == 0) // TODO: Tune this to 60Hz-ish
+        if ((ticks % 65536) == 0) // TODO: tune this to time not counter
         {
             if (SDL_MUSTLOCK(surface))
                 SDL_LockSurface(surface);
@@ -85,6 +84,7 @@ int SDL_main(int argc, char** argv)
         ++ticks;
     } while(s_alive);
 
+    SDL_WaitThread(thread, nullptr);
     SDL_FreeSurface(surface);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

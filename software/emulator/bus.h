@@ -6,6 +6,7 @@
 #include "sdcard.h"
 #include "mailmem.h"
 #include "vpu.h"
+#include "leds.h"
 
 #define DEVICE_BASE 0x80000000
 #define DEVICE_TRUC (DEVICE_BASE+0x0000)
@@ -39,4 +40,5 @@ private:
 	CMailMem m_mail;
 	CSDCard m_sdcc;
 	CVPU m_vpuc;
+	CLEDs m_leds;
 };
