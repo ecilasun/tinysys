@@ -759,7 +759,7 @@ always @(posedge aclk) begin
 						3'b101: begin // CSRRWI
 							m_ibus.wdata <= D;
 						end
-						3'b010: begin // CSRRS
+						3'b010: begin // CSRRS (also CSRR)
 							m_ibus.wdata <= csrprevval | A;
 						end
 						3'b110: begin // CSRRSI

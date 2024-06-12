@@ -119,6 +119,15 @@ public:
 
 	// HART0 by default
 	uint32_t m_idx = 0;
+	uint32_t m_sie = 0;
+
+	uint32_t m_exceptionmode = 0;
+	uint32_t m_lasttrap = 0;
+	uint32_t m_exceptionstart = 0;
+	uint32_t m_exceptionend = 0;
+
+	uint32_t m_postmret = 0;
+	uint32_t m_posteoi = 0;
 
 	uint32_t m_resetvector = 0x0FFE0000;
 	bool m_pendingCPUReset{ false };
@@ -128,6 +137,7 @@ public:
 
 private:
 	void DecodeInstruction(uint32_t instr, SDecodedInstruction& dec);
+	void SetExceptionHandlerStartEnd();
 	uint32_t ALU();
 	uint32_t BLU();
 };

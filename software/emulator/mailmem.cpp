@@ -21,21 +21,16 @@ void CMailMem::Reset()
 
 void CMailMem::Tick()
 {
-
 }
 
 void CMailMem::Read(uint32_t address, uint32_t& data)
 {
 	uint32_t mailslot = (address >> 2) & 0xFFF;
 	data = m_mailmem[mailslot];
-
-	//printf("MAIL[%d]->data\n", mailslot);
 }
 
 void CMailMem::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 {
 	uint32_t mailslot = (address>>2) & 0xFFF;
 	m_mailmem[mailslot] = word;
-
-	//printf("MAIL[%d]<-0x%.8x\n", mailslot, word);
 }

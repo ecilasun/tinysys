@@ -40,7 +40,7 @@ public:
 	~CCSRMem();
 
 	void Reset();
-	uint32_t Tick(CRV32* cpu);
+	uint32_t Tick(CRV32* cpu, uint32_t* sie);
 	void Read(uint32_t address, uint32_t& data);
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe);
 

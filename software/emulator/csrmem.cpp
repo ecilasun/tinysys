@@ -4,7 +4,7 @@
 
 CCSRMem::CCSRMem()
 {
-	m_csrmem = (uint32_t*)malloc(4 * 1024 * sizeof(uint32_t));
+	m_csrmem = (uint32_t*)malloc(4096 * sizeof(uint32_t));
 }
 
 CCSRMem::~CCSRMem()
@@ -15,7 +15,7 @@ CCSRMem::~CCSRMem()
 void CCSRMem::Reset()
 {
 	// Clear memory
-	memset(m_csrmem, 0, 4 * 1024 * sizeof(uint32_t));
+	memset(m_csrmem, 0, 4096 * sizeof(uint32_t));
 
 	// Set default CSR contents
 	m_csrmem[CSR_TIMECMPLO] = 0xFFFFFFFF;
@@ -29,7 +29,7 @@ void CCSRMem::Reset()
 	m_csrmem[CSR_HWSTATE] = 0x00000000;
 }
 
-uint32_t CCSRMem::Tick(CRV32* cpu)
+uint32_t CCSRMem::Tick(CRV32* cpu, uint32_t* sie)
 {
 	uint32_t irq = 0;
 
@@ -56,13 +56,20 @@ uint32_t CCSRMem::Tick(CRV32* cpu)
 	uint32_t usbirq = 0;
 
 	// Software interrupt
-	uint32_t softInterruptEna = (m_mieshadow & 0x008 ? 1:0) & m_mstatusIEshadow;
+	if (sie)
+		*sie = (m_mieshadow & 0x008 ? 1:0) & m_mstatusIEshadow;
 	// Timer interrupt
 	uint32_t timerInterrupt = (m_mieshadow & 0x080 ? 1:0) & m_mstatusIEshadow & timerirq;
 	// Machine external interrupts
 	uint32_t hwInterrupt = (m_mieshadow & 0x800 ? 1:0) & m_mstatusIEshadow & (uartirq | gpioirq | keyirq | usbirq);
 
-	irq = (softInterruptEna | timerInterrupt | hwInterrupt) ? 1 : 0;
+	//if (timerInterrupt)
+	//	printf("TIRQ @%llu >= @%llu\n", wallclocktime, timecmp);
+	//if (hwInterrupt)
+	//	printf("HIRQ\n");
+
+	// Hardware interrupts fire from here, software interrupts fire from fetch
+	irq = (timerInterrupt | hwInterrupt) ? 1 : 0;
 
 	return irq;
 }
@@ -75,6 +82,9 @@ void CCSRMem::Read(uint32_t address, uint32_t& data)
 		data = 0; // TODO: {28'd0, uartirq, gpioirq, keyirq, usbirq};
 	else
 		data = m_csrmem[csrindex];
+
+	if (csrindex == CSR_MEPC || csrindex == 0x8a0)
+		__debugbreak();
 
 	//printf("CSR0[%d]->data\n", csrindex);
 }
@@ -96,6 +106,9 @@ void CCSRMem::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 		// Only store MEIE, MTIE and MSIE bits
 		if (csrindex == CSR_MIE)
 			m_mieshadow = word & 0x888;
+
+		if (csrindex == CSR_MEPC || csrindex == 0x8a0)
+			__debugbreak();
 	}
 
 	//printf("CSR0[%d]<-0x%.8x\n", csrindex, word);

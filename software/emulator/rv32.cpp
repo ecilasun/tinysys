@@ -39,6 +39,22 @@ const char *regnames[] = {
 	"s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11",
 	"t3", "t4", "t5", "t6" };
 
+// This is an exact copy of the ISR ROM contents of the real hardware
+uint32_t ISR_ROM[] = {
+	0xfd079073,0x00000797,0x34179073,0x08000793,0x3047b7f3,0x3007a7f3,0x800007b7,0x00778793,
+	0x34279073,0x00800793,0x3007b7f3,0xfd0027f3,0xfd079073,0x08000793,0x3007b7f3,0x3047a7f3,
+	0x00800793,0x3007a7f3,0xfd0027f3,0xfd079073,0x00000797,0x34179073,0x000017b7,0x80078793,
+	0x3047b7f3,0x0047d793,0x3007a7f3,0x800007b7,0x00b78793,0x34279073,0x00800793,0x3007b7f3,
+	0xfd0027f3,0xfd079073,0x08000793,0x3007b7f3,0x00479793,0x3047a7f3,0x00800793,0x3007a7f3,
+	0xfd0027f3,0xfd079073,0x00000797,0x34179073,0x00800793,0x3047b7f3,0x00479793,0x3007a7f3,
+	0x00b00793,0x34279073,0x00800793,0x3007b7f3,0xfd0027f3,0xfd079073,0x08000793,0x3007b7f3,
+	0x0047d793,0x3047a7f3,0x00800793,0x3007a7f3,0xfd0027f3,0xfd079073,0x00000797,0x34179073,
+	0x00800793,0x3047b7f3,0x00479793,0x3007a7f3,0x00300793,0x34279073,0x00800793,0x3007b7f3,
+	0xfd0027f3,0xfd079073,0x08000793,0x3007b7f3,0x0047d793,0x3047a7f3,0x00800793,0x3007a7f3,
+	0xfd0027f3,0xfd079073,0x00000797,0x34179073,0x00800793,0x3047b7f3,0x00479793,0x3007a7f3,
+	0x00200793,0x34279073,0x00800793,0x3007b7f3,0xfd0027f3,0xfd079073,0x08000793,0x3007b7f3,
+	0x0047d793,0x3047a7f3,0x00800793,0x3007a7f3,0xfd0027f3 };
+
 CRV32::CRV32()
 {
 }
@@ -332,6 +348,34 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 #endif
 }
 
+void CRV32::SetExceptionHandlerStartEnd()
+{
+	switch (m_exceptionmode)
+	{
+		// SWI start
+		case 0x00000001: {
+			m_exceptionstart = 81;
+			m_exceptionend = 92;
+		}
+		break;
+
+		// SWI end
+		case 0x80000001: {
+			m_exceptionstart = 93;
+			m_exceptionend = 100;
+		}
+		break;
+
+		// Unknown
+		default:
+		{
+			m_exceptionstart = 0;
+			m_exceptionend = 0;
+		}
+		break;
+	}
+}
+
 bool CRV32::Tick(CBus& bus, uint32_t irq)
 {
 	bool retval = true;
@@ -342,8 +386,8 @@ bool CRV32::Tick(CBus& bus, uint32_t irq)
 		// Normally they're shadowed to hardware counters
 		// in the device so we don't have to emulate any latency here
 
+		uint32_t csrbase = m_idx == 0 ? CSR0BASE : CSR1BASE;
 		{
-			uint32_t csrbase = m_idx == 0 ? CSR0BASE : CSR1BASE;
 			bus.Write(csrbase + (CSR_CYCLELO << 2), (uint32_t)(m_cyclecounter & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
 			bus.Write(csrbase + (CSR_CYCLEHI << 2), (uint32_t)((m_cyclecounter & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
 			bus.Write(csrbase + (CSR_RETILO << 2), (uint32_t)(m_retired & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
@@ -371,17 +415,33 @@ bool CRV32::Tick(CBus& bus, uint32_t irq)
 
 			case ECPUFetchDecode:
 			{
-				bus.Read(m_PC, m_instruction_next);
-
-				// TODO: Handle interrupts and inject instruction sequence from ISR ROM as with real hardware
-				//  irqreq[1:0], sie, cpuresetreq
+				if (m_exceptionmode)
+				{
+					// Inject ISR ROM instruction sequence when we're in ISR mode
+					m_instruction_next = ISR_ROM[m_exceptionstart];
+					// Done injecting instructions
+					if (m_exceptionstart == m_exceptionend)
+					{
+						// Remember for exit time
+						m_lasttrap = m_exceptionmode;
+						// Are we returning from an exception?
+						if (m_exceptionmode & 0x80000000)
+							m_postmret = 1;
+						else // Or we're ending header to branch to mtvec
+							m_posteoi = 1;
+						m_exceptionmode = 0;
+					}
+					++m_exceptionstart;
+				}
+				else
+				{
+					// Otherwise read from instruction memory as usual
+					bus.Read(m_PC, m_instruction_next);
+				}
 
 				DecodeInstruction(m_instruction_next, m_decoded_next);
-
-				// NOTE: Register reads happen at end of this clock in hardware
 				m_rval1_next = m_GPR[m_decoded_next.m_rs1];
 				m_rval2_next = m_GPR[m_decoded_next.m_rs2];
-				// Same deal with ALU and BLU
 				m_aluout_next = ALU();
 				m_branchout_next = BLU();
 
@@ -452,11 +512,12 @@ bool CRV32::Tick(CBus& bus, uint32_t irq)
 							// cacheop=0b11
 							// NOOP for now
 						}
-						/*else if (m_decoded.m_f12 == F12_MRET)
+						else if (m_decoded.m_f12 == F12_MRET)
 						{
-							// This is handled by fetch unit in hardware
+							m_exceptionmode = 0x80000000 | m_lasttrap;
+							SetExceptionHandlerStartEnd();
 						}
-						else if (m_decoded.m_f12 == F12_WFI)
+						/*else if (m_decoded.m_f12 == F12_WFI)
 						{
 							// This is handled by fetch unit in hardware
 						}
@@ -471,8 +532,7 @@ bool CRV32::Tick(CBus& bus, uint32_t irq)
 						else // CSROP
 						{
 							// Read previous value
-							uint32_t base = m_idx == 0 ? CSR0BASE : CSR1BASE;
-							uint32_t csraddress = base + (m_decoded.m_csroffset << 2);
+							uint32_t csraddress = csrbase + (m_decoded.m_csroffset << 2);
 							uint32_t csrprevval;
 							bus.Read(csraddress, csrprevval);
 
@@ -485,13 +545,27 @@ bool CRV32::Tick(CBus& bus, uint32_t irq)
 							wstrobe = 0b1111;
 							switch (m_decoded.m_f3)
 							{
-								case 0b001:	wdata = m_rval1; break;
-								case 0b101:	wdata = m_decoded.m_immed; break;
-								case 0b010:	wdata = csrprevval | m_rval1; break;
-								case 0b110:	wdata = csrprevval | m_decoded.m_immed; break;
-								case 0b011:	wdata = ~m_rval1; break;
-								case 0b111:	wdata = ~m_decoded.m_immed; break;
-								default:	wdata = csrprevval; break;
+								case 0b001: // csrrw
+									wdata = m_rval1;
+								break;
+								case 0b101: // csrrwi
+									wdata = m_decoded.m_immed;
+								break;
+								case 0b010: // csrrs / csrr
+									wdata = csrprevval | m_rval1;
+								break;
+								case 0b110: // csrrsi
+									wdata = csrprevval | m_decoded.m_immed;
+								break;
+								case 0b011: // csrrc
+									wdata = csrprevval & (~m_rval1);
+								break;
+								case 0b111: // csrrci
+									wdata = csrprevval & (~m_decoded.m_immed);
+								break;
+								default: // unknown - keep previous value
+									wdata = csrprevval;
+								break;
 							}
 						}
 					break;
@@ -593,13 +667,17 @@ bool CRV32::Tick(CBus& bus, uint32_t irq)
 					break;
 
 					default:
-						// TODO: trap illegal instruction
-#if defined(DEBUG)
+						if (m_sie)
+						{
+							m_exceptionmode = 0x00000001;		// start software trap
+							SetExceptionHandlerStartEnd();
+						}
+/*#if defined(DEBUG)
 						printf("ILLEGAL_INSTRUCTION %.8X @PC 0x%.8X\n", m_instruction, m_PC);
 						for (int i=0; i<32; ++i)
 							printf("%s=%.8X ", regnames[i], m_GPR[i]);
 						retval = false;
-#endif
+#endif*/
 					break;
 				}
 
@@ -608,6 +686,17 @@ bool CRV32::Tick(CBus& bus, uint32_t irq)
 
 				if(rwen && m_decoded.m_rd != 0)
 					m_GPR_next[m_decoded.m_rd] = rdin;
+
+				if (m_postmret) // Resume from where we left off
+				{
+					m_postmret = 0;
+					bus.Read(csrbase + (CSR_MEPC << 2), m_PC_next);
+				}
+				else if (m_posteoi) // Branch to ISR vector
+				{
+					m_posteoi = 0;
+					bus.Read(csrbase + (CSR_MTVEC << 2), m_PC_next);
+				}
 
 				++m_retired;
 				m_state_next = ECPUFetchDecode;
