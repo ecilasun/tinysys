@@ -366,6 +366,62 @@ void CRV32::SetExceptionHandlerStartEnd()
 		}
 		break;
 
+		// HWI start
+		case 0x00000002: {
+			m_exceptionstart = 19;
+			m_exceptionend = 32;
+		}
+		break;
+
+		// HWI end
+		case 0x80000002: {
+			m_exceptionstart = 33;
+			m_exceptionend = 40;
+		}
+		break;
+
+		// TMI start
+		case 0x00000003: {
+			m_exceptionstart = 0;
+			m_exceptionend = 11;
+		}
+		break;
+
+		// TMI end
+		case 0x80000003: {
+			m_exceptionstart = 12;
+			m_exceptionend = 18;
+		}
+		break;
+
+		// ebreak start
+		case 0x00000004: {
+			m_exceptionstart = 61;
+			m_exceptionend = 72;
+		}
+		break;
+
+		// ebreak end
+		case 0x80000004: {
+			m_exceptionstart = 73;
+			m_exceptionend = 80;
+		}
+		break;
+
+		// ecall start
+		case 0x00000005: {
+			m_exceptionstart = 41;
+			m_exceptionend = 52;
+		}
+		break;
+
+		// ecall end
+		case 0x80000005: {
+			m_exceptionstart = 53;
+			m_exceptionend = 60;
+		}
+		break;
+
 		// Unknown
 		default:
 		{
@@ -379,6 +435,9 @@ void CRV32::SetExceptionHandlerStartEnd()
 bool CRV32::Tick(CBus& bus, uint32_t irq)
 {
 	bool retval = true;
+	bool softfault = false;
+	bool ebreak = false;
+	bool ecall = false;
 
 	//if (cpuclock.m_edge == RisingEdge)
 	{
@@ -505,30 +564,30 @@ bool CRV32::Tick(CBus& bus, uint32_t irq)
 						if (m_decoded.m_f12 == F12_CDISCARD)
 						{
 							// cacheop=0b01
-							// NOOP for now
+							// NOOP for now, D$ not implemented yet
 						}
 						else if (m_decoded.m_f12 == F12_CFLUSH)
 						{
 							// cacheop=0b11
-							// NOOP for now
+							// NOOP for now, D$ not implemented yet
 						}
 						else if (m_decoded.m_f12 == F12_MRET)
 						{
 							m_exceptionmode = 0x80000000 | m_lasttrap;
 							SetExceptionHandlerStartEnd();
 						}
-						/*else if (m_decoded.m_f12 == F12_WFI)
+						else if (m_decoded.m_f12 == F12_WFI)
 						{
-							// This is handled by fetch unit in hardware
+							// NOOP for now, ideally should wait for irq != 0 in a WFI state for about 16 clocks similar to real hardware
 						}
 						else if (m_decoded.m_f12 == F12_EBREAK)
 						{
-							// This is handled by fetch unit in hardware
+							ebreak = true;
 						}
 						else if (m_decoded.m_f12 == F12_ECALL)
 						{
-							// This is handled by fetch unit in hardware
-						}*/
+							ecall = true;
+						}
 						else // CSROP
 						{
 							// Read previous value
@@ -668,10 +727,7 @@ bool CRV32::Tick(CBus& bus, uint32_t irq)
 
 					default:
 						if (m_sie)
-						{
-							m_exceptionmode = 0x00000001;		// start software trap
-							SetExceptionHandlerStartEnd();
-						}
+							softfault = true;
 /*#if defined(DEBUG)
 						printf("ILLEGAL_INSTRUCTION %.8X @PC 0x%.8X\n", m_instruction, m_PC);
 						for (int i=0; i<32; ++i)
@@ -679,6 +735,21 @@ bool CRV32::Tick(CBus& bus, uint32_t irq)
 						retval = false;
 #endif*/
 					break;
+				}
+
+				if ((ebreak || ecall || softfault || irq) && m_exceptionmode == 0)
+				{
+					if (softfault) // software
+						m_exceptionmode = 0x00000001;
+					else if (ebreak) // ebreak
+						m_exceptionmode = 0x00000004;
+					else if (ecall) // ecall
+						m_exceptionmode = 0x00000005;
+					else if (irq & 1) // hardware
+						m_exceptionmode = 0x00000002;
+					else if (irq & 2) // timer
+						m_exceptionmode = 0x00000003;
+					SetExceptionHandlerStartEnd();
 				}
 
 				if(wstrobe)

@@ -31,8 +31,6 @@ void CCSRMem::Reset()
 
 uint32_t CCSRMem::Tick(CRV32* cpu, uint32_t* sie)
 {
-	uint32_t irq = 0;
-
 	// Detect reset request
 	if (m_cpuresetreq)
 	{
@@ -59,9 +57,9 @@ uint32_t CCSRMem::Tick(CRV32* cpu, uint32_t* sie)
 	if (sie)
 		*sie = (m_mieshadow & 0x008 ? 1:0) & m_mstatusIEshadow;
 	// Timer interrupt
-	uint32_t timerInterrupt = (m_mieshadow & 0x080 ? 1:0) & m_mstatusIEshadow & timerirq;
+	uint32_t timerInterrupt = ((m_mieshadow & 0x080 ? 1 : 0) & m_mstatusIEshadow & timerirq) ? 1 : 0;
 	// Machine external interrupts
-	uint32_t hwInterrupt = (m_mieshadow & 0x800 ? 1:0) & m_mstatusIEshadow & (uartirq | gpioirq | keyirq | usbirq);
+	uint32_t hwInterrupt = ((m_mieshadow & 0x800 ? 1 : 0) & m_mstatusIEshadow & (uartirq | gpioirq | keyirq | usbirq)) ? 1 : 0;
 
 	//if (timerInterrupt)
 	//	printf("TIRQ @%llu >= @%llu\n", wallclocktime, timecmp);
@@ -69,9 +67,7 @@ uint32_t CCSRMem::Tick(CRV32* cpu, uint32_t* sie)
 	//	printf("HIRQ\n");
 
 	// Hardware interrupts fire from here, software interrupts fire from fetch
-	irq = (timerInterrupt | hwInterrupt) ? 1 : 0;
-
-	return irq;
+	return (timerInterrupt<<1) | (hwInterrupt);
 }
 
 void CCSRMem::Read(uint32_t address, uint32_t& data)
@@ -83,8 +79,8 @@ void CCSRMem::Read(uint32_t address, uint32_t& data)
 	else
 		data = m_csrmem[csrindex];
 
-	if (csrindex == CSR_MEPC || csrindex == 0x8a0)
-		__debugbreak();
+	//if (csrindex == CSR_MEPC || csrindex == 0x8a0)
+	//	__debugbreak();
 
 	//printf("CSR0[%d]->data\n", csrindex);
 }
@@ -107,8 +103,8 @@ void CCSRMem::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 		if (csrindex == CSR_MIE)
 			m_mieshadow = word & 0x888;
 
-		if (csrindex == CSR_MEPC || csrindex == 0x8a0)
-			__debugbreak();
+		//if (csrindex == CSR_MEPC || csrindex == 0x8a0)
+		//	__debugbreak();
 	}
 
 	//printf("CSR0[%d]<-0x%.8x\n", csrindex, word);
