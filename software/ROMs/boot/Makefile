@@ -35,12 +35,12 @@ folders = \
 
 RISCV_GCC ?= $(RISCV_PREFIX)gcc
 RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump
-RISCV_PREFIX ?= riscv32-unknown-elf-
 ifeq ($(UNAME), WINDOWS)
 RISCVTOOL ?= ..\..\build\release\riscvtool.exe
 RISCV_PREFIX ?= riscv64-unknown-elf-
 else
 RISCVTOOL ?= ../../build/release/riscvtool
+RISCV_PREFIX ?= riscv64-unknown-elf-
 endif
 # No filesystem when defined
 # FILESYSTEM ?= -DDISABLE_FILESYSTEM
