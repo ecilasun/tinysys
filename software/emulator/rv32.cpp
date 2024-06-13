@@ -446,6 +446,7 @@ bool CRV32::Tick(CBus& bus, uint32_t irq)
 		// in the device so we don't have to emulate any latency here
 
 		uint32_t csrbase = m_idx == 0 ? CSR0BASE : CSR1BASE;
+		// Hardware will return hardwired or timer based values for these instead of overwriting the CSR
 		{
 			bus.Write(csrbase + (CSR_CYCLELO << 2), (uint32_t)(m_cyclecounter & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
 			bus.Write(csrbase + (CSR_CYCLEHI << 2), (uint32_t)((m_cyclecounter & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
@@ -456,9 +457,9 @@ bool CRV32::Tick(CBus& bus, uint32_t irq)
 			bus.Write(csrbase + (CSR_PROGRAMCOUNTER << 2), m_PC, 0xFFFFFFFF);
 		}
 
-		++m_cyclecounter;
 		if (m_cyclecounter%15 == 0) // 150MHz vs 10Mhz
 			++m_wallclock;
+		++m_cyclecounter;
 
 		// Process input and prepare intermediates
 		switch (m_state)
@@ -793,7 +794,7 @@ bool CRV32::Tick(CBus& bus, uint32_t irq)
 		m_state = m_state_next;
 
 		// Propagate intermediates to registers
-		m_PC = m_PC_next;
+		m_PC = m_exceptionmode ? m_PC : m_PC_next;
 		m_instruction = m_instruction_next;
 		m_decoded = m_decoded_next;
 		m_rval1 = m_rval1_next;
