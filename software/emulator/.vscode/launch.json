@@ -9,7 +9,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\build\\release\\tinysys.exe",
-            "args": ["ROM\\rom.bin"],
+            "args": ["ROMs\\rom.bin"],
             "cwd": "${workspaceFolder}\\",
             "stopAtEntry": false,
             "environment": [],
@@ -20,7 +20,7 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/release/tinysys",
-            "args": ["ROM\\rom.bin"],
+            "args": ["ROMs/rom.bin"],
             "cwd": "${workspaceFolder}/"
         }
     ]

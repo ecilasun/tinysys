@@ -103,8 +103,8 @@ void CCSRMem::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 		if (csrindex == CSR_MIE)
 			m_mieshadow = word & 0x888;
 
-		if (csrindex == CSR_MEPC || csrindex == 0x8a0)
-			__debugbreak();
+//		if (csrindex == CSR_MEPC || csrindex == 0x8a0)
+//			__debugbreak();
 	}
 
 	//printf("CSR0[%d]<-0x%.8x\n", csrindex, word);

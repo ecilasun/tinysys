@@ -48,7 +48,7 @@ def build(bld):
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_DARWIN', 'DEBUG']
         includes = ['source', 'includes', '/opt/homebrew/Cellar/sdl2/2.30.0/include']
         sdk_lib_path = '/opt/homebrew/Cellar/sdl2/2.30.0/lib/'
-        compile_flags = ['-std=c++20']
+        compile_flags = ['-std=c++20', '-g']
         linker_flags = []
     elif platform.system().lower().startswith('linux'):
         libs = ['SDL2']

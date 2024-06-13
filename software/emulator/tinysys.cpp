@@ -47,7 +47,6 @@ int SDL_main(int argc, char** argv)
     const int WIDTH = 640;
     const int HEIGHT = 480;
     SDL_Window* window = NULL;
-    SDL_Renderer* renderer = NULL;
 
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
     {
@@ -55,9 +54,13 @@ int SDL_main(int argc, char** argv)
         return -1;
     }
     window = SDL_CreateWindow("tinysys emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
     SDL_Surface* surface = SDL_GetWindowSurface(window);
+    if (!surface)
+    {
+        printf("Could not create window surface\n");
+        return -1;
+    }
 
     SDL_Thread* thread = SDL_CreateThread(emulatorthread, "emulator", &emulator);
 
@@ -86,7 +89,6 @@ int SDL_main(int argc, char** argv)
 
     SDL_WaitThread(thread, nullptr);
     SDL_FreeSurface(surface);
-    SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
 
