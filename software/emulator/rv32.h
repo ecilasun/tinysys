@@ -1,11 +1,11 @@
 #pragma once
 
 #include "bitutil.h"
+#include <queue>
 
-enum CPUState{
-	ECPUReset,
-	ECPUFetchDecode,
-	ECPUExecute
+enum FetchState{
+	EFetchRead,
+	EFetchWaitForBranch,
 };
 
 #define OP_OP			0b0110011
@@ -63,6 +63,7 @@ enum CPUState{
 
 struct SDecodedInstruction
 {
+	uint32_t m_pc;
 	uint32_t m_opcode;
 	uint32_t m_aluop;
 	uint32_t m_bluop;
@@ -74,10 +75,12 @@ struct SDecodedInstruction
 	uint32_t m_immed;
 	uint32_t m_selimm;
 	uint32_t m_csroffset;
-#if defined(DEBUG)
+	uint32_t m_rval1;
+	uint32_t m_rval2;
+//#if defined(DEBUG)
 	// internal / debugging related
 	uint32_t m_opindex;
-#endif
+//#endif
 };
 
 class CBus;
@@ -88,29 +91,12 @@ public:
 	CRV32();
 	~CRV32();
 
-	// Left hand side
-	uint32_t m_PC_next;
-	uint32_t m_GPR_next[32];
-	uint32_t m_instruction_next;
-	uint32_t m_rval1_next;
-	uint32_t m_rval2_next;
-	uint32_t m_aluout_next;
-	uint32_t m_branchout_next;
-	SDecodedInstruction m_decoded_next;
-
 	// Right hand side
 	uint32_t m_PC;
+	uint32_t m_branchtarget;
+	uint32_t m_fetchstate;
+	uint32_t m_branchresolved;
 	uint32_t m_GPR[32];
-	uint32_t m_instruction;
-	uint32_t m_rval1;
-	uint32_t m_rval2;
-	uint32_t m_aluout;
-	uint32_t m_branchout;
-	SDecodedInstruction m_decoded;
-
-	// Internal state
-	CPUState m_state = ECPUReset;
-	CPUState m_state_next = ECPUReset;
 
 	// Internal counters
 	uint64_t m_cyclecounter = 0;
@@ -118,26 +104,28 @@ public:
 	uint64_t m_retired = 0;
 
 	// HART0 by default
-	uint32_t m_idx = 0;
+	uint32_t m_hartid = 0;
 	uint32_t m_sie = 0;
 
 	uint32_t m_exceptionmode = 0;
 	uint32_t m_lasttrap = 0;
-	uint32_t m_exceptionstart = 0;
-	uint32_t m_exceptionend = 0;
 
-	uint32_t m_postmret = 0;
-	uint32_t m_posteoi = 0;
+	//uint32_t m_postmret = 0;
+	//uint32_t m_posteoi = 0;
 
 	uint32_t m_resetvector = 0x0FFE0000;
 	bool m_pendingCPUReset{ false };
 
+	std::queue<SDecodedInstruction> m_instructionfifo;
+
 	void Reset();
 	bool Tick(CBus& bus, uint32_t irq);
+	bool FetchDecode(CBus& bus, uint32_t irq);
+	bool Execute(CBus& bus);
 
 private:
-	void DecodeInstruction(uint32_t instr, SDecodedInstruction& dec);
-	void SetExceptionHandlerStartEnd();
-	uint32_t ALU();
-	uint32_t BLU();
+	void DecodeInstruction(const uint32_t pc, const uint32_t instr, SDecodedInstruction& dec);
+	void InjectISRHeaderFooter();
+	uint32_t ALU(SDecodedInstruction &instr);
+	uint32_t BLU(SDecodedInstruction& instr);
 };

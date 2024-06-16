@@ -65,76 +65,91 @@ CRV32::~CRV32()
 
 void CRV32::Reset()
 {
-	m_state_next = m_state = ECPUReset;
+	m_fetchstate = EFetchRead;
+
+	m_PC = m_resetvector;
+	m_branchresolved = 0;
+	m_branchtarget = 0;
+	m_cyclecounter = 0;
+	m_retired = 0;
+	m_wallclock = 0;
+
+	m_exceptionmode = 0;
+	m_lasttrap = 0;
+
+	for (uint32_t i=0; i<32; i++)
+		m_GPR[i] = 0x00000000;
+
+	m_instructionfifo = {};
 }
 
-uint32_t CRV32::ALU()
+uint32_t CRV32::ALU(SDecodedInstruction& instr)
 {
 	uint32_t aluout = 0;
 
-	uint32_t selected = m_decoded_next.m_selimm ? m_decoded_next.m_immed : m_rval2_next;
+	uint32_t selected = instr.m_selimm ? instr.m_immed : instr.m_rval2;
 
-	switch(m_decoded_next.m_aluop)
+	switch(instr.m_aluop)
 	{
 		case ALU_OR:
-			aluout = m_rval1_next | selected;
+			aluout = instr.m_rval1 | selected;
 		break;
 		case ALU_SUB:
-			aluout = m_rval1_next + (~selected + 1); // val1-val2
+			aluout = instr.m_rval1 + (~selected + 1); // val1-val2
 		break;
 		case ALU_SLL:
-			aluout = m_rval1_next << (selected&0x1F);
+			aluout = instr.m_rval1 << (selected&0x1F);
 		break;
 		case ALU_SLT:
-			aluout = ((int32_t)m_rval1_next < (int32_t)selected) ? 1 : 0;
+			aluout = ((int32_t)instr.m_rval1 < (int32_t)selected) ? 1 : 0;
 		break;
 		case ALU_SLTU:
-			aluout = (m_rval1_next < selected) ? 1 : 0;
+			aluout = (instr.m_rval1 < selected) ? 1 : 0;
 		break;
 		case ALU_XOR:
-			aluout = m_rval1_next ^ selected;
+			aluout = instr.m_rval1 ^ selected;
 		break;
 		case ALU_SRL:
-			aluout = m_rval1_next >> (selected&0x1F);
+			aluout = instr.m_rval1 >> (selected&0x1F);
 		break;
 		case ALU_SRA:
-			aluout = (int32_t)m_rval1_next >> (selected&0x1F);
+			aluout = (int32_t)instr.m_rval1 >> (selected&0x1F);
 		break;
 		case ALU_ADD:
-			aluout = m_rval1_next + selected;
+			aluout = instr.m_rval1 + selected;
 		break;
 		case ALU_AND:
-			aluout = m_rval1_next & selected;
+			aluout = instr.m_rval1 & selected;
 		break;
 		case ALU_MUL:
 		{
 			uint64_t a, b;
-			int64_t sign1ext = (int32_t)m_rval1_next;
-			int64_t sign2ext = (int32_t)m_rval2_next;
-			switch (m_decoded_next.m_f3)
+			int64_t sign1ext = (int32_t)instr.m_rval1;
+			int64_t sign2ext = (int32_t)instr.m_rval2;
+			switch (instr.m_f3)
 			{
 				case 0b000:
 				case 0b001: { a = sign1ext; b = sign2ext; } break; // mul/mulh
-				case 0b010: { a = sign1ext; b = m_rval2_next; } break; // mulhsu
-				case 0b011: { a = m_rval1_next; b = m_rval2_next; } break; // mulhu
+				case 0b010: { a = sign1ext; b = instr.m_rval2; } break; // mulhsu
+				case 0b011: { a = instr.m_rval1; b = instr.m_rval2; } break; // mulhu
 				default: { a = 0; b = 0; } break;
 			}
 			uint64_t result = a * b;
-			aluout = m_decoded_next.m_f3 == 0b000 ? (uint32_t)((a*b)&0xFFFFFFFF) : (uint32_t)(((a*b)&0xFFFFFFFF00000000)>>32);
+			aluout = instr.m_f3 == 0b000 ? (uint32_t)((a*b)&0xFFFFFFFF) : (uint32_t)(((a*b)&0xFFFFFFFF00000000)>>32);
 		}
 		break;
 		case ALU_DIV:
 		case ALU_REM:
 		{
 			uint64_t a, b;
-			int64_t sign1ext = (int32_t)m_rval1_next;
-			int64_t sign2ext = (int32_t)m_rval2_next;
-			switch (m_decoded_next.m_f3)
+			int64_t sign1ext = (int32_t)instr.m_rval1;
+			int64_t sign2ext = (int32_t)instr.m_rval2;
+			switch (instr.m_f3)
 			{
 				case 0b100: { a = sign1ext; b = sign2ext; aluout = (uint32_t)(a / b); } break; //  div
-				case 0b101: { a = m_rval1_next; b = m_rval2_next; aluout = (uint32_t)(a / b); } break; // divu
+				case 0b101: { a = instr.m_rval1; b = instr.m_rval2; aluout = (uint32_t)(a / b); } break; // divu
 				case 0b110: { a = sign1ext; b = sign2ext; aluout = (uint32_t)(a % b); } break; // rem
-				case 0b111: { a = m_rval1_next; b = m_rval2_next; aluout = (uint32_t)(a % b); } break; // remu
+				case 0b111: { a = instr.m_rval1; b = instr.m_rval2; aluout = (uint32_t)(a % b); } break; // remu
 				default: { a = 0; b = 1; } break;
 			}
 		}
@@ -144,37 +159,38 @@ uint32_t CRV32::ALU()
 	return aluout;
 }
 
-uint32_t CRV32::BLU()
+uint32_t CRV32::BLU(SDecodedInstruction& instr)
 {
 	uint32_t bluout = 0;
 
-	switch (m_decoded_next.m_bluop)
+	switch (instr.m_bluop)
 	{
 		case BLU_EQ:
-			bluout = m_rval1_next == m_rval2_next ? 1 : 0;
+			bluout = instr.m_rval1 == instr.m_rval2 ? 1 : 0;
 		break;
 		case BLU_NE:
-			bluout = m_rval1_next != m_rval2_next ? 1 : 0;
+			bluout = instr.m_rval1 != instr.m_rval2 ? 1 : 0;
 		break;
 		case BLU_L:
-			bluout = (int32_t)m_rval1_next < (int32_t)m_rval2_next ? 1 : 0;
+			bluout = (int32_t)instr.m_rval1 < (int32_t)instr.m_rval2 ? 1 : 0;
 		break;
 		case BLU_GE:
-			bluout = (int32_t)m_rval1_next >= (int32_t)m_rval2_next ? 1 : 0;
+			bluout = (int32_t)instr.m_rval1 >= (int32_t)instr.m_rval2 ? 1 : 0;
 		break;
 		case BLU_LU:
-			bluout = m_rval1_next < m_rval2_next ? 1 : 0;
+			bluout = instr.m_rval1 < instr.m_rval2 ? 1 : 0;
 		break;
 		case BLU_GEU:
-			bluout = m_rval1_next >= m_rval2_next ? 1 : 0;
+			bluout = instr.m_rval1 >= instr.m_rval2 ? 1 : 0;
 		break;
 	}
 
 	return bluout;
 }
 
-void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
+void CRV32::DecodeInstruction(uint32_t pc, uint32_t instr, SDecodedInstruction& dec)
 {
+	dec.m_pc = pc;
 	dec.m_opcode = SelectBitRange(instr, 6, 0);
 	dec.m_f3 = SelectBitRange(instr, 14, 12);
 	dec.m_rs1 = SelectBitRange(instr, 19, 15);
@@ -183,7 +199,7 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 	dec.m_f12 = SelectBitRange(instr, 31, 20);
 	dec.m_csroffset = (SelectBitRange(instr, 31, 25) << 5) | dec.m_rs2;
 
-#if defined(DEBUG)
+//#if defined(DEBUG)
 	switch (dec.m_opcode)
 	{
 		case OP_OP:		dec.m_opindex = 1; break;
@@ -199,7 +215,7 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 		case OP_SYSTEM:	dec.m_opindex = 11; break;
 		default:		dec.m_opindex = 0; break;
 	}
-#endif
+//#endif
 
 	switch (dec.m_opcode)
 	{
@@ -343,469 +359,526 @@ void CRV32::DecodeInstruction(uint32_t instr, SDecodedInstruction& dec)
 
 	dec.m_selimm = (dec.m_opcode==OP_JALR) || (dec.m_opcode==OP_OP_IMM) || (dec.m_opcode==OP_LOAD) || (dec.m_opcode==OP_STORE);
 
-#if defined(DEBUG)
+//#if defined(DEBUG)
 	//printf("%.8X: %s%s %s %s -> %s I=%d\n", m_PC, opnames[dec.m_opindex], alunames[dec.m_aluop], regnames[dec.m_rs1], regnames[dec.m_rs2], regnames[dec.m_rd], dec.m_immed);
-#endif
+//#endif
 }
 
-void CRV32::SetExceptionHandlerStartEnd()
+void CRV32::InjectISRHeaderFooter()
 {
 	switch (m_exceptionmode)
 	{
 		// SWI start
 		case 0x00000001: {
-			m_exceptionstart = 81;
-			m_exceptionend = 92;
+			for (uint32_t i = 81; i <= 92; ++i)
+			{
+				SDecodedInstruction isrinstr;
+				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				m_instructionfifo.push(isrinstr);
+			}
 		}
 		break;
 
 		// SWI end
 		case 0x80000001: {
-			m_exceptionstart = 93;
-			m_exceptionend = 100;
+			for (uint32_t i = 93; i <= 100; ++i)
+			{
+				SDecodedInstruction isrinstr;
+				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				m_instructionfifo.push(isrinstr);
+			}
 		}
 		break;
 
 		// HWI start
 		case 0x00000002: {
-			m_exceptionstart = 19;
-			m_exceptionend = 32;
+			for (uint32_t i = 19; i <= 32; ++i)
+			{
+				SDecodedInstruction isrinstr;
+				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				m_instructionfifo.push(isrinstr);
+			}
 		}
 		break;
 
 		// HWI end
 		case 0x80000002: {
-			m_exceptionstart = 33;
-			m_exceptionend = 40;
+			for (uint32_t i = 33; i <= 40; ++i)
+			{
+				SDecodedInstruction isrinstr;
+				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				m_instructionfifo.push(isrinstr);
+			}
 		}
 		break;
 
 		// TMI start
 		case 0x00000003: {
-			m_exceptionstart = 0;
-			m_exceptionend = 11;
+			for (uint32_t i = 0; i <= 11; ++i)
+			{
+				SDecodedInstruction isrinstr;
+				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				m_instructionfifo.push(isrinstr);
+			}
 		}
 		break;
 
 		// TMI end
 		case 0x80000003: {
-			m_exceptionstart = 12;
-			m_exceptionend = 18;
+			for (uint32_t i = 12; i <= 18; ++i)
+			{
+				SDecodedInstruction isrinstr;
+				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				m_instructionfifo.push(isrinstr);
+			}
 		}
 		break;
 
 		// ebreak start
 		case 0x00000004: {
-			m_exceptionstart = 61;
-			m_exceptionend = 72;
+			for (uint32_t i = 61; i <= 72; ++i)
+			{
+				SDecodedInstruction isrinstr;
+				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				m_instructionfifo.push(isrinstr);
+			}
 		}
 		break;
 
 		// ebreak end
 		case 0x80000004: {
-			m_exceptionstart = 73;
-			m_exceptionend = 80;
+			for (uint32_t i = 73; i <= 80; ++i)
+			{
+				SDecodedInstruction isrinstr;
+				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				m_instructionfifo.push(isrinstr);
+			}
 		}
 		break;
 
 		// ecall start
 		case 0x00000005: {
-			m_exceptionstart = 41;
-			m_exceptionend = 52;
+			for (uint32_t i = 41; i <= 52; ++i)
+			{
+				SDecodedInstruction isrinstr;
+				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				m_instructionfifo.push(isrinstr);
+			}
 		}
 		break;
 
 		// ecall end
 		case 0x80000005: {
-			m_exceptionstart = 53;
-			m_exceptionend = 60;
+			for (uint32_t i = 53; i <= 60; ++i)
+			{
+				SDecodedInstruction isrinstr;
+				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				m_instructionfifo.push(isrinstr);
+			}
 		}
 		break;
 
 		// Unknown
 		default:
 		{
-			m_exceptionstart = 0;
-			m_exceptionend = 0;
+			// Nothing to inject
 		}
 		break;
 	}
 }
 
-bool CRV32::Tick(CBus& bus, uint32_t irq)
+bool CRV32::FetchDecode(CBus& bus, uint32_t irq)
 {
-	bool retval = true;
-	bool softfault = false;
-	bool ebreak = false;
-	bool ecall = false;
-
-	//if (cpuclock.m_edge == RisingEdge)
+	if (m_fetchstate == EFetchRead)
 	{
-		// We hack our way around with these CSR register
-		// Normally they're shadowed to hardware counters
-		// in the device so we don't have to emulate any latency here
+		uint32_t instruction;
+		bus.Read(m_PC, instruction);
+		SDecodedInstruction decoded;
+		DecodeInstruction(m_PC, instruction, decoded);
 
-		uint32_t csrbase = m_idx == 0 ? CSR0BASE : CSR1BASE;
-		// Hardware will return hardwired or timer based values for these instead of overwriting the CSR
+		if (decoded.m_opindex == 0)
 		{
-			bus.Write(csrbase + (CSR_CYCLELO << 2), (uint32_t)(m_cyclecounter & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
-			bus.Write(csrbase + (CSR_CYCLEHI << 2), (uint32_t)((m_cyclecounter & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
-			bus.Write(csrbase + (CSR_RETILO << 2), (uint32_t)(m_retired & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
-			bus.Write(csrbase + (CSR_RETIHI << 2), (uint32_t)((m_retired & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
-			bus.Write(csrbase + (CSR_TIMELO << 2), (uint32_t)(m_wallclock & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
-			bus.Write(csrbase + (CSR_TIMEHI << 2), (uint32_t)((m_wallclock & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
-			bus.Write(csrbase + (CSR_PROGRAMCOUNTER << 2), m_PC, 0xFFFFFFFF);
+			printf("illegal instruction @0x%.8X\n", m_PC);
+			for (uint32_t i=0;i<32;++i)
+				printf("r%d=%.8x ", i, m_GPR[i]);
+			printf("\n");
+			return false;
 		}
 
-		if (m_cyclecounter%15 == 0) // 150MHz vs 10Mhz
-			++m_wallclock;
-		++m_cyclecounter;
+		bool isebreak = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_EBREAK;
+		bool isecall = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_ECALL;
+		bool ismret = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_MRET;
+		bool isillegal = decoded.m_opindex == 0;
+		bool branchtomtvec = false;
 
-		// Process input and prepare intermediates
-		switch (m_state)
+		if ((isebreak || isecall || isillegal || irq) && m_exceptionmode == 0)
 		{
-			case ECPUReset:
+			branchtomtvec = true;
+			m_lasttrap = m_exceptionmode;
+			if (isillegal) // software - illegal instruction
+				m_exceptionmode = 0x00000001;
+			else if (isebreak) // ebreak
+				m_exceptionmode = 0x00000004;
+			else if (isecall) // ecall
+				m_exceptionmode = 0x00000005;
+			else if (irq & 1) // hardware
+				m_exceptionmode = 0x00000002;
+			else if (irq & 2) // timer
+				m_exceptionmode = 0x00000003;
+			InjectISRHeaderFooter();
+		}
+		else
+			m_instructionfifo.push(decoded);
+
+		// Determine next PC
+		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
+		if (branchtomtvec)
+			bus.Read(csrbase + (CSR_MTVEC << 2), m_PC);
+		else if (decoded.m_opcode != OP_BRANCH && decoded.m_opcode != OP_JALR && decoded.m_opcode != OP_JAL && !ismret)
+			m_PC = decoded.m_pc + 4;
+		else
+			m_fetchstate = EFetchWaitForBranch; // wait for branch target from exec
+	}
+	else if (m_fetchstate == EFetchWaitForBranch)
+	{
+		if (m_branchresolved)
+		{
+			if (m_lasttrap)
 			{
-				m_PC_next = m_resetvector;
-				for (int i=0;i<32;++i)
-					m_GPR_next[i] = 0;
-				m_state_next = ECPUFetchDecode;
+				m_exceptionmode = 0x80000000 | m_lasttrap;
+				m_lasttrap = 0x00000000;
+				InjectISRHeaderFooter();
+			}
+
+			m_branchresolved = 0;
+			m_PC = m_branchtarget;
+			m_fetchstate = EFetchRead;
+		}
+	}
+
+	return true;
+}
+
+bool CRV32::Execute(CBus& bus)
+{
+	++m_cyclecounter;
+	if (m_instructionfifo.size())
+	{
+		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
+
+		SDecodedInstruction instr;
+		instr = m_instructionfifo.front();
+
+		// Get register contents
+		instr.m_rval1 = m_GPR[instr.m_rs1];
+		instr.m_rval2 = m_GPR[instr.m_rs2];
+
+		// Run ALU+BLU ops
+		uint32_t aluout = ALU(instr);
+		uint32_t branchout = BLU(instr);
+
+		// Calculate future PC and other offsets
+		uint32_t adjacentpc = instr.m_pc + 4;
+		uint32_t rwaddress = instr.m_rval1 + instr.m_immed;
+		uint32_t offsetpc = instr.m_pc + instr.m_immed;
+		uint32_t jumpabs = instr.m_rval1 + instr.m_immed;
+		uint32_t rdin = 0;
+		uint32_t rwen = 0;
+		uint32_t wdata = 0;
+		uint32_t wstrobe = 0;
+
+		bool isebreak = false;
+		bool isecall = false;
+		bool isillegal = false;
+
+		/*printf("- @%.8X: op=%.8X r1=%.8x r2=%.8x imm=%.8X\n", instr.m_pc, instr.m_opcode, instr.m_rval1, instr.m_rval2, instr.m_immed);
+		for (uint32_t i = 0; i < 32; ++i)
+			printf("x%d=%.8x ", i, m_GPR[i]);
+		printf("\n");*/
+
+		// Execute
+		switch (instr.m_opcode)
+		{
+			case OP_OP:
+			case OP_OP_IMM:
+				rdin = aluout;
+				rwen = 1;
+				//printf("- op/opimm %.8x\n", aluout);
+			break;
+
+			case OP_AUIPC:
+				rdin = offsetpc;
+				rwen = 1;
+				//printf("- auipc %.8x\n", offsetpc);
+			break;
+
+			case OP_LUI:
+				rdin = instr.m_immed;
+				rwen = 1;
+				//printf("- lui %.8x\n", instr.m_immed);
+			break;
+
+			case OP_JAL:
+				m_branchresolved = 1;
+				m_branchtarget = offsetpc;
+				rdin = adjacentpc;
+				rwen = 1;
+				//printf("- jal %.8x\n", offsetpc);
+			break;
+
+			case OP_JALR:
+				m_branchresolved = 1;
+				m_branchtarget = jumpabs;
+				rdin = adjacentpc;
+				rwen = 1;
+				//printf("- lalr %.8x\n", jumpabs);
+			break;
+
+			case OP_BRANCH:
+				m_branchresolved = 1;
+				m_branchtarget = branchout ? offsetpc : adjacentpc;
+				//printf("- branch %.8x\n", branchout ? offsetpc : adjacentpc);
+			break;
+
+			case OP_FENCE:
+				// NOOP for now
+				//printf("- fencei\n");
+			break;
+
+			case OP_SYSTEM:
+			{
+				if (instr.m_f12 == F12_CDISCARD)
+				{
+					// cacheop=0b01
+					// NOOP for now, D$ not implemented yet
+					//printf("- cdiscard\n");
+				}
+				else if (instr.m_f12 == F12_CFLUSH)
+				{
+					// cacheop=0b11
+					// NOOP for now, D$ not implemented yet
+					//printf("- cflush\n");
+				}
+				else if (instr.m_f12 == F12_MRET)
+				{
+					m_branchresolved = 1;
+					bus.Read(csrbase + (CSR_MEPC << 2), m_branchtarget);
+				}
+				else if (instr.m_f12 == F12_WFI)
+				{
+					// NOOP for now, ideally should wait for irq != 0 in a WFI state for about 16 clocks similar to real hardware
+					//printf("- wfi\n");
+				}
+				else if (instr.m_f12 == F12_EBREAK)
+				{
+					isebreak = true;
+					//printf("- ebreak\n");
+				}
+				else if (instr.m_f12 == F12_ECALL)
+				{
+					isecall = true;
+					//printf("- ecall\n");
+				}
+				else // CSROP
+				{
+					// Read previous value
+					uint32_t csraddress = csrbase + (instr.m_csroffset << 2);
+					uint32_t csrprevval;
+					bus.Read(csraddress, csrprevval);
+
+					// Keep it in a register
+					rwen = 1;
+					rdin = csrprevval;
+					rwaddress = csraddress;
+
+					// Apply operation
+					wstrobe = 0b1111;
+					switch (instr.m_f3)
+					{
+						case 0b001: // csrrw
+							wdata = instr.m_rval1;
+							break;
+						case 0b101: // csrrwi
+							wdata = instr.m_immed;
+							break;
+						case 0b010: // csrrs / csrr
+							wdata = csrprevval | instr.m_rval1;
+							break;
+						case 0b110: // csrrsi
+							wdata = csrprevval | instr.m_immed;
+							break;
+						case 0b011: // csrrc
+							wdata = csrprevval & (~instr.m_rval1);
+							break;
+						case 0b111: // csrrci
+							wdata = csrprevval & (~instr.m_immed);
+							break;
+						default: // unknown - keep previous value
+							wdata = csrprevval;
+							break;
+					}
+
+					//printf("- csrop @%.8x\n", instr.m_csroffset);
+				}
 			}
 			break;
 
-			case ECPUFetchDecode:
+			case OP_STORE:
 			{
-				if (m_exceptionmode)
+				uint32_t byte = SelectBitRange(instr.m_rval2, 7, 0);
+				uint32_t half = SelectBitRange(instr.m_rval2, 15, 0);
+				switch (instr.m_f3)
 				{
-					// Inject ISR ROM instruction sequence when we're in ISR mode
-					m_instruction_next = ISR_ROM[m_exceptionstart];
-					// Done injecting instructions
-					if (m_exceptionstart == m_exceptionend)
-					{
-						// Remember for exit time
-						m_lasttrap = m_exceptionmode;
-						// Are we returning from an exception?
-						if (m_exceptionmode & 0x80000000)
-							m_postmret = 1;
-						else // Or we're ending header to branch to mtvec
-							m_posteoi = 1;
-						m_exceptionmode = 0;
-					}
-					++m_exceptionstart;
+					case 0b000:	wdata = (byte << 24) | (byte << 16) | (byte << 8) | byte; break;
+					case 0b001:	wdata = (half << 16) | half; break;
+					default:	wdata = instr.m_rval2; break;
 				}
-				else
+				uint32_t ah = SelectBitRange(rwaddress, 1, 1);
+				uint32_t ab = SelectBitRange(rwaddress, 0, 0);
+				uint32_t himask = (ah << 3) | (ah << 2) | ((1 - ah) << 1) | (1 - ah);
+				uint32_t lomask = ((ab << 3) | ((1 - ab) << 2) | (ab << 1) | (1 - ab));
+				switch (instr.m_f3)
 				{
-					// Otherwise read from instruction memory as usual
-					bus.Read(m_PC, m_instruction_next);
+					case 0b000:	wstrobe = himask & lomask; break;
+					case 0b001:	wstrobe = himask; break;
+					default:	wstrobe = 0b1111; break;
 				}
 
-				DecodeInstruction(m_instruction_next, m_decoded_next);
-				m_rval1_next = m_GPR[m_decoded_next.m_rs1];
-				m_rval2_next = m_GPR[m_decoded_next.m_rs2];
-				m_aluout_next = ALU();
-				m_branchout_next = BLU();
-
-				m_state_next = ECPUExecute;
+				//printf("- store %.8x\n", rwaddress);
 			}
 			break;
 
-			case ECPUExecute:
+			case OP_LOAD:
 			{
-				uint32_t adjacentpc = m_PC + 4;
-				uint32_t rwaddress = m_rval1 + m_decoded.m_immed;
-				uint32_t offsetpc = m_PC + m_decoded.m_immed;
-				uint32_t jumpabs = m_rval1 + m_decoded.m_immed;
-				uint32_t rdin = 0;
-				uint32_t rwen = 0;
-				uint32_t wdata = 0;
-				uint32_t wstrobe = 0;
+				uint32_t dataword;
+				bus.Read(rwaddress, dataword);
 
-				if (m_decoded.m_opcode != OP_BRANCH && m_decoded.m_opcode != OP_JALR && m_decoded.m_opcode != OP_JAL)
-					m_PC_next = adjacentpc;
+				uint32_t range1 = SelectBitRange(rwaddress, 1, 1);
+				uint32_t range2 = SelectBitRange(rwaddress, 1, 0);
 
-				switch(m_decoded.m_opcode)
+				uint32_t b3 = SelectBitRange(dataword, 31, 24);
+				uint32_t b2 = SelectBitRange(dataword, 23, 16);
+				uint32_t b1 = SelectBitRange(dataword, 15, 8);
+				uint32_t b0 = SelectBitRange(dataword, 7, 0);
+
+				uint32_t h1 = SelectBitRange(dataword, 31, 16);
+				uint32_t h0 = SelectBitRange(dataword, 15, 0);
+
+				int32_t sign3 = int32_t(dataword & 0x80000000);
+				int32_t sign2 = int32_t((dataword << 8) & 0x80000000);
+				int32_t sign1 = int32_t((dataword << 16) & 0x80000000);
+				int32_t sign0 = int32_t((dataword << 24) & 0x80000000);
+
+				switch (instr.m_f3)
 				{
-					case OP_OP:
-					case OP_OP_IMM:
-						rdin = m_aluout;
-						rwen = 1;
-					break;
-
-					case OP_AUIPC:
-						rdin = offsetpc;
-						rwen = 1;
-					break;
-
-					case OP_LUI:
-						rdin = m_decoded.m_immed;
-						rwen = 1;
-					break;
-
-					case OP_JAL:
-						m_PC_next = offsetpc;
-						rdin = adjacentpc;
-						rwen = 1;
-					break;
-
-					case OP_JALR:
-						m_PC_next = jumpabs;
-						rdin = adjacentpc;
-						rwen = 1;
-					break;
-
-					case OP_BRANCH:
-						m_PC_next = m_branchout ? offsetpc : adjacentpc;
-					break;
-
-					case OP_FENCE:
-						// NOOP for now
-					break;
-
-					case OP_SYSTEM:
-						if (m_decoded.m_f12 == F12_CDISCARD)
-						{
-							// cacheop=0b01
-							// NOOP for now, D$ not implemented yet
-						}
-						else if (m_decoded.m_f12 == F12_CFLUSH)
-						{
-							// cacheop=0b11
-							// NOOP for now, D$ not implemented yet
-						}
-						else if (m_decoded.m_f12 == F12_MRET)
-						{
-							m_exceptionmode = 0x80000000 | m_lasttrap;
-							SetExceptionHandlerStartEnd();
-						}
-						else if (m_decoded.m_f12 == F12_WFI)
-						{
-							// NOOP for now, ideally should wait for irq != 0 in a WFI state for about 16 clocks similar to real hardware
-						}
-						else if (m_decoded.m_f12 == F12_EBREAK)
-						{
-							ebreak = true;
-						}
-						else if (m_decoded.m_f12 == F12_ECALL)
-						{
-							ecall = true;
-						}
-						else // CSROP
-						{
-							// Read previous value
-							uint32_t csraddress = csrbase + (m_decoded.m_csroffset << 2);
-							uint32_t csrprevval;
-							bus.Read(csraddress, csrprevval);
-
-							// Keep it in a register
-							rwen = 1;
-							rdin = csrprevval;
-							rwaddress = csraddress;
-
-							// Apply operation
-							wstrobe = 0b1111;
-							switch (m_decoded.m_f3)
-							{
-								case 0b001: // csrrw
-									wdata = m_rval1;
-								break;
-								case 0b101: // csrrwi
-									wdata = m_decoded.m_immed;
-								break;
-								case 0b010: // csrrs / csrr
-									wdata = csrprevval | m_rval1;
-								break;
-								case 0b110: // csrrsi
-									wdata = csrprevval | m_decoded.m_immed;
-								break;
-								case 0b011: // csrrc
-									wdata = csrprevval & (~m_rval1);
-								break;
-								case 0b111: // csrrci
-									wdata = csrprevval & (~m_decoded.m_immed);
-								break;
-								default: // unknown - keep previous value
-									wdata = csrprevval;
-								break;
-							}
-						}
-					break;
-
-					case OP_STORE:
+					case 0b000: // BYTE with sign extension
 					{
-						uint32_t byte = SelectBitRange(m_rval2, 7, 0);
-						uint32_t half = SelectBitRange(m_rval2, 15, 0);
-						switch (m_decoded.m_f3)
+						switch (range2)
 						{
-							case 0b000:	wdata = (byte<<24)|(byte<<16)|(byte<<8)|byte; break;
-							case 0b001:	wdata = (half<<16)|half; break;
-							default:	wdata = m_rval2; break;
-						}
-						uint32_t ah = SelectBitRange(rwaddress, 1, 1);
-						uint32_t ab = SelectBitRange(rwaddress, 0, 0);
-						uint32_t himask = (ah << 3) | (ah << 2) | ((1 - ah) << 1) | (1 - ah);
-						uint32_t lomask = ((ab << 3) | ((1 - ab) << 2) | (ab << 1) | (1 - ab));
-						switch (m_decoded.m_f3)
-						{
-							case 0b000:	wstrobe = himask & lomask; break;
-							case 0b001:	wstrobe = himask; break;
-							default:	wstrobe = 0b1111; break;
+							case 0b11: rdin = (sign3 >> 24) | b3; break;
+							case 0b10: rdin = (sign2 >> 24) | b2; break;
+							case 0b01: rdin = (sign1 >> 24) | b1; break;
+							case 0b00: rdin = (sign0 >> 24) | b0; break;
 						}
 					}
 					break;
-
-					case OP_LOAD:
+					case 0b001: // HALF with sign extension
 					{
-						uint32_t dataword;
-						bus.Read(rwaddress, dataword);
-
-						uint32_t range1 = SelectBitRange(rwaddress,1,1);
-						uint32_t range2 = SelectBitRange(rwaddress,1,0);
-
-						uint32_t b3 = SelectBitRange(dataword,31,24);
-						uint32_t b2 = SelectBitRange(dataword,23,16);
-						uint32_t b1 = SelectBitRange(dataword,15,8);
-						uint32_t b0 = SelectBitRange(dataword,7,0);
-
-						uint32_t h1 = SelectBitRange(dataword,31,16);
-						uint32_t h0 = SelectBitRange(dataword,15,0);
-
-						int32_t sign3 = int32_t(dataword & 0x80000000);
-						int32_t sign2 = int32_t((dataword<<8) & 0x80000000);
-						int32_t sign1 = int32_t((dataword<<16) & 0x80000000);
-						int32_t sign0 = int32_t((dataword<<24) & 0x80000000);
-
-						switch(m_decoded.m_f3)
+						switch (range1)
 						{
-							case 0b000: // BYTE with sign extension
-							{
-								switch(range2)
-								{
-									case 0b11: rdin = (sign3>>24) | b3; break;
-									case 0b10: rdin = (sign2>>24) | b2; break;
-									case 0b01: rdin = (sign1>>24) | b1; break;
-									case 0b00: rdin = (sign0>>24) | b0; break;
-								}
-							}
-							break;
-							case 0b001: // HALF with sign extension
-							{
-								switch(range1)
-								{
-									case 0b1: rdin = (sign3>>16) | h1; break;
-									case 0b0: rdin = (sign1>>16) | h0; break;
-								}
-							}
-							break;
-							case 0b100: // BYTE with zero extension
-							{
-								switch(range2)
-								{
-									case 0b11: rdin = b3; break;
-									case 0b10: rdin = b2; break;
-									case 0b01: rdin = b1; break;
-									case 0b00: rdin = b0; break;
-								}
-							}
-							break;
-							case 0b101: // HALF with zero extension
-							{
-								switch(range1)
-								{
-									case 0b1: rdin = h1; break;
-									case 0b0: rdin = h0; break;
-								}
-							}
-							break;
-							default: // WORD - 0b010
-							{
-								rdin = dataword;
-							}
-							break;
+							case 0b1: rdin = (sign3 >> 16) | h1; break;
+							case 0b0: rdin = (sign1 >> 16) | h0; break;
 						}
-						rwen = 1;
 					}
 					break;
-
-					default:
-						if (m_sie)
-							softfault = true;
-/*#if defined(DEBUG)
-						printf("ILLEGAL_INSTRUCTION %.8X @PC 0x%.8X\n", m_instruction, m_PC);
-						for (int i=0; i<32; ++i)
-							printf("%s=%.8X ", regnames[i], m_GPR[i]);
-						retval = false;
-#endif*/
+					case 0b100: // BYTE with zero extension
+					{
+						switch (range2)
+						{
+							case 0b11: rdin = b3; break;
+							case 0b10: rdin = b2; break;
+							case 0b01: rdin = b1; break;
+							case 0b00: rdin = b0; break;
+						}
+					}
+					break;
+					case 0b101: // HALF with zero extension
+					{
+						switch (range1)
+						{
+							case 0b1: rdin = h1; break;
+							case 0b0: rdin = h0; break;
+						}
+					}
+					break;
+					default: // WORD - 0b010
+					{
+						rdin = dataword;
+					}
 					break;
 				}
+				rwen = 1;
 
-				if ((ebreak || ecall || softfault || irq) && m_exceptionmode == 0)
-				{
-					if (softfault) // software
-						m_exceptionmode = 0x00000001;
-					else if (ebreak) // ebreak
-						m_exceptionmode = 0x00000004;
-					else if (ecall) // ecall
-						m_exceptionmode = 0x00000005;
-					else if (irq & 1) // hardware
-						m_exceptionmode = 0x00000002;
-					else if (irq & 2) // timer
-						m_exceptionmode = 0x00000003;
-					SetExceptionHandlerStartEnd();
-				}
-
-				if(wstrobe)
-					bus.Write(rwaddress, wdata, wstrobe);
-
-				if(rwen && m_decoded.m_rd != 0)
-					m_GPR_next[m_decoded.m_rd] = rdin;
-
-				if (m_postmret) // Resume from where we left off
-				{
-					m_postmret = 0;
-					bus.Read(csrbase + (CSR_MEPC << 2), m_PC_next);
-				}
-				else if (m_posteoi) // Branch to ISR vector
-				{
-					m_posteoi = 0;
-					bus.Read(csrbase + (CSR_MTVEC << 2), m_PC_next);
-				}
-
-				++m_retired;
-				m_state_next = ECPUFetchDecode;
+				//printf("- load @%.8x -> %.8x\n", rwaddress, instr.m_rd);
 			}
 			break;
 
 			default:
-#if defined(DEBUG)
-				printf("  ! ILLEGAL CPU STATE !\n");
-#endif
+			{
+				//printf("- UNKNOWN\n");
+				if (m_sie)
+				{
+					isillegal = true;
+				}
+			}
 			break;
 		}
 
-		if (m_pendingCPUReset)
+		if (wstrobe)
 		{
-			m_state_next = ECPUReset;
-			m_pendingCPUReset = false;
+			//printf("- W @%.8X val=%.8x mask=%.8x\n", rwaddress, wdata, wstrobe);
+			bus.Write(rwaddress, wdata, wstrobe);
 		}
+
+		if (rwen && instr.m_rd != 0)
+		{
+			//printf("- regw @%.8X val=%.8x\n", instr.m_rd, rdin);
+			m_GPR[instr.m_rd] = rdin;
+		}
+
+		m_instructionfifo.pop();
+		++m_retired;
 	}
-	//else
+
+	return true;
+}
+
+bool CRV32::Tick(CBus& bus, uint32_t irq)
+{
+	const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
+
+	// Hardware will return hardwired or timer based values for these instead of overwriting the CSR
 	{
-		// Propagate state
-		m_state = m_state_next;
-
-		// Propagate intermediates to registers
-		m_PC = m_exceptionmode ? m_PC : m_PC_next;
-		m_instruction = m_instruction_next;
-		m_decoded = m_decoded_next;
-		m_rval1 = m_rval1_next;
-		m_rval2 = m_rval2_next;
-		m_aluout = m_aluout_next;
-		m_branchout = m_branchout_next;
-
-		// Propagate GPR
-		for (int i=0; i<32; ++i)
-			m_GPR[i] = m_GPR_next[i];
+		bus.Write(csrbase + (CSR_CYCLELO << 2), (uint32_t)(m_cyclecounter & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
+		bus.Write(csrbase + (CSR_CYCLEHI << 2), (uint32_t)((m_cyclecounter & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
+		bus.Write(csrbase + (CSR_RETILO << 2), (uint32_t)(m_retired & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
+		bus.Write(csrbase + (CSR_RETIHI << 2), (uint32_t)((m_retired & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
+		bus.Write(csrbase + (CSR_TIMELO << 2), (uint32_t)(m_wallclock & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
+		bus.Write(csrbase + (CSR_TIMEHI << 2), (uint32_t)((m_wallclock & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
+		bus.Write(csrbase + (CSR_PROGRAMCOUNTER << 2), m_PC, 0xFFFFFFFF);
 	}
 
-	return retval;
+	if (m_pendingCPUReset)
+	{
+		m_pendingCPUReset = false;
+		Reset();
+	}
+
+	bool fetchok = FetchDecode(bus, irq);
+	bool execok = Execute(bus);
+
+	if (m_cyclecounter % 15 == 0) // 150MHz vs 10Mhz
+		++m_wallclock;
+
+	return fetchok && execok;
 }
