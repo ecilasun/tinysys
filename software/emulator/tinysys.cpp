@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 int SDL_main(int argc, char** argv)
 #endif
 {
-    printf("tinysys emulator v0.1\n");
+    printf("tinysys emulator v0.2\n");
 
     CEmulator emulator;
     bool success;
