@@ -199,7 +199,6 @@ void CRV32::DecodeInstruction(uint32_t pc, uint32_t instr, SDecodedInstruction& 
 	dec.m_f12 = SelectBitRange(instr, 31, 20);
 	dec.m_csroffset = (SelectBitRange(instr, 31, 25) << 5) | dec.m_rs2;
 
-//#if defined(DEBUG)
 	switch (dec.m_opcode)
 	{
 		case OP_OP:		dec.m_opindex = 1; break;
@@ -215,7 +214,6 @@ void CRV32::DecodeInstruction(uint32_t pc, uint32_t instr, SDecodedInstruction& 
 		case OP_SYSTEM:	dec.m_opindex = 11; break;
 		default:		dec.m_opindex = 0; break;
 	}
-//#endif
 
 	switch (dec.m_opcode)
 	{
@@ -359,9 +357,7 @@ void CRV32::DecodeInstruction(uint32_t pc, uint32_t instr, SDecodedInstruction& 
 
 	dec.m_selimm = (dec.m_opcode==OP_JALR) || (dec.m_opcode==OP_OP_IMM) || (dec.m_opcode==OP_LOAD) || (dec.m_opcode==OP_STORE);
 
-//#if defined(DEBUG)
 	//printf("%.8X: %s%s %s %s -> %s I=%d\n", m_PC, opnames[dec.m_opindex], alunames[dec.m_aluop], regnames[dec.m_rs1], regnames[dec.m_rs2], regnames[dec.m_rd], dec.m_immed);
-//#endif
 }
 
 void CRV32::InjectISRHeaderFooter()
@@ -496,19 +492,20 @@ bool CRV32::FetchDecode(CBus& bus, uint32_t irq)
 		SDecodedInstruction decoded;
 		DecodeInstruction(m_PC, instruction, decoded);
 
-		if (decoded.m_opindex == 0)
+		// Debug mode only, let ISR handle this
+		/*if (decoded.m_opindex == 0)
 		{
 			printf("illegal instruction @0x%.8X\n", m_PC);
 			for (uint32_t i=0;i<32;++i)
 				printf("r%d=%.8x ", i, m_GPR[i]);
 			printf("\n");
 			return false;
-		}
+		}*/
 
 		bool isebreak = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_EBREAK;
 		bool isecall = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_ECALL;
 		bool ismret = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_MRET;
-		bool isillegal = decoded.m_opindex == 0;
+		bool isillegal = m_sie && decoded.m_opindex == 0;
 		bool branchtomtvec = false;
 
 		if ((isebreak || isecall || isillegal || irq) && m_exceptionmode == 0)
@@ -594,10 +591,6 @@ bool CRV32::Execute(CBus& bus)
 		uint32_t wdata = 0;
 		uint32_t wstrobe = 0;
 
-		bool isebreak = false;
-		bool isecall = false;
-		bool isillegal = false;
-
 		/*printf("- @%.8X: op=%.8X r1=%.8x r2=%.8x imm=%.8X\n", instr.m_pc, instr.m_opcode, instr.m_rval1, instr.m_rval2, instr.m_immed);
 		for (uint32_t i = 0; i < 32; ++i)
 			printf("x%d=%.8x ", i, m_GPR[i]);
@@ -678,12 +671,10 @@ bool CRV32::Execute(CBus& bus)
 				}
 				else if (instr.m_f12 == F12_EBREAK)
 				{
-					isebreak = true;
 					//printf("- ebreak\n");
 				}
 				else if (instr.m_f12 == F12_ECALL)
 				{
-					isecall = true;
 					//printf("- ecall\n");
 				}
 				else // CSROP
@@ -833,10 +824,6 @@ bool CRV32::Execute(CBus& bus)
 			default:
 			{
 				//printf("- UNKNOWN\n");
-				if (m_sie)
-				{
-					isillegal = true;
-				}
 			}
 			break;
 		}
