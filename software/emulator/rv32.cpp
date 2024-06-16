@@ -513,8 +513,10 @@ bool CRV32::FetchDecode(CBus& bus, uint32_t irq)
 
 		if ((isebreak || isecall || isillegal || irq) && m_exceptionmode == 0)
 		{
+			// For MRET to work properly this has to be pointing at the next instruction
+			decoded.m_pc += 4;
+			// Will need to route to mtvec
 			branchtomtvec = true;
-			m_lasttrap = m_exceptionmode;
 			if (isillegal) // software - illegal instruction
 				m_exceptionmode = 0x00000001;
 			else if (isebreak) // ebreak
@@ -525,7 +527,9 @@ bool CRV32::FetchDecode(CBus& bus, uint32_t irq)
 				m_exceptionmode = 0x00000002;
 			else if (irq & 2) // timer
 				m_exceptionmode = 0x00000003;
+			// Add header
 			InjectISRHeaderFooter();
+			m_lasttrap = m_exceptionmode;
 		}
 		else
 			m_instructionfifo.push(decoded);
@@ -545,9 +549,12 @@ bool CRV32::FetchDecode(CBus& bus, uint32_t irq)
 		{
 			if (m_lasttrap)
 			{
+				// Add footer
 				m_exceptionmode = 0x80000000 | m_lasttrap;
-				m_lasttrap = 0x00000000;
 				InjectISRHeaderFooter();
+				// we're done
+				m_exceptionmode = 0x00000000;
+				m_lasttrap = 0x00000000;
 			}
 
 			m_branchresolved = 0;
