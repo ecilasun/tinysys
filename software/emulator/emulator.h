@@ -12,13 +12,14 @@ public:
 	bool Reset(const char* romFile);
 	bool Step();
 	void UpdateVideoLink(uint32_t* pixels, int pitch);
+	void FillMemBitmap(uint32_t* pixels);
 	void QueueBytes(uint8_t *bytes, uint32_t count);
 	void QueueByte(uint8_t byte);
 
-	bool IsVideoDirty(){ return m_bus.IsVideoDirty(); }
-	void ClearVideoDirty() { m_bus.ClearVideoDirty(); }
+	bool IsVideoDirty(){ return m_bus->IsVideoDirty(); }
+	void ClearVideoDirty() { m_bus->ClearVideoDirty(); }
 
-	CBus m_bus;
+	CBus* m_bus{ nullptr };
 
 	uint8_t* m_rombin{ nullptr };
 	uint32_t m_romsize{ 0 };

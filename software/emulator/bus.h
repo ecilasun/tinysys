@@ -31,16 +31,17 @@
 class CBus
 {
 public:
-	CBus();
+	explicit CBus(uint32_t resetvector);
 	~CBus();
 
-	void Reset(uint32_t resetvector, uint8_t* rombin, uint32_t romsize);
+	void Reset(uint8_t* rombin, uint32_t romsize);
 	bool Tick();
 	void Read(uint32_t address, uint32_t& data);
 	void Write(uint32_t address, uint32_t data, uint32_t wstrobe);
 	uint32_t* GetHostAddress(uint32_t address);
 
 	void UpdateVideoLink(uint32_t* pixels, int pitch);
+	void FillMemBitmap(uint32_t* pixels);
 	void QueueByte(uint8_t byte);
 
 	bool IsVideoDirty() { return m_vpuc.IsVideoDirty(); }
@@ -55,5 +56,7 @@ private:
 	CVPU m_vpuc;
 	CLEDs m_leds;
 	CUART m_uart;
-	uint32_t m_evenodd{ 0 };
+	uint32_t m_resetvector{ 0 };
+	uint32_t m_busactivitystart{ 0 };
+	uint32_t m_busactivityend{ 0 };
 };

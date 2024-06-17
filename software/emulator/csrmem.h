@@ -50,7 +50,7 @@ public:
 	uint32_t m_hartid{ 0 };
 
 private:
-	uint32_t* m_csrmem = nullptr;
+	uint32_t* m_csrmem{ nullptr };
 	uint32_t m_cpuresetreq{ 0 };
 	uint32_t m_mieshadow{ 0 };
 	uint32_t m_mstatusshadow{ 0 };

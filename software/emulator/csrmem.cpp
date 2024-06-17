@@ -62,7 +62,7 @@ void CCSRMem::Tick(CRV32* cpu, CUART* uart)
 void CCSRMem::Read(uint32_t address, uint32_t& data)
 {
 	uint32_t csrindex = (address >> 2) & 0xFFF;
-	//if (csrindex == CSR_MEPC || csrindex == 0x8a0)
+	//if (csrindex == CSR_MSCRATCH)
 	//	__debugbreak();
 
 	if (csrindex == CSR_HWSTATE)
@@ -70,13 +70,13 @@ void CCSRMem::Read(uint32_t address, uint32_t& data)
 	else if (csrindex == CSR_CPURESET)
 		data = m_cpuresetreq;
 	else if (csrindex == CSR_TIMELO)
-		data = (uint32_t)(m_wallclocktime & 0x00000000FFFFFFFF);
+		data = (uint32_t)(m_wallclocktime & 0x00000000FFFFFFFFU);
 	else if (csrindex == CSR_TIMEHI)
-		data = (uint32_t)((m_wallclocktime & 0xFFFFFFFF00000000) >> 32);
+		data = (uint32_t)((m_wallclocktime & 0xFFFFFFFF00000000U) >> 32);
 	else if (csrindex == CSR_TIMECMPLO)
-		data = (uint32_t)(m_timecmp & 0x00000000FFFFFFFF);
+		data = (uint32_t)(m_timecmp & 0x00000000FFFFFFFFU);
 	else if (csrindex == CSR_TIMECMPHI)
-		data = (uint32_t)((m_timecmp & 0xFFFFFFFF00000000) >> 32);
+		data = (uint32_t)((m_timecmp & 0xFFFFFFFF00000000U) >> 32);
 	else if (csrindex == CSR_MSTATUS)
 		data = m_mstatusshadow;
 	else if (csrindex == CSR_MIE)
@@ -90,19 +90,19 @@ void CCSRMem::Read(uint32_t address, uint32_t& data)
 void CCSRMem::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 {
 	uint32_t csrindex = (address>>2) & 0xFFF;
-	//if (csrindex == CSR_MEPC || csrindex == 0x8a0)
+	//if (csrindex == CSR_MSCRATCH)
 	//	__debugbreak();
 
 	if (csrindex == CSR_CPURESET)
 		m_cpuresetreq = word & 1 ? 1 : 0;
 	else if (csrindex == CSR_TIMELO)
-		m_wallclocktime = (m_wallclocktime & 0xFFFFFFFF00000000) | ((uint64_t)word);
+		m_wallclocktime = (m_wallclocktime & 0xFFFFFFFF00000000U) | ((uint64_t)word);
 	else if (csrindex == CSR_TIMEHI)
-		m_wallclocktime = ((uint64_t)word << 32) | (m_wallclocktime & 0x00000000FFFFFFFF);
+		m_wallclocktime = ((uint64_t)word << 32) | (m_wallclocktime & 0x00000000FFFFFFFFU);
 	else if (csrindex == CSR_TIMECMPLO)
-		m_timecmp = (m_timecmp & 0xFFFFFFFF00000000) | ((uint64_t)word);
+		m_timecmp = (m_timecmp & 0xFFFFFFFF00000000U) | ((uint64_t)word);
 	else if (csrindex == CSR_TIMECMPHI)
-		m_timecmp = ((uint64_t)word << 32) | (m_timecmp & 0x00000000FFFFFFFF);
+		m_timecmp = ((uint64_t)word << 32) | (m_timecmp & 0x00000000FFFFFFFFU);
 	else if (csrindex == CSR_MSTATUS)
 		m_mstatusshadow = word;
 	else if (csrindex == CSR_MIE)

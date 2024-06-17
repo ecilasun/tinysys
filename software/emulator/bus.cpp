@@ -1,13 +1,15 @@
 #include <stdio.h>
 #include "bus.h"
 
-CBus::CBus()
+CBus::CBus(uint32_t resetvector)
 {
+	m_resetvector = resetvector;
+
 	m_csr[0] = new CCSRMem(0);
 	m_csr[1] = new CCSRMem(1);
 
-	m_cpu[0] = new CRV32(0);
-	m_cpu[1] = new CRV32(1);
+	m_cpu[0] = new CRV32(0, resetvector);
+	m_cpu[1] = new CRV32(1, resetvector);
 }
 
 CBus::~CBus()
@@ -18,10 +20,10 @@ CBus::~CBus()
 	delete m_cpu[1];
 }
 
-void CBus::Reset(uint32_t resetvector, uint8_t* rombin, uint32_t romsize)
+void CBus::Reset(uint8_t* rombin, uint32_t romsize)
 {
 	m_mem.Reset();
-	m_mem.CopyROM(resetvector, rombin, romsize);
+	m_mem.CopyROM(m_resetvector, rombin, romsize);
 
 	m_sdcc.Reset();
 	m_vpuc.Reset();
@@ -39,6 +41,23 @@ void CBus::UpdateVideoLink(uint32_t *pixels, int pitch)
 	m_vpuc.UpdateVideoLink(pixels, pitch, this);
 }
 
+void CBus::FillMemBitmap(uint32_t* pixels)
+{
+	uint32_t* source = m_mem.GetHostAddress(0);
+
+	// System memory, 1 pixel per 1Kbytes of memory
+	for (uint32_t i = m_busactivitystart; i < m_busactivityend; ++i)
+	{
+		uint32_t mix = 0;
+		for (uint32_t j = 0; j < 256; ++j)
+			mix ^= source[i * 256 + j];
+		pixels[i] = mix;
+	}
+
+	m_busactivitystart = 0xFFFFFFFF;
+	m_busactivityend = 0x00000000;
+}
+
 void CBus::QueueByte(uint8_t byte)
 {
 	m_uart.QueueByte(byte);
@@ -46,13 +65,11 @@ void CBus::QueueByte(uint8_t byte)
 
 bool CBus::Tick()
 {
-	++m_evenodd;
-
 	bool ret0 = m_cpu[0]->Tick(this);
 	m_csr[0]->Tick(m_cpu[0], &m_uart);
 
 	bool ret1 = m_cpu[1]->Tick(this);
-	m_csr[1]->Tick(/*m_cpu[1]*/nullptr, &m_uart); // TODO: enable this when reboot issue for hart#1 is resolved
+	m_csr[1]->Tick(/*m_cpu[1]*/nullptr, &m_uart); // hart#1 somehow executes as hart#0 after reboot (m_hartid appears correct)
 
 	m_mem.Tick();
 	m_vpuc.Tick();
@@ -251,7 +268,10 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 	}
 	else
 	{
-		// TODO: sysmem needs to recognize writes to current scanout pointer or attempts to swap scanout pointers
+		uint32_t addrkb = address / 1024;
+		m_busactivitystart = addrkb < m_busactivitystart ? addrkb : m_busactivitystart;
+		m_busactivityend = addrkb > m_busactivityend ? addrkb : m_busactivityend;
+
 		m_vpuc.DirtyInVideoScanoutRegion(address);
 		m_mem.Write(address, data, wstrobe);
 	}

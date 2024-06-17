@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 int SDL_main(int argc, char** argv)
 #endif
 {
-	printf("tinysys emulator v0.2\n");
+	printf("tinysys emulator v0.3\n");
 
 	CEmulator emulator;
 	bool success;
@@ -47,6 +47,7 @@ int SDL_main(int argc, char** argv)
 	const int WIDTH = 640;
 	const int HEIGHT = 480;
 	SDL_Window* window = NULL;
+	SDL_Window* debugwindow = NULL;
 
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
 	{
@@ -54,9 +55,17 @@ int SDL_main(int argc, char** argv)
 		return -1;
 	}
 	window = SDL_CreateWindow("tinysys emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	debugwindow = SDL_CreateWindow("memdbg", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 256, 1024, SDL_WINDOW_SHOWN);
 
 	SDL_Surface* surface = SDL_GetWindowSurface(window);
 	if (!surface)
+	{
+		printf("Could not create window surface\n");
+		return -1;
+	}
+
+	SDL_Surface* debugsurface = SDL_GetWindowSurface(debugwindow);
+	if (!debugsurface)
 	{
 		printf("Could not create window surface\n");
 		return -1;
@@ -76,7 +85,8 @@ int SDL_main(int argc, char** argv)
 				emulator.QueueByte(ev.key.keysym.sym);
 		}
 
-		if ((emulator.m_steps%16384)==0 && emulator.IsVideoDirty())
+		// Video output
+		if ((emulator.m_steps % 16384) == 0 && emulator.IsVideoDirty())
 		{
 			if (SDL_MUSTLOCK(surface))
 				SDL_LockSurface(surface);
@@ -87,6 +97,20 @@ int SDL_main(int argc, char** argv)
 			SDL_UpdateWindowSurface(window);
 			emulator.ClearVideoDirty();
 		}
+
+		// Memory debug view
+		if ((emulator.m_steps % 16384) == 0)
+		{
+			if (SDL_MUSTLOCK(debugsurface))
+				SDL_LockSurface(debugsurface);
+			// Update memory bitmap
+			uint32_t* pixels = (uint32_t*)debugsurface->pixels;
+			emulator.FillMemBitmap(pixels);
+			if (SDL_MUSTLOCK(debugsurface))
+				SDL_UnlockSurface(debugsurface);
+			SDL_UpdateWindowSurface(debugwindow);
+		}
+
 		++ticks;
 	} while(s_alive);
 

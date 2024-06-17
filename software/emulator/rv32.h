@@ -90,7 +90,7 @@ class CBus;
 class CRV32
 {
 public:
-	explicit CRV32(uint32_t hartid) : m_hartid(hartid) {}
+	explicit CRV32(uint32_t hartid, uint32_t resetvector) : m_hartid(hartid), m_resetvector(resetvector) {}
 	~CRV32() {}
 
 	// Right hand side
@@ -106,6 +106,7 @@ public:
 	uint64_t m_cyclecounter = 0;
 	uint64_t m_wallclock = 0;
 	uint64_t m_retired = 0;
+	uint32_t m_debugtrace = 0;
 
 	// HART0 by default
 	uint32_t m_hartid = 0;
@@ -118,7 +119,7 @@ public:
 	//uint32_t m_postmret = 0;
 	//uint32_t m_posteoi = 0;
 
-	uint32_t m_resetvector{ 0x0FFE0000 };
+	uint32_t m_resetvector{ 0x0 };
 	bool m_pendingCPUReset{ false };
 
 	std::queue<SDecodedInstruction> m_instructionfifo;

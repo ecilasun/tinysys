@@ -9,7 +9,7 @@ public:
 	CMailMem();
 	~CMailMem();
 
-	uint32_t * m_mailmem;
+	uint32_t* m_mailmem{ nullptr };
 
 	void Reset();
 	void Tick();

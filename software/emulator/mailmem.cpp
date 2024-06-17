@@ -32,14 +32,14 @@ void CMailMem::Tick()
 
 void CMailMem::Read(uint32_t address, uint32_t& data)
 {
-	uint32_t mailslot = (address >> 2) & 0xFFF;
+	uint32_t mailslot = (address&0xFFF) >> 2;
 	data = m_mailmem[mailslot];
 }
 
 void CMailMem::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 {
 	uint32_t olddata;
-	uint32_t mailslot = (address >> 2) & 0xFFF;
+	uint32_t mailslot = (address&0xFFF) >> 2;
 	olddata = m_mailmem[mailslot];
 
 	// Expand the wstrobe

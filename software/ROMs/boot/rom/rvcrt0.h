@@ -12,6 +12,8 @@ extern "C"
 
 			// Invalidate I$
 			"fence.i;"
+			"csrw mie,0;"						// No external (hardware) interrupts
+			"csrw mstatus,0;"					// Disable all interrupts (mstatus:mie=0)
 
 			// Detect boot override address in mscratch register
 			"csrr a3, mscratch;"				// Check if we have a boot addres override (defaults to zero on hard reset)
@@ -24,8 +26,6 @@ extern "C"
 			"li sp, 0x0FFDFFF0;"				// Stack is at near end of BRAM
 			"mv s0, sp;"						// Set frame pointer to current stack pointer
 
-			"csrw mie,0;"						// No external (hardware) interrupts
-			"csrw mstatus,0;"					// Disable all interrupts (mstatus:mie=0)
 			"csrr a3, mhartid;"					// Check the index of this processor
 			"bnez a3, _helpercore;"				// All CPUs except CPU#0 will set up their stack and go to WFI loop
 

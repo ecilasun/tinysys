@@ -28,7 +28,8 @@ bool CEmulator::Reset(const char* romFile)
 		fclose(fp);
 	}
 
-	m_bus.Reset(0x0FFE0000, m_rombin, m_romsize);
+	m_bus = new CBus(0x0FFE0000);
+	m_bus->Reset(m_rombin, m_romsize);
 
 	return true;
 }
@@ -36,21 +37,26 @@ bool CEmulator::Reset(const char* romFile)
 bool CEmulator::Step()
 {
 	++m_steps;
-	return m_bus.Tick();
+	return m_bus->Tick();
 }
 
 void CEmulator::UpdateVideoLink(uint32_t *pixels, int pitch)
 {
-	m_bus.UpdateVideoLink(pixels, pitch);
+	m_bus->UpdateVideoLink(pixels, pitch);
+}
+
+void CEmulator::FillMemBitmap(uint32_t *pixels)
+{
+	m_bus->FillMemBitmap(pixels);
 }
 
 void CEmulator::QueueBytes(uint8_t *bytes, uint32_t count)
 {
 	for (uint32_t i = 0; i < count; ++i)
-		m_bus.QueueByte(bytes[i]);
+		m_bus->QueueByte(bytes[i]);
 }
 
 void CEmulator::QueueByte(uint8_t byte)
 {
-	m_bus.QueueByte(byte);
+	m_bus->QueueByte(byte);
 }

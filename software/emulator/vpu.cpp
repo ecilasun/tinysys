@@ -31,8 +31,17 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 			if (m_indexedcolormode)
 			{
 				// 16bpp
-				for (uint32_t i = 0; i < m_scanlength; i++)
-					pixels[i] = 0xFFFFFF00;// devicemem[i]; // TODO: convert to 16 bit
+				uint16_t* devicememas12bpp = (uint16_t*)devicemem;
+				const int W = pitch / 4;
+				for (uint32_t y = 0; y < m_scanheight; y++)
+				{
+					const int linetop = W * y;
+					for (uint32_t x = 0; x < m_scanwidth; ++x)
+					{
+						uint32_t color = devicememas12bpp[m_scanwidth * y + x];
+						pixels[linetop + x] = color; // TODO: expand to 32bpp from 12bpp
+					}
+				}
 			}
 			else
 			{

@@ -348,7 +348,8 @@ void CRV32::DecodeInstruction(uint32_t pc, uint32_t instr, SDecodedInstruction& 
 
 	dec.m_selimm = (dec.m_opcode==OP_JALR) || (dec.m_opcode==OP_OP_IMM) || (dec.m_opcode==OP_LOAD) || (dec.m_opcode==OP_STORE);
 
-	//printf("#%d:: %.8X:%.8X %s%s %s %s -> %s I=%d\n", m_hartid, m_PC, instr, opnames[dec.m_opindex], alunames[dec.m_aluop], regnames[dec.m_rs1], regnames[dec.m_rs2], regnames[dec.m_rd], dec.m_immed);
+	//if (m_debugtrace)
+	//	printf("#%d:: %.8X:%.8X %s%s %s %s -> %s I=%d\n", m_hartid, m_PC, instr, opnames[dec.m_opindex], alunames[dec.m_aluop], regnames[dec.m_rs1], regnames[dec.m_rs2], regnames[dec.m_rd], dec.m_immed);
 }
 
 void CRV32::InjectISRHeaderFooter()
@@ -481,6 +482,7 @@ bool CRV32::FetchDecode(CBus* bus)
 		m_pendingCPUReset = false;
 		m_exceptionmode = 0;
 		m_branchresolved = 0;
+		m_lasttrap = 0;
 		m_PC = m_resetvector;
 		if (m_instructionfifo.size() == 0)
 			m_fetchstate = EFetchRead;
@@ -873,7 +875,10 @@ bool CRV32::Tick(CBus* bus)
 	const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
 
 	if (m_pendingCPUReset)
+	{
 		m_fetchstate = EFetchInit;
+		m_debugtrace = true;
+	}
 
 	bool fetchok = FetchDecode(bus);
 	bool execok = Execute(bus);
