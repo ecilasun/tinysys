@@ -675,6 +675,8 @@ void __attribute__((aligned(64), noinline)) UserMain()
 		if (taskctx->kernelError)
 			while(1) { asm volatile("wfi;"); }
 
+		asm volatile("wfi;");
+
 		// Yield time back to any tasks running on this core after handling an interrupt
 		/*uint64_t currentTime =*/ TaskYield();
 	}

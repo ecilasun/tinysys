@@ -99,7 +99,6 @@ public:
 	uint32_t m_fetchstate;
 	uint32_t m_branchresolved;
 	uint32_t m_wasmret;
-	uint32_t m_wficounter;
 	uint32_t m_GPR[32];
 
 	// Internal counters
@@ -115,9 +114,6 @@ public:
 
 	uint32_t m_exceptionmode = 0;
 	uint32_t m_lasttrap = 0;
-
-	//uint32_t m_postmret = 0;
-	//uint32_t m_posteoi = 0;
 
 	uint32_t m_resetvector{ 0x0 };
 	bool m_pendingCPUReset{ false };

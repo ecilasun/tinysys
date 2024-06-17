@@ -480,19 +480,21 @@ bool CRV32::FetchDecode(CBus* bus)
 	if (m_fetchstate == EFetchInit)
 	{
 		m_pendingCPUReset = false;
-		m_exceptionmode = 0;
-		m_branchresolved = 0;
-		m_lasttrap = 0;
-		m_PC = m_resetvector;
 		if (m_instructionfifo.size() == 0)
+		{
+			m_exceptionmode = 0;
+			m_branchresolved = 0;
+			m_wasmret = 0;
+			m_lasttrap = 0;
+			m_PC = m_resetvector;
 			m_fetchstate = EFetchRead;
+		}
 		return true;
 	}
 
 	if (m_fetchstate == EFetchWFI)
 	{
-		m_wficounter++;
-		if (m_wficounter>=16 || m_irq)
+		if (m_irq)
 			m_fetchstate = EFetchRead;
 		return true;
 	}
@@ -522,7 +524,6 @@ bool CRV32::FetchDecode(CBus* bus)
 
 		if (iswfi)
 		{
-			m_wficounter = 0;
 			m_fetchstate = EFetchWFI;
 		}
 		else if ((isebreak || isecall || isillegal || m_irq) && m_exceptionmode == 0)
@@ -556,6 +557,8 @@ bool CRV32::FetchDecode(CBus* bus)
 			m_PC = decoded.m_pc + 4;
 		else
 			m_fetchstate = EFetchWaitForBranch; // wait for branch target from exec
+
+		return true;
 	}
 	else if (m_fetchstate == EFetchWaitForBranch)
 	{
@@ -576,9 +579,12 @@ bool CRV32::FetchDecode(CBus* bus)
 			m_PC = m_branchtarget;
 			m_fetchstate = EFetchRead;
 		}
+
+		return true;
 	}
 
-	return true;
+	printf("unknown fetch state %d\n", m_fetchstate);
+	return false;
 }
 
 bool CRV32::Execute(CBus* bus)

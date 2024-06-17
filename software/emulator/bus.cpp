@@ -114,19 +114,16 @@ void CBus::Read(uint32_t address, uint32_t& data)
 			break;
 			case 1:
 			{
-				// DEVICE_LEDS
 				m_leds.Read(address, data);
 			}
 			break;
 			case 2:
 			{
-				// DEVICE_VPUC
 				m_vpuc.Read(address, data);
 			}
 			break;
 			case 3:
 			{
-				// DEVICE_SDCC
 				m_sdcc.Read(address, data);
 			}
 			break;
@@ -164,13 +161,11 @@ void CBus::Read(uint32_t address, uint32_t& data)
 			break;
 			case 8:
 			{
-				// DEVICE_MAIL
 				m_mail.Read(address, data);
 			}
 			break;
 			case 9:
 			{
-				// DEVICE_UART
 				m_uart.Read(address, data);
 			}
 			break;
@@ -211,19 +206,16 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 			break;
 			case 1:
 			{
-				// DEVICE_LEDS
 				m_leds.Write(address, data, wstrobe);
 			}
 			break;
 			case 2:
 			{
-				// DEVICE_VPUC
 				m_vpuc.Write(address, data, wstrobe);
 			}
 			break;
 			case 3:
 			{
-				// DEVICE_SDCC
 				m_sdcc.Write(address, data, wstrobe);
 			}
 			break;
@@ -257,13 +249,11 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 			break;
 			case 8:
 			{
-				// DEVICE_MAIL
 				m_mail.Write(address, data, wstrobe);
 			}
 			break;
 			case 9:
 			{
-				// DEVICE_UART
 				m_uart.Write(address, data, wstrobe);
 			}
 			break;
