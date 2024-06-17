@@ -4,8 +4,10 @@
 #include <queue>
 
 enum FetchState{
+	EFetchInit,
 	EFetchRead,
 	EFetchWaitForBranch,
+	EFetchWFI
 };
 
 #define OP_OP			0b0110011
@@ -97,6 +99,7 @@ public:
 	uint32_t m_fetchstate;
 	uint32_t m_branchresolved;
 	uint32_t m_wasmret;
+	uint32_t m_wficounter;
 	uint32_t m_GPR[32];
 
 	// Internal counters

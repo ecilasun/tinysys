@@ -37,16 +37,13 @@ void CBus::QueueByte(uint8_t byte)
 
 void CBus::Tick(CRV32* cpu0, CRV32* cpu1, uint32_t& irq0, uint32_t& irq1)
 {
-	// TODO: Update device interrupt state
-	//Write(csrbase + (CSR_HWSTATE << 2), 0, 0xFFFFFFFF);
-
-	m_mem.Tick();
-	m_sdcc.Tick();
-	m_vpuc.Tick();
-	m_uart.Tick();
-
 	irq0 = m_csr[0]->Tick(cpu0, &m_uart);
 	irq1 = m_csr[1]->Tick(cpu1, &m_uart);
+
+	m_mem.Tick();
+	m_vpuc.Tick();
+	m_uart.Tick();
+	m_sdcc.Tick();
 }
 
 uint32_t* CBus::GetHostAddress(uint32_t address)

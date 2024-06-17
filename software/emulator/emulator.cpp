@@ -40,10 +40,11 @@ bool CEmulator::Reset(const char* romFile)
 bool CEmulator::Step()
 {
 	uint32_t irq0, irq1;
-	m_bus.Tick(m_cpu[0], m_cpu[1], irq0, irq1);
+	// TODO: Enable for CPU#1
+	m_bus.Tick(m_cpu[0], /*m_cpu[1]*/nullptr, irq0, irq1);
 
 	bool ret0 = m_cpu[0]->Tick(m_bus, irq0);
-	bool ret1 = true;// m_cpu[1]->Tick(m_bus, irq1);
+	bool ret1 = m_cpu[1]->Tick(m_bus, irq1);
 
 	m_steps++;
 

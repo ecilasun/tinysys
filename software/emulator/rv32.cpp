@@ -55,7 +55,7 @@ uint32_t ISR_ROM[] = {
 
 void CRV32::Reset()
 {
-	m_fetchstate = EFetchRead;
+	m_fetchstate = EFetchInit;
 
 	m_PC = m_resetvector;
 	m_branchresolved = 0;
@@ -476,6 +476,21 @@ void CRV32::InjectISRHeaderFooter()
 
 bool CRV32::FetchDecode(CBus& bus, uint32_t irq)
 {
+	if (m_fetchstate == EFetchInit)
+	{
+		m_pendingCPUReset = false;
+		m_PC = m_resetvector;
+		if (m_instructionfifo.size() == 0)
+			m_fetchstate = EFetchRead;
+	}
+
+	if (m_fetchstate == EFetchWFI)
+	{
+		m_wficounter++;
+		if (m_wficounter>=16 || irq)
+			m_fetchstate = EFetchRead;
+	}
+
 	if (m_fetchstate == EFetchRead)
 	{
 		uint32_t instruction;
@@ -496,10 +511,16 @@ bool CRV32::FetchDecode(CBus& bus, uint32_t irq)
 		bool isebreak = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_EBREAK;
 		bool isecall = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_ECALL;
 		bool ismret = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_MRET;
+		bool iswfi = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_WFI;
 		bool isillegal = m_sie && decoded.m_opindex == 0;
 		bool branchtomtvec = false;
 
-		if ((isebreak || isecall || isillegal || irq) && m_exceptionmode == 0)
+		if (iswfi)
+		{
+			m_wficounter = 0;
+			m_fetchstate = EFetchWFI;
+		}
+		else if ((isebreak || isecall || isillegal || irq) && m_exceptionmode == 0)
 		{
 			// For MRET to work properly this has to be pointing at the next instruction
 			decoded.m_pc += 4;
@@ -851,14 +872,7 @@ bool CRV32::Tick(CBus& bus, uint32_t irq)
 	const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
 
 	if (m_pendingCPUReset)
-	{
-		m_pendingCPUReset = false;
-		// Consume leftovers
-		while (m_instructionfifo.size())
-			Execute(bus);
-		m_fetchstate = EFetchRead;
-		m_PC = m_resetvector;
-	}
+		m_fetchstate = EFetchInit;
 
 	bool fetchok = FetchDecode(bus, irq);
 	bool execok = Execute(bus);

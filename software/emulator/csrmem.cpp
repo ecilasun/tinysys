@@ -30,8 +30,8 @@ uint32_t CCSRMem::Tick(CRV32* cpu, CUART* uart)
 		m_cpuresetreq = 0;
 		if (cpu)
 		{
-			cpu->m_pendingCPUReset = true;
 			cpu->m_resetvector = m_csrmem[CSR_MSCRATCH];
+			cpu->m_pendingCPUReset = true;
 		}
 	}
 
