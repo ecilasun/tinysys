@@ -108,12 +108,12 @@ void __attribute__((naked)) enterTimerISR()
 		"auipc a5, 0;"              // Grab PC from INJECT stage of the CPU
 		"csrw mepc, a5;"            // Set MEPC to PC for mret
 		"li a5, 128;"               // Generate mask for bit 7
-		"csrrc a5, mie, a5;"        // Extract MIE[7(MTIE)] and set it to zero
-		"csrrs a5, mstatus, a5;"    // Copy it to MSTATUS[7(MPIE)]
+		"csrrc zero, mie, a5;"      // Clear MIE[7(MTIE)]
+		"csrrs zero, mstatus, a5;"  // Set MSTATUS[7(MPIE)]
 		"li a5, 0x80000007;"        // Set MCAUSE[31] for interrupt and set MCAUSE[30:0] to 7
 		"csrw mcause, a5;"
 		"li a5, 8;"                 // Generate mask for bit 3
-		"csrrc a5, mstatus, a5;"    // Clear MSTATUS[3(MIE)]
+		"csrrc zero, mstatus, a5;"  // Clear MSTATUS[3(MIE)]
 		"csrr a5, 0xFD0;"           // Restore old A5
 		// Hardware branches to mtvec
 	);
@@ -124,13 +124,13 @@ void __attribute__((naked)) leaveTimerISR()
 	asm volatile(
 		"csrw 0xFD0, a5;"           // Save current A5
 		"li a5, 128;"               // Generate mask for bit 7
-		"csrrc a5, mstatus, a5;"    // Extract MSTATUS[7(MPIE)] and set it to zero
-		"csrrs a5, mie, a5;"        // Copy it to MIE[7(MTIE)]
+		"csrrc zero, mstatus, a5;"  // Clear MSTATUS[7(MPIE)]
+		"csrrs zero, mie, a5;"      // Set MIE[7(MTIE)]
 		"li a5, 8;"                 // Generate mask for bit 3
-		"csrrs a5, mstatus, a5;"    // Set MSTATUS[3(MIE)]
+		"csrrs zero, mstatus, a5;"  // Set MSTATUS[3(MIE)]
 		"csrr a5, 0xFD0;"           // Restore old A5
 		// Hardware sets PC <= MEPC;
-		);
+	);
 }
 
 // HARDWARE INTERRUPT
@@ -142,13 +142,13 @@ void __attribute__((naked)) enterHWISR()
 		"auipc a5, 0;"              // Grab PC from INJECT stage of the CPU
 		"csrw mepc, a5;"            // Set MEPC to PC+4 for mret
 		"li a5, 2048;"              // Generate mask for bit 11
-		"csrrc a5, mie, a5;"        // Extract MIE[11(MEIE)] and set it to zero
+		"csrrc zero, mie, a5;"      // Clear MIE[11(MEIE)]
 		"srl a5, a5, 4;"            // Shift to 7th bit position
-		"csrrs a5, mstatus, a5;"    // Copy it to MSTATUS[7(MPIE)]
+		"csrrs zero, mstatus, a5;"  // Set MSTATUS[7(MPIE)]
 		"li a5, 0x8000000B;"        // Set MCAUSE[31] for interrupt and set MCAUSE[30:0] to 11
 		"csrw mcause, a5;"
 		"li a5, 8;"                 // Generate mask for bit 3
-		"csrrc a5, mstatus, a5;"    // Clear MSTATUS[3(MIE)]
+		"csrrc zero, mstatus, a5;"  // Clear MSTATUS[3(MIE)]
 		"csrr a5, 0xFD0;"           // Restore old A5
 		// Hardware branches to mtvec
 	);
@@ -159,11 +159,11 @@ void __attribute__((naked)) leaveHWSR()
 	asm volatile(
 		"csrw 0xFD0, a5;"           // Save current A5
 		"li a5, 128;"               // Generate mask for bit 7
-		"csrrc a5, mstatus, a5;"    // Extract MSTATUS[7(MPIE)] and set it to zero
+		"csrrc zero, mstatus, a5;"  // Clear MSTATUS[7(MPIE)]
 		"sll a5, a5, 4;"            // Shift to 11th bit position
-		"csrrs a5, mie, a5;"        // Copy it to MIE[11(MEIE)]
+		"csrrs zero, mie, a5;"      // Set MIE[11(MEIE)]
 		"li a5, 8;"                 // Generate mask for bit 3
-		"csrrs a5, mstatus, a5;"    // Set MSTATUS[3(MIE)]
+		"csrrs zero, mstatus, a5;"  // Set MSTATUS[3(MIE)]
 		"csrr a5, 0xFD0;"           // Restore old A5
 		// Hardware sets PC <= MEPC;
 		);
@@ -178,13 +178,13 @@ void __attribute__((naked)) enterSWecallISR()
 		"auipc a5, 0;"              // Grab PC+4 from INJECT stage of the CPU
 		"csrw mepc, a5;"            // Set MEPC to PC+4 for mret
 		"li a5, 8;"                 // Generate mask for bit 3
-		"csrrc a5, mie, a5;"        // Extract MIE[3(MSIE)] and set it to zero
+		"csrrc zero, mie, a5;"      // Clear MIE[3(MSIE)]
 		"sll a5, a5, 4;"            // Shift to 7th bit position
-		"csrrs a5, mstatus, a5;"    // Copy it to MSTATUS[7(MPIE)]
+		"csrrs zero, mstatus, a5;"  // Set MSTATUS[7(MPIE)]
 		"li a5, 0x0000000B;"        // Clear MCAUSE[31] for trap and set MCAUSE[30:0] to 0xB (machine ecall)
 		"csrw mcause, a5;"
 		"li a5, 8;"                 // Generate mask for bit 3
-		"csrrc a5, mstatus, a5;"    // Clear MSTATUS[3(MIE)]
+		"csrrc zero, mstatus, a5;"  // Clear MSTATUS[3(MIE)]
 		"csrr a5, 0xFD0;"           // Restore old A5
 		// Hardware branches to mtvec
 	);
@@ -195,11 +195,11 @@ void __attribute__((naked)) leaveSWecallISR()
 	asm volatile(
 		"csrw 0xFD0, a5;"           // Save current A5
 		"li a5, 128;"               // Generate mask for bit 7
-		"csrrc a5, mstatus, a5;"    // Extract MSTATUS[7(MPIE)] and set it to zero
+		"csrrc zero, mstatus, a5;"  // Clear MSTATUS[7(MPIE)]
 		"srl a5, a5, 4;"            // Shift to 3rd bit position
-		"csrrs a5, mie, a5;"        // Copy it to MIE[3(MSIE)]
+		"csrrs zero, mie, a5;"      // Set MIE[3(MSIE)]
 		"li a5, 8;"                 // Generate mask for bit 3
-		"csrrs a5, mstatus, a5;"    // Set MSTATUS[3(MIE)]
+		"csrrs zero, mstatus, a5;"  // Set MSTATUS[3(MIE)]
 		"csrr a5, 0xFD0;"           // Restore old A5
 		// Hardware sets PC <= MEPC;
 		);
@@ -214,13 +214,13 @@ void __attribute__((naked)) enterSWebreakISR()
 		"auipc a5, 0;"              // Grab PC from INJECT stage of the CPU
 		"csrw mepc, a5;"            // Set MEPC to PC for mret
 		"li a5, 8;"                 // Generate mask for bit 3
-		"csrrc a5, mie, a5;"        // Extract MIE[3(MSIE)] and set it to zero
+		"csrrc zero, mie, a5;"      // Clear MIE[3(MSIE)]
 		"sll a5, a5, 4;"            // Shift to 7th bit position
-		"csrrs a5, mstatus, a5;"    // Copy it to MSTATUS[7(MPIE)]
+		"csrrs zero, mstatus, a5;"  // Set MSTATUS[7(MPIE)]
 		"li a5, 0x00000003;"        // Clear MCAUSE[31] for trap and set MCAUSE[30:0] to 0x3 (debug breakpoint)
 		"csrw mcause, a5;"
 		"li a5, 8;"                 // Generate mask for bit 3
-		"csrrc a5, mstatus, a5;"    // Clear MSTATUS[3(MIE)]
+		"csrrc zero, mstatus, a5;"  // Clear MSTATUS[3(MIE)]
 		"csrr a5, 0xFD0;"           // Restore old A5
 		// Hardware branches to mtvec
 	);
@@ -231,11 +231,11 @@ void __attribute__((naked)) leaveSWebreakISR() // Same as leaveSWecallISR
 	asm volatile(
 		"csrw 0xFD0, a5;"           // Save current A5
 		"li a5, 128;"               // Generate mask for bit 7
-		"csrrc a5, mstatus, a5;"    // Extract MSTATUS[7(MPIE)] and set it to zero
+		"csrrc zero, mstatus, a5;"  // Clear MSTATUS[7(MPIE)]
 		"srl a5, a5, 4;"            // Shift to 3rd bit position
-		"csrrs a5, mie, a5;"        // Copy it to MIE[3(MSIE)]
+		"csrrs zero, mie, a5;"      // Set MIE[3(MSIE)]
 		"li a5, 8;"                 // Generate mask for bit 3
-		"csrrs a5, mstatus, a5;"    // Set MSTATUS[3(MIE)]
+		"csrrs zero, mstatus, a5;"  // Set MSTATUS[3(MIE)]
 		"csrr a5, 0xFD0;"           // Restore old A5
 		// Hardware sets PC <= MEPC;
 		);
@@ -250,13 +250,13 @@ void __attribute__((naked)) enterSWillegalISR()
 		"auipc a5, 0;"              // Grab PC from INJECT stage of the CPU
 		"csrw mepc, a5;"            // Set MEPC to PC for mret
 		"li a5, 8;"                 // Generate mask for bit 3
-		"csrrc a5, mie, a5;"        // Extract MIE[3(MSIE)] and set it to zero
+		"csrrc zero, mie, a5;"      // Clear MIE[3(MSIE)]
 		"sll a5, a5, 4;"            // Shift to 7th bit position
-		"csrrs a5, mstatus, a5;"    // Copy it to MSTATUS[7(MPIE)]
+		"csrrs zero, mstatus, a5;"  // Copy it to MSTATUS[7(MPIE)]
 		"li a5, 0x00000002;"        // Clear MCAUSE[31] for trap and set MCAUSE[30:0] to 0x2 (illegal instruction)
 		"csrw mcause, a5;"
 		"li a5, 8;"                 // Generate mask for bit 3
-		"csrrc a5, mstatus, a5;"    // Clear MSTATUS[3(MIE)]
+		"csrrc zero, mstatus, a5;"  // Clear MSTATUS[3(MIE)]
 		"csrr a5, 0xFD0;"           // Restore old A5
 		// Hardware branches to mtvec
 	);
@@ -267,11 +267,11 @@ void __attribute__((naked)) leaveSWillegalISR() // Same as leaveSWecallISR
 	asm volatile(
 		"csrw 0xFD0, a5;"           // Save current A5
 		"li a5, 128;"               // Generate mask for bit 7
-		"csrrc a5, mstatus, a5;"    // Extract MSTATUS[7(MPIE)] and set it to zero
+		"csrrc zero, mstatus, a5;"  // Clear MSTATUS[7(MPIE)]
 		"srl a5, a5, 4;"            // Shift to 3rd bit position
-		"csrrs a5, mie, a5;"        // Copy it to MIE[3(MSIE)]
+		"csrrs zero, mie, a5;"      // Set MIE[3(MSIE)]
 		"li a5, 8;"                 // Generate mask for bit 3
-		"csrrs a5, mstatus, a5;"    // Set MSTATUS[3(MIE)]
+		"csrrs zero, mstatus, a5;"  // Set MSTATUS[3(MIE)]
 		"csrr a5, 0xFD0;"           // Restore old A5
 		// Hardware sets PC <= MEPC;
 		);

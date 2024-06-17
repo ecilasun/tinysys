@@ -41,19 +41,17 @@ const char *regnames[] = {
 
 // This is an exact copy of the ISR ROM contents of the real hardware
 uint32_t ISR_ROM[] = {
-	0xfd079073,0x00000797,0x34179073,0x08000793,0x3047b7f3,0x3007a7f3,0x800007b7,0x00778793,
-	0x34279073,0x00800793,0x3007b7f3,0xfd0027f3,0xfd079073,0x08000793,0x3007b7f3,0x3047a7f3,
-	0x00800793,0x3007a7f3,0xfd0027f3,0xfd079073,0x00000797,0x34179073,0x000017b7,0x80078793,
-	0x3047b7f3,0x0047d793,0x3007a7f3,0x800007b7,0x00b78793,0x34279073,0x00800793,0x3007b7f3,
-	0xfd0027f3,0xfd079073,0x08000793,0x3007b7f3,0x00479793,0x3047a7f3,0x00800793,0x3007a7f3,
-	0xfd0027f3,0xfd079073,0x00000797,0x34179073,0x00800793,0x3047b7f3,0x00479793,0x3007a7f3,
-	0x00b00793,0x34279073,0x00800793,0x3007b7f3,0xfd0027f3,0xfd079073,0x08000793,0x3007b7f3,
-	0x0047d793,0x3047a7f3,0x00800793,0x3007a7f3,0xfd0027f3,0xfd079073,0x00000797,0x34179073,
-	0x00800793,0x3047b7f3,0x00479793,0x3007a7f3,0x00300793,0x34279073,0x00800793,0x3007b7f3,
-	0xfd0027f3,0xfd079073,0x08000793,0x3007b7f3,0x0047d793,0x3047a7f3,0x00800793,0x3007a7f3,
-	0xfd0027f3,0xfd079073,0x00000797,0x34179073,0x00800793,0x3047b7f3,0x00479793,0x3007a7f3,
-	0x00200793,0x34279073,0x00800793,0x3007b7f3,0xfd0027f3,0xfd079073,0x08000793,0x3007b7f3,
-	0x0047d793,0x3047a7f3,0x00800793,0x3007a7f3,0xfd0027f3 };
+	0xfd079073,0x00000797,0x34179073,0x08000793,0x3047b073,0x3007a073,0x800007b7,0x00778793,0x34279073,0x00800793,0x3007b073,0xfd0027f3, // 0-11 TMI start
+	0xfd079073,0x08000793,0x3007b073,0x3047a073,0x00800793,0x3007a073,0xfd0027f3, // 12-18 TMI end
+	0xfd079073,0x00000797,0x34179073,0x000017b7,0x80078793,0x3047b073,0x0047d793,0x3007a073,0x800007b7,0x00b78793,0x34279073,0x00800793,0x3007b073,0xfd0027f3, // 19-32 HWI start
+	0xfd079073,0x08000793,0x3007b073,0x00479793,0x3047a073,0x00800793,0x3007a073,0xfd0027f3, // 33-40 HWI end
+	0xfd079073,0x00000797,0x34179073,0x00800793,0x3047b073,0x00479793,0x3007a073,0x00b00793,0x34279073,0x00800793,0x3007b073,0xfd0027f3, // 41-52 ecall start
+	0xfd079073,0x08000793,0x3007b073,0x0047d793,0x3047a073,0x00800793,0x3007a073,0xfd0027f3, // 53-60 ecall end
+	0xfd079073,0x00000797,0x34179073,0x00800793,0x3047b073,0x00479793,0x3007a073,0x00300793,0x34279073,0x00800793,0x3007b073,0xfd0027f3, // 61-72 ebreak start
+	0xfd079073,0x08000793,0x3007b073,0x0047d793,0x3047a073,0x00800793,0x3007a073,0xfd0027f3, // 73-80 ebreak end
+	0xfd079073,0x00000797,0x34179073,0x00800793,0x3047b073,0x00479793,0x3007a073,0x00200793,0x34279073,0x00800793,0x3007b073,0xfd0027f3, // 81-92 SWI start
+	0xfd079073,0x08000793,0x3007b073,0x0047d793,0x3047a073,0x00800793,0x3007a073,0xfd0027f3 // 93-100 SWI end
+};
 
 CRV32::CRV32()
 {
@@ -69,6 +67,7 @@ void CRV32::Reset()
 
 	m_PC = m_resetvector;
 	m_branchresolved = 0;
+	m_wasmret = 0;
 	m_branchtarget = 0;
 	m_cyclecounter = 0;
 	m_retired = 0;
@@ -364,9 +363,9 @@ void CRV32::InjectISRHeaderFooter()
 {
 	switch (m_exceptionmode)
 	{
-		// SWI start
-		case 0x00000001: {
-			for (uint32_t i = 81; i <= 92; ++i)
+		// TMI start
+		case 0x00000003: {
+			for (uint32_t i = 0; i <= 11; ++i)
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
@@ -375,9 +374,9 @@ void CRV32::InjectISRHeaderFooter()
 		}
 		break;
 
-		// SWI end
-		case 0x80000001: {
-			for (uint32_t i = 93; i <= 100; ++i)
+		// TMI end
+		case 0x80000003: {
+			for (uint32_t i = 12; i <= 18; ++i)
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
@@ -408,9 +407,9 @@ void CRV32::InjectISRHeaderFooter()
 		}
 		break;
 
-		// TMI start
-		case 0x00000003: {
-			for (uint32_t i = 0; i <= 11; ++i)
+		// ecall start
+		case 0x00000005: {
+			for (uint32_t i = 41; i <= 52; ++i)
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
@@ -419,9 +418,9 @@ void CRV32::InjectISRHeaderFooter()
 		}
 		break;
 
-		// TMI end
-		case 0x80000003: {
-			for (uint32_t i = 12; i <= 18; ++i)
+		// ecall end
+		case 0x80000005: {
+			for (uint32_t i = 53; i <= 60; ++i)
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
@@ -452,9 +451,9 @@ void CRV32::InjectISRHeaderFooter()
 		}
 		break;
 
-		// ecall start
-		case 0x00000005: {
-			for (uint32_t i = 41; i <= 52; ++i)
+		// SWI start
+		case 0x00000001: {
+			for (uint32_t i = 81; i <= 92; ++i)
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
@@ -463,9 +462,9 @@ void CRV32::InjectISRHeaderFooter()
 		}
 		break;
 
-		// ecall end
-		case 0x80000005: {
-			for (uint32_t i = 53; i <= 60; ++i)
+		// SWI end
+		case 0x80000001: {
+			for (uint32_t i = 93; i <= 100; ++i)
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
@@ -514,16 +513,16 @@ bool CRV32::FetchDecode(CBus& bus, uint32_t irq)
 			decoded.m_pc += 4;
 			// Will need to route to mtvec
 			branchtomtvec = true;
-			if (isillegal) // software - illegal instruction
+			if (irq & 1) // hardware
+				m_exceptionmode = 0x00000002;
+			else if (irq & 2) // timer
+				m_exceptionmode = 0x00000003;
+			else if (isillegal) // software - illegal instruction
 				m_exceptionmode = 0x00000001;
 			else if (isebreak) // ebreak
 				m_exceptionmode = 0x00000004;
 			else if (isecall) // ecall
 				m_exceptionmode = 0x00000005;
-			else if (irq & 1) // hardware
-				m_exceptionmode = 0x00000002;
-			else if (irq & 2) // timer
-				m_exceptionmode = 0x00000003;
 			// Add header
 			InjectISRHeaderFooter();
 			m_lasttrap = m_exceptionmode;
@@ -544,8 +543,9 @@ bool CRV32::FetchDecode(CBus& bus, uint32_t irq)
 	{
 		if (m_branchresolved)
 		{
-			if (m_lasttrap)
+			if (m_lasttrap && m_wasmret)
 			{
+				m_wasmret = 0;
 				// Add footer
 				m_exceptionmode = 0x80000000 | m_lasttrap;
 				InjectISRHeaderFooter();
@@ -565,10 +565,16 @@ bool CRV32::FetchDecode(CBus& bus, uint32_t irq)
 
 bool CRV32::Execute(CBus& bus)
 {
-	++m_cyclecounter;
 	if (m_instructionfifo.size())
 	{
+		++m_cyclecounter;
+
 		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
+		bus.Write(csrbase + (CSR_RETILO << 2), (uint32_t)(m_retired & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
+		bus.Write(csrbase + (CSR_RETIHI << 2), (uint32_t)((m_retired & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
+		bus.Write(csrbase + (CSR_PROGRAMCOUNTER << 2), m_PC, 0xFFFFFFFF);
+		bus.Write(csrbase + (CSR_CYCLELO << 2), (uint32_t)(m_cyclecounter & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
+		bus.Write(csrbase + (CSR_CYCLEHI << 2), (uint32_t)((m_cyclecounter & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
 
 		SDecodedInstruction instr;
 		instr = m_instructionfifo.front();
@@ -661,6 +667,7 @@ bool CRV32::Execute(CBus& bus)
 				}
 				else if (instr.m_f12 == F12_MRET)
 				{
+					m_wasmret = 1;
 					m_branchresolved = 1;
 					bus.Read(csrbase + (CSR_MEPC << 2), m_branchtarget);
 				}
@@ -699,7 +706,7 @@ bool CRV32::Execute(CBus& bus)
 						case 0b101: // csrrwi
 							wdata = instr.m_immed;
 							break;
-						case 0b010: // csrrs / csrr
+						case 0b010: // csrrs / csrr (set bits using rval1 as mask)
 							wdata = csrprevval | instr.m_rval1;
 							break;
 						case 0b110: // csrrsi
@@ -851,17 +858,6 @@ bool CRV32::Tick(CBus& bus, uint32_t irq)
 {
 	const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
 
-	// Hardware will return hardwired or timer based values for these instead of overwriting the CSR
-	{
-		bus.Write(csrbase + (CSR_CYCLELO << 2), (uint32_t)(m_cyclecounter & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
-		bus.Write(csrbase + (CSR_CYCLEHI << 2), (uint32_t)((m_cyclecounter & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
-		bus.Write(csrbase + (CSR_RETILO << 2), (uint32_t)(m_retired & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
-		bus.Write(csrbase + (CSR_RETIHI << 2), (uint32_t)((m_retired & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
-		bus.Write(csrbase + (CSR_TIMELO << 2), (uint32_t)(m_wallclock & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
-		bus.Write(csrbase + (CSR_TIMEHI << 2), (uint32_t)((m_wallclock & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
-		bus.Write(csrbase + (CSR_PROGRAMCOUNTER << 2), m_PC, 0xFFFFFFFF);
-	}
-
 	if (m_pendingCPUReset)
 	{
 		m_pendingCPUReset = false;
@@ -872,7 +868,11 @@ bool CRV32::Tick(CBus& bus, uint32_t irq)
 	bool execok = Execute(bus);
 
 	if (m_cyclecounter % 15 == 0) // 150MHz vs 10Mhz
+	{
+		bus.Write(csrbase + (CSR_TIMELO << 2), (uint32_t)(m_wallclock & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
+		bus.Write(csrbase + (CSR_TIMEHI << 2), (uint32_t)((m_wallclock & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
 		++m_wallclock;
+	}
 
 	return fetchok && execok;
 }

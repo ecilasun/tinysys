@@ -96,6 +96,7 @@ public:
 	uint32_t m_branchtarget;
 	uint32_t m_fetchstate;
 	uint32_t m_branchresolved;
+	uint32_t m_wasmret;
 	uint32_t m_GPR[32];
 
 	// Internal counters

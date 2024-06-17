@@ -8,6 +8,7 @@ void CBus::Reset(uint32_t resetvector, uint8_t* rombin, uint32_t romsize)
 	m_csr[1].Reset();
 	m_sdcc.Reset();
 	m_vpuc.Reset();
+	m_uart.Reset();
 
 	m_mem.CopyROM(resetvector, rombin, romsize);
 }
@@ -15,6 +16,11 @@ void CBus::Reset(uint32_t resetvector, uint8_t* rombin, uint32_t romsize)
 void CBus::UpdateVideoLink(uint32_t *pixels, int pitch)
 {
 	m_vpuc.UpdateVideoLink(pixels, pitch, this);
+}
+
+void CBus::QueueByte(uint8_t byte)
+{
+	m_uart.QueueByte(byte);
 }
 
 uint32_t CBus::Tick(CRV32* cpu0, uint32_t* sie0)
@@ -25,10 +31,12 @@ uint32_t CBus::Tick(CRV32* cpu0, uint32_t* sie0)
 	uint32_t irq = 0;
 
 	m_mem.Tick();
-	irq |= m_csr[0].Tick(cpu0, sie0);
-	irq |= m_csr[1].Tick(nullptr, nullptr); // TODO: This CSR has no CPU to talk to yet
 	m_sdcc.Tick();
 	m_vpuc.Tick();
+	m_uart.Tick();
+
+	irq |= m_csr[0].Tick(cpu0, &m_uart, sie0);
+	irq |= m_csr[1].Tick(nullptr, nullptr, nullptr); // TODO: This CSR has no CPU to talk to yet
 
 	return irq;
 }
@@ -68,7 +76,6 @@ void CBus::Read(uint32_t address, uint32_t& data)
 			{
 				// DEVICE_VPUC
 				m_vpuc.Read(address, data);
-				data = 0;
 			}
 			break;
 			case 3:
@@ -97,7 +104,7 @@ void CBus::Read(uint32_t address, uint32_t& data)
 			{
 				// DEVICE_USBA
 				//m_usba->Read(address, data);
-				printf("<-USB-A\n");
+				//printf("<-USB-A\n");
 				data = 0xFF; // SPI access should return FF for no device present
 			}
 			break;
@@ -113,15 +120,12 @@ void CBus::Read(uint32_t address, uint32_t& data)
 			{
 				// DEVICE_MAIL
 				m_mail.Read(address, data);
-				data = 0;
 			}
 			break;
 			case 9:
 			{
 				// DEVICE_UART
-				//m_uart->Read(address, data);
-				printf("<-UART\n");
-				data = 0;
+				m_uart.Read(address, data);
 			}
 			break;
 			case 0xA:
@@ -190,7 +194,7 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 			{
 				// DEVICE_USBA
 				//m_usba->Write(address, data, wstrobe);
-				printf("USB-A@0x%.8X<-0x%.8x\n", address, data);
+				//printf("USB-A@0x%.8X<-0x%.8x\n", address, data);
 			}
 			break;
 			case 7:
@@ -209,8 +213,7 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 			case 9:
 			{
 				// DEVICE_UART
-				//m_uart->Write(address, data, wstrobe);
-				printf("UART@0x%.8X<-0x%.8x\n", address, data);
+				m_uart.Write(address, data, wstrobe);
 			}
 			break;
 			case 0xA:

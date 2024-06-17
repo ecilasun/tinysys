@@ -188,12 +188,12 @@ void TaskExitTaskWithID(struct STaskContext *_ctx, uint32_t _taskid, uint32_t _s
  */
 uint64_t TaskYield()
 {
-	// Set up the next task switch interrupt to now
+	// Set up the next task switch interrupt to almost-now
 	// so we can yield as soon as possible.
-	clear_csr(mstatus, MSTATUS_MIE);
+	clear_csr(mie, MIP_MTIP);
 	uint64_t now = E32ReadTime();
-	E32SetTimeCompare(now);
-	set_csr(mstatus, MSTATUS_MIE);
+	E32SetTimeCompare(now + 100);
+	set_csr(mie, MIP_MTIP);
 	return now;
 }
 

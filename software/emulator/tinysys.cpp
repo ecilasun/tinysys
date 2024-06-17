@@ -72,6 +72,8 @@ int SDL_main(int argc, char** argv)
         {
             if (ev.type == SDL_QUIT)
                 s_alive = false;
+            if (ev.type == SDL_KEYUP)
+				emulator.QueueByte((uint8_t)ev.key.keysym.sym);
         }
 
         if ((ticks % 65536) == 0) // TODO: tune this to time not counter

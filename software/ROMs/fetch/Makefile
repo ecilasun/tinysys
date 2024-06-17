@@ -48,7 +48,7 @@ FILESYSTEM ?= -DENABLE_FILESYSTEM -DLFS_NO_MALLOC -DLFS_NO_DEBUG
 ROMWORDSIZE ?= 4
 # 512 bit cache lines makes 64 bytes per line
 # 256 cache lines makes total cache size 16 Kbytes
-RISCV_GCC_OPTS ?= -mcmodel=medany -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -O0 -static -ffreestanding -nostartfiles
+RISCV_GCC_OPTS ?= -mcmodel=medany -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -O0 -static -ffreestanding -nostartfiles -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,-gc-sections,--strip-debug
 
 incs  += -I$(src_dir) -I$(corelib_dir) $(addprefix -I$(src_dir)/, $(folders))
 objs  :=

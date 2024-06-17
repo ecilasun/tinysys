@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "rv32.h"
+#include "uart.h"
 
 #define CSR_MSTATUS			0x300
 #define CSR_MISA			0x301
@@ -40,13 +41,17 @@ public:
 	~CCSRMem();
 
 	void Reset();
-	uint32_t Tick(CRV32* cpu, uint32_t* sie);
+	uint32_t Tick(CRV32* cpu, CUART* uart, uint32_t* sie);
 	void Read(uint32_t address, uint32_t& data);
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe);
+
+	uint64_t m_wallclocktime{ 0 };
+	uint64_t m_timecmp{ 0 };
 
 private:
 	uint32_t* m_csrmem = nullptr;
 	uint32_t m_cpuresetreq{ 0 };
 	uint32_t m_mieshadow{ 0 };
-	uint32_t m_mstatusIEshadow{ 0 };
+	uint32_t m_mstatusshadow{ 0 };
+	uint32_t m_irqstate{ 0 };
 };

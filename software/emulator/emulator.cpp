@@ -46,3 +46,8 @@ void CEmulator::UpdateVideoLink(uint32_t *pixels, int pitch)
 {
 	m_bus.UpdateVideoLink(pixels, pitch);
 }
+
+void CEmulator::QueueByte(uint8_t byte)
+{
+	m_bus.QueueByte(byte);
+}

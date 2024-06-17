@@ -45,6 +45,9 @@
     <ClCompile Include="..\leds.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\uart.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\csrmem.h">
@@ -75,6 +78,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\leds.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\uart.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -144,6 +144,7 @@
     <ClCompile Include="..\rv32.cpp" />
     <ClCompile Include="..\sdcard.cpp" />
     <ClCompile Include="..\tinysys.cpp" />
+    <ClCompile Include="..\uart.cpp" />
     <ClCompile Include="..\vpu.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -156,6 +157,7 @@
     <ClInclude Include="..\sysmem.h" />
     <ClInclude Include="..\rv32.h" />
     <ClInclude Include="..\sdcard.h" />
+    <ClInclude Include="..\uart.h" />
     <ClInclude Include="..\vpu.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
