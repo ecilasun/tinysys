@@ -12,6 +12,7 @@ public:
 	bool Reset(const char* romFile);
 	bool Step();
 	void UpdateVideoLink(uint32_t* pixels, int pitch);
+	void QueueBytes(uint8_t *bytes, uint32_t count);
 	void QueueByte(uint8_t byte);
 
 	CBus m_bus;
