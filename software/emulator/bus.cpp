@@ -9,15 +9,15 @@ CBus::CBus(uint32_t resetvector)
 	m_csr[1] = new CCSRMem(1);
 
 	m_cpu[0] = new CRV32(0, resetvector);
-	m_cpu[1] = new CRV32(1, resetvector);
+	m_cpu[1] = nullptr;// Only one CPU for now new CRV32(1, resetvector);
 }
 
 CBus::~CBus()
 {
 	delete m_csr[0];
 	delete m_csr[1];
-	delete m_cpu[0];
-	delete m_cpu[1];
+	if (m_cpu[0]) delete m_cpu[0];
+	if (m_cpu[1]) delete m_cpu[1];
 }
 
 void CBus::Reset(uint8_t* rombin, uint32_t romsize)
@@ -32,8 +32,8 @@ void CBus::Reset(uint8_t* rombin, uint32_t romsize)
 	m_csr[0]->Reset();
 	m_csr[1]->Reset();
 
-	m_cpu[0]->Reset();
-	m_cpu[1]->Reset();
+	if (m_cpu[0]) m_cpu[0]->Reset();
+	if (m_cpu[1]) m_cpu[1]->Reset();
 }
 
 void CBus::UpdateVideoLink(uint32_t *pixels, int pitch)
@@ -65,11 +65,19 @@ void CBus::QueueByte(uint8_t byte)
 
 bool CBus::Tick()
 {
-	bool ret0 = m_cpu[0]->Tick(this);
-	m_csr[0]->Tick(m_cpu[0], &m_uart);
+	bool ret0 = true;
+	if (m_cpu[0])
+	{
+		ret0 = m_cpu[0]->Tick(this);
+		m_csr[0]->Tick(m_cpu[0], &m_uart);
+	}
 
-	bool ret1 = m_cpu[1]->Tick(this);
-	m_csr[1]->Tick(/*m_cpu[1]*/nullptr, &m_uart); // hart#1 somehow executes as hart#0 after reboot (m_hartid appears correct)
+	bool ret1 = true;
+	if (m_cpu[1])
+	{
+		ret1 = m_cpu[1]->Tick(this);
+		m_csr[1]->Tick(m_cpu[1], &m_uart);
+	}
 
 	m_mem.Tick();
 	m_vpuc.Tick();
@@ -176,6 +184,11 @@ void CBus::Read(uint32_t address, uint32_t& data)
 				m_csr[1]->Read(address, data);
 			}
 			break;
+			default:
+			{
+				printf("Unknown device read @0x%.8X\n", address);
+				data = 0;
+			}
 		}
 	}
 	else
@@ -264,6 +277,10 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 				m_csr[1]->Write(address, data, wstrobe);
 			}
 			break;
+			default:
+			{
+				printf("Unknown device write @0x%.8X\n", address);
+			}
 		}
 	}
 	else

@@ -4,8 +4,8 @@
 
 const char *opnames[] = {
 	"illegal",
-	"",
-	"",
+	"op",
+	"opimm",
 	"auipc",
 	"lui",
 	"store",
@@ -349,7 +349,7 @@ void CRV32::DecodeInstruction(uint32_t pc, uint32_t instr, SDecodedInstruction& 
 	dec.m_selimm = (dec.m_opcode==OP_JALR) || (dec.m_opcode==OP_OP_IMM) || (dec.m_opcode==OP_LOAD) || (dec.m_opcode==OP_STORE);
 
 	//if (m_debugtrace)
-	//	printf("#%d:: %.8X:%.8X %s%s %s %s -> %s I=%d\n", m_hartid, m_PC, instr, opnames[dec.m_opindex], alunames[dec.m_aluop], regnames[dec.m_rs1], regnames[dec.m_rs2], regnames[dec.m_rd], dec.m_immed);
+	//	printf("#%d:: %.8X:%.8X %s %s %s %s -> %s I=%d\n", m_hartid, m_PC, instr, opnames[dec.m_opindex], alunames[dec.m_aluop], regnames[dec.m_rs1], regnames[dec.m_rs2], regnames[dec.m_rd], dec.m_immed);
 }
 
 void CRV32::InjectISRHeaderFooter()
@@ -872,8 +872,6 @@ bool CRV32::Execute(CBus* bus)
 
 bool CRV32::Tick(CBus* bus)
 {
-	const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
-
 	if (m_pendingCPUReset)
 	{
 		m_fetchstate = EFetchInit;
@@ -885,6 +883,7 @@ bool CRV32::Tick(CBus* bus)
 
 	if (m_cyclecounter % 15 == 0) // 150MHz vs 10Mhz
 	{
+		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
 		bus->Write(csrbase + (CSR_TIMELO << 2), (uint32_t)(m_wallclock & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
 		bus->Write(csrbase + (CSR_TIMEHI << 2), (uint32_t)((m_wallclock & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
 		++m_wallclock;

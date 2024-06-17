@@ -14,7 +14,7 @@ void CCSRMem::Reset()
 	m_csrmem[CSR_MARCHID] = 0x80000000;
 
 	m_csrmem[CSR_CPURESET] = 0x00000000;
-	m_csrmem[CSR_WATERMARK] = 0x00000000; // NOTE: Always preserve contents past soft reset
+	m_csrmem[CSR_WATERMARK] = 0x00000000; // NOTE: Always preserves contents past soft reset
 	m_csrmem[CSR_PROGRAMCOUNTER] = 0x00000000;
 	m_csrmem[CSR_HWSTATE] = 0x00000000;
 
@@ -32,13 +32,10 @@ void CCSRMem::Tick(CRV32* cpu, CUART* uart)
 			cpu->m_pendingCPUReset = true;
 	}
 
-	// TODO: Detect interrupt requests here as with real hardware
-	// uartirq, gpioirq, keyirq, usbirq
-
 	uint32_t uartirq = uart ? uart->m_uartirq : 0;
-	uint32_t gpioirq = 0;
-	uint32_t keyirq = 0;
-	uint32_t usbirq = 0;
+	uint32_t gpioirq = 0; // Ignoring GPIO from/to ESP32 pins for now
+	uint32_t keyirq = 0; // Ignoring sdcard insert/remove signal for now
+	uint32_t usbirq = 0; // Ignoring USB for now
 
 	uint32_t ie = m_mstatusshadow & 0x8;
 
