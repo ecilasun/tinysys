@@ -22,10 +22,7 @@ CSysMem::~CSysMem()
 
 void CSysMem::Reset()
 {
-	// Clear memory to some random bitrot pattern
-	uint32_t* mem = (uint32_t*)m_devicemem;
-	for (uint32_t i = 0; i < 256 * 1024 * 256; ++i)
-		mem[i] = (rand()%255) | 0xFF000000;
+	memset(m_devicemem, 0xCC, 256*1024*1024);
 }
 
 void CSysMem::Tick()

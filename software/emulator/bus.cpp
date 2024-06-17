@@ -50,8 +50,8 @@ void CBus::FillMemBitmap(uint32_t* pixels)
 	{
 		uint32_t mix = 0;
 		for (uint32_t j = 0; j < 256; ++j)
-			mix ^= source[i * 256 + j];
-		pixels[i] = mix;
+			mix = (mix << 8) ^ source[i * 256 + j];
+		pixels[i] = mix | 0xFF000000;
 	}
 
 	m_busactivitystart = 0xFFFFFFFF;
