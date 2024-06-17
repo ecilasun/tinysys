@@ -35,7 +35,7 @@ public:
 	~CBus();
 
 	void Reset(uint32_t resetvector, uint8_t* rombin, uint32_t romsize);
-	void Tick(CRV32* cpu0, CRV32* cpu1, uint32_t& irq0, uint32_t& irq1);
+	void Tick(CRV32* cpu0, CRV32* cpu1);
 	void Read(uint32_t address, uint32_t& data);
 	void Write(uint32_t address, uint32_t data, uint32_t wstrobe);
 	uint32_t* GetHostAddress(uint32_t address);

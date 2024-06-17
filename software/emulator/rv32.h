@@ -110,6 +110,7 @@ public:
 	// HART0 by default
 	uint32_t m_hartid = 0;
 	uint32_t m_sie = 0;
+	uint32_t m_irq = 0;
 
 	uint32_t m_exceptionmode = 0;
 	uint32_t m_lasttrap = 0;
@@ -123,8 +124,8 @@ public:
 	std::queue<SDecodedInstruction> m_instructionfifo;
 
 	void Reset();
-	bool Tick(CBus& bus, uint32_t irq);
-	bool FetchDecode(CBus& bus, uint32_t irq);
+	bool Tick(CBus& bus);
+	bool FetchDecode(CBus& bus);
 	bool Execute(CBus& bus);
 
 private:

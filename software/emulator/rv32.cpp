@@ -474,21 +474,25 @@ void CRV32::InjectISRHeaderFooter()
 	}
 }
 
-bool CRV32::FetchDecode(CBus& bus, uint32_t irq)
+bool CRV32::FetchDecode(CBus& bus)
 {
 	if (m_fetchstate == EFetchInit)
 	{
 		m_pendingCPUReset = false;
+		m_exceptionmode = 0;
+		m_branchresolved = 0;
 		m_PC = m_resetvector;
 		if (m_instructionfifo.size() == 0)
 			m_fetchstate = EFetchRead;
+		return true;
 	}
 
 	if (m_fetchstate == EFetchWFI)
 	{
 		m_wficounter++;
-		if (m_wficounter>=16 || irq)
+		if (m_wficounter>=16 || m_irq)
 			m_fetchstate = EFetchRead;
+		return true;
 	}
 
 	if (m_fetchstate == EFetchRead)
@@ -501,10 +505,9 @@ bool CRV32::FetchDecode(CBus& bus, uint32_t irq)
 		// Debug mode only, let ISR handle this
 		if (decoded.m_opindex == 0)
 		{
-			printf("HART #%d: Illegal instruction 0x%.8X @0x%.8X\n", m_hartid, instruction, m_PC);
+			printf("HART #%d: Illegal instruction 0x%.8X @0x%.8X exmode:%d branchres:%d irq:%d\n", m_hartid, instruction, m_PC, m_exceptionmode, m_branchresolved, m_irq);
 			for (uint32_t i=0;i<32;++i)
-				printf("r%d=%.8x ", i, m_GPR[i]);
-			printf("\n");
+				printf("r%d=%.8x\n", i, m_GPR[i]);
 			return false;
 		}
 
@@ -520,15 +523,15 @@ bool CRV32::FetchDecode(CBus& bus, uint32_t irq)
 			m_wficounter = 0;
 			m_fetchstate = EFetchWFI;
 		}
-		else if ((isebreak || isecall || isillegal || irq) && m_exceptionmode == 0)
+		else if ((isebreak || isecall || isillegal || m_irq) && m_exceptionmode == 0)
 		{
 			// For MRET to work properly this has to be pointing at the next instruction
 			decoded.m_pc += 4;
 			// Will need to route to mtvec
 			branchtomtvec = true;
-			if (irq & 1) // hardware
+			if (m_irq & 1) // hardware
 				m_exceptionmode = 0x00000002;
-			else if (irq & 2) // timer
+			else if (m_irq & 2) // timer
 				m_exceptionmode = 0x00000003;
 			else if (isillegal) // software - illegal instruction
 				m_exceptionmode = 0x00000001;
@@ -735,8 +738,6 @@ bool CRV32::Execute(CBus& bus)
 							wdata = csrprevval;
 							break;
 					}
-
-					//printf("- csrop @%.8x\n", instr.m_csroffset);
 				}
 			}
 			break;
@@ -867,14 +868,14 @@ bool CRV32::Execute(CBus& bus)
 	return true;
 }
 
-bool CRV32::Tick(CBus& bus, uint32_t irq)
+bool CRV32::Tick(CBus& bus)
 {
 	const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
 
 	if (m_pendingCPUReset)
 		m_fetchstate = EFetchInit;
 
-	bool fetchok = FetchDecode(bus, irq);
+	bool fetchok = FetchDecode(bus);
 	bool execok = Execute(bus);
 
 	if (m_cyclecounter % 15 == 0) // 150MHz vs 10Mhz

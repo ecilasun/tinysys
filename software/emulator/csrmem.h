@@ -41,7 +41,7 @@ public:
 	~CCSRMem() { free(m_csrmem); }
 
 	void Reset();
-	uint32_t Tick(CRV32* cpu, CUART* uart);
+	void Tick(CRV32* cpu, CUART* uart);
 	void Read(uint32_t address, uint32_t& data);
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe);
 

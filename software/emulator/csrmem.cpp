@@ -22,17 +22,14 @@ void CCSRMem::Reset()
 	m_wallclocktime = 0x0000000000000000;
 }
 
-uint32_t CCSRMem::Tick(CRV32* cpu, CUART* uart)
+void CCSRMem::Tick(CRV32* cpu, CUART* uart)
 {
 	// Detect reset request
 	if (m_cpuresetreq)
 	{
 		m_cpuresetreq = 0;
 		if (cpu)
-		{
-			cpu->m_resetvector = m_csrmem[CSR_MSCRATCH];
 			cpu->m_pendingCPUReset = true;
-		}
 	}
 
 	// TODO: Detect interrupt requests here as with real hardware
@@ -45,19 +42,21 @@ uint32_t CCSRMem::Tick(CRV32* cpu, CUART* uart)
 
 	uint32_t ie = m_mstatusshadow & 0x8;
 
-	// Software interrupt
-	if (cpu)
-		cpu->m_sie = (m_mieshadow & 0x008 ? 1 : 0) && ie;
 	// Timer interrupt
 	uint32_t timerInterrupt = ((m_mieshadow & 0x080 ? 1 : 0) && ie && (m_wallclocktime >= m_timecmp)) ? 1 : 0;
+
 	// Machine external interrupts
 	uint32_t hwInterrupt = ((m_mieshadow & 0x800 ? 1 : 0) && ie && (uartirq || gpioirq || keyirq || usbirq)) ? 1 : 0;
 
-	// IRQ state shadow
-	m_irqstate = (uartirq<<3) | (gpioirq<<2) | (keyirq<<1) | (usbirq);
+	if (cpu)
+	{
+		// Software interrupt
+		cpu->m_sie = (m_mieshadow & 0x008 ? 1 : 0) && ie;
+		cpu->m_irq = (timerInterrupt << 1) | (hwInterrupt);
+	}
 
-	// Hardware interrupts fire from here, software interrupts fire from fetch
-	return (timerInterrupt<<1) | (hwInterrupt);
+	// IRQ state shadow
+	m_irqstate = (uartirq << 3) | (gpioirq << 2) | (keyirq << 1) | (usbirq);
 }
 
 void CCSRMem::Read(uint32_t address, uint32_t& data)
