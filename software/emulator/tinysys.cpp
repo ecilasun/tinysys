@@ -12,13 +12,13 @@ static bool s_alive = true;
 int emulatorthread(void* data)
 {
 	CEmulator* emulator = (CEmulator*)data;
-    bool kicking;
+	bool kicking;
 	do
 	{
-        kicking = emulator->Step();
+		kicking = emulator->Step();
 	} while(s_alive && kicking);
 
-    s_alive = false;
+	s_alive = false;
 	return 0;
 }
 
@@ -28,73 +28,74 @@ int main(int argc, char** argv)
 int SDL_main(int argc, char** argv)
 #endif
 {
-    printf("tinysys emulator v0.2\n");
+	printf("tinysys emulator v0.2\n");
 
-    CEmulator emulator;
-    bool success;
+	CEmulator emulator;
+	bool success;
 
-    if (argc<=1)
-        success = emulator.Reset("rom.bin");
-    else
-        success = emulator.Reset(argv[1]);
+	if (argc<=1)
+		success = emulator.Reset("rom.bin");
+	else
+		success = emulator.Reset(argv[1]);
 
-    if (!success)
-    {
-        printf("Failed to load ROM\n");
-        return -1;
-    }
+	if (!success)
+	{
+		printf("Failed to load ROM\n");
+		return -1;
+	}
 
-    const int WIDTH = 640;
-    const int HEIGHT = 480;
-    SDL_Window* window = NULL;
+	const int WIDTH = 640;
+	const int HEIGHT = 480;
+	SDL_Window* window = NULL;
 
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
-    {
-        printf("Error initializing SDL2: %s\n", SDL_GetError());
-        return -1;
-    }
-    window = SDL_CreateWindow("tinysys emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+	{
+		printf("Error initializing SDL2: %s\n", SDL_GetError());
+		return -1;
+	}
+	window = SDL_CreateWindow("tinysys emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 
-    SDL_Surface* surface = SDL_GetWindowSurface(window);
-    if (!surface)
-    {
-        printf("Could not create window surface\n");
-        return -1;
-    }
+	SDL_Surface* surface = SDL_GetWindowSurface(window);
+	if (!surface)
+	{
+		printf("Could not create window surface\n");
+		return -1;
+	}
 
-    SDL_Thread* thread = SDL_CreateThread(emulatorthread, "emulator", &emulator);
+	SDL_Thread* thread = SDL_CreateThread(emulatorthread, "emulator", &emulator);
 
-    SDL_Event ev;
-    int ticks = 0;
-    do
-    {
-        if (SDL_PollEvent(&ev) != 0)
-        {
-            if (ev.type == SDL_QUIT)
-                s_alive = false;
-            if (ev.type == SDL_TEXTINPUT)
+	SDL_Event ev;
+	int ticks = 0;
+	do
+	{
+		if (SDL_PollEvent(&ev) != 0)
+		{
+			if (ev.type == SDL_QUIT)
+				s_alive = false;
+			if (ev.type == SDL_TEXTINPUT)
 				emulator.QueueBytes((uint8_t*)ev.text.text, (uint32_t)strlen(ev.text.text));
-            if (ev.type == SDL_KEYUP && ev.key.keysym.sym == SDL_KeyCode::SDLK_RETURN)
-                emulator.QueueByte(13);
-        }
+			if (ev.type == SDL_KEYUP && ev.key.keysym.sym == SDL_KeyCode::SDLK_RETURN)
+				emulator.QueueByte(13);
+		}
 
-        if ((ticks % 65536) == 0) // TODO: tune this to time not counter
-        {
-            if (SDL_MUSTLOCK(surface))
-                SDL_LockSurface(surface);
-            uint32_t* pixels = (uint32_t*)surface->pixels;
-            emulator.UpdateVideoLink(pixels, surface->pitch);
-            if (SDL_MUSTLOCK(surface))
-                SDL_UnlockSurface(surface);
-            SDL_UpdateWindowSurface(window);
-        }
-        ++ticks;
-    } while(s_alive);
+		if ((emulator.m_steps%16384)==0 && emulator.IsVideoDirty())
+		{
+			if (SDL_MUSTLOCK(surface))
+				SDL_LockSurface(surface);
+			uint32_t* pixels = (uint32_t*)surface->pixels;
+			emulator.UpdateVideoLink(pixels, surface->pitch);
+			if (SDL_MUSTLOCK(surface))
+				SDL_UnlockSurface(surface);
+			SDL_UpdateWindowSurface(window);
+			emulator.ClearVideoDirty();
+		}
+		++ticks;
+	} while(s_alive);
 
-    SDL_WaitThread(thread, nullptr);
-    SDL_FreeSurface(surface);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+	SDL_WaitThread(thread, nullptr);
+	SDL_FreeSurface(surface);
+	SDL_DestroyWindow(window);
+	SDL_Quit();
 
-    return 0;
+	return 0;
 }

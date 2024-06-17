@@ -229,5 +229,9 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 		}
 	}
 	else
+	{
+		// TODO: sysmem needs to recognize writes to current scanout pointer or attempts to swap scanout pointers
+		m_vpuc.DirtyInVideoScanoutRegion(address);
 		m_mem.Write(address, data, wstrobe);
+	}
 }

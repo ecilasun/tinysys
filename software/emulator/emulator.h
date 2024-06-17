@@ -15,9 +15,13 @@ public:
 	void QueueBytes(uint8_t *bytes, uint32_t count);
 	void QueueByte(uint8_t byte);
 
+	bool IsVideoDirty(){ return m_bus.IsVideoDirty(); }
+	void ClearVideoDirty() { m_bus.ClearVideoDirty(); }
+
 	CBus m_bus;
 	CRV32 m_cpu;
 
-	uint8_t *m_rombin = nullptr;
-	uint32_t m_romsize = 0;
+	uint8_t* m_rombin{ nullptr };
+	uint32_t m_romsize{ 0 };
+	uint32_t m_steps{ 0 };
 };

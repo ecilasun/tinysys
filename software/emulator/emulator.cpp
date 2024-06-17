@@ -39,6 +39,8 @@ bool CEmulator::Step()
 	uint32_t irq = m_bus.Tick(&m_cpu, &m_cpu.m_sie); // TODO: Pass list of all CPUs on the system
 	bool retval = m_cpu.Tick(m_bus, irq);
 
+	m_steps++;
+
 	return retval;
 }
 

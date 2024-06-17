@@ -43,6 +43,9 @@ public:
 	void UpdateVideoLink(uint32_t* pixels, int pitch);
 	void QueueByte(uint8_t byte);
 
+	bool IsVideoDirty() { return m_vpuc.IsVideoDirty(); }
+	void ClearVideoDirty() { m_vpuc.ClearVideoDirty(); }
+
 private:
 	CSysMem m_mem;
 	CCSRMem m_csr[2];

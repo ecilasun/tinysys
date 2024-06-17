@@ -17,6 +17,7 @@ void CVPU::Reset()
 	m_scanoutpointer = 0x0;
 	m_videoscanoutenable = 0;
 	m_count = 0;
+	m_videodirty = 1;
 }
 
 void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
@@ -26,36 +27,27 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 		uint32_t* devicemem = bus->GetHostAddress(m_scanoutpointer);
 		if (m_videoscanoutenable && devicemem)
 		{
-			if (m_scanwidth == 640)
+			// Copy vram scan out pointer contents to SDL surface
+			if (m_indexedcolormode)
 			{
-				// Copy vram scan out pointer contents to SDL surface
-				if (m_indexedcolormode)
+				// 16bpp
+				for (uint32_t i = 0; i < m_scanlength; i++)
+					pixels[i] = 0xFFFFFF00;// devicemem[i]; // TODO: convert to 16 bit
+			}
+			else
+			{
+				// 8bpp
+				uint8_t* devicememas8bpp = (uint8_t*)devicemem;
+				const int W = pitch / 4;
+				for (uint32_t y = 0; y < m_scanheight; y++)
 				{
-					// 16bpp
-					for (uint32_t i = 0; i < 640 * 480; i++)
-						pixels[i] = 0xFFFFFF00;// devicemem[i]; // TODO: convert to 16 bit
-				}
-				else
-				{
-					// 8bpp
-					uint8_t* devicememas8bpp = (uint8_t*)devicemem;
-					const int W = pitch / 4;
-					for (uint32_t y = 0; y < 480; y++)
+					const int linetop = W * y;
+					for (uint32_t x = 0; x < m_scanwidth; ++x)
 					{
-						const int linetop = W * y;
-						for (uint32_t x = 0; x < 640; ++x)
-						{
-							uint32_t color = m_vgapalette[devicememas8bpp[640 * y + x]];
-							pixels[linetop + x] = color;
-						}
+						uint32_t color = m_vgapalette[devicememas8bpp[m_scanwidth * y + x]];
+						pixels[linetop + x] = color;
 					}
 				}
-			}
-			else // 320
-			{
-				// not implemented yet
-				for (uint32_t i = 0; i < 640 * 480; i++)
-					pixels[i] = 0xFFFF0000;
 			}
 		}
 		else
@@ -139,6 +131,8 @@ void CVPU::Tick()
 
 		case 2:
 		{
+			// Changing scanout page should trigger video update
+			m_videodirty = 1;
 			// SETVPAGE
 			m_scanoutpointer = m_data;
 			//printf("scanout @%.8X\n", m_scanoutpointer);
@@ -148,6 +142,8 @@ void CVPU::Tick()
 
 		case 3:
 		{
+			// Palette animations should trigger video update
+			m_videodirty = 1;
 			// SETPAL
 			uint32_t addrs = SelectBitRange(m_data, 31, 24);
 			uint32_t color = SelectBitRange(m_data, 11, 0);
@@ -162,10 +158,14 @@ void CVPU::Tick()
 
 		case 4:
 		{
+			// Video mode change should trigger video update
+			m_videodirty = 1;
 			// VMODE
 			m_videoscanoutenable = m_data & 0x1 ? 1 : 0;	// 0:video output disabled, 1:video output enabled
 			m_indexedcolormode = m_data & 0x4 ? 1 : 0;		// 0:8bit indexed, 1:16bit rgb
 			m_scanwidth = m_data&0x2 ? 640 : 320;			// 0:320-wide, 1:640-wide
+			m_scanheight = m_data&0x2 ? 480 : 240;			// 0:240-tall, 1:480-tall
+			m_scanlength = m_scanwidth * m_scanheight;
 			m_state = 0;
 		}
 		break;
@@ -185,6 +185,6 @@ void CVPU::Read(uint32_t address, uint32_t& data)
 
 void CVPU::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 {
-	// Command FIFO write
+	// Command FIFO writes dirty the video output
 	m_fifo.push(word);
 }
