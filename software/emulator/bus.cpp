@@ -9,7 +9,7 @@ CBus::CBus(uint32_t resetvector)
 	m_csr[1] = new CCSRMem(1);
 
 	m_cpu[0] = new CRV32(0, resetvector);
-	m_cpu[1] = nullptr;// Only one CPU for now new CRV32(1, resetvector);
+	m_cpu[1] = new CRV32(1, resetvector);
 }
 
 CBus::~CBus()

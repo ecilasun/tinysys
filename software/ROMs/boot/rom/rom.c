@@ -751,6 +751,10 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	// Reset secondary CPUs
 	LEDSetState(0x0);															// xxxx
 
+	// Let the other CPUs boot
+	E32SetupCPU(1, UserMain);
+	E32ResetCPU(1);
+
 	//kprintf("CPU1 entry:%x mtvec:%x rst:%x\n", (uint32_t)UserMain, E32ReadMemMappedCSR(1, CSR_MSCRATCH), E32ReadMemMappedCSR(1, CSR_CPURESET));
 
 	// Main CLI loop
@@ -835,8 +839,6 @@ int main()
 	ClearTaskMemory();
 
 	// Reset and wake up all CPUs again, this time with their correct entry points
-	E32SetupCPU(1, UserMain);
-	E32ResetCPU(1);
 	E32SetupCPU(0, KernelMain);
 	E32ResetCPU(0);
 
