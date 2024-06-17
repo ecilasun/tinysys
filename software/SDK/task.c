@@ -192,7 +192,7 @@ uint64_t TaskYield()
 	// so we can yield as soon as possible.
 	clear_csr(mie, MIP_MTIP);
 	uint64_t now = E32ReadTime();
-	E32SetTimeCompare(now + 100);
+	E32SetTimeCompare(now);
 	set_csr(mie, MIP_MTIP);
 	return now;
 }
