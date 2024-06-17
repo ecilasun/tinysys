@@ -5,24 +5,33 @@ CBus::CBus()
 {
 	m_csr[0] = new CCSRMem(0);
 	m_csr[1] = new CCSRMem(1);
+
+	m_cpu[0] = new CRV32(0);
+	m_cpu[1] = new CRV32(1);
 }
 
 CBus::~CBus()
 {
 	delete m_csr[0];
 	delete m_csr[1];
+	delete m_cpu[0];
+	delete m_cpu[1];
 }
 
 void CBus::Reset(uint32_t resetvector, uint8_t* rombin, uint32_t romsize)
 {
 	m_mem.Reset();
-	m_csr[0]->Reset();
-	m_csr[1]->Reset();
+	m_mem.CopyROM(resetvector, rombin, romsize);
+
 	m_sdcc.Reset();
 	m_vpuc.Reset();
 	m_uart.Reset();
 
-	m_mem.CopyROM(resetvector, rombin, romsize);
+	m_csr[0]->Reset();
+	m_csr[1]->Reset();
+
+	m_cpu[0]->Reset();
+	m_cpu[1]->Reset();
 }
 
 void CBus::UpdateVideoLink(uint32_t *pixels, int pitch)
@@ -35,15 +44,22 @@ void CBus::QueueByte(uint8_t byte)
 	m_uart.QueueByte(byte);
 }
 
-void CBus::Tick(CRV32* cpu0, CRV32* cpu1)
+bool CBus::Tick()
 {
-	m_csr[0]->Tick(cpu0, &m_uart);
-	m_csr[1]->Tick(nullptr/*cpu1*/, &m_uart);
+	++m_evenodd;
+
+	bool ret0 = m_cpu[0]->Tick(this);
+	m_csr[0]->Tick(m_cpu[0], &m_uart);
+
+	bool ret1 = m_cpu[1]->Tick(this);
+	m_csr[1]->Tick(/*m_cpu[1]*/nullptr, &m_uart); // TODO: enable this when reboot issue for hart#1 is resolved
 
 	m_mem.Tick();
 	m_vpuc.Tick();
 	m_uart.Tick();
 	m_sdcc.Tick();
+
+	return ret0 && ret1;
 }
 
 uint32_t* CBus::GetHostAddress(uint32_t address)

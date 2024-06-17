@@ -124,9 +124,9 @@ public:
 	std::queue<SDecodedInstruction> m_instructionfifo;
 
 	void Reset();
-	bool Tick(CBus& bus);
-	bool FetchDecode(CBus& bus);
-	bool Execute(CBus& bus);
+	bool Tick(CBus* bus);
+	bool FetchDecode(CBus* bus);
+	bool Execute(CBus* bus);
 
 private:
 	void DecodeInstruction(const uint32_t pc, const uint32_t instr, SDecodedInstruction& dec);

@@ -35,7 +35,7 @@ public:
 	~CBus();
 
 	void Reset(uint32_t resetvector, uint8_t* rombin, uint32_t romsize);
-	void Tick(CRV32* cpu0, CRV32* cpu1);
+	bool Tick();
 	void Read(uint32_t address, uint32_t& data);
 	void Write(uint32_t address, uint32_t data, uint32_t wstrobe);
 	uint32_t* GetHostAddress(uint32_t address);
@@ -48,10 +48,12 @@ public:
 
 private:
 	CSysMem m_mem;
+	CRV32* m_cpu[2]{ nullptr, nullptr };
 	CCSRMem* m_csr[2]{ nullptr, nullptr };
 	CMailMem m_mail;
 	CSDCard m_sdcc;
 	CVPU m_vpuc;
 	CLEDs m_leds;
 	CUART m_uart;
+	uint32_t m_evenodd{ 0 };
 };

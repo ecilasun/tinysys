@@ -28,25 +28,15 @@ bool CEmulator::Reset(const char* romFile)
 		fclose(fp);
 	}
 
-	m_cpu[0] = new CRV32(0);
-	m_cpu[1] = new CRV32(1);
-	m_bus.Reset(m_cpu[0]->m_resetvector, m_rombin, m_romsize);
-	m_cpu[0]->Reset();
-	m_cpu[1]->Reset();
+	m_bus.Reset(0x0FFE0000, m_rombin, m_romsize);
 
 	return true;
 }
 
 bool CEmulator::Step()
 {
-	m_bus.Tick(m_cpu[0], m_cpu[1]);
-
-	bool ret0 = m_cpu[0]->Tick(m_bus);
-	bool ret1 = m_cpu[1]->Tick(m_bus);
-
-	m_steps++;
-
-	return ret0 && ret1;
+	++m_steps;
+	return m_bus.Tick();
 }
 
 void CEmulator::UpdateVideoLink(uint32_t *pixels, int pitch)

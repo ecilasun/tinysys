@@ -474,7 +474,7 @@ void CRV32::InjectISRHeaderFooter()
 	}
 }
 
-bool CRV32::FetchDecode(CBus& bus)
+bool CRV32::FetchDecode(CBus* bus)
 {
 	if (m_fetchstate == EFetchInit)
 	{
@@ -498,7 +498,7 @@ bool CRV32::FetchDecode(CBus& bus)
 	if (m_fetchstate == EFetchRead)
 	{
 		uint32_t instruction;
-		bus.Read(m_PC, instruction);
+		bus->Read(m_PC, instruction);
 		SDecodedInstruction decoded;
 		DecodeInstruction(m_PC, instruction, decoded);
 
@@ -549,7 +549,7 @@ bool CRV32::FetchDecode(CBus& bus)
 		// Determine next PC
 		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
 		if (branchtomtvec)
-			bus.Read(csrbase + (CSR_MTVEC << 2), m_PC);
+			bus->Read(csrbase + (CSR_MTVEC << 2), m_PC);
 		else if (decoded.m_opcode != OP_BRANCH && decoded.m_opcode != OP_JALR && decoded.m_opcode != OP_JAL && !ismret)
 			m_PC = decoded.m_pc + 4;
 		else
@@ -579,18 +579,18 @@ bool CRV32::FetchDecode(CBus& bus)
 	return true;
 }
 
-bool CRV32::Execute(CBus& bus)
+bool CRV32::Execute(CBus* bus)
 {
 	if (m_instructionfifo.size())
 	{
 		++m_cyclecounter;
 
 		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
-		bus.Write(csrbase + (CSR_RETILO << 2), (uint32_t)(m_retired & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
-		bus.Write(csrbase + (CSR_RETIHI << 2), (uint32_t)((m_retired & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
-		bus.Write(csrbase + (CSR_PROGRAMCOUNTER << 2), m_PC, 0xFFFFFFFF);
-		bus.Write(csrbase + (CSR_CYCLELO << 2), (uint32_t)(m_cyclecounter & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
-		bus.Write(csrbase + (CSR_CYCLEHI << 2), (uint32_t)((m_cyclecounter & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
+		bus->Write(csrbase + (CSR_RETILO << 2), (uint32_t)(m_retired & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
+		bus->Write(csrbase + (CSR_RETIHI << 2), (uint32_t)((m_retired & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
+		bus->Write(csrbase + (CSR_PROGRAMCOUNTER << 2), m_PC, 0xFFFFFFFF);
+		bus->Write(csrbase + (CSR_CYCLELO << 2), (uint32_t)(m_cyclecounter & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
+		bus->Write(csrbase + (CSR_CYCLEHI << 2), (uint32_t)((m_cyclecounter & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
 
 		SDecodedInstruction instr;
 		instr = m_instructionfifo.front();
@@ -685,7 +685,7 @@ bool CRV32::Execute(CBus& bus)
 				{
 					m_wasmret = 1;
 					m_branchresolved = 1;
-					bus.Read(csrbase + (CSR_MEPC << 2), m_branchtarget);
+					bus->Read(csrbase + (CSR_MEPC << 2), m_branchtarget);
 				}
 				else if (instr.m_f12 == F12_WFI)
 				{
@@ -705,7 +705,7 @@ bool CRV32::Execute(CBus& bus)
 					// Read previous value
 					uint32_t csraddress = csrbase + (instr.m_csroffset << 2);
 					uint32_t csrprevval;
-					bus.Read(csraddress, csrprevval);
+					bus->Read(csraddress, csrprevval);
 
 					// Keep it in a register
 					rwen = 1;
@@ -770,7 +770,7 @@ bool CRV32::Execute(CBus& bus)
 			case OP_LOAD:
 			{
 				uint32_t dataword;
-				bus.Read(rwaddress, dataword);
+				bus->Read(rwaddress, dataword);
 
 				uint32_t range1 = SelectBitRange(rwaddress, 1, 1);
 				uint32_t range2 = SelectBitRange(rwaddress, 1, 0);
@@ -852,7 +852,7 @@ bool CRV32::Execute(CBus& bus)
 		if (wstrobe)
 		{
 			//printf("- W @%.8X val=%.8x mask=%.8x\n", rwaddress, wdata, wstrobe);
-			bus.Write(rwaddress, wdata, wstrobe);
+			bus->Write(rwaddress, wdata, wstrobe);
 		}
 
 		if (rwen && instr.m_rd != 0)
@@ -868,7 +868,7 @@ bool CRV32::Execute(CBus& bus)
 	return true;
 }
 
-bool CRV32::Tick(CBus& bus)
+bool CRV32::Tick(CBus* bus)
 {
 	const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
 
@@ -880,8 +880,8 @@ bool CRV32::Tick(CBus& bus)
 
 	if (m_cyclecounter % 15 == 0) // 150MHz vs 10Mhz
 	{
-		bus.Write(csrbase + (CSR_TIMELO << 2), (uint32_t)(m_wallclock & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
-		bus.Write(csrbase + (CSR_TIMEHI << 2), (uint32_t)((m_wallclock & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
+		bus->Write(csrbase + (CSR_TIMELO << 2), (uint32_t)(m_wallclock & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
+		bus->Write(csrbase + (CSR_TIMEHI << 2), (uint32_t)((m_wallclock & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
 		++m_wallclock;
 	}
 
