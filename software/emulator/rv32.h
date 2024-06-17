@@ -88,8 +88,8 @@ class CBus;
 class CRV32
 {
 public:
-	CRV32();
-	~CRV32();
+	explicit CRV32(uint32_t hartid) : m_hartid(hartid) {}
+	~CRV32() {}
 
 	// Right hand side
 	uint32_t m_PC;
@@ -114,7 +114,7 @@ public:
 	//uint32_t m_postmret = 0;
 	//uint32_t m_posteoi = 0;
 
-	uint32_t m_resetvector = 0x0FFE0000;
+	uint32_t m_resetvector{ 0x0FFE0000 };
 	bool m_pendingCPUReset{ false };
 
 	std::queue<SDecodedInstruction> m_instructionfifo;

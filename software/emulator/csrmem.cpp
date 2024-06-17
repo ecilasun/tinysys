@@ -2,16 +2,6 @@
 #include <string.h>
 #include "csrmem.h"
 
-CCSRMem::CCSRMem()
-{
-	m_csrmem = (uint32_t*)malloc(4096 * sizeof(uint32_t));
-}
-
-CCSRMem::~CCSRMem()
-{
-	free(m_csrmem);
-}
-
 void CCSRMem::Reset()
 {
 	// Clear memory
@@ -32,7 +22,7 @@ void CCSRMem::Reset()
 	m_wallclocktime = 0x0000000000000000;
 }
 
-uint32_t CCSRMem::Tick(CRV32* cpu, CUART* uart, uint32_t* sie)
+uint32_t CCSRMem::Tick(CRV32* cpu, CUART* uart)
 {
 	// Detect reset request
 	if (m_cpuresetreq)
@@ -56,8 +46,8 @@ uint32_t CCSRMem::Tick(CRV32* cpu, CUART* uart, uint32_t* sie)
 	uint32_t ie = m_mstatusshadow & 0x8;
 
 	// Software interrupt
-	if (sie)
-		*sie = (m_mieshadow & 0x008 ? 1 : 0) && ie;
+	if (cpu)
+		cpu->m_sie = (m_mieshadow & 0x008 ? 1 : 0) && ie;
 	// Timer interrupt
 	uint32_t timerInterrupt = ((m_mieshadow & 0x080 ? 1 : 0) && ie && (m_wallclocktime >= m_timecmp)) ? 1 : 0;
 	// Machine external interrupts
@@ -92,6 +82,8 @@ void CCSRMem::Read(uint32_t address, uint32_t& data)
 		data = m_mstatusshadow;
 	else if (csrindex == CSR_MIE)
 		data = m_mieshadow;
+	else if (csrindex == CSR_MHARTID)
+		data = m_hartid;
 	else
 		data = m_csrmem[csrindex];
 }
@@ -116,6 +108,8 @@ void CCSRMem::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 		m_mstatusshadow = word;
 	else if (csrindex == CSR_MIE)
 		m_mieshadow = word; // Only timer, software, and external interrupt state is shadowed
+	else if (csrindex == CSR_MHARTID)
+		; // noop
 	else
 		m_csrmem[csrindex] = word;
 }

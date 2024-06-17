@@ -21,7 +21,7 @@ public:
 	void UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus);
 	bool IsVideoDirty() { return m_videodirty; }
 	void ClearVideoDirty() { m_videodirty = 0; }
-	void DirtyInVideoScanoutRegion(uint32_t address) { if (address>=m_scanoutpointer && address<=m_scanoutpointer+m_scanlength) m_videodirty = 1; }
+	inline void DirtyInVideoScanoutRegion(uint32_t address) { if (address>=m_scanoutpointer && address<=m_scanoutpointer+m_scanlength) m_videodirty = 1; }
 
 private:
 	uint32_t m_cmd{ 0 };

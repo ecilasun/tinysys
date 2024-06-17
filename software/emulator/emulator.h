@@ -19,7 +19,7 @@ public:
 	void ClearVideoDirty() { m_bus.ClearVideoDirty(); }
 
 	CBus m_bus;
-	CRV32 m_cpu;
+	CRV32* m_cpu[2]{ nullptr, nullptr };
 
 	uint8_t* m_rombin{ nullptr };
 	uint32_t m_romsize{ 0 };

@@ -22,6 +22,7 @@ void CUART::Tick()
 
 	while (m_byteoutqueue.size())
 	{
+		// Output to console
 		printf("%c", m_byteoutqueue.front());
 		m_byteoutqueue.pop();
 	}

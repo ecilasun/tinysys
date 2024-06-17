@@ -1,11 +1,23 @@
 #include <stdio.h>
 #include "bus.h"
 
+CBus::CBus()
+{
+	m_csr[0] = new CCSRMem(0);
+	m_csr[1] = new CCSRMem(1);
+}
+
+CBus::~CBus()
+{
+	delete m_csr[0];
+	delete m_csr[1];
+}
+
 void CBus::Reset(uint32_t resetvector, uint8_t* rombin, uint32_t romsize)
 {
 	m_mem.Reset();
-	m_csr[0].Reset();
-	m_csr[1].Reset();
+	m_csr[0]->Reset();
+	m_csr[1]->Reset();
 	m_sdcc.Reset();
 	m_vpuc.Reset();
 	m_uart.Reset();
@@ -23,22 +35,18 @@ void CBus::QueueByte(uint8_t byte)
 	m_uart.QueueByte(byte);
 }
 
-uint32_t CBus::Tick(CRV32* cpu0, uint32_t* sie0)
+void CBus::Tick(CRV32* cpu0, CRV32* cpu1, uint32_t& irq0, uint32_t& irq1)
 {
 	// TODO: Update device interrupt state
 	//Write(csrbase + (CSR_HWSTATE << 2), 0, 0xFFFFFFFF);
-
-	uint32_t irq = 0;
 
 	m_mem.Tick();
 	m_sdcc.Tick();
 	m_vpuc.Tick();
 	m_uart.Tick();
 
-	irq |= m_csr[0].Tick(cpu0, &m_uart, sie0);
-	irq |= m_csr[1].Tick(nullptr, nullptr, nullptr); // TODO: This CSR has no CPU to talk to yet
-
-	return irq;
+	irq0 = m_csr[0]->Tick(cpu0, &m_uart);
+	irq1 = m_csr[1]->Tick(cpu1, &m_uart);
 }
 
 uint32_t* CBus::GetHostAddress(uint32_t address)
@@ -104,7 +112,7 @@ void CBus::Read(uint32_t address, uint32_t& data)
 			{
 				// DEVICE_USBA
 				//m_usba->Read(address, data);
-				//printf("<-USB-A\n");
+				printf("<-USB-A\n");
 				data = 0xFF; // SPI access should return FF for no device present
 			}
 			break;
@@ -130,12 +138,12 @@ void CBus::Read(uint32_t address, uint32_t& data)
 			break;
 			case 0xA:
 			{
-				m_csr[0].Read(address, data);
+				m_csr[0]->Read(address, data);
 			}
 			break;
 			case 0xB:
 			{
-				m_csr[1].Read(address, data);
+				m_csr[1]->Read(address, data);
 			}
 			break;
 		}
@@ -194,7 +202,7 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 			{
 				// DEVICE_USBA
 				//m_usba->Write(address, data, wstrobe);
-				//printf("USB-A@0x%.8X<-0x%.8x\n", address, data);
+				printf("USB-A@0x%.8X<-0x%.8x\n", address, data);
 			}
 			break;
 			case 7:
@@ -218,12 +226,12 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 			break;
 			case 0xA:
 			{
-				m_csr[0].Write(address, data, wstrobe);
+				m_csr[0]->Write(address, data, wstrobe);
 			}
 			break;
 			case 0xB:
 			{
-				m_csr[1].Write(address, data, wstrobe);
+				m_csr[1]->Write(address, data, wstrobe);
 			}
 			break;
 		}

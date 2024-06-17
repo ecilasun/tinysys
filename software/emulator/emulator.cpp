@@ -28,20 +28,26 @@ bool CEmulator::Reset(const char* romFile)
 		fclose(fp);
 	}
 
-	m_bus.Reset(m_cpu.m_resetvector, m_rombin, m_romsize);
-	m_cpu.Reset();
+	m_cpu[0] = new CRV32(0);
+	m_cpu[1] = new CRV32(1);
+	m_bus.Reset(m_cpu[0]->m_resetvector, m_rombin, m_romsize);
+	m_cpu[0]->Reset();
+	m_cpu[1]->Reset();
 
 	return true;
 }
 
 bool CEmulator::Step()
 {
-	uint32_t irq = m_bus.Tick(&m_cpu, &m_cpu.m_sie); // TODO: Pass list of all CPUs on the system
-	bool retval = m_cpu.Tick(m_bus, irq);
+	uint32_t irq0, irq1;
+	m_bus.Tick(m_cpu[0], m_cpu[1], irq0, irq1);
+
+	bool ret0 = m_cpu[0]->Tick(m_bus, irq0);
+	bool ret1 = true;// m_cpu[1]->Tick(m_bus, irq1);
 
 	m_steps++;
 
-	return retval;
+	return ret0 && ret1;
 }
 
 void CEmulator::UpdateVideoLink(uint32_t *pixels, int pitch)

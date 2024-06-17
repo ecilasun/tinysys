@@ -53,14 +53,6 @@ uint32_t ISR_ROM[] = {
 	0xfd079073,0x08000793,0x3007b073,0x0047d793,0x3047a073,0x00800793,0x3007a073,0xfd0027f3 // 93-100 SWI end
 };
 
-CRV32::CRV32()
-{
-}
-
-CRV32::~CRV32()
-{
-}
-
 void CRV32::Reset()
 {
 	m_fetchstate = EFetchRead;
@@ -356,7 +348,7 @@ void CRV32::DecodeInstruction(uint32_t pc, uint32_t instr, SDecodedInstruction& 
 
 	dec.m_selimm = (dec.m_opcode==OP_JALR) || (dec.m_opcode==OP_OP_IMM) || (dec.m_opcode==OP_LOAD) || (dec.m_opcode==OP_STORE);
 
-	//printf("%.8X: %s%s %s %s -> %s I=%d\n", m_PC, opnames[dec.m_opindex], alunames[dec.m_aluop], regnames[dec.m_rs1], regnames[dec.m_rs2], regnames[dec.m_rd], dec.m_immed);
+	//printf("#%d:: %.8X:%.8X %s%s %s %s -> %s I=%d\n", m_hartid, m_PC, instr, opnames[dec.m_opindex], alunames[dec.m_aluop], regnames[dec.m_rs1], regnames[dec.m_rs2], regnames[dec.m_rd], dec.m_immed);
 }
 
 void CRV32::InjectISRHeaderFooter()
@@ -492,14 +484,14 @@ bool CRV32::FetchDecode(CBus& bus, uint32_t irq)
 		DecodeInstruction(m_PC, instruction, decoded);
 
 		// Debug mode only, let ISR handle this
-		/*if (decoded.m_opindex == 0)
+		if (decoded.m_opindex == 0)
 		{
-			printf("illegal instruction @0x%.8X\n", m_PC);
+			printf("HART #%d: Illegal instruction 0x%.8X @0x%.8X\n", m_hartid, instruction, m_PC);
 			for (uint32_t i=0;i<32;++i)
 				printf("r%d=%.8x ", i, m_GPR[i]);
 			printf("\n");
 			return false;
-		}*/
+		}
 
 		bool isebreak = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_EBREAK;
 		bool isecall = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_ECALL;
@@ -861,7 +853,11 @@ bool CRV32::Tick(CBus& bus, uint32_t irq)
 	if (m_pendingCPUReset)
 	{
 		m_pendingCPUReset = false;
-		Reset();
+		// Consume leftovers
+		while (m_instructionfifo.size())
+			Execute(bus);
+		m_fetchstate = EFetchRead;
+		m_PC = m_resetvector;
 	}
 
 	bool fetchok = FetchDecode(bus, irq);

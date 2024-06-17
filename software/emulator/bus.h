@@ -31,11 +31,11 @@
 class CBus
 {
 public:
-	CBus() {}
-	~CBus() {}
+	CBus();
+	~CBus();
 
 	void Reset(uint32_t resetvector, uint8_t* rombin, uint32_t romsize);
-	uint32_t Tick(CRV32* cpu0, uint32_t* sie0);
+	void Tick(CRV32* cpu0, CRV32* cpu1, uint32_t& irq0, uint32_t& irq1);
 	void Read(uint32_t address, uint32_t& data);
 	void Write(uint32_t address, uint32_t data, uint32_t wstrobe);
 	uint32_t* GetHostAddress(uint32_t address);
@@ -48,7 +48,7 @@ public:
 
 private:
 	CSysMem m_mem;
-	CCSRMem m_csr[2];
+	CCSRMem* m_csr[2]{ nullptr, nullptr };
 	CMailMem m_mail;
 	CSDCard m_sdcc;
 	CVPU m_vpuc;

@@ -37,16 +37,17 @@
 class CCSRMem
 {
 public:
-	CCSRMem();
-	~CCSRMem();
+	explicit CCSRMem(uint32_t hartid) : m_hartid(hartid) { m_csrmem = (uint32_t*)malloc(4096 * sizeof(uint32_t)); }
+	~CCSRMem() { free(m_csrmem); }
 
 	void Reset();
-	uint32_t Tick(CRV32* cpu, CUART* uart, uint32_t* sie);
+	uint32_t Tick(CRV32* cpu, CUART* uart);
 	void Read(uint32_t address, uint32_t& data);
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe);
 
 	uint64_t m_wallclocktime{ 0 };
 	uint64_t m_timecmp{ 0 };
+	uint32_t m_hartid{ 0 };
 
 private:
 	uint32_t* m_csrmem = nullptr;
