@@ -72,10 +72,8 @@ int SDL_main(int argc, char** argv)
 		{
 			if (ev.type == SDL_QUIT)
 				s_alive = false;
-			if (ev.type == SDL_TEXTINPUT)
-				emulator.QueueBytes((uint8_t*)ev.text.text, (uint32_t)strlen(ev.text.text));
-			if (ev.type == SDL_KEYUP && ev.key.keysym.sym == SDL_KeyCode::SDLK_RETURN)
-				emulator.QueueByte(13);
+			else if (ev.type == SDL_KEYUP)
+				emulator.QueueByte(ev.key.keysym.sym);
 		}
 
 		if ((emulator.m_steps%16384)==0 && emulator.IsVideoDirty())
