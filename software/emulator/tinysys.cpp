@@ -82,7 +82,13 @@ int SDL_main(int argc, char** argv)
 			if (ev.type == SDL_QUIT)
 				s_alive = false;
 			else if (ev.type == SDL_KEYUP)
-				emulator.QueueByte(ev.key.keysym.sym);
+			{
+				const Uint8* state = SDL_GetKeyboardState(nullptr);
+				if (state[SDL_SCANCODE_LCTRL] && ev.key.keysym.sym == 'c')
+					emulator.QueueByte(3);
+				else if (ev.key.keysym.sym != SDLK_LCTRL)
+					emulator.QueueByte(ev.key.keysym.sym);
+			}
 		}
 
 		// Video output

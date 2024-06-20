@@ -555,7 +555,7 @@ bool CRV32::FetchDecode(CBus* bus)
 			bus->Read(csrbase + (CSR_MTVEC << 2), m_PC);
 		else if (decoded.m_opcode != OP_BRANCH && decoded.m_opcode != OP_JALR && decoded.m_opcode != OP_JAL && !ismret)
 			m_PC = decoded.m_pc + 4;
-		else
+		else if (!iswfi)
 			m_fetchstate = EFetchWaitForBranch; // wait for branch target from exec
 
 		return true;
