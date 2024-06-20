@@ -229,7 +229,7 @@ DRESULT disk_ioctl (
 		if (cmd == GET_BLOCK_SIZE)
 			*(DWORD*)buff = 0x200; // 512
 		else if (cmd == GET_SECTOR_COUNT)
-			*(DWORD*)buff = 0x10000;
+			*(DWORD*)buff = 0x100000;
 		res = RES_OK;
 #else
 		if (SDIOControl(cmd, buff) != -1)

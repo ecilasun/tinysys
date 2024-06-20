@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <random>
+#include <filesystem>
 #include "sdcard.h"
 
 #define SD_CMD_LEN 0x6
@@ -21,22 +22,85 @@ extern "C" void SDInitBlockMem();
 extern "C" int SDReadMultipleBlocks(uint8_t* datablock, uint32_t numblocks, uint32_t blockaddress);
 extern "C" int SDWriteMultipleBlocks(const uint8_t* datablock, uint32_t numblocks, uint32_t blockaddress);
 
+void removeTextBeforeAndIncludingToken(std::string& str, const std::string& token) {
+	size_t pos = str.find(token);
+	if (pos != std::string::npos) {
+		str.erase(0, pos + token.length());
+		// Also replace backslashes with forward slashes
+		std::replace(str.begin(), str.end(), '\\', '/');
+	}
+}
+
+void CSDCard::PopulateFileSystem()
+{
+	uint8_t tmpmem[4096];
+	using namespace std::filesystem;
+	path sourcePath = absolute("../sdcardmirror");
+	std::string targetRoot = "sd:";
+	for (const auto& entry : recursive_directory_iterator(sourcePath))
+	{
+		if (entry.is_directory())
+		{
+			std::string filePath = entry.path().string();
+			removeTextBeforeAndIncludingToken(filePath, "sdcardmirror");
+			f_mkdir((targetRoot+filePath).c_str());
+		}
+
+		if (entry.is_regular_file())
+		{
+			std::string filePath = entry.path().string();
+			std::string actualPath = filePath;
+			removeTextBeforeAndIncludingToken(filePath, "sdcardmirror");
+
+			FILE *sourceFile = fopen(actualPath.c_str(), "rb");
+			if (sourceFile)
+			{
+				FIL m_file;
+				f_open(&m_file, (targetRoot + filePath).c_str(), FA_CREATE_ALWAYS | FA_WRITE);
+
+				size_t fs = entry.file_size();
+				size_t numblocks = (fs+4093)/4096;
+				for (size_t i = 0; i < numblocks; ++i)
+				{
+					UINT readlen = (UINT)fread(tmpmem, 1, 4096, sourceFile);
+					if (readlen)
+					{
+						UINT wbytes = 0;
+						FRESULT fr = f_write(&m_file, tmpmem, readlen, &wbytes);
+						if (fr != FR_OK || wbytes != readlen)
+							printf("Failed to write file\n");
+					}
+				}
+				f_close(&m_file);
+			}
+			fclose(sourceFile);
+		}
+	}
+}
+
 void CSDCard::Reset()
 {
-	// TODO: Grab all files in sdcard directory and generate a fake FAT32 image in memory
-
-	// Prepare a 64 MByte dummy sdcard in RAM
-	//m_ramdisk = new RAMDisk(64*1024*1024);
-
+	// Prepare a 64 MByte range of block memory to hold the FAT32 image
 	SDInitBlockMem();
 
 	m_fs = new FATFS();
 	uint8_t buf[1024];
-	f_mkfs("sd:", nullptr, buf, 1024);
+	MKFS_PARM mkfs_param = { 0 };
+	mkfs_param.align = 0x10000;
+	mkfs_param.au_size = 0x1000;
+	mkfs_param.fmt = FM_FAT32;
+	mkfs_param.n_fat = 2;
+	mkfs_param.n_root = 512;
+	f_mkfs("sd:", &mkfs_param, buf, 1024);
 
 	FRESULT mountattempt = f_mount(m_fs, "sd:", 1);
 	if (mountattempt != FR_OK)
 		printf("Failed to mount filesystem\n");
+	else
+	{
+		printf("Building file system\n");
+		PopulateFileSystem();
+	}
 }
 
 uint32_t CSDCard::SPIRead(uint8_t *buffer, uint32_t len)
@@ -89,7 +153,6 @@ void CSDCard::ProcessSPI()
 						case SD_CMD0: // GO_IDLE_STATE
 						{
 							m_spioutfifo.push(0x01);
-							printf("SD_CMD0\n");
 						}
 						break;
 
@@ -101,7 +164,6 @@ void CSDCard::ProcessSPI()
 							m_spioutfifo.push(0x00);
 							m_spioutfifo.push(m_databytes[3]);
 							m_spioutfifo.push(m_databytes[4]);
-							printf("SD_CMD8\n");
 						}
 						break;
 
@@ -110,7 +172,6 @@ void CSDCard::ProcessSPI()
 							// R2 response
 							m_spioutfifo.push(0x00);
 							m_spioutfifo.push(0x00);
-							printf("SD_CMD13\n");
 						}
 						break;
 
@@ -118,7 +179,6 @@ void CSDCard::ProcessSPI()
 						{
 							// R1 response
 							m_spioutfifo.push(0x00);
-							printf("SD_CMD16\n");
 						}
 						break;
 
@@ -136,7 +196,6 @@ void CSDCard::ProcessSPI()
 								m_spioutfifo.push(datablock[i]); // Return empty contents for now
 							m_spioutfifo.push(0x00);
 							m_spioutfifo.push(0x00); // CRC
-							printf("SD_CMD17 block %.8X\n", block_num);
 						}
 						break;
 
@@ -153,7 +212,6 @@ void CSDCard::ProcessSPI()
 								block[i] = m_databytes[4 + i];
 								//std::vector<uint8_t> dataToWrite(512, 0xFF); // Example data to write
 								//m_image.writeSector(10, dataToWrite); // Write to sector 10*/
-							printf("SD_CMD24\n");
 						}
 						break;
 
@@ -161,7 +219,6 @@ void CSDCard::ProcessSPI()
 						{
 							m_app_mode = true;
 							m_spioutfifo.push(0x01);
-							printf("SD_CMD55\n");
 						}
 						break;
 
@@ -173,7 +230,6 @@ void CSDCard::ProcessSPI()
 							m_spioutfifo.push(0x00);
 							m_spioutfifo.push(0x00);
 							m_spioutfifo.push(0x00);
-							printf("SD_CMD58\n");
 						}
 						break;
 					}
@@ -186,7 +242,6 @@ void CSDCard::ProcessSPI()
 						{
 							// R1 response
 							m_spioutfifo.push(0x00);
-							printf("SD_ACMD41\n");
 						}
 						break;
 					}

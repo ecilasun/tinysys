@@ -6,7 +6,7 @@ static uint8_t* s_blockmem;
 
 void SDInitBlockMem()
 {
-	s_blockmem = (uint8_t*)malloc(64 * 1024 * 1024);
+	s_blockmem = (uint8_t*)malloc(256 * 1024 * 1024);
 }
 
 int SDReadMultipleBlocks(uint8_t* datablock, uint32_t numblocks, uint32_t blockaddress)
