@@ -2,10 +2,6 @@
 #include <random>
 #include "sdcard.h"
 
-// Some parts are based on the following code
-// https://github.com/Gigahawk/pico-libsdemu/blob/master/src/libsdemu.c
-
-
 #define SD_CMD_LEN 0x6
 
 #define SD_CMD0 0
@@ -21,17 +17,26 @@
 #define DATA_RES_ACCEPTED 0X05
 #define SD_SECTOR_SIZE 512
 
+extern "C" void SDInitBlockMem();
+extern "C" int SDReadMultipleBlocks(uint8_t* datablock, uint32_t numblocks, uint32_t blockaddress);
+extern "C" int SDWriteMultipleBlocks(const uint8_t* datablock, uint32_t numblocks, uint32_t blockaddress);
+
 void CSDCard::Reset()
 {
 	// TODO: Grab all files in sdcard directory and generate a fake FAT32 image in memory
 
-	size_t totalSectors = 1024; // Example total sectors
-	size_t fatSectors = 32; // Example FAT size in sectors
-	size_t rootDirStart = 33; // Example start sector of the root directory
-	size_t rootDirSectors = 1; // Number of sectors for the root directory
-	m_image = new Fat32Image(totalSectors, fatSectors, rootDirStart, rootDirSectors);
+	// Prepare a 64 MByte dummy sdcard in RAM
+	//m_ramdisk = new RAMDisk(64*1024*1024);
 
-	m_image->addFileWithLongName("ThisIsALongFileName.txt", "THISIS~1.TXT", 2, 1024);
+	SDInitBlockMem();
+
+	m_fs = new FATFS();
+	uint8_t buf[1024];
+	f_mkfs("sd:", nullptr, buf, 1024);
+
+	FRESULT mountattempt = f_mount(m_fs, "sd:", 1);
+	if (mountattempt != FR_OK)
+		printf("Failed to mount filesystem\n");
 }
 
 uint32_t CSDCard::SPIRead(uint8_t *buffer, uint32_t len)
@@ -125,18 +130,12 @@ void CSDCard::ProcessSPI()
 							uint32_t block_num = (uint32_t)m_databytes[0] << 24 | (uint32_t)m_databytes[1] << 16 | (uint32_t)m_databytes[2] << 8 | (uint32_t)m_databytes[3];
 							m_spioutfifo.push(DATA_START_BLOCK);
 							// Return block from FAT32 image in memory
-							auto readData = m_image->readSector(block_num);
+							uint8_t datablock[512];
+							SDReadMultipleBlocks(datablock, 1, block_num);
 							for (int i = 0; i < SD_SECTOR_SIZE; ++i)
-								m_spioutfifo.push(readData[i]); // Return empty contents for now
+								m_spioutfifo.push(datablock[i]); // Return empty contents for now
 							m_spioutfifo.push(0x00);
 							m_spioutfifo.push(0x00); // CRC
-							/*if (block == NULL) {
-								spi_write_const(spi, 0x00, SD_SECTOR_SIZE + 2);
-							}
-							else {
-								spi_write(spi, block, SD_SECTOR_SIZE);
-								spi_write_const(spi, 0x00, 2);
-							}*/
 							printf("SD_CMD17 block %.8X\n", block_num);
 						}
 						break;
@@ -146,13 +145,14 @@ void CSDCard::ProcessSPI()
 							// Return an R1 response
 							m_spioutfifo.push(0xFF); // fail
 							// We always emulate an SD card, the arg is always block number
-							/*uint32_t block_num = (uint32_t)m_databytes[0] << 24 | (uint32_t)m_databytes[1] << 16 | (uint32_t)m_databytes[2] << 8 | (uint32_t)m_databytes[3];
+							uint32_t block_num = (uint32_t)m_databytes[0] << 24 | (uint32_t)m_databytes[1] << 16 | (uint32_t)m_databytes[2] << 8 | (uint32_t)m_databytes[3];
+							//SDWriteMultipleBlocks...
 							// Request the block from the application, can be read only
-							uint8_t block[SD_SECTOR_SIZE];
+							/*uint8_t block[SD_SECTOR_SIZE];
 							for (int i = 0; i < SD_SECTOR_SIZE; ++i)
-								block[i] = m_databytes[4 + i];*/
+								block[i] = m_databytes[4 + i];
 								//std::vector<uint8_t> dataToWrite(512, 0xFF); // Example data to write
-								//m_image.writeSector(10, dataToWrite); // Write to sector 10
+								//m_image.writeSector(10, dataToWrite); // Write to sector 10*/
 							printf("SD_CMD24\n");
 						}
 						break;

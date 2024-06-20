@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="3rdParty">
+      <UniqueIdentifier>{ca4ebbb4-7cf1-4e07-bd50-00521840a7f5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\emulator.cpp">
@@ -46,6 +49,21 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\uart.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\3rdparty\fat32\diskio.c">
+      <Filter>3rdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\3rdparty\fat32\ff.c">
+      <Filter>3rdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\3rdparty\fat32\ffsystem.c">
+      <Filter>3rdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\3rdparty\fat32\ffunicode.c">
+      <Filter>3rdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sdcardblockmem.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

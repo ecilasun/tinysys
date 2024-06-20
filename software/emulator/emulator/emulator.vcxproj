@@ -43,7 +43,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -104,7 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;CAT_WINDOWS;DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\repos\tinysys\tinysys\software\emulator\3rdparty\SDL2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\repos\tinysys\tinysys\software\3rdparty\fat32;D:\repos\tinysys\tinysys\software\emulator\3rdparty\SDL2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -120,7 +120,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;CAT_WINDOWS;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\repos\tinysys\tinysys\software\emulator\3rdparty\SDL2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\repos\tinysys\tinysys\software\3rdparty\fat32; D:\repos\tinysys\tinysys\software\emulator\3rdparty\SDL2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
@@ -135,11 +135,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\3rdparty\fat32\diskio.c" />
+    <ClCompile Include="..\..\3rdparty\fat32\ff.c" />
+    <ClCompile Include="..\..\3rdparty\fat32\ffsystem.c" />
+    <ClCompile Include="..\..\3rdparty\fat32\ffunicode.c" />
     <ClCompile Include="..\bus.cpp" />
     <ClCompile Include="..\csrmem.cpp" />
     <ClCompile Include="..\emulator.cpp" />
     <ClCompile Include="..\leds.cpp" />
     <ClCompile Include="..\mailmem.cpp" />
+    <ClCompile Include="..\sdcardblockmem.c" />
     <ClCompile Include="..\sysmem.cpp" />
     <ClCompile Include="..\rv32.cpp" />
     <ClCompile Include="..\sdcard.cpp" />

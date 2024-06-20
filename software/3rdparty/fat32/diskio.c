@@ -9,7 +9,7 @@
 
 #include "ff.h"			/* Obtains integer types */
 #include "diskio.h"		/* Declarations of disk functions */
-#if !defined(DISABLE_FILESYSTEM)
+#if !defined(DISABLE_FILESYSTEM) && !defined(CAT_WINDOWS)
 #include "sdcard.h"
 #endif
 /* Definitions of physical drive number for each drive */
@@ -17,6 +17,12 @@
 #define DEV_MMC		1	/* Example: Map MMC/SD card to physical drive 1 */
 #define DEV_USB		2	/* Example: Map USB MSD to physical drive 2 */
 
+#if defined(CAT_WINDOWS)
+// We'll be using a RAM disk for emulation
+#include <stdint.h>
+extern int SDReadMultipleBlocks(uint8_t* datablock, uint32_t numblocks, uint32_t blockaddress);
+extern int SDWriteMultipleBlocks(const uint8_t* datablock, uint32_t numblocks, uint32_t blockaddress);
+#endif
 
 /*-----------------------------------------------------------------------*/
 /* Get Drive Status                                                      */
@@ -74,13 +80,18 @@ DSTATUS disk_initialize (
 		return stat;
 
 	case DEV_MMC :
+
+#if defined(CAT_WINDOWS)
+		stat = 0;
+#else
+
 #if !defined(DISABLE_FILESYSTEM)
-		if (SDCardStartup() != -1) //MMC_disk_initialize();
+		if (SDCardStartup() != -1)
 			stat = 0x0;
 		else
 #endif
 			stat = STA_NOINIT;
-
+#endif
 		// translate the result code here
 
 		return stat;
@@ -124,7 +135,7 @@ DRESULT disk_read (
 		// translate the arguments here
 
 #if !defined(DISABLE_FILESYSTEM)
-		if (SDReadMultipleBlocks(buff, count, sector) != -1) // MMC_disk_read(buff, sector, count);
+		if (SDReadMultipleBlocks(buff, count, sector) != -1)
 			res = RES_OK;
 		else
 #endif
@@ -173,7 +184,7 @@ DRESULT disk_write (
 		case DEV_MMC :
 		{
 		#if !defined(DISABLE_FILESYSTEM)
-			if (SDWriteMultipleBlocks(buff, count, sector) != -1) // MMC_disk_write(buff, sector, count)
+			if (SDWriteMultipleBlocks(buff, count, sector) != -1)
 				res = RES_OK;
 			else
 		#endif
@@ -213,12 +224,19 @@ DRESULT disk_ioctl (
 		return res;
 
 	case DEV_MMC :
-
 		// Process of the command for the MMC/SD card
+#if defined(CAT_WINDOWS)
+		if (cmd == GET_BLOCK_SIZE)
+			*(DWORD*)buff = 0x200; // 512
+		else if (cmd == GET_SECTOR_COUNT)
+			*(DWORD*)buff = 0x10000;
+		res = RES_OK;
+#else
 		if (SDIOControl(cmd, buff) != -1)
 			res = RES_OK;
 		else
 			res = RES_ERROR;
+#endif
 		return res;
 
 	case DEV_USB :
