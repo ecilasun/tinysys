@@ -109,7 +109,7 @@ char *krealpath(const char *path, char resolved[PATH_MAX])
 		resolved_len = 4;
 		left_len = strlcpy(left, path + 1, sizeof(left));
 	} else {
-		if (getcwd(resolved, PATH_MAX) == NULL) {
+		if (f_getcwd(resolved, PATH_MAX) != FR_OK) {
 			strlcpy(resolved, ".", PATH_MAX);
 			return (NULL);
 		}
@@ -120,7 +120,6 @@ char *krealpath(const char *path, char resolved[PATH_MAX])
 		errno = ENAMETOOLONG;
 		return (NULL);
 	}
-
 	/*
 	 * Iterate over path components in `left'.
 	 */
