@@ -43,7 +43,7 @@ DSTATUS disk_status (
 		return stat;
 
 	case DEV_MMC :
-		stat = 0x0;//MMC_disk_status();
+		stat = 0x0;
 
 		// translate the result code here
 
@@ -230,6 +230,10 @@ DRESULT disk_ioctl (
 			*(DWORD*)buff = 0x200; // 512
 		else if (cmd == GET_SECTOR_COUNT)
 			*(DWORD*)buff = 0x100000;
+		else if (cmd == CTRL_SYNC) // nothing to do here
+			;
+		else
+			;// __debugbreak();
 		res = RES_OK;
 #else
 		if (SDIOControl(cmd, buff) != -1)
