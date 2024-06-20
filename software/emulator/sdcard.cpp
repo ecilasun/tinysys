@@ -158,7 +158,7 @@ void CSDCard::Tick()
 						{
 							// R3 response
 							m_spioutfifo.push(0x00);
-							m_spioutfifo.push(0xC0);
+							m_spioutfifo.push(0xC0); // SDHC
 							m_spioutfifo.push(0x00);
 							m_spioutfifo.push(0x00);
 							m_spioutfifo.push(0x00);
