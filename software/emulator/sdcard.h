@@ -26,6 +26,8 @@ private:
 	uint32_t m_numdatabytes{ 0 };
 	uint8_t m_databytes[8];
 	uint8_t m_cmdbyte;
+	uint32_t m_writeblock{ 0 };
+	uint8_t m_datablock[512];
 	bool m_app_mode{ false };
 
 	FATFS* m_fs;

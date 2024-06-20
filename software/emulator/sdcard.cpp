@@ -190,10 +190,9 @@ void CSDCard::ProcessSPI()
 							uint32_t block_num = (uint32_t)m_databytes[0] << 24 | (uint32_t)m_databytes[1] << 16 | (uint32_t)m_databytes[2] << 8 | (uint32_t)m_databytes[3];
 							m_spioutfifo.push(DATA_START_BLOCK);
 							// Return block from FAT32 image in memory
-							uint8_t datablock[512];
-							SDReadMultipleBlocks(datablock, 1, block_num);
+							SDReadMultipleBlocks(m_datablock, 1, block_num);
 							for (int i = 0; i < SD_SECTOR_SIZE; ++i)
-								m_spioutfifo.push(datablock[i]); // Return empty contents for now
+								m_spioutfifo.push(m_datablock[i]); // Return empty contents for now
 							m_spioutfifo.push(0x00);
 							m_spioutfifo.push(0x00); // CRC
 						}
@@ -202,16 +201,11 @@ void CSDCard::ProcessSPI()
 						case SD_CMD24: // WRITE_BLOCK
 						{
 							// Return an R1 response
-							m_spioutfifo.push(0xFF); // fail
+							m_spioutfifo.push(0x01);
 							// We always emulate an SD card, the arg is always block number
-							uint32_t block_num = (uint32_t)m_databytes[0] << 24 | (uint32_t)m_databytes[1] << 16 | (uint32_t)m_databytes[2] << 8 | (uint32_t)m_databytes[3];
-							//SDWriteMultipleBlocks...
-							// Request the block from the application, can be read only
-							/*uint8_t block[SD_SECTOR_SIZE];
-							for (int i = 0; i < SD_SECTOR_SIZE; ++i)
-								block[i] = m_databytes[4 + i];
-								//std::vector<uint8_t> dataToWrite(512, 0xFF); // Example data to write
-								//m_image.writeSector(10, dataToWrite); // Write to sector 10*/
+							m_writeblock = (uint32_t)m_databytes[0] << 24 | (uint32_t)m_databytes[1] << 16 | (uint32_t)m_databytes[2] << 8 | (uint32_t)m_databytes[3];
+							m_numdatabytes = 0;
+							m_spimode = 2; // data write mode
 						}
 						break;
 
@@ -250,6 +244,20 @@ void CSDCard::ProcessSPI()
 
 				// Done
 				m_spimode = 0; // cmd
+			}
+		}
+
+		// Data write mode
+		if (m_spimode == 2)
+		{
+			int rd = SPIRead(&m_cmdbyte, 1);
+			if (rd)
+				m_datablock[m_numdatabytes++] = m_cmdbyte;
+			if (m_numdatabytes == SD_SECTOR_SIZE)
+			{
+				SDWriteMultipleBlocks(m_datablock, 1, m_writeblock);
+				m_spimode = 0;
+				m_numdatabytes = 0;
 			}
 		}
 	}
