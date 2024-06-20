@@ -79,10 +79,7 @@ struct SDecodedInstruction
 	uint32_t m_csroffset;
 	uint32_t m_rval1;
 	uint32_t m_rval2;
-//#if defined(DEBUG)
-	// internal / debugging related
 	uint32_t m_opindex;
-//#endif
 };
 
 class CBus;
@@ -94,26 +91,26 @@ public:
 	~CRV32() {}
 
 	// Right hand side
-	uint32_t m_PC;
-	uint32_t m_branchtarget;
-	uint32_t m_fetchstate;
-	uint32_t m_branchresolved;
-	uint32_t m_wasmret;
-	uint32_t m_GPR[32];
+	uint32_t m_PC{ 0 };
+	uint32_t m_branchtarget{ 0 };
+	uint32_t m_fetchstate{ 0 };
+	uint32_t m_branchresolved{ 0 };
+	uint32_t m_wasmret{ 0 };;
+	uint32_t m_GPR[32] = {};
 
 	// Internal counters
-	uint64_t m_cyclecounter = 0;
-	uint64_t m_wallclock = 0;
-	uint64_t m_retired = 0;
-	uint32_t m_debugtrace = 0;
+	uint64_t m_cyclecounter{ 0 };
+	uint64_t m_wallclock{ 0 };
+	uint64_t m_retired{ 0 };
+	uint32_t m_debugtrace{ 0 };
 
 	// HART0 by default
-	uint32_t m_hartid = 0;
-	uint32_t m_sie = 0;
-	uint32_t m_irq = 0;
+	uint32_t m_hartid{ 0 };
+	uint32_t m_sie{ 0 };
+	uint32_t m_irq{ 0 };
 
-	uint32_t m_exceptionmode = 0;
-	uint32_t m_lasttrap = 0;
+	uint32_t m_exceptionmode{ 0 };
+	uint32_t m_lasttrap{ 0 };
 
 	uint32_t m_resetvector{ 0x0 };
 	bool m_pendingCPUReset{ false };

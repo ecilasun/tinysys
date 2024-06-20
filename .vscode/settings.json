@@ -42,7 +42,10 @@
 		"xlocbuf": "c",
 		"xloctime": "c",
 		"xstring": "c",
-		"gpioringbuffer.h": "c"
+		"gpioringbuffer.h": "c",
+		"array": "c",
+		"deque": "c",
+		"ranges": "c"
 	},
 	"terminal.integrated.profiles.windows": {
 		"MSYS2": {

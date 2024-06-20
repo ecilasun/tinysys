@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <queue>
 
 class CSDCard
 {
@@ -12,4 +13,14 @@ public:
 	void Tick();
 	void Read(uint32_t address, uint32_t& data);
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe);
+
+private:
+	uint32_t SPIRead(uint8_t* buffer, uint32_t len);
+	std::queue<uint8_t> m_spiinfifo;
+	std::queue<uint8_t> m_spioutfifo;
+	uint32_t m_spimode{ 0 };
+	uint32_t m_numdatabytes{ 0 };
+	uint8_t m_databytes[6];
+	uint8_t m_cmdbyte;
+	bool m_app_mode{ false };
 };
