@@ -24,6 +24,14 @@
 void CSDCard::Reset()
 {
 	// TODO: Grab all files in sdcard directory and generate a fake FAT32 image in memory
+
+	size_t totalSectors = 1024; // Example total sectors
+	size_t fatSectors = 32; // Example FAT size in sectors
+	size_t rootDirStart = 33; // Example start sector of the root directory
+	size_t rootDirSectors = 1; // Number of sectors for the root directory
+	m_image = new Fat32Image(totalSectors, fatSectors, rootDirStart, rootDirSectors);
+
+	m_image->addFileWithLongName("ThisIsALongFileName.txt", "THISIS~1.TXT", 2, 1024);
 }
 
 uint32_t CSDCard::SPIRead(uint8_t *buffer, uint32_t len)
@@ -42,16 +50,15 @@ uint32_t CSDCard::SPIRead(uint8_t *buffer, uint32_t len)
 	return numread;
 }
 
-void CSDCard::Tick()
+void CSDCard::ProcessSPI()
 {
 	// Run the SPI bus
-	if (!m_spiinfifo.empty())
+	if (m_spiinfifo.size())
 	{
 		if (m_spimode == 0) // cmd
 		{
 			int rd = SPIRead(&m_cmdbyte, 1);
-			// First two bits of transfer must be 0b01 to be a
-			// valid command
+			// First two bits of transfer must be 0b01 to be a valid command
 			if (rd && ((m_cmdbyte & 0xC0) == 0x40))
 			{
 				m_numdatabytes = 0;
@@ -62,10 +69,11 @@ void CSDCard::Tick()
 
 		if (m_spimode == 1) // data
 		{
-			int rd = SPIRead(m_databytes, 1);
+			int rd = SPIRead(&m_databytes[m_numdatabytes], 1);
 			m_numdatabytes += rd;
-			if (m_numdatabytes == 6)
+			if (m_numdatabytes == SD_CMD_LEN)
 			{
+				m_numdatabytes = 0;
 				// TODO: process command and put something into m_spioutfifo as response
 				uint8_t cmd = m_cmdbyte & 0b00111111;
 
@@ -116,9 +124,10 @@ void CSDCard::Tick()
 							// We always emulate an SD card, the arg is always block number
 							uint32_t block_num = (uint32_t)m_databytes[0] << 24 | (uint32_t)m_databytes[1] << 16 | (uint32_t)m_databytes[2] << 8 | (uint32_t)m_databytes[3];
 							m_spioutfifo.push(DATA_START_BLOCK);
-							// TODO: Return block from FAT32 image in memory
+							// Return block from FAT32 image in memory
+							auto readData = m_image->readSector(block_num);
 							for (int i = 0; i < SD_SECTOR_SIZE; ++i)
-								m_spioutfifo.push(0x00); // Return empty contents for now
+								m_spioutfifo.push(readData[i]); // Return empty contents for now
 							m_spioutfifo.push(0x00);
 							m_spioutfifo.push(0x00); // CRC
 							/*if (block == NULL) {
@@ -142,6 +151,8 @@ void CSDCard::Tick()
 							uint8_t block[SD_SECTOR_SIZE];
 							for (int i = 0; i < SD_SECTOR_SIZE; ++i)
 								block[i] = m_databytes[4 + i];*/
+								//std::vector<uint8_t> dataToWrite(512, 0xFF); // Example data to write
+								//m_image.writeSector(10, dataToWrite); // Write to sector 10
 							printf("SD_CMD24\n");
 						}
 						break;
@@ -189,6 +200,11 @@ void CSDCard::Tick()
 	}
 }
 
+void CSDCard::Tick()
+{
+	// ProcessSPI
+}
+
 void CSDCard::Read(uint32_t address, uint32_t& data)
 {
 	if (m_spioutfifo.size())
@@ -204,6 +220,7 @@ void CSDCard::Read(uint32_t address, uint32_t& data)
 void CSDCard::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 {
 	// SPI bus write
-	m_spiinfifo.push(word);
+	m_spiinfifo.push(word&0xFF);
 	//printf("SDW:%.8X <- %.8X\n", address, word);
+	ProcessSPI();
 }
