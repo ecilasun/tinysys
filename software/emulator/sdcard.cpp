@@ -85,13 +85,7 @@ void CSDCard::Reset()
 
 	m_fs = new FATFS();
 	uint8_t buf[1024];
-	MKFS_PARM mkfs_param = { 0 };
-	mkfs_param.align = 0x10000;
-	mkfs_param.au_size = 0x1000;
-	mkfs_param.fmt = FM_FAT32;
-	mkfs_param.n_fat = 2;
-	mkfs_param.n_root = 512;
-	f_mkfs("sd:", &mkfs_param, buf, 1024);
+	f_mkfs("sd:", nullptr, buf, 1024);
 
 	FRESULT mountattempt = f_mount(m_fs, "sd:", 1);
 	if (mountattempt != FR_OK)
@@ -265,7 +259,7 @@ void CSDCard::ProcessSPI()
 
 void CSDCard::Tick()
 {
-	// ProcessSPI
+	ProcessSPI();
 }
 
 void CSDCard::Read(uint32_t address, uint32_t& data)
@@ -285,5 +279,4 @@ void CSDCard::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 	// SPI bus write
 	m_spiinfifo.push(word&0xFF);
 	//printf("SDW:%.8X <- %.8X\n", address, word);
-	ProcessSPI();
 }
