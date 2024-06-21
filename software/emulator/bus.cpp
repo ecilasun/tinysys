@@ -41,6 +41,7 @@ void CBus::UpdateVideoLink(uint32_t *pixels, int pitch)
 	m_vpuc.UpdateVideoLink(pixels, pitch, this);
 }
 
+#if defined(MEM_DEBUG)
 void CBus::FillMemBitmap(uint32_t* pixels)
 {
 	uint32_t* source = m_mem.GetHostAddress(0);
@@ -57,6 +58,7 @@ void CBus::FillMemBitmap(uint32_t* pixels)
 	m_busactivitystart = 0xFFFFFFFF;
 	m_busactivityend = 0x00000000;
 }
+#endif
 
 void CBus::QueueByte(uint8_t byte)
 {
@@ -147,7 +149,7 @@ void CBus::Read(uint32_t address, uint32_t& data)
 			{
 				// DEVICE_USBA
 				//m_usba->Read(address, data);
-				printf("<-USB-A\n");
+				//printf("<-USB-A\n");
 				data = 0xFF; // SPI access should return FF for no device present
 			}
 			break;
@@ -237,7 +239,7 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 			{
 				// DEVICE_USBA
 				//m_usba->Write(address, data, wstrobe);
-				printf("USB-A@0x%.8X<-0x%.8x\n", address, data);
+				//printf("USB-A@0x%.8X<-0x%.8x\n", address, data);
 			}
 			break;
 			case 7:
@@ -275,9 +277,11 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 	}
 	else
 	{
+#if defined(MEM_DEBUG)
 		uint32_t addrkb = address / 1024;
 		m_busactivitystart = addrkb < m_busactivitystart ? addrkb : m_busactivitystart;
 		m_busactivityend = addrkb > m_busactivityend ? addrkb : m_busactivityend;
+#endif
 
 		m_vpuc.DirtyInVideoScanoutRegion(address);
 		m_mem.Write(address, data, wstrobe);

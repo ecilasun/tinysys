@@ -45,10 +45,12 @@ void CEmulator::UpdateVideoLink(uint32_t *pixels, int pitch)
 	m_bus->UpdateVideoLink(pixels, pitch);
 }
 
+#if defined(MEM_DEBUG)
 void CEmulator::FillMemBitmap(uint32_t *pixels)
 {
 	m_bus->FillMemBitmap(pixels);
 }
+#endif
 
 void CEmulator::QueueBytes(uint8_t *bytes, uint32_t count)
 {

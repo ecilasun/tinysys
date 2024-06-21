@@ -12,9 +12,12 @@ public:
 	bool Reset(const char* romFile);
 	bool Step();
 	void UpdateVideoLink(uint32_t* pixels, int pitch);
-	void FillMemBitmap(uint32_t* pixels);
 	void QueueBytes(uint8_t *bytes, uint32_t count);
 	void QueueByte(uint8_t byte);
+
+#if defined(MEM_DEBUG)
+	void FillMemBitmap(uint32_t* pixels);
+#endif
 
 	bool IsVideoDirty(){ return m_bus->IsVideoDirty(); }
 	void ClearVideoDirty() { m_bus->ClearVideoDirty(); }

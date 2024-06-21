@@ -229,8 +229,8 @@ DRESULT disk_ioctl (
 		if (cmd == GET_BLOCK_SIZE)
 			*(DWORD*)buff = 0x200; // 512
 		else if (cmd == GET_SECTOR_COUNT)
-			*(DWORD*)buff = 0x100000;
-		else if (cmd == CTRL_SYNC) // nothing to do here
+			*(DWORD*)buff = 0x40000; // 128 mbytes
+		else if (cmd == CTRL_SYNC) // we never have unfinished writes in flight
 			;
 		else
 			;// __debugbreak();

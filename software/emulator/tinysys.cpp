@@ -47,7 +47,6 @@ int SDL_main(int argc, char** argv)
 	const int WIDTH = 640;
 	const int HEIGHT = 480;
 	SDL_Window* window = NULL;
-	SDL_Window* debugwindow = NULL;
 
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
 	{
@@ -55,7 +54,10 @@ int SDL_main(int argc, char** argv)
 		return -1;
 	}
 	window = SDL_CreateWindow("tinysys emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
-	debugwindow = SDL_CreateWindow("memdbg", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 256, 1024, SDL_WINDOW_SHOWN);
+
+#if defined(MEM_DEBUG)
+	SDL_Window* debugwindow = SDL_CreateWindow("memdbg", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 256, 1024, SDL_WINDOW_SHOWN);
+#endif
 
 	SDL_Surface* surface = SDL_GetWindowSurface(window);
 	if (!surface)
@@ -64,12 +66,14 @@ int SDL_main(int argc, char** argv)
 		return -1;
 	}
 
+#if defined(MEM_DEBUG)
 	SDL_Surface* debugsurface = SDL_GetWindowSurface(debugwindow);
 	if (!debugsurface)
 	{
 		printf("Could not create window surface\n");
 		return -1;
 	}
+#endif
 
 	SDL_Thread* thread = SDL_CreateThread(emulatorthread, "emulator", &emulator);
 
@@ -105,6 +109,7 @@ int SDL_main(int argc, char** argv)
 		}
 
 		// Memory debug view
+#if defined(MEM_DEBUG)
 		if ((emulator.m_steps % 16384) == 0)
 		{
 			if (SDL_MUSTLOCK(debugsurface))
@@ -116,6 +121,7 @@ int SDL_main(int argc, char** argv)
 				SDL_UnlockSurface(debugsurface);
 			SDL_UpdateWindowSurface(debugwindow);
 		}
+#endif
 
 		++ticks;
 	} while(s_alive);

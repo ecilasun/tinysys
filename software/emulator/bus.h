@@ -41,8 +41,11 @@ public:
 	uint32_t* GetHostAddress(uint32_t address);
 
 	void UpdateVideoLink(uint32_t* pixels, int pitch);
-	void FillMemBitmap(uint32_t* pixels);
 	void QueueByte(uint8_t byte);
+
+#if defined(MEM_DEBUG)
+	void FillMemBitmap(uint32_t* pixels);
+#endif
 
 	bool IsVideoDirty() { return m_vpuc.IsVideoDirty(); }
 	void ClearVideoDirty() { m_vpuc.ClearVideoDirty(); }
@@ -57,6 +60,9 @@ private:
 	CLEDs m_leds;
 	CUART m_uart;
 	uint32_t m_resetvector{ 0 };
+
+#if defined(MEM_DEBUG)
 	uint32_t m_busactivitystart{ 0 };
 	uint32_t m_busactivityend{ 0 };
+#endif
 };

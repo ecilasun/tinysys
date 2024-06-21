@@ -33,7 +33,8 @@ void removeTextBeforeAndIncludingToken(std::string& str, const std::string& toke
 
 void CSDCard::PopulateFileSystem()
 {
-	uint8_t tmpmem[4096];
+	uint8_t* tmpmem = new uint8_t[16384];
+
 	using namespace std::filesystem;
 	path sourcePath = absolute("../sdcardmirror");
 	std::string targetRoot = "sd:";
@@ -55,14 +56,14 @@ void CSDCard::PopulateFileSystem()
 			FILE *sourceFile = fopen(actualPath.c_str(), "rb");
 			if (sourceFile)
 			{
+				size_t fs = entry.file_size();
+				size_t numblocks = (fs+16383)/16384;
+
 				FIL m_file;
 				f_open(&m_file, (targetRoot + filePath).c_str(), FA_CREATE_ALWAYS | FA_WRITE);
-
-				size_t fs = entry.file_size();
-				size_t numblocks = (fs+4093)/4096;
 				for (size_t i = 0; i < numblocks; ++i)
 				{
-					UINT readlen = (UINT)fread(tmpmem, 1, 4096, sourceFile);
+					UINT readlen = (UINT)fread(tmpmem, 1, 16384, sourceFile);
 					if (readlen)
 					{
 						UINT wbytes = 0;
@@ -76,24 +77,36 @@ void CSDCard::PopulateFileSystem()
 			fclose(sourceFile);
 		}
 	}
+
+	delete[] tmpmem;
 }
 
 void CSDCard::Reset()
 {
-	// Prepare a 64 MByte range of block memory to hold the FAT32 image
+	// Prepare block of memory to hold the FAT32 image
 	SDInitBlockMem();
 
 	m_fs = new FATFS();
-	uint8_t buf[1024];
-	f_mkfs("sd:", nullptr, buf, 1024);
-
-	FRESULT mountattempt = f_mount(m_fs, "sd:", 1);
-	if (mountattempt != FR_OK)
-		printf("Failed to mount filesystem\n");
+	uint8_t buf[512];
+	MKFS_PARM opt;
+	opt.align = 0;
+	opt.au_size = 0;
+	opt.n_fat = 2;
+	opt.n_root = 512;
+	opt.fmt = FM_FAT32;
+	FRESULT createattempt = f_mkfs("sd:", &opt, buf, 512);
+	if (createattempt != FR_OK)
+		printf("Failed to create in-memory filesystem\n");
 	else
 	{
-		printf("Building file system\n");
-		PopulateFileSystem();
+		FRESULT mountattempt = f_mount(m_fs, "sd:", 1);
+		if (mountattempt != FR_OK)
+			printf("Failed to mount in-memory filesystem\n");
+		else
+		{
+			printf("Building file system\n");
+			PopulateFileSystem();
+		}
 	}
 }
 
@@ -185,7 +198,7 @@ void CSDCard::ProcessSPI()
 							m_spioutfifo.push(DATA_START_BLOCK);
 							// Return block from FAT32 image in memory
 							SDReadMultipleBlocks(m_datablock, 1, block_num);
-							for (int i = 0; i < SD_SECTOR_SIZE; ++i)
+							for (int i = 0; i <SD_SECTOR_SIZE; ++i)
 								m_spioutfifo.push(m_datablock[i]); // Return empty contents for now
 							m_spioutfifo.push(0x00);
 							m_spioutfifo.push(0x00); // CRC
