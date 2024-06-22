@@ -518,16 +518,14 @@ bool CRV32::FetchDecode(CBus* bus)
 		}
 		return true;
 	}
-
-	if (m_fetchstate == EFetchWFI)
+	else if (m_fetchstate == EFetchWFI)
 	{
 		m_wficount = (m_wficount + 1) % 4;
 		if (m_wficount==0 || m_irq)
 			m_fetchstate = EFetchRead;
 		return true;
 	}
-
-	if (m_fetchstate == EFetchRead)
+	else if (m_fetchstate == EFetchRead)
 	{
 		uint32_t instruction;
 		bus->Read(m_PC, instruction);
@@ -565,7 +563,10 @@ bool CRV32::FetchDecode(CBus* bus)
 			else if (isebreak) // ebreak
 				m_exceptionmode = EXC_EBREAK;
 			else if (isecall) // ecall
+			{
 				m_exceptionmode = EXC_ECALL;
+				m_PC += 4;
+			}
 
 			// Add header
 			InjectISRHeader();
@@ -601,7 +602,7 @@ bool CRV32::FetchDecode(CBus* bus)
 				// Add footer (append _END to previous exception mode)
 				m_exceptionmode = ERV32ExceptionMode(0x80000000 | m_lasttrap);
 				InjectISRFooter();
-				// We're done
+				// We're done, can accept new interrupts now
 				m_exceptionmode = EXC_NONE;
 				m_lasttrap = EXC_NONE;
 			}
@@ -613,9 +614,11 @@ bool CRV32::FetchDecode(CBus* bus)
 
 		return true;
 	}
-
-	printf("unknown fetch state %d\n", m_fetchstate);
-	return false;
+	else
+	{
+		printf("unknown fetch state %d\n", m_fetchstate);
+		return false;
+	}
 }
 
 bool CRV32::Execute(CBus* bus)
