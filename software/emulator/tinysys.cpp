@@ -41,7 +41,6 @@ uint32_t videoCallback(Uint32 interval, void* param)
 		if (SDL_MUSTLOCK(ctx->surface))
 			SDL_UnlockSurface(ctx->surface);
 		SDL_UpdateWindowSurface(ctx->window);
-		ctx->emulator->ClearVideoDirty();
 }
 	return interval;
 }

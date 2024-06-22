@@ -19,9 +19,6 @@ public:
 	void FillMemBitmap(uint32_t* pixels);
 #endif
 
-	bool IsVideoDirty(){ return m_bus->IsVideoDirty(); }
-	void ClearVideoDirty() { m_bus->ClearVideoDirty(); }
-
 	CBus* m_bus{ nullptr };
 
 	uint8_t* m_rombin{ nullptr };

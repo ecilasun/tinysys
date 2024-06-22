@@ -48,9 +48,6 @@ public:
 	void FillMemBitmap(uint32_t* pixels);
 #endif
 
-	bool IsVideoDirty() { return m_vpuc.IsVideoDirty(); }
-	void ClearVideoDirty() { m_vpuc.ClearVideoDirty(); }
-
 private:
 	CSysMem m_mem;
 	CRV32* m_cpu[2]{ nullptr, nullptr };

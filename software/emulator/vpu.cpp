@@ -17,7 +17,6 @@ void CVPU::Reset()
 	m_scanoutpointer = 0x0;
 	m_videoscanoutenable = 0;
 	m_count = 0;
-	m_videodirty = 1;
 }
 
 void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
@@ -124,7 +123,7 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 			pixels[i] = ((i/640)%2) ? 0xFF151515 : 0xFF000015;
 	}
 
-	// TODO: vsync will be tied to this counter
+	// This function is invoked at 13ms intervals, so this counter acts as our vsync
 	++m_count;
 }
 
@@ -192,8 +191,6 @@ void CVPU::Tick()
 
 		case 2:
 		{
-			// Changing scanout page should trigger video update
-			m_videodirty = 1;
 			// SETVPAGE
 			m_scanoutpointer = m_data;
 			//printf("scanout @%.8X\n", m_scanoutpointer);
@@ -203,8 +200,6 @@ void CVPU::Tick()
 
 		case 3:
 		{
-			// Palette animations should trigger video update
-			m_videodirty = 1;
 			// SETPAL
 			uint32_t addrs = SelectBitRange(m_data, 31, 24);
 			uint32_t color = SelectBitRange(m_data, 11, 0);
@@ -219,8 +214,6 @@ void CVPU::Tick()
 
 		case 4:
 		{
-			// Video mode change should trigger video update
-			m_videodirty = 1;
 			// VMODE
 			m_videoscanoutenable = m_data & 0x1 ? 1 : 0;	// 0:video output disabled, 1:video output enabled
 			m_12bppmode = m_data & 0x4 ? 1 : 0;				// 0:8bit indexed, 1:16bit rgb
@@ -242,9 +235,8 @@ void CVPU::Tick()
 
 void CVPU::Read(uint32_t address, uint32_t& data)
 {
-	// Fake vsync: will flip for every read
-	data = m_fakevsync%2;
-	++m_fakevsync;
+	// Every time we call UpdateVideoLink we increment m_count, so we can use this as a vsync signal
+	data = m_count%2;
 }
 
 void CVPU::Write(uint32_t address, uint32_t word, uint32_t wstrobe)

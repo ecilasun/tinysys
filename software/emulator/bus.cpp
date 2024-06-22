@@ -288,7 +288,6 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 		m_busactivityend = addrkb > m_busactivityend ? addrkb : m_busactivityend;
 #endif
 
-		m_vpuc.DirtyInVideoScanoutRegion(address);
 		m_mem.Write(address, data, wstrobe);
 	}
 }
