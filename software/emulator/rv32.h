@@ -22,11 +22,11 @@ enum FetchState{
 #define OP_FENCE		0b0001111
 #define OP_SYSTEM		0b1110011
 
-#define OPCODE_FLOAT_OP		0b1010011
-#define OPCODE_FLOAT_MADD	0b1000011
-#define OPCODE_FLOAT_MSUB	0b1000111
-#define OPCODE_FLOAT_NMSUB	0b1001011
-#define OPCODE_FLOAT_NMADD	0b1001111
+#define OP_FLOAT_OP		0b1010011
+#define OP_FLOAT_MADD	0b1000011
+#define OP_FLOAT_MSUB	0b1000111
+#define OP_FLOAT_NMSUB	0b1001011
+#define OP_FLOAT_NMADD	0b1001111
 
 // Integer base
 #define ALU_NONE		0
@@ -84,6 +84,21 @@ struct SDecodedInstruction
 
 class CBus;
 
+enum ERV32ExceptionMode
+{
+	EXC_NONE = 0x00000000,
+	EXC_SWI = 0x00000001,
+	EXC_HWI = 0x00000002,
+	EXC_TMI = 0x00000003,
+	EXC_EBREAK = 0x00000004,
+	EXC_ECALL = 0x00000005,
+	EXC_SWI_END = 0x80000001,
+	EXC_HWI_END = 0x80000002,
+	EXC_TMI_END = 0x80000003,
+	EXC_EBREAK_END = 0x80000004,
+	EXC_ECALL_END = 0x80000005
+};
+
 class CRV32
 {
 public:
@@ -109,8 +124,8 @@ public:
 	uint32_t m_sie{ 0 };
 	uint32_t m_irq{ 0 };
 
-	uint32_t m_exceptionmode{ 0 };
-	uint32_t m_lasttrap{ 0 };
+	ERV32ExceptionMode m_exceptionmode{ EXC_NONE };
+	ERV32ExceptionMode m_lasttrap{ EXC_NONE };
 
 	uint32_t m_resetvector{ 0x0 };
 	bool m_pendingCPUReset{ false };
@@ -124,7 +139,8 @@ public:
 
 private:
 	void DecodeInstruction(const uint32_t pc, const uint32_t instr, SDecodedInstruction& dec);
-	void InjectISRHeaderFooter();
+	void InjectISRHeader();
+	void InjectISRFooter();
 	uint32_t ALU(SDecodedInstruction &instr);
 	uint32_t BLU(SDecodedInstruction& instr);
 };

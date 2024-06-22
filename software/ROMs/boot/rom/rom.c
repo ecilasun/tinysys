@@ -23,9 +23,9 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "v1.05"
+#define VERSIONSTRING "v1.06"
 // On-storage version
-#define DEVVERSIONSTRING "v1.05"
+#define DEVVERSIONSTRING "v1.06"
 
 static char s_execName[33] = "";
 static char s_execParam0[33] = "";
@@ -441,7 +441,7 @@ uint32_t ExecuteCmd(char *_cmd)
 				return 0;
 			}
 			else
-				kprintf("Executable not found\n");
+				kprintf("Executable '%s' not found\n", command);
 		}
 	}
 

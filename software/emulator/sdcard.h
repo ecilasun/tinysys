@@ -23,12 +23,15 @@ private:
 	std::queue<uint8_t> m_spiinfifo;
 	std::queue<uint8_t> m_spioutfifo;
 	uint32_t m_spimode{ 0 };
+	uint32_t m_havestarttoken{ 0 };
 	uint32_t m_numdatabytes{ 0 };
 	uint8_t m_databytes[8];
 	uint8_t m_cmdbyte;
+	uint32_t m_readblock{ 0 };
 	uint32_t m_writeblock{ 0 };
 	uint8_t m_datablock[512];
 	bool m_app_mode{ false };
 
 	FATFS* m_fs;
+	uint8_t* m_workbuf;
 };

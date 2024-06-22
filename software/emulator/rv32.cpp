@@ -14,7 +14,12 @@ const char *opnames[] = {
 	"jalr",
 	"branch",
 	"fence",
-	"system" };
+	"system",
+	"floatop",
+	"floatmadd",
+	"floatmsub",
+	"floatnmsub",
+	"floatnmadd" };
 
 const char *alunames[] = {
 	"", // none
@@ -27,7 +32,10 @@ const char *alunames[] = {
 	"srl",
 	"sra",
 	"or",
-	"and" };
+	"and",
+	"mul",
+	"div",
+	"rem" };
 
 const char *regnames[] = {
 	"zero",
@@ -65,8 +73,8 @@ void CRV32::Reset()
 	m_retired = 0;
 	m_wallclock = 0;
 
-	m_exceptionmode = 0;
-	m_lasttrap = 0;
+	m_exceptionmode = EXC_NONE;
+	m_lasttrap = EXC_NONE;
 
 	for (uint32_t i=0; i<32; i++)
 		m_GPR[i] = 0x00000000;
@@ -192,18 +200,23 @@ void CRV32::DecodeInstruction(uint32_t pc, uint32_t instr, SDecodedInstruction& 
 
 	switch (dec.m_opcode)
 	{
-		case OP_OP:		dec.m_opindex = 1; break;
-		case OP_OP_IMM:	dec.m_opindex = 2; break;
-		case OP_AUIPC:	dec.m_opindex = 3; break;
-		case OP_LUI:	dec.m_opindex = 4; break;
-		case OP_STORE:	dec.m_opindex = 5; break;
-		case OP_LOAD:	dec.m_opindex = 6; break;
-		case OP_JAL:	dec.m_opindex = 7; break;
-		case OP_JALR:	dec.m_opindex = 8; break;
-		case OP_BRANCH:	dec.m_opindex = 9; break;
-		case OP_FENCE:	dec.m_opindex = 10; break;
-		case OP_SYSTEM:	dec.m_opindex = 11; break;
-		default:		dec.m_opindex = 0; break;
+		case OP_OP:				dec.m_opindex = 1; break;
+		case OP_OP_IMM:			dec.m_opindex = 2; break;
+		case OP_AUIPC:			dec.m_opindex = 3; break;
+		case OP_LUI:			dec.m_opindex = 4; break;
+		case OP_STORE:			dec.m_opindex = 5; break;
+		case OP_LOAD:			dec.m_opindex = 6; break;
+		case OP_JAL:			dec.m_opindex = 7; break;
+		case OP_JALR:			dec.m_opindex = 8; break;
+		case OP_BRANCH:			dec.m_opindex = 9; break;
+		case OP_FENCE:			dec.m_opindex = 10; break;
+		case OP_SYSTEM:			dec.m_opindex = 11; break;
+		case OP_FLOAT_OP:		dec.m_opindex = 12; break;
+		case OP_FLOAT_MADD:		dec.m_opindex = 13; break;
+		case OP_FLOAT_MSUB:		dec.m_opindex = 14; break;
+		case OP_FLOAT_NMSUB:	dec.m_opindex = 15; break;
+		case OP_FLOAT_NMADD:	dec.m_opindex = 16; break;
+		default:				dec.m_opindex = 0; break;		// Invalid opcode
 	}
 
 	switch (dec.m_opcode)
@@ -268,7 +281,7 @@ void CRV32::DecodeInstruction(uint32_t pc, uint32_t instr, SDecodedInstruction& 
 		}
 		break;
 
-		default: // OP_FENCE
+		default: // OP_FENCE, OP_FLOAT_OP, OP_FLOAT_MADD, OP_FLOAT_MSUB, OP_FLOAT_NMSUB, OP_FLOAT_NMADD
 		{
 			dec.m_immed = 0;
 		}
@@ -349,15 +362,15 @@ void CRV32::DecodeInstruction(uint32_t pc, uint32_t instr, SDecodedInstruction& 
 	dec.m_selimm = (dec.m_opcode==OP_JALR) || (dec.m_opcode==OP_OP_IMM) || (dec.m_opcode==OP_LOAD) || (dec.m_opcode==OP_STORE);
 
 	//if (m_debugtrace)
-	//	printf("#%d:: %.8X:%.8X %s %s %s %s -> %s I=%d\n", m_hartid, m_PC, instr, opnames[dec.m_opindex], alunames[dec.m_aluop], regnames[dec.m_rs1], regnames[dec.m_rs2], regnames[dec.m_rd], dec.m_immed);
+	//printf("#%d:: %.8X:%.8X %s %s %s %s -> %s I=%d\n", m_hartid, m_PC, instr, opnames[dec.m_opindex], alunames[dec.m_aluop], regnames[dec.m_rs1], regnames[dec.m_rs2], regnames[dec.m_rd], dec.m_immed);
 }
 
-void CRV32::InjectISRHeaderFooter()
+void CRV32::InjectISRHeader()
 {
 	switch (m_exceptionmode)
 	{
 		// TMI start
-		case 0x00000003: {
+		case EXC_TMI: {
 			for (uint32_t i = 0; i <= 11; ++i)
 			{
 				SDecodedInstruction isrinstr;
@@ -367,19 +380,8 @@ void CRV32::InjectISRHeaderFooter()
 		}
 		break;
 
-		// TMI end
-		case 0x80000003: {
-			for (uint32_t i = 12; i <= 18; ++i)
-			{
-				SDecodedInstruction isrinstr;
-				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push(isrinstr);
-			}
-		}
-		break;
-
 		// HWI start
-		case 0x00000002: {
+		case EXC_HWI: {
 			for (uint32_t i = 19; i <= 32; ++i)
 			{
 				SDecodedInstruction isrinstr;
@@ -389,19 +391,8 @@ void CRV32::InjectISRHeaderFooter()
 		}
 		break;
 
-		// HWI end
-		case 0x80000002: {
-			for (uint32_t i = 33; i <= 40; ++i)
-			{
-				SDecodedInstruction isrinstr;
-				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push(isrinstr);
-			}
-		}
-		break;
-
 		// ecall start
-		case 0x00000005: {
+		case EXC_ECALL: {
 			for (uint32_t i = 41; i <= 52; ++i)
 			{
 				SDecodedInstruction isrinstr;
@@ -411,19 +402,8 @@ void CRV32::InjectISRHeaderFooter()
 		}
 		break;
 
-		// ecall end
-		case 0x80000005: {
-			for (uint32_t i = 53; i <= 60; ++i)
-			{
-				SDecodedInstruction isrinstr;
-				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push(isrinstr);
-			}
-		}
-		break;
-
 		// ebreak start
-		case 0x00000004: {
+		case EXC_EBREAK: {
 			for (uint32_t i = 61; i <= 72; ++i)
 			{
 				SDecodedInstruction isrinstr;
@@ -433,19 +413,8 @@ void CRV32::InjectISRHeaderFooter()
 		}
 		break;
 
-		// ebreak end
-		case 0x80000004: {
-			for (uint32_t i = 73; i <= 80; ++i)
-			{
-				SDecodedInstruction isrinstr;
-				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push(isrinstr);
-			}
-		}
-		break;
-
 		// SWI start
-		case 0x00000001: {
+		case EXC_SWI: {
 			for (uint32_t i = 81; i <= 92; ++i)
 			{
 				SDecodedInstruction isrinstr;
@@ -455,8 +424,66 @@ void CRV32::InjectISRHeaderFooter()
 		}
 		break;
 
+		// Unknown
+		default:
+		{
+			// Nothing to inject
+			printf("unknown header encountered\n");
+		}
+		break;
+	}
+}
+
+void CRV32::InjectISRFooter()
+{
+	switch (m_exceptionmode)
+	{
+		// TMI end
+		case EXC_TMI_END: {
+			for (uint32_t i = 12; i <= 18; ++i)
+			{
+				SDecodedInstruction isrinstr;
+				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				m_instructionfifo.push(isrinstr);
+			}
+		}
+		break;
+
+		// HWI end
+		case EXC_HWI_END: {
+			for (uint32_t i = 33; i <= 40; ++i)
+			{
+				SDecodedInstruction isrinstr;
+				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				m_instructionfifo.push(isrinstr);
+			}
+		}
+		break;
+
+		// ecall end
+		case EXC_ECALL_END: {
+			for (uint32_t i = 53; i <= 60; ++i)
+			{
+				SDecodedInstruction isrinstr;
+				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				m_instructionfifo.push(isrinstr);
+			}
+		}
+		break;
+
+		// ebreak end
+		case EXC_EBREAK_END: {
+			for (uint32_t i = 73; i <= 80; ++i)
+			{
+				SDecodedInstruction isrinstr;
+				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				m_instructionfifo.push(isrinstr);
+			}
+		}
+		break;
+
 		// SWI end
-		case 0x80000001: {
+		case EXC_SWI_END: {
 			for (uint32_t i = 93; i <= 100; ++i)
 			{
 				SDecodedInstruction isrinstr;
@@ -470,6 +497,7 @@ void CRV32::InjectISRHeaderFooter()
 		default:
 		{
 			// Nothing to inject
+			printf("unknown footer encountered\n");
 		}
 		break;
 	}
@@ -482,10 +510,10 @@ bool CRV32::FetchDecode(CBus* bus)
 		m_pendingCPUReset = false;
 		if (m_instructionfifo.size() == 0)
 		{
-			m_exceptionmode = 0;
+			m_exceptionmode = EXC_NONE;
+			m_lasttrap = EXC_NONE;
 			m_branchresolved = 0;
 			m_wasmret = 0;
-			m_lasttrap = 0;
 			m_PC = m_resetvector;
 			m_fetchstate = EFetchRead;
 		}
@@ -507,18 +535,22 @@ bool CRV32::FetchDecode(CBus* bus)
 		DecodeInstruction(m_PC, instruction, decoded);
 
 		// Debug mode only, let ISR handle this
-		if (decoded.m_opindex == 0)
+		/*if (decoded.m_opindex == 0)
 		{
 			printf("HART #%d: Illegal instruction 0x%.8X @0x%.8X exmode:%d branchres:%d irq:%d\n", m_hartid, instruction, m_PC, m_exceptionmode, m_branchresolved, m_irq);
 			for (uint32_t i=0;i<32;++i)
 				printf("r%d=%.8x\n", i, m_GPR[i]);
 			return false;
-		}
+		}*/
 
 		bool isebreak = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_EBREAK;
 		bool isecall = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_ECALL;
 		bool ismret = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_MRET;
 		bool iswfi = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_WFI;
+		bool isfence = decoded.m_opcode == OP_FENCE;
+		bool isbranch = decoded.m_opcode == OP_BRANCH;
+		bool isjalr = decoded.m_opcode == OP_JALR;
+		bool isjal = decoded.m_opcode == OP_JAL;
 		bool isillegal = m_sie && decoded.m_opindex == 0;
 		bool branchtomtvec = false;
 
@@ -526,24 +558,22 @@ bool CRV32::FetchDecode(CBus* bus)
 		{
 			m_fetchstate = EFetchWFI;
 		}
-		else if ((isebreak || isecall || isillegal || m_irq) && m_exceptionmode == 0)
+		else if ((isebreak || isecall || isillegal || m_irq) && m_exceptionmode == EXC_NONE)
 		{
-			// For MRET to work properly this has to be pointing at the next instruction
-			decoded.m_pc += 4;
 			// Will need to route to mtvec
 			branchtomtvec = true;
 			if (m_irq & 1) // hardware
-				m_exceptionmode = 0x00000002;
+				m_exceptionmode = EXC_HWI;
 			else if (m_irq & 2) // timer
-				m_exceptionmode = 0x00000003;
+				m_exceptionmode = EXC_TMI;
 			else if (isillegal) // software - illegal instruction
-				m_exceptionmode = 0x00000001;
+				m_exceptionmode = EXC_SWI;
 			else if (isebreak) // ebreak
-				m_exceptionmode = 0x00000004;
+				m_exceptionmode = EXC_EBREAK;
 			else if (isecall) // ecall
-				m_exceptionmode = 0x00000005;
+				m_exceptionmode = EXC_ECALL;
 			// Add header
-			InjectISRHeaderFooter();
+			InjectISRHeader();
 			m_lasttrap = m_exceptionmode;
 		}
 		else
@@ -551,11 +581,13 @@ bool CRV32::FetchDecode(CBus* bus)
 
 		// Determine next PC
 		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
-		if (branchtomtvec)
+		if (branchtomtvec) // Do not do anything else while we're in exception mode apart from route execution to mtvec (execution resumes from this PC after injected header code runs)
 			bus->Read(csrbase + (CSR_MTVEC << 2), m_PC);
-		else if (decoded.m_opcode != OP_BRANCH && decoded.m_opcode != OP_JALR && decoded.m_opcode != OP_JAL && !ismret)
+		else if (isjal) // For JAL instructions, we can calculate the target immediately without having to execute
+			m_PC = decoded.m_pc + decoded.m_immed;
+		else if (!isfence && !isbranch && !isjalr && !ismret) // For anything that doesn't require a branch, just increment PC
 			m_PC = decoded.m_pc + 4;
-		else if (!iswfi)
+		else if (!iswfi) // For branches, jumps and mret, we need to wait for the branch target
 			m_fetchstate = EFetchWaitForBranch; // wait for branch target from exec
 
 		return true;
@@ -568,11 +600,11 @@ bool CRV32::FetchDecode(CBus* bus)
 			{
 				m_wasmret = 0;
 				// Add footer
-				m_exceptionmode = 0x80000000 | m_lasttrap;
-				InjectISRHeaderFooter();
+				m_exceptionmode = ERV32ExceptionMode(0x80000000 | m_lasttrap);
+				InjectISRFooter();
 				// we're done
-				m_exceptionmode = 0x00000000;
-				m_lasttrap = 0x00000000;
+				m_exceptionmode = EXC_NONE;
+				m_lasttrap = EXC_NONE;
 			}
 
 			m_branchresolved = 0;
@@ -602,6 +634,7 @@ bool CRV32::Execute(CBus* bus)
 
 		SDecodedInstruction instr;
 		instr = m_instructionfifo.front();
+		m_instructionfifo.pop();
 
 		// Get register contents
 		instr.m_rval1 = m_GPR[instr.m_rs1];
@@ -649,8 +682,7 @@ bool CRV32::Execute(CBus* bus)
 			break;
 
 			case OP_JAL:
-				m_branchresolved = 1;
-				m_branchtarget = offsetpc;
+				// fetch handles this
 				rdin = adjacentpc;
 				rwen = 1;
 				//printf("- jal %.8x\n", offsetpc);
@@ -671,8 +703,10 @@ bool CRV32::Execute(CBus* bus)
 			break;
 
 			case OP_FENCE:
-				// NOOP for now
 				//printf("- fencei\n");
+				m_instructionfifo = {};
+				m_branchresolved = 1;
+				m_branchtarget = instr.m_pc + 4;
 			break;
 
 			case OP_SYSTEM:
@@ -850,6 +884,17 @@ bool CRV32::Execute(CBus* bus)
 			}
 			break;
 
+			case OP_FLOAT_OP:
+			case OP_FLOAT_MADD:
+			case OP_FLOAT_MSUB:
+			case OP_FLOAT_NMSUB:
+			case OP_FLOAT_NMADD:
+			{
+				printf("- unimpl - float op\n");
+				return false;
+			}
+			break;
+
 			default:
 			{
 				//printf("- UNKNOWN\n");
@@ -869,7 +914,6 @@ bool CRV32::Execute(CBus* bus)
 			m_GPR[instr.m_rd] = rdin;
 		}
 
-		m_instructionfifo.pop();
 		++m_retired;
 	}
 

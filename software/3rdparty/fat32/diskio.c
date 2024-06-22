@@ -20,6 +20,8 @@
 #if defined(CAT_WINDOWS)
 // We'll be using a RAM disk for emulation
 #include <stdint.h>
+extern int SDCardStartup();
+extern int SDIOControl(const uint8_t cmd, void* buffer);
 extern int SDReadMultipleBlocks(uint8_t* datablock, uint32_t numblocks, uint32_t blockaddress);
 extern int SDWriteMultipleBlocks(const uint8_t* datablock, uint32_t numblocks, uint32_t blockaddress);
 #endif
@@ -81,17 +83,12 @@ DSTATUS disk_initialize (
 
 	case DEV_MMC :
 
-#if defined(CAT_WINDOWS)
-		stat = 0;
-#else
-
 #if !defined(DISABLE_FILESYSTEM)
 		if (SDCardStartup() != -1)
 			stat = 0x0;
 		else
 #endif
 			stat = STA_NOINIT;
-#endif
 		// translate the result code here
 
 		return stat;
@@ -225,22 +222,10 @@ DRESULT disk_ioctl (
 
 	case DEV_MMC :
 		// Process of the command for the MMC/SD card
-#if defined(CAT_WINDOWS)
-		if (cmd == GET_BLOCK_SIZE)
-			*(DWORD*)buff = 0x200; // 512
-		else if (cmd == GET_SECTOR_COUNT)
-			*(DWORD*)buff = 0x40000; // 128 mbytes
-		else if (cmd == CTRL_SYNC) // we never have unfinished writes in flight
-			;
-		else
-			;// __debugbreak();
-		res = RES_OK;
-#else
 		if (SDIOControl(cmd, buff) != -1)
 			res = RES_OK;
 		else
 			res = RES_ERROR;
-#endif
 		return res;
 
 	case DEV_USB :

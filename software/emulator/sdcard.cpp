@@ -19,8 +19,9 @@
 #define SD_SECTOR_SIZE 512
 
 extern "C" void SDInitBlockMem();
-extern "C" int SDReadMultipleBlocks(uint8_t* datablock, uint32_t numblocks, uint32_t blockaddress);
-extern "C" int SDWriteMultipleBlocks(const uint8_t* datablock, uint32_t numblocks, uint32_t blockaddress);
+extern "C" void SDReportMemoryUsage();
+extern "C" int SDReadBlock(uint32_t blockaddress, uint8_t* datablock);
+extern "C" int SDWriteBlock(uint32_t blockaddress, const uint8_t* datablock);
 
 void removeTextBeforeAndIncludingToken(std::string& str, const std::string& token) {
 	size_t pos = str.find(token);
@@ -87,14 +88,14 @@ void CSDCard::Reset()
 	SDInitBlockMem();
 
 	m_fs = new FATFS();
-	uint8_t buf[512];
+	m_workbuf = new uint8_t[4096];
 	MKFS_PARM opt;
 	opt.align = 0;
-	opt.au_size = 0;
+	opt.au_size = 4096;
 	opt.n_fat = 2;
-	opt.n_root = 512;
+	opt.n_root = 2048;
 	opt.fmt = FM_FAT32;
-	FRESULT createattempt = f_mkfs("sd:", &opt, buf, 512);
+	FRESULT createattempt = f_mkfs("sd:", &opt, m_workbuf, 4096);
 	if (createattempt != FR_OK)
 		printf("Failed to create in-memory filesystem\n");
 	else
@@ -104,10 +105,12 @@ void CSDCard::Reset()
 			printf("Failed to mount in-memory filesystem\n");
 		else
 		{
-			printf("Building file system\n");
+			printf("Building file system from sdcardmirror folder\n");
 			PopulateFileSystem();
 		}
 	}
+
+	SDReportMemoryUsage();
 }
 
 uint32_t CSDCard::SPIRead(uint8_t *buffer, uint32_t len)
@@ -191,27 +194,27 @@ void CSDCard::ProcessSPI()
 
 						case SD_CMD17: // READ_BLOCK
 						{
-							// Return an R1 response
-							m_spioutfifo.push(0x01);
-							// We always emulate an SD card, the arg is always block number
-							uint32_t block_num = (uint32_t)m_databytes[0] << 24 | (uint32_t)m_databytes[1] << 16 | (uint32_t)m_databytes[2] << 8 | (uint32_t)m_databytes[3];
-							m_spioutfifo.push(DATA_START_BLOCK);
+							m_spioutfifo.push(0x00);				// expect to return 0 for ack
+							m_spioutfifo.push(DATA_START_BLOCK);	// return start token
+
+							m_readblock = (m_databytes[0] << 24) | (m_databytes[1] << 16) | (m_databytes[2] << 8) | (m_databytes[3]);
+
 							// Return block from FAT32 image in memory
-							SDReadMultipleBlocks(m_datablock, 1, block_num);
+							SDReadBlock(m_readblock, m_datablock);
 							for (int i = 0; i <SD_SECTOR_SIZE; ++i)
-								m_spioutfifo.push(m_datablock[i]); // Return empty contents for now
-							m_spioutfifo.push(0x00);
-							m_spioutfifo.push(0x00); // CRC
+								m_spioutfifo.push(m_datablock[i]);
+
+							m_spioutfifo.push(0xFF);
+							m_spioutfifo.push(0xFF); // CRC
 						}
 						break;
 
 						case SD_CMD24: // WRITE_BLOCK
 						{
-							// Return an R1 response
-							m_spioutfifo.push(0x01);
-							// We always emulate an SD card, the arg is always block number
-							m_writeblock = (uint32_t)m_databytes[0] << 24 | (uint32_t)m_databytes[1] << 16 | (uint32_t)m_databytes[2] << 8 | (uint32_t)m_databytes[3];
+							m_writeblock = (m_databytes[0] << 24) | (m_databytes[1] << 16) | (m_databytes[2] << 8) | (m_databytes[3]);
+
 							m_numdatabytes = 0;
+							m_havestarttoken = 0;
 							m_spimode = 2; // data write mode
 						}
 						break;
@@ -257,12 +260,33 @@ void CSDCard::ProcessSPI()
 		// Data write mode
 		if (m_spimode == 2)
 		{
+			// Wait for data start token or data
+			int rd = SPIRead(&m_cmdbyte, 1);
+			if (rd)
+			{
+				if (m_havestarttoken)
+					m_datablock[m_numdatabytes++] = m_cmdbyte;
+				else if (m_cmdbyte == DATA_START_BLOCK)
+					m_havestarttoken = 1;
+			}
+			if (m_numdatabytes == SD_SECTOR_SIZE)
+			{
+				SDWriteBlock(m_writeblock, m_datablock);
+				// now we wait for checksum
+				m_spimode = 3;
+				m_numdatabytes = 0;
+			}
+		}
+
+		// Wait for checksum
+		if (m_spimode == 3)
+		{
 			int rd = SPIRead(&m_cmdbyte, 1);
 			if (rd)
 				m_datablock[m_numdatabytes++] = m_cmdbyte;
-			if (m_numdatabytes == SD_SECTOR_SIZE)
+			if (m_numdatabytes == 2)
 			{
-				SDWriteMultipleBlocks(m_datablock, 1, m_writeblock);
+				m_spioutfifo.push(0x05); // data accepted
 				m_spimode = 0;
 				m_numdatabytes = 0;
 			}

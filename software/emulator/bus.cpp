@@ -110,7 +110,7 @@ void CBus::Read(uint32_t address, uint32_t& data)
 			{
 				// DEVICE_GPIO
 				//m_gpio->Read(address, data);
-				printf("<-GPIO\n");
+				//printf("<-GPIO\n");
 				data = 0;
 			}
 			break;
@@ -133,7 +133,7 @@ void CBus::Read(uint32_t address, uint32_t& data)
 			{
 				// DEVICE_XADC
 				//m_xadc->Read(address, data);
-				printf("<-ADC\n");
+				//printf("<-XADC\n");
 				data = 0;
 			}
 			break;
@@ -141,7 +141,7 @@ void CBus::Read(uint32_t address, uint32_t& data)
 			{
 				// DEVICE_DMAC
 				//m_dmac->Read(address, data);
-				printf("<-DMA\n");
+				//printf("<-DMAC\n");
 				data = 0;
 			}
 			break;
@@ -149,7 +149,7 @@ void CBus::Read(uint32_t address, uint32_t& data)
 			{
 				// DEVICE_USBA
 				//m_usba->Read(address, data);
-				//printf("<-USB-A\n");
+				//printf("<-USBA\n");
 				data = 0xFF; // SPI access should return FF for no device present
 			}
 			break;
@@ -157,7 +157,7 @@ void CBus::Read(uint32_t address, uint32_t& data)
 			{
 				// DEVICE_APUC
 				//m_apuc->Read(address, data);
-				printf("<-APU\n");
+				//printf("<-APU\n");
 				data = 0;
 			}
 			break;
@@ -203,7 +203,7 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 			{
 				// DEVICE_GPIO
 				//m_gpio->Write(address, data, wstrobe);
-				printf("GPIO@0x%.8X<-0x%.8x\n", address, data);
+				//printf("GPIO@0x%.8X<-0x%.8x\n", address, data);
 			}
 			break;
 			case 1:
@@ -225,28 +225,28 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 			{
 				// DEVICE_XADC
 				//m_xadc->Write(address, data, wstrobe);
-				printf("XADC@0x%.8X<-0x%.8x\n", address, data);
+				//printf("XADC@0x%.8X<-0x%.8x\n", address, data);
 			}
 			break;
 			case 5:
 			{
 				// DEVICE_DMAC
 				//m_dmac->Write(address, data, wstrobe);
-				printf("DMAC@0x%.8X<-0x%.8x\n", address, data);
+				//printf("DMAC@0x%.8X<-0x%.8x\n", address, data);
 			}
 			break;
 			case 6:
 			{
 				// DEVICE_USBA
 				//m_usba->Write(address, data, wstrobe);
-				//printf("USB-A@0x%.8X<-0x%.8x\n", address, data);
+				//printf("USBA-A@0x%.8X<-0x%.8x\n", address, data);
 			}
 			break;
 			case 7:
 			{
 				// DEVICE_APUC
 				//m_apuc->Write(address, data, wstrobe);
-				printf("APUC@0x%.8X<-0x%.8x\n", address, data);
+				//printf("APUC@0x%.8X<-0x%.8x\n", address, data);
 			}
 			break;
 			case 8:
