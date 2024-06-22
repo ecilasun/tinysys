@@ -6,6 +6,7 @@
 #include "sdcard.h"
 #include "mailmem.h"
 #include "vpu.h"
+#include "dma.h"
 #include "leds.h"
 #include "uart.h"
 
@@ -57,6 +58,7 @@ private:
 	CMailMem m_mail;
 	CSDCard* m_sdcc{ nullptr };
 	CVPU m_vpuc;
+	CDMA m_dmac;
 	CLEDs m_leds;
 	CUART m_uart;
 	uint32_t m_resetvector{ 0 };

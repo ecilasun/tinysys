@@ -66,6 +66,9 @@
     <ClCompile Include="..\sdcardblockmem.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\dma.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\csrmem.h">
@@ -99,6 +102,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\uart.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dma.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

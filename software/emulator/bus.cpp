@@ -30,6 +30,7 @@ void CBus::Reset(uint8_t* rombin, uint32_t romsize)
 
 	m_sdcc->Reset();
 	m_vpuc.Reset();
+	m_dmac.Reset();
 	m_uart.Reset();
 
 	m_csr[0]->Reset();
@@ -86,6 +87,7 @@ bool CBus::Tick()
 
 	m_mem.Tick();
 	m_vpuc.Tick();
+	m_dmac.Tick(this);
 	m_uart.Tick();
 	m_sdcc->Tick();
 
@@ -142,10 +144,7 @@ void CBus::Read(uint32_t address, uint32_t& data)
 			break;
 			case 5:
 			{
-				// DEVICE_DMAC
-				//m_dmac->Read(address, data);
-				//printf("?<-DMAC\n");
-				data = 0;
+				m_dmac.Read(address, data);
 			}
 			break;
 			case 6:
@@ -234,8 +233,7 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 			case 5:
 			{
 				// DEVICE_DMAC
-				//m_dmac->Write(address, data, wstrobe);
-				//printf("DMAC@0x%.8X<-0x%.8x\n", address, data);
+				m_dmac.Write(address, data, wstrobe);
 			}
 			break;
 			case 6:

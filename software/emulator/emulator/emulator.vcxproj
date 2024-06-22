@@ -143,6 +143,7 @@
     <ClCompile Include="..\..\3rdparty\fat32\ffunicode.c" />
     <ClCompile Include="..\bus.cpp" />
     <ClCompile Include="..\csrmem.cpp" />
+    <ClCompile Include="..\dma.cpp" />
     <ClCompile Include="..\emulator.cpp" />
     <ClCompile Include="..\leds.cpp" />
     <ClCompile Include="..\mailmem.cpp" />
@@ -158,6 +159,7 @@
     <ClInclude Include="..\bitutil.h" />
     <ClInclude Include="..\bus.h" />
     <ClInclude Include="..\csrmem.h" />
+    <ClInclude Include="..\dma.h" />
     <ClInclude Include="..\emulator.h" />
     <ClInclude Include="..\leds.h" />
     <ClInclude Include="..\mailmem.h" />
