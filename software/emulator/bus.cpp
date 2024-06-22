@@ -160,7 +160,11 @@ void CBus::Read(uint32_t address, uint32_t& data)
 				// DEVICE_APUC
 				//m_apuc->Read(address, data);
 				//printf("<-APU\n");
-				data = 0;
+				{
+					static uint32_t evenodd = 0;
+					data = evenodd % 2;
+					evenodd++;
+				}
 			}
 			break;
 			case 8:
