@@ -19,11 +19,16 @@ void CCSRMem::Reset()
 	m_csrmem[CSR_HWSTATE] = 0x00000000;
 
 	m_timecmp = 0xFFFFFFFFFFFFFFFF;
+	m_cycle = 0x0000000000000000;
 	m_wallclocktime = 0x0000000000000000;
 }
 
 void CCSRMem::Tick(CRV32* cpu, CUART* uart)
 {
+	++m_cycle;
+	if (m_cycle % 15 == 0)
+		++m_wallclocktime;
+
 	// Detect reset request
 	if (m_cpuresetreq)
 	{
@@ -70,6 +75,10 @@ void CCSRMem::Read(uint32_t address, uint32_t& data)
 		data = (uint32_t)(m_wallclocktime & 0x00000000FFFFFFFFU);
 	else if (csrindex == CSR_TIMEHI)
 		data = (uint32_t)((m_wallclocktime & 0xFFFFFFFF00000000U) >> 32);
+	else if (csrindex == CSR_CYCLELO)
+		data = (uint32_t)(m_cycle & 0x00000000FFFFFFFFU);
+	else if (csrindex == CSR_CYCLEHI)
+		data = (uint32_t)((m_cycle & 0xFFFFFFFF00000000U) >> 32);
 	else if (csrindex == CSR_TIMECMPLO)
 		data = (uint32_t)(m_timecmp & 0x00000000FFFFFFFFU);
 	else if (csrindex == CSR_TIMECMPHI)
@@ -93,9 +102,13 @@ void CCSRMem::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 	if (csrindex == CSR_CPURESET)
 		m_cpuresetreq = word & 1 ? 1 : 0;
 	else if (csrindex == CSR_TIMELO)
-		m_wallclocktime = (m_wallclocktime & 0xFFFFFFFF00000000U) | ((uint64_t)word);
+		;
 	else if (csrindex == CSR_TIMEHI)
-		m_wallclocktime = ((uint64_t)word << 32) | (m_wallclocktime & 0x00000000FFFFFFFFU);
+		;
+	else if (csrindex == CSR_CYCLELO)
+		;
+	else if (csrindex == CSR_CYCLEHI)
+		;
 	else if (csrindex == CSR_TIMECMPLO)
 		m_timecmp = (m_timecmp & 0xFFFFFFFF00000000U) | ((uint64_t)word);
 	else if (csrindex == CSR_TIMECMPHI)

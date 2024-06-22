@@ -114,8 +114,6 @@ public:
 	uint32_t m_GPR[32] = {};
 
 	// Internal counters
-	uint64_t m_cyclecounter{ 0 };
-	uint64_t m_wallclock{ 0 };
 	uint64_t m_retired{ 0 };
 	uint32_t m_debugtrace{ 0 };
 

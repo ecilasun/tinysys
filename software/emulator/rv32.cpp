@@ -69,9 +69,7 @@ void CRV32::Reset()
 	m_branchresolved = 0;
 	m_wasmret = 0;
 	m_branchtarget = 0;
-	m_cyclecounter = 0;
 	m_retired = 0;
-	m_wallclock = 0;
 
 	m_exceptionmode = EXC_NONE;
 	m_lasttrap = EXC_NONE;
@@ -623,14 +621,10 @@ bool CRV32::Execute(CBus* bus)
 {
 	if (m_instructionfifo.size())
 	{
-		++m_cyclecounter;
-
 		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
 		bus->Write(csrbase + (CSR_RETILO << 2), (uint32_t)(m_retired & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
 		bus->Write(csrbase + (CSR_RETIHI << 2), (uint32_t)((m_retired & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
 		bus->Write(csrbase + (CSR_PROGRAMCOUNTER << 2), m_PC, 0xFFFFFFFF);
-		bus->Write(csrbase + (CSR_CYCLELO << 2), (uint32_t)(m_cyclecounter & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
-		bus->Write(csrbase + (CSR_CYCLEHI << 2), (uint32_t)((m_cyclecounter & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
 
 		SDecodedInstruction instr;
 		instr = m_instructionfifo.front();
@@ -930,14 +924,6 @@ bool CRV32::Tick(CBus* bus)
 
 	bool fetchok = FetchDecode(bus);
 	bool execok = Execute(bus);
-
-	if (m_cyclecounter % 15 == 0) // 150MHz vs 10Mhz
-	{
-		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
-		bus->Write(csrbase + (CSR_TIMELO << 2), (uint32_t)(m_wallclock & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
-		bus->Write(csrbase + (CSR_TIMEHI << 2), (uint32_t)((m_wallclock & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
-		++m_wallclock;
-	}
 
 	return fetchok && execok;
 }

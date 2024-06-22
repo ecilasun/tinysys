@@ -7,7 +7,7 @@ class CEmulator
 {
 public:
 	CEmulator() {}
-	~CEmulator() {}
+	~CEmulator();
 
 	bool Reset(const char* romFile);
 	bool Step();

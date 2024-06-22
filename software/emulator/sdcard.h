@@ -9,7 +9,7 @@ class CSDCard
 {
 public:
 	CSDCard() {}
-	~CSDCard() {}
+	~CSDCard();
 
 	void Reset();
 	void Tick();

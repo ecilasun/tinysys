@@ -10,12 +10,15 @@ CBus::CBus(uint32_t resetvector)
 
 	m_cpu[0] = new CRV32(0, resetvector);
 	m_cpu[1] = new CRV32(1, resetvector);
+
+	m_sdcc = new CSDCard();
 }
 
 CBus::~CBus()
 {
 	delete m_csr[0];
 	delete m_csr[1];
+	delete m_sdcc;
 	if (m_cpu[0]) delete m_cpu[0];
 	if (m_cpu[1]) delete m_cpu[1];
 }
@@ -25,7 +28,7 @@ void CBus::Reset(uint8_t* rombin, uint32_t romsize)
 	m_mem.Reset();
 	m_mem.CopyROM(m_resetvector, rombin, romsize);
 
-	m_sdcc.Reset();
+	m_sdcc->Reset();
 	m_vpuc.Reset();
 	m_uart.Reset();
 
@@ -84,7 +87,7 @@ bool CBus::Tick()
 	m_mem.Tick();
 	m_vpuc.Tick();
 	m_uart.Tick();
-	m_sdcc.Tick();
+	m_sdcc->Tick();
 
 	return ret0 && ret1;
 }
@@ -126,7 +129,7 @@ void CBus::Read(uint32_t address, uint32_t& data)
 			break;
 			case 3:
 			{
-				m_sdcc.Read(address, data);
+				m_sdcc->Read(address, data);
 			}
 			break;
 			case 4:
@@ -218,7 +221,7 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 			break;
 			case 3:
 			{
-				m_sdcc.Write(address, data, wstrobe);
+				m_sdcc->Write(address, data, wstrobe);
 			}
 			break;
 			case 4:

@@ -102,12 +102,12 @@ int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum E
 	if (prevcount >= TASK_MAX)
 		return 0;
 
-	// Stop timer interrupts on this core during this operation
-	clear_csr(mie, MIP_MTIP);
-
 	// Task stacks
 	const uint32_t stacksizeword = 1024;
 	uint32_t stackpointer = TASKMEM_END_STACK_END - (prevcount*stacksizeword);
+
+	// Stop timer interrupts on this core during this operation
+	clear_csr(mie, MIP_MTIP);
 
 	// Insert the task before we increment task count
 	struct STask *task = &(_ctx->tasks[prevcount]);

@@ -55,7 +55,7 @@ private:
 	CRV32* m_cpu[2]{ nullptr, nullptr };
 	CCSRMem* m_csr[2]{ nullptr, nullptr };
 	CMailMem m_mail;
-	CSDCard m_sdcc;
+	CSDCard* m_sdcc{ nullptr };
 	CVPU m_vpuc;
 	CLEDs m_leds;
 	CUART m_uart;

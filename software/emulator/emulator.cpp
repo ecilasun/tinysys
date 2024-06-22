@@ -1,10 +1,21 @@
 #include <stdio.h>
 #include "emulator.h"
 
+CEmulator::~CEmulator()
+{
+	if (m_rombin)
+		delete[] m_rombin;
+	if (m_bus)
+		delete m_bus;
+}
+
 bool CEmulator::Reset(const char* romFile)
 {
 	if (m_rombin)
-		delete []m_rombin;
+	{
+		delete[]m_rombin;
+		m_rombin = nullptr;
+	}
 
 	if (romFile)
 	{

@@ -25,6 +25,16 @@ void SDReportMemoryUsage()
 	printf("Virtual sdcard using %d MBytes of RAM out of %d Mbytes disk capacity\n", s_blockcount, VIRTUALDISKSIZE/(1024*1024));
 }
 
+void SDFreeBlockMem()
+{
+	for (int i = 0; i < 512; ++i)
+	{
+		if (s_alloctable[i])
+			free((void*)s_alloctable[i]);
+	}
+	free(s_alloctable);
+}
+
 int SDCardStartup()
 {
 	return 0;

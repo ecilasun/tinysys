@@ -19,6 +19,7 @@
 #define SD_SECTOR_SIZE 512
 
 extern "C" void SDInitBlockMem();
+extern "C" void SDFreeBlockMem();
 extern "C" void SDReportMemoryUsage();
 extern "C" int SDReadBlock(uint32_t blockaddress, uint8_t* datablock);
 extern "C" int SDWriteBlock(uint32_t blockaddress, const uint8_t* datablock);
@@ -30,6 +31,13 @@ void removeTextBeforeAndIncludingToken(std::string& str, const std::string& toke
 		// Also replace backslashes with forward slashes
 		std::replace(str.begin(), str.end(), '\\', '/');
 	}
+}
+
+CSDCard::~CSDCard()
+{
+	delete m_fs;
+	delete[] m_workbuf;
+	SDFreeBlockMem();
 }
 
 void CSDCard::PopulateFileSystem()
