@@ -44,11 +44,11 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 							uint32_t G = SelectBitRange(color, 3, 0) << 4;
 							uint32_t B = SelectBitRange(color, 7, 4) << 4;
 							uint32_t R = SelectBitRange(color, 11, 8) << 4;
-							color = 0xFF000000 | (R << 16) | (G << 8) | (B);
-							pixels[linetop0 + x*2+0] = color;
-							pixels[linetop1 + x*2+0] = color;
-							pixels[linetop0 + x*2+1] = color;
-							pixels[linetop1 + x*2+1] = color;
+							uint32_t expandedcolor = 0xFF000000 | (R << 16) | (G << 8) | (B);
+							pixels[linetop0 + x*2+0] = expandedcolor;
+							pixels[linetop1 + x*2+0] = expandedcolor;
+							pixels[linetop0 + x*2+1] = expandedcolor;
+							pixels[linetop1 + x*2+1] = expandedcolor;
 						}
 					}
 				}
@@ -66,8 +66,8 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 							uint32_t G = SelectBitRange(color, 3, 0) << 4;
 							uint32_t B = SelectBitRange(color, 7, 4) << 4;
 							uint32_t R = SelectBitRange(color, 11, 8) << 4;
-							color = 0xFF000000 | (R << 16) | (G << 8) | (B);
-							pixels[linetop + x] = color;
+							uint32_t expandedcolor = 0xFF000000 | (R << 16) | (G << 8) | (B);
+							pixels[linetop + x] = expandedcolor;
 						}
 					}
 				}

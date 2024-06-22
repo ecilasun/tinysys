@@ -11,6 +11,7 @@ struct EmulatorContext
 {
 	CEmulator* emulator;
 	SDL_Window* window;
+	SDL_Window* debugwindow;
 	SDL_Surface* surface;
 };
 
@@ -32,16 +33,13 @@ int emulatorthread(void* data)
 uint32_t videoCallback(Uint32 interval, void* param)
 {
 	EmulatorContext* ctx = (EmulatorContext*)param;
-	//if ((emulator->m_steps % 16384) == 0 && emulator->IsVideoDirty())
-	{
-		if (SDL_MUSTLOCK(ctx->surface))
-			SDL_LockSurface(ctx->surface);
-		uint32_t* pixels = (uint32_t*)ctx->surface->pixels;
-		ctx->emulator->UpdateVideoLink(pixels, ctx->surface->pitch);
-		if (SDL_MUSTLOCK(ctx->surface))
-			SDL_UnlockSurface(ctx->surface);
-		SDL_UpdateWindowSurface(ctx->window);
-}
+	if (SDL_MUSTLOCK(ctx->surface))
+		SDL_LockSurface(ctx->surface);
+	uint32_t* pixels = (uint32_t*)ctx->surface->pixels;
+	ctx->emulator->UpdateVideoLink(pixels, ctx->surface->pitch);
+	if (SDL_MUSTLOCK(ctx->surface))
+		SDL_UnlockSurface(ctx->surface);
+	SDL_UpdateWindowSurface(ctx->window);
 	return interval;
 }
 
@@ -51,7 +49,7 @@ int main(int argc, char** argv)
 int SDL_main(int argc, char** argv)
 #endif
 {
-	printf("tinysys emulator v0.3\n");
+	printf("tinysys emulator v0.4\n");
 
 	EmulatorContext ectx;
 	ectx.emulator = new CEmulator;
@@ -79,7 +77,7 @@ int SDL_main(int argc, char** argv)
 	ectx.window = SDL_CreateWindow("tinysys emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 
 #if defined(MEM_DEBUG)
-	SDL_Window* debugwindow = SDL_CreateWindow("memdbg", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 256, 1024, SDL_WINDOW_SHOWN);
+	ectx.debugwindow = SDL_CreateWindow("memdbg", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 256, 1024, SDL_WINDOW_SHOWN);
 #endif
 
 	ectx.surface = SDL_GetWindowSurface(ectx.window);
@@ -90,7 +88,7 @@ int SDL_main(int argc, char** argv)
 	}
 
 #if defined(MEM_DEBUG)
-	SDL_Surface* debugsurface = SDL_GetWindowSurface(debugwindow);
+	SDL_Surface* debugsurface = SDL_GetWindowSurface(ectx.debugwindow);
 	if (!debugsurface)
 	{
 		printf("Could not create window surface\n");
@@ -131,7 +129,7 @@ int SDL_main(int argc, char** argv)
 			ectx.emulator->FillMemBitmap(pixels);
 			if (SDL_MUSTLOCK(debugsurface))
 				SDL_UnlockSurface(debugsurface);
-			SDL_UpdateWindowSurface(debugwindow);
+			SDL_UpdateWindowSurface(ectx.debugwindow);
 		}
 #endif
 
