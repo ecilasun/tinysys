@@ -28,7 +28,7 @@ private:
 	uint32_t m_data{ 0 };
 	uint32_t m_state{ 0 };
 	uint32_t m_videoscanoutenable{ 0 };
-	uint32_t m_indexedcolormode{ 0 };
+	uint32_t m_12bppmode{ 0 };
 	uint32_t m_scanoutpointer{ 0 };
 	uint32_t m_scanwidth{ 320 };
 	uint32_t m_scanheight{ 240 };

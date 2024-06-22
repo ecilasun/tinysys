@@ -989,6 +989,7 @@ bool CRV32::Execute(CBus* bus)
 					{
 						*D = (float)instr.m_rval1;
 					}
+					break;
 					case 0b1100001: // fcvtswu4sat.s
 					{
 						rdin = max(0, min(15, (int)(16.0f * *A)));
