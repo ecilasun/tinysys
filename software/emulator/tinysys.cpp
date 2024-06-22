@@ -7,6 +7,13 @@
 #include <SDL2/SDL.h>
 #endif
 
+struct EmulatorContext
+{
+	CEmulator* emulator;
+	SDL_Window* window;
+	SDL_Surface* surface;
+};
+
 static bool s_alive = true;
 
 int emulatorthread(void* data)
@@ -22,6 +29,23 @@ int emulatorthread(void* data)
 	return 0;
 }
 
+uint32_t videoCallback(Uint32 interval, void* param)
+{
+	EmulatorContext* ctx = (EmulatorContext*)param;
+	//if ((emulator->m_steps % 16384) == 0 && emulator->IsVideoDirty())
+	{
+		if (SDL_MUSTLOCK(ctx->surface))
+			SDL_LockSurface(ctx->surface);
+		uint32_t* pixels = (uint32_t*)ctx->surface->pixels;
+		ctx->emulator->UpdateVideoLink(pixels, ctx->surface->pitch);
+		if (SDL_MUSTLOCK(ctx->surface))
+			SDL_UnlockSurface(ctx->surface);
+		SDL_UpdateWindowSurface(ctx->window);
+		ctx->emulator->ClearVideoDirty();
+}
+	return interval;
+}
+
 #if defined(CAT_LINUX) || defined(CAT_DARWIN)
 int main(int argc, char** argv)
 #else
@@ -30,13 +54,14 @@ int SDL_main(int argc, char** argv)
 {
 	printf("tinysys emulator v0.3\n");
 
-	CEmulator emulator;
+	EmulatorContext ectx;
+	ectx.emulator = new CEmulator;
 	bool success;
 
 	if (argc<=1)
-		success = emulator.Reset("rom.bin");
+		success = ectx.emulator->Reset("rom.bin");
 	else
-		success = emulator.Reset(argv[1]);
+		success = ectx.emulator->Reset(argv[1]);
 
 	if (!success)
 	{
@@ -46,21 +71,20 @@ int SDL_main(int argc, char** argv)
 
 	const int WIDTH = 640;
 	const int HEIGHT = 480;
-	SDL_Window* window = NULL;
 
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
 	{
 		printf("Error initializing SDL2: %s\n", SDL_GetError());
 		return -1;
 	}
-	window = SDL_CreateWindow("tinysys emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	ectx.window = SDL_CreateWindow("tinysys emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 
 #if defined(MEM_DEBUG)
 	SDL_Window* debugwindow = SDL_CreateWindow("memdbg", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 256, 1024, SDL_WINDOW_SHOWN);
 #endif
 
-	SDL_Surface* surface = SDL_GetWindowSurface(window);
-	if (!surface)
+	ectx.surface = SDL_GetWindowSurface(ectx.window);
+	if (!ectx.surface)
 	{
 		printf("Could not create window surface\n");
 		return -1;
@@ -75,7 +99,9 @@ int SDL_main(int argc, char** argv)
 	}
 #endif
 
-	SDL_Thread* thread = SDL_CreateThread(emulatorthread, "emulator", &emulator);
+	SDL_Thread* thread = SDL_CreateThread(emulatorthread, "emulator", ectx.emulator);
+
+	SDL_AddTimer(13, videoCallback, &ectx);
 
 	SDL_Event ev;
 	int ticks = 0;
@@ -89,34 +115,21 @@ int SDL_main(int argc, char** argv)
 			{
 				const Uint8* state = SDL_GetKeyboardState(nullptr);
 				if (state[SDL_SCANCODE_LCTRL] && ev.key.keysym.sym == 'c')
-					emulator.QueueByte(3);
+					ectx.emulator->QueueByte(3);
 				else if (ev.key.keysym.sym != SDLK_LCTRL)
-					emulator.QueueByte(ev.key.keysym.sym);
+					ectx.emulator->QueueByte(ev.key.keysym.sym);
 			}
-		}
-
-		// Video output
-		if ((emulator.m_steps % 16384) == 0 && emulator.IsVideoDirty())
-		{
-			if (SDL_MUSTLOCK(surface))
-				SDL_LockSurface(surface);
-			uint32_t* pixels = (uint32_t*)surface->pixels;
-			emulator.UpdateVideoLink(pixels, surface->pitch);
-			if (SDL_MUSTLOCK(surface))
-				SDL_UnlockSurface(surface);
-			SDL_UpdateWindowSurface(window);
-			emulator.ClearVideoDirty();
 		}
 
 		// Memory debug view
 #if defined(MEM_DEBUG)
-		if ((emulator.m_steps % 16384) == 0)
+		if ((ectx.emulator->m_steps % 16384) == 0)
 		{
 			if (SDL_MUSTLOCK(debugsurface))
 				SDL_LockSurface(debugsurface);
 			// Update memory bitmap
 			uint32_t* pixels = (uint32_t*)debugsurface->pixels;
-			emulator.FillMemBitmap(pixels);
+			ectx.emulator->FillMemBitmap(pixels);
 			if (SDL_MUSTLOCK(debugsurface))
 				SDL_UnlockSurface(debugsurface);
 			SDL_UpdateWindowSurface(debugwindow);
@@ -127,8 +140,8 @@ int SDL_main(int argc, char** argv)
 	} while(s_alive);
 
 	SDL_WaitThread(thread, nullptr);
-	SDL_FreeSurface(surface);
-	SDL_DestroyWindow(window);
+	SDL_FreeSurface(ectx.surface);
+	SDL_DestroyWindow(ectx.window);
 	SDL_Quit();
 
 	return 0;
