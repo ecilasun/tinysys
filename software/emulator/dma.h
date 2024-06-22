@@ -2,21 +2,22 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "rv32.h"
 #include <queue>
+#include "rv32.h"
+#include "memmappeddevice.h"
 
 class CBus;
 
-class CDMA
+class CDMA : public MemMappedDevice
 {
 public:
 	CDMA();
 	~CDMA();
 
-	void Reset();
-	void Tick(CBus* bus);
-	void Read(uint32_t address, uint32_t& data);
-	void Write(uint32_t address, uint32_t word, uint32_t wstrobe);
+	void Reset() override final;
+	void Tick(CBus* bus) override final;
+	void Read(uint32_t address, uint32_t& data) override final;
+	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
 
 private:
 	uint32_t m_op{ 0 };

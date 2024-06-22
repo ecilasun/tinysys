@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "sysmem.h"
+#include "memmappeddevice.h"
 
 static const uint32_t quadexpand[] = {
 	0x00000000, 0x000000FF, 0x0000FF00, 0x0000FFFF,
@@ -25,9 +26,8 @@ void CSysMem::Reset()
 	memset(m_devicemem, 0xCC, 256*1024*1024);
 }
 
-void CSysMem::Tick()
+void CSysMem::Tick(CBus* bus)
 {
-	// TODO:
 }
 
 uint32_t* CSysMem::GetHostAddress(uint32_t address)

@@ -5,44 +5,73 @@ CBus::CBus(uint32_t resetvector)
 {
 	m_resetvector = resetvector;
 
+	m_mem = new CSysMem();
+	m_vpuc = new CVPU();
+	m_dmac = new CDMA();
+	m_leds = new CLEDs();
+	m_mail = new CMailMem();
 	m_csr[0] = new CCSRMem(0);
 	m_csr[1] = new CCSRMem(1);
-
 	m_cpu[0] = new CRV32(0, resetvector);
 	m_cpu[1] = new CRV32(1, resetvector);
-
 	m_sdcc = new CSDCard();
+	m_uart = new CUART();
+	m_dummydevice = new CDummyDevice();
+
+	// Device array
+	m_devices[0] = m_dummydevice; // GPIO
+	m_devices[1] = m_leds;
+	m_devices[2] = m_vpuc;
+	m_devices[3] = m_sdcc;
+	m_devices[4] = m_dummydevice; // XADC
+	m_devices[5] = m_dmac;
+	m_devices[6] = m_dummydevice; // USBA
+	m_devices[7] = m_dummydevice; // APUC
+	m_devices[8] = m_mail;
+	m_devices[9] = m_uart;
+	m_devices[10] = m_csr[0];
+	m_devices[11] = m_csr[1];
+	m_devices[12] = m_mem; // system memory
 }
 
 CBus::~CBus()
 {
-	delete m_csr[0];
-	delete m_csr[1];
-	delete m_sdcc;
+	if (m_csr[0]) delete m_csr[0];
+	if (m_csr[1]) delete m_csr[1];
+	if (m_sdcc) delete m_sdcc;
 	if (m_cpu[0]) delete m_cpu[0];
 	if (m_cpu[1]) delete m_cpu[1];
+	if (m_mail) delete m_mail;
+	if (m_uart) delete m_uart;
+	if (m_leds) delete m_leds;
+	if (m_dmac) delete m_dmac;
+	if (m_vpuc) delete m_vpuc;
+	if (m_mem) delete m_mem;
 }
 
 void CBus::Reset(uint8_t* rombin, uint32_t romsize)
 {
-	m_mem.Reset();
-	m_mem.CopyROM(m_resetvector, rombin, romsize);
+	m_mem->Reset();
+	m_mem->CopyROM(m_resetvector, rombin, romsize);
 
 	m_sdcc->Reset();
-	m_vpuc.Reset();
-	m_dmac.Reset();
-	m_uart.Reset();
+	m_vpuc->Reset();
+	m_dmac->Reset();
+	m_uart->Reset();
+	m_leds->Reset();
+	m_mail->Reset();
+	m_dummydevice->Reset();
 
 	m_csr[0]->Reset();
-	m_csr[1]->Reset();
+	if (m_csr[1]) m_csr[1]->Reset();
 
-	if (m_cpu[0]) m_cpu[0]->Reset();
+	m_cpu[0]->Reset();
 	if (m_cpu[1]) m_cpu[1]->Reset();
 }
 
 void CBus::UpdateVideoLink(uint32_t *pixels, int pitch)
 {
-	m_vpuc.UpdateVideoLink(pixels, pitch, this);
+	m_vpuc->UpdateVideoLink(pixels, pitch, this);
 }
 
 #if defined(MEM_DEBUG)
@@ -66,30 +95,22 @@ void CBus::FillMemBitmap(uint32_t* pixels)
 
 void CBus::QueueByte(uint8_t byte)
 {
-	m_uart.QueueByte(byte);
+	m_uart->QueueByte(byte);
 }
 
 bool CBus::Tick()
 {
 	bool ret0 = true;
-	if (m_cpu[0])
-	{
-		ret0 = m_cpu[0]->Tick(this);
-		m_csr[0]->Tick(m_cpu[0], &m_uart);
-	}
-
 	bool ret1 = true;
-	if (m_cpu[1])
-	{
-		ret1 = m_cpu[1]->Tick(this);
-		m_csr[1]->Tick(m_cpu[1], &m_uart);
-	}
 
-	m_mem.Tick();
-	m_vpuc.Tick();
-	m_dmac.Tick(this);
-	m_uart.Tick();
-	m_sdcc->Tick();
+	if (m_cpu[0])
+		ret0 = m_cpu[0]->Tick(this);
+
+	if (m_cpu[1])
+		ret1 = m_cpu[1]->Tick(this);
+
+	for (int i = 0; i < 13; ++i)
+		m_devices[i]->Tick(this);
 
 	return ret0 && ret1;
 }
@@ -100,194 +121,26 @@ uint32_t* CBus::GetHostAddress(uint32_t address)
 	if (address & 0x80000000)
 		return nullptr;
 	else
-		return m_mem.GetHostAddress(address);
+		return m_mem->GetHostAddress(address);
 }
 
 void CBus::Read(uint32_t address, uint32_t& data)
 {
-	uint32_t dev = (address & 0xF0000) >> 16;
-
-	if (address & 0x80000000)
-	{
-		switch (dev)
-		{
-			case 0:
-			{
-				// DEVICE_GPIO
-				//m_gpio->Read(address, data);
-				//printf("<-GPIO\n");
-				data = 0;
-			}
-			break;
-			case 1:
-			{
-				m_leds.Read(address, data);
-			}
-			break;
-			case 2:
-			{
-				m_vpuc.Read(address, data);
-			}
-			break;
-			case 3:
-			{
-				m_sdcc->Read(address, data);
-			}
-			break;
-			case 4:
-			{
-				// DEVICE_XADC
-				//m_xadc->Read(address, data);
-				//printf("?<-XADC\n");
-				data = 0x000007FF;
-			}
-			break;
-			case 5:
-			{
-				m_dmac.Read(address, data);
-			}
-			break;
-			case 6:
-			{
-				// DEVICE_USBA
-				//m_usba->Read(address, data);
-				//printf("<-USBA\n");
-				data = 0xFF; // SPI access should return FF for no device present
-			}
-			break;
-			case 7:
-			{
-				// DEVICE_APUC
-				//m_apuc->Read(address, data);
-				//printf("<-APU\n");
-				{
-					static uint32_t evenodd = 0;
-					data = evenodd % 2;
-					evenodd++;
-				}
-			}
-			break;
-			case 8:
-			{
-				m_mail.Read(address, data);
-			}
-			break;
-			case 9:
-			{
-				m_uart.Read(address, data);
-			}
-			break;
-			case 0xA:
-			{
-				m_csr[0]->Read(address, data);
-			}
-			break;
-			case 0xB:
-			{
-				m_csr[1]->Read(address, data);
-			}
-			break;
-			default:
-			{
-				printf("Unknown device read @0x%.8X\n", address);
-				data = 0;
-			}
-		}
-	}
-	else
-		m_mem.Read(address, data);
+	uint32_t dev = address & 0x80000000 ? ((address & 0xF0000) >> 16) : 12;
+	m_devices[dev]->Read(address, data);
 }
 
 void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 {
-	if (address & 0x80000000)
-	{
-		uint32_t dev = (address & 0xF0000) >> 16;
-		switch (dev)
-		{
-			case 0:
-			{
-				// DEVICE_GPIO
-				//m_gpio->Write(address, data, wstrobe);
-				//printf("GPIO@0x%.8X<-0x%.8x\n", address, data);
-			}
-			break;
-			case 1:
-			{
-				m_leds.Write(address, data, wstrobe);
-			}
-			break;
-			case 2:
-			{
-				m_vpuc.Write(address, data, wstrobe);
-			}
-			break;
-			case 3:
-			{
-				m_sdcc->Write(address, data, wstrobe);
-			}
-			break;
-			case 4:
-			{
-				// DEVICE_XADC
-				//m_xadc->Write(address, data, wstrobe);
-				//printf("XADC@0x%.8X<-0x%.8x\n", address, data);
-			}
-			break;
-			case 5:
-			{
-				// DEVICE_DMAC
-				m_dmac.Write(address, data, wstrobe);
-			}
-			break;
-			case 6:
-			{
-				// DEVICE_USBA
-				//m_usba->Write(address, data, wstrobe);
-				//printf("USBA-A@0x%.8X<-0x%.8x\n", address, data);
-			}
-			break;
-			case 7:
-			{
-				// DEVICE_APUC
-				//m_apuc->Write(address, data, wstrobe);
-				//printf("APUC@0x%.8X<-0x%.8x\n", address, data);
-			}
-			break;
-			case 8:
-			{
-				m_mail.Write(address, data, wstrobe);
-			}
-			break;
-			case 9:
-			{
-				m_uart.Write(address, data, wstrobe);
-			}
-			break;
-			case 0xA:
-			{
-				m_csr[0]->Write(address, data, wstrobe);
-			}
-			break;
-			case 0xB:
-			{
-				m_csr[1]->Write(address, data, wstrobe);
-			}
-			break;
-			default:
-			{
-				printf("Unknown device write @0x%.8X\n", address);
-			}
-		}
-	}
-	else
-	{
+	uint32_t dev = address & 0x80000000 ? ((address & 0xF0000) >> 16) : 12;
+	m_devices[dev]->Write(address, data, wstrobe);
+
 #if defined(MEM_DEBUG)
+	if (dev == 11)
+	{
 		uint32_t addrkb = address / 1024;
 		m_busactivitystart = addrkb < m_busactivitystart ? addrkb : m_busactivitystart;
 		m_busactivityend = addrkb > m_busactivityend ? addrkb : m_busactivityend;
-#endif
-
-		m_mem.Write(address, data, wstrobe);
 	}
+#endif
 }

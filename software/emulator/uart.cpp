@@ -16,7 +16,7 @@ void CUART::Reset()
 	m_controlword = 0b10000; // Interrupts are enabled by default
 }
 
-void CUART::Tick()
+void CUART::Tick(CBus* bus)
 {
 	m_uartirq = m_byteinqueue.size() && (m_controlword&16) ? 1 : 0; // depends on interrupt enable
 

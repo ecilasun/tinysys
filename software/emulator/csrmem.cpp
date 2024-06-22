@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "csrmem.h"
+#include "bus.h"
+#include "uart.h"
 
 void CCSRMem::Reset()
 {
@@ -23,11 +25,14 @@ void CCSRMem::Reset()
 	m_wallclocktime = 0x0000000000000000;
 }
 
-void CCSRMem::Tick(CRV32* cpu, CUART* uart)
+void CCSRMem::Tick(CBus* bus)
 {
 	++m_cycle;
 	if (m_cycle % 15 == 0)
 		++m_wallclocktime;
+
+	CRV32* cpu = bus->GetCPU(m_hartid);
+	CUART* uart = bus->GetUART();
 
 	// Detect reset request
 	if (m_cpuresetreq)

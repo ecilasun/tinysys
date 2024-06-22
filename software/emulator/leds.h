@@ -1,8 +1,9 @@
 #pragma once
 
 #include <stdint.h>
+#include "memmappeddevice.h"
 
-class CLEDs
+class CLEDs : public MemMappedDevice
 {
 public:
 	CLEDs() {}
@@ -10,8 +11,8 @@ public:
 
 	uint32_t m_ledstate = 0;
 
-	void Reset();
-	void Tick();
-	void Read(uint32_t address, uint32_t& data);
-	void Write(uint32_t address, uint32_t word, uint32_t wstrobe);
+	void Reset() override final;
+	void Tick(CBus* bus) override final;
+	void Read(uint32_t address, uint32_t& data) override final;
+	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
 };

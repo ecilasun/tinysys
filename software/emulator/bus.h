@@ -9,6 +9,8 @@
 #include "dma.h"
 #include "leds.h"
 #include "uart.h"
+#include "dummydevice.h"
+#include "memmappeddevice.h"
 
 #define DEVICE_BASE 0x80000000
 
@@ -41,6 +43,9 @@ public:
 	void Write(uint32_t address, uint32_t data, uint32_t wstrobe);
 	uint32_t* GetHostAddress(uint32_t address);
 
+	CRV32* GetCPU(uint32_t hartid) { return m_cpu[hartid]; }
+	CUART* GetUART() { return m_uart; }
+
 	void UpdateVideoLink(uint32_t* pixels, int pitch);
 	void QueueByte(uint8_t byte);
 
@@ -49,16 +54,20 @@ public:
 #endif
 
 private:
-	CSysMem m_mem;
+	uint32_t m_resetvector{ 0 };
+
+	CSysMem* m_mem{ nullptr };
 	CRV32* m_cpu[2]{ nullptr, nullptr };
 	CCSRMem* m_csr[2]{ nullptr, nullptr };
-	CMailMem m_mail;
+	CMailMem* m_mail{ nullptr };
 	CSDCard* m_sdcc{ nullptr };
-	CVPU m_vpuc;
-	CDMA m_dmac;
-	CLEDs m_leds;
-	CUART m_uart;
-	uint32_t m_resetvector{ 0 };
+	CVPU* m_vpuc{ nullptr };
+	CDMA* m_dmac{ nullptr };
+	CLEDs* m_leds{ nullptr };
+	CUART* m_uart{ nullptr };
+	CDummyDevice* m_dummydevice{ nullptr };
+
+	MemMappedDevice* m_devices[13]{ nullptr };
 
 #if defined(MEM_DEBUG)
 	uint32_t m_busactivitystart{ 0 };

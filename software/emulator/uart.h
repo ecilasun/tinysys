@@ -2,8 +2,9 @@
 
 #include <stdint.h>
 #include <queue>
+#include "memmappeddevice.h"
 
-class CUART
+class CUART : public MemMappedDevice
 {
 public:
 	CUART() {}
@@ -12,10 +13,10 @@ public:
 	uint32_t m_uartirq{ 0 };
 	uint32_t m_controlword{ 0 };
 
-	void Reset();
-	void Tick();
-	void Read(uint32_t address, uint32_t& data);
-	void Write(uint32_t address, uint32_t word, uint32_t wstrobe);
+	void Reset() override final;
+	void Tick(CBus* bus) override final;
+	void Read(uint32_t address, uint32_t& data) override final;
+	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
 
 	std::queue<uint8_t> m_byteinqueue;
 	std::queue<uint8_t> m_byteoutqueue;

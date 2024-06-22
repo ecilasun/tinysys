@@ -26,7 +26,7 @@ void CMailMem::Reset()
 	memset(m_mailmem, 0, 1024 * sizeof(uint32_t));
 }
 
-void CMailMem::Tick()
+void CMailMem::Tick(CBus* bus)
 {
 }
 

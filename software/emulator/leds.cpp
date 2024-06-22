@@ -5,7 +5,7 @@ void CLEDs::Reset()
 {
 }
 
-void CLEDs::Tick()
+void CLEDs::Tick(CBus* bus)
 {
 }
 

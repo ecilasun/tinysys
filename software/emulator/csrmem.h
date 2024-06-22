@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "rv32.h"
 #include "uart.h"
+#include "memmappeddevice.h"
 
 #define CSR_MSTATUS			0x300
 #define CSR_MISA			0x301
@@ -34,16 +35,16 @@
 #define CSR_PROGRAMCOUNTER	0xFFC
 #define CSR_HWSTATE			0xFFF
 
-class CCSRMem
+class CCSRMem : public MemMappedDevice
 {
 public:
 	explicit CCSRMem(uint32_t hartid) : m_hartid(hartid) { m_csrmem = (uint32_t*)malloc(4096 * sizeof(uint32_t)); }
 	~CCSRMem() { free(m_csrmem); }
 
-	void Reset();
-	void Tick(CRV32* cpu, CUART* uart);
-	void Read(uint32_t address, uint32_t& data);
-	void Write(uint32_t address, uint32_t word, uint32_t wstrobe);
+	void Reset() override final;
+	void Tick(CBus* bus) override final;
+	void Read(uint32_t address, uint32_t& data) override final;
+	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
 
 	uint64_t m_cycle{ 0 };
 	uint64_t m_wallclocktime{ 0 };

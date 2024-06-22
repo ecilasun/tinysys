@@ -2,19 +2,19 @@
 
 #include <stdint.h>
 #include <queue>
-
 #include <ff.h>
+#include "memmappeddevice.h"
 
-class CSDCard
+class CSDCard : public MemMappedDevice
 {
 public:
 	CSDCard() {}
 	~CSDCard();
 
-	void Reset();
-	void Tick();
-	void Read(uint32_t address, uint32_t& data);
-	void Write(uint32_t address, uint32_t word, uint32_t wstrobe);
+	void Reset() override final;
+	void Tick(CBus* bus) override final;
+	void Read(uint32_t address, uint32_t& data) override final;
+	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
 
 private:
 	void PopulateFileSystem();
@@ -25,13 +25,13 @@ private:
 	uint32_t m_spimode{ 0 };
 	uint32_t m_havestarttoken{ 0 };
 	uint32_t m_numdatabytes{ 0 };
-	uint8_t m_databytes[8];
-	uint8_t m_cmdbyte;
+	uint8_t m_databytes[8] = {};
+	uint8_t m_cmdbyte{ 0 };
 	uint32_t m_readblock{ 0 };
 	uint32_t m_writeblock{ 0 };
-	uint8_t m_datablock[512];
+	uint8_t m_datablock[512] = {};
 	bool m_app_mode{ false };
 
-	FATFS* m_fs;
-	uint8_t* m_workbuf;
+	FATFS* m_fs{ nullptr };
+	uint8_t* m_workbuf{ nullptr };
 };

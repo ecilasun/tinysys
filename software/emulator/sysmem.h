@@ -2,19 +2,20 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include "memmappeddevice.h"
 
-class CSysMem
+class CSysMem : public MemMappedDevice
 {
 public:
 	CSysMem();
 	~CSysMem();
 
-	void *m_devicemem;
+	void Reset() override final;
+	void Tick(CBus* bus) override final;
+	void Read(uint32_t address, uint32_t& data) override final;
+	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
 
-	void Reset();
-	void Tick();
+	void* m_devicemem;
 	void CopyROM(uint32_t resetvector, uint8_t *bin, uint32_t size);
 	uint32_t* GetHostAddress(uint32_t address);
-	void Read(uint32_t address, uint32_t& data);
-	void Write(uint32_t address, uint32_t word, uint32_t wstrobe);
 };

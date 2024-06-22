@@ -127,7 +127,7 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 	++m_count;
 }
 
-void CVPU::Tick()
+void CVPU::Tick(CBus* bus)
 {
 	// Pull cmd from fifo and process
 	switch (m_state)

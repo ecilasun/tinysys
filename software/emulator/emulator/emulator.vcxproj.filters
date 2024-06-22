@@ -107,5 +107,11 @@
     <ClInclude Include="..\dma.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\memmappeddevice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dummydevice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

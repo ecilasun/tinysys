@@ -302,7 +302,7 @@ void CSDCard::ProcessSPI()
 	}
 }
 
-void CSDCard::Tick()
+void CSDCard::Tick(CBus* bus)
 {
 	ProcessSPI();
 }

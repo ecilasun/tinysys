@@ -160,9 +160,11 @@
     <ClInclude Include="..\bus.h" />
     <ClInclude Include="..\csrmem.h" />
     <ClInclude Include="..\dma.h" />
+    <ClInclude Include="..\dummydevice.h" />
     <ClInclude Include="..\emulator.h" />
     <ClInclude Include="..\leds.h" />
     <ClInclude Include="..\mailmem.h" />
+    <ClInclude Include="..\memmappeddevice.h" />
     <ClInclude Include="..\sysmem.h" />
     <ClInclude Include="..\rv32.h" />
     <ClInclude Include="..\sdcard.h" />
