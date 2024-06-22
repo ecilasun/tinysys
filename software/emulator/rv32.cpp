@@ -191,8 +191,10 @@ void CRV32::DecodeInstruction(uint32_t pc, uint32_t instr, SDecodedInstruction& 
 	dec.m_pc = pc;
 	dec.m_opcode = SelectBitRange(instr, 6, 0);
 	dec.m_f3 = SelectBitRange(instr, 14, 12);
+	dec.m_f7 = SelectBitRange(instr, 31, 25);
 	dec.m_rs1 = SelectBitRange(instr, 19, 15);
 	dec.m_rs2 = SelectBitRange(instr, 24, 20);
+	dec.m_rs3 = SelectBitRange(instr, 31, 27);
 	dec.m_rd = SelectBitRange(instr, 11, 7);
 	dec.m_f12 = SelectBitRange(instr, 31, 20);
 	dec.m_csroffset = (SelectBitRange(instr, 31, 25) << 5) | dec.m_rs2;
@@ -635,8 +637,9 @@ bool CRV32::Execute(CBus* bus)
 		m_instructionfifo.pop();
 
 		// Get register contents
-		instr.m_rval1 = m_GPR[instr.m_rs1];
-		instr.m_rval2 = m_GPR[instr.m_rs2];
+		instr.m_rval1 = m_GPR[instr.m_rs1 & 0x1F];
+		instr.m_rval2 = m_GPR[instr.m_rs2 & 0x1F];
+		instr.m_rval3 = m_GPR[instr.m_rs3 & 0x1F];
 
 		// Run ALU+BLU ops
 		uint32_t aluout = ALU(instr);
@@ -881,14 +884,123 @@ bool CRV32::Execute(CBus* bus)
 			}
 			break;
 
-			case OP_FLOAT_OP:
 			case OP_FLOAT_MADD:
 			case OP_FLOAT_MSUB:
 			case OP_FLOAT_NMSUB:
 			case OP_FLOAT_NMADD:
 			{
-				printf("- unimpl - float op\n");
-				return false;
+				// We use zfinx extension (floating point registers in integer registers) so we need to alias them
+				float* A = (float*)&instr.m_rval1;
+				float* B = (float*)&instr.m_rval2;
+				float* C = (float*)&instr.m_rval3;
+				float* D = (float*)&rdin;
+				rwen = 1;
+
+				if (instr.m_opcode == OP_FLOAT_MADD)
+					*D = *A * *B + *C;
+				else if (instr.m_opcode == OP_FLOAT_MSUB)
+					*D = *A * *B - *C;
+				else if (instr.m_opcode == OP_FLOAT_NMSUB)
+					*D = -*A * *B + *C;
+				else if (instr.m_opcode == OP_FLOAT_NMADD)
+					*D = -*A * *B - *C;
+				else
+				{
+					printf("- unknown floatop3\n");
+				}
+			}
+			break;
+
+			case OP_FLOAT_OP:
+			{
+				float* A = (float*)&instr.m_rval1;
+				float* B = (float*)&instr.m_rval2;
+				float* D = (float*)&rdin;
+				rwen = 1;
+
+				switch (instr.m_f7)
+				{
+					case 0b0000000: // fadd.s
+					{
+						*D = *A + *B;
+					}
+					break;
+					case 0b0000100: // fsub.s
+					{
+						*D = *A - *B;
+					}
+					break;
+					case 0b0001000: // fmul.s
+					{
+						*D = *A * *B;
+					}
+					break;
+					case 0b0001100: // fdiv.s
+					{
+						*D = *A / *B;
+					}
+					break;
+					case 0b0101100: // fsqrt.s
+					{
+						*D = sqrtf(*A);
+					}
+					break;
+					case 0b0010000: // fsgnj.s / fsgnjn.s / fsgnjx.s
+					{
+						switch (instr.m_f3)
+						{
+							case 0b000: rdin = (instr.m_rval2 & 0x80000000) | (instr.m_rval1 & 0x7FFFFFFF); break;
+							case 0b001: rdin = ((instr.m_rval2 & 0x80000000) ^ 0x80000000) | (instr.m_rval1 & 0x7FFFFFFF); break;
+							case 0b010: rdin = ((instr.m_rval2 & 0x80000000) ^ (instr.m_rval1 & 0x80000000)) | (instr.m_rval1 & 0x7FFFFFFF); break;
+						}
+					}
+					break;
+					case 0b0010100: // fmin.s / fmax.s
+					{
+						switch (instr.m_f3)
+						{
+							case 0b000: *D = fminf(*A, *B); break;
+							case 0b001: *D = fmaxf(*A, *B); break;
+						}
+					}
+					break;
+					case 0b1010000: // feq.s / flt.s / fle.s
+					{
+						switch (instr.m_f3)
+						{
+							case 0b010: rdin = *A == *B ? 1 : 0; break;
+							case 0b001: rdin = *A < *B ? 1 : 0; break;
+							case 0b000: rdin = *A <= *B ? 1 : 0; break;
+						}
+					}
+					break;
+					case 0b1110000: // fclass
+					{
+						rwen = 0;
+						printf("- fclass not implemented\n");
+					}
+					break;
+					case 0b1100000: // fcvtws / fcvtwus
+					{
+						rdin = (int)*A;
+					}
+					break;
+					case 0b1101000: // fcvtsw / fcvtwus
+					{
+						*D = (float)instr.m_rval1;
+					}
+					case 0b1100001: // fcvtswu4sat.s
+					{
+						rdin = max(0, min(15, (int)(16.0f * *A)));
+					}
+					break;
+					default:
+					{
+						rwen = 0;
+						printf("- unknown floatop2\n");
+					}
+					break;
+				}
 			}
 			break;
 

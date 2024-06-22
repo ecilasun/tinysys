@@ -38,8 +38,8 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 					const int linetop = W * y;
 					for (uint32_t x = 0; x < m_scanwidth; ++x)
 					{
-						uint32_t color = devicememas12bpp[m_scanwidth * y + x];
-						pixels[linetop + x] = color; // TODO: expand to 32bpp from 12bpp
+						uint16_t color = devicememas12bpp[m_scanwidth * y + x];
+						pixels[linetop + x] = color | 0xFF000000; // TODO: expand to 32bpp from 12bpp
 					}
 				}
 			}

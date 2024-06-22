@@ -70,15 +70,18 @@ struct SDecodedInstruction
 	uint32_t m_aluop;
 	uint32_t m_bluop;
 	uint32_t m_f3;
+	uint32_t m_f7;
 	uint32_t m_f12;
 	uint32_t m_rs1;
 	uint32_t m_rs2;
+	uint32_t m_rs3;
 	uint32_t m_rd;
 	uint32_t m_immed;
 	uint32_t m_selimm;
 	uint32_t m_csroffset;
 	uint32_t m_rval1;
 	uint32_t m_rval2;
+	uint32_t m_rval3;
 	uint32_t m_opindex;
 };
 
