@@ -63,6 +63,7 @@ uint32_t ISR_ROM[] = {
 
 void CRV32::Reset()
 {
+	m_wficount = 0;
 	m_fetchstate = EFetchInit;
 
 	m_PC = m_resetvector;
@@ -520,7 +521,8 @@ bool CRV32::FetchDecode(CBus* bus)
 
 	if (m_fetchstate == EFetchWFI)
 	{
-		if (m_irq)
+		m_wficount = (m_wficount + 1) % 4;
+		if (m_wficount==0 || m_irq)
 			m_fetchstate = EFetchRead;
 		return true;
 	}
@@ -552,11 +554,7 @@ bool CRV32::FetchDecode(CBus* bus)
 		bool isillegal = m_sie && decoded.m_opindex == 0;
 		bool branchtomtvec = false;
 
-		if (iswfi)
-		{
-			m_fetchstate = EFetchWFI;
-		}
-		else if ((isebreak || isecall || isillegal || m_irq) && m_exceptionmode == EXC_NONE)
+		if ((isebreak || isecall || isillegal || m_irq) && m_exceptionmode == EXC_NONE)
 		{
 			// Will need to route to mtvec
 			branchtomtvec = true;
@@ -579,13 +577,15 @@ bool CRV32::FetchDecode(CBus* bus)
 
 		// Determine next PC
 		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
-		if (branchtomtvec) // Do not do anything else while we're in exception mode apart from route execution to mtvec (execution resumes from this PC after injected header code runs)
+		if (iswfi)
+			m_fetchstate = EFetchWFI;
+		else if (branchtomtvec) // Do not do anything else while we're in exception mode apart from route execution to mtvec (execution resumes from this PC after injected header code runs)
 			bus->Read(csrbase + (CSR_MTVEC << 2), m_PC);
 		else if (isjal) // For JAL instructions, we can calculate the target immediately without having to execute
 			m_PC = decoded.m_pc + decoded.m_immed;
 		else if (!isfence && !isbranch && !isjalr && !ismret) // For anything that doesn't require a branch, just increment PC
 			m_PC = decoded.m_pc + 4;
-		else if (!iswfi) // For branches, jumps and mret, we need to wait for the branch target
+		else // For branches, jumps and mret, we need to wait for the branch target
 			m_fetchstate = EFetchWaitForBranch; // wait for branch target from exec
 
 		return true;

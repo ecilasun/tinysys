@@ -115,6 +115,7 @@ public:
 
 	// Internal counters
 	uint64_t m_retired{ 0 };
+	uint32_t m_wficount{ 0 };
 	uint32_t m_debugtrace{ 0 };
 
 	// HART0 by default
