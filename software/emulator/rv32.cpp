@@ -543,7 +543,7 @@ bool CRV32::FetchDecode(CBus* bus)
 			return false;
 		}*/
 
-		bool isebreak = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_EBREAK;
+		bool isebreak = m_sie && decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_EBREAK;
 		bool isecall = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_ECALL;
 		bool ismret = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_MRET;
 		bool iswfi = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_WFI;
@@ -552,12 +552,10 @@ bool CRV32::FetchDecode(CBus* bus)
 		bool isjalr = decoded.m_opcode == OP_JALR;
 		bool isjal = decoded.m_opcode == OP_JAL;
 		bool isillegal = m_sie && decoded.m_opindex == 0;
-		bool branchtomtvec = false;
+		bool branchtomtvec = (isebreak || isecall || isillegal || m_irq) && m_exceptionmode == EXC_NONE;
 
-		if ((isebreak || isecall || isillegal || m_irq) && m_exceptionmode == EXC_NONE)
+		if (branchtomtvec)
 		{
-			// Will need to route to mtvec
-			branchtomtvec = true;
 			if (m_irq & 1) // hardware
 				m_exceptionmode = EXC_HWI;
 			else if (m_irq & 2) // timer
@@ -568,6 +566,7 @@ bool CRV32::FetchDecode(CBus* bus)
 				m_exceptionmode = EXC_EBREAK;
 			else if (isecall) // ecall
 				m_exceptionmode = EXC_ECALL;
+
 			// Add header
 			InjectISRHeader();
 			m_lasttrap = m_exceptionmode;
@@ -577,12 +576,14 @@ bool CRV32::FetchDecode(CBus* bus)
 
 		// Determine next PC
 		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
-		if (iswfi)
-			m_fetchstate = EFetchWFI;
-		else if (branchtomtvec) // Do not do anything else while we're in exception mode apart from route execution to mtvec (execution resumes from this PC after injected header code runs)
+		if (branchtomtvec) // Do not do anything else while we're in exception mode apart from route execution to mtvec (execution resumes from this PC after injected header code runs)
 			bus->Read(csrbase + (CSR_MTVEC << 2), m_PC);
+		else if (iswfi)
+			m_fetchstate = EFetchWFI;
 		else if (isjal) // For JAL instructions, we can calculate the target immediately without having to execute
 			m_PC = decoded.m_pc + decoded.m_immed;
+		else if (isebreak) // EBREAK stays at the same PC until it's replaced by another instruction or SWI is disabled
+			m_PC = decoded.m_pc;
 		else if (!isfence && !isbranch && !isjalr && !ismret) // For anything that doesn't require a branch, just increment PC
 			m_PC = decoded.m_pc + 4;
 		else // For branches, jumps and mret, we need to wait for the branch target
@@ -597,10 +598,10 @@ bool CRV32::FetchDecode(CBus* bus)
 			if (m_lasttrap && m_wasmret)
 			{
 				m_wasmret = 0;
-				// Add footer
+				// Add footer (append _END to previous exception mode)
 				m_exceptionmode = ERV32ExceptionMode(0x80000000 | m_lasttrap);
 				InjectISRFooter();
-				// we're done
+				// We're done
 				m_exceptionmode = EXC_NONE;
 				m_lasttrap = EXC_NONE;
 			}
@@ -725,16 +726,15 @@ bool CRV32::Execute(CBus* bus)
 				}
 				else if (instr.m_f12 == F12_WFI)
 				{
-					// NOOP for now, ideally should wait for irq != 0 in a WFI state for about 16 clocks similar to real hardware
-					//printf("- wfi\n");
+					// This is handled by fetch unit, same as hardware
 				}
 				else if (instr.m_f12 == F12_EBREAK)
 				{
-					//printf("- ebreak\n");
+					// This is handled by fetch unit, same as hardware
 				}
 				else if (instr.m_f12 == F12_ECALL)
 				{
-					//printf("- ecall\n");
+					// This is handled by fetch unit, same as hardware
 				}
 				else // CSROP
 				{
