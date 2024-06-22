@@ -36,5 +36,6 @@ private:
 	uint32_t m_count{ 0 };
 	uint32_t m_vgapalette[256];
 	uint32_t m_videodirty{ 1 };
+	uint32_t m_fakevsync{ 0 };
 	std::queue<uint32_t> m_fifo;
 };

@@ -136,15 +136,15 @@ void CBus::Read(uint32_t address, uint32_t& data)
 			{
 				// DEVICE_XADC
 				//m_xadc->Read(address, data);
-				//printf("<-XADC\n");
-				data = 0;
+				//printf("?<-XADC\n");
+				data = 0x000007FF;
 			}
 			break;
 			case 5:
 			{
 				// DEVICE_DMAC
 				//m_dmac->Read(address, data);
-				//printf("<-DMAC\n");
+				//printf("?<-DMAC\n");
 				data = 0;
 			}
 			break;

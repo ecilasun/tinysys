@@ -188,8 +188,9 @@ void CVPU::Tick()
 
 void CVPU::Read(uint32_t address, uint32_t& data)
 {
-	// TODO: Command FIFO reads should return device status (vsync in this case)
-	data = 0;
+	// Fake vsync: will flip for every read
+	data = m_fakevsync%2;
+	++m_fakevsync;
 }
 
 void CVPU::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
