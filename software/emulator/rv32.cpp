@@ -628,8 +628,6 @@ bool CRV32::Execute(CBus* bus)
 	if (m_instructionfifo.size())
 	{
 		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
-		bus->Write(csrbase + (CSR_RETILO << 2), (uint32_t)(m_retired & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
-		bus->Write(csrbase + (CSR_RETIHI << 2), (uint32_t)((m_retired & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
 		bus->Write(csrbase + (CSR_PROGRAMCOUNTER << 2), m_PC, 0xFFFFFFFF);
 
 		SDecodedInstruction instr;
@@ -655,11 +653,6 @@ bool CRV32::Execute(CBus* bus)
 		uint32_t wdata = 0;
 		uint32_t wstrobe = 0;
 
-		/*printf("- @%.8X: op=%.8X r1=%.8x r2=%.8x imm=%.8X\n", instr.m_pc, instr.m_opcode, instr.m_rval1, instr.m_rval2, instr.m_immed);
-		for (uint32_t i = 0; i < 32; ++i)
-			printf("x%d=%.8x ", i, m_GPR[i]);
-		printf("\n");*/
-
 		// Execute
 		switch (instr.m_opcode)
 		{
@@ -667,26 +660,22 @@ bool CRV32::Execute(CBus* bus)
 			case OP_OP_IMM:
 				rdin = aluout;
 				rwen = 1;
-				//printf("- op/opimm %.8x\n", aluout);
 			break;
 
 			case OP_AUIPC:
 				rdin = offsetpc;
 				rwen = 1;
-				//printf("- auipc %.8x\n", offsetpc);
 			break;
 
 			case OP_LUI:
 				rdin = instr.m_immed;
 				rwen = 1;
-				//printf("- lui %.8x\n", instr.m_immed);
 			break;
 
 			case OP_JAL:
 				// fetch handles this
 				rdin = adjacentpc;
 				rwen = 1;
-				//printf("- jal %.8x\n", offsetpc);
 			break;
 
 			case OP_JALR:
@@ -694,13 +683,11 @@ bool CRV32::Execute(CBus* bus)
 				m_branchtarget = jumpabs;
 				rdin = adjacentpc;
 				rwen = 1;
-				//printf("- lalr %.8x\n", jumpabs);
 			break;
 
 			case OP_BRANCH:
 				m_branchresolved = 1;
 				m_branchtarget = branchout ? offsetpc : adjacentpc;
-				//printf("- branch %.8x\n", branchout ? offsetpc : adjacentpc);
 			break;
 
 			case OP_FENCE:
@@ -804,8 +791,6 @@ bool CRV32::Execute(CBus* bus)
 					case 0b001:	wstrobe = himask; break;
 					default:	wstrobe = 0b1111; break;
 				}
-
-				//printf("- store %.8x\n", rwaddress);
 			}
 			break;
 
@@ -879,8 +864,6 @@ bool CRV32::Execute(CBus* bus)
 					break;
 				}
 				rwen = 1;
-
-				//printf("- load @%.8x -> %.8x\n", rwaddress, instr.m_rd);
 			}
 			break;
 
@@ -906,7 +889,7 @@ bool CRV32::Execute(CBus* bus)
 					*D = -*A * *B - *C;
 				else
 				{
-					printf("- unknown floatop3\n");
+					//printf("- unknown floatop3\n");
 				}
 			}
 			break;
@@ -977,7 +960,7 @@ bool CRV32::Execute(CBus* bus)
 					case 0b1110000: // fclass
 					{
 						rwen = 0;
-						printf("- fclass not implemented\n");
+						//printf("- fclass not implemented\n");
 					}
 					break;
 					case 0b1100000: // fcvtws / fcvtwus
@@ -998,7 +981,7 @@ bool CRV32::Execute(CBus* bus)
 					default:
 					{
 						rwen = 0;
-						printf("- unknown floatop2\n");
+						//printf("- unknown floatop2\n");
 					}
 					break;
 				}
@@ -1025,6 +1008,8 @@ bool CRV32::Execute(CBus* bus)
 		}
 
 		++m_retired;
+		bus->Write(csrbase + (CSR_RETILO << 2), (uint32_t)(m_retired & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
+		bus->Write(csrbase + (CSR_RETIHI << 2), (uint32_t)((m_retired & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
 	}
 
 	return true;

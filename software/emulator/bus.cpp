@@ -68,7 +68,7 @@ void CBus::Reset(uint8_t* rombin, uint32_t romsize)
 	m_csr[0]->Reset();
 	if (m_csr[1]) m_csr[1]->Reset();
 
-	m_cpu[0]->Reset();
+	m_csr[1]->Reset();
 	if (m_cpu[1]) m_cpu[1]->Reset();
 }
 

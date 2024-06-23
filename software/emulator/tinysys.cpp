@@ -111,13 +111,13 @@ int SDL_main(int argc, char** argv)
 #endif
 
 	SDL_Thread* thread = SDL_CreateThread(emulatorthread, "emulator", ectx.emulator);
-	SDL_TimerID videoTimer = SDL_AddTimer(13, videoCallback, &ectx);
+	SDL_TimerID videoTimer = SDL_AddTimer(13, videoCallback, &ectx); // 60fps
 
 	// Enumerate audio output devices
-	for (int i = 0; i < SDL_GetNumAudioDevices(0); i++)
+	/*for (int i = 0; i < SDL_GetNumAudioDevices(0); i++)
 	{
 		printf("Audio device %d : %s\n", i, SDL_GetAudioDeviceName(i, 0));
-	}
+	}*/
 
 	SDL_AudioSpec audioSpecDesired, audioSpecObtained;
 	SDL_zero(audioSpecDesired);
@@ -130,7 +130,8 @@ int SDL_main(int argc, char** argv)
 	audioSpecDesired.userdata = &ectx;
 
 	int dev = SDL_OpenAudioDevice(nullptr, 0, &audioSpecDesired, &audioSpecObtained, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_FORMAT_CHANGE);
-	SDL_PauseAudioDevice(dev, 0);
+	if (dev != 0)
+		SDL_PauseAudioDevice(dev, 0);
 
 	SDL_Event ev;
 	int ticks = 0;
