@@ -46,10 +46,15 @@ public:
 	void Read(uint32_t address, uint32_t& data) override final;
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
 
+	void SetRetiredInstructions(uint64_t retired) { m_retired = retired; }
+	void SetPC(uint32_t pc) { m_pc = pc; }
+
+	uint64_t m_retired{ 0 };
 	uint64_t m_cycle{ 0 };
 	uint64_t m_wallclocktime{ 0 };
 	uint64_t m_timecmp{ 0 };
 	uint32_t m_hartid{ 0 };
+	uint32_t m_pc{ 0 };
 
 private:
 	uint32_t* m_csrmem{ nullptr };

@@ -47,6 +47,7 @@ public:
 	CAPU* GetAPU() { return m_apu; }
 	CRV32* GetCPU(uint32_t hartid) { return m_cpu[hartid]; }
 	CUART* GetUART() { return m_uart; }
+	CCSRMem* GetCSR(uint32_t hartid) { return m_csr[hartid]; }
 
 	void UpdateVideoLink(uint32_t* pixels, int pitch);
 	void QueueByte(uint8_t byte);

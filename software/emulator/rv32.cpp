@@ -376,7 +376,7 @@ void CRV32::InjectISRHeader()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push(isrinstr);
+				m_instructionfifo.push_back(isrinstr);
 			}
 		}
 		break;
@@ -387,7 +387,7 @@ void CRV32::InjectISRHeader()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push(isrinstr);
+				m_instructionfifo.push_back(isrinstr);
 			}
 		}
 		break;
@@ -398,7 +398,7 @@ void CRV32::InjectISRHeader()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push(isrinstr);
+				m_instructionfifo.push_back(isrinstr);
 			}
 		}
 		break;
@@ -409,7 +409,7 @@ void CRV32::InjectISRHeader()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push(isrinstr);
+				m_instructionfifo.push_back(isrinstr);
 			}
 		}
 		break;
@@ -420,7 +420,7 @@ void CRV32::InjectISRHeader()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push(isrinstr);
+				m_instructionfifo.push_back(isrinstr);
 			}
 		}
 		break;
@@ -445,7 +445,7 @@ void CRV32::InjectISRFooter()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push(isrinstr);
+				m_instructionfifo.push_back(isrinstr);
 			}
 		}
 		break;
@@ -456,7 +456,7 @@ void CRV32::InjectISRFooter()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push(isrinstr);
+				m_instructionfifo.push_back(isrinstr);
 			}
 		}
 		break;
@@ -467,7 +467,7 @@ void CRV32::InjectISRFooter()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push(isrinstr);
+				m_instructionfifo.push_back(isrinstr);
 			}
 		}
 		break;
@@ -478,7 +478,7 @@ void CRV32::InjectISRFooter()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push(isrinstr);
+				m_instructionfifo.push_back(isrinstr);
 			}
 		}
 		break;
@@ -489,7 +489,7 @@ void CRV32::InjectISRFooter()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push(isrinstr);
+				m_instructionfifo.push_back(isrinstr);
 			}
 		}
 		break;
@@ -575,7 +575,7 @@ bool CRV32::FetchDecode(CBus* bus)
 			m_lasttrap = m_exceptionmode;
 		}
 		else
-			m_instructionfifo.push(decoded);
+			m_instructionfifo.push_back(decoded);
 
 		// Determine next PC
 		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
@@ -627,12 +627,14 @@ bool CRV32::Execute(CBus* bus)
 {
 	if (m_instructionfifo.size())
 	{
+		CCSRMem* csr = bus->GetCSR(m_hartid);
+		csr->SetPC(m_PC);
+
 		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
-		bus->Write(csrbase + (CSR_PROGRAMCOUNTER << 2), m_PC, 0xFFFFFFFF);
 
 		SDecodedInstruction instr;
 		instr = m_instructionfifo.front();
-		m_instructionfifo.pop();
+		m_instructionfifo.pop_front();
 
 		// Get register contents
 		instr.m_rval1 = m_GPR[instr.m_rs1 & 0x1F];
@@ -1008,8 +1010,7 @@ bool CRV32::Execute(CBus* bus)
 		}
 
 		++m_retired;
-		bus->Write(csrbase + (CSR_RETILO << 2), (uint32_t)(m_retired & 0x00000000FFFFFFFFU), 0xFFFFFFFF);
-		bus->Write(csrbase + (CSR_RETIHI << 2), (uint32_t)((m_retired & 0xFFFFFFFF00000000U) >> 32), 0xFFFFFFFF);
+		csr->SetRetiredInstructions(m_retired);
 	}
 
 	return true;

@@ -6,6 +6,7 @@
 #include "core.h"
 #include "basesystem.h"
 #include "uart.h"
+#include "task.h"
 
 /* A port of Dmitry Sokolov's tiny raytracer to C and to FemtoRV32 */
 /* Displays on the small OLED display and/or HDMI                  */
@@ -462,6 +463,7 @@ void render(Sphere* spheres, int nb_spheres, Light* lights, int nb_lights) {
     for (int i = 0; i<graphics_width; i++) {
       render_pixel(i,j  ,spheres,nb_spheres,lights,nb_lights);
     }
+	TaskYield();
   }
 #endif
    stats_end_frame();

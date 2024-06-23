@@ -27,9 +27,8 @@ void CCSRMem::Reset()
 
 void CCSRMem::Tick(CBus* bus)
 {
-	++m_cycle;
-	if (m_cycle % 15 == 0)
-		++m_wallclocktime;
+	m_cycle += 5; // Hardware clocks at about ~5 cycles per instruction (sometimes less, sometimes more)
+	m_wallclocktime = m_cycle/15; // main clock is 150MHz and wallclock is 10MHz, therefore /15
 
 	CRV32* cpu = bus->GetCPU(m_hartid);
 	CUART* uart = bus->GetUART();
@@ -94,6 +93,12 @@ void CCSRMem::Read(uint32_t address, uint32_t& data)
 		data = m_mieshadow;
 	else if (csrindex == CSR_MHARTID)
 		data = m_hartid;
+	else if (csrindex == CSR_RETILO)
+		data = (uint32_t)(m_retired & 0x00000000FFFFFFFFU);
+	else if (csrindex == CSR_RETIHI)
+		data = (uint32_t)((m_retired & 0xFFFFFFFF00000000U) >> 32);
+	else if (csrindex == CSR_PROGRAMCOUNTER)
+		data = m_pc;
 	else
 		data = m_csrmem[csrindex];
 }

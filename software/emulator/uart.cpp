@@ -20,12 +20,17 @@ void CUART::Tick(CBus* bus)
 {
 	m_uartirq = m_byteinqueue.size() && (m_controlword&16) ? 1 : 0; // depends on interrupt enable
 
+	int needflush = 0;
 	while (m_byteoutqueue.size())
 	{
 		// Output to console
 		printf("%c", m_byteoutqueue.front());
-		m_byteoutqueue.pop();
+		m_byteoutqueue.pop_front();
+		++needflush;
 	}
+
+	if (needflush)
+		fflush(stdout);
 }
 
 void CUART::Read(uint32_t address, uint32_t& data)
@@ -36,7 +41,7 @@ void CUART::Read(uint32_t address, uint32_t& data)
 		// Read status register to check if a byte is available first
 		while (m_byteinqueue.size() == 0) {}
 		data = m_byteinqueue.front();
-		m_byteinqueue.pop();
+		m_byteinqueue.pop_front();
 	}
 	else if (address == UARTTRANSMIT)
 	{
@@ -73,11 +78,11 @@ void CUART::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 	else if (address == UARTTRANSMIT)
 	{
 		// Write to transmit
-		m_byteoutqueue.push(word & 0xFF);
+		m_byteoutqueue.push_back(word & 0xFF);
 	}
 }
 
 void CUART::QueueByte(uint8_t byte)
 {
-	m_byteinqueue.push(byte);
+	m_byteinqueue.push_back(byte);
 }

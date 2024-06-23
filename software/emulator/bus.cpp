@@ -68,7 +68,7 @@ void CBus::Reset(uint8_t* rombin, uint32_t romsize)
 	m_csr[0]->Reset();
 	if (m_csr[1]) m_csr[1]->Reset();
 
-	m_csr[1]->Reset();
+	m_cpu[0]->Reset();
 	if (m_cpu[1]) m_cpu[1]->Reset();
 }
 
@@ -103,12 +103,9 @@ void CBus::QueueByte(uint8_t byte)
 
 bool CBus::Tick()
 {
-	bool ret0 = true;
+	bool ret0 = m_cpu[0]->Tick(this);
+
 	bool ret1 = true;
-
-	if (m_cpu[0])
-		ret0 = m_cpu[0]->Tick(this);
-
 	if (m_cpu[1])
 		ret1 = m_cpu[1]->Tick(this);
 
@@ -139,7 +136,7 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 	m_devices[dev]->Write(address, data, wstrobe);
 
 #if defined(MEM_DEBUG)
-	if (dev == 11)
+	if (dev == 12)
 	{
 		uint32_t addrkb = address / 1024;
 		m_busactivitystart = addrkb < m_busactivitystart ? addrkb : m_busactivitystart;

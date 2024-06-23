@@ -1,7 +1,7 @@
 #pragma once
 
 #include "bitutil.h"
-#include <queue>
+#include <deque>
 
 enum FetchState{
 	EFetchInit,
@@ -132,7 +132,7 @@ public:
 	uint32_t m_resetvector{ 0x0 };
 	bool m_pendingCPUReset{ false };
 
-	std::queue<SDecodedInstruction> m_instructionfifo;
+	std::deque<SDecodedInstruction> m_instructionfifo;
 
 	void Reset();
 	bool Tick(CBus* bus);

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <queue>
+#include <deque>
 #include "memmappeddevice.h"
 
 class CUART : public MemMappedDevice
@@ -18,7 +18,7 @@ public:
 	void Read(uint32_t address, uint32_t& data) override final;
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
 
-	std::queue<uint8_t> m_byteinqueue;
-	std::queue<uint8_t> m_byteoutqueue;
+	std::deque<uint8_t> m_byteinqueue;
+	std::deque<uint8_t> m_byteoutqueue;
 	void QueueByte(uint8_t byte);
 };
