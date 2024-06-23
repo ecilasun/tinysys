@@ -69,6 +69,9 @@
     <ClCompile Include="..\dma.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\apu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\csrmem.h">
@@ -111,6 +114,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\dummydevice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\apu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

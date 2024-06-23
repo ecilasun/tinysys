@@ -7,6 +7,7 @@ CBus::CBus(uint32_t resetvector)
 
 	m_mem = new CSysMem();
 	m_vpuc = new CVPU();
+	m_apu = new CAPU();
 	m_dmac = new CDMA();
 	m_leds = new CLEDs();
 	m_mail = new CMailMem();
@@ -26,7 +27,7 @@ CBus::CBus(uint32_t resetvector)
 	m_devices[4] = m_dummydevice; // XADC
 	m_devices[5] = m_dmac;
 	m_devices[6] = m_dummydevice; // USBA
-	m_devices[7] = m_dummydevice; // APUC
+	m_devices[7] = m_apu;
 	m_devices[8] = m_mail;
 	m_devices[9] = m_uart;
 	m_devices[10] = m_csr[0];
@@ -46,6 +47,7 @@ CBus::~CBus()
 	if (m_leds) delete m_leds;
 	if (m_dmac) delete m_dmac;
 	if (m_vpuc) delete m_vpuc;
+	if (m_apu) delete m_apu;
 	if (m_mem) delete m_mem;
 }
 
@@ -61,6 +63,7 @@ void CBus::Reset(uint8_t* rombin, uint32_t romsize)
 	m_leds->Reset();
 	m_mail->Reset();
 	m_dummydevice->Reset();
+	m_apu->Reset();
 
 	m_csr[0]->Reset();
 	if (m_csr[1]) m_csr[1]->Reset();

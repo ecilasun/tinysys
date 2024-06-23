@@ -30,6 +30,20 @@ int emulatorthread(void* data)
 	return 0;
 }
 
+void audioCallback(void* userdata, Uint8* stream, int len)
+{
+	if (len == 0)
+		return;
+
+	EmulatorContext* ctx = (EmulatorContext*)userdata;
+	CAPU *apu = ctx->emulator->m_bus->GetAPU();
+	uint8_t* source = (uint8_t*)apu->GetPlaybackData();
+
+	uint32_t maxlen = len/sizeof(uint16_t) > 1024 ? 1024*sizeof(uint16_t) : len;
+	SDL_MixAudioFormat(stream, (uint8_t*)source, AUDIO_S16, len, SDL_MIX_MAXVOLUME);
+	apu->FlipBuffers();
+}
+
 uint32_t videoCallback(Uint32 interval, void* param)
 {
 	EmulatorContext* ctx = (EmulatorContext*)param;
@@ -97,8 +111,26 @@ int SDL_main(int argc, char** argv)
 #endif
 
 	SDL_Thread* thread = SDL_CreateThread(emulatorthread, "emulator", ectx.emulator);
+	SDL_TimerID videoTimer = SDL_AddTimer(13, videoCallback, &ectx);
 
-	SDL_AddTimer(13, videoCallback, &ectx);
+	// Enumerate audio output devices
+	for (int i = 0; i < SDL_GetNumAudioDevices(0); i++)
+	{
+		printf("Audio device %d : %s\n", i, SDL_GetAudioDeviceName(i, 0));
+	}
+
+	SDL_AudioSpec audioSpecDesired, audioSpecObtained;
+	SDL_zero(audioSpecDesired);
+	SDL_zero(audioSpecObtained);
+	audioSpecDesired.freq = 22050;
+	audioSpecDesired.format = AUDIO_S16;
+	audioSpecDesired.channels = 2;
+	audioSpecDesired.samples = 1024;
+	audioSpecDesired.callback = audioCallback;
+	audioSpecDesired.userdata = &ectx;
+
+	int dev = SDL_OpenAudioDevice(nullptr, 0, &audioSpecDesired, &audioSpecObtained, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_FORMAT_CHANGE);
+	SDL_PauseAudioDevice(dev, 0);
 
 	SDL_Event ev;
 	int ticks = 0;
@@ -136,9 +168,11 @@ int SDL_main(int argc, char** argv)
 		++ticks;
 	} while(s_alive);
 
+	SDL_RemoveTimer(videoTimer);
 	SDL_WaitThread(thread, nullptr);
 	SDL_FreeSurface(ectx.surface);
 	SDL_DestroyWindow(ectx.window);
+	SDL_CloseAudioDevice(dev);
 	SDL_Quit();
 
 	return 0;

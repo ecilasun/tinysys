@@ -6,6 +6,7 @@
 #include "sdcard.h"
 #include "mailmem.h"
 #include "vpu.h"
+#include "apu.h"
 #include "dma.h"
 #include "leds.h"
 #include "uart.h"
@@ -43,6 +44,7 @@ public:
 	void Write(uint32_t address, uint32_t data, uint32_t wstrobe);
 	uint32_t* GetHostAddress(uint32_t address);
 
+	CAPU* GetAPU() { return m_apu; }
 	CRV32* GetCPU(uint32_t hartid) { return m_cpu[hartid]; }
 	CUART* GetUART() { return m_uart; }
 
@@ -65,6 +67,7 @@ private:
 	CDMA* m_dmac{ nullptr };
 	CLEDs* m_leds{ nullptr };
 	CUART* m_uart{ nullptr };
+	CAPU* m_apu{ nullptr };
 	CDummyDevice* m_dummydevice{ nullptr };
 
 	MemMappedDevice* m_devices[13]{ nullptr };
