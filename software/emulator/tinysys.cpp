@@ -112,7 +112,7 @@ int SDL_main(int argc, char** argv)
 #endif
 
 	SDL_Thread* thread = SDL_CreateThread(emulatorthread, "emulator", ectx.emulator);
-	SDL_TimerID videoTimer = SDL_AddTimer(13, videoCallback, &ectx); // 60fps
+	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, &ectx); // 60fps
 
 	// Enumerate audio output devices
 	/*for (int i = 0; i < SDL_GetNumAudioDevices(0); i++)

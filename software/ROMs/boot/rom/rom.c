@@ -811,20 +811,20 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 		uint64_t currentTime = TaskYield();
 
 		// ----------------------------------------------------------------
-		// High level maintenance tasks which should not be interrupted
+		// H/W related tasks which should't cause IRQs or be interrupted
 		// ----------------------------------------------------------------
 
-		// Disable machine interrupts on this core
 		clear_csr(mstatus, MSTATUS_MIE);
-
-		// Deal with USB peripheral setup and data traffic
 		ProcessUSBDevice(currentTime);
-
-		// Emit outgoing serial data
-		UARTEmitBufferedOutput();
-
-		// Enable machine interrupts on this core
 		set_csr(mstatus, MSTATUS_MIE);
+
+		// ----------------------------------------------------------------
+		// Tasks which should not switch context to avoid memory conflicts
+		// ----------------------------------------------------------------
+
+		clear_csr(mie, MIP_MTIP);
+		UARTEmitBufferedOutput();
+		set_csr(mie, MIP_MTIP);
 
 		// ----------------------------------------------------------------
 		// GDB stub / serial keyboard input

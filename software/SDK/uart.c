@@ -33,7 +33,8 @@ uint32_t UARTReceiveData()
  */
 void UARTSendByte(uint8_t data)
 {
-	SerialOutRingBufferWrite(&data, 1);
+	while (!SerialOutRingBufferWrite(&data, 1))
+		asm volatile ("nop");
 }
 
 /**
@@ -43,7 +44,8 @@ void UARTSendByte(uint8_t data)
  */
 void UARTSendBlock(uint8_t *data, uint32_t numBytes)
 {
-	SerialOutRingBufferWrite(data, numBytes);
+	while (!SerialOutRingBufferWrite(data, numBytes))
+		asm volatile ("nop");
 }
 
 /**
@@ -79,7 +81,9 @@ int UARTWrite(const char *outstring)
 {
 	uint32_t count = 0;
 	while(outstring[count]!=0) { count++; }
-	return SerialOutRingBufferWrite(outstring, count);
+	while (!SerialOutRingBufferWrite(outstring, count))
+		asm volatile ("nop");
+	return count;
 }
 
 /**
@@ -97,7 +101,10 @@ int UARTWriteHexByte(const uint8_t i)
 	msg[0] = hexdigits[((i>>4)%16)];
 	msg[1] = hexdigits[(i%16)];
 
-	return SerialOutRingBufferWrite(msg, 2);
+	while (!SerialOutRingBufferWrite(msg, 2))
+		asm volatile ("nop");
+
+	return 2;
 }
 
 /**
@@ -121,7 +128,11 @@ int UARTWriteHex(const uint32_t i)
 	msg[6] = hexdigits[((i>>4)%16)];
 	msg[7] = hexdigits[(i%16)];
 
-	return SerialOutRingBufferWrite(msg, 8);
+
+	while (!SerialOutRingBufferWrite(msg, 8))
+		asm volatile ("nop");
+
+	return 8;
 }
 
 /**
@@ -156,7 +167,10 @@ int UARTWriteDecimal(const int32_t i)
 	}
 	msg[m] = 0;
 
-	return UARTWrite(msg);
+	while (!SerialOutRingBufferWrite(msg, m))
+		asm volatile ("nop");
+
+	return m;
 }
 
 /**
