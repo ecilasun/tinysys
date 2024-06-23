@@ -39,8 +39,9 @@ void audioCallback(void* userdata, Uint8* stream, int len)
 	CAPU *apu = ctx->emulator->m_bus->GetAPU();
 	uint8_t* source = (uint8_t*)apu->GetPlaybackData();
 
-	uint32_t maxlen = len/sizeof(uint16_t) > 1024 ? 1024*sizeof(uint16_t) : len;
-	SDL_MixAudioFormat(stream, (uint8_t*)source, AUDIO_S16, len, SDL_MIX_MAXVOLUME);
+	// NOTE: Seems like we're getting an 8Kbyte buffer to fill for far fewer samples, use custom code instead of 'mix'
+	//SDL_MixAudioFormat(stream, (uint8_t*)source, AUDIO_S16, len, SDL_MIX_MAXVOLUME);
+
 	apu->FlipBuffers();
 }
 
@@ -134,7 +135,6 @@ int SDL_main(int argc, char** argv)
 		SDL_PauseAudioDevice(dev, 0);
 
 	SDL_Event ev;
-	int ticks = 0;
 	do
 	{
 		if (SDL_PollEvent(&ev) != 0)
@@ -165,8 +165,6 @@ int SDL_main(int argc, char** argv)
 			SDL_UpdateWindowSurface(ectx.debugwindow);
 		}
 #endif
-
-		++ticks;
 	} while(s_alive);
 
 	SDL_RemoveTimer(videoTimer);
