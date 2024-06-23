@@ -65,7 +65,7 @@ uint32_t __attribute__ ((noinline)) GPIORingBufferRead(void* pvDest, const uint3
         return 0;
 
     //EReadWriteBarrier(0);
-    asm volatile ("nop;"); // Stop compiler reordering
+   	asm volatile ("" : : : "memory"); // Stop compiler reordering
 
     uint8_t* pbDest = (uint8_t *)pvDest;
     const uint32_t actualReadOffset = readOffset & c_sizeMask;
@@ -115,7 +115,7 @@ uint32_t __attribute__ ((noinline)) GPIORingBufferWrite( const void* pvSrc, cons
     //EAssert(bytesLeft == 0, "Item not an exact multiple of ring buffer, this will cause multiple memcpy() calls during Write()");
 
     //EReadWriteBarrier(0);
-    asm volatile ("nop;"); // Stop compiler reordering
+	asm volatile ("" : : : "memory"); // Stop compiler reordering
 
     writeOffset += cbSrc;
     *m_gpio_writeOffset = writeOffset;

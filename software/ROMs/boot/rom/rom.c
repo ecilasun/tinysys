@@ -682,6 +682,38 @@ void __attribute__((aligned(64), noinline)) UserMain()
 	}
 }
 
+void HandleCPUError(struct STaskContext *ctx, const uint32_t cpu)
+{
+	ksetcolor(CONSOLEMAGENTA, CONSOLEDIMGRAY);
+	kprintf("CPU#%d: ", cpu);
+	switch (ctx->kernelError)
+	{
+		case 1: kprintf("Unknown hardware device\n"); break;
+		case 2: kprintf("Unknown interrupt type\n"); break;
+		case 3: kprintf("Guru meditation\n"); break;
+		case 4: kprintf("Illegal instruction\n"); break;
+		case 5: kprintf("Breakpoint with no debugger attached\n"); break;
+		default: kprintf("Unknown kernel error\n"); break;
+	};
+
+	// Dump task registers
+	if (ctx->kernelError == 4)
+	{
+		ksetcolor(CONSOLEGREEN, CONSOLEDIMGRAY);
+		uint32_t taskid = ctx->kernelErrorData[0];
+		struct STask *task = &ctx->tasks[taskid];
+		// Skip zero register and emit '0' since we save PC there
+		kprintf("Task: '%s'\nIR=0x%08X\n", task->name, ctx->kernelErrorData[1]);
+		for (uint32_t i=0; i<32; ++i)
+			kprintf("%s=0x%08X%c", s_regnames[i], task->regs[i], (i+1)%4==0 ? '\n':' ');
+		kprintf("\n");
+	}
+	ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
+
+	// Clear error once handled and reported
+	ctx->kernelError = 0;
+}
+
 // Core task for CPU#0
 void __attribute__((aligned(64), noinline)) KernelMain()
 {
@@ -768,37 +800,7 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 		for (int cpu=0;cpu<2;++cpu)
 		{
 			if (taskctx[cpu]->kernelError)
-			{
-				struct STaskContext *ctx = taskctx[cpu];
-				ksetcolor(CONSOLEMAGENTA, CONSOLEDIMGRAY);
-				kprintf("CPU#%d: ", cpu);
-				switch (ctx->kernelError)
-				{
-					case 1: kprintf("Unknown hardware device\n"); break;
-					case 2: kprintf("Unknown interrupt type\n"); break;
-					case 3: kprintf("Guru meditation\n"); break;
-					case 4: kprintf("Illegal instruction\n"); break;
-					case 5: kprintf("Breakpoint with no debugger attached\n"); break;
-					default: kprintf("Unknown kernel error\n"); break;
-				};
-
-				// Dump task registers
-				if (ctx->kernelError == 4)
-				{
-					ksetcolor(CONSOLEGREEN, CONSOLEDIMGRAY);
-					uint32_t taskid = ctx->kernelErrorData[0];
-					struct STask *task = &ctx->tasks[taskid];
-					// Skip zero register and emit '0' since we save PC there
-					kprintf("Task: '%s'\nIR=0x%08X\n", task->name, ctx->kernelErrorData[1]);
-					for (uint32_t i=0; i<32; ++i)
-						kprintf("%s=0x%08X%c", s_regnames[i], task->regs[i], (i+1)%4==0 ? '\n':' ');
-					kprintf("\n");
-				}
-				ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
-
-				// Clear error once handled and reported
-				ctx->kernelError = 0;
-			}
+				HandleCPUError(taskctx[cpu], cpu);
 		}
 
 		// Refresh console output
@@ -825,7 +827,7 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 		set_csr(mstatus, MSTATUS_MIE);
 
 		// ----------------------------------------------------------------
-		// GDB stub / serial keyboard input / file transfer handler
+		// GDB stub / serial keyboard input
 		// ----------------------------------------------------------------
 		HandleSerialInput();
 	}
