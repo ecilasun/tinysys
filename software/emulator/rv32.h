@@ -102,6 +102,38 @@ enum ERV32ExceptionMode
 	EXC_ECALL_END = 0x80000005
 };
 
+class InstructionCache
+{
+public:
+	InstructionCache() {}
+	~InstructionCache() {}
+
+	void Reset();
+	void Fetch(CBus *bus, uint32_t pc, uint32_t& instr);
+	void Flush();
+
+	// 256 entries, 16 words each
+	uint32_t m_cache[256*16] = {};
+	uint32_t m_cachelinetags[256] = {};
+};
+
+/*class DataCache
+{
+public:
+	DataCache() {}
+	~DataCache() {}
+
+	void Reset();
+	void Read(CBus* bus, uint32_t address, uint32_t& data);
+	void Write(CBus* bus, uint32_t address, uint32_t data, uint32_t wmask);
+	void Flush();
+	void Invalidate();
+
+	// 512 entries, 16 words each
+	uint32_t m_cache[512 * 16] = {};
+	uint32_t m_cachelinetags[512] = {};
+};*/
+
 class CRV32
 {
 public:
@@ -119,7 +151,6 @@ public:
 	// Internal counters
 	uint64_t m_retired{ 0 };
 	uint32_t m_wficount{ 0 };
-	uint32_t m_debugtrace{ 0 };
 
 	// HART0 by default
 	uint32_t m_hartid{ 0 };
@@ -145,4 +176,5 @@ private:
 	void InjectISRFooter();
 	uint32_t ALU(SDecodedInstruction &instr);
 	uint32_t BLU(SDecodedInstruction& instr);
+	InstructionCache m_icache;
 };

@@ -501,17 +501,35 @@ always @(posedge aclk) begin
 				unique case (func7)
 					`F7_FSGNJ: begin
 						wback <= 1'b1;
-						case(func3)
+						unique case(func3)
 							3'b000: wbdin <= {B[31], A[30:0]}; // fsgnj
 							3'b001: wbdin <= {~B[31], A[30:0]}; // fsgnjn
-							3'b010: wbdin <= {A[31]^B[31], A[30:0]}; // fsgnjx
+							default: wbdin <= {A[31]^B[31], A[30:0]}; // 3'b010 - fsgnjx
 						endcase
 						ctlmode <= READINSTR;
 					end
-					`F7_FMVXW: begin
+					`F7_FCLASS: begin
 						wback <= 1'b1;
-						wbdin <= A; // fmvxw (TODO: fclass: classify the float)
-						// wbdin <= func3 == 3'b000 ? fA : ?????; // fmvxw
+						unique case (func3)
+							3'b000: begin
+								wbdin <= A; // 3'b000 - fmv.x.w
+							end
+							default: begin // 3'b001 - fclass.s
+								// This is rather costly..
+								wbdin <= `POS_NORMAL;
+								/*if (A == 32'h00000000) wbdin <= `POS_ZERO;
+								else if (A == 32'h80000000) wbdin <= `NEG_ZERO;
+								else if (A == 32'h7F800000) wbdin <= `POS_INF;
+								else if (A == 32'hFF800000) wbdin <= `NEG_INF;
+								else if (A >= 32'h7F800001 && A <= 32'h7FBFFFFF) wbdin <= `SNAN;
+								else if (A >= 32'hFF800001 && A <= 32'hFFBFFFFF) wbdin <= `SNAN;
+								else if (A >= 32'h7FC00000 && A <= 32'h7FFFFFFF) wbdin <= `QNAN;
+								else if (A >= 32'hFFC00000 && A <= 32'hFFFFFFFF) wbdin <= `QNAN;
+								else if (A[31]) wbdin <= `NEG_NORMAL;
+								else wbdin <= `POS_NORMAL;*/
+								// TODO: `POS_SUBNORMAL and `NEG_SUBNORMAL
+							end
+						endcase
 						ctlmode <= READINSTR;
 					end
 					`F7_FMVWX: begin

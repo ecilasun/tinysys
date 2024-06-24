@@ -48,6 +48,7 @@ const char *regnames[] = {
 	"t3", "t4", "t5", "t6" };
 
 // This is an exact copy of the ISR ROM contents of the real hardware
+// Please see the fetch ROM source code for hardware implementation
 uint32_t ISR_ROM[] = {
 	0xfd079073,0x00000797,0x34179073,0x08000793,0x3047b073,0x3007a073,0x800007b7,0x00778793,0x34279073,0x00800793,0x3007b073,0xfd0027f3, // 0-11 TMI start
 	0xfd079073,0x08000793,0x3007b073,0x3047a073,0x00800793,0x3007a073,0xfd0027f3, // 12-18 TMI end
@@ -61,8 +62,79 @@ uint32_t ISR_ROM[] = {
 	0xfd079073,0x08000793,0x3007b073,0x0047d793,0x3047a073,0x00800793,0x3007a073,0xfd0027f3 // 93-100 SWI end
 };
 
+// Floating point classification
+#define NEG_INF			0
+#define NEG_NORMAL		1
+#define NEG_SUBNORMAL	2
+#define NEG_ZERO		3
+#define POS_ZERO		4
+#define POS_SUBNORMAL	5
+#define POS_NORMAL		6
+#define POS_INF			7
+#define SNAN			8
+#define QNAN			9
+
+void InstructionCache::Reset()
+{
+	for (uint32_t i=0; i<256; i++)
+	{
+		// TODO: AVX512 perhaps?
+		uint32_t base = (i << 4);
+		m_cache[base + 0x0] = 0x00000000;
+		m_cache[base + 0x1] = 0x00000000;
+		m_cache[base + 0x2] = 0x00000000;
+		m_cache[base + 0x3] = 0x00000000;
+		m_cache[base + 0x4] = 0x00000000;
+		m_cache[base + 0x5] = 0x00000000;
+		m_cache[base + 0x6] = 0x00000000;
+		m_cache[base + 0x7] = 0x00000000;
+		m_cache[base + 0x8] = 0x00000000;
+		m_cache[base + 0x9] = 0x00000000;
+		m_cache[base + 0xA] = 0x00000000;
+		m_cache[base + 0xB] = 0x00000000;
+		m_cache[base + 0xC] = 0x00000000;
+		m_cache[base + 0xD] = 0x00000000;
+		m_cache[base + 0xE] = 0x00000000;
+		m_cache[base + 0xF] = 0x00000000;
+	}
+
+	for (uint32_t i = 0; i < 256; i++)
+		m_cachelinetags[i] = 0x00000000;
+}
+
+void InstructionCache::Fetch(CBus *bus, uint32_t pc, uint32_t& instr)
+{
+	uint32_t tag = SelectBitRange(pc, 27,14);	// 14 bits
+	uint32_t line = SelectBitRange(pc, 13, 6);	// 8 bits
+	uint32_t offset = SelectBitRange(pc, 5, 2);	// 4 bits
+
+	if ((tag | 0x4000) == m_cachelinetags[line])
+	{
+		instr = m_cache[(line << 4) + offset];
+		return;
+	}
+	else
+	{
+		// Base cache address
+		uint32_t addr = (tag << 14) | (line << 6);
+		for (uint32_t i = 0; i < 16; i++)
+			bus->Read(addr+(i<<2), m_cache[(line << 4) + i]);
+		instr = m_cache[(line << 4) + offset];
+		// Mark valid
+		m_cachelinetags[line] = tag | 0x4000;
+	}
+}
+
+void InstructionCache::Flush()
+{
+	for (uint32_t i = 0; i < 256; i++)
+		m_cachelinetags[i] = 0x00000000;
+}
+
 void CRV32::Reset()
 {
+	m_icache.Reset();
+
 	m_wficount = 0;
 	m_fetchstate = EFetchInit;
 
@@ -361,9 +433,6 @@ void CRV32::DecodeInstruction(uint32_t pc, uint32_t instr, SDecodedInstruction& 
 	}
 
 	dec.m_selimm = (dec.m_opcode==OP_JALR) || (dec.m_opcode==OP_OP_IMM) || (dec.m_opcode==OP_LOAD) || (dec.m_opcode==OP_STORE);
-
-	//if (m_debugtrace)
-	//printf("#%d:: %.8X:%.8X %s %s %s %s -> %s I=%d\n", m_hartid, m_PC, instr, opnames[dec.m_opindex], alunames[dec.m_aluop], regnames[dec.m_rs1], regnames[dec.m_rs2], regnames[dec.m_rd], dec.m_immed);
 }
 
 void CRV32::InjectISRHeader()
@@ -530,18 +599,11 @@ bool CRV32::FetchDecode(CBus* bus)
 	else if (m_fetchstate == EFetchRead)
 	{
 		uint32_t instruction;
-		bus->Read(m_PC, instruction);
+		m_icache.Fetch(bus, m_PC, instruction);
+
+		// Decode is part of fetch unit in hardware
 		SDecodedInstruction decoded;
 		DecodeInstruction(m_PC, instruction, decoded);
-
-		// Debug mode only, let ISR handle this
-		/*if (decoded.m_opindex == 0)
-		{
-			printf("HART #%d: Illegal instruction 0x%.8X @0x%.8X exmode:%d branchres:%d irq:%d\n", m_hartid, instruction, m_PC, m_exceptionmode, m_branchresolved, m_irq);
-			for (uint32_t i=0;i<32;++i)
-				printf("r%d=%.8x\n", i, m_GPR[i]);
-			return false;
-		}*/
 
 		bool isebreak = m_sie && decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_EBREAK;
 		bool isecall = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_ECALL;
@@ -554,6 +616,7 @@ bool CRV32::FetchDecode(CBus* bus)
 		bool isillegal = m_sie && decoded.m_opindex == 0;
 		bool branchtomtvec = (isebreak || isecall || isillegal || m_irq) && m_exceptionmode == EXC_NONE;
 
+		// Exception handling is part of fetch unit in hardware
 		if (branchtomtvec)
 		{
 			if (m_irq & 1) // hardware
@@ -570,7 +633,7 @@ bool CRV32::FetchDecode(CBus* bus)
 				m_PC += 4;
 			}
 
-			// Add header
+			// Inject instructions in the header
 			InjectISRHeader();
 			m_lasttrap = m_exceptionmode;
 		}
@@ -710,8 +773,7 @@ bool CRV32::Execute(CBus* bus)
 				else if (instr.m_f12 == F12_CFLUSH)
 				{
 					// cacheop=0b11
-					// NOOP for now, D$ not implemented yet
-					//printf("- cflush\n");
+					m_icache.Flush();
 				}
 				else if (instr.m_f12 == F12_MRET)
 				{
@@ -875,20 +937,20 @@ bool CRV32::Execute(CBus* bus)
 			case OP_FLOAT_NMADD:
 			{
 				// We use zfinx extension (floating point registers in integer registers) so we need to alias them
-				float* A = (float*)&instr.m_rval1;
-				float* B = (float*)&instr.m_rval2;
-				float* C = (float*)&instr.m_rval3;
+				float A = *(float*)&instr.m_rval1;
+				float B = *(float*)&instr.m_rval2;
+				float C = *(float*)&instr.m_rval3;
 				float* D = (float*)&rdin;
 				rwen = 1;
 
 				if (instr.m_opcode == OP_FLOAT_MADD)
-					*D = *A * *B + *C;
+					*D = A * B + C;
 				else if (instr.m_opcode == OP_FLOAT_MSUB)
-					*D = *A * *B - *C;
+					*D = A * B - C;
 				else if (instr.m_opcode == OP_FLOAT_NMSUB)
-					*D = -*A * *B + *C;
+					*D = -A * B + C;
 				else if (instr.m_opcode == OP_FLOAT_NMADD)
-					*D = -*A * *B - *C;
+					*D = -A * B - C;
 				else
 				{
 					//printf("- unknown floatop3\n");
@@ -898,8 +960,8 @@ bool CRV32::Execute(CBus* bus)
 
 			case OP_FLOAT_OP:
 			{
-				float* A = (float*)&instr.m_rval1;
-				float* B = (float*)&instr.m_rval2;
+				float A = *(float*)&instr.m_rval1;
+				float B = *(float*)&instr.m_rval2;
 				float* D = (float*)&rdin;
 				rwen = 1;
 
@@ -907,27 +969,27 @@ bool CRV32::Execute(CBus* bus)
 				{
 					case 0b0000000: // fadd.s
 					{
-						*D = *A + *B;
+						*D = A + B;
 					}
 					break;
 					case 0b0000100: // fsub.s
 					{
-						*D = *A - *B;
+						*D = A - B;
 					}
 					break;
 					case 0b0001000: // fmul.s
 					{
-						*D = *A * *B;
+						*D = A * B;
 					}
 					break;
 					case 0b0001100: // fdiv.s
 					{
-						*D = *A / *B;
+						*D = A / B;
 					}
 					break;
 					case 0b0101100: // fsqrt.s
 					{
-						*D = sqrtf(*A);
+						*D = sqrtf(A);
 					}
 					break;
 					case 0b0010000: // fsgnj.s / fsgnjn.s / fsgnjx.s
@@ -944,8 +1006,8 @@ bool CRV32::Execute(CBus* bus)
 					{
 						switch (instr.m_f3)
 						{
-							case 0b000: *D = fminf(*A, *B); break;
-							case 0b001: *D = fmaxf(*A, *B); break;
+							case 0b000: *D = fminf(A, B); break;
+							case 0b001: *D = fmaxf(A, B); break;
 						}
 					}
 					break;
@@ -953,21 +1015,40 @@ bool CRV32::Execute(CBus* bus)
 					{
 						switch (instr.m_f3)
 						{
-							case 0b010: rdin = *A == *B ? 1 : 0; break;
-							case 0b001: rdin = *A < *B ? 1 : 0; break;
-							case 0b000: rdin = *A <= *B ? 1 : 0; break;
+							case 0b010: rdin = A == B ? 1 : 0; break;
+							case 0b001: rdin = A < B ? 1 : 0; break;
+							case 0b000: rdin = A <= B ? 1 : 0; break;
 						}
 					}
 					break;
 					case 0b1110000: // fclass
 					{
-						rwen = 0;
-						//printf("- fclass not implemented\n");
+						switch (instr.m_f3)
+						{
+							case 0b000: {
+								rdin = instr.m_rval1;
+							}
+							break;
+							case 0b001: {
+								rdin = POS_NORMAL; // Not implementing this for now
+								/*if (instr.m_rval1 == 0x00000000) rdin = POS_ZERO;
+								else if (instr.m_rval1 == 0x80000000) rdin = NEG_ZERO;
+								else if (instr.m_rval1 == 0x7F800000) rdin = POS_INF;
+								else if (instr.m_rval1 == 0xFF800000) rdin = NEG_INF;
+								else if (instr.m_rval1 >= 0x7F800001 && instr.m_rval1 <= 0x7FBFFFFF) rdin = SNAN;
+								else if (instr.m_rval1 >= 0xFF800001 && instr.m_rval1 <= 0xFFBFFFFF) rdin = SNAN;
+								else if (instr.m_rval1 >= 0x7FC00000 && instr.m_rval1 <= 0x7FFFFFFF) rdin = QNAN;
+								else if (instr.m_rval1 >= 0xFFC00000 && instr.m_rval1 <= 0xFFFFFFFF) rdin = QNAN;
+								else if (instr.m_rval1 & 0x80000000) rdin = NEG_NORMAL;
+								else rdin = POS_NORMAL;*/
+							}
+							break;
+						}
 					}
 					break;
 					case 0b1100000: // fcvtws / fcvtwus
 					{
-						rdin = (int)*A;
+						rdin = (int)A;
 					}
 					break;
 					case 0b1101000: // fcvtsw / fcvtwus
@@ -977,7 +1058,7 @@ bool CRV32::Execute(CBus* bus)
 					break;
 					case 0b1100001: // fcvtswu4sat.s
 					{
-						rdin = max(0, min(15, (int)(16.0f * *A)));
+						rdin = max(0, min(15, (int)(16.0f * A)));
 					}
 					break;
 					default:
@@ -1019,10 +1100,7 @@ bool CRV32::Execute(CBus* bus)
 bool CRV32::Tick(CBus* bus)
 {
 	if (m_pendingCPUReset)
-	{
 		m_fetchstate = EFetchInit;
-		m_debugtrace = true;
-	}
 
 	bool fetchok = FetchDecode(bus);
 	bool execok = Execute(bus);

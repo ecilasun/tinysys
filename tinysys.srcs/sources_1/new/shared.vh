@@ -12,6 +12,21 @@
 `define DATACMD_UNUSED2		3'b111
 
 // ------------------------------------------
+// Float classes
+// ------------------------------------------
+
+`define NEG_INF			32'd0
+`define NEG_NORMAL		32'd1
+`define NEG_SUBNORMAL	32'd2
+`define NEG_ZERO		32'd3
+`define POS_ZERO		32'd4
+`define POS_SUBNORMAL	32'd5
+`define POS_NORMAL		32'd6
+`define POS_INF			32'd7
+`define SNAN			32'd8
+`define QNAN			32'd9
+
+// ------------------------------------------
 // Uncompressed instruction groups
 // ------------------------------------------
 
@@ -84,10 +99,10 @@
 
 // Quadrant 0
 `define INSTR_CADDI4SPN		5'b00000 // RES, nzuimm=0 +
-//`define INSTR_CFLD		5'b00100 // 32/64
+//`define INSTR_CFLD		5'b00100 // 32/64 ------
 //`define INSTR_CLQ			5'b00100 // 128
 `define INSTR_CLW			5'b01000 // 32? +
-//`define INSTR_CFLW		5'b01100 // 32
+//`define INSTR_CFLW		5'b01100 // 32 ------
 //`define INSTR_CLD			5'b01100 // 64/128 
 //`define INSTR_CFSD		5'b10100 // 32/64
 //`define INSTR_CSQ			5'b10100 // 128
@@ -118,21 +133,21 @@
 
 // Quadrant 2
 `define INSTR_CSLLI			5'b00010
-//`define INSTR_CFLDSP		5'b00110
-//`define INSTR_CLQSP		5'b00110
+//`define INSTR_CFLDSP		5'b00110 ------
+//`define INSTR_CLQSP		5'b00110 ------
 `define INSTR_CLWSP			5'b01010
-//`define INSTR_CFLWSP		5'b01110
-//`define INSTR_CLDSP		5'b01110
+//`define INSTR_CFLWSP		5'b01110 ------
+//`define INSTR_CLDSP		5'b01110 ------
 `define INSTR_CJR			5'b10010
 `define INSTR_CMV			5'b10010
 `define INSTR_CEBREAK		5'b10010
 `define INSTR_CJALR			5'b10010
 `define INSTR_CADD			5'b10010
-//`define INSTR_CFSDSP		5'b10110
-//`define INSTR_CSQSP		5'b10110
+//`define INSTR_CFSDSP		5'b10110 ------
+//`define INSTR_CSQSP		5'b10110 ------
 `define INSTR_CSWSP			5'b11010
-//`define INSTR_CFSWSP		5'b11110
-//`define INSTR_CSDSP		5'b11110
+//`define INSTR_CFSWSP		5'b11110 ------
+//`define INSTR_CSDSP		5'b11110 ------
 
 // ------------------------------------------
 // Manually assembled instructions
@@ -214,7 +229,9 @@
 `define F7_FCVTWUS     7'b1100000
 `define F7_FCVTSW      7'b1101000
 `define F7_FCVTSWU     7'b1101000
-`define F7_FCVTSWU4SAT 7'b1100001 // NON-STANDARD EXTENSION
+
+// Non-standard instructions
+`define F7_FCVTSWU4SAT 7'b1100001
 
 // Move from/to integer registers
 `define F7_FMVXW       7'b1110000

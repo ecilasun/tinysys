@@ -44,18 +44,7 @@ always_comb begin
 end
 
 // Immed vs rval2 selector
-wire selector = instrOneHot[`O_H_JALR] || instrOneHot[`O_H_OP_IMM] || instrOneHot[`O_H_LOAD] /*|| instrOneHot[`O_H_FLOAT_LDW] || instrOneHot[`O_H_FLOAT_STW]*/ || instrOneHot[`O_H_STORE];
-
-// Every instruction except SYS:3'b000, BRANCH, FPU ops and STORE are recoding form
-// i.e. NOT (branch or store) OR (SYS AND at least one bit set)
-/*wire isfpuopcode = 
-	instrOneHot[`O_H_FLOAT_OP] ||
-	instrOneHot[`O_H_FLOAT_LDW] ||
-	instrOneHot[`O_H_FLOAT_STW] ||
-	instrOneHot[`O_H_FLOAT_MADD] ||
-	instrOneHot[`O_H_FLOAT_MSUB] ||
-	instrOneHot[`O_H_FLOAT_NMSUB] ||
-	instrOneHot[`O_H_FLOAT_NMADD];*/
+wire selector = instrOneHot[`O_H_JALR] || instrOneHot[`O_H_OP_IMM] || instrOneHot[`O_H_LOAD] || instrOneHot[`O_H_STORE];
 
 // NOTE: Load _is_ recording form but it's delayed vs where we normaly flag 'recording', so it's omitted from list and handled mamually
 //wire recordingform = ~(instrOneHot[`O_H_BRANCH] || instrOneHot[`O_H_LOAD] || instrOneHot[`O_H_STORE] || isfpuopcode) || (instrOneHot[`O_H_SYSTEM] & (|func3));
@@ -179,7 +168,7 @@ always_comb begin
 			immed = {instruction[31:12], 12'd0};
 		end
 		// S-imm
-		/*instrOneHot[`O_H_FLOAT_STW],*/ instrOneHot[`O_H_STORE]: begin
+		instrOneHot[`O_H_STORE]: begin
 			immed = {{21{instruction[31]}}, instruction[30:25], instruction[11:7]};
 		end
 		// J-imm
@@ -191,11 +180,11 @@ always_comb begin
 			immed = {{20{instruction[31]}}, instruction[7], instruction[30:25], instruction[11:8], 1'b0};
 		end
 		// zero extented 5 bit imm encoding for CSR*I instructions
-		instrOneHot[`O_H_SYSTEM]: begin
+		instrOneHot[`O_H_SYSTEM], instrOneHot[`O_H_FENCE]: begin
 			immed = {27'd0, instruction[19:15]};
 		end
 		// I-imm
-		default/*instrOneHot[`O_H_OP_IMM], instrOneHot[`O_H_FLOAT_LDW], instrOneHot[`O_H_LOAD], instrOneHot[`O_H_JALR]*/: begin
+		default/*instrOneHot[`O_H_OP_IMM], instrOneHot[`O_H_LOAD], instrOneHot[`O_H_JALR]*/: begin
 			immed = {{21{instruction[31]}}, instruction[30:20]};
 		end
 	endcase
