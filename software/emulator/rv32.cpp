@@ -1058,7 +1058,10 @@ bool CRV32::Execute(CBus* bus)
 					break;
 					case 0b1100001: // fcvtswu4sat.s
 					{
-						rdin = max(0, min(15, (int)(16.0f * A)));
+						int sat = (int)(16.0f * A);
+						sat = sat > 15 ? 15 : sat;
+						sat = sat < 0 ? 0 : sat;
+						rdin = sat;
 					}
 					break;
 					default:

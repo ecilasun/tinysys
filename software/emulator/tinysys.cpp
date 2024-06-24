@@ -39,6 +39,8 @@ void audioCallback(void* userdata, Uint8* stream, int len)
 	CAPU *apu = ctx->emulator->m_bus->GetAPU();
 	uint8_t* source = (uint8_t*)apu->GetPlaybackData();
 
+	memset(stream, 0, len);
+
 	// NOTE: Seems like we're getting an 8Kbyte buffer to fill for far fewer samples, use custom code instead of 'mix'
 	//SDL_MixAudioFormat(stream, (uint8_t*)source, AUDIO_S16, len, SDL_MIX_MAXVOLUME);
 

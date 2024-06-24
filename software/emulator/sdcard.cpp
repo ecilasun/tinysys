@@ -45,9 +45,14 @@ void CSDCard::PopulateFileSystem()
 	uint8_t* tmpmem = new uint8_t[16384];
 
 	using namespace std::filesystem;
+#if defined(CAT_WINDOWS)
 	path sourcePath = absolute("../sdcardmirror");
+#else
+	path sourcePath = absolute("sdcardmirror");
+#endif
 	std::string targetRoot = "sd:";
-	for (const auto& entry : recursive_directory_iterator(sourcePath))
+	recursive_directory_iterator it(sourcePath);
+	for (const auto& entry : it)
 	{
 		if (entry.is_directory())
 		{

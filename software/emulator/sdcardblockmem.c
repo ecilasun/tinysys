@@ -50,7 +50,7 @@ uint8_t* SDCardGetPhysicalBlock(uint32_t blockaddress)
 	if (!s_alloctable[mbyteblock])
 	{
 		++s_blockcount;
-		uint8_t *ptr = malloc(1024 * 1024);
+		uint8_t *ptr = (uint8_t*)malloc(1024 * 1024);
 		s_alloctable[mbyteblock] = (intptr_t)ptr;
 	}
 

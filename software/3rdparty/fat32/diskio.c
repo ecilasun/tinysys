@@ -9,7 +9,7 @@
 
 #include "ff.h"			/* Obtains integer types */
 #include "diskio.h"		/* Declarations of disk functions */
-#if !defined(DISABLE_FILESYSTEM) && !defined(CAT_WINDOWS)
+#if !defined(DISABLE_FILESYSTEM) && !defined(CAT_WINDOWS) && !defined(CAT_LINUX) && !defined(CAT_DARWIN)
 #include "sdcard.h"
 #endif
 /* Definitions of physical drive number for each drive */
@@ -17,7 +17,7 @@
 #define DEV_MMC		1	/* Example: Map MMC/SD card to physical drive 1 */
 #define DEV_USB		2	/* Example: Map USB MSD to physical drive 2 */
 
-#if defined(CAT_WINDOWS)
+#if defined(CAT_WINDOWS) || defined(CAT_LINUX) || defined(CAT_DARWIN)
 // We'll be using a RAM disk for emulation
 #include <stdint.h>
 extern int SDCardStartup();

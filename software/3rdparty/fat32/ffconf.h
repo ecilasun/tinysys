@@ -30,7 +30,7 @@
 /  f_findnext(). (0:Disable, 1:Enable 2:Enable with matching altname[] too) */
 
 
-#if defined(CAT_WINDOWS)
+#if defined(CAT_WINDOWS) || defined(CAT_LINUX) || defined(CAT_DARWIN)
 #define FF_USE_MKFS		1
 #else
 #define FF_USE_MKFS		0
