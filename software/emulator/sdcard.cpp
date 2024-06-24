@@ -46,9 +46,9 @@ void CSDCard::PopulateFileSystem()
 
 	using namespace std::filesystem;
 #if defined(CAT_WINDOWS)
-	path sourcePath = absolute("../sdcardmirror");
+	path sourcePath = absolute("../sdcard");
 #else
-	path sourcePath = absolute("sdcardmirror");
+	path sourcePath = absolute("sdcard");
 #endif
 	std::string targetRoot = "sd:";
 	recursive_directory_iterator it(sourcePath);
@@ -57,7 +57,7 @@ void CSDCard::PopulateFileSystem()
 		if (entry.is_directory())
 		{
 			std::string filePath = entry.path().string();
-			removeTextBeforeAndIncludingToken(filePath, "sdcardmirror");
+			removeTextBeforeAndIncludingToken(filePath, "sdcard");
 			f_mkdir((targetRoot+filePath).c_str());
 		}
 
@@ -65,7 +65,7 @@ void CSDCard::PopulateFileSystem()
 		{
 			std::string filePath = entry.path().string();
 			std::string actualPath = filePath;
-			removeTextBeforeAndIncludingToken(filePath, "sdcardmirror");
+			removeTextBeforeAndIncludingToken(filePath, "sdcard");
 
 			FILE *sourceFile = fopen(actualPath.c_str(), "rb");
 			if (sourceFile)
@@ -118,7 +118,7 @@ void CSDCard::Reset()
 			printf("Failed to mount in-memory filesystem\n");
 		else
 		{
-			printf("Building file system from sdcardmirror folder\n");
+			printf("Building file system from 'sdcard' folder\n");
 			PopulateFileSystem();
 		}
 	}
