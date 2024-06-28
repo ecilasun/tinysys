@@ -199,28 +199,49 @@ uint32_t CRV32::ALU(SDecodedInstruction& instr)
 			switch (instr.m_f3)
 			{
 				case 0b000:
-				case 0b001: { a = sign1ext; b = sign2ext; } break; // mul/mulh
-				case 0b010: { a = sign1ext; b = instr.m_rval2; } break; // mulhsu
-				case 0b011: { a = instr.m_rval1; b = instr.m_rval2; } break; // mulhu
-				default: { a = 0; b = 0; } break;
+				case 0b001: {
+					a = sign1ext;
+					b = sign2ext;
+				} break; // mul/mulh
+				case 0b010: {
+					a = sign1ext;
+					b = instr.m_rval2;
+				} break; // mulhsu
+				case 0b011: {
+					a = instr.m_rval1;
+					b = instr.m_rval2;
+				} break; // mulhu
+				default: {
+					a = 0;
+					b = 0;
+				} break;
 			}
 			uint64_t result = a * b;
-			aluout = instr.m_f3 == 0b000 ? (uint32_t)((a*b)&0xFFFFFFFF) : (uint32_t)(((a*b)&0xFFFFFFFF00000000)>>32);
+			aluout = instr.m_f3 == 0b000 ? (uint32_t)(result&0xFFFFFFFF) : (uint32_t)((result&0xFFFFFFFF00000000)>>32);
 		}
 		break;
 		case ALU_DIV:
 		case ALU_REM:
 		{
-			uint64_t a, b;
 			int64_t sign1ext = (int32_t)instr.m_rval1;
 			int64_t sign2ext = (int32_t)instr.m_rval2;
 			switch (instr.m_f3)
 			{
-				case 0b100: { a = sign1ext; b = sign2ext; aluout = (uint32_t)(a / b); } break; //  div
-				case 0b101: { a = instr.m_rval1; b = instr.m_rval2; aluout = (uint32_t)(a / b); } break; // divu
-				case 0b110: { a = sign1ext; b = sign2ext; aluout = (uint32_t)(a % b); } break; // rem
-				case 0b111: { a = instr.m_rval1; b = instr.m_rval2; aluout = (uint32_t)(a % b); } break; // remu
-				default: { a = 0; b = 1; } break;
+				case 0b100: {
+					aluout = sign1ext / sign2ext;
+				} break; //  div
+				case 0b101: {
+					aluout = instr.m_rval1 / instr.m_rval2;
+				} break; // divu
+				case 0b110: {
+					aluout = sign1ext % sign2ext;
+				} break; // rem
+				case 0b111: {
+					aluout = instr.m_rval1 % instr.m_rval2;
+				} break; // remu
+				default: {
+					aluout = 0;
+				} break;
 			}
 		}
 		break;
@@ -619,6 +640,7 @@ bool CRV32::FetchDecode(CBus* bus)
 		// Exception handling is part of fetch unit in hardware
 		if (branchtomtvec)
 		{
+			// Most of these prevent instruction execution so they have to come back to same PC
 			if (m_irq & 1) // hardware
 				m_exceptionmode = EXC_HWI;
 			else if (m_irq & 2) // timer
@@ -630,6 +652,7 @@ bool CRV32::FetchDecode(CBus* bus)
 			else if (isecall) // ecall
 			{
 				m_exceptionmode = EXC_ECALL;
+				// ECALL assumes current instruction executed and will return to the next one
 				m_PC += 4;
 			}
 
@@ -640,9 +663,10 @@ bool CRV32::FetchDecode(CBus* bus)
 		else
 			m_instructionfifo.push_back(decoded);
 
-		// Determine next PC
 		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
-		if (branchtomtvec) // Do not do anything else while we're in exception mode apart from route execution to mtvec (execution resumes from this PC after injected header code runs)
+
+		// Determine next PC
+		if (branchtomtvec) // Route execution to mtvec
 			bus->Read(csrbase + (CSR_MTVEC << 2), m_PC);
 		else if (iswfi)
 			m_fetchstate = EFetchWFI;
@@ -953,7 +977,7 @@ bool CRV32::Execute(CBus* bus)
 					*D = -A * B - C;
 				else
 				{
-					//printf("- unknown floatop3\n");
+					printf("- unknown floatop3\n");
 				}
 			}
 			break;
@@ -1067,7 +1091,7 @@ bool CRV32::Execute(CBus* bus)
 					default:
 					{
 						rwen = 0;
-						//printf("- unknown floatop2\n");
+						printf("- unknown floatop2\n");
 					}
 					break;
 				}
