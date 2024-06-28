@@ -46,7 +46,7 @@ int audiothread(void* data)
 
 		if (pastSelector)
 		{
-			SDL_QueueAudio(emulator->m_audioDevice, source, 1024);
+			SDL_QueueAudio(emulator->m_audioDevice, source, 1024*sizeof(int16_t)*2);
 			apu->FlipBuffers();
 			while(SDL_GetQueuedAudioSize(emulator->m_audioDevice) != 0)
 				SDL_Delay(1);
