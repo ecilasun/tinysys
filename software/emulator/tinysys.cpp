@@ -44,12 +44,10 @@ int audiothread(void* data)
 			SDL_PauseAudioDevice(emulator->m_audioDevice, pastSelector ? 0 : 1);
 		}
 
-		if (pastSelector)
+		if (pastSelector && SDL_GetQueuedAudioSize(emulator->m_audioDevice) == 0)
 		{
 			SDL_QueueAudio(emulator->m_audioDevice, source, 1024*sizeof(int16_t)*2);
 			apu->FlipBuffers();
-			while(SDL_GetQueuedAudioSize(emulator->m_audioDevice) != 0)
-				SDL_Delay(1);
 		}
 	} while(s_alive);
 
@@ -126,12 +124,6 @@ int SDL_main(int argc, char** argv)
 	SDL_Thread* audiothreadID = SDL_CreateThread(audiothread, "audio", ectx.emulator);
 	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, &ectx); // 60fps
 
-	// Enumerate audio output devices
-	/*for (int i = 0; i < SDL_GetNumAudioDevices(0); i++)
-	{
-		printf("Audio device %d : %s\n", i, SDL_GetAudioDeviceName(i, 0));
-	}*/
-
 	SDL_AudioSpec audioSpecDesired, audioSpecObtained;
 	SDL_zero(audioSpecDesired);
 	SDL_zero(audioSpecObtained);
@@ -142,8 +134,16 @@ int SDL_main(int argc, char** argv)
 	audioSpecDesired.callback = nullptr;
 	audioSpecDesired.userdata = &ectx;
 
-	int dev = SDL_OpenAudioDevice(nullptr, 0, &audioSpecDesired, &audioSpecObtained, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_FORMAT_CHANGE);
+	int dev = SDL_OpenAudioDevice(nullptr, 0, &audioSpecDesired, &audioSpecObtained, 0/*SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_FORMAT_CHANGE*/);
 	ectx.emulator->m_audioDevice = dev;
+
+	// Enumerate audio output devices
+	/*fprintf(stderr, "Available audio devices:\n");
+	for (int i = 0; i < SDL_GetNumAudioDevices(0); i++)
+	{
+		fprintf(stderr, "  device #%d : %s\n", i, SDL_GetAudioDeviceName(i, 0));
+	}
+	fprintf(stderr, "Using device #%d\n", dev);*/
 
 	SDL_Event ev;
 	do
