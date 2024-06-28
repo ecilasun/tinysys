@@ -1130,7 +1130,14 @@ bool CRV32::Tick(CBus* bus)
 		m_fetchstate = EFetchInit;
 
 	bool fetchok = FetchDecode(bus);
+	FetchDecode(bus);
+	FetchDecode(bus);
+	FetchDecode(bus);
+
 	bool execok = Execute(bus);
+	Execute(bus);
+	Execute(bus);
+	Execute(bus);
 
 	return fetchok && execok;
 }

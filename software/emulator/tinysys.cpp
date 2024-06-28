@@ -73,7 +73,7 @@ int main(int argc, char** argv)
 int SDL_main(int argc, char** argv)
 #endif
 {
-	printf("tinysys emulator v0.4\n");
+	fprintf(stderr, "tinysys emulator v0.4\n");
 
 	EmulatorContext ectx;
 	ectx.emulator = new CEmulator;
@@ -86,7 +86,7 @@ int SDL_main(int argc, char** argv)
 
 	if (!success)
 	{
-		printf("Failed to load ROM\n");
+		fprintf(stderr, "Failed to load ROM\n");
 		return -1;
 	}
 
@@ -95,7 +95,7 @@ int SDL_main(int argc, char** argv)
 
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
 	{
-		printf("Error initializing SDL2: %s\n", SDL_GetError());
+		fprintf(stderr, "Error initializing SDL2: %s\n", SDL_GetError());
 		return -1;
 	}
 	ectx.window = SDL_CreateWindow("tinysys emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
@@ -107,7 +107,7 @@ int SDL_main(int argc, char** argv)
 	ectx.surface = SDL_GetWindowSurface(ectx.window);
 	if (!ectx.surface)
 	{
-		printf("Could not create window surface\n");
+		fprintf(stderr, "Could not create window surface\n");
 		return -1;
 	}
 
@@ -115,7 +115,7 @@ int SDL_main(int argc, char** argv)
 	SDL_Surface* debugsurface = SDL_GetWindowSurface(ectx.debugwindow);
 	if (!debugsurface)
 	{
-		printf("Could not create window surface\n");
+		fprintf(stderr, "Could not create window surface\n");
 		return -1;
 	}
 #endif
@@ -135,6 +135,10 @@ int SDL_main(int argc, char** argv)
 	audioSpecDesired.userdata = &ectx;
 
 	int dev = SDL_OpenAudioDevice(nullptr, 0, &audioSpecDesired, &audioSpecObtained, 0/*SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_FORMAT_CHANGE*/);
+	if (dev == 0)
+		fprintf(stderr, "Can't find a usable audio device\n");
+	else
+		fprintf(stderr, "Audio device handle: %d\n", dev);
 	ectx.emulator->m_audioDevice = dev;
 
 	// Enumerate audio output devices

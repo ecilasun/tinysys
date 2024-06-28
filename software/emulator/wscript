@@ -42,27 +42,30 @@ def build(bld):
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_WINDOWS', 'RELEASE']
         includes = ['source', 'includes', '3rdparty/SDL2/include', '../3rdparty/fat32']
         sdk_lib_path = os.path.abspath('3rdparty/SDL2/lib/x64/')
-        compile_flags =  ['/permissive-', '/arch:AVX', '/std:c++20', '/GL', '/WX', '/Ox', '/Ot', '/Oy', '/fp:fast', '/Qfast_transcendentals', '/Zi', '/EHsc', '/FS', '/DDEBUG', '/D_SECURE_SCL 0', '/Fdtinysys'] # '/DRELEASE'
+        compile_flags =  ['/permissive-', '/arch:AVX2', '/GL', '/WX', '/Ox', '/Ot', '/Oy', '/fp:fast', '/Qfast_transcendentals', '/Zi', '/EHsc', '/FS', '/DRELEASE', '/D_SECURE_SCL 0']
+        platform_flags = ['/std:c++20']
         linker_flags = ['/SUBSYSTEM:CONSOLE', '/LTCG', '/RELEASE']
     elif platform.system().lower().startswith('darwin'):
         libs = ['SDL2']
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_DARWIN', 'RELEASE']
         includes = ['source', 'includes', '/opt/homebrew/Cellar/sdl2/2.30.0/include', '../3rdparty/fat32']
         sdk_lib_path = '/opt/homebrew/Cellar/sdl2/2.30.0/lib/'
-        compile_flags = ['-std=c++20', '-march=native', '-O3', '-arch', 'arm64']
+        compile_flags = ['-march=native', '-O3', '-arch', 'arm64']
+        platform_flags = ['-std=c++20']
         linker_flags = []
     elif platform.system().lower().startswith('linux'):
         libs = ['SDL2']
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_LINUX', 'RELEASE']
         includes = ['source', 'includes', '/opt/sdl2/2.30.0/include', '../3rdparty/fat32']
         sdk_lib_path = '/opt/sdl2/2.30.0/lib/'
-        compile_flags = ['-std=c++20', '-march=native', '-O3']
+        compile_flags = ['-march=native', '-O3']
+        platform_flags = ['-std=c++20']
         linker_flags = []
 
     # build 3rdparty fat32 code
     bld.stlib(
         source = glob.glob('../3rdparty/fat32/*.c'),
-        cxxflags = ['-std=c99', '-O3'],
+        cxxflags = compile_flags + ['-std=c99'],
         ldflags = linker_flags,
         target = 'fat32',
         defines = platform_defines,
@@ -72,7 +75,7 @@ def build(bld):
     # build sdcard code
     bld.stlib(
         source = glob.glob('*.c'),
-        cxxflags = ['-std=c99', '-O3'],
+        cxxflags = compile_flags + ['-std=c99'],
         ldflags = linker_flags,
         target = 'sdcard',
         defines = platform_defines,
@@ -82,7 +85,7 @@ def build(bld):
     # Build risctool
     bld.program(
         source=glob.glob('*.cpp'),
-        cxxflags=compile_flags,
+        cxxflags=compile_flags + platform_flags,
         ldflags=linker_flags,
         target='tinysys',
         defines=platform_defines,
