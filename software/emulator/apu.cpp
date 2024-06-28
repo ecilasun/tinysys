@@ -44,7 +44,7 @@ void CAPU::Tick(CBus* bus)
 			// Dispatch
 			switch (m_cmd)
 			{
-				case 0x00000000:
+				case APUCMD_BUFFERSIZE:
 				{
 					// APUBUFFERSIZE
 					if (m_fifo.size())
@@ -56,7 +56,7 @@ void CAPU::Tick(CBus* bus)
 					}
 				}
 				break;
-				case 0x00000001:
+				case APUCMD_START:
 				{
 					// APUSTART
 					if (m_fifo.size())
@@ -68,17 +68,22 @@ void CAPU::Tick(CBus* bus)
 					}
 				}
 				break;
-				case 0x00000002:
+				case APUCMD_SETRATE:
 				{
 					// APUSETRATE
-					switch (SelectBitRange(m_cmd, 1, 0))
+					if (m_fifo.size())
 					{
-						case 0b00: m_rateselector = 0b0100; break;
-						case 0b01: m_rateselector = 0b0010; break;
-						case 0b10: m_rateselector = 0b0001; break;
-						case 0b11: m_rateselector = 0b0000; break;
+						m_data = m_fifo.front();
+						m_fifo.pop();
+						switch (SelectBitRange(m_data, 1, 0))
+						{
+							case 0b00: m_rateselector = 0b0100; break;
+							case 0b01: m_rateselector = 0b0010; break;
+							case 0b10: m_rateselector = 0b0001; break;
+							case 0b11: m_rateselector = 0b0000; break;
+						}
+						m_state = 0;
 					}
-					m_state = 0;
 				}
 				break;
 				default:

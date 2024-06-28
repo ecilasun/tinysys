@@ -33,14 +33,24 @@ int emulatorthread(void* data)
 int audiothread(void* data)
 {
 	CEmulator* emulator = (CEmulator*)data;
+	uint32_t pastSelector = 0xFF;
 	CAPU *apu = emulator->m_bus->GetAPU();
 	do
 	{
 		uint8_t* source = (uint8_t*)apu->GetPlaybackData();
-		SDL_QueueAudio(emulator->m_audioDevice, source, 1024);
-		apu->FlipBuffers();
-		while(SDL_GetQueuedAudioSize(emulator->m_audioDevice) != 0)
-			SDL_Delay(1);
+		if (apu->m_rateselector != pastSelector)
+		{
+			pastSelector = apu->m_rateselector;
+			SDL_PauseAudioDevice(emulator->m_audioDevice, pastSelector ? 0 : 1);
+		}
+
+		if (pastSelector)
+		{
+			SDL_QueueAudio(emulator->m_audioDevice, source, 1024);
+			apu->FlipBuffers();
+			while(SDL_GetQueuedAudioSize(emulator->m_audioDevice) != 0)
+				SDL_Delay(1);
+		}
 	} while(s_alive);
 
 	return 0;
@@ -133,8 +143,6 @@ int SDL_main(int argc, char** argv)
 	audioSpecDesired.userdata = &ectx;
 
 	int dev = SDL_OpenAudioDevice(nullptr, 0, &audioSpecDesired, &audioSpecObtained, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_FORMAT_CHANGE);
-	if (dev != 0)
-		SDL_PauseAudioDevice(dev, 0);
 	ectx.emulator->m_audioDevice = dev;
 
 	SDL_Event ev;
