@@ -19,6 +19,8 @@ public:
 	void FillMemBitmap(uint32_t* pixels);
 #endif
 
+	int m_audioDevice {0};
+
 	CBus* m_bus{ nullptr };
 
 	uint8_t* m_rombin{ nullptr };

@@ -30,21 +30,20 @@ int emulatorthread(void* data)
 	return 0;
 }
 
-void audioCallback(void* userdata, Uint8* stream, int len)
+int audiothread(void* data)
 {
-	if (len == 0)
-		return;
+	CEmulator* emulator = (CEmulator*)data;
+	CAPU *apu = emulator->m_bus->GetAPU();
+	do
+	{
+		uint8_t* source = (uint8_t*)apu->GetPlaybackData();
+		SDL_QueueAudio(emulator->m_audioDevice, source, 1024);
+		apu->FlipBuffers();
+		while(SDL_GetQueuedAudioSize(emulator->m_audioDevice) != 0)
+			SDL_Delay(1);
+	} while(s_alive);
 
-	EmulatorContext* ctx = (EmulatorContext*)userdata;
-	CAPU *apu = ctx->emulator->m_bus->GetAPU();
-	uint8_t* source = (uint8_t*)apu->GetPlaybackData();
-
-	memset(stream, 0, len);
-
-	// NOTE: Seems like we're getting an 8Kbyte buffer to fill for far fewer samples, use custom code instead of 'mix'
-	//SDL_MixAudioFormat(stream, (uint8_t*)source, AUDIO_S16, len, SDL_MIX_MAXVOLUME);
-
-	apu->FlipBuffers();
+	return 0;
 }
 
 uint32_t videoCallback(Uint32 interval, void* param)
@@ -113,7 +112,8 @@ int SDL_main(int argc, char** argv)
 	}
 #endif
 
-	SDL_Thread* thread = SDL_CreateThread(emulatorthread, "emulator", ectx.emulator);
+	SDL_Thread* emulatorthreadID = SDL_CreateThread(emulatorthread, "emulator", ectx.emulator);
+	SDL_Thread* audiothreadID = SDL_CreateThread(audiothread, "audio", ectx.emulator);
 	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, &ectx); // 60fps
 
 	// Enumerate audio output devices
@@ -129,12 +129,13 @@ int SDL_main(int argc, char** argv)
 	audioSpecDesired.format = AUDIO_S16;
 	audioSpecDesired.channels = 2;
 	audioSpecDesired.samples = 1024;
-	audioSpecDesired.callback = audioCallback;
+	audioSpecDesired.callback = nullptr;
 	audioSpecDesired.userdata = &ectx;
 
 	int dev = SDL_OpenAudioDevice(nullptr, 0, &audioSpecDesired, &audioSpecObtained, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_FORMAT_CHANGE);
 	if (dev != 0)
 		SDL_PauseAudioDevice(dev, 0);
+	ectx.emulator->m_audioDevice = dev;
 
 	SDL_Event ev;
 	do
@@ -170,7 +171,8 @@ int SDL_main(int argc, char** argv)
 	} while(s_alive);
 
 	SDL_RemoveTimer(videoTimer);
-	SDL_WaitThread(thread, nullptr);
+	SDL_WaitThread(emulatorthreadID, nullptr);
+	SDL_WaitThread(audiothreadID, nullptr);
 	SDL_FreeSurface(ectx.surface);
 	SDL_DestroyWindow(ectx.window);
 	SDL_CloseAudioDevice(dev);
