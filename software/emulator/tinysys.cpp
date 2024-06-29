@@ -35,6 +35,10 @@ int audiothread(void* data)
 	CEmulator* emulator = (CEmulator*)data;
 	uint32_t pastSelector = 0xFF;
 	CAPU *apu = emulator->m_bus->GetAPU();
+	int queuedTotal = 0;
+	int queuesamplecount = 128;
+	int totalsamples = 1024;
+	int chunksize = queuesamplecount*sizeof(int16_t)*2;
 	do
 	{
 		uint8_t* source = (uint8_t*)apu->GetPlaybackData();
@@ -44,9 +48,17 @@ int audiothread(void* data)
 			SDL_PauseAudioDevice(emulator->m_audioDevice, pastSelector ? 0 : 1);
 		}
 
-		if (pastSelector && SDL_GetQueuedAudioSize(emulator->m_audioDevice) == 0)
+		int bytesRemaining = SDL_GetQueuedAudioSize(emulator->m_audioDevice);
+		if (pastSelector && bytesRemaining <= (totalsamples-queuesamplecount)*sizeof(uint16_t)*2) // near the end of the buffer
 		{
-			SDL_QueueAudio(emulator->m_audioDevice, source, 1024*sizeof(int16_t)*2);
+			// Queue more
+			SDL_QueueAudio(emulator->m_audioDevice, source+queuedTotal, chunksize);
+			queuedTotal += chunksize;
+		}
+
+		if (queuedTotal >= totalsamples*sizeof(int16_t)*2)
+		{
+			queuedTotal = 0;
 			apu->FlipBuffers();
 		}
 	} while(s_alive);
@@ -73,7 +85,7 @@ int main(int argc, char** argv)
 int SDL_main(int argc, char** argv)
 #endif
 {
-	fprintf(stderr, "tinysys emulator v0.4\n");
+	printf("tinysys emulator v0.4\n");
 
 	EmulatorContext ectx;
 	ectx.emulator = new CEmulator;
@@ -86,7 +98,7 @@ int SDL_main(int argc, char** argv)
 
 	if (!success)
 	{
-		fprintf(stderr, "Failed to load ROM\n");
+		printf("Failed to load ROM\n");
 		return -1;
 	}
 
@@ -95,7 +107,7 @@ int SDL_main(int argc, char** argv)
 
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
 	{
-		fprintf(stderr, "Error initializing SDL2: %s\n", SDL_GetError());
+		printf("Error initializing SDL2: %s\n", SDL_GetError());
 		return -1;
 	}
 	ectx.window = SDL_CreateWindow("tinysys emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
@@ -107,7 +119,7 @@ int SDL_main(int argc, char** argv)
 	ectx.surface = SDL_GetWindowSurface(ectx.window);
 	if (!ectx.surface)
 	{
-		fprintf(stderr, "Could not create window surface\n");
+		printf("Could not create window surface\n");
 		return -1;
 	}
 
@@ -115,7 +127,7 @@ int SDL_main(int argc, char** argv)
 	SDL_Surface* debugsurface = SDL_GetWindowSurface(ectx.debugwindow);
 	if (!debugsurface)
 	{
-		fprintf(stderr, "Could not create window surface\n");
+		printf("Could not create window surface\n");
 		return -1;
 	}
 #endif
@@ -135,10 +147,6 @@ int SDL_main(int argc, char** argv)
 	audioSpecDesired.userdata = &ectx;
 
 	int dev = SDL_OpenAudioDevice(nullptr, 0, &audioSpecDesired, &audioSpecObtained, 0/*SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_FORMAT_CHANGE*/);
-	if (dev == 0)
-		fprintf(stderr, "Can't find a usable audio device\n");
-	else
-		fprintf(stderr, "Audio device handle: %d\n", dev);
 	ectx.emulator->m_audioDevice = dev;
 
 	// Enumerate audio output devices
@@ -185,9 +193,10 @@ int SDL_main(int argc, char** argv)
 	SDL_RemoveTimer(videoTimer);
 	SDL_WaitThread(emulatorthreadID, nullptr);
 	SDL_WaitThread(audiothreadID, nullptr);
+	SDL_ClearQueuedAudio(ectx.emulator->m_audioDevice);
 	SDL_FreeSurface(ectx.surface);
 	SDL_DestroyWindow(ectx.window);
-	SDL_CloseAudioDevice(dev);
+	SDL_CloseAudioDevice(ectx.emulator->m_audioDevice);
 	SDL_Quit();
 
 	return 0;
