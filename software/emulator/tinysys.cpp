@@ -36,8 +36,9 @@ int audiothread(void* data)
 	uint32_t pastSelector = 0xFF;
 	CAPU *apu = emulator->m_bus->GetAPU();
 	int queuedTotal = 0;
-	int queuesamplecount = 128;
-	int totalsamples = 1024;
+	int queuesamplecount = 256; // samples to queue per iteration
+	int queuecapacity = 1024; // queue size
+	int totalsamples = 1024; // device buffer size
 	int chunksize = queuesamplecount*sizeof(int16_t)*2;
 	do
 	{
@@ -49,13 +50,17 @@ int audiothread(void* data)
 		}
 
 		int bytesRemaining = SDL_GetQueuedAudioSize(emulator->m_audioDevice);
-		if (pastSelector && bytesRemaining <= (totalsamples-queuesamplecount)*sizeof(uint16_t)*2) // near the end of the buffer
+
+		// Check if we've got enough space in the audio queue to fit our 128 samples
+		if (pastSelector && bytesRemaining <= (queuecapacity-queuesamplecount)*sizeof(uint16_t)*2)
 		{
-			// Queue more
+			// Queue more samples if we found some room
 			SDL_QueueAudio(emulator->m_audioDevice, source+queuedTotal, chunksize);
+			// Bytes queued so far
 			queuedTotal += chunksize;
 		}
 
+		// Bytes queued reached APU buffer size, swap
 		if (queuedTotal >= totalsamples*sizeof(int16_t)*2)
 		{
 			queuedTotal = 0;
