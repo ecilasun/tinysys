@@ -80,7 +80,7 @@ void CBus::UpdateVideoLink(uint32_t *pixels, int pitch)
 #if defined(MEM_DEBUG)
 void CBus::FillMemBitmap(uint32_t* pixels)
 {
-	uint32_t* source = m_mem.GetHostAddress(0);
+	uint32_t* source = m_mem->GetHostAddress(0);
 
 	// System memory, 1 pixel per 1Kbytes of memory
 	for (uint32_t i = m_busactivitystart; i < m_busactivityend; ++i)

@@ -7,6 +7,10 @@
 #include <SDL2/SDL.h>
 #endif
 
+static int AudioQueueCapacity = 1024;	// Size of the audio queue in samples
+const int QueueSampleCount = 64;		// Push this many samples to the queue per iteration
+const int QueueSampleByteSize = QueueSampleCount*sizeof(int16_t)*2;
+
 struct EmulatorContext
 {
 	CEmulator* emulator;
@@ -36,10 +40,6 @@ int audiothread(void* data)
 	uint32_t pastSelector = 0xFF;
 	CAPU *apu = emulator->m_bus->GetAPU();
 	int queuedTotal = 0;
-	int queuesamplecount = 256; // samples to queue per iteration
-	int queuecapacity = 1024; // queue size
-	int totalsamples = 1024; // device buffer size
-	int chunksize = queuesamplecount*sizeof(int16_t)*2;
 	do
 	{
 		uint8_t* source = (uint8_t*)apu->GetPlaybackData();
@@ -52,16 +52,16 @@ int audiothread(void* data)
 		int bytesRemaining = SDL_GetQueuedAudioSize(emulator->m_audioDevice);
 
 		// Check if we've got enough space in the audio queue to fit our 128 samples
-		if (pastSelector && bytesRemaining <= (queuecapacity-queuesamplecount)*sizeof(uint16_t)*2)
+		if (pastSelector && (bytesRemaining <= (AudioQueueCapacity-QueueSampleCount)*sizeof(uint16_t)*2))
 		{
 			// Queue more samples if we found some room
-			SDL_QueueAudio(emulator->m_audioDevice, source+queuedTotal, chunksize);
+			SDL_QueueAudio(emulator->m_audioDevice, source+queuedTotal, QueueSampleByteSize);
 			// Bytes queued so far
-			queuedTotal += chunksize;
+			queuedTotal += QueueSampleByteSize;
 		}
 
-		// Bytes queued reached APU buffer size, swap
-		if (queuedTotal >= totalsamples*sizeof(int16_t)*2)
+		// Bytes queued reached APU word count, swap
+		if (queuedTotal >= apu->m_apuwordcount*sizeof(int32_t))
 		{
 			queuedTotal = 0;
 			apu->FlipBuffers();
@@ -147,20 +147,22 @@ int SDL_main(int argc, char** argv)
 	audioSpecDesired.freq = 22050;
 	audioSpecDesired.format = AUDIO_S16;
 	audioSpecDesired.channels = 2;
-	audioSpecDesired.samples = 1024;
+	audioSpecDesired.samples = AudioQueueCapacity;
 	audioSpecDesired.callback = nullptr;
 	audioSpecDesired.userdata = &ectx;
 
 	int dev = SDL_OpenAudioDevice(nullptr, 0, &audioSpecDesired, &audioSpecObtained, 0/*SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_FORMAT_CHANGE*/);
 	ectx.emulator->m_audioDevice = dev;
+	if (dev)
+		AudioQueueCapacity = audioSpecObtained.samples;
 
 	// Enumerate audio output devices
-	/*fprintf(stderr, "Available audio devices:\n");
+	fprintf(stderr, "Available audio devices:\n");
 	for (int i = 0; i < SDL_GetNumAudioDevices(0); i++)
 	{
 		fprintf(stderr, "  device #%d : %s\n", i, SDL_GetAudioDeviceName(i, 0));
 	}
-	fprintf(stderr, "Using device #%d\n", dev);*/
+	fprintf(stderr, "Using device #%d, queue size is %d samples\n", dev, AudioQueueCapacity);
 
 	SDL_Event ev;
 	do

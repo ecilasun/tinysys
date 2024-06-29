@@ -29,13 +29,13 @@ public:
 	void FlipBuffers() { m_currentbuffer ^= 1; }
 
 	uint32_t m_rateselector{ 0 };
+	uint32_t m_apuwordcount{ 0 };
 
 private:
 	uint32_t m_cmd{ 0 };
 	uint32_t m_data{ 0 };
 	uint32_t m_state{ 0 };
 	uint32_t m_currentbuffer{ 0 };
-	uint32_t m_apuwordcount{ 0 };
 	uint32_t m_sourceAddress{ 0 };
 	uint32_t *m_audioData[2]{ nullptr };
 

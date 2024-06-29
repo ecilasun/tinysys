@@ -977,7 +977,7 @@ bool CRV32::Execute(CBus* bus)
 					*D = -A * B - C;
 				else
 				{
-					printf("- unknown floatop3\n");
+					fprintf(stderr, "- unknown floatop3\n");
 				}
 			}
 			break;
@@ -1091,7 +1091,7 @@ bool CRV32::Execute(CBus* bus)
 					default:
 					{
 						rwen = 0;
-						printf("- unknown floatop2\n");
+						fprintf(stderr, "- unknown floatop2\n");
 					}
 					break;
 				}
@@ -1100,20 +1100,20 @@ bool CRV32::Execute(CBus* bus)
 
 			default:
 			{
-				//printf("- UNKNOWN\n");
+				// Illegal instruction exception should catch this
 			}
 			break;
 		}
 
 		if (wstrobe)
 		{
-			//printf("- W @%.8X val=%.8x mask=%.8x\n", rwaddress, wdata, wstrobe);
+			//fprintf(stderr, "- W @%.8X val=%.8x mask=%.8x\n", rwaddress, wdata, wstrobe);
 			bus->Write(rwaddress, wdata, wstrobe);
 		}
 
 		if (rwen && instr.m_rd != 0)
 		{
-			//printf("- regw @%.8X val=%.8x\n", instr.m_rd, rdin);
+			//fprintf(stderr, "- regw @%.8X val=%.8x\n", instr.m_rd, rdin);
 			m_GPR[instr.m_rd] = rdin;
 		}
 
@@ -1130,14 +1130,7 @@ bool CRV32::Tick(CBus* bus)
 		m_fetchstate = EFetchInit;
 
 	bool fetchok = FetchDecode(bus);
-	FetchDecode(bus);
-	FetchDecode(bus);
-	FetchDecode(bus);
-
 	bool execok = Execute(bus);
-	Execute(bus);
-	Execute(bus);
-	Execute(bus);
 
 	return fetchok && execok;
 }
