@@ -161,6 +161,8 @@ void CSDCard::ProcessSPI()
 			m_numdatabytes += rd;
 			if (m_numdatabytes == SD_CMD_LEN)
 			{
+				// Assume done
+				m_spimode = 0; // cmd
 				m_numdatabytes = 0;
 				// TODO: process command and put something into m_spioutfifo as response
 				uint8_t cmd = m_cmdbyte & 0b00111111;
@@ -225,6 +227,9 @@ void CSDCard::ProcessSPI()
 							m_numdatabytes = 0;
 							m_havestarttoken = 0;
 							m_spimode = 2; // data write mode
+
+							// Accept data
+							m_spioutfifo.push(0x00);
 						}
 						break;
 
@@ -260,9 +265,6 @@ void CSDCard::ProcessSPI()
 					}
 					m_app_mode = false;
 				}
-
-				// Done
-				m_spimode = 0; // cmd
 			}
 		}
 

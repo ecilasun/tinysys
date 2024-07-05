@@ -17,7 +17,7 @@ Here's a list of features implemented so far
 - APU works and plays sound via SDL
 - DMA works including masked mode
 - XADC is a placeholder and will return some huge temperature
-- SPI sdcard emulator works, minor glitch in disk writes
+- SPI sdcard emulator fully works
 
 And here's the list of what's missing
 
