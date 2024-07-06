@@ -20,17 +20,22 @@ void CUART::Tick(CBus* bus)
 {
 	m_uartirq = m_byteinqueue.size() && (m_controlword&16) ? 1 : 0; // depends on interrupt enable
 
-	int needflush = 0;
-	while (m_byteoutqueue.size())
+	// Emulate a different throughput rate than the bus clock
+	++m_clockSkip;
+	if (m_clockSkip%5 == 0)
 	{
-		// Output to console
-		printf("%c", m_byteoutqueue.front());
-		m_byteoutqueue.pop_front();
-		++needflush;
-	}
+		int needflush = 0;
+		while (m_byteoutqueue.size())
+		{
+			// Output to console
+			printf("%c", m_byteoutqueue.front());
+			m_byteoutqueue.pop_front();
+			++needflush;
+		}
 
-	if (needflush)
-		fflush(stdout);
+		if (needflush)
+			fflush(stdout);
+	}
 }
 
 void CUART::Read(uint32_t address, uint32_t& data)

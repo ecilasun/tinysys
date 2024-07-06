@@ -110,29 +110,32 @@ public:
 
 	void Reset();
 	void Fetch(CBus *bus, uint32_t pc, uint32_t& instr);
-	void Flush();
+	void Discard();
 
 	// 256 entries, 16 words each
 	uint32_t m_cache[256*16] = {};
 	uint32_t m_cachelinetags[256] = {};
 };
 
-/*class DataCache
+class DataCache
 {
 public:
 	DataCache() {}
 	~DataCache() {}
 
 	void Reset();
+	void WriteLine(CBus* bus, uint32_t line);
+	void LoadLine(CBus* bus, uint32_t tag, uint32_t line);
 	void Read(CBus* bus, uint32_t address, uint32_t& data);
-	void Write(CBus* bus, uint32_t address, uint32_t data, uint32_t wmask);
-	void Flush();
-	void Invalidate();
+	void Write(CBus* bus, uint32_t address, uint32_t data, uint32_t wstrobe);
+	void Flush(CBus* bus);
+	void Discard();
 
 	// 512 entries, 16 words each
-	uint32_t m_cache[512 * 16] = {};
+	uint32_t m_cache[512*16] = {};
 	uint32_t m_cachelinetags[512] = {};
-};*/
+	uint32_t m_cachelinewb[512] = {};
+};
 
 class CRV32
 {
@@ -177,4 +180,5 @@ private:
 	uint32_t ALU(SDecodedInstruction &instr);
 	uint32_t BLU(SDecodedInstruction& instr);
 	InstructionCache m_icache;
+	DataCache m_dcache;
 };

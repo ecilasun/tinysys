@@ -1,0 +1,6 @@
+{
+	"files.associations": {
+		"charconv": "cpp",
+		"format": "cpp"
+	}
+}

@@ -62,6 +62,13 @@ uint32_t ISR_ROM[] = {
 	0xfd079073,0x08000793,0x3007b073,0x0047d793,0x3047a073,0x00800793,0x3007a073,0xfd0027f3 // 93-100 SWI end
 };
 
+static const uint32_t s_quadexpand[] = {
+	0x00000000, 0x000000FF, 0x0000FF00, 0x0000FFFF,
+	0x00FF0000, 0x00FF00FF, 0x00FFFF00, 0x00FFFFFF,
+	0xFF000000, 0xFF0000FF, 0xFF00FF00, 0xFF00FFFF,
+	0xFFFF0000, 0xFFFF00FF, 0xFFFFFF00, 0xFFFFFFFF,
+};
+
 // Floating point classification
 #define NEG_INF			0
 #define NEG_NORMAL		1
@@ -111,7 +118,6 @@ void InstructionCache::Fetch(CBus *bus, uint32_t pc, uint32_t& instr)
 	if ((tag | 0x4000) == m_cachelinetags[line])
 	{
 		instr = m_cache[(line << 4) + offset];
-		return;
 	}
 	else
 	{
@@ -125,15 +131,120 @@ void InstructionCache::Fetch(CBus *bus, uint32_t pc, uint32_t& instr)
 	}
 }
 
-void InstructionCache::Flush()
+void InstructionCache::Discard()
 {
 	for (uint32_t i = 0; i < 256; i++)
 		m_cachelinetags[i] = 0x00000000;
 }
 
+void DataCache::Reset()
+{
+	for (uint32_t i=0; i<512; i++)
+	{
+		// TODO: AVX512 perhaps?
+		uint32_t base = (i << 4);
+		m_cache[base + 0x0] = 0x00000000;
+		m_cache[base + 0x1] = 0x00000000;
+		m_cache[base + 0x2] = 0x00000000;
+		m_cache[base + 0x3] = 0x00000000;
+		m_cache[base + 0x4] = 0x00000000;
+		m_cache[base + 0x5] = 0x00000000;
+		m_cache[base + 0x6] = 0x00000000;
+		m_cache[base + 0x7] = 0x00000000;
+		m_cache[base + 0x8] = 0x00000000;
+		m_cache[base + 0x9] = 0x00000000;
+		m_cache[base + 0xA] = 0x00000000;
+		m_cache[base + 0xB] = 0x00000000;
+		m_cache[base + 0xC] = 0x00000000;
+		m_cache[base + 0xD] = 0x00000000;
+		m_cache[base + 0xE] = 0x00000000;
+		m_cache[base + 0xF] = 0x00000000;
+	}
+
+	for (uint32_t i = 0; i < 512; i++)
+	{
+		m_cachelinewb[i] = 0;
+		m_cachelinetags[i] = 0x00000000;
+	}
+}
+
+void DataCache::WriteLine(CBus* bus, uint32_t line)
+{
+	if (m_cachelinewb[line])
+	{
+		m_cachelinewb[line] = 0;
+		uint32_t tag = m_cachelinetags[line] & 0x3FFF;
+		uint32_t wbaddr = (tag << 15) | (line << 6);
+		for (uint32_t i = 0; i < 16; i++)
+			bus->Write(wbaddr+(i<<2), m_cache[(line << 4) + i], 0x0F);
+	}
+}
+
+void DataCache::LoadLine(CBus* bus, uint32_t tag, uint32_t line)
+{
+	uint32_t addr = (tag << 15) | (line << 6);
+	for (uint32_t i = 0; i < 16; i++)
+		bus->Read(addr+(i<<2), m_cache[(line << 4) + i]);
+	m_cachelinetags[line] = tag | 0x4000;
+}
+
+void DataCache::Read(CBus* bus, uint32_t address, uint32_t& data)
+{
+	uint32_t tag = SelectBitRange(address, 27, 15);		// 13 bits
+	uint32_t line = SelectBitRange(address, 14, 6);		// 9 bits
+	uint32_t offset = SelectBitRange(address, 5, 2);	// 4 bits
+
+	if ((tag | 0x4000) != m_cachelinetags[line])
+	{
+		WriteLine(bus, line);
+		LoadLine(bus, tag, line);
+	}
+
+	// Read from cache
+	data = m_cache[(line << 4) + offset];
+}
+
+void DataCache::Write(CBus* bus, uint32_t address, uint32_t data, uint32_t wstrobe)
+{
+	uint32_t tag = SelectBitRange(address, 27, 15);		// 13 bits
+	uint32_t line = SelectBitRange(address, 14, 6);		// 9 bits
+	uint32_t offset = SelectBitRange(address, 5, 2);	// 4 bits
+
+	if ((tag | 0x4000) != m_cachelinetags[line])
+	{
+		WriteLine(bus, line);
+		LoadLine(bus, tag, line);
+	}
+
+	// Write to cache
+	uint32_t fullmask = s_quadexpand[wstrobe];
+	uint32_t invfullmask = ~fullmask;
+	uint32_t olddata = m_cache[(line << 4) + offset];
+	m_cache[(line << 4) + offset] = (olddata&invfullmask) | (data&fullmask);
+
+	// This line is now dirty and requres write back to memory
+	m_cachelinewb[line] = 1;
+}
+
+void DataCache::Flush(CBus* bus)
+{
+	for (uint32_t line = 0; line < 512; line++)
+		WriteLine(bus, line);
+}
+
+void DataCache::Discard()
+{
+	for (uint32_t i = 0; i < 512; i++)
+	{
+		m_cachelinetags[i] = 0x00000000;
+		m_cachelinewb[i] = 0;
+	}
+}
+
 void CRV32::Reset()
 {
 	m_icache.Reset();
+	m_dcache.Reset();
 
 	m_wficount = 0;
 	m_fetchstate = EFetchInit;
@@ -784,6 +895,7 @@ bool CRV32::Execute(CBus* bus)
 				m_instructionfifo = {};
 				m_branchresolved = 1;
 				m_branchtarget = instr.m_pc + 4;
+				m_icache.Discard();
 			break;
 
 			case OP_SYSTEM:
@@ -793,11 +905,12 @@ bool CRV32::Execute(CBus* bus)
 					// cacheop=0b01
 					// NOOP for now, D$ not implemented yet
 					//printf("- cdiscard\n");
+					m_dcache.Discard();
 				}
 				else if (instr.m_f12 == F12_CFLUSH)
 				{
 					// cacheop=0b11
-					m_icache.Flush();
+					m_dcache.Flush(bus);
 				}
 				else if (instr.m_f12 == F12_MRET)
 				{
@@ -885,7 +998,10 @@ bool CRV32::Execute(CBus* bus)
 			case OP_LOAD:
 			{
 				uint32_t dataword;
-				bus->Read(rwaddress, dataword);
+				if (rwaddress & 0x80000000)
+					bus->Read(rwaddress, dataword);
+				else
+					m_dcache.Read(bus, rwaddress, dataword);
 
 				uint32_t range1 = SelectBitRange(rwaddress, 1, 1);
 				uint32_t range2 = SelectBitRange(rwaddress, 1, 0);
@@ -1108,7 +1224,10 @@ bool CRV32::Execute(CBus* bus)
 		if (wstrobe)
 		{
 			//fprintf(stderr, "- W @%.8X val=%.8x mask=%.8x\n", rwaddress, wdata, wstrobe);
-			bus->Write(rwaddress, wdata, wstrobe);
+			if (rwaddress & 0x80000000)
+				bus->Write(rwaddress, wdata, wstrobe);
+			else
+				m_dcache.Write(bus, rwaddress, wdata, wstrobe);
 		}
 
 		if (rwen && instr.m_rd != 0)
