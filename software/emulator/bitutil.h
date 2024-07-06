@@ -2,6 +2,10 @@
 
 #include <stdint.h>
 
+#if defined(CAT_WINDOWS)
+#include <immintrin.h> // Include for _bextr_u32 or _bextr_u64
+#endif
+
 #if defined(CAT_WINDOWS) || defined(CAT_LINUX)
 #define FINLINE __forceinline
 #else
@@ -12,16 +16,15 @@
 FINLINE uint32_t SelectBitRange(uint32_t val, uint32_t startbit, uint32_t endbit)
 {
 	// XOP.LZ.0A 10 /r id	BEXTR	Bit field extract (with immediate)	(src >> start) & ((1 << len) - 1)
-
-	// get number of bits covered; delta = (start-end)+1
-	uint32_t delta = (startbit-endbit)+1;
-	// logic shift right by endbit
-	uint32_t shifted = val >> endbit;
-	// prep inverse mask: 0x80000000 >>> (31-delta)
-	uint32_t invmask = ((int32_t)0x80000000) >> (31-delta);
-	// prep actual mask
-	uint32_t mask = ~invmask;
-	// final return value
-	uint32_t retval = shifted & mask;
-	return retval;
+	#if defined(CAT_WINDOWS)
+		return _bextr_u32(val, endbit, startbit - endbit + 1);
+	#else
+		// Calculate the number of bits to extract
+		uint32_t numBits = (startbit - endbit) + 1;
+		// Directly create the mask by shifting 1 left by the number of bits to extract, then subtract 1
+		uint32_t mask = (1U << numBits) - 1;
+		// Apply the mask after shifting the value to the right by the endbit position
+		uint32_t retval = (val >> endbit) & mask;
+		return retval;
+	#endif
 }
