@@ -56,7 +56,7 @@ always @(posedge uartbaseclock) begin
 	end else begin
 		outfifore <= 1'b0; // Stop read request
 		transmitbyte <= 1'b0;
-		if (~uarttxbusy & (transmitbyte == 1'b0) && (~outfifoempty) && outfifovalid) begin
+		if (~uarttxbusy && (transmitbyte == 1'b0) && (~outfifoempty) && outfifovalid) begin
 			datatotransmit <= outfifoout;
 			transmitbyte <= 1'b1;
 			outfifore <= 1'b1;
