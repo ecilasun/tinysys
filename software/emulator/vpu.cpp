@@ -38,13 +38,14 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 					{
 						const int linetop0 = 2 * W * y;
 						const int linetop1 = 2 * W * y + W;
+						uint16_t* sourceRow = &devicememas12bpp[m_scanwidth * y];
 						for (uint32_t x = 0; x < m_scanwidth; ++x)
 						{
-							uint16_t color = devicememas12bpp[m_scanwidth * y + x];
-							uint32_t G = SelectBitRange(color, 3, 0) << 4;
-							uint32_t B = SelectBitRange(color, 7, 4) << 4;
-							uint32_t R = SelectBitRange(color, 11, 8) << 4;
-							uint32_t expandedcolor = 0xFF000000 | (R << 16) | (G << 8) | (B);
+							uint16_t color = sourceRow[x];
+							uint32_t G = SelectBitRange(color, 3, 0);
+							uint32_t B = SelectBitRange(color, 7, 4);
+							uint32_t R = SelectBitRange(color, 11, 8);
+							uint32_t expandedcolor = 0xFF000000 | (R << 20) | (G << 12) | (B << 4);
 							pixels[linetop0 + x*2+0] = expandedcolor;
 							pixels[linetop1 + x*2+0] = expandedcolor;
 							pixels[linetop0 + x*2+1] = expandedcolor;
@@ -60,13 +61,14 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 					for (uint32_t y = 0; y < m_scanheight; y++)
 					{
 						const int linetop = W * y;
+						uint16_t* sourceRow = &devicememas12bpp[m_scanwidth * y];
 						for (uint32_t x = 0; x < m_scanwidth; ++x)
 						{
-							uint16_t color = devicememas12bpp[m_scanwidth * y + x];
-							uint32_t G = SelectBitRange(color, 3, 0) << 4;
-							uint32_t B = SelectBitRange(color, 7, 4) << 4;
-							uint32_t R = SelectBitRange(color, 11, 8) << 4;
-							uint32_t expandedcolor = 0xFF000000 | (R << 16) | (G << 8) | (B);
+							uint16_t color = sourceRow[x];
+							uint32_t G = SelectBitRange(color, 3, 0);
+							uint32_t B = SelectBitRange(color, 7, 4);
+							uint32_t R = SelectBitRange(color, 11, 8);
+							uint32_t expandedcolor = 0xFF000000 | (R << 20) | (G << 12) | (B << 4);
 							pixels[linetop + x] = expandedcolor;
 						}
 					}
@@ -81,15 +83,18 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 					const int W = pitch / 4;
 					for (uint32_t y = 0; y < m_scanheight; y++)
 					{
-						const int linetop0 = 2 * W * y;
-						const int linetop1 = 2 * W * y + W;
+						uint32_t* pixelRow0 = &pixels[2*W*y];
+						uint32_t* pixelRow1 = pixelRow0 + W;
+						uint8_t* sourceRow = &devicememas8bpp[m_scanwidth * y];
 						for (uint32_t x = 0; x < m_scanwidth; ++x)
 						{
-							uint32_t color = m_vgapalette[devicememas8bpp[m_scanwidth * y + x]];
-							pixels[linetop0 + x*2+0] = color;
-							pixels[linetop1 + x*2+0] = color;
-							pixels[linetop0 + x*2+1] = color;
-							pixels[linetop1 + x*2+1] = color;
+							uint32_t color = m_vgapalette[sourceRow[x]];
+							uint32_t *pixelPos0 = pixelRow0+(x<<1);
+							uint32_t *pixelPos1 = pixelRow1+(x<<1);
+							pixelPos0[0] = color;
+							pixelPos0[1] = color;
+							pixelPos1[0] = color;
+							pixelPos1[1] = color;
 						}
 					}
 				}
@@ -100,11 +105,12 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 					const int W = pitch / 4;
 					for (uint32_t y = 0; y < m_scanheight; y++)
 					{
-						const int linetop = W * y;
+						uint32_t* pixelRow = &pixels[W*y];
+						uint8_t* sourceRow = &devicememas8bpp[m_scanwidth * y];
 						for (uint32_t x = 0; x < m_scanwidth; ++x)
 						{
-							uint32_t color = m_vgapalette[devicememas8bpp[m_scanwidth * y + x]];
-							pixels[linetop + x] = color;
+							uint32_t color = m_vgapalette[sourceRow[x]];
+							pixelRow[x] = color;
 						}
 					}
 				}
