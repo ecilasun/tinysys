@@ -144,3 +144,15 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 	}
 #endif
 }
+
+void CBus::Read16(uint32_t address, uint32_t* data)
+{
+	uint32_t dev = address & 0x80000000 ? ((address & 0xF0000) >> 16) : 12;
+	m_devices[dev]->Read16(address, data);
+}
+
+void CBus::Write16(uint32_t address, uint32_t* data)
+{
+	uint32_t dev = address & 0x80000000 ? ((address & 0xF0000) >> 16) : 12;
+	m_devices[dev]->Write16(address, data);
+}

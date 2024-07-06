@@ -14,6 +14,8 @@ public:
 	void Tick(CBus* bus) override final;
 	void Read(uint32_t address, uint32_t& data) override final;
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
+	void Read16(uint32_t address, uint32_t* data) override final;
+	void Write16(uint32_t address, uint32_t* word) override final;
 
 	void* m_devicemem;
 	void CopyROM(uint32_t resetvector, uint8_t *bin, uint32_t size);

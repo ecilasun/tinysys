@@ -40,8 +40,10 @@ public:
 
 	void Reset(uint8_t* rombin, uint32_t romsize);
 	bool Tick();
-	void Read(uint32_t address, uint32_t& data);
-	void Write(uint32_t address, uint32_t data, uint32_t wstrobe);
+	void Read(uint32_t address, uint32_t& data);	// Write 32 bits
+	void Read16(uint32_t address, uint32_t* data);	// Read 128 bits
+	void Write(uint32_t address, uint32_t data, uint32_t wstrobe);	// Write 32 bits
+	void Write16(uint32_t address, uint32_t* data);					// Write 128 bits
 	uint32_t* GetHostAddress(uint32_t address);
 
 	CAPU* GetAPU() { return m_apu; }
@@ -56,10 +58,9 @@ public:
 	void FillMemBitmap(uint32_t* pixels);
 #endif
 
-private:
-	uint32_t m_resetvector{ 0 };
-
 	CSysMem* m_mem{ nullptr };
+
+private:
 	CRV32* m_cpu[2]{ nullptr, nullptr };
 	CCSRMem* m_csr[2]{ nullptr, nullptr };
 	CMailMem* m_mail{ nullptr };
@@ -72,6 +73,8 @@ private:
 	CDummyDevice* m_dummydevice{ nullptr };
 
 	MemMappedDevice* m_devices[13]{ nullptr };
+
+	uint32_t m_resetvector{ 0 };
 
 #if defined(MEM_DEBUG)
 	uint32_t m_busactivitystart{ 0 };

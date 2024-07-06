@@ -85,7 +85,7 @@ void InstructionCache::Reset()
 {
 	for (uint32_t i=0; i<256; i++)
 	{
-		// TODO: AVX512 perhaps?
+		// TODO: AVX2 perhaps?
 		uint32_t base = (i << 4);
 		m_cache[base + 0x0] = 0x00000000;
 		m_cache[base + 0x1] = 0x00000000;
@@ -141,7 +141,7 @@ void DataCache::Reset()
 {
 	for (uint32_t i=0; i<512; i++)
 	{
-		// TODO: AVX512 perhaps?
+		// TODO: AVX2 perhaps?
 		uint32_t base = (i << 4);
 		m_cache[base + 0x0] = 0x00000000;
 		m_cache[base + 0x1] = 0x00000000;
@@ -175,16 +175,14 @@ void DataCache::WriteLine(CBus* bus, uint32_t line)
 		m_cachelinewb[line] = 0;
 		uint32_t tag = m_cachelinetags[line] & 0x3FFF;
 		uint32_t wbaddr = (tag << 15) | (line << 6);
-		for (uint32_t i = 0; i < 16; i++)
-			bus->Write(wbaddr+(i<<2), m_cache[(line << 4) + i], 0x0F);
+		bus->m_mem->Write16(wbaddr, &m_cache[line << 4]);
 	}
 }
 
 void DataCache::LoadLine(CBus* bus, uint32_t tag, uint32_t line)
 {
 	uint32_t addr = (tag << 15) | (line << 6);
-	for (uint32_t i = 0; i < 16; i++)
-		bus->Read(addr+(i<<2), m_cache[(line << 4) + i]);
+	bus->m_mem->Read16(addr, &m_cache[line << 4]);
 	m_cachelinetags[line] = tag | 0x4000;
 }
 
