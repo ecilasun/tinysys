@@ -23,9 +23,9 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "v1.06"
+#define VERSIONSTRING "v1.07"
 // On-storage version
-#define DEVVERSIONSTRING "v1.06"
+#define DEVVERSIONSTRING "v1.07"
 
 static char s_execName[33] = "";
 static char s_execParam0[33] = "";
@@ -684,22 +684,25 @@ void __attribute__((aligned(64), noinline)) UserMain()
 
 void HandleCPUError(struct STaskContext *ctx, const uint32_t cpu)
 {
-	ksetcolor(CONSOLEMAGENTA, CONSOLEDIMGRAY);
-	kprintf("CPU#%d: ", cpu);
+	ksetcolor(CONSOLERED, CONSOLEDIMGRAY);
+
 	switch (ctx->kernelError)
 	{
-		case 1: kprintf("Unknown hardware device\n"); break;
-		case 2: kprintf("Unknown interrupt type\n"); break;
-		case 3: kprintf("Guru meditation\n"); break;
-		case 4: kprintf("Illegal instruction\n"); break;
-		case 5: kprintf("Breakpoint with no debugger attached\n"); break;
-		default: kprintf("Unknown kernel error\n"); break;
-	};
+		case 1: kprintf("Unknown hardware device"); break;
+		case 2: kprintf("Unknown interrupt type"); break;
+		case 3: kprintf("Guru meditation"); break;
+		case 4: kprintf("Illegal instruction"); break;
+		case 5: kprintf("Breakpoint with no debugger attached"); break;
+		default: kprintf("Unknown kernel error"); break;
+	}
+
+	kprintf(" on CPU #%d\n", cpu);
+
+	ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 
 	// Dump task registers
 	if (ctx->kernelError == 4)
 	{
-		ksetcolor(CONSOLEGREEN, CONSOLEDIMGRAY);
 		uint32_t taskid = ctx->kernelErrorData[0];
 		struct STask *task = &ctx->tasks[taskid];
 		// Skip zero register and emit '0' since we save PC there
@@ -708,7 +711,6 @@ void HandleCPUError(struct STaskContext *ctx, const uint32_t cpu)
 			kprintf("%s=0x%08X%c", s_regnames[i], task->regs[i], (i+1)%4==0 ? '\n':' ');
 		kprintf("\n");
 	}
-	ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 
 	// Clear error once handled and reported
 	ctx->kernelError = 0;
@@ -827,8 +829,9 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 		set_csr(mie, MIP_MTIP);
 
 		// ----------------------------------------------------------------
-		// GDB stub / serial keyboard input
+		// Serial input to feed to keyboard buffer
 		// ----------------------------------------------------------------
+
 		HandleSerialInput();
 	}
 }

@@ -40,7 +40,7 @@ void DMACopy4K(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targe
  * 
  * The function will copy data in 16 byte chunks (256 blocks) from source to target.
  * The source and target addresses must be 16 byte aligned.
- * Any zero bytes in the data will be ignored and not written to the target.
+ * Any zero bytes in the data stream will be ignored and not written to the target.
  * 
  * @param _sourceAddress16ByteAligned 16 byte aligned source address
  * @param _targetAddress16ByteAligned 16 byte aligned target address
@@ -55,6 +55,49 @@ void DMACopyAutoByteMask4K(const uint32_t _sourceAddress16ByteAligned, const uin
 	*DMAIO = 255;
 	*DMAIO = DMACMD_ENQUEUE_AUTOBYTEMASK;
 }
+
+/**
+ * @brief Copy unaligned data from source to target
+ * 
+ * The function will copy data in given byte count from source to target.
+ * The source and target addresses do not have to be aligned, and the byte count does not have to be a multiple of 16.
+ * 
+ * @param _sourceAddress Unaligned source address
+ * @param _targetAddress Unaligned target address
+ * @param _byteCount Number of bytes to copy
+ */
+/*void DMACopyUnaligned(const uint32_t _sourceAddress, const uint32_t _targetAddress, const uint8_t _byteCount)
+{
+	*DMAIO = DMACMD_SETSOURCE;
+	*DMAIO = _sourceAddress;
+	*DMAIO = DMACMD_SETTARGET;
+	*DMAIO = _targetAddress;
+	*DMAIO = DMACMD_SETLENGHT;
+	*DMAIO = (_byteCount+15)/16 - 1;;
+	*DMAIO = DMACMD_ENQUEUEUNALIGNED;
+}*/
+
+/**
+ * @brief Copy unaligned data from source to target
+ * 
+ * The function will copy data in given byte count from source to target.
+ * The source and target addresses do not have to be aligned, and the byte count does not have to be a multiple of 16.
+ * Any zero bytes in the data stream will be ignored and not written to the target.
+ * 
+ * @param _sourceAddress Unaligned source address
+ * @param _targetAddress Unaligned target address
+ * @param _byteCount Number of bytes to copy
+ */
+/*void DMACopyUnalignedMask(const uint32_t _sourceAddress, const uint32_t _targetAddress, const uint8_t _byteCount)
+{
+	*DMAIO = DMACMD_SETSOURCE;
+	*DMAIO = _sourceAddress;
+	*DMAIO = DMACMD_SETTARGET;
+	*DMAIO = _targetAddress;
+	*DMAIO = DMACMD_SETLENGHT;
+	*DMAIO = (_byteCount+15)/16 - 1;
+	*DMAIO = DMACMD_ENQUEUEUNALIGNED_AUTOBYTEMASK;
+}*/
 
 /**
  * @brief Copy data from source to target

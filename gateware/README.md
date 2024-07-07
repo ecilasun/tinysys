@@ -1,4 +1,4 @@
-# Latest Gateware Build is: v1.06
+# Latest Gateware Build is: v1.07
 # Latest Board version is: 2F
 
 # Gateware binary
@@ -13,6 +13,7 @@ This is the current architecture to use with gcc13 and higher: `rv32im_zicsr_zif
 r1.01: Initial release version<br>
 r1.03: Improvements for dual core boot stability, fixed audio hardware playback rate issue<br>
 r1.06: Minor improvements to inner ROM loop and some other bug fixes<br>
+r1.07: DMA hardware change in preparation for misaligned DMA support<br>
 
 # Device gateware
 

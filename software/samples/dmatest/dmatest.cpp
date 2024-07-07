@@ -97,6 +97,12 @@ int main(int argc, char *argv[])
 		if (leftoverDMA!=0)
 			DMACopyAutoByteMask((uint32_t)(bufferA+offset*W+fulloffset), (uint32_t)(bufferC+fulloffset), leftoverDMA);
 
+		// Copy some unaligned data
+		//DMACopyUnaligned();
+
+		// Copy some unaligned masked data
+		//DMACopyUnalignedMask();
+
 		// Tag for DMA sync (essentially an item in FIFO after last DMA so we can check if DMA is complete when this drains)
 		DMATag(0x0);
 

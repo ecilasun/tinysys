@@ -632,6 +632,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				if (value==0) // io_setup()
 				{
 					//sys_io_setup(unsigned nr_reqs, aio_context_t __user *ctx);
+					errno = EINVAL;
 					write_csr(0x8AA, 0xFFFFFFFF);
 				}
 				else if (value==17) // getcwd()
