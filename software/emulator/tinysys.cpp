@@ -181,6 +181,22 @@ int SDL_main(int argc, char** argv)
 			}
 		}
 
+		// Print CPU stats
+#if defined(CPU_STATS)
+		if ((ectx.emulator->m_steps % 16384) == 0)
+		{
+			CRV32 *cpu0 = ectx.emulator->m_bus->GetCPU(0);
+			printf("I$  read hits / misses: %d %d\n", cpu0->m_icache.m_hits, cpu0->m_icache.m_misses);
+			printf("D$  read hits / misses: %d %d\n", cpu0->m_dcache.m_readhits, cpu0->m_dcache.m_readmisses);
+			printf("   write hits / misses: %d %d\n", cpu0->m_dcache.m_writehits, cpu0->m_dcache.m_writemisses);
+			printf("EX retired instructions: %lld\n", cpu0->m_retired);
+			printf("EX conditional branches taken / not taken: %d / %d\n", cpu0->m_btaken, cpu0->m_bntaken);
+			printf("EX unconditional branches taken: %d\n", cpu0->m_ucbtaken);
+		}
+#endif
+
+		// SDL_PumpEvents(); ??
+
 		// Memory debug view
 #if defined(MEM_DEBUG)
 		if ((ectx.emulator->m_steps % 16384) == 0)

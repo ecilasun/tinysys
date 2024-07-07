@@ -115,6 +115,11 @@ public:
 	// 256 entries, 16 words each
 	uint32_t m_cache[256*16] = {};
 	uint32_t m_cachelinetags[256] = {};
+
+#if defined(CPU_STATS)
+	uint32_t m_hits {0};
+	uint32_t m_misses {0};
+#endif
 };
 
 class DataCache
@@ -135,6 +140,13 @@ public:
 	uint32_t m_cache[512*16] = {};
 	uint32_t m_cachelinetags[512] = {};
 	uint32_t m_cachelinewb[512] = {};
+
+#if defined(CPU_STATS)
+	uint32_t m_readhits {0};
+	uint32_t m_readmisses {0};
+	uint32_t m_writehits {0};
+	uint32_t m_writemisses {0};
+#endif
 };
 
 class CRV32
@@ -148,7 +160,7 @@ public:
 	uint32_t m_branchtarget{ 0 };
 	uint32_t m_fetchstate{ 0 };
 	uint32_t m_branchresolved{ 0 };
-	uint32_t m_wasmret{ 0 };;
+	uint32_t m_wasmret{ 0 };
 	uint32_t m_GPR[32] = {};
 
 	// Internal counters
@@ -173,12 +185,19 @@ public:
 	bool FetchDecode(CBus* bus);
 	bool Execute(CBus* bus);
 
+	InstructionCache m_icache;
+	DataCache m_dcache;
+
+#if defined(CPU_STATS)
+	uint32_t m_btaken{ 0 };
+	uint32_t m_bntaken{ 0 };
+	uint32_t m_ucbtaken{ 0 };
+#endif
+
 private:
 	void DecodeInstruction(const uint32_t pc, const uint32_t instr, SDecodedInstruction& dec);
 	void InjectISRHeader();
 	void InjectISRFooter();
 	uint32_t ALU(SDecodedInstruction &instr);
 	uint32_t BLU(SDecodedInstruction& instr);
-	InstructionCache m_icache;
-	DataCache m_dcache;
 };

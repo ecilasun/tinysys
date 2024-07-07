@@ -118,6 +118,9 @@ void InstructionCache::Fetch(CBus *bus, uint32_t pc, uint32_t& instr)
 	if ((tag | 0x4000) == m_cachelinetags[line])
 	{
 		instr = m_cache[(line << 4) + offset];
+#if defined(CPU_STATS)
+		m_hits++;
+#endif
 	}
 	else
 	{
@@ -128,6 +131,9 @@ void InstructionCache::Fetch(CBus *bus, uint32_t pc, uint32_t& instr)
 		instr = m_cache[(line << 4) + offset];
 		// Mark valid
 		m_cachelinetags[line] = tag | 0x4000;
+#if defined(CPU_STATS)
+		m_misses++;
+#endif
 	}
 }
 
@@ -196,7 +202,14 @@ void DataCache::Read(CBus* bus, uint32_t address, uint32_t& data)
 	{
 		WriteLine(bus, line);
 		LoadLine(bus, tag, line);
+#if defined(CPU_STATS)
+		m_readmisses++;
+#endif
 	}
+#if defined(CPU_STATS)
+	else
+		m_readhits++;
+#endif
 
 	// Read from cache
 	data = m_cache[(line << 4) + offset];
@@ -212,7 +225,14 @@ void DataCache::Write(CBus* bus, uint32_t address, uint32_t data, uint32_t wstro
 	{
 		WriteLine(bus, line);
 		LoadLine(bus, tag, line);
+#if defined(CPU_STATS)
+		m_writemisses++;
+#endif
 	}
+#if defined(CPU_STATS)
+	else
+		m_writehits++;
+#endif
 
 	// Write to cache
 	uint32_t fullmask = s_quadexpand[wstrobe];
@@ -874,6 +894,9 @@ bool CRV32::Execute(CBus* bus)
 				// fetch handles this
 				rdin = adjacentpc;
 				rwen = 1;
+#if defined(CPU_STATS)
+				m_ucbtaken++;
+#endif
 			break;
 
 			case OP_JALR:
@@ -881,19 +904,25 @@ bool CRV32::Execute(CBus* bus)
 				m_branchtarget = jumpabs;
 				rdin = adjacentpc;
 				rwen = 1;
+#if defined(CPU_STATS)
+				m_ucbtaken++;
+#endif
 			break;
 
 			case OP_BRANCH:
 				m_branchresolved = 1;
+#if defined(CPU_STATS)
+				m_btaken += branchout ? 1:0;
+				m_bntaken += branchout ? 0:1;
+#endif
 				m_branchtarget = branchout ? offsetpc : adjacentpc;
 			break;
 
 			case OP_FENCE:
-				//printf("- fencei\n");
+				m_icache.Discard();
 				m_instructionfifo = {};
 				m_branchresolved = 1;
 				m_branchtarget = instr.m_pc + 4;
-				m_icache.Discard();
 			break;
 
 			case OP_SYSTEM:

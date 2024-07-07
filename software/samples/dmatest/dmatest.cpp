@@ -59,22 +59,14 @@ int main(int argc, char *argv[])
 
 	int32_t offset = 0;
 	int32_t dir = 2;
-	int32_t averagetime = 131072;
+	int32_t averagetime = 20000;
 	int32_t outstats = 0;
-	uint64_t starttime = E32ReadTime();
 	uint32_t prevvsync = VPUReadVBlankCounter();
 	int ox = 32, dx = 1;
 	int oy = 32, dy = 2;
 	while (1)
 	{
-		uint64_t endtime = E32ReadTime();
-		averagetime = (averagetime + (uint32_t)(endtime-starttime))/2;
-
-		if (outstats % 512 == 0)
-			printf("DMA clocks (average): %ld\n", averagetime);
-		++outstats;
-
-		starttime = E32ReadTime();
+		uint64_t starttime = E32ReadTime();
 
 		uint32_t fulloffset = 0;
 		for (uint32_t full=0;full<fullDMAs;++full)
@@ -137,9 +129,16 @@ int main(int argc, char *argv[])
 			prevvsync = currentvsync;
 		}
 
+		uint64_t endtime = E32ReadTime();
+		averagetime = (averagetime + (uint32_t)(endtime-starttime))/2;
+
 		// Handle scroll of the inner region
 		offset = (offset+dir);
 		if (offset == 0 || offset == H*2-2) dir = -dir;
+
+		if (outstats % 512 == 0)
+			printf("DMA clocks (average): %ld\n", averagetime);
+		++outstats;
 	}
 	return 0;
 }
