@@ -10,6 +10,7 @@ software/waf3**
 software/build**
 software/samples/**/*.elf
 software/samples/**/*.txt
+software/samples/agnes/**
 software/ROMs/**/*.txt
 software/ROMs/**/*.coe
 software/ROMs/**/*.elf
