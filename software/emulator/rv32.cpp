@@ -727,7 +727,8 @@ bool CRV32::FetchDecode(CBus* bus)
 {
 	if (m_fetchstate == EFetchInit)
 	{
-		m_pendingCPUReset = false;
+		CCSRMem* csr = bus->GetCSR(m_hartid);
+		csr->m_pendingCPUReset = false;
 		if (m_instructionfifo.size() == 0)
 		{
 			m_exceptionmode = EXC_NONE;
@@ -741,8 +742,9 @@ bool CRV32::FetchDecode(CBus* bus)
 	}
 	else if (m_fetchstate == EFetchWFI)
 	{
-		m_wficount = (m_wficount + 1) % 4;
-		if (m_wficount==0 || m_irq)
+		m_wficount = (m_wficount + 1) % 12;
+		CCSRMem* csr = bus->GetCSR(m_hartid);
+		if (m_wficount==0 || csr->m_irq)
 			m_fetchstate = EFetchRead;
 		return true;
 	}
@@ -755,7 +757,9 @@ bool CRV32::FetchDecode(CBus* bus)
 		SDecodedInstruction decoded;
 		DecodeInstruction(m_PC, instruction, decoded);
 
-		bool isebreak = m_sie && decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_EBREAK;
+		CCSRMem* csr = bus->GetCSR(m_hartid);
+
+		bool isebreak = csr->m_sie && decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_EBREAK;
 		bool isecall = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_ECALL;
 		bool ismret = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_MRET;
 		bool iswfi = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_WFI;
@@ -763,16 +767,16 @@ bool CRV32::FetchDecode(CBus* bus)
 		bool isbranch = decoded.m_opcode == OP_BRANCH;
 		bool isjalr = decoded.m_opcode == OP_JALR;
 		bool isjal = decoded.m_opcode == OP_JAL;
-		bool isillegal = m_sie && decoded.m_opindex == 0;
-		bool branchtomtvec = (isebreak || isecall || isillegal || m_irq) && m_exceptionmode == EXC_NONE;
+		bool isillegal = csr->m_sie && decoded.m_opindex == 0;
+		bool branchtomtvec = (isebreak || isecall || isillegal || csr->m_irq) && m_exceptionmode == EXC_NONE;
 
 		// Exception handling is part of fetch unit in hardware
 		if (branchtomtvec)
 		{
 			// Most of these prevent instruction execution so they have to come back to same PC
-			if (m_irq & 1) // hardware
+			if (csr->m_irq & 1) // hardware
 				m_exceptionmode = EXC_HWI;
-			else if (m_irq & 2) // timer
+			else if (csr->m_irq & 2) // timer
 				m_exceptionmode = EXC_TMI;
 			else if (isillegal) // software - illegal instruction
 				m_exceptionmode = EXC_SWI;
@@ -1272,7 +1276,8 @@ bool CRV32::Execute(CBus* bus)
 
 bool CRV32::Tick(CBus* bus)
 {
-	if (m_pendingCPUReset)
+	CCSRMem* csr = bus->GetCSR(m_hartid);
+	if (csr->m_pendingCPUReset)
 		m_fetchstate = EFetchInit;
 
 	bool fetchok = FetchDecode(bus);

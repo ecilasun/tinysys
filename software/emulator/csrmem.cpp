@@ -30,15 +30,13 @@ void CCSRMem::Tick(CBus* bus)
 	m_cycle += 5; // Hardware clocks at about ~5 cycles per instruction (sometimes less, sometimes more)
 	m_wallclocktime = m_cycle/15; // main clock is 150MHz and wallclock is 10MHz, therefore /15
 
-	CRV32* cpu = bus->GetCPU(m_hartid);
 	CUART* uart = bus->GetUART();
 
 	// Detect reset request
 	if (m_cpuresetreq)
 	{
 		m_cpuresetreq = 0;
-		if (cpu)
-			cpu->m_pendingCPUReset = true;
+		m_pendingCPUReset = true;
 	}
 
 	uint32_t uartirq = uart ? uart->m_uartirq : 0;
@@ -54,12 +52,9 @@ void CCSRMem::Tick(CBus* bus)
 	// Machine external interrupts
 	uint32_t hwInterrupt = ((m_mieshadow & 0x800 ? 1 : 0) && ie && (uartirq || gpioirq || keyirq || usbirq)) ? 1 : 0;
 
-	if (cpu)
-	{
-		// Software interrupt
-		cpu->m_sie = (m_mieshadow & 0x008 ? 1 : 0) && ie;
-		cpu->m_irq = (timerInterrupt << 1) | (hwInterrupt);
-	}
+	// Software interrupt
+	m_sie = (m_mieshadow & 0x008 ? 1 : 0) && ie;
+	m_irq = (timerInterrupt << 1) | (hwInterrupt);
 
 	// IRQ state shadow
 	m_irqstate = (uartirq << 3) | (gpioirq << 2) | (keyirq << 1) | (usbirq);

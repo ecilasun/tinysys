@@ -169,14 +169,11 @@ public:
 
 	// HART0 by default
 	uint32_t m_hartid{ 0 };
-	uint32_t m_sie{ 0 };
-	uint32_t m_irq{ 0 };
 
 	ERV32ExceptionMode m_exceptionmode{ EXC_NONE };
 	ERV32ExceptionMode m_lasttrap{ EXC_NONE };
 
 	uint32_t m_resetvector{ 0x0 };
-	bool m_pendingCPUReset{ false };
 
 	std::deque<SDecodedInstruction> m_instructionfifo;
 

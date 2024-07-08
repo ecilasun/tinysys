@@ -58,6 +58,10 @@ public:
 	uint32_t m_hartid{ 0 };
 	uint32_t m_pc{ 0 };
 
+	uint32_t m_sie{0};
+	uint32_t m_irq{0};
+	bool m_pendingCPUReset{false};
+
 private:
 	uint32_t* m_csrmem{ nullptr };
 	uint32_t m_cpuresetreq{ 0 };

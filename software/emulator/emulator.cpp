@@ -7,9 +7,11 @@ CEmulator::~CEmulator()
 		delete[] m_rombin;
 	if (m_bus)
 		delete m_bus;
+	if (m_cpu[0]) delete m_cpu[0];
+	if (m_cpu[1]) delete m_cpu[1];
 }
 
-bool CEmulator::Reset(const char* romFile)
+bool CEmulator::Reset(const char* romFile, uint32_t resetvector)
 {
 	if (m_rombin)
 	{
@@ -39,8 +41,13 @@ bool CEmulator::Reset(const char* romFile)
 		fclose(fp);
 	}
 
-	m_bus = new CBus(0x0FFE0000);
+	m_bus = new CBus(resetvector);
 	m_bus->Reset(m_rombin, m_romsize);
+
+	m_cpu[0] = new CRV32(0, resetvector);
+	m_cpu[1] = new CRV32(1, resetvector);
+	m_cpu[0]->Reset();
+	m_cpu[1]->Reset();
 
 	return true;
 }
@@ -48,6 +55,8 @@ bool CEmulator::Reset(const char* romFile)
 bool CEmulator::Step()
 {
 	++m_steps;
+	m_cpu[0]->Tick(m_bus);
+	m_cpu[1]->Tick(m_bus);
 	return m_bus->Tick();
 }
 

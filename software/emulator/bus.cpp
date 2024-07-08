@@ -13,8 +13,6 @@ CBus::CBus(uint32_t resetvector)
 	m_mail = new CMailMem();
 	m_csr[0] = new CCSRMem(0);
 	m_csr[1] = new CCSRMem(1);
-	m_cpu[0] = new CRV32(0, resetvector);
-	m_cpu[1] = new CRV32(1, resetvector);
 	m_sdcc = new CSDCard();
 	m_uart = new CUART();
 	m_dummydevice = new CDummyDevice();
@@ -40,8 +38,6 @@ CBus::~CBus()
 	if (m_csr[0]) delete m_csr[0];
 	if (m_csr[1]) delete m_csr[1];
 	if (m_sdcc) delete m_sdcc;
-	if (m_cpu[0]) delete m_cpu[0];
-	if (m_cpu[1]) delete m_cpu[1];
 	if (m_mail) delete m_mail;
 	if (m_uart) delete m_uart;
 	if (m_leds) delete m_leds;
@@ -67,9 +63,6 @@ void CBus::Reset(uint8_t* rombin, uint32_t romsize)
 
 	m_csr[0]->Reset();
 	if (m_csr[1]) m_csr[1]->Reset();
-
-	m_cpu[0]->Reset();
-	if (m_cpu[1]) m_cpu[1]->Reset();
 }
 
 void CBus::UpdateVideoLink(uint32_t *pixels, int pitch)
@@ -103,16 +96,10 @@ void CBus::QueueByte(uint8_t byte)
 
 bool CBus::Tick()
 {
-	bool ret0 = m_cpu[0]->Tick(this);
-
-	bool ret1 = true;
-	if (m_cpu[1])
-		ret1 = m_cpu[1]->Tick(this);
-
 	for (int i = 0; i < 13; ++i)
 		m_devices[i]->Tick(this);
 
-	return ret0 && ret1;
+	return true;
 }
 
 uint32_t* CBus::GetHostAddress(uint32_t address)

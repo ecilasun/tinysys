@@ -47,7 +47,6 @@ public:
 	uint32_t* GetHostAddress(uint32_t address);
 
 	CAPU* GetAPU() { return m_apu; }
-	CRV32* GetCPU(uint32_t hartid) { return m_cpu[hartid]; }
 	CUART* GetUART() { return m_uart; }
 	CCSRMem* GetCSR(uint32_t hartid) { return m_csr[hartid]; }
 
@@ -61,7 +60,6 @@ public:
 	CSysMem* m_mem{ nullptr };
 
 private:
-	CRV32* m_cpu[2]{ nullptr, nullptr };
 	CCSRMem* m_csr[2]{ nullptr, nullptr };
 	CMailMem* m_mail{ nullptr };
 	CSDCard* m_sdcc{ nullptr };

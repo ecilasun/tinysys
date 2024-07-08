@@ -96,10 +96,11 @@ int SDL_main(int argc, char** argv)
 	ectx.emulator = new CEmulator;
 	bool success;
 
+	const uint32_t resetvector = 0x0FFE0000;
 	if (argc<=1)
-		success = ectx.emulator->Reset("rom.bin");
+		success = ectx.emulator->Reset("rom.bin", resetvector);
 	else
-		success = ectx.emulator->Reset(argv[1]);
+		success = ectx.emulator->Reset(argv[1], resetvector);
 
 	if (!success)
 	{
