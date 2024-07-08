@@ -10,7 +10,6 @@ software/waf3**
 software/build**
 software/samples/**/*.elf
 software/samples/**/*.txt
-software/samples/agnes/**
 software/emulator/sdcard/nes/**
 software/ROMs/**/*.txt
 software/ROMs/**/*.coe
