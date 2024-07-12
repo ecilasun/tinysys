@@ -1037,65 +1037,38 @@ bool CRV32::Execute(CBus* bus)
 				uint32_t range1 = SelectBitRange(rwaddress, 1, 1);
 				uint32_t range2 = SelectBitRange(rwaddress, 1, 0);
 
-				uint32_t b3 = SelectBitRange(dataword, 31, 24);
-				uint32_t b2 = SelectBitRange(dataword, 23, 16);
-				uint32_t b1 = SelectBitRange(dataword, 15, 8);
-				uint32_t b0 = SelectBitRange(dataword, 7, 0);
+				uint32_t b[4];
+				b[3] = SelectBitRange(dataword, 31, 24);
+				b[2] = SelectBitRange(dataword, 23, 16);
+				b[1] = SelectBitRange(dataword, 15, 8);
+				b[0] = SelectBitRange(dataword, 7, 0);
 
-				uint32_t h1 = SelectBitRange(dataword, 31, 16);
-				uint32_t h0 = SelectBitRange(dataword, 15, 0);
+				uint32_t h[2];
+				h[1] = SelectBitRange(dataword, 31, 16);
+				h[0] = SelectBitRange(dataword, 15, 0);
 
-				int32_t sign3 = int32_t(dataword & 0x80000000);
-				int32_t sign2 = int32_t((dataword << 8) & 0x80000000);
-				int32_t sign1 = int32_t((dataword << 16) & 0x80000000);
-				int32_t sign0 = int32_t((dataword << 24) & 0x80000000);
+				int32_t sign[4];
+				sign[3] = int32_t(dataword & 0x80000000);
+				sign[2] = int32_t((dataword << 8) & 0x80000000);
+				sign[1] = int32_t((dataword << 16) & 0x80000000);
+				sign[0] = int32_t((dataword << 24) & 0x80000000);
 
 				switch (instr.m_f3)
 				{
 					case 0b000: // BYTE with sign extension
-					{
-						switch (range2)
-						{
-							case 0b11: rdin = (sign3 >> 24) | b3; break;
-							case 0b10: rdin = (sign2 >> 24) | b2; break;
-							case 0b01: rdin = (sign1 >> 24) | b1; break;
-							case 0b00: rdin = (sign0 >> 24) | b0; break;
-						}
-					}
+						rdin = (sign[range2] >> 24) | b[range2];
 					break;
 					case 0b001: // HALF with sign extension
-					{
-						switch (range1)
-						{
-							case 0b1: rdin = (sign3 >> 16) | h1; break;
-							case 0b0: rdin = (sign1 >> 16) | h0; break;
-						}
-					}
+						rdin = (sign[range1*2+1] >> 16) | h[range1];
 					break;
 					case 0b100: // BYTE with zero extension
-					{
-						switch (range2)
-						{
-							case 0b11: rdin = b3; break;
-							case 0b10: rdin = b2; break;
-							case 0b01: rdin = b1; break;
-							case 0b00: rdin = b0; break;
-						}
-					}
+						rdin = b[range2];
 					break;
 					case 0b101: // HALF with zero extension
-					{
-						switch (range1)
-						{
-							case 0b1: rdin = h1; break;
-							case 0b0: rdin = h0; break;
-						}
-					}
+						rdin = h[range1];
 					break;
 					default: // WORD - 0b010
-					{
 						rdin = dataword;
-					}
 					break;
 				}
 				rwen = 1;

@@ -96,7 +96,7 @@ void CBus::QueueByte(uint8_t byte)
 
 bool CBus::Tick()
 {
-	m_dmac->Tick(this);
+	m_dmac->Tick(m_mem);
 	m_csr[0]->Tick(this);
 	m_csr[1]->Tick(this);
 	m_sdcc->Tick(this);
@@ -135,16 +135,4 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 		m_busactivityend = addrkb > m_busactivityend ? addrkb : m_busactivityend;
 	}
 #endif
-}
-
-void CBus::Read16(uint32_t address, uint32_t* data)
-{
-	uint32_t dev = address & 0x80000000 ? ((address & 0xF0000) >> 16) : 12;
-	m_devices[dev]->Read16(address, data);
-}
-
-void CBus::Write16(uint32_t address, uint32_t* data)
-{
-	uint32_t dev = address & 0x80000000 ? ((address & 0xF0000) >> 16) : 12;
-	m_devices[dev]->Write16(address, data);
 }

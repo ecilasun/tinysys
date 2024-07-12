@@ -16,7 +16,7 @@ void CDMA::Reset()
 {
 }
 
-void CDMA::Tick(CBus* bus)
+void CDMA::Tick(CSysMem* mem)
 {
 	// Pull cmd from fifo and process
 	switch (m_state)
@@ -103,14 +103,14 @@ void CDMA::Tick(CBus* bus)
 		case 2:
 		{
 			// Each burst is 16 bytes in hardware (therefore 4 words)
-			uint32_t dmalen = m_dmaburstcount*4;
+			uint32_t dmalen = m_dmaburstcount;
 			for (uint32_t i = 0; i < dmalen; ++i)
 			{
-				uint32_t data = 0;
-				bus->Read(m_dmasourceaddr, data);
-				bus->Write(m_dmatargetaddr, data, 0x0F);
-				m_dmasourceaddr += 4;
-				m_dmatargetaddr += 4;
+				uint32_t data[16];
+				mem->Read16(m_dmasourceaddr, data);
+				mem->Write16(m_dmatargetaddr, data);
+				m_dmasourceaddr += 4*16;
+				m_dmatargetaddr += 4*16;
 			}
 			m_state = 0;
 		}
@@ -123,9 +123,9 @@ void CDMA::Tick(CBus* bus)
 			for (uint32_t i = 0; i < dmalen; ++i)
 			{
 				uint32_t data = 0;
-				bus->Read(m_dmasourceaddr, data);
+				mem->Read(m_dmasourceaddr, data);
 				uint32_t mask = (data & 0x000000FF ? 0x1 : 0x0) | (data & 0x0000FF00 ? 0x2 : 0x0) | (data & 0x00FF0000 ? 0x4 : 0x0) | (data & 0xFF000000 ? 0x8 : 0x0);
-				bus->Write(m_dmatargetaddr, data, mask);
+				mem->Write(m_dmatargetaddr, data, mask);
 				m_dmasourceaddr += 4;
 				m_dmatargetaddr += 4;
 			}

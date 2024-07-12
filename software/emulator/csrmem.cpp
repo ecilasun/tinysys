@@ -27,7 +27,7 @@ void CCSRMem::Reset()
 
 void CCSRMem::Tick(CBus* bus)
 {
-	m_cycle += 5; // Hardware clocks at about ~5 cycles per instruction (sometimes less, sometimes more)
+	m_cycle += 5; // Hardware clocks at about ~5 clocks per instruction (sometimes less, sometimes more)
 	m_wallclocktime = m_cycle/15; // main clock is 150MHz and wallclock is 10MHz, therefore /15
 
 	CUART* uart = bus->GetUART();

@@ -41,9 +41,7 @@ public:
 	void Reset(uint8_t* rombin, uint32_t romsize);
 	bool Tick();
 	void Read(uint32_t address, uint32_t& data);	// Write 32 bits
-	void Read16(uint32_t address, uint32_t* data);	// Read 128 bits
 	void Write(uint32_t address, uint32_t data, uint32_t wstrobe);	// Write 32 bits
-	void Write16(uint32_t address, uint32_t* data);					// Write 128 bits
 	uint32_t* GetHostAddress(uint32_t address);
 
 	CAPU* GetAPU() { return m_apu; }
