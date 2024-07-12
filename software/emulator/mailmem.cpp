@@ -26,10 +26,6 @@ void CMailMem::Reset()
 	memset(m_mailmem, 0, 1024 * sizeof(uint32_t));
 }
 
-void CMailMem::Tick(CBus* bus)
-{
-}
-
 void CMailMem::Read(uint32_t address, uint32_t& data)
 {
 	uint32_t mailslot = (address >> 2) & 0x3FF;

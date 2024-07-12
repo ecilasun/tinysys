@@ -30,7 +30,7 @@ void CAPU::Tick(CBus* bus)
 		case 0:
 		{
 			// Idle
-			if (m_fifo.size())
+			if (!m_fifo.empty())
 			{
 				m_state = 1;
 				m_cmd = m_fifo.front();
@@ -47,7 +47,7 @@ void CAPU::Tick(CBus* bus)
 				case APUCMD_BUFFERSIZE:
 				{
 					// APUBUFFERSIZE
-					if (m_fifo.size())
+					if (!m_fifo.empty())
 					{
 						m_data = m_fifo.front();
 						m_fifo.pop();
@@ -59,7 +59,7 @@ void CAPU::Tick(CBus* bus)
 				case APUCMD_START:
 				{
 					// APUSTART
-					if (m_fifo.size())
+					if (!m_fifo.empty())
 					{
 						m_data = m_fifo.front();
 						m_fifo.pop();
@@ -71,7 +71,7 @@ void CAPU::Tick(CBus* bus)
 				case APUCMD_SETRATE:
 				{
 					// APUSETRATE
-					if (m_fifo.size())
+					if (!m_fifo.empty())
 					{
 						m_data = m_fifo.front();
 						m_fifo.pop();

@@ -24,7 +24,7 @@ void CDMA::Tick(CBus* bus)
 		case 0:
 		{
 			// Idle
-			if (m_fifo.size())
+			if (!m_fifo.empty())
 			{
 				m_state = 1;
 				m_cmd = m_fifo.front();
@@ -42,7 +42,7 @@ void CDMA::Tick(CBus* bus)
 				case 0x00:
 				{
 					// DMASOURCE
-					if (m_fifo.size())
+					if (!m_fifo.empty())
 					{
 						m_data = m_fifo.front();
 						m_fifo.pop();
@@ -54,7 +54,7 @@ void CDMA::Tick(CBus* bus)
 				case 0x01:
 				{
 					// DMATARGET
-					if (m_fifo.size())
+					if (!m_fifo.empty())
 					{
 						m_data = m_fifo.front();
 						m_fifo.pop();
@@ -66,7 +66,7 @@ void CDMA::Tick(CBus* bus)
 				case 0x02:
 				{
 					// DMABURST
-					if (m_fifo.size())
+					if (!m_fifo.empty())
 					{
 						m_data = m_fifo.front();
 						m_fifo.pop();
@@ -85,7 +85,7 @@ void CDMA::Tick(CBus* bus)
 				case 0x04:
 				{
 					// DMATAG
-					if (m_fifo.size())
+					if (!m_fifo.empty())
 					{
 						m_data = m_fifo.front();
 						m_fifo.pop();
@@ -142,7 +142,7 @@ void CDMA::Tick(CBus* bus)
 
 void CDMA::Read(uint32_t address, uint32_t& data)
 {
-	data = m_fifo.size() ? 1 : 0;
+	data = !m_fifo.empty() ? 1 : 0;
 }
 
 void CDMA::Write(uint32_t address, uint32_t word, uint32_t wstrobe)

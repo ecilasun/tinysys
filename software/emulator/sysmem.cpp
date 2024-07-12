@@ -30,10 +30,6 @@ void CSysMem::Reset()
 	memset(m_devicemem, 0xCC, 256*1024*1024);
 }
 
-void CSysMem::Tick(CBus* bus)
-{
-}
-
 uint32_t* CSysMem::GetHostAddress(uint32_t address)
 {
 	uint32_t *wordmem = (uint32_t*)m_devicemem;

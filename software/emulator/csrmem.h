@@ -42,11 +42,11 @@ public:
 	~CCSRMem() { free(m_csrmem); }
 
 	void Reset() override final;
-	void Tick(CBus* bus) override final;
 	void Read(uint32_t address, uint32_t& data) override final;
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
 	void Read16(uint32_t address, uint32_t* data) override final { data[0] = 0; }
 	void Write16(uint32_t address, uint32_t* data) override final {}
+	void Tick(CBus* bus);
 
 	void SetRetiredInstructions(uint64_t retired) { m_retired = retired; }
 	void SetPC(uint32_t pc) { m_pc = pc; }

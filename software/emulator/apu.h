@@ -21,11 +21,11 @@ public:
 	~CAPU();
 
 	void Reset() override final;
-	void Tick(CBus* bus) override final;
 	void Read(uint32_t address, uint32_t& data) override final;
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
 	void Read16(uint32_t address, uint32_t* data) override final { data[0] = 0; }
 	void Write16(uint32_t address, uint32_t* data) override final {}
+	void Tick(CBus* bus);
 
 	void* GetPlaybackData() { return m_audioData[m_currentbuffer]; }
 	void FlipBuffers() { m_currentbuffer ^= 1; }

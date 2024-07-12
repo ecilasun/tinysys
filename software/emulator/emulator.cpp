@@ -52,12 +52,12 @@ bool CEmulator::Reset(const char* romFile, uint32_t resetvector)
 	return true;
 }
 
-bool CEmulator::Step()
+void CEmulator::Step()
 {
 	++m_steps;
 	m_cpu[0]->Tick(m_bus);
+	m_bus->Tick();
 	m_cpu[1]->Tick(m_bus);
-	return m_bus->Tick();
 }
 
 void CEmulator::UpdateVideoLink(uint32_t *pixels, int pitch)

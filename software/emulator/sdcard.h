@@ -12,15 +12,14 @@ public:
 	~CSDCard();
 
 	void Reset() override final;
-	void Tick(CBus* bus) override final;
 	void Read(uint32_t address, uint32_t& data) override final;
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
 	void Read16(uint32_t address, uint32_t* data) override final { data[0] = 0; }
 	void Write16(uint32_t address, uint32_t* data) override final {}
+	void Tick(CBus* bus);
 
 private:
 	void PopulateFileSystem();
-	void ProcessSPI();
 	uint32_t SPIRead(uint8_t* buffer, uint32_t len);
 	std::queue<uint8_t> m_spiinfifo;
 	std::queue<uint8_t> m_spioutfifo;

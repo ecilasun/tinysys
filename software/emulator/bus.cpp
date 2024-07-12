@@ -96,8 +96,13 @@ void CBus::QueueByte(uint8_t byte)
 
 bool CBus::Tick()
 {
-	for (int i = 0; i < 13; ++i)
-		m_devices[i]->Tick(this);
+	m_dmac->Tick(this);
+	m_csr[0]->Tick(this);
+	m_csr[1]->Tick(this);
+	m_sdcc->Tick(this);
+	m_uart->Tick(this);
+	m_vpuc->Tick(this);
+	m_apu->Tick(this);
 
 	return true;
 }

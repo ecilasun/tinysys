@@ -5,10 +5,6 @@ void CLEDs::Reset()
 {
 }
 
-void CLEDs::Tick(CBus* bus)
-{
-}
-
 void CLEDs::Read(uint32_t address, uint32_t& data)
 {
 	data = m_ledstate;

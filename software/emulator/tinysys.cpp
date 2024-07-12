@@ -24,11 +24,10 @@ static bool s_alive = true;
 int emulatorthread(void* data)
 {
 	CEmulator* emulator = (CEmulator*)data;
-	bool kicking;
 	do
 	{
-		kicking = emulator->Step();
-	} while(s_alive && kicking);
+		emulator->Step();
+	} while(s_alive);
 
 	s_alive = false;
 	return 0;

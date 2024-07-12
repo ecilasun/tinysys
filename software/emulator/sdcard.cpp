@@ -127,7 +127,7 @@ uint32_t CSDCard::SPIRead(uint8_t *buffer, uint32_t len)
 	uint32_t numread = 0;
 	for (uint32_t i = 0; i < len; ++i)
 	{
-		if (m_spiinfifo.size())
+		if (!m_spiinfifo.empty())
 		{
 			buffer[i] = m_spiinfifo.front();
 			m_spiinfifo.pop();
@@ -138,10 +138,10 @@ uint32_t CSDCard::SPIRead(uint8_t *buffer, uint32_t len)
 	return numread;
 }
 
-void CSDCard::ProcessSPI()
+void CSDCard::Tick(CBus* bus)
 {
 	// Run the SPI bus
-	if (m_spiinfifo.size())
+	while (!m_spiinfifo.empty())
 	{
 		if (m_spimode == 0) // cmd
 		{
@@ -305,14 +305,9 @@ void CSDCard::ProcessSPI()
 	}
 }
 
-void CSDCard::Tick(CBus* bus)
-{
-	ProcessSPI();
-}
-
 void CSDCard::Read(uint32_t address, uint32_t& data)
 {
-	if (m_spioutfifo.size())
+	if (!m_spioutfifo.empty())
 	{
 		data = m_spioutfifo.front();
 		m_spioutfifo.pop();
