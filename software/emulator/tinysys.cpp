@@ -35,6 +35,8 @@ int emulatorthread(void* data)
 
 int audiothread(void* data)
 {
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_LOW);
+
 	CEmulator* emulator = (CEmulator*)data;
 	uint32_t pastSelector = 0xFF;
 	CAPU *apu = emulator->m_bus->GetAPU();

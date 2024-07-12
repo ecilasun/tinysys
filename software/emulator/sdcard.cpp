@@ -63,7 +63,12 @@ void CSDCard::PopulateFileSystem()
 			std::string actualPath = filePath;
 			removeTextBeforeAndIncludingToken(filePath, "sdcard");
 
-			FILE *sourceFile = fopen(actualPath.c_str(), "rb");
+			FILE* sourceFile;
+#if defined(CAT_WINDOWS)
+			errno_t x = fopen_s(&sourceFile, actualPath.c_str(), "rb");
+#else
+			sourceFile = fopen(actualPath.c_str(), "rb");
+#endif
 			if (sourceFile)
 			{
 				size_t fs = entry.file_size();

@@ -357,13 +357,13 @@ uint32_t CRV32::ALU(SDecodedInstruction& instr)
 			switch (instr.m_f3)
 			{
 				case 0b100: {
-					aluout = sign1ext / sign2ext;
+					aluout = uint32_t(sign1ext / sign2ext);
 				} break; //  div
 				case 0b101: {
-					aluout = instr.m_rval1 / instr.m_rval2;
+					aluout = uint32_t(instr.m_rval1 / instr.m_rval2);
 				} break; // divu
 				case 0b110: {
-					aluout = sign1ext % sign2ext;
+					aluout = uint32_t(sign1ext % sign2ext);
 				} break; // rem
 				case 0b111: {
 					aluout = instr.m_rval1 % instr.m_rval2;
@@ -861,10 +861,6 @@ bool CRV32::Execute(CBus* bus)
 		instr.m_rval2 = m_GPR[instr.m_rs2 & 0x1F];
 		instr.m_rval3 = m_GPR[instr.m_rs3 & 0x1F];
 
-		// Run ALU+BLU ops
-		uint32_t aluout = ALU(instr);
-		uint32_t branchout = BLU(instr);
-
 		// Calculate future PC and other offsets
 		uint32_t adjacentpc = instr.m_pc + 4;
 		uint32_t rwaddress = instr.m_rval1 + instr.m_immed;
@@ -880,7 +876,7 @@ bool CRV32::Execute(CBus* bus)
 		{
 			case OP_OP:
 			case OP_OP_IMM:
-				rdin = aluout;
+				rdin = ALU(instr);
 				rwen = 1;
 			break;
 
@@ -914,12 +910,15 @@ bool CRV32::Execute(CBus* bus)
 			break;
 
 			case OP_BRANCH:
+			{
 				m_branchresolved = 1;
+				bool branchout = BLU(instr);
 #if defined(CPU_STATS)
-				m_btaken += branchout ? 1:0;
-				m_bntaken += branchout ? 0:1;
+				m_btaken += branchout ? 1 : 0;
+				m_bntaken += branchout ? 0 : 1;
 #endif
 				m_branchtarget = branchout ? offsetpc : adjacentpc;
+			}
 			break;
 
 			case OP_FENCE:
