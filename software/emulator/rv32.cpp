@@ -800,7 +800,7 @@ bool CRV32::FetchDecode(CBus* bus)
 
 		// Determine next PC
 		if (branchtomtvec) // Route execution to mtvec
-			bus->Read(csrbase + (CSR_MTVEC << 2), m_PC);
+			csr->Read(CSR_MTVEC << 2, m_PC);
 		else if (iswfi)
 			m_fetchstate = EFetchWFI;
 		else if (isjal) // For JAL instructions, we can calculate the target immediately without having to execute
@@ -946,7 +946,7 @@ bool CRV32::Execute(CBus* bus)
 				{
 					m_wasmret = 1;
 					m_branchresolved = 1;
-					bus->Read(csrbase + (CSR_MEPC << 2), m_branchtarget);
+					csr->Read((CSR_MEPC << 2), m_branchtarget);
 				}
 				else if (instr.m_f12 == F12_WFI)
 				{
@@ -963,14 +963,14 @@ bool CRV32::Execute(CBus* bus)
 				else // CSROP
 				{
 					// Read previous value
-					uint32_t csraddress = csrbase + (instr.m_csroffset << 2);
 					uint32_t csrprevval;
-					bus->Read(csraddress, csrprevval);
+					uint32_t csraddress = (instr.m_csroffset << 2);
+					csr->Read(csraddress, csrprevval);
 
 					// Keep it in a register
 					rwen = 1;
 					rdin = csrprevval;
-					rwaddress = csraddress;
+					rwaddress = csrbase + csraddress;
 
 					// Apply operation
 					wstrobe = 0b1111;

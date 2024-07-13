@@ -41,6 +41,7 @@ int audiothread(void* data)
 	uint32_t pastSelector = 0xFF;
 	CAPU *apu = emulator->m_bus->GetAPU();
 	int queuedTotal = 0;
+	uint16_t *tmpbuf = new uint16_t[QueueSampleCount*8];
 	do
 	{
 		uint8_t* source = (uint8_t*)apu->GetPlaybackData();
@@ -55,9 +56,47 @@ int audiothread(void* data)
 		// Check if we've got enough space in the audio queue to fit our 128 samples
 		if (pastSelector && (bytesRemaining <= (AudioQueueCapacity-QueueSampleCount)*sizeof(uint16_t)*2))
 		{
+			// pastSelector == 0 means audio is paused
+			// pastSelector == 1 means 44.1kHz audio is playing
+			// pastSelector == 2 means 22.05kHz audio is playing
+			// pastSelector == 3 means 11.025kHz audio is playing
+
 			// Queue more samples if we found some room
-			SDL_QueueAudio(emulator->m_audioDevice, source+queuedTotal, QueueSampleByteSize);
-			// Bytes queued so far
+			if (pastSelector == 1) // 44.1kHz
+				SDL_QueueAudio(emulator->m_audioDevice, source+queuedTotal, QueueSampleByteSize);
+			else if (pastSelector == 2) // 22.05kHz
+			{
+				uint16_t* p = (uint16_t*)(source + queuedTotal);
+				for (int i = 0; i < QueueSampleCount; i++)
+				{
+					uint16_t L = p[i * 2 + 0];
+					uint16_t R = p[i * 2 + 1];
+					tmpbuf[i * 4 + 0] = L;
+					tmpbuf[i * 4 + 1] = R;
+					tmpbuf[i * 4 + 2] = L;
+					tmpbuf[i * 4 + 3] = R;
+				}
+				SDL_QueueAudio(emulator->m_audioDevice, tmpbuf, QueueSampleByteSize * 2);
+			}
+			else if (pastSelector == 3) // 11.025kHz
+			{
+				uint16_t* p = (uint16_t*)(source + queuedTotal);
+				for (int i = 0; i < QueueSampleCount; i++)
+				{
+					uint16_t L = p[i * 2 + 0];
+					uint16_t R = p[i * 2 + 1];
+					tmpbuf[i * 8 + 0] = L;
+					tmpbuf[i * 8 + 1] = R;
+					tmpbuf[i * 8 + 2] = L;
+					tmpbuf[i * 8 + 3] = R;
+					tmpbuf[i * 8 + 4] = L;
+					tmpbuf[i * 8 + 5] = R;
+					tmpbuf[i * 8 + 6] = L;
+					tmpbuf[i * 8 + 7] = R;
+				}
+				SDL_QueueAudio(emulator->m_audioDevice, tmpbuf, QueueSampleByteSize * 4);
+			}
+			// Bytes queued so far (in sample space)
 			queuedTotal += QueueSampleByteSize;
 		}
 
@@ -68,6 +107,8 @@ int audiothread(void* data)
 			apu->FlipBuffers();
 		}
 	} while(s_alive);
+
+	delete [] tmpbuf;
 
 	return 0;
 }
@@ -91,7 +132,7 @@ int main(int argc, char** argv)
 int SDL_main(int argc, char** argv)
 #endif
 {
-	printf("tinysys emulator v0.4\n");
+	printf("tinysys emulator v0.5\n");
 
 	EmulatorContext ectx;
 	ectx.emulator = new CEmulator;
@@ -139,14 +180,10 @@ int SDL_main(int argc, char** argv)
 	}
 #endif
 
-	SDL_Thread* emulatorthreadID = SDL_CreateThread(emulatorthread, "emulator", ectx.emulator);
-	SDL_Thread* audiothreadID = SDL_CreateThread(audiothread, "audio", ectx.emulator);
-	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, &ectx); // 60fps
-
 	SDL_AudioSpec audioSpecDesired, audioSpecObtained;
 	SDL_zero(audioSpecDesired);
 	SDL_zero(audioSpecObtained);
-	audioSpecDesired.freq = 22050;
+	audioSpecDesired.freq = 44100;
 	audioSpecDesired.format = AUDIO_S16;
 	audioSpecDesired.channels = 2;
 	audioSpecDesired.samples = AudioQueueCapacity;
@@ -165,6 +202,10 @@ int SDL_main(int argc, char** argv)
 		fprintf(stderr, "  device #%d : %s\n", i, SDL_GetAudioDeviceName(i, 0));
 	}
 	fprintf(stderr, "Using device #%d, queue size is %d samples\n", dev, AudioQueueCapacity);
+
+	SDL_Thread* emulatorthreadID = SDL_CreateThread(emulatorthread, "emulator", ectx.emulator);
+	SDL_Thread* audiothreadID = SDL_CreateThread(audiothread, "audio", ectx.emulator);
+	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, &ectx); // 60fps
 
 	SDL_Event ev;
 	do
