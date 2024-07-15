@@ -46,6 +46,7 @@ public:
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
 	void Tick(CBus* bus);
 
+	void UpdateTime(uint32_t executeCount);
 	void SetRetiredInstructions(uint64_t retired) { m_retired = retired; }
 	void SetPC(uint32_t pc) { m_pc = pc; }
 

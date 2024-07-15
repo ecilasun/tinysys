@@ -25,11 +25,14 @@ void CCSRMem::Reset()
 	m_wallclocktime = 0x0000000000000000;
 }
 
+void CCSRMem::UpdateTime(uint32_t executeCount)
+{
+	m_cycle += 5*executeCount; // each instruction takes about 5 to 6 clocks
+	m_wallclocktime = m_cycle/15; // 150MHz clock / 15 = 10MHz clock for wallclock
+}
+
 void CCSRMem::Tick(CBus* bus)
 {
-	m_cycle += 5; // each instruction takes about 5 to 6 clocks
-	m_wallclocktime = m_cycle/15; // 150MHz clock / 15 = 10MHz clock for wallclock
-
 	CUART* uart = bus->GetUART();
 
 	// Detect reset request

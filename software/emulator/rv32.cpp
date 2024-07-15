@@ -750,67 +750,80 @@ bool CRV32::FetchDecode(CBus* bus)
 	}
 	else if (m_fetchstate == EFetchRead)
 	{
-		uint32_t instruction;
-		m_icache.Fetch(bus, m_PC, instruction);
+		// Grab a block of code until we hit a branch or exception
+		bool doneFetching = false;
+		do{
+			uint32_t instruction;
+			m_icache.Fetch(bus, m_PC, instruction);
 
-		// Decode is part of fetch unit in hardware
-		SDecodedInstruction decoded;
-		DecodeInstruction(m_PC, instruction, decoded);
+			// Decode is part of fetch unit in hardware
+			SDecodedInstruction decoded;
+			DecodeInstruction(m_PC, instruction, decoded);
 
-		CCSRMem* csr = bus->GetCSR(m_hartid);
+			CCSRMem* csr = bus->GetCSR(m_hartid);
 
-		bool isebreak = csr->m_sie && decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_EBREAK;
-		bool isecall = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_ECALL;
-		bool ismret = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_MRET;
-		bool iswfi = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_WFI;
-		bool isfence = decoded.m_opcode == OP_FENCE;
-		bool isbranch = decoded.m_opcode == OP_BRANCH;
-		bool isjalr = decoded.m_opcode == OP_JALR;
-		bool isjal = decoded.m_opcode == OP_JAL;
-		bool isillegal = csr->m_sie && decoded.m_opindex == 0;
-		bool branchtomtvec = (isebreak || isecall || isillegal || csr->m_irq) && m_exceptionmode == EXC_NONE;
+			bool isebreak = csr->m_sie && decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_EBREAK;
+			bool isecall = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_ECALL;
+			bool ismret = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_MRET;
+			bool iswfi = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_WFI;
+			bool isfence = decoded.m_opcode == OP_FENCE;
+			bool isbranch = decoded.m_opcode == OP_BRANCH;
+			bool isjalr = decoded.m_opcode == OP_JALR;
+			bool isjal = decoded.m_opcode == OP_JAL;
+			bool isillegal = csr->m_sie && decoded.m_opindex == 0;
+			bool branchtomtvec = (isebreak || isecall || isillegal || csr->m_irq) && m_exceptionmode == EXC_NONE;
 
-		// Exception handling is part of fetch unit in hardware
-		if (branchtomtvec)
-		{
-			// Most of these prevent instruction execution so they have to come back to same PC
-			if (csr->m_irq & 1) // hardware
-				m_exceptionmode = EXC_HWI;
-			else if (csr->m_irq & 2) // timer
-				m_exceptionmode = EXC_TMI;
-			else if (isillegal) // software - illegal instruction
-				m_exceptionmode = EXC_SWI;
-			else if (isebreak) // ebreak
-				m_exceptionmode = EXC_EBREAK;
-			else if (isecall) // ecall
+			// Exception handling is part of fetch unit in hardware
+			if (branchtomtvec)
 			{
-				m_exceptionmode = EXC_ECALL;
-				// ECALL assumes current instruction executed and will return to the next one
-				m_PC += 4;
+				// Most of these prevent instruction execution so they have to come back to same PC
+				if (csr->m_irq & 1) // hardware
+					m_exceptionmode = EXC_HWI;
+				else if (csr->m_irq & 2) // timer
+					m_exceptionmode = EXC_TMI;
+				else if (isillegal) // software - illegal instruction
+					m_exceptionmode = EXC_SWI;
+				else if (isebreak) // ebreak
+					m_exceptionmode = EXC_EBREAK;
+				else if (isecall) // ecall
+				{
+					m_exceptionmode = EXC_ECALL;
+					// ECALL assumes current instruction executed and will return to the next one
+					m_PC += 4;
+				}
+
+				// Inject instructions in the header
+				InjectISRHeader();
+				m_lasttrap = m_exceptionmode;
 			}
+			else
+				m_instructionfifo.push_back(decoded);
 
-			// Inject instructions in the header
-			InjectISRHeader();
-			m_lasttrap = m_exceptionmode;
-		}
-		else
-			m_instructionfifo.push_back(decoded);
+			const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
 
-		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
-
-		// Determine next PC
-		if (branchtomtvec) // Route execution to mtvec
-			csr->Read(CSR_MTVEC << 2, m_PC);
-		else if (iswfi)
-			m_fetchstate = EFetchWFI;
-		else if (isjal) // For JAL instructions, we can calculate the target immediately without having to execute
-			m_PC = decoded.m_pc + decoded.m_immed;
-		else if (isebreak) // EBREAK stays at the same PC until it's replaced by another instruction or SWI is disabled
-			m_PC = decoded.m_pc;
-		else if (!isfence && !isbranch && !isjalr && !ismret) // For anything that doesn't require a branch, just increment PC
-			m_PC = decoded.m_pc + 4;
-		else // For branches, jumps and mret, we need to wait for the branch target
-			m_fetchstate = EFetchWaitForBranch; // wait for branch target from exec
+			// Determine next PC
+			if (branchtomtvec) // Route execution to mtvec
+			{
+				csr->Read(CSR_MTVEC << 2, m_PC);
+				doneFetching = true;
+			}
+			else if (iswfi)
+			{
+				m_fetchstate = EFetchWFI;
+				doneFetching = true;
+			}
+			else if (isjal) // For JAL instructions, we can calculate the target immediately without having to execute
+				m_PC = decoded.m_pc + decoded.m_immed;
+			else if (isebreak) // EBREAK stays at the same PC until it's replaced by another instruction or SWI is disabled
+				m_PC = decoded.m_pc;
+			else if (!isfence && !isbranch && !isjalr && !ismret) // For anything that doesn't require a branch, just increment PC
+				m_PC = decoded.m_pc + 4;
+			else // For branches, jumps and mret, we need to wait for the branch target
+			{
+				m_fetchstate = EFetchWaitForBranch; // wait for branch target from exec
+				doneFetching = true;
+			}
+		} while (!doneFetching);		
 
 		return true;
 	}
@@ -1241,9 +1254,10 @@ bool CRV32::Execute(CBus* bus)
 
 		++m_retired;
 		csr->SetRetiredInstructions(m_retired);
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 bool CRV32::Tick(CBus* bus)
@@ -1252,8 +1266,11 @@ bool CRV32::Tick(CBus* bus)
 	if (csr->m_pendingCPUReset)
 		m_fetchstate = EFetchInit;
 
+	// Gather a block of code (or grab precompiled version)
 	bool fetchok = FetchDecode(bus);
-	bool execok = Execute(bus);
+	csr->UpdateTime(m_instructionfifo.size());
+	// Execute a whole block
+	while(Execute(bus)) {}
 
-	return fetchok && execok;
+	return fetchok;
 }
