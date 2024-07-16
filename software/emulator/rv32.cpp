@@ -813,7 +813,10 @@ bool CRV32::FetchDecode(CBus* bus)
 				doneFetching = true;
 			}
 			else if (isjal) // For JAL instructions, we can calculate the target immediately without having to execute
+			{
 				m_PC = decoded.m_pc + decoded.m_immed;
+				doneFetching = true;
+			}
 			else if (isebreak) // EBREAK stays at the same PC until it's replaced by another instruction or SWI is disabled
 				m_PC = decoded.m_pc;
 			else if (!isfence && !isbranch && !isjalr && !ismret) // For anything that doesn't require a branch, just increment PC
@@ -823,7 +826,7 @@ bool CRV32::FetchDecode(CBus* bus)
 				m_fetchstate = EFetchWaitForBranch; // wait for branch target from exec
 				doneFetching = true;
 			}
-		} while (!doneFetching);		
+		} while (!doneFetching);
 
 		return true;
 	}
