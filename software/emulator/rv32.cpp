@@ -861,16 +861,16 @@ bool CRV32::FetchDecode(CBus* bus)
 
 bool CRV32::Execute(CBus* bus)
 {
-	if (m_instructionfifo.size())
+	CCSRMem* csr = bus->GetCSR(m_hartid);
+	while (m_instructionfifo.size())
 	{
-		CCSRMem* csr = bus->GetCSR(m_hartid);
-		csr->SetPC(m_PC);
-
 		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
 
 		SDecodedInstruction instr;
 		instr = m_instructionfifo.front();
 		m_instructionfifo.pop_front();
+
+		csr->SetPC(instr.m_pc);
 
 		// Get register contents
 		instr.m_rval1 = m_GPR[instr.m_rs1 & 0x1F];
@@ -1256,11 +1256,10 @@ bool CRV32::Execute(CBus* bus)
 		}
 
 		++m_retired;
-		csr->SetRetiredInstructions(m_retired);
-		return true;
 	}
 
-	return false;
+	csr->SetRetiredInstructions(m_retired);
+	return true;
 }
 
 bool CRV32::Tick(CBus* bus)
@@ -1272,8 +1271,8 @@ bool CRV32::Tick(CBus* bus)
 	// Gather a block of code (or grab precompiled version)
 	bool fetchok = FetchDecode(bus);
 	csr->UpdateTime(m_instructionfifo.size());
-	// Execute a whole block
-	while(Execute(bus)) {}
+	// Execute the whole block
+	Execute(bus);
 
 	return fetchok;
 }
