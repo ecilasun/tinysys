@@ -864,8 +864,6 @@ bool CRV32::Execute(CBus* bus)
 	CCSRMem* csr = bus->GetCSR(m_hartid);
 	while (m_instructionfifo.size())
 	{
-		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
-
 		SDecodedInstruction instr;
 		instr = m_instructionfifo.front();
 		m_instructionfifo.pop_front();
@@ -986,6 +984,7 @@ bool CRV32::Execute(CBus* bus)
 					// Keep it in a register
 					rwen = 1;
 					rdin = csrprevval;
+					const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
 					rwaddress = csrbase + csraddress;
 
 					// Apply operation
