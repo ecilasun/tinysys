@@ -103,14 +103,14 @@ void CDMA::Tick(CSysMem* mem)
 		case 2:
 		{
 			// Each burst is 16 bytes in hardware (therefore 4 words)
-			uint32_t dmalen = m_dmaburstcount*4;
+			uint32_t dmalen = m_dmaburstcount;
 			for (uint32_t i = 0; i < dmalen; ++i)
 			{
-				uint32_t data = 0;
-				mem->Read(m_dmasourceaddr, data);
-				mem->Write(m_dmatargetaddr, data, 0xF);
-				m_dmasourceaddr += 4;
-				m_dmatargetaddr += 4;
+				uint32_t data[4];
+				mem->Read128bits(m_dmasourceaddr, data);
+				mem->Write128bits(m_dmatargetaddr, data);
+				m_dmasourceaddr += 16;
+				m_dmatargetaddr += 16;
 			}
 			m_state = 0;
 		}
