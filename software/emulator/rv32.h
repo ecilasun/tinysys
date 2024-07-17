@@ -1,7 +1,10 @@
 #pragma once
 
-#include "bitutil.h"
 #include <deque>
+#include <map>
+#include <vector>
+
+#include "bitutil.h"
 
 enum FetchState{
 	EFetchInit,
@@ -86,6 +89,7 @@ struct SDecodedInstruction
 };
 
 class CBus;
+class CCSRMem;
 
 enum ERV32ExceptionMode
 {
@@ -149,6 +153,12 @@ public:
 #endif
 };
 
+struct SDecodedBlock
+{
+	uint32_t m_PC;
+	std::vector<SDecodedInstruction> m_code;
+};
+
 class CRV32
 {
 public:
@@ -176,6 +186,7 @@ public:
 	uint32_t m_resetvector{ 0x0 };
 
 	std::deque<SDecodedInstruction> m_instructionfifo;
+	std::map<uint32_t, SDecodedBlock> m_decodedBlocks;
 
 	void Reset();
 	bool Tick(CBus* bus);
@@ -195,6 +206,7 @@ private:
 	void DecodeInstruction(const uint32_t pc, const uint32_t instr, SDecodedInstruction& dec);
 	void InjectISRHeader();
 	void InjectISRFooter();
+	void GatherInstructions(CCSRMem* csr, CBus* bus);
 	uint32_t ALU(SDecodedInstruction &instr);
 	uint32_t BLU(SDecodedInstruction& instr);
 };
