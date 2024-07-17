@@ -14,8 +14,8 @@ public:
 	void Read(uint32_t address, uint32_t& data) override final;
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
 
-	void Read16(uint32_t address, uint32_t* data);
-	void Write16(uint32_t address, uint32_t* word);
+	void Read512bits(uint32_t address, uint32_t* data);
+	void Write512bits(uint32_t address, uint32_t* word);
 
 	void* m_devicemem;
 	void CopyROM(uint32_t resetvector, uint8_t *bin, uint32_t size);

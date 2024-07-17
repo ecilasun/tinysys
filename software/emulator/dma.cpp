@@ -70,7 +70,7 @@ void CDMA::Tick(CSysMem* mem)
 					{
 						m_data = m_fifo.front();
 						m_fifo.pop();
-						m_dmaburstcount = (m_data & 0xFF);
+						m_dmaburstcount = (m_data & 0xFF) + 1; // input is -1
 						m_state = 0;
 					}
 				}
@@ -103,14 +103,14 @@ void CDMA::Tick(CSysMem* mem)
 		case 2:
 		{
 			// Each burst is 16 bytes in hardware (therefore 4 words)
-			uint32_t dmalen = m_dmaburstcount/4;
-			for (uint32_t i = 0; i <= dmalen; ++i)
+			uint32_t dmalen = m_dmaburstcount*4;
+			for (uint32_t i = 0; i < dmalen; ++i)
 			{
-				uint32_t data[16];
-				mem->Read16(m_dmasourceaddr, data);
-				mem->Write16(m_dmatargetaddr, data);
-				m_dmasourceaddr += 4*16;
-				m_dmatargetaddr += 4*16;
+				uint32_t data = 0;
+				mem->Read(m_dmasourceaddr, data);
+				mem->Write(m_dmatargetaddr, data, 0xF);
+				m_dmasourceaddr += 4;
+				m_dmatargetaddr += 4;
 			}
 			m_state = 0;
 		}
@@ -120,7 +120,7 @@ void CDMA::Tick(CSysMem* mem)
 		{
 			// Each burst is 16 bytes in hardware (therefore 4 words)
 			uint32_t dmalen = m_dmaburstcount*4;
-			for (uint32_t i = 0; i <= dmalen; ++i)
+			for (uint32_t i = 0; i < dmalen; ++i)
 			{
 				uint32_t data = 0;
 				mem->Read(m_dmasourceaddr, data);

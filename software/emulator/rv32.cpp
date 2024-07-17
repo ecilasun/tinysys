@@ -181,14 +181,14 @@ void DataCache::WriteLine(CBus* bus, uint32_t line)
 		m_cachelinewb[line] = 0;
 		uint32_t tag = m_cachelinetags[line] & 0x3FFF;
 		uint32_t wbaddr = (tag << 15) | (line << 6);
-		bus->m_mem->Write16(wbaddr, &m_cache[line << 4]);
+		bus->m_mem->Write512bits(wbaddr, &m_cache[line << 4]);
 	}
 }
 
 void DataCache::LoadLine(CBus* bus, uint32_t tag, uint32_t line)
 {
 	uint32_t addr = (tag << 15) | (line << 6);
-	bus->m_mem->Read16(addr, &m_cache[line << 4]);
+	bus->m_mem->Read512bits(addr, &m_cache[line << 4]);
 	m_cachelinetags[line] = tag | 0x4000;
 }
 

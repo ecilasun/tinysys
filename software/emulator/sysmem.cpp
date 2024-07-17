@@ -68,7 +68,7 @@ void CSysMem::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 	wordmem[address>>2] = (olddata&invfullmask) | (word&fullmask);
 }
 
-void CSysMem::Read16(uint32_t address, uint32_t* data)
+void CSysMem::Read512bits(uint32_t address, uint32_t* data)
 {
 #if defined(CAT_WINDOWS)
 	uint32_t *wordmem = (uint32_t*)m_devicemem;
@@ -85,7 +85,7 @@ void CSysMem::Read16(uint32_t address, uint32_t* data)
 #endif
 }
 
-void CSysMem::Write16(uint32_t address, uint32_t* data)
+void CSysMem::Write512bits(uint32_t address, uint32_t* data)
 {
 #if defined(CAT_WINDOWS)
 	uint32_t *wordmem = (uint32_t*)m_devicemem;
