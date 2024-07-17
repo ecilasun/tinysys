@@ -9,6 +9,7 @@
 
 static int AudioQueueCapacity = 1024;	// Size of the audio queue in samples
 const int QueueSampleCount = 64;		// Push this many samples to the queue per iteration
+static int AudioQueueCapacityInBytes = AudioQueueCapacity*sizeof(uint16_t)*2;
 const int QueueSampleByteSize = QueueSampleCount*sizeof(int16_t)*2;
 
 struct EmulatorContext
@@ -40,7 +41,7 @@ int audiothread(void* data)
 	CEmulator* emulator = (CEmulator*)data;
 	uint32_t pastSelector = 0xFF;
 	CAPU *apu = emulator->m_bus->GetAPU();
-	int queuedTotal = 0;
+	int queueReadCursor = 0;
 	uint16_t *tmpbuf = new uint16_t[QueueSampleCount*8];
 	do
 	{
@@ -51,23 +52,22 @@ int audiothread(void* data)
 			SDL_PauseAudioDevice(emulator->m_audioDevice, pastSelector ? 0 : 1);
 		}
 
-		int bytesRemaining = SDL_GetQueuedAudioSize(emulator->m_audioDevice);
+		int bytesQueued = SDL_GetQueuedAudioSize(emulator->m_audioDevice);
+		int spaceLeft = AudioQueueCapacityInBytes-bytesQueued;
 
 		// Check if we've got enough space in the audio queue to fit our 128 samples
-		if (pastSelector && (bytesRemaining <= (AudioQueueCapacity-QueueSampleCount)*sizeof(uint16_t)*2))
+		if (pastSelector && (spaceLeft >= QueueSampleByteSize))
 		{
-			// pastSelector == 0 means audio is paused
-			// pastSelector == 1 means 44.1kHz audio is playing
-			// pastSelector == 2 means 22.05kHz audio is playing
-			// pastSelector == 3 means 11.025kHz audio is playing
-
 			// Queue more samples if we found some room
-			if (pastSelector == 1) // 44.1kHz
-				SDL_QueueAudio(emulator->m_audioDevice, source+queuedTotal, QueueSampleByteSize);
-			else if (pastSelector == 2) // 22.05kHz
+			if (pastSelector == 1)			// 44.1kHz
 			{
-				uint16_t* p = (uint16_t*)(source + queuedTotal);
-				for (int i = 0; i < QueueSampleCount; i++)
+				SDL_QueueAudio(emulator->m_audioDevice, source+queueReadCursor, QueueSampleByteSize);
+				queueReadCursor += QueueSampleByteSize;
+			}
+			else if (pastSelector == 2)		// 22.05kHz
+			{
+				uint16_t* p = (uint16_t*)(source + queueReadCursor);
+				for (int i = 0; i < QueueSampleCount/2; i++)
 				{
 					uint16_t L = p[i * 2 + 0];
 					uint16_t R = p[i * 2 + 1];
@@ -76,12 +76,13 @@ int audiothread(void* data)
 					tmpbuf[i * 4 + 2] = L;
 					tmpbuf[i * 4 + 3] = R;
 				}
-				SDL_QueueAudio(emulator->m_audioDevice, tmpbuf, QueueSampleByteSize * 2);
+				SDL_QueueAudio(emulator->m_audioDevice, tmpbuf, QueueSampleByteSize);
+				queueReadCursor += QueueSampleByteSize/2;
 			}
-			else if (pastSelector == 3) // 11.025kHz
+			else if (pastSelector == 3)		// 11.025kHz
 			{
-				uint16_t* p = (uint16_t*)(source + queuedTotal);
-				for (int i = 0; i < QueueSampleCount; i++)
+				uint16_t* p = (uint16_t*)(source + queueReadCursor);
+				for (int i = 0; i < QueueSampleCount/4; i++)
 				{
 					uint16_t L = p[i * 2 + 0];
 					uint16_t R = p[i * 2 + 1];
@@ -94,16 +95,16 @@ int audiothread(void* data)
 					tmpbuf[i * 8 + 6] = L;
 					tmpbuf[i * 8 + 7] = R;
 				}
-				SDL_QueueAudio(emulator->m_audioDevice, tmpbuf, QueueSampleByteSize * 4);
+				SDL_QueueAudio(emulator->m_audioDevice, tmpbuf, QueueSampleByteSize);
+				queueReadCursor += QueueSampleByteSize/4;
 			}
-			// Bytes queued so far (in sample space)
-			queuedTotal += QueueSampleByteSize;
+			// else if (pastSelector == 0) {} // audio is paused
 		}
 
 		// Bytes queued reached APU word count, swap
-		if (queuedTotal >= apu->m_apuwordcount*sizeof(int32_t))
+		if (queueReadCursor >= apu->m_apuwordcount*sizeof(int32_t))
 		{
-			queuedTotal = 0;
+			queueReadCursor = 0;
 			apu->FlipBuffers();
 		}
 	} while(s_alive);
