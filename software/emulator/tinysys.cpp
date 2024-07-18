@@ -119,11 +119,28 @@ uint32_t videoCallback(Uint32 interval, void* param)
 	EmulatorContext* ctx = (EmulatorContext*)param;
 	if (SDL_MUSTLOCK(ctx->surface))
 		SDL_LockSurface(ctx->surface);
+
 	uint32_t* pixels = (uint32_t*)ctx->surface->pixels;
 	ctx->emulator->UpdateVideoLink(pixels, ctx->surface->pitch);
+
+	uint32_t W = ctx->surface->w;
+	uint32_t H = ctx->surface->h-8;
+	uint32_t S = ctx->emulator->m_bus->GetLEDs()->m_ledstate;
+	for (uint32_t j = H; j < H+8; j++)
+	{
+		for (uint32_t i = 8; i < 16; i++)
+		{
+			pixels[W*j+i] = S&0x1 ?  0xFF00FF00 : 0xFF000000;
+			pixels[W*j+i+9] = S&0x2 ?  0xFF00FF00 : 0xFF000000;
+			pixels[W*j+i+18] = S&0x4 ?  0xFF00FF00 : 0xFF000000;
+			pixels[W*j+i+27] = S&0x8 ?  0xFF00FF00 : 0xFF000000;
+		}
+	}
+
 	if (SDL_MUSTLOCK(ctx->surface))
 		SDL_UnlockSurface(ctx->surface);
 	SDL_UpdateWindowSurface(ctx->window);
+
 	return interval;
 }
 
@@ -159,7 +176,7 @@ int SDL_main(int argc, char** argv)
 		printf("Error initializing SDL2: %s\n", SDL_GetError());
 		return -1;
 	}
-	ectx.window = SDL_CreateWindow("tinysys emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	ectx.window = SDL_CreateWindow("tinysys emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT+8, SDL_WINDOW_SHOWN);
 
 #if defined(MEM_DEBUG)
 	ectx.debugwindow = SDL_CreateWindow("memdbg", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 256, 1024, SDL_WINDOW_SHOWN);
