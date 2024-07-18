@@ -3,6 +3,7 @@
 		"charconv": "cpp",
 		"format": "cpp",
 		"queue": "cpp",
-		"deque": "cpp"
+		"deque": "cpp",
+		"xtree": "cpp"
 	}
 }

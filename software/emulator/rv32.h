@@ -185,8 +185,8 @@ public:
 
 	uint32_t m_resetvector{ 0x0 };
 
-	std::deque<SDecodedInstruction> m_instructionfifo;
-	std::map<uint32_t, SDecodedBlock> m_decodedBlocks;
+	std::vector<SDecodedInstruction> m_instructions;
+	std::map<uint32_t, SDecodedBlock*> m_decodedBlocks;
 
 	void Reset();
 	bool Tick(CBus* bus);
@@ -204,8 +204,8 @@ public:
 
 private:
 	void DecodeInstruction(const uint32_t pc, const uint32_t instr, SDecodedInstruction& dec);
-	void InjectISRHeader();
-	void InjectISRFooter();
+	void InjectISRHeader(std::vector<SDecodedInstruction> *code);
+	void InjectISRFooter(std::vector<SDecodedInstruction>* code);
 	void GatherInstructions(CCSRMem* csr, CBus* bus);
 	uint32_t ALU(SDecodedInstruction &instr);
 	uint32_t BLU(SDecodedInstruction& instr);

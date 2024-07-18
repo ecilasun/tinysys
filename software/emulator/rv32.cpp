@@ -279,7 +279,7 @@ void CRV32::Reset()
 	for (uint32_t i=0; i<32; i++)
 		m_GPR[i] = 0x00000000;
 
-	m_instructionfifo = {};
+	m_instructions.clear();
 	m_decodedBlocks.clear();
 }
 
@@ -586,7 +586,7 @@ void CRV32::DecodeInstruction(uint32_t pc, uint32_t instr, SDecodedInstruction& 
 	dec.m_selimm = (dec.m_opcode==OP_JALR) || (dec.m_opcode==OP_OP_IMM) || (dec.m_opcode==OP_LOAD) || (dec.m_opcode==OP_STORE);
 }
 
-void CRV32::InjectISRHeader()
+void CRV32::InjectISRHeader(std::vector<SDecodedInstruction> *code)
 {
 	switch (m_exceptionmode)
 	{
@@ -596,7 +596,7 @@ void CRV32::InjectISRHeader()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push_back(isrinstr);
+				code->push_back(isrinstr);
 			}
 		}
 		break;
@@ -607,7 +607,7 @@ void CRV32::InjectISRHeader()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push_back(isrinstr);
+				code->push_back(isrinstr);
 			}
 		}
 		break;
@@ -618,7 +618,7 @@ void CRV32::InjectISRHeader()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push_back(isrinstr);
+				code->push_back(isrinstr);
 			}
 		}
 		break;
@@ -629,7 +629,7 @@ void CRV32::InjectISRHeader()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push_back(isrinstr);
+				code->push_back(isrinstr);
 			}
 		}
 		break;
@@ -640,7 +640,7 @@ void CRV32::InjectISRHeader()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push_back(isrinstr);
+				code->push_back(isrinstr);
 			}
 		}
 		break;
@@ -655,7 +655,7 @@ void CRV32::InjectISRHeader()
 	}
 }
 
-void CRV32::InjectISRFooter()
+void CRV32::InjectISRFooter(std::vector<SDecodedInstruction>* code)
 {
 	switch (m_exceptionmode)
 	{
@@ -665,7 +665,7 @@ void CRV32::InjectISRFooter()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push_back(isrinstr);
+				code->push_back(isrinstr);
 			}
 		}
 		break;
@@ -676,7 +676,7 @@ void CRV32::InjectISRFooter()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push_back(isrinstr);
+				code->push_back(isrinstr);
 			}
 		}
 		break;
@@ -687,7 +687,7 @@ void CRV32::InjectISRFooter()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push_back(isrinstr);
+				code->push_back(isrinstr);
 			}
 		}
 		break;
@@ -698,7 +698,7 @@ void CRV32::InjectISRFooter()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push_back(isrinstr);
+				code->push_back(isrinstr);
 			}
 		}
 		break;
@@ -709,7 +709,7 @@ void CRV32::InjectISRFooter()
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
-				m_instructionfifo.push_back(isrinstr);
+				code->push_back(isrinstr);
 			}
 		}
 		break;
@@ -726,6 +726,9 @@ void CRV32::InjectISRFooter()
 
 void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 {
+	uint32_t mtvec;
+	csr->Read(CSR_MTVEC << 2, mtvec);
+
 	// IRQ handling sequence
 	bool branchtomtvecforinterrupt = csr->m_irq && (m_exceptionmode == EXC_NONE);
 
@@ -736,11 +739,30 @@ void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 		else if (csr->m_irq & 2)		// timer
 			m_exceptionmode = EXC_TMI;
 
-		InjectISRHeader();
+		// NOTE: ISR header/footer uses exception mode for address
+		SDecodedBlock *blk;
+		auto found = m_decodedBlocks.find(m_exceptionmode);
+		if (found == m_decodedBlocks.end())
+		{
+			blk = new SDecodedBlock();
+			blk->m_PC = mtvec;
+			m_decodedBlocks[m_exceptionmode] = blk;
+			InjectISRHeader(&blk->m_code);
+		}
+		else
+			blk = found->second;
+
+		// Grab pre-decoded code block
+		for (auto instr : blk->m_code)
+		{
+			instr.m_pc = m_PC; // NOTE: ISR depends on this to be varying based on current PC
+			m_instructions.push_back(instr);
+		}
+
 		m_lasttrap = m_exceptionmode;
 
 		// Resume from ISR handler
-		csr->Read(CSR_MTVEC << 2, m_PC);
+		m_PC = mtvec;
 
 		return;
 	}
@@ -781,19 +803,37 @@ void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 				m_PC += 4;
 			}
 
-			// Inject instructions in the header
-			InjectISRHeader();
+			// NOTE: ISR header/footer uses exception mode for address
+			SDecodedBlock *blk;
+			auto found = m_decodedBlocks.find(m_exceptionmode);
+			if (found == m_decodedBlocks.end())
+			{
+				blk = new SDecodedBlock();
+				blk->m_PC = mtvec;
+				m_decodedBlocks[m_exceptionmode] = blk;
+				InjectISRHeader(&blk->m_code);
+			}
+			else
+				blk = found->second;
+
+			// Grab pre-decoded code block
+			for (auto instr : blk->m_code)
+			{
+				instr.m_pc = m_PC; // NOTE: ISR depends on this to be varying based on current PC
+				m_instructions.push_back(instr);
+			}
+
 			m_lasttrap = m_exceptionmode;
 		}
 		else
-			m_instructionfifo.push_back(decoded);
+			m_instructions.push_back(decoded);
 
 		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
 
 		// Determine next PC
 		if (branchtomtvecforinstr) // Route execution to mtvec
 		{
-			csr->Read(CSR_MTVEC << 2, m_PC);
+			m_PC = mtvec;
 			doneFetching = true;
 		}
 		else if (iswfi)
@@ -824,7 +864,7 @@ bool CRV32::FetchDecode(CBus* bus)
 	{
 		CCSRMem* csr = bus->GetCSR(m_hartid);
 		csr->m_pendingCPUReset = false;
-		if (m_instructionfifo.size() == 0)
+		if (m_instructions.size() == 0)
 		{
 			m_exceptionmode = EXC_NONE;
 			m_lasttrap = EXC_NONE;
@@ -859,7 +899,7 @@ bool CRV32::FetchDecode(CBus* bus)
 				m_wasmret = 0;
 				// Add footer (append _END to previous exception mode)
 				m_exceptionmode = ERV32ExceptionMode(0x80000000 | m_lasttrap);
-				InjectISRFooter();
+				InjectISRFooter(&m_instructions);
 				// We're done, can accept new interrupts now
 				m_exceptionmode = EXC_NONE;
 				m_lasttrap = EXC_NONE;
@@ -882,12 +922,8 @@ bool CRV32::FetchDecode(CBus* bus)
 bool CRV32::Execute(CBus* bus)
 {
 	CCSRMem* csr = bus->GetCSR(m_hartid);
-	while (m_instructionfifo.size())
+	for (auto &instr : m_instructions)
 	{
-		SDecodedInstruction instr;
-		instr = m_instructionfifo.front();
-		m_instructionfifo.pop_front();
-
 		csr->SetPC(instr.m_pc);
 
 		// Get register contents
@@ -957,7 +993,7 @@ bool CRV32::Execute(CBus* bus)
 
 			case OP_FENCE:
 				m_icache.Discard();
-				m_instructionfifo = {};
+				m_instructions.clear();
 				m_decodedBlocks.clear();
 				m_branchresolved = 1;
 				m_branchtarget = instr.m_pc + 4;
@@ -1278,6 +1314,8 @@ bool CRV32::Execute(CBus* bus)
 		++m_retired;
 	}
 
+	m_instructions.clear();
+
 	csr->SetRetiredInstructions(m_retired);
 	return true;
 }
@@ -1290,7 +1328,7 @@ bool CRV32::Tick(CBus* bus)
 
 	// Gather a block of code (or grab precompiled version)
 	bool fetchok = FetchDecode(bus);
-	csr->UpdateTime(m_instructionfifo.size());
+	csr->UpdateTime((uint32_t)m_instructions.size());
 	// Execute the whole block
 	Execute(bus);
 
