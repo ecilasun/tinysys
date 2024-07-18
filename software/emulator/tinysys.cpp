@@ -126,14 +126,20 @@ uint32_t videoCallback(Uint32 interval, void* param)
 	uint32_t W = ctx->surface->w;
 	uint32_t H = ctx->surface->h-8;
 	uint32_t S = ctx->emulator->m_bus->GetLEDs()->m_ledstate;
+
+	uint32_t L1 = S&0x1 ?  0xFFFFA500 : 0xFF000000;
+	uint32_t L2 = S&0x2 ?  0xFFFFA500 : 0xFF000000;
+	uint32_t L3 = S&0x4 ?  0xFFFFA500 : 0xFF000000;
+	uint32_t L4 = S&0x8 ?  0xFFFFA500 : 0xFF000000;
+	
 	for (uint32_t j = H; j < H+8; j++)
 	{
 		for (uint32_t i = 8; i < 16; i++)
 		{
-			pixels[W*j+i] = S&0x1 ?  0xFF00FF00 : 0xFF000000;
-			pixels[W*j+i+9] = S&0x2 ?  0xFF00FF00 : 0xFF000000;
-			pixels[W*j+i+18] = S&0x4 ?  0xFF00FF00 : 0xFF000000;
-			pixels[W*j+i+27] = S&0x8 ?  0xFF00FF00 : 0xFF000000;
+			pixels[W*j+i] = L1;
+			pixels[W*j+i+9] = L2;
+			pixels[W*j+i+18] = L3;
+			pixels[W*j+i+27] = L4;
 		}
 	}
 
