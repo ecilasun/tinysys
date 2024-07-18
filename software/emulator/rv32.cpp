@@ -897,9 +897,33 @@ bool CRV32::FetchDecode(CBus* bus)
 			if (m_lasttrap && m_wasmret)
 			{
 				m_wasmret = 0;
+
 				// Add footer (append _END to previous exception mode)
 				m_exceptionmode = ERV32ExceptionMode(0x80000000 | m_lasttrap);
-				InjectISRFooter(&m_instructions);
+
+				// NOTE: ISR header/footer uses exception mode for address
+				SDecodedBlock *blk;
+				auto found = m_decodedBlocks.find(m_exceptionmode);
+				if (found == m_decodedBlocks.end())
+				{
+					CCSRMem* csr = bus->GetCSR(m_hartid);
+					uint32_t mtvec;
+					csr->Read(CSR_MTVEC << 2, mtvec);
+					blk = new SDecodedBlock();
+					blk->m_PC = mtvec;
+					m_decodedBlocks[m_exceptionmode] = blk;
+					InjectISRFooter(&blk->m_code);
+				}
+				else
+					blk = found->second;
+
+				// Grab pre-decoded code block
+				for (auto instr : blk->m_code)
+				{
+					instr.m_pc = m_PC; // NOTE: ISR depends on this to be varying based on current PC
+					m_instructions.push_back(instr);
+				}
+
 				// We're done, can accept new interrupts now
 				m_exceptionmode = EXC_NONE;
 				m_lasttrap = EXC_NONE;
