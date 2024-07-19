@@ -39,7 +39,7 @@ def build(bld):
     # RELEASE
     if platform.system().lower().startswith('win'):
         libs = ['ws2_32', 'shell32', 'user32', 'Comdlg32', 'gdi32', 'ole32', 'kernel32', 'winmm', 'SDL2main', 'SDL2']
-        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_WINDOWS', 'RELEASE'] # 'MEM_DEBUG' , 'CPU_STATS'
+        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_WINDOWS', 'RELEASE'] # 'CPU_STATS'
         includes = ['source', 'includes', '3rdparty/SDL2/include', '../3rdparty/fat32']
         sdk_lib_path = os.path.abspath('3rdparty/SDL2/lib/x64/')
         compile_flags =  ['/permissive-', '/arch:AVX2', '/GL', '/WX', '/Ox', '/Ot', '/Oy', '/fp:fast', '/Qfast_transcendentals', '/Zi', '/EHsc', '/FS', '/DRELEASE', '/D_SECURE_SCL 0']

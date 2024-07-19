@@ -12,7 +12,6 @@ public:
 
 	uint32_t m_uartirq{ 0 };
 	uint32_t m_controlword{ 0 };
-	uint32_t m_clockSkip{ 0 };
 
 	void Reset() override final;
 	void Read(uint32_t address, uint32_t& data) override final;

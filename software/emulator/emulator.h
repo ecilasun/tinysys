@@ -15,10 +15,6 @@ public:
 	void QueueBytes(uint8_t *bytes, uint32_t count);
 	void QueueByte(uint8_t byte);
 
-#if defined(MEM_DEBUG)
-	void FillMemBitmap(uint32_t* pixels);
-#endif
-
 	int m_audioDevice {0};
 
 	CBus* m_bus{ nullptr };

@@ -16,7 +16,6 @@ struct EmulatorContext
 {
 	CEmulator* emulator;
 	SDL_Window* window;
-	SDL_Window* debugwindow;
 	SDL_Surface* surface;
 };
 
@@ -135,10 +134,10 @@ uint32_t videoCallback(Uint32 interval, void* param)
 	uint32_t H = ctx->surface->h-8;
 	uint32_t S = ctx->emulator->m_bus->GetLEDs()->m_ledstate;
 
-	uint32_t L1 = S&0x1 ?  0xFFFFA500 : 0xFF000000;
-	uint32_t L2 = S&0x2 ?  0xFFFFA500 : 0xFF000000;
-	uint32_t L3 = S&0x4 ?  0xFFFFA500 : 0xFF000000;
-	uint32_t L4 = S&0x8 ?  0xFFFFA500 : 0xFF000000;
+	uint32_t L1 = S&0x1 ?  0xFFFFA500 : 0xFF202020;
+	uint32_t L2 = S&0x2 ?  0xFFFFA500 : 0xFF202020;
+	uint32_t L3 = S&0x4 ?  0xFFFFA500 : 0xFF202020;
+	uint32_t L4 = S&0x8 ?  0xFFFFA500 : 0xFF202020;
 	
 	for (uint32_t j = H; j < H+8; j++)
 	{
@@ -192,25 +191,12 @@ int SDL_main(int argc, char** argv)
 	}
 	ectx.window = SDL_CreateWindow("tinysys emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT+8, SDL_WINDOW_SHOWN);
 
-#if defined(MEM_DEBUG)
-	ectx.debugwindow = SDL_CreateWindow("memdbg", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 256, 1024, SDL_WINDOW_SHOWN);
-#endif
-
 	ectx.surface = SDL_GetWindowSurface(ectx.window);
 	if (!ectx.surface)
 	{
 		printf("Could not create window surface\n");
 		return -1;
 	}
-
-#if defined(MEM_DEBUG)
-	SDL_Surface* debugsurface = SDL_GetWindowSurface(ectx.debugwindow);
-	if (!debugsurface)
-	{
-		printf("Could not create window surface\n");
-		return -1;
-	}
-#endif
 
 	SDL_AudioSpec audioSpecDesired, audioSpecObtained;
 	SDL_zero(audioSpecDesired);
@@ -260,30 +246,13 @@ int SDL_main(int argc, char** argv)
 #if defined(CPU_STATS)
 		if ((ectx.emulator->m_steps % 16384) == 0)
 		{
-			CRV32 *cpu0 = ectx.emulator->m_bus->GetCPU(0);
+			CRV32 *cpu0 = ectx.emulator->m_cpu[0];
 			printf("I$  read hits / misses: %d %d\n", cpu0->m_icache.m_hits, cpu0->m_icache.m_misses);
 			printf("D$  read hits / misses: %d %d\n", cpu0->m_dcache.m_readhits, cpu0->m_dcache.m_readmisses);
 			printf("   write hits / misses: %d %d\n", cpu0->m_dcache.m_writehits, cpu0->m_dcache.m_writemisses);
 			printf("EX retired instructions: %lld\n", cpu0->m_retired);
 			printf("EX conditional branches taken / not taken: %d / %d\n", cpu0->m_btaken, cpu0->m_bntaken);
 			printf("EX unconditional branches taken: %d\n", cpu0->m_ucbtaken);
-		}
-#endif
-
-		// SDL_PumpEvents(); ??
-
-		// Memory debug view
-#if defined(MEM_DEBUG)
-		if ((ectx.emulator->m_steps % 16384) == 0)
-		{
-			if (SDL_MUSTLOCK(debugsurface))
-				SDL_LockSurface(debugsurface);
-			// Update memory bitmap
-			uint32_t* pixels = (uint32_t*)debugsurface->pixels;
-			ectx.emulator->FillMemBitmap(pixels);
-			if (SDL_MUSTLOCK(debugsurface))
-				SDL_UnlockSurface(debugsurface);
-			SDL_UpdateWindowSurface(ectx.debugwindow);
 		}
 #endif
 	} while(s_alive);

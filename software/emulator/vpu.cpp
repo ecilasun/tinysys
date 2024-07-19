@@ -118,14 +118,16 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 		}
 		else
 		{
-			for (uint32_t i = 0; i < 640 * 480; i++)
+			// This is going to reset evrything including the 8 pixel status bar
+			for (uint32_t i = 0; i < 640 * 488; i++)
 				pixels[i] = (i%2) ? 0xFF201515 : 0xFF001515;
 		}
 	}
 
 	if (m_scanoutpointer == 0x0 || m_videoscanoutenable == 0x0)
 	{
-		for (uint32_t i = 0; i < 640 * 480; i++)
+		// This is going to reset evrything including the 8 pixel status bar
+		for (uint32_t i = 0; i < 640 * 488; i++)
 			pixels[i] = ((i/640)%2) ? 0xFF151515 : 0xFF000015;
 	}
 

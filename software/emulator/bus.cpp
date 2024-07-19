@@ -70,25 +70,6 @@ void CBus::UpdateVideoLink(uint32_t *pixels, int pitch)
 	m_vpuc->UpdateVideoLink(pixels, pitch, this);
 }
 
-#if defined(MEM_DEBUG)
-void CBus::FillMemBitmap(uint32_t* pixels)
-{
-	uint32_t* source = m_mem->GetHostAddress(0);
-
-	// System memory, 1 pixel per 1Kbytes of memory
-	for (uint32_t i = m_busactivitystart; i < m_busactivityend; ++i)
-	{
-		uint32_t mix = 0;
-		for (uint32_t j = 0; j < 256; ++j)
-			mix = (mix << 8) ^ source[i * 256 + j];
-		pixels[i] = mix | 0xFF000000;
-	}
-
-	m_busactivitystart = 0xFFFFFFFF;
-	m_busactivityend = 0x00000000;
-}
-#endif
-
 void CBus::QueueByte(uint8_t byte)
 {
 	m_uart->QueueByte(byte);
@@ -126,13 +107,4 @@ void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 {
 	uint32_t dev = address & 0x80000000 ? ((address & 0xF0000) >> 16) : 12;
 	m_devices[dev]->Write(address, data, wstrobe);
-
-#if defined(MEM_DEBUG)
-	if (dev == 12)
-	{
-		uint32_t addrkb = address / 1024;
-		m_busactivitystart = addrkb < m_busactivitystart ? addrkb : m_busactivitystart;
-		m_busactivityend = addrkb > m_busactivityend ? addrkb : m_busactivityend;
-	}
-#endif
 }
