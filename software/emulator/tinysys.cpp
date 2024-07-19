@@ -57,7 +57,7 @@ int audiothread(void* data)
 			uint8_t* source = ((uint8_t*)apu->GetPlaybackData()) + queueReadCursor;
 
 			// Queue more samples if we found some room
-			if (pastSelector == 1)			// 44.1kHz
+			if (pastSelector == 4)			// 44.1kHz
 			{
 				SDL_QueueAudio(emulator->m_audioDevice, source, QueueSampleByteSize);
 				queueReadCursor += QueueSampleByteSize;
@@ -77,7 +77,7 @@ int audiothread(void* data)
 				SDL_QueueAudio(emulator->m_audioDevice, tmpbuf, QueueSampleByteSize);
 				queueReadCursor += QueueSampleByteSize/2;
 			}
-			else if (pastSelector == 3)		// 11.025kHz
+			else if (pastSelector == 1)		// 11.025kHz
 			{
 				uint16_t* p = (uint16_t*)source;
 				for (int i = 0; i < QueueSampleCount/4; i++)
