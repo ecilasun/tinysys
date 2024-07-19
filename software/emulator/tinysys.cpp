@@ -43,30 +43,29 @@ int audiothread(void* data)
 	CAPU *apu = emulator->m_bus->GetAPU();
 	int queueReadCursor = 0;
 	uint16_t *tmpbuf = new uint16_t[QueueSampleCount*8];
+	int spaceLeft = AudioQueueCapacityInBytes;
 	do
 	{
-		uint8_t* source = (uint8_t*)apu->GetPlaybackData();
 		if (apu->m_rateselector != pastSelector)
 		{
 			pastSelector = apu->m_rateselector;
 			SDL_PauseAudioDevice(emulator->m_audioDevice, pastSelector ? 0 : 1);
 		}
 
-		int bytesQueued = SDL_GetQueuedAudioSize(emulator->m_audioDevice);
-		int spaceLeft = AudioQueueCapacityInBytes-bytesQueued;
-
 		// Check if we've got enough space in the audio queue to fit our 128 samples
 		if (pastSelector && (spaceLeft >= QueueSampleByteSize))
 		{
+			uint8_t* source = ((uint8_t*)apu->GetPlaybackData()) + queueReadCursor;
+
 			// Queue more samples if we found some room
 			if (pastSelector == 1)			// 44.1kHz
 			{
-				SDL_QueueAudio(emulator->m_audioDevice, source+queueReadCursor, QueueSampleByteSize);
+				SDL_QueueAudio(emulator->m_audioDevice, source, QueueSampleByteSize);
 				queueReadCursor += QueueSampleByteSize;
 			}
 			else if (pastSelector == 2)		// 22.05kHz
 			{
-				uint16_t* p = (uint16_t*)(source + queueReadCursor);
+				uint16_t* p = (uint16_t*)source;
 				for (int i = 0; i < QueueSampleCount/2; i++)
 				{
 					uint16_t L = p[i * 2 + 0];
@@ -81,7 +80,7 @@ int audiothread(void* data)
 			}
 			else if (pastSelector == 3)		// 11.025kHz
 			{
-				uint16_t* p = (uint16_t*)(source + queueReadCursor);
+				uint16_t* p = (uint16_t*)source;
 				for (int i = 0; i < QueueSampleCount/4; i++)
 				{
 					uint16_t L = p[i * 2 + 0];
@@ -107,6 +106,15 @@ int audiothread(void* data)
 			queueReadCursor = 0;
 			apu->FlipBuffers();
 		}
+
+		if (pastSelector)
+		{
+			int bytesQueued = SDL_GetQueuedAudioSize(emulator->m_audioDevice);
+			spaceLeft = AudioQueueCapacityInBytes-bytesQueued;
+		}
+		else
+			spaceLeft = AudioQueueCapacityInBytes;
+
 	} while(s_alive);
 
 	delete [] tmpbuf;
@@ -197,12 +205,12 @@ int SDL_main(int argc, char** argv)
 		AudioQueueCapacity = audioSpecObtained.samples;
 
 	// Enumerate audio output devices
-	fprintf(stderr, "Available audio devices:\n");
+	fprintf(stderr, "Enumerating audio devices:\n");
 	for (int i = 0; i < SDL_GetNumAudioDevices(0); i++)
 	{
-		fprintf(stderr, "  device #%d : %s\n", i, SDL_GetAudioDeviceName(i, 0));
+		fprintf(stderr, "  #%d : %s\n", i, SDL_GetAudioDeviceName(i, 0));
 	}
-	fprintf(stderr, "Using device #%d, queue size is %d samples\n", dev, AudioQueueCapacity);
+	fprintf(stderr, "Using device #%d with audio queue size of %d samples\n", dev, AudioQueueCapacity);
 
 	SDL_Thread* emulatorthreadID = SDL_CreateThread(emulatorthread, "emulator", ectx.emulator);
 	SDL_Thread* audiothreadID = SDL_CreateThread(audiothread, "audio", ectx.emulator);

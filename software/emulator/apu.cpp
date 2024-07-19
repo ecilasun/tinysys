@@ -51,7 +51,7 @@ void CAPU::Tick(CBus* bus)
 					{
 						m_data = m_fifo.front();
 						m_fifo.pop();
-						m_apuwordcount = SelectBitRange(m_data, 9,0);
+						m_apuwordcount = SelectBitRange(m_data, 9,0)+1;
 						m_state = 0;
 					}
 				}
