@@ -77,10 +77,10 @@ void CAPU::Tick(CBus* bus)
 						m_fifo.pop();
 						switch (SelectBitRange(m_data, 1, 0))
 						{
-							case 0b00: m_rateselector = 0b0100; break;
-							case 0b01: m_rateselector = 0b0010; break;
-							case 0b10: m_rateselector = 0b0001; break;
-							case 0b11: m_rateselector = 0b0000; break;
+							case 0b00: m_rateselector = 0b0100; break; // 44.1KHz
+							case 0b01: m_rateselector = 0b0010; break; // 22.05KHz
+							case 0b10: m_rateselector = 0b0001; break; // 11.025KHz
+							case 0b11: m_rateselector = 0b0000; break; // Quiet
 						}
 						m_state = 0;
 					}
