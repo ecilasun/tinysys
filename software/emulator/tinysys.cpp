@@ -134,19 +134,22 @@ uint32_t videoCallback(Uint32 interval, void* param)
 	uint32_t H = ctx->surface->h-8;
 	uint32_t S = ctx->emulator->m_bus->GetLEDs()->m_ledstate;
 
-	uint32_t L1 = S&0x1 ?  0xFFFFA500 : 0xFF202020;
-	uint32_t L2 = S&0x2 ?  0xFFFFA500 : 0xFF202020;
-	uint32_t L3 = S&0x4 ?  0xFFFFA500 : 0xFF202020;
-	uint32_t L4 = S&0x8 ?  0xFFFFA500 : 0xFF202020;
-	
-	for (uint32_t j = H; j < H+8; j++)
+	// TODO: LED image instead of flat colors
 	{
-		for (uint32_t i = 8; i < 16; i++)
+		uint32_t L1 = S&0x1 ?  0xFFFF7F00 : 0xFF201000;
+		uint32_t L2 = S&0x2 ?  0xFFFF7F00 : 0xFF201000;
+		uint32_t L3 = S&0x4 ?  0xFFFF7F00 : 0xFF201000;
+		uint32_t L4 = S&0x8 ?  0xFFFF7F00 : 0xFF201000;
+		
+		for (uint32_t j = H; j < H+8; j++)
 		{
-			pixels[W*j+i] = L1;
-			pixels[W*j+i+9] = L2;
-			pixels[W*j+i+18] = L3;
-			pixels[W*j+i+27] = L4;
+			for (uint32_t i = 8; i < 16; i++)
+			{
+				pixels[W*j+i] = L1;
+				pixels[W*j+i+9] = L2;
+				pixels[W*j+i+18] = L3;
+				pixels[W*j+i+27] = L4;
+			}
 		}
 	}
 

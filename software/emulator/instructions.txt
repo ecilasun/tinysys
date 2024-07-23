@@ -1,0 +1,75 @@
+str = store to register
+ldr = load from register
+smem = start store to memory
+lmem = start load from memory
+add = add two registers (result goes to acc)
+upd = update register contents
+rlock = lock register for async writes (increases write counter for a register)
+ulock = unlock register (auto-inserted as needed, decreases write counter for a register)
+ir = immediate register
+pc = program counter
+rs1 = source register 1
+rs2 = source register 2
+rd = destination register
+acc = accumulator / temp register
+fstp = pause fetch (usually before branch address calculation)
+fcnt = continue fetch (usually after branch address calculation)
+
+u-imm                                        rd           opcode
+[31:12                                      ][11:7       ][6:0        ]
+uimm[31:12]                                  dest         LUI                            // lui     { str rd, ir; }
+uimm[31:12]                                  dest         AUIPC                          // auipc   { add pc, ir; str rd, acc; }
+
+imm                rs1          f3           rd           opcode
+[31:20            ][19:15      ][14:12      ][11:7       ][6:0        ]
+imm[11:0]          src          addi         dest         OP-IMM                         // addi    {}
+imm[11:0]          src          slti         dest         OP-IMM                         // slti    {}
+imm[11:0]          src          sltiu        dest         OP-IMM                         // sltiu   {}
+imm[11:0]          src          andi         dest         OP-IMM                         // andi    {}
+imm[11:0]          src          ori          dest         OP-IMM                         // ori     {}
+imm[11:0]          src          xori         dest         OP-IMM                         // xori    {}
+0000000 imm[4:0]   src          slli         dest         OP-IMM                         // slli    {}
+0000000 imm[4:0]   src          srli         dest         OP-IMM                         // srli    {}
+0100000 imm[4:0]   src          srai         dest         OP-IMM                         // srai    {}
+offset[11:0]       base         0            dest         JALR                           // jalr    { fstp; addi pc, 4; str rd, acc; add rs1, ir; str pc, acc; fcnt; }
+offset[11:0]       base         width        dest         LOAD                           // load    { add rs1, ir; rlock rd; lmem rd, acc; }
+
+imm                rs2          rs1          f3            rd             opcode
+[31:25            ][24:20      ][19:15      ][14:12       ][11:7         ][6:0        ]
+0000000            src2         src1         add           dest           OP             // add
+0000000            src2         src1         slt           dest           OP             // slt
+0000000            src2         src1         sltu          dest           OP             // sltu
+0000000            src2         src1         and           dest           OP             // and
+0000000            src2         src1         or            dest           OP             // or
+0000000            src2         src1         xor           dest           OP             // xor
+0000000            src2         src1         sll           dest           OP             // sll
+0000000            src2         src1         srl           dest           OP             // srl
+0100000            src2         src1         sub           dest           OP             // sub
+0100000            src2         src1         sra           dest           OP             // sra
+offset[12|10:5]    src2         src1         beq           offset[11|4:1] BRANCH         // beq
+offset[12|10:5]    src2         src1         bne           offset[11|4:1] BRANCH         // bne
+offset[12|10:5]    src2         src1         blt           offset[11|4:1] BRANCH         // blt
+offset[12|10:5]    src2         src1         bltu          offset[11|4:1] BRANCH         // bltu
+offset[12|10:5]    src2         src1         bge           offset[11|4:1] BRANCH         // bge
+offset[12|10:5]    src2         src1         bgeu          offset[11|4:1] BRANCH         // bgeu
+offset[11:5]       src          base         width         offset[4:0]    STORE          // store
+MULDIV             multiplier   multiplicand MUL           dest           OP             // mul
+MULDIV             multiplier   multiplicand MULH          dest           OP             // mulh
+MULDIV             multiplier   multiplicand MULHSU        dest           OP             // mulsu
+MULDIV             multiplier   multiplicand MULHU         dest           OP             // mulhu
+MULDIV             divisor      dividend     DIV           dest           OP             // div
+MULDIV             divisor      dividend     DIVU          dest           OP             // divu
+MULDIV             divisor      dividend     REM           dest           OP             // rem
+MULDIV             divisor      dividend     REMU          dest           OP             // remu
+
+imm[20]   imm[10:1]  imm[11]  imm[19:12]  rd      opcode
+[31      ][30:21    ][20     ][19:12     ][11:7  ][6:0    ]
+offset[20:1]                               dest   JAL                                    // jal     { fstp; addi pc, 4; str rd, acc; add pc, ir; str pc, acc; fcnt; }
+
+flags                            rs1        f3         rd           opcode
+[31:20                          ][19:15    ][14:12    ][11:7       ][6:0        ]
+FM[3:0]|PI|PO|PR|PW|SI|SO|SR|SW  0          FENCE      0            MISC-MEM             // fence
+0                                0          FENCE.I    0            MISC-MEM             // fence.i
+ECALL                            0          PRIV       0            SYSTEM               // ecall
+EBREAK                           0          PRIV       0            SYSTEM               // ebreak
+
