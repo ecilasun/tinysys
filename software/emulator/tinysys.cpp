@@ -197,10 +197,11 @@ int SDL_main(int argc, char** argv)
 	bool success;
 
 	const uint32_t resetvector = 0x0FFE0000;
-	if (argc<=1)
-		success = ectx.emulator->Reset("rom.bin", resetvector);
-	else
-		success = ectx.emulator->Reset(argv[1], resetvector);
+	char bootRom[256] = "rom.bin";
+	if (argc>1)
+		strncpy(bootRom, argv[1], 255);
+
+	success = ectx.emulator->Reset(bootRom, resetvector);
 
 	if (!success)
 	{
@@ -256,7 +257,10 @@ int SDL_main(int argc, char** argv)
 	SDL_Thread* audiothreadID = SDL_CreateThread(audiothread, "audio", ectx.emulator);
 	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, &ectx); // 60fps
 
-	s_textSurface = TTF_RenderText_Blended(s_debugfont, emulatorVersionString, {255,255,255});
+	char bootString[256];
+	sprintf(bootString, "%s : %s", emulatorVersionString, bootRom);
+
+	s_textSurface = TTF_RenderText_Blended_Wrapped(s_debugfont, bootString, {255,255,255}, WIDTH);
 
 	SDL_Event ev;
 	do
