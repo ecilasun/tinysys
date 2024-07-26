@@ -156,6 +156,7 @@ uint32_t videoCallback(Uint32 interval, void* param)
 		}
 	}
 
+	// Stay up for 2 seconds
 	if (s_logotime < 120)
 	{
 		// Center the splash image
@@ -163,9 +164,16 @@ uint32_t videoCallback(Uint32 interval, void* param)
 		splashRect.x = (W-splashRect.w)/2;
 		splashRect.y = (H-splashRect.h)/2;
 
-		for (uint32_t j = splashRect.y-4; j < splashRect.y+splashRect.h+4; j++)
+		int m = 0;
+		int top = splashRect.y-4;
+		int bottom = splashRect.y+splashRect.h+4;
+		int d = bottom-top;
+		for (uint32_t j = top; j < bottom; j++)
+		{
+			m = 255*(j-top)/d;
 			for (uint32_t i = 0; i < W; i++)
-				pixels[W*j+i] = 0xFF201000;
+				pixels[W*j+i] = 0xFF000000 | (m);
+		}
 
 		SDL_BlitSurface(s_textSurface, nullptr, ctx->surface, &splashRect);
 	}
