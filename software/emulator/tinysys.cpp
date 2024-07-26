@@ -1,16 +1,22 @@
 #include <stdio.h>
 #include "emulator.h"
 
-#ifdef CAT_WINDOWS
 #include "SDL.h"
+
+#ifdef CAT_WINDOWS
+// 
 #else
-#include <SDL2/SDL.h>
+#include "SDL_ttf.h"
 #endif
 
 static int AudioQueueCapacity = 1024;	// Size of the audio queue in samples
 const int QueueSampleCount = 64;		// Push this many samples to the queue per iteration
 static int AudioQueueCapacityInBytes = AudioQueueCapacity*sizeof(uint16_t)*2;
 const int QueueSampleByteSize = QueueSampleCount*sizeof(int16_t)*2;
+
+static TTF_Font* s_debugfont = nullptr;
+static SDL_Surface* s_textSurface = nullptr;
+static uint32_t s_logotime = 0;
 
 struct EmulatorContext
 {
@@ -153,6 +159,10 @@ uint32_t videoCallback(Uint32 interval, void* param)
 		}
 	}
 
+	if (s_logotime < 120)
+		SDL_BlitSurface(s_textSurface, nullptr, ctx->surface, nullptr);
+	++s_logotime;
+
 	if (SDL_MUSTLOCK(ctx->surface))
 		SDL_UnlockSurface(ctx->surface);
 	SDL_UpdateWindowSurface(ctx->window);
@@ -166,7 +176,7 @@ int main(int argc, char** argv)
 int SDL_main(int argc, char** argv)
 #endif
 {
-	printf("tinysys emulator v0.5\n");
+	fprintf(stderr, "tinysys emulator v0.5\n");
 
 	EmulatorContext ectx;
 	ectx.emulator = new CEmulator;
@@ -180,7 +190,7 @@ int SDL_main(int argc, char** argv)
 
 	if (!success)
 	{
-		printf("Failed to load ROM\n");
+		fprintf(stderr, "Failed to load ROM\n");
 		return -1;
 	}
 
@@ -189,15 +199,27 @@ int SDL_main(int argc, char** argv)
 
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
 	{
-		printf("Error initializing SDL2: %s\n", SDL_GetError());
+		fprintf(stderr, "Error initializing SDL2: %s\n", SDL_GetError());
 		return -1;
 	}
 	ectx.window = SDL_CreateWindow("tinysys emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT+8, SDL_WINDOW_SHOWN);
 
+	if (TTF_Init() != 0)
+	{
+		fprintf(stderr, "Error initializing SDL2_ttf: %s\n", TTF_GetError());
+		return -1;
+	}
+	s_debugfont = TTF_OpenFont("DejaVuSansMono.ttf", 16);
+	if (!s_debugfont)
+	{
+		fprintf(stderr, "Error loading font: %s\n", TTF_GetError());
+		return -1;
+	}
+
 	ectx.surface = SDL_GetWindowSurface(ectx.window);
 	if (!ectx.surface)
 	{
-		printf("Could not create window surface\n");
+		fprintf(stderr, "Could not create window surface\n");
 		return -1;
 	}
 
@@ -227,6 +249,8 @@ int SDL_main(int argc, char** argv)
 	SDL_Thread* emulatorthreadID = SDL_CreateThread(emulatorthread, "emulator", ectx.emulator);
 	SDL_Thread* audiothreadID = SDL_CreateThread(audiothread, "audio", ectx.emulator);
 	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, &ectx); // 60fps
+
+	s_textSurface = TTF_RenderText_Blended(s_debugfont, "tinysys emulator", {255,255,255});
 
 	SDL_Event ev;
 	do
@@ -260,6 +284,8 @@ int SDL_main(int argc, char** argv)
 #endif
 	} while(s_alive);
 
+	TTF_CloseFont(s_debugfont);
+	TTF_Quit();
 	SDL_RemoveTimer(videoTimer);
 	SDL_WaitThread(emulatorthreadID, nullptr);
 	SDL_WaitThread(audiothreadID, nullptr);
