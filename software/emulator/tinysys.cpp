@@ -294,6 +294,7 @@ int SDL_main(int argc, char** argv)
 #endif
 	} while(s_alive);
 
+	SDL_FreeSurface(s_textSurface);
 	TTF_CloseFont(s_debugfont);
 	TTF_Quit();
 	SDL_RemoveTimer(videoTimer);
