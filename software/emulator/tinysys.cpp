@@ -162,6 +162,11 @@ uint32_t videoCallback(Uint32 interval, void* param)
 		SDL_Rect splashRect = s_textSurface->clip_rect;
 		splashRect.x = (W-splashRect.w)/2;
 		splashRect.y = (H-splashRect.h)/2;
+
+		for (uint32_t j = splashRect.y-4; j < splashRect.y+splashRect.h+4; j++)
+			for (uint32_t i = 0; i < W; i++)
+				pixels[W*j+i] = 0xFF201000;
+
 		SDL_BlitSurface(s_textSurface, nullptr, ctx->surface, &splashRect);
 	}
 	++s_logotime;
@@ -210,7 +215,7 @@ int SDL_main(int argc, char** argv)
 		fprintf(stderr, "Error initializing SDL2_ttf: %s\n", TTF_GetError());
 		return -1;
 	}
-	s_debugfont = TTF_OpenFont("DejaVuSansMono.ttf", 16);
+	s_debugfont = TTF_OpenFont("DejaVuSansMono.ttf", 12);
 	if (!s_debugfont)
 	{
 		fprintf(stderr, "Error loading font: %s\n", TTF_GetError());
