@@ -2,12 +2,7 @@
 #include "emulator.h"
 
 #include "SDL.h"
-
-#ifdef CAT_WINDOWS
-// 
-#else
 #include "SDL_ttf.h"
-#endif
 
 static int AudioQueueCapacity = 1024;	// Size of the audio queue in samples
 const int QueueSampleCount = 64;		// Push this many samples to the queue per iteration
