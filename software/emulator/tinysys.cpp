@@ -258,7 +258,7 @@ int SDL_main(int argc, char** argv)
 	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, &ectx); // 60fps
 
 	char bootString[256];
-	sprintf(bootString, "%s : %s", emulatorVersionString, bootRom);
+	snprintf(bootString, 255, "%s : %s", emulatorVersionString, bootRom);
 
 	s_textSurface = TTF_RenderText_Blended_Wrapped(s_debugfont, bootString, {255,255,255}, WIDTH);
 
