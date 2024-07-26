@@ -4,6 +4,8 @@
 #include "SDL.h"
 #include "SDL_ttf.h"
 
+static const char* emulatorVersionString = "tinysys emulator v0.7";
+
 static int AudioQueueCapacity = 1024;	// Size of the audio queue in samples
 const int QueueSampleCount = 64;		// Push this many samples to the queue per iteration
 static int AudioQueueCapacityInBytes = AudioQueueCapacity*sizeof(uint16_t)*2;
@@ -155,7 +157,13 @@ uint32_t videoCallback(Uint32 interval, void* param)
 	}
 
 	if (s_logotime < 120)
-		SDL_BlitSurface(s_textSurface, nullptr, ctx->surface, nullptr);
+	{
+		// Center the splash image
+		SDL_Rect splashRect = s_textSurface->clip_rect;
+		splashRect.x = (W-splashRect.w)/2;
+		splashRect.y = (H-splashRect.h)/2;
+		SDL_BlitSurface(s_textSurface, nullptr, ctx->surface, &splashRect);
+	}
 	++s_logotime;
 
 	if (SDL_MUSTLOCK(ctx->surface))
@@ -171,8 +179,6 @@ int main(int argc, char** argv)
 int SDL_main(int argc, char** argv)
 #endif
 {
-	fprintf(stderr, "tinysys emulator v0.5\n");
-
 	EmulatorContext ectx;
 	ectx.emulator = new CEmulator;
 	bool success;
@@ -197,7 +203,7 @@ int SDL_main(int argc, char** argv)
 		fprintf(stderr, "Error initializing SDL2: %s\n", SDL_GetError());
 		return -1;
 	}
-	ectx.window = SDL_CreateWindow("tinysys emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT+8, SDL_WINDOW_SHOWN);
+	ectx.window = SDL_CreateWindow("tinysys", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT+8, SDL_WINDOW_SHOWN);
 
 	if (TTF_Init() != 0)
 	{
@@ -233,19 +239,11 @@ int SDL_main(int argc, char** argv)
 	if (dev)
 		AudioQueueCapacity = audioSpecObtained.samples;
 
-	// Enumerate audio output devices
-	fprintf(stderr, "Enumerating audio devices:\n");
-	for (int i = 0; i < SDL_GetNumAudioDevices(0); i++)
-	{
-		fprintf(stderr, "  #%d : %s\n", i, SDL_GetAudioDeviceName(i, 0));
-	}
-	fprintf(stderr, "Using device #%d with audio queue size of %d samples\n", dev, AudioQueueCapacity);
-
 	SDL_Thread* emulatorthreadID = SDL_CreateThread(emulatorthread, "emulator", ectx.emulator);
 	SDL_Thread* audiothreadID = SDL_CreateThread(audiothread, "audio", ectx.emulator);
 	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, &ectx); // 60fps
 
-	s_textSurface = TTF_RenderText_Blended(s_debugfont, "tinysys emulator", {255,255,255});
+	s_textSurface = TTF_RenderText_Blended(s_debugfont, emulatorVersionString, {255,255,255});
 
 	SDL_Event ev;
 	do
