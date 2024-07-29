@@ -50,7 +50,7 @@ def build(bld):
         linker_flags = ['/SUBSYSTEM:CONSOLE', '/LTCG', '/RELEASE']
     elif platform.system().lower().startswith('darwin'):
         libs = ['SDL2', 'SDL2_ttf']
-        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_DARWIN', 'RELEASE']
+        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_DARWIN', 'RELEASE'] # 'CPU_STATS'
         includes = ['source', 'includes', '/opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2', '/opt/homebrew/Cellar/sdl2_ttf/2.22.0/include/SDL2', '../3rdparty/fat32']
         sdk_lib_path = ['/opt/homebrew/Cellar/sdl2/2.30.5/lib/', '/opt/homebrew/Cellar/sdl2_ttf/2.22.0/lib/']
         compile_flags = ['-march=native', '-O3', '-arch', 'arm64']
@@ -58,7 +58,7 @@ def build(bld):
         linker_flags = []
     elif platform.system().lower().startswith('linux'):
         libs = ['SDL2']
-        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_LINUX', 'RELEASE']
+        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_LINUX', 'RELEASE'] # 'CPU_STATS'
         includes = ['source', 'includes', '/opt/sdl2/2.30.5/include', '../3rdparty/fat32']
         sdk_lib_path = ['/opt/sdl2/2.30.5/lib/']
         compile_flags = ['-march=native', '-O3']

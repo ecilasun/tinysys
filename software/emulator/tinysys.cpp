@@ -15,6 +15,9 @@ static TTF_Font* s_debugfont = nullptr;
 static SDL_Surface* s_textSurface = nullptr;
 static uint32_t s_logotime = 0;
 
+const int WIDTH = 640;
+const int HEIGHT = 480;
+
 struct EmulatorContext
 {
 	CEmulator* emulator;
@@ -156,6 +159,13 @@ uint32_t videoCallback(Uint32 interval, void* param)
 		}
 	}
 
+#if defined(CPU_STATS)
+	{
+		SDL_Rect statRect = s_textSurface->clip_rect;
+		statRect.y = H-statRect.h;
+		SDL_BlitSurface(s_textSurface, nullptr, ctx->surface, &statRect);
+	}
+#else
 	// Stay up for 2 seconds
 	if (s_logotime < 120)
 	{
@@ -178,6 +188,7 @@ uint32_t videoCallback(Uint32 interval, void* param)
 		SDL_BlitSurface(s_textSurface, nullptr, ctx->surface, &splashRect);
 	}
 	++s_logotime;
+#endif
 
 	if (SDL_MUSTLOCK(ctx->surface))
 		SDL_UnlockSurface(ctx->surface);
@@ -185,6 +196,36 @@ uint32_t videoCallback(Uint32 interval, void* param)
 
 	return interval;
 }
+
+		// Print CPU stats
+#if defined(CPU_STATS)
+uint32_t statsCallback(Uint32 interval, void* param)
+{
+	EmulatorContext* ctx = (EmulatorContext*)param;
+	char stats[513];
+	CRV32 *cpu0 = ctx->emulator->m_cpu[0];
+	snprintf(stats, 512, "CPU0 stats (over last second)\n");
+	snprintf(stats, 512, "%sI$  read hits / misses: %d %d\n", stats, cpu0->m_icache.m_hits, cpu0->m_icache.m_misses);
+	snprintf(stats, 512, "%sD$  read hits / misses: %d %d\n", stats, cpu0->m_dcache.m_readhits, cpu0->m_dcache.m_readmisses);
+	snprintf(stats, 512, "%s   write hits / misses: %d %d\n", stats, cpu0->m_dcache.m_writehits, cpu0->m_dcache.m_writemisses);
+	snprintf(stats, 512, "%sEX retired instructions: %lld\n", stats, cpu0->m_retired);
+	snprintf(stats, 512, "%sEX conditional branches taken / not taken: %d / %d\n", stats, cpu0->m_btaken, cpu0->m_bntaken);
+	snprintf(stats, 512, "%sEX unconditional branches taken: %d\n", stats, cpu0->m_ucbtaken);
+
+	s_textSurface = TTF_RenderText_Blended_Wrapped(s_debugfont, stats, {255,255,255}, WIDTH);
+	cpu0->m_icache.m_hits = 0;
+	cpu0->m_icache.m_misses = 0;
+	cpu0->m_dcache.m_readhits = 0;
+	cpu0->m_dcache.m_readmisses = 0;
+	cpu0->m_dcache.m_writehits = 0;
+	cpu0->m_dcache.m_writemisses = 0;
+	cpu0->m_retired = 0;
+	cpu0->m_btaken = 0;
+	cpu0->m_bntaken = 0;
+
+	return interval;
+}
+#endif
 
 #if defined(CAT_LINUX) || defined(CAT_DARWIN)
 int main(int argc, char** argv)
@@ -208,9 +249,6 @@ int SDL_main(int argc, char** argv)
 		fprintf(stderr, "Failed to load ROM\n");
 		return -1;
 	}
-
-	const int WIDTH = 640;
-	const int HEIGHT = 480;
 
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
 	{
@@ -256,6 +294,9 @@ int SDL_main(int argc, char** argv)
 	SDL_Thread* emulatorthreadID = SDL_CreateThread(emulatorthread, "emulator", ectx.emulator);
 	SDL_Thread* audiothreadID = SDL_CreateThread(audiothread, "audio", ectx.emulator);
 	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, &ectx); // 60fps
+#if defined(CPU_STATS)
+	SDL_TimerID statsTimer = SDL_AddTimer(1000, statsCallback, &ectx);
+#endif
 
 	char bootString[256];
 	snprintf(bootString, 255, "%s : %s", emulatorVersionString, bootRom);
@@ -282,20 +323,6 @@ int SDL_main(int argc, char** argv)
 				}
 			}
 		}
-
-		// Print CPU stats
-#if defined(CPU_STATS)
-		if ((ectx.emulator->m_steps % 16384) == 0)
-		{
-			CRV32 *cpu0 = ectx.emulator->m_cpu[0];
-			printf("I$  read hits / misses: %d %d\n", cpu0->m_icache.m_hits, cpu0->m_icache.m_misses);
-			printf("D$  read hits / misses: %d %d\n", cpu0->m_dcache.m_readhits, cpu0->m_dcache.m_readmisses);
-			printf("   write hits / misses: %d %d\n", cpu0->m_dcache.m_writehits, cpu0->m_dcache.m_writemisses);
-			printf("EX retired instructions: %lld\n", cpu0->m_retired);
-			printf("EX conditional branches taken / not taken: %d / %d\n", cpu0->m_btaken, cpu0->m_bntaken);
-			printf("EX unconditional branches taken: %d\n", cpu0->m_ucbtaken);
-		}
-#endif
 	} while(s_alive);
 
 	SDL_FreeSurface(s_textSurface);
