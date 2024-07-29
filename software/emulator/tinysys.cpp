@@ -271,11 +271,15 @@ int SDL_main(int argc, char** argv)
 				s_alive = false;
 			else if (ev.type == SDL_KEYUP)
 			{
-				const Uint8* state = SDL_GetKeyboardState(nullptr);
-				if (state[SDL_SCANCODE_LCTRL] && ev.key.keysym.sym == 'c')
+				if ((ev.key.keysym.mod & KMOD_CTRL) && ev.key.keysym.sym == 'c')
 					ectx.emulator->QueueByte(3);
-				else if (ev.key.keysym.sym != SDLK_LCTRL)
-					ectx.emulator->QueueByte(ev.key.keysym.sym);
+				else if (ev.key.keysym.sym != SDLK_LCTRL && ev.key.keysym.sym != SDLK_LSHIFT && ev.key.keysym.sym != SDLK_RSHIFT)
+				{
+					if (ev.key.keysym.mod & KMOD_SHIFT)
+						ectx.emulator->QueueByte(0x5F & ev.key.keysym.sym);
+					else
+						ectx.emulator->QueueByte(ev.key.keysym.sym);
+				}
 			}
 		}
 
