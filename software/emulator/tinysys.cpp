@@ -15,6 +15,10 @@ static TTF_Font* s_debugfont = nullptr;
 static SDL_Surface* s_textSurface = nullptr;
 static uint32_t s_logotime = 0;
 
+#if defined(CPU_STATS)
+static SDL_Surface* s_statSurface = nullptr;
+#endif
+
 const int WIDTH = 640;
 const int HEIGHT = 480;
 
@@ -23,6 +27,7 @@ struct EmulatorContext
 	CEmulator* emulator;
 	SDL_Window* window;
 	SDL_Surface* surface;
+	SDL_Surface* compositesurface;
 };
 
 static bool s_alive = true;
@@ -130,14 +135,14 @@ int audiothread(void* data)
 uint32_t videoCallback(Uint32 interval, void* param)
 {
 	EmulatorContext* ctx = (EmulatorContext*)param;
-	if (SDL_MUSTLOCK(ctx->surface))
-		SDL_LockSurface(ctx->surface);
+	if (SDL_MUSTLOCK(ctx->compositesurface))
+		SDL_LockSurface(ctx->compositesurface);
 
-	uint32_t* pixels = (uint32_t*)ctx->surface->pixels;
-	ctx->emulator->UpdateVideoLink(pixels, ctx->surface->pitch);
+	uint32_t* pixels = (uint32_t*)ctx->compositesurface->pixels;
+	ctx->emulator->UpdateVideoLink(pixels, ctx->compositesurface->pitch);
 
-	uint32_t W = ctx->surface->w;
-	uint32_t H = ctx->surface->h-8;
+	uint32_t W = ctx->compositesurface->w;
+	uint32_t H = ctx->compositesurface->h-8;
 	uint32_t S = ctx->emulator->m_bus->GetLEDs()->m_ledstate;
 
 	// TODO: LED image instead of flat colors
@@ -159,21 +164,14 @@ uint32_t videoCallback(Uint32 interval, void* param)
 		}
 	}
 
-#if defined(CPU_STATS)
-	{
-		SDL_Rect statRect = s_textSurface->clip_rect;
-		statRect.y = H-statRect.h;
-		SDL_BlitSurface(s_textSurface, nullptr, ctx->surface, &statRect);
-	}
-#else
+	// Center the splash image
+	SDL_Rect splashRect = s_textSurface ? s_textSurface->clip_rect : SDL_Rect();
+	splashRect.x = (W-splashRect.w)/2;
+	splashRect.y = (H-splashRect.h)/2;
+
 	// Stay up for 2 seconds
 	if (s_logotime < 120)
 	{
-		// Center the splash image
-		SDL_Rect splashRect = s_textSurface->clip_rect;
-		splashRect.x = (W-splashRect.w)/2;
-		splashRect.y = (H-splashRect.h)/2;
-
 		int m = 0;
 		int top = splashRect.y-4;
 		int bottom = splashRect.y+splashRect.h+4;
@@ -184,14 +182,28 @@ uint32_t videoCallback(Uint32 interval, void* param)
 			for (uint32_t i = 0; i < W; i++)
 				pixels[W*j+i] = 0xFF000000 | (m);
 		}
-
-		SDL_BlitSurface(s_textSurface, nullptr, ctx->surface, &splashRect);
 	}
+
+	if (SDL_MUSTLOCK(ctx->compositesurface))
+		SDL_UnlockSurface(ctx->compositesurface);
+
+	if (s_logotime < 120 && s_textSurface)
+		SDL_BlitSurface(s_textSurface, nullptr, ctx->compositesurface, &splashRect);
+
 	++s_logotime;
+
+#if defined(CPU_STATS)
+	if (s_statSurface)
+	{
+		SDL_Rect statRect = s_statSurface->clip_rect;
+		statRect.y = H-statRect.h;
+
+		SDL_BlitSurface(s_statSurface, nullptr, ctx->compositesurface, &statRect);
+	}
 #endif
 
-	if (SDL_MUSTLOCK(ctx->surface))
-		SDL_UnlockSurface(ctx->surface);
+	// Update window surface
+	SDL_BlitSurface(ctx->compositesurface, nullptr, ctx->surface, nullptr);
 	SDL_UpdateWindowSurface(ctx->window);
 
 	return interval;
@@ -205,14 +217,15 @@ uint32_t statsCallback(Uint32 interval, void* param)
 	char stats[513];
 	CRV32 *cpu0 = ctx->emulator->m_cpu[0];
 	snprintf(stats, 512, "CPU0 stats (over last second)\n");
-	snprintf(stats, 512, "%sI$  read hits / misses: %d %d\n", stats, cpu0->m_icache.m_hits, cpu0->m_icache.m_misses);
-	snprintf(stats, 512, "%sD$  read hits / misses: %d %d\n", stats, cpu0->m_dcache.m_readhits, cpu0->m_dcache.m_readmisses);
-	snprintf(stats, 512, "%s   write hits / misses: %d %d\n", stats, cpu0->m_dcache.m_writehits, cpu0->m_dcache.m_writemisses);
+	snprintf(stats, 512, "%sI$  read hits / misses: %d / %d\n", stats, cpu0->m_icache.m_hits, cpu0->m_icache.m_misses);
 	snprintf(stats, 512, "%sEX retired instructions: %lld\n", stats, cpu0->m_retired);
 	snprintf(stats, 512, "%sEX conditional branches taken / not taken: %d / %d\n", stats, cpu0->m_btaken, cpu0->m_bntaken);
 	snprintf(stats, 512, "%sEX unconditional branches taken: %d\n", stats, cpu0->m_ucbtaken);
+	snprintf(stats, 512, "%sD$  read hits / misses: %d / %d\n", stats, cpu0->m_dcache.m_readhits, cpu0->m_dcache.m_readmisses);
+	snprintf(stats, 512, "%s   write hits / misses: %d / %d\n", stats, cpu0->m_dcache.m_writehits, cpu0->m_dcache.m_writemisses);
 
-	s_textSurface = TTF_RenderText_Blended_Wrapped(s_debugfont, stats, {255,255,255}, WIDTH);
+	s_statSurface = TTF_RenderText_Blended_Wrapped(s_debugfont, stats, {255,0,255}, WIDTH);
+
 	cpu0->m_icache.m_hits = 0;
 	cpu0->m_icache.m_misses = 0;
 	cpu0->m_dcache.m_readhits = 0;
@@ -275,6 +288,8 @@ int SDL_main(int argc, char** argv)
 		fprintf(stderr, "Could not create window surface\n");
 		return -1;
 	}
+	// Compositor surface
+	ectx.compositesurface = SDL_CreateRGBSurfaceWithFormat(0, WIDTH, HEIGHT+8, 32, SDL_PIXELFORMAT_ARGB8888);
 
 	SDL_AudioSpec audioSpecDesired, audioSpecObtained;
 	SDL_zero(audioSpecDesired);
@@ -325,6 +340,10 @@ int SDL_main(int argc, char** argv)
 		}
 	} while(s_alive);
 
+#if defined(CPU_STATS)
+	SDL_FreeSurface(s_statSurface);
+#endif
+
 	SDL_FreeSurface(s_textSurface);
 	TTF_CloseFont(s_debugfont);
 	TTF_Quit();
@@ -332,6 +351,7 @@ int SDL_main(int argc, char** argv)
 	SDL_WaitThread(emulatorthreadID, nullptr);
 	SDL_WaitThread(audiothreadID, nullptr);
 	SDL_ClearQueuedAudio(ectx.emulator->m_audioDevice);
+	SDL_FreeSurface(ectx.compositesurface);
 	SDL_FreeSurface(ectx.surface);
 	SDL_DestroyWindow(ectx.window);
 	SDL_CloseAudioDevice(ectx.emulator->m_audioDevice);

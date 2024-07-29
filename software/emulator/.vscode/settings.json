@@ -5,6 +5,7 @@
 		"queue": "cpp",
 		"deque": "cpp",
 		"xtree": "cpp",
-		"vector": "cpp"
+		"vector": "cpp",
+		"random": "cpp"
 	}
 }
