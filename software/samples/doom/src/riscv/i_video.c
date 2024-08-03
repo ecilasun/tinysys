@@ -33,7 +33,6 @@
 
 uint8_t *framebuffer;
 #include "dma.h"
-uint32_t prevvblankcount;
 struct EVideoContext g_vctx;
 
 void
@@ -50,8 +49,6 @@ I_InitGraphics(void)
 	VPUSetVMode(&g_vctx, EVS_Enable);
 	VPUSetWriteAddress(&g_vctx, (uint32_t)framebuffer);
 	VPUSetScanoutAddress(&g_vctx, (uint32_t)framebuffer);
-
-	prevvblankcount = VPUReadVBlankCounter();
 }
 
 void
@@ -122,8 +119,7 @@ void
 I_WaitVBL(int count)
 {
 	// Wait until we exit current frame's vbcounter and enter the next one
-	while (prevvblankcount == VPUReadVBlankCounter()) { }
-	prevvblankcount = VPUReadVBlankCounter();
+	VPUWaitVSync();
 }
 
 void
