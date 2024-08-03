@@ -7,12 +7,17 @@ If you wish to actually run things on a real piece of hardware:
 - Next step is to acquire (or use an existing) QMTECH A7200T core board (I'll build my own single board computer later, promise!)
 
 If you wish to work on software:
-- To be able to compile your own executables, or ROM images, you'll need a prebuilt gcc risc-v toolchain from:
-https://www.embecosm.com/resources/tool-chain-downloads/
+- To be able to compile your own executables, or ROM images, you'll need a prebuilt gcc risc-v toolchain from the following link.
+<br>(NOTE: The default compiler setup for samples and ROM images uses gcc, so please make sure to get that package)
+<br>https://www.embecosm.com/resources/tool-chain-downloads/
+- In case you need it, you can find 'make' binaries here:
+<br>https://gnuwin32.sourceforge.net/packages/make.htm
+<br>(Make sure to also install libintl3 from same source and make sure it's on the path as well as the make.exe from the bin package)
 - If you wish to build your own ROM images, you'll also need a working python3 install to make sure the waf build system functions as intended.
 - To be able to compile riscvtool, you'll also need a working cpp compiler targeting the platform you're going to build on (windows/linux/macos etc)
 - I advise using Visual Studio Code, but it's optional (all step below try to show both VSC and command line usage)
-- To compile the ROM image and program the ESP32-C6 device (our communication module) for the first time, you'll need to install ESP-IDF addon for your Visual Studio Code (see https://github.com/espressif/vscode-esp-idf-extension/releases/ for releases)
+- To compile the ROM image and program the ESP32-C6 device (our communication module) for the first time, you'll need to install ESP-IDF addon for your Visual Studio Code
+<br>See https://github.com/espressif/vscode-esp-idf-extension/releases/ for latest release
 
 Or if you wish to simply browse / copy code or hardware details, feel free to do so, and don't forget to credit me or other people for their respective work!
 
