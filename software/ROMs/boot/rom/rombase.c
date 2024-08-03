@@ -626,8 +626,6 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				// 1025			rename			int rename(const char *oldpath, const char *newpath);
 				// 1026			remove			remove(const char *fname);
 				// 1038 		_stat			int stat(const char *path, struct stat *buf);
-				// Custom
-				// 0xFFFFFFFF	setdebugger	void *setdebugger(unsigned int flags); // flags: connect/disconnect
 
 				if (value==0) // io_setup()
 				{
@@ -1048,11 +1046,6 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 						buf->st_ctim.tv_nsec = 0;
 						write_csr(0x8AA, 0x0);
 					}
-				}
-				else if (value==0xFFFFFFFF) // setdebugger()
-				{
-					// kprintf("Unimplemented debugger interface\n");
-					write_csr(0x8AA, 0xFFFFFFFF);
 				}
 				else // Unimplemented syscalls drop here
 				{

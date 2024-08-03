@@ -23,9 +23,9 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "v1.07"
+#define VERSIONSTRING "v1.08"
 // On-storage version
-#define DEVVERSIONSTRING "v1.07"
+#define DEVVERSIONSTRING "v1.08"
 
 static char s_execName[33] = "";
 static char s_execParam0[33] = "";
@@ -349,33 +349,34 @@ uint32_t ExecuteCmd(char *_cmd)
 	{
 		VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
 
-		kprintf("\n                                                   \n");
-		kprintf(" COMMAND      | USAGE                              \n");
-		kprintf(" cls          | Clear terminal                     \n");
-		kprintf(" cd path      | Change working directory           \n");
-		kprintf(" del fname    | Delete file                        \n");
-		kprintf(" dir [path]   | Show list of files in cwd or path  \n");
-		kprintf(" mem          | Show available memory              \n");
-		kprintf(" pwd          | Show current work directory        \n");
-		kprintf(" reboot       | Reboot the device                  \n");
-		kprintf(" ren old new  | Rename file from old to new name   \n");
-		kprintf(" ver          | Show version info                  \n");
+		kprintf("\n                                                     \n");
+		kprintf(" COMMAND      | USAGE                                \n");
+		kprintf(" cls          | Clear terminal                       \n");
+		kprintf(" cd path      | Change working directory             \n");
+		kprintf(" del fname    | Delete file                          \n");
+		kprintf(" dir [path]   | Show list of files in cwd or path    \n");
+		kprintf(" mem          | Show available memory                \n");
+		kprintf(" proc cpu     | Show process info for given CPU(0/1) \n");
+		kprintf(" pwd          | Show current work directory          \n");
+		kprintf(" reboot       | Reboot the device                    \n");
+		kprintf(" ren old new  | Rename file from old to new name     \n");
+		kprintf(" ver          | Show version info                    \n");
+		kprintf("                                                     \n");
 
 		// Hidden commands for dev mode reveal when running from overlay
 		uint32_t waterMark = read_csr(0xFF0);
 		if (waterMark != 0)
 		{
-			kprintf("---------------------------------------------------\n");
-			kprintf(" DEV MODE SPECIFIC - USE AT YOUR OWN RISK          \n");
-			kprintf(" COMMAND      | USAGE                              \n");
-			kprintf(" kill pid cpu | Kill process with id pid on CPU    \n");
-			kprintf(" mount        | Mount drive sd:                    \n");
-			kprintf(" proc cpu     | Show process info for given CPU    \n");
-			kprintf(" runon cpu    | Run ELF files on given cpu         \n");
-			kprintf(" unmount      | Unmount drive sd:                  \n");
+			kprintf(" DEV MODE SPECIFIC - USE AT YOUR OWN RISK            \n");
+			kprintf(" COMMAND      | USAGE                                \n");
+			kprintf(" kill pid cpu | Kill process with id pid on CPU      \n");
+			kprintf(" mount        | Mount drive sd:                      \n");
+			kprintf(" runon cpu    | Run ELF files on given cpu           \n");
+			kprintf(" unmount      | Unmount drive sd:                    \n");
+			kprintf("                                                     \n");
 		}
+		kprintf("\n");
 
-		kprintf("                                                   \n\n");
 		VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 	}
 	else // Anything else defers to being a command on storage
