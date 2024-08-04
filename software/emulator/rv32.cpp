@@ -1341,7 +1341,6 @@ bool CRV32::Execute(CBus* bus)
 	m_instructions.clear();
 
 	csr->SetRetiredInstructions(m_retired);
-	csr->UpdateTime(m_retired);
 	return true;
 }
 
@@ -1353,6 +1352,7 @@ bool CRV32::Tick(CBus* bus)
 
 	// Gather a block of code (or grab precompiled version)
 	bool fetchok = FetchDecode(bus);
+	csr->UpdateTime((uint32_t)m_instructions.size());
 	// Execute the whole block
 	Execute(bus);
 
