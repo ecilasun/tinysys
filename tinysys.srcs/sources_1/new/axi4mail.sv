@@ -3,17 +3,23 @@ module axi4mail(
 	input wire aresetn,
 	axi4if.slave s_axi);
 
-logic mailresetn;
-always_ff @(posedge aclk) begin
-	// We don't need to be synchronous to anything
-	// since most of the device takes quite a while
-	// before we can access the mailbox (for instance, ROM copy)
-	mailresetn <= aresetn;
-end
+// --------------------------------------------------
+// Reset delay line
+// --------------------------------------------------
+
+wire delayedresetn;
+delayreset delayresetinst(
+	.aclk(aclk),
+	.inputresetn(aresetn),
+	.delayedresetn(delayedresetn) );
+
+// --------------------------------------------------
+// Memory
+// --------------------------------------------------
 
 maildeviceram mailboxinst(
   .s_aclk(aclk),
-  .s_aresetn(mailresetn),
+  .s_aresetn(delayedresetn),
   .s_axi_awid(4'd0),
   .s_axi_awaddr(s_axi.awaddr),
   .s_axi_awlen(s_axi.awlen),

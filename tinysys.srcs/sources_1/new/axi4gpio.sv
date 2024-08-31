@@ -10,6 +10,16 @@ module axi4gpio(
 logic gpiowe = 1'b0;
 logic [16:0] gpiodout;
 
+// --------------------------------------------------
+// Reset delay line
+// --------------------------------------------------
+
+wire delayedresetn;
+delayreset delayresetinst(
+	.aclk(aclk),
+	.inputresetn(aresetn),
+	.delayedresetn(delayedresetn) );
+
 // Output and input values
 logic [16:0] gpiooutstate;
 logic [16:0] gpioinstate;
@@ -38,7 +48,7 @@ assign gpio[15] = gpiooutputmask[15]==1'b1 ? gpiooutstate[15] : 1'bz;
 assign gpio[16] = gpiooutputmask[16]==1'b1 ? gpiooutstate[16] : 1'bz;
 
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		gpioinstate <= 17'd0;
 		gpiooutstate <= 17'd0;
 	end else begin
@@ -80,10 +90,10 @@ gpiofifo gpiofifoinst(
 	.rd_en(gpiofifore),
 	.valid(gpiofifovalid),
 	.clk(aclk),
-	.rst(~aresetn) );
+	.rst(~delayedresetn) );
 
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		previnstate <= 17'd0;
 		gpiofifowe <= 1'b0;
 	end else begin
@@ -97,7 +107,7 @@ always @(posedge aclk) begin
 end
 
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		gpiodout <= 17'd0;
 		gpioinputmask <= 17'd0;
 		gpiooutputmask <= 17'd0;

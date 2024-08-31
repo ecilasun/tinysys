@@ -12,6 +12,16 @@ module commandqueue(
 	// Busy state or a sync counter &c
     input wire [31:0] devicestate);
 
+// --------------------------------------------------
+// Reset delay line
+// --------------------------------------------------
+
+wire delayedresetn;
+delayreset delayresetinst(
+	.aclk(aclk),
+	.inputresetn(aresetn),
+	.delayedresetn(delayedresetn) );
+
 wire fifofull;
 logic fifowe;
 logic [31:0] fifodin;
@@ -27,14 +37,14 @@ commandring cmdfifoinst(
 	.rd_en(fifore),
 	.valid(fifovalid),
 	.clk(aclk),
-	.rst(~aresetn) );
+	.rst(~delayedresetn) );
 
 logic [1:0] waddrstate;
 logic [1:0] writestate;
 logic [1:0] raddrstate;
 
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		waddrstate <= 2'b00;
 	end else begin
 		unique case (waddrstate)
@@ -60,7 +70,7 @@ end
 
 always @(posedge aclk) begin
 
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		fifowe <= 1'b0;
 		writestate <= 2'b00;
 		fifodin <= 32'd0;
@@ -97,7 +107,7 @@ end
 // Reads from command fifo will return externally supplied device status
 
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		raddrstate <= 2'b00;
 	end else begin
 		s_axi.rvalid <= 1'b0;

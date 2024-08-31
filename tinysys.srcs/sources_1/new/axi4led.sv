@@ -6,6 +6,16 @@ module axi4led(
 	axi4if.slave s_axi,
 	output wire [3:0] led );
 
+// --------------------------------------------------
+// Reset delay line
+// --------------------------------------------------
+
+wire delayedresetn;
+delayreset delayresetinst(
+	.aclk(aclk),
+	.inputresetn(aresetn),
+	.delayedresetn(delayedresetn) );
+
 logic ledwe = 1'b0;
 logic [3:0] ledstate = 4'd0;
 
@@ -18,7 +28,7 @@ end
 assign led = ledbits;
 
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		s_axi.awready <= 1'b0;
 		s_axi.arready <= 1'b0;
 		s_axi.wready <= 1'b0;

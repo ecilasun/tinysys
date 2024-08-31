@@ -15,6 +15,16 @@ module axi4dma(
 logic cmdre;
 assign dmafifore = cmdre;
 
+// --------------------------------------------------
+// Reset delay line
+// --------------------------------------------------
+
+wire delayedresetn;
+delayreset delayresetinst(
+	.aclk(aclk),
+	.inputresetn(aresetn),
+	.delayedresetn(delayedresetn) );
+
 // ------------------------------------------------------------------------------------
 // Setup
 // ------------------------------------------------------------------------------------
@@ -60,10 +70,10 @@ dmaworkfifo dmaworkfifoinst(
 	.rd_en(dre),
 	.valid(dvalid),
 	.clk(aclk),
-	.srst(~aresetn) );
+	.srst(~delayedresetn) );
 
 always_ff @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		cmdre <= 1'b0;
 		dmacmd <= 32'd0;
 		dmasourceaddr <= 32'd0;
@@ -198,7 +208,7 @@ logic [31:0] wtargetaddr;
 logic [7:0] wsingleburstcount;
 
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		m_axi.awvalid <= 0;
 		m_axi.wvalid <= 0;
 		m_axi.wstrb <= 16'h0000;

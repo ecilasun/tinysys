@@ -47,6 +47,16 @@ bit [31:0] tx_data_lr;
 bit re;
 assign audiore = re;
 
+// --------------------------------------------------
+// Reset delay line
+// --------------------------------------------------
+
+wire delayedresetn;
+delayreset delayresetinst(
+	.aclk(aclk),
+	.inputresetn(aresetn),
+	.delayedresetn(delayedresetn) );
+
 // ------------------------------------------------------------------------------------
 // Command dispatch
 // ------------------------------------------------------------------------------------
@@ -102,7 +112,7 @@ bit bufferSwap;
 bit [3:0] sampleoutputrateselector;
 
 always_ff @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		bufferSwapCDC1 <= 1'b0;
 		bufferSwapCDC2 <= 1'b0;
 	end else begin
@@ -125,7 +135,7 @@ assign m_axi.awlen = 0;
 assign m_axi.wdata = 0;
 
 always_ff @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		re <= 1'b0;
 		samplewe <= 1'b0;
 		counterenabled <= 1'b0;
