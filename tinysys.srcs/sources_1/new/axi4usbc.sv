@@ -11,6 +11,20 @@ module axi4usbc(
     max3420wires.def usbcconn,
 	axi4if.slave s_axi);
 
+// --------------------------------------------------
+// Reset delay line
+// --------------------------------------------------
+
+wire delayedresetn;
+delayreset delayresetinst(
+	.aclk(aclk),
+	.inputresetn(aresetn),
+	.delayedresetn(delayedresetn) );
+
+// ----------------------------------------------------------------------------
+// Internal
+// ----------------------------------------------------------------------------
+
 logic writestate;
 logic [1:0] raddrstate;
 
@@ -36,7 +50,7 @@ logic we;
 wire outfifoempty; // Used after this section in output fifo
 
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		usbgpxcdcA <= 1'b0;
 		usbgpxcdcB <= 1'b0;
 		usbirqcdcA <= 1'b0;
@@ -54,7 +68,7 @@ always @(posedge aclk) begin
 end
 
 assign usbirq = ~usbirqcdcB;
-assign usbcconn.resn = aresetn;	// Low during reset
+assign usbcconn.resn = delayedresetn;	// Low during reset
 
 // ----------------------------------------------------------------------------
 // spi master device
@@ -105,7 +119,7 @@ spimasterinfifo usbspiinputfifo(
 	.rd_en(infifore),
 	.valid(infifovalid),
 
-	.rst(~aresetn) );
+	.rst(~delayedresetn) );
 
 always @(posedge spibaseclock) begin
 	if (~rst50n) begin
@@ -138,7 +152,7 @@ usbcspififo usboutputfifo(
 	.rd_en(outfifore),
 	.valid(outfifovalid),
 
-	.rst(~aresetn) );
+	.rst(~delayedresetn) );
 
 always @(posedge spibaseclock) begin
 	if (~rst50n) begin
@@ -172,7 +186,7 @@ end
 // ----------------------------------------------------------------------------
 
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		s_axi.awready <= 1'b0;
 	end else begin
 		s_axi.awready <= 1'b0;
@@ -183,7 +197,7 @@ always @(posedge aclk) begin
 end
 
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		writestate <= 1'b0;
 		outfifowe <= 1'b0;
 	end else begin
@@ -212,7 +226,7 @@ always @(posedge aclk) begin
 end
 
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		raddrstate <= 2'b00;
 		infifore <= 1'b0;
 	end else begin

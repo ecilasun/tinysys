@@ -7,6 +7,16 @@ module axi4xadc(
 	output wire [11:0] device_temp);
 
 // --------------------------------------------------
+// Reset delay line
+// --------------------------------------------------
+
+wire delayedresetn;
+delayreset delayresetinst(
+	.aclk(aclk),
+	.inputresetn(aresetn),
+	.delayedresetn(delayedresetn) );
+
+// --------------------------------------------------
 // On-chip ADC for temperature control and DDR3 SDRAM
 // --------------------------------------------------
 
@@ -48,7 +58,7 @@ xadc_wiz_0 XADC (
 	.alarm_out(adcalarm) );
 
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		tmp0 <= 12'd0;
 		devicetemperature <= 12'd0;
 	end else begin
@@ -73,8 +83,7 @@ logic [1:0] raddrstate;
 logic [2:0] chsel;
 
 always @(posedge aclk) begin
-
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		raddrstate <= 2'b00;
 		chsel <= 3'b000;
 	end else begin

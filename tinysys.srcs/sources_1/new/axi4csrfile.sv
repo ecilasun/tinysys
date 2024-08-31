@@ -29,6 +29,16 @@ module axi4CSRFile #(
 	axi4if.slave s_axi );
 
 // --------------------------------------------------
+// Reset delay line
+// --------------------------------------------------
+
+wire delayedresetn;
+delayreset delayresetinst(
+	.aclk(aclk),
+	.inputresetn(aresetn),
+	.delayedresetn(delayedresetn) );
+
+// --------------------------------------------------
 // CSR RAM
 // --------------------------------------------------
 
@@ -64,7 +74,7 @@ end
 
 // Read/Write CSR
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		csrdout <= 32'd0;
 	end else begin
 		csrdout <= csrmemory[csrraddr];
@@ -89,7 +99,7 @@ logic cpuresetreq_r;
 assign cpuresetreq = cpuresetreq_r;
 
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		softInterruptEna <= 0;
 		timerInterrupt <= 0;
 		hwInterrupt <= 0;
@@ -114,7 +124,7 @@ logic [1:0] raddrstate;
 logic [1:0] writestate;
 
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		waddrstate <= 2'b00;
 	end else begin
 		unique case(waddrstate)
@@ -137,7 +147,7 @@ always @(posedge aclk) begin
 end
 
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		csrdin <= 32'd0;
 		writestate <= 2'b00;
 		mtvecshadow <= 32'd0;
@@ -195,7 +205,7 @@ always @(posedge aclk) begin
 end
 
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		raddrstate <= 2'b00;
 	end else begin
 		s_axi.rvalid <= 1'b0;

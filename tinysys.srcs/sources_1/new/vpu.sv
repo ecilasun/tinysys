@@ -26,6 +26,16 @@ module videocore(
 // - Memory mapped command buffer interface
 
 // --------------------------------------------------
+// Reset delay line
+// --------------------------------------------------
+
+wire delayedresetn;
+delayreset delayresetinst(
+	.aclk(aclk),
+	.inputresetn(aresetn),
+	.delayedresetn(delayedresetn) );
+
+// --------------------------------------------------
 // Scan setup
 // --------------------------------------------------
 
@@ -61,6 +71,12 @@ logic colormode;			// 0:indexed color, 1:16bit color
 
 logic [127:0] scanlinecache [0:127];
 
+initial begin
+	for (int i=0;i<128;i=i+1) begin
+		scanlinecache[i] = 128'd0;
+	end
+end
+
 wire [127:0] scanlinedout;
 logic [127:0] scanlinedin;
 logic scanlinewe;
@@ -68,7 +84,7 @@ logic [6:0] scanlinewa;
 logic [6:0] scanlinera;
 
 always @(posedge aclk) begin
-	/*if (~aresetn) begin
+	/*if (~delayedresetn) begin
 		
 	end else begin*/
 		if (scanlinewe)
@@ -176,7 +192,7 @@ end
 
 wire hsync, vsync;
 vgatimer VideoScanout(
-	.rst_i(~aresetn),
+	.rst_i(~delayedresetn),
 	.clk_i(clk25),
 	.hsync_o(hsync),
 	.vsync_o(vsync),
@@ -244,7 +260,7 @@ vpucmdmodetype cmdmode = WCMD;
 logic [31:0] vpucmd;
 
 always_ff @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		vpucmd <= 32'd0;
 		scanaddr <= 32'd0;
 		burstlen <= 'd19;
@@ -368,7 +384,7 @@ end
 
 // Vertical blanking and pixel tracking
 always_ff @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		scanline <= 10'd0;
 		scanlinepre <= 10'd0;
 		scanpixelpre <= 10'd0;
@@ -393,7 +409,7 @@ scanstatetype scanstate = DETECTFRAMESTART;
 logic [6:0] rdata_cnt;
 
 always_ff @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~delayedresetn) begin
 		scanlinewe <= 1'b0;
 		m_axi.arvalid <= 0;
 		m_axi.rready <= 0;
