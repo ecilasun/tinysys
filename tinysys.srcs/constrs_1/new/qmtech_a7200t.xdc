@@ -324,7 +324,7 @@ set_clock_groups -name grpP -asynchronous -group [get_clocks -of_objects [get_pi
 
 create_pblock pblock_hart1
 add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list socinstance/hart1]]
-resize_pblock [get_pblocks pblock_hart1] -add {CLOCKREGION_X1Y2:CLOCKREGION_X1Y1}
+resize_pblock [get_pblocks pblock_hart1] -add {CLOCKREGION_X1Y2:CLOCKREGION_X1Y2}
 
 create_pblock pblock_hart0
 add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list socinstance/hart0]]

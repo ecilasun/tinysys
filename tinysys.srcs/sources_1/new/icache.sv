@@ -27,9 +27,9 @@ logic [31:0] cacheaddress;
 data_t cachedin[0:3];
 logic memreadstrobe;
 
-logic [13:0] ctag = 14'd0;			// current cache tag (14 bits)
-logic [3:0] coffset = 4'd0;			// current word offset 0..15
-logic [7:0] clineaddr = 8'd0;		// current cache line 0..256
+logic [13:0] ctag;			// current cache tag (14 bits)
+logic [3:0] coffset;		// current word offset 0..15
+logic [7:0] clineaddr;		// current cache line 0..256
 
 logic [14:0] cachelinetags[0:255];	// cache line tags (14 bits) + 1 bit for valid flag
 
@@ -38,7 +38,6 @@ logic [511:0] cdin;					// input data to write to cache
 wire [511:0] cdout;					// output data read from cache
 
 logic [7:0] dccount;				// line counter for cache flush/invalidate ops
-logic [13:0] flushline = 14'd0;		// contents of line being flushed
 
 logic memreset;
 always_ff @(posedge aclk) begin
@@ -104,6 +103,9 @@ always_ff @(posedge aclk) begin
 		ctagwe <= 1'b0;
 		dccount <= 8'h00;
 		dataout <= 32'd0;
+		ctag <= 14'd0;
+		coffset <= 4'd0;
+		clineaddr <= 8'd0;
 	end else begin
 		memreadstrobe <= 1'b0;
 		readdone <= 1'b0;
