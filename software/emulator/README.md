@@ -18,11 +18,11 @@ Here's a list of features implemented so far
 - DMA works including masked mode
 - XADC is a placeholder and will return some huge temperature
 - SPI sdcard emulator fully works
+- APU supports varying playback rates
 
 And here's the list of what's missing
 
 - ESP32-C6 module emulation is missing and won't be supported
-- APU needs to support varying playback rates
 - GPIO isn't supported (as that requires emulation of ESP32-C6)
 - USB-A isn't supported
 
