@@ -72,6 +72,10 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <CustomBuildBeforeTargets />
+    <IncludePath>D:\repos\tinysys\software\3rdparty\fat32;D:\repos\tinysys\software\emulator\3rdparty\SDL2\include;D:\repos\tinysys\software\emulator\3rdparty\SDL2_ttf\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>D:\repos\tinysys\software\3rdparty\fat32;D:\repos\tinysys\software\emulator\3rdparty\SDL2\include;D:\repos\tinysys\software\emulator\3rdparty\SDL2_ttf\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -105,7 +109,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;CAT_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;CAT_WINDOWS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>D:\repos\tinysys\tinysys\software\3rdparty\fat32;D:\repos\tinysys\tinysys\software\emulator\3rdparty\SDL2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -115,8 +119,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <CustomBuildStep>
-      <Command>copy ..\3rdparty\SDL2\lib\x64\SDL2.dll .\x64\Debug\</Command>
-      <Outputs>SDL2.dll</Outputs>
+      <Command>copy ..\3rdparty\SDL2\lib\x64\SDL2.dll .\x64\Debug\
+copy ..\3rdparty\SDL2_ttf\lib\x64\SDL2_ttf.dll .\x64\Debug\</Command>
+      <Outputs>SDL2.dll;SDL2_ttf.dll</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -125,7 +130,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;CAT_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;CAT_WINDOWS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>D:\repos\tinysys\tinysys\software\3rdparty\fat32;D:\repos\tinysys\tinysys\software\emulator\3rdparty\SDL2\include;</AdditionalIncludeDirectories>
@@ -142,10 +147,11 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <CustomBuildStep>
-      <Command>copy ..\3rdparty\SDL2\lib\x64\SDL2.dll .\x64\Release\</Command>
+      <Command>copy ..\3rdparty\SDL2\lib\x64\SDL2.dll .\x64\Release\
+copy ..\3rdparty\SDL2_ttf\lib\x64\SDL2_ttf.dll .\x64\Release\</Command>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Outputs>SDL2.dll</Outputs>
+      <Outputs>SDL2.dll;SDL2_ttf.dll</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -191,6 +197,7 @@
   <ItemGroup>
     <Library Include="..\3rdparty\SDL2\lib\x64\SDL2.lib" />
     <Library Include="..\3rdparty\SDL2\lib\x64\SDL2main.lib" />
+    <Library Include="..\3rdparty\SDL2_ttf\lib\x64\SDL2_ttf.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

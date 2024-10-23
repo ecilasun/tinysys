@@ -176,7 +176,7 @@ uint32_t videoCallback(Uint32 interval, void* param)
 		int top = splashRect.y-4;
 		int bottom = splashRect.y+splashRect.h+4;
 		int d = bottom-top;
-		for (uint32_t j = top; j < bottom; j++)
+		for (int j = top; j < bottom; j++)
 		{
 			m = 255*(j-top)/d;
 			for (uint32_t i = 0; i < W; i++)

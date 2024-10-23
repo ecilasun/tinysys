@@ -129,5 +129,6 @@
   <ItemGroup>
     <Library Include="..\3rdparty\SDL2\lib\x64\SDL2.lib" />
     <Library Include="..\3rdparty\SDL2\lib\x64\SDL2main.lib" />
+    <Library Include="..\3rdparty\SDL2_ttf\lib\x64\SDL2_ttf.lib" />
   </ItemGroup>
 </Project>
