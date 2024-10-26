@@ -1,0 +1,1 @@
+bin\tinysys.exe ROMs\rom.bin

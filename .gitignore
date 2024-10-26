@@ -32,3 +32,4 @@ software/host/.lock*
 software/ESP32C6/generic_gpio/build/**
 software/ESP32C6/defaultrom/build/**
 software/**/.DS_Store
+software/emulator/bin/**

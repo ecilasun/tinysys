@@ -1,6 +1,28 @@
 # What is this?
 
-This is a work-in-progress system emulator for tinysys
+This is an emulator for the tinysys project
+
+# Usage
+To build the project, make sure you have C++ VC compiler tools installed, use the following sequence:
+```
+python3 waf configure -obuild/release
+python3 waf build
+```
+This will copy the emulator executable to the bin directory of project root folder, which you can then run using:
+```
+emulator.bat
+or
+./emulator.sh
+```
+depending on your OS.
+
+The emulator will then scan the *sdcard* directory for executable files and generate a fake SDCard layout in memory which the emulator can access as if it's a real device.
+
+To test your app, make sure the emulator is not running, drop your binary into the sdcard folder, and start the editor.
+
+Following that, you can then run it by typing the name of your executable, excluding the .elf extension.
+
+P.S. The emulator has been tested on latest macOS and Windows 11, Linux builds might require some manual work.
 
 # Details
 
@@ -31,3 +53,4 @@ Please note that this is not a clock precise emulation and instructions will alm
 Wish list
 
 - A GDB proxy in the emulator to debug running risc-v code
+

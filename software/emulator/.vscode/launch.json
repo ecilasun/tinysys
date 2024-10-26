@@ -8,7 +8,7 @@
             "name": "C++ Launch (Win)",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}\\build\\release\\tinysys.exe",
+            "program": "${workspaceFolder}\\bin\\tinysys.exe",
             "args": ["ROMs\\rom.bin"],
             "cwd": "${workspaceFolder}\\",
             "stopAtEntry": false,
@@ -19,7 +19,7 @@
             "name": "C++ Launch (Linux / Darwin)",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/build/release/tinysys",
+            "program": "${workspaceFolder}/bin/tinysys",
             "args": ["ROMs/rom.bin"],
             "cwd": "${workspaceFolder}/"
         }

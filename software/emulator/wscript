@@ -96,3 +96,13 @@ def build(bld):
         libpath=sdk_lib_path,
         lib=libs,
         use=['sdcard', 'fat32'])
+
+    sourcefile = os.path.abspath('build/release/tinysys.exe')
+    targetfile = os.path.abspath('bin/tinysys.exe')
+    copyfile(sourcefile, targetfile)
+    sourcefile = os.path.abspath('build/release/SDL2_ttf.dll')
+    targetfile = os.path.abspath('bin/SDL2_ttf.dll')
+    copyfile(sourcefile, targetfile)
+    sourcefile = os.path.abspath('build/release/SDL2.dll')
+    targetfile = os.path.abspath('bin/SDL2.dll')
+    copyfile(sourcefile, targetfile)
