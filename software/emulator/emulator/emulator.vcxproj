@@ -24,6 +24,7 @@
     <ProjectGuid>{59269669-e11f-4141-b965-2fd4729f9648}</ProjectGuid>
     <RootNamespace>emulator</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>tinysys</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -123,6 +124,12 @@
 copy ..\3rdparty\SDL2_ttf\lib\x64\SDL2_ttf.dll .\x64\Debug\</Command>
       <Outputs>SDL2.dll;SDL2_ttf.dll</Outputs>
     </CustomBuildStep>
+    <PostBuildEvent>
+      <Command>copy .\x64\Release\tinysys.exe ..\bin\tinysys.exe
+copy .\x64\Release\SDL2.dll ..\bin\SDL2.dll
+copy .\x64\Release\SDL2_ttf.dll ..\bin\SDL2_ttf.dll</Command>
+      <Message>Copying resulting binaries</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -153,6 +160,14 @@ copy ..\3rdparty\SDL2_ttf\lib\x64\SDL2_ttf.dll .\x64\Release\</Command>
     <CustomBuildStep>
       <Outputs>SDL2.dll;SDL2_ttf.dll</Outputs>
     </CustomBuildStep>
+    <PostBuildEvent>
+      <Command>copy .\x64\Release\tinysys.exe ..\bin\tinysys.exe
+copy .\x64\Release\SDL2.dll ..\bin\SDL2.dll
+copy .\x64\Release\SDL2_ttf.dll ..\bin\SDL2_ttf.dll</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copying resulting binaries</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\3rdparty\fat32\diskio.c" />

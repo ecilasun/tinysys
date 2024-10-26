@@ -8,6 +8,9 @@ To build the project, make sure you have C++ VC compiler tools installed, use th
 python3 waf configure -obuild/release
 python3 waf build
 ```
+
+Alternatively, you can use Visual Studio to build the emulator, using the emulator.sln solution file in the emulator/ folder
+
 This will copy the emulator executable to the bin directory of project root folder, which you can then run using:
 ```
 emulator.bat
