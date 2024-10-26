@@ -19,9 +19,9 @@ If you wish to work on software:
 - To compile the ROM image and program the ESP32-C6 device (our communication module) for the first time, you'll need to install ESP-IDF addon for your Visual Studio Code
 <br>See https://github.com/espressif/vscode-esp-idf-extension/releases/ for latest release
 
-Or if you wish to simply browse / copy code or hardware details, feel free to do so, and don't forget to credit me or other people for their respective work!
+Or if you wish to simply browse / copy code or hardware details, feel free to do so, and don't forget to credit me and other people for their respective work!
 
-# Build riscvtool (optional)
+# Build riscvtool (optional, required to build a new OS ROM)
 
 If you wish to build new ROM images to experiment with, you'll need riscvtool which will generate the ROM binary format required by tinysys. You'll need a working python3 install for the following steps to work.
 
@@ -45,17 +45,11 @@ PS: The build process for riscvtool is the same on Linux and Windows.
 
 # Building ELF executables
 
-To build the samples, switch to 'software/samples' directory then simply type:
-
-```
-make
-```
-
-This will produce .elf binaries in each of the sample folders, which you can then copy onto an sdcard and run on the device.
+Please see [README.md](./samples/README.md) file in the samples directory
 
 # Building ROM images
 
-NOTE: Ordinarily you don't need to build ROM images, there is one built into the gateware provided in the /gateware directory.
+NOTE: Ordinarily you don't need to (and should not) build ROM images, there is one built into the gateware provided in the /gateware directory.
 
 This is similar to building the samples, simply switch to 'ROMs/boot' directory and type:
 
@@ -69,18 +63,20 @@ The .bin image goes onto the sdcard, inside the '/boot' directory at the root of
 
 The .mem image is the actual physical ROM version of the same binary. If you don't plan to use an sdcard, the contents of the .mem file should be pasted over the 'Memory File/romimage.mem' file you can find in the project view. After replacing it, don't forget to 'Reset Runs' / 'Generate Bitstream' to generate your new gateware. (I recommend doing development using the .bin image and only replace the .mem once you're sure it's working to avoid lengthy development times, gateware usually takes about 20 minutes each run on a modetately fast desktop PC)
 
-# Communicating with tinysys
+# Programming the ESP32 communications firmware
 
-Tinysys uses an ESP32-C6 to communucate with the outside world. For this to function properly, the ROM image for the ESP chip has to be build. You need first plug in the previously-unprogrammed tinysys device, then open 'software/ESP32C6/defaultrom' in Visual Studio Code, and Hit the ESP-IDF 'Build, Flash and Monitor' button (looks like a little flame) to build and deploy it to the device.
+Tinysys uses an ESP32-C6 to communucate with the outside world. For this to function properly, the ROM image for the ESP chip has to be built. You need first plug in the previously-unprogrammed tinysys device, then open 'software/ESP32C6/defaultrom' in Visual Studio Code, and Hit the ESP-IDF 'Build, Flash and Monitor' button (looks like a little flame) to build and deploy it to the device.
 
 # Default SDCard layout
 
 Tinysys OS expects to find certain files in certain paths to function as expected. For instance, the 'rom.bin' file is expected to be in the '/boot' directory at the root of SDCard. Tinysys OS supports commands that can be executed from any directory (sort of a fixed $PATH if you will), and this is always expected to be 'sys/bin' Anything in that directory can be run from anywhere. Therefore it's a good place to put OS utilities or any used code that you might want to run from any path.
 
-Therefore the default layout is:
+Therefore the default SDCard layout is:
 
+```
 sd:/sys/bin/... <- utility binaries, accessible from anywhere
 sd:/boot/rom.bin <- ROM overlay is always located here
+```
 
 # Creating your own project
 
@@ -100,6 +96,8 @@ Also thanks goes to Ben Stragnell for great advice and pointers in how audio har
 
 Further thanks goes to everyone who's build something on this machine at least once to put it through its paces.
 
-Peace.
+Happy hacking!
+
 Copyright 2024 Engin Cilasun
-Please see license.txt file for details
+
+Please see respective license.txt files for individual license terms
