@@ -17,11 +17,11 @@ However, to be compatible with future hardware, it is advised that the writes go
 ### Copy a 4K block
 `void DMACopy4K(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned);`
 
-This function moves a 4Kbyte block of memory from a 16 byte aligned memory address to another 16 byte aligned memory address. It is most commonly used to blit an offscreen image to the scan-out buffer of the video controller, or to quickly clear large blocks of memory to the values in a source block.
+This function moves a 4Kbyte block of memory from a 16 byte aligned memory address to another 16 byte aligned memory address. It is most commonly used to blit an offscreen image, such as a bitmap background, to the scan-out buffer of the video controller.
 
 `void DMACopyAutoByteMask4K(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned);`
 
-This function behaves exactly the same way as `DMACopy4K`, however it will not write any zeros seen in the source byte stream. It can be used to overlay data onto a memory location without destroying masked areas, denoted by zero.
+This function behaves exactly the same way as `DMACopy4K`, however it will not write any zeros seen in the source byte stream. It can be used to overlay data onto a memory location without destroying masked areas, such as when drawing a foreground layer with masking on top of a background image.
 
 ### Copy an arbitrary block size
 `void DMACopy(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned, const uint8_t _blockCountInMultiplesOf16bytes);`
