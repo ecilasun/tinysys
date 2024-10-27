@@ -9,7 +9,7 @@ Tasks can yield execution to other tasks by calling the `TaskYield()` function. 
 The task system can access the task context of other CPUs in the system from any other CPU, which allows for user tasks (always running on HART#0) to spawn tasks on either HART#0 or HART#1
 
 ### Accessing the OS task context
-`struct STaskContext *GetTaskContextOfCPU(uint32_t _hartid)`
+`struct STaskContext *TaskGetContextOfCPU(uint32_t _hartid)`
 
 This function returns the task context for a given CPU. Use the returned data pointer with care, directly modifying the returned memory contents is not recommended.
 

@@ -6,11 +6,6 @@
 #include <stdio.h>
 #include <string.h>
 
-struct STaskContext *GetTaskContextOfCPU(uint32_t _hartid)
-{
-	return (struct STaskContext *)(DEVICE_MAIL + sizeof(struct STaskContext)*_hartid);
-}
-
 void MyTask()
 {
 	uint32_t state = 0;
@@ -25,7 +20,7 @@ void MyTask()
 int main(int argc, char *argv[])
 {
 	// Grab task context of CPU#1
-	struct STaskContext *taskctx = GetTaskContextOfCPU(1);
+	struct STaskContext *taskctx = TaskGetContextOfCPU(1);
 
 	// Add a new task to run
 	int taskID = TaskAdd(taskctx, "mytask", MyTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
