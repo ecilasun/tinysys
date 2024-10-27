@@ -1,3 +1,5 @@
+# *NOTE: This module is now obsolete*
+
 # TinyRemote
 
 This is tinyremote, which is built for Linux to make life a tad easier by combining a key listener and a video capture module into one.
