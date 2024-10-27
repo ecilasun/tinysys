@@ -13,4 +13,8 @@ This function will control the state of the debug LEDs on the device. Setting on
 
 Upon termination of a process, all LEDs will revert back to off state.
 
+### Using the debug LEDs
+
+For a full sample that blinks the debug LEDs, see the sample code in 'samples/led' directory
+
 ### Back to [SDK Documentation](README.md)

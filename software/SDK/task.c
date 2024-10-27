@@ -42,6 +42,19 @@ void TaskInitSystem(struct STaskContext *_ctx, uint32_t _hartid)
 }
 
 /**
+ * @brief Get the task context of a specific HART
+ * 
+ * Get the task context of a specific HART.
+ * 
+ * @param _hartid HART ID
+ * @return Task context
+ */
+struct STaskContext *GetTaskContextOfCPU(uint32_t _hartid)
+{
+	return (struct STaskContext *)(DEVICE_MAIL + sizeof(struct STaskContext)*_hartid);
+}
+
+/**
  * @brief Set the state of a task
  * 
  * Transition a task to a new state.
