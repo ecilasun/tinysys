@@ -20,7 +20,7 @@ void MyTask()
 int main(int argc, char *argv[])
 {
 	// Grab task context of CPU#1
-	struct STaskContext *taskctx = TaskGetContextOfCPU(1);
+	struct STaskContext *taskctx = TaskGetContext(1);
 
 	// Add a new task to run
 	int taskID = TaskAdd(taskctx, "mytask", MyTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);

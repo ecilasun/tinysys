@@ -9,7 +9,7 @@ Tasks can yield execution to other tasks by calling the `TaskYield()` function. 
 The task system can access the task context of other CPUs in the system from any other CPU, which allows for user tasks (always running on HART#0) to spawn tasks on either HART#0 or HART#1
 
 ### Accessing the OS task context
-`struct STaskContext *TaskGetContextOfCPU(uint32_t _hartid)`
+`struct STaskContext *TaskGetContext(uint32_t _hartid)`
 
 This function returns the task context for a given CPU. Use the returned data pointer with care, directly modifying the returned memory contents is not recommended.
 
@@ -39,7 +39,7 @@ Call this function in a tight loop that might be blocking other tasks or the OS.
 If this function is not called, the tasks will switch automatically after their run length expires, therefore it is entirely optional. Still, it is recommended as a good practice to do this at least once, for example, in a main game loop.
 
 ### Stopping a task
-`void TaskExitTaskWithID(struct STaskContext *_ctx, uint32_t _taskid, uint32_t _signal);`
+`void TaskExitTaskWithID(struct STaskContext *_ctx, uint32_t _taskid, uint32_t _signal)`
 
 This function can be called with the same handle returned from the `TaskAdd()` function. Upon exiting, the return value of the task will be determined by the `_signal` value.
 

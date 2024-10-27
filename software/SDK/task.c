@@ -49,7 +49,7 @@ void TaskInitSystem(struct STaskContext *_ctx, uint32_t _hartid)
  * @param _hartid HART ID
  * @return Task context
  */
-struct STaskContext *TaskGetContextOfCPU(uint32_t _hartid)
+struct STaskContext *TaskGetContext(uint32_t _hartid)
 {
 	return (struct STaskContext *)(DEVICE_MAIL + sizeof(struct STaskContext)*_hartid);
 }

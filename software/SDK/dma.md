@@ -15,36 +15,36 @@ To write a command, the SDK functions simply write the command word and the para
 However, to be compatible with future hardware, it is advised that the writes go through the SDK functions listed below.
 
 ### Copy a 4K block
-`void DMACopy4K(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned);`
+`void DMACopy4K(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned)`
 
 This function moves a 4Kbyte block of memory from a 16 byte aligned memory address to another 16 byte aligned memory address. It is most commonly used to blit an offscreen image, such as a bitmap background, to the scan-out buffer of the video controller.
 
-`void DMACopyAutoByteMask4K(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned);`
+`void DMACopyAutoByteMask4K(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned)`
 
 This function behaves exactly the same way as `DMACopy4K`, however it will not write any zeros seen in the source byte stream. It can be used to overlay data onto a memory location without destroying masked areas, such as when drawing a foreground layer with masking on top of a background image.
 
 ### Copy an arbitrary block size
-`void DMACopy(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned, const uint8_t _blockCountInMultiplesOf16bytes);`
+`void DMACopy(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned, const uint8_t _blockCountInMultiplesOf16bytes)`
 
 This function will copy given number of 16 byte blocks from a 16 byte aligned source address to a 16 byte aligned target address. The function will return immediately. Caller can then do other operations and use `DMAWait()` at a later point to wait for DMA operations to complete or periodically poll using the non-blocking `DMAPending()` function.
 
-`void DMACopyAutoByteMask(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned, const uint8_t _blockCountInMultiplesOf16bytes);`
+`void DMACopyAutoByteMask(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned, const uint8_t _blockCountInMultiplesOf16bytes)`
 
 This function behaves exactly the same way as `DMACopy`, however it will not write any zeros seen in the source byte stream. It can be used to overlay data onto a memory location without destroying masked areas, denoted by zero.
 
 ### Insert DMA synchronization marker
-`void DMATag(const uint32_t _tag);`
+`void DMATag(const uint32_t _tag)`
 
 This function inserts a waitable noop command into the DMA FIFO.
 
 The `_tag` value is not used for now.
 
 ### Wait for DMA transfer completion
-`void DMAWait(enum ECPUCoherency _cpucoherency);`
+`void DMAWait(enum ECPUCoherency _cpucoherency)`
 
 This function will wait for all current pending DMA operations to fully complete. Before it returns, it will make sure the CPU can see DMA writes if `_cpucoherency` flag is set to `CPUCoherent`, or do nothing if the value is `CPUIncoherent`
 
-`uint32_t DMAPending();`
+`uint32_t DMAPending()`
 
 This function will check to see if any DMA operations are still pending or in progress, and will return immediately.
 
