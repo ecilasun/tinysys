@@ -10,7 +10,7 @@ See the playing audio section below for details on how this system works.
 
 # Command FIFO
 
-The command fifo accepts the followin command codes as 32bit words, followed by zero or more words containing data as required.
+The command fifo accepts the following command codes as 32bit words, followed by zero or more words containing data as required.
 
 To write a command, the SDK functions simply write the command word and the parameters to the FIFO at memory address `0x80070000`
 
