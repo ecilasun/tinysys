@@ -93,6 +93,8 @@ The 16 bit color mode in fact uses 12 bit colors packed as follows:
 #define MAKECOLORRGB12(_r, _g, _b) ((((_r&0xF)<<8) | (_b&0xF)<<4) | (_g&0xF))
 ```
 
+The lowest 4 bits are green, followed by 4 bits of blue, and 4 bits of red.
+
 The remaining 4 bits are reserved for future and should always be set to zeros.
 
 ### Back to [SDK Documentation](README.md)

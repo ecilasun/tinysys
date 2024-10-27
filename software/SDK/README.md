@@ -24,3 +24,8 @@ Please see [VPU](vpu.md) for documentation about video output control.
 The debug LEDs provide an easy means to debug code when there are no alternatives, or to show status.
 
 Please see [LED](led.md) for documentation about debug LEDs.
+
+## Low level hardware overview
+The hardware of tinysys consists of an FPGA board that carries some custom devices and two RISC-V cores. The FPGA board lives on a custom board that contains some external peripheral chips that interface the board to the outside world, such as video, audio and USB connectivity.
+
+Please see [HARDWARE](hardware.md) for brief information about the internal devices.
