@@ -25,6 +25,11 @@ The debug LEDs provide an easy means to debug code when there are no alternative
 
 Please see [LED](led.md) for documentation about debug LEDs.
 
+## Emulator
+The emulator tries to provide as close an experience to the real hardware as possible, including a virtual SDCard interface to make development easy.
+
+Please see [EMULATOR](emulator.md) for documentation about debug LEDs.
+
 ## Low level hardware overview
 The hardware of tinysys consists of an FPGA board that carries some custom devices and two RISC-V cores. The FPGA board lives on a custom board that contains some external peripheral chips that interface the board to the outside world, such as video, audio and USB connectivity.
 
