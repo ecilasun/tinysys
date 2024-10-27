@@ -1,10 +1,12 @@
 # Audio Processing Unit
 
-The APU consists of a commmand FIFO and a hardware audio chip (Cirrus Logic, CS4344-CZZR, stereo D/A converter) that listens to commands over an SPI bus.
+The APU consists of a commmand FIFO an internal hardware to stream out audio at a chosen rate, and an external audio chip (Cirrus Logic, CS4344-CZZR, stereo D/A converter) that listens to sound data over an I2S bus.
 
-The internal audio device can drive the DAC using stereo 16bit samples, clocked at 44, 22 or 11KHz.
+The internal audio device can drive the DAC using stereo 16bit samples, clocked at 44Khz, 22Khz or 11KHz sample rates.
 
-APU has two pages of internal memory. One of these pages is called the 'write page' and can be written over by `APUStartDMA` function listed below. The other page is dedicated for feeding the audio chip and can't be touched by the CPU while playback is in progress.
+APU has an internal memory region which is split into two pages. One of these pages is called the 'write page' and can be written by the CPU using the `APUStartDMA()` function. The other page is the 'read page' and is dedicated to feeding the audio chip and can't be touched by the CPU while playback is in progress.
+
+When the APU reaches the end of the current read page, it will toggle the two pages and flip a counter bit. This mechanism can be used to wait for audio playback to complete to queue more samples.
 
 See the playing audio section below for details on how this system works.
 
@@ -73,8 +75,9 @@ do{
 	// TODO: fill apubuffer with some stereo 16 bit audio data
 	CFLUSH_D_L1; // Make sure the CPU writes can be seen by the DMA device by flushing them to memory
 	APUStartDMA((uint32_t)apubuffer); // Kick new data to the APU
-	// Wait for the current write page to change
-	// This means the APU has reached the end of the playback buffer and is attempting to read from the other page
+
+	// Wait for the sample playback to finish.
+	// This means the APU has reached the end of the read page and has set the other page as the new read page.
 	uint32_t currframe;
 	do
 	{
@@ -82,8 +85,7 @@ do{
 	} while (currframe == prevframe);
 	prevframe = currframe;
 
-	// Yield time back to the CPU for other running tasks on this CPU, if you have any
-	// Normally one would want to give back time to the OS but this is entirely optional.
+	// See task.md about this command
 	TaskYield();
 } while(1);
 ```

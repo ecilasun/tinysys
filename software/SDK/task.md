@@ -1,10 +1,12 @@
 # Multitasking
 
-The operating system on tinysys allows for a timer driven scheduler and a very simple task system.
+The OS on tinysys implements a hardware timer driven preemptive scheduler, and a few utility functions to aid in task generation.
 
 This allows the OS to run several tasks, one of which is the user process, as well as allowing the user process to enqueue and run tasks of its own.
 
 Tasks can yield execution to other tasks by calling the `TaskYield()` function. This function will only have an effect on the calling CPU and won't change the scheduling on other CPUs.
+
+The task system can access the task context of other CPUs in the system from any other CPU, which allows for user tasks (always running on HART#0) to spawn tasks on either HART#0 or HART#1
 
 ### Accessing the OS task context
 `struct STaskContext *GetTaskContextOfCPU(uint32_t _hartid)`
