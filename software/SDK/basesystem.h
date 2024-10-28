@@ -71,6 +71,8 @@
 // ROM SHADOW
 #define ROMSHADOW_END_MEM_END			0x0FFFFFFF // ROM shadow copy above this (128 KBytes, but normally OS ROM fits in upper 64 KByte half)
 
+#define MAX_HARTS 2
+
 // Device address base
 #define DEVICE_BASE 0x80000000
 

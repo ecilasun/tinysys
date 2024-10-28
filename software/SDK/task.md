@@ -15,6 +15,11 @@ This function returns the task context for a given CPU. Use the returned data po
 
 Use the returned context as the `_ctx` parameter for functions listed below.
 
+### Shared uncached dmemory
+`void *TaskGetSharedMemory()`
+
+This function will return a shared memory space for HART to HART communications. The memory is uncached, so all writes from one HART are immediately visible to all other HARTs.
+
 ### Adding a new task
 `int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength)`
 

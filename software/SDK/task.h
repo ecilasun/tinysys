@@ -48,6 +48,9 @@ void TaskInitSystem(struct STaskContext *_ctx, uint32_t _hartid);
 // Get task context for given HART
 struct STaskContext *TaskGetContext(uint32_t _hartid);
 
+// Shared memory space for all HARTs
+void *TaskGetSharedMemory();
+
 // Add a new task to the pool
 int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength);
 

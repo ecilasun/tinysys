@@ -2,28 +2,64 @@
 #include "core.h"
 #include "task.h"
 #include "leds.h"
+#include "vpu.h"
 
 #include <stdio.h>
 #include <string.h>
 
+// This sample shows HART-To-HART communication using shared memory and task management
+
+static struct EVideoContext s_vx;
+static struct EVideoSwapContext s_sc;
+
+static uint8_t *s_framebufferA;
+static uint8_t *s_framebufferB;
+
 void MyTask()
 {
-	uint32_t state = 0;
+	// Set up shared memory for this HART
+	volatile int *sharedmem = (volatile int*)TaskGetSharedMemory();
+	volatile int *s_frame1 = sharedmem+4;
+
 	while(1)
 	{
-		LEDSetState(state++);
-		E32Sleep(300*ONE_MILLISECOND_IN_TICKS);
+		LEDSetState(*s_frame1);
+
 		TaskYield();
+		E32Sleep(150*ONE_MILLISECOND_IN_TICKS);
+
+		*s_frame1 = *s_frame1 + 1;
 	}
 }
 
 int main(int argc, char *argv[])
 {
+	// Grab some framebuffer memory
+	s_framebufferA = VPUAllocateBuffer(320*240);
+	s_framebufferB = VPUAllocateBuffer(320*240);
+
+	// Set up video output
+	s_vx.m_vmode = EVM_320_Wide;
+	s_vx.m_cmode = ECM_8bit_Indexed;
+	VPUSetVMode(&s_vx, EVS_Enable);
+	VPUSetWriteAddress(&s_vx, (uint32_t)s_framebufferA);
+	VPUSetScanoutAddress(&s_vx, (uint32_t)s_framebufferB);
+
+	// Prepare swap context
+	s_sc.cycle = 0;
+	s_sc.framebufferA = s_framebufferA;
+	s_sc.framebufferB = s_framebufferB;
+
+	// Set up shared memory for this HART
+	volatile int *sharedmem = (volatile int*)TaskGetSharedMemory();
+	volatile int *s_frame0 = sharedmem;
+	volatile int *s_frame1 = sharedmem+4;
+
 	// Grab task context of CPU#1
 	struct STaskContext *taskctx = TaskGetContext(1);
 
 	// Add a new task to run
-	int taskID = TaskAdd(taskctx, "mytask", MyTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+	int taskID = TaskAdd(taskctx, "mytask", MyTask, TS_RUNNING, QUARTER_MILLISECOND_IN_TICKS);
 
 	if (taskID == 0)
 	{
@@ -31,12 +67,28 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	for (uint32_t i=0; i<50; ++i)
+	char tmpstr[128];
+	do
 	{
-		printf("tick:%ld\n", i);
+		VPUClear(&s_vx, 0x03050305);
+
+		int L1 = snprintf(tmpstr, 127, "HART#1: %d", *s_frame1);
+		VPUPrintString(&s_vx, 0x00, 0x0F, 8, 8, tmpstr, L1);
+
+		int L0 = snprintf(tmpstr, 127, "HART#0: %d", *s_frame0);
+		VPUPrintString(&s_vx, 0x00, 0x0F, 8, 16, tmpstr, L0);
+
 		TaskYield();
-		E32Sleep(250*ONE_MILLISECOND_IN_TICKS);
-	}
+		E32Sleep(50*ONE_MILLISECOND_IN_TICKS);
+
+		// Make sure the video memory write is visible to the VPU
+		CFLUSH_D_L1;
+
+		VPUWaitVSync();
+		VPUSwapPages(&s_vx, &s_sc);
+
+		*s_frame0 = *s_frame0 + 1;
+	} while(1);
 
 	// We're done with the test, remove our task
 	TaskExitTaskWithID(taskctx, taskID, 0);

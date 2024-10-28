@@ -55,6 +55,19 @@ struct STaskContext *TaskGetContext(uint32_t _hartid)
 }
 
 /**
+ * @brief Get the shared memory of a specific HART
+ * 
+ * Get the shared memory for all HARTs
+ * 
+ * @param _hartid HART ID
+ * @return Shared memory address
+ */
+void *TaskGetSharedMemory()
+{
+	return (void *)(DEVICE_MAIL + sizeof(struct STaskContext)*MAX_HARTS);
+}
+
+/**
  * @brief Set the state of a task
  * 
  * Transition a task to a new state.
