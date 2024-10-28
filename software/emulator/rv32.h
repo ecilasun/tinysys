@@ -188,8 +188,10 @@ public:
 	std::vector<SDecodedInstruction> m_instructions;
 	std::map<uint32_t, SDecodedBlock*> m_decodedBlocks;
 
+	uint32_t m_cycles{0};
+
 	void Reset();
-	bool Tick(CBus* bus);
+	bool Tick(uint64_t wallclock, CBus* bus);
 	bool FetchDecode(CBus* bus);
 	bool Execute(CBus* bus);
 

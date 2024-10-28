@@ -965,6 +965,8 @@ bool CRV32::Execute(CBus* bus)
 		uint32_t wdata = 0;
 		uint32_t wstrobe = 0;
 
+		++m_cycles;
+
 		// Execute
 		switch (instr.m_opcode)
 		{
@@ -1100,6 +1102,7 @@ bool CRV32::Execute(CBus* bus)
 
 			case OP_STORE:
 			{
+				m_cycles+=2;
 				uint32_t byte = SelectBitRange(instr.m_rval2, 7, 0);
 				uint32_t half = SelectBitRange(instr.m_rval2, 15, 0);
 				switch (instr.m_f3)
@@ -1123,6 +1126,8 @@ bool CRV32::Execute(CBus* bus)
 
 			case OP_LOAD:
 			{
+				m_cycles+=2;
+
 				uint32_t dataword;
 				if (rwaddress & 0x80000000)
 					bus->Read(rwaddress, dataword);
@@ -1175,6 +1180,7 @@ bool CRV32::Execute(CBus* bus)
 			case OP_FLOAT_NMSUB:
 			case OP_FLOAT_NMADD:
 			{
+				m_cycles+=6;
 				// We use zfinx extension (floating point registers in integer registers) so we need to alias them
 				float A = *(float*)&instr.m_rval1;
 				float B = *(float*)&instr.m_rval2;
@@ -1199,6 +1205,7 @@ bool CRV32::Execute(CBus* bus)
 
 			case OP_FLOAT_OP:
 			{
+				m_cycles+=6;
 				float A = *(float*)&instr.m_rval1;
 				float B = *(float*)&instr.m_rval2;
 				float* D = (float*)&rdin;
@@ -1322,6 +1329,7 @@ bool CRV32::Execute(CBus* bus)
 
 		if (wstrobe)
 		{
+			++m_cycles;
 			//fprintf(stderr, "- W @%.8X val=%.8x mask=%.8x\n", rwaddress, wdata, wstrobe);
 			if (rwaddress & 0x80000000)
 				bus->Write(rwaddress, wdata, wstrobe);
@@ -1331,6 +1339,7 @@ bool CRV32::Execute(CBus* bus)
 
 		if (rwen && instr.m_rd != 0)
 		{
+			m_cycles+=3;
 			//fprintf(stderr, "- regw @%.8X val=%.8x\n", instr.m_rd, rdin);
 			m_GPR[instr.m_rd] = rdin;
 		}
@@ -1344,7 +1353,7 @@ bool CRV32::Execute(CBus* bus)
 	return true;
 }
 
-bool CRV32::Tick(CBus* bus)
+bool CRV32::Tick(uint64_t wallclock, CBus* bus)
 {
 	CCSRMem* csr = bus->GetCSR(m_hartid);
 	if (csr->m_pendingCPUReset)
@@ -1352,7 +1361,7 @@ bool CRV32::Tick(CBus* bus)
 
 	// Gather a block of code (or grab precompiled version)
 	bool fetchok = FetchDecode(bus);
-	csr->UpdateTime((uint32_t)m_instructions.size());
+	csr->UpdateTime(wallclock, m_cycles);
 	// Execute the whole block
 	Execute(bus);
 

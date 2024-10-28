@@ -37,7 +37,8 @@ int emulatorthread(void* data)
 	CEmulator* emulator = (CEmulator*)data;
 	do
 	{
-		emulator->Step();
+		uint64_t wallclock = SDL_GetTicks64() / 10000; // ONE_MILLISECOND_IN_TICKS
+		emulator->Step(wallclock);
 	} while(s_alive);
 
 	s_alive = false;
