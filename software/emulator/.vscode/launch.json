@@ -19,7 +19,7 @@
             "name": "C++ Launch (Linux / Darwin)",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/tinysys",
+            "program": "${workspaceFolder}/build/release/tinysys",
             "args": ["ROMs/rom.bin"],
             "cwd": "${workspaceFolder}/"
         }
