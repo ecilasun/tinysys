@@ -965,7 +965,7 @@ bool CRV32::Execute(CBus* bus)
 		uint32_t wdata = 0;
 		uint32_t wstrobe = 0;
 
-		++m_cycles;
+		m_cycles += 5; // READINSTR + WAIT + READREG + WAIT + DISPATCH
 
 		// Execute
 		switch (instr.m_opcode)
@@ -1027,20 +1027,25 @@ bool CRV32::Execute(CBus* bus)
 
 			case OP_SYSTEM:
 			{
+				m_cycles += 6; // SYSOP + WAIT
+
 				if (instr.m_f12 == F12_CDISCARD)
 				{
 					// cacheop=0b01
 					// NOOP for now, D$ not implemented yet
 					//printf("- cdiscard\n");
+					m_cycles += 50; // CACHE OP
 					m_dcache.Discard();
 				}
 				else if (instr.m_f12 == F12_CFLUSH)
 				{
 					// cacheop=0b11
+					m_cycles += 50; // CACHE OP
 					m_dcache.Flush(bus);
 				}
 				else if (instr.m_f12 == F12_MRET)
 				{
+					m_cycles += 2; // MRET
 					m_wasmret = 1;
 					m_branchresolved = 1;
 					csr->Read((CSR_MEPC << 2), m_branchtarget);
@@ -1059,6 +1064,8 @@ bool CRV32::Execute(CBus* bus)
 				}
 				else // CSROP
 				{
+					m_cycles += 4; // READ + MODIFY + WRITE + WAIT
+
 					// Read previous value
 					uint32_t csrprevval;
 					uint32_t csraddress = (instr.m_csroffset << 2);
@@ -1102,7 +1109,8 @@ bool CRV32::Execute(CBus* bus)
 
 			case OP_STORE:
 			{
-				m_cycles+=2;
+				m_cycles += 2; // PENDINGWRITE + BUSDONE_W
+
 				uint32_t byte = SelectBitRange(instr.m_rval2, 7, 0);
 				uint32_t half = SelectBitRange(instr.m_rval2, 15, 0);
 				switch (instr.m_f3)
@@ -1126,7 +1134,7 @@ bool CRV32::Execute(CBus* bus)
 
 			case OP_LOAD:
 			{
-				m_cycles+=2;
+				m_cycles += 2; // PENDINGWRITE + BUSDONE_W
 
 				uint32_t dataword;
 				if (rwaddress & 0x80000000)
@@ -1180,7 +1188,8 @@ bool CRV32::Execute(CBus* bus)
 			case OP_FLOAT_NMSUB:
 			case OP_FLOAT_NMADD:
 			{
-				m_cycles+=6;
+				m_cycles += 8; // DISPATCH + OP + WAIT
+
 				// We use zfinx extension (floating point registers in integer registers) so we need to alias them
 				float A = *(float*)&instr.m_rval1;
 				float B = *(float*)&instr.m_rval2;
@@ -1205,7 +1214,8 @@ bool CRV32::Execute(CBus* bus)
 
 			case OP_FLOAT_OP:
 			{
-				m_cycles+=6;
+				m_cycles += 8; // DISPATCH + OP + WAIT
+
 				float A = *(float*)&instr.m_rval1;
 				float B = *(float*)&instr.m_rval2;
 				float* D = (float*)&rdin;
@@ -1329,7 +1339,6 @@ bool CRV32::Execute(CBus* bus)
 
 		if (wstrobe)
 		{
-			++m_cycles;
 			//fprintf(stderr, "- W @%.8X val=%.8x mask=%.8x\n", rwaddress, wdata, wstrobe);
 			if (rwaddress & 0x80000000)
 				bus->Write(rwaddress, wdata, wstrobe);
@@ -1339,7 +1348,6 @@ bool CRV32::Execute(CBus* bus)
 
 		if (rwen && instr.m_rd != 0)
 		{
-			m_cycles+=3;
 			//fprintf(stderr, "- regw @%.8X val=%.8x\n", instr.m_rd, rdin);
 			m_GPR[instr.m_rd] = rdin;
 		}

@@ -307,8 +307,10 @@ int SDL_main(int argc, char** argv)
 	if (dev)
 		AudioQueueCapacity = audioSpecObtained.samples;
 
-	uint64_t startTick = SDL_GetTicks64() * 10000;
-	s_wallclock = SDL_GetTicks64() * 10000 - startTick; // ONE_MILLISECOND_IN_TICKS
+	// ONE_MILLISECOND_IN_TICKS to convert from SDL ticks to device units
+	const uint64_t ONE_MS_IN_TICKS = 10000;
+	uint64_t startTick = SDL_GetTicks64() * ONE_MS_IN_TICKS;
+	s_wallclock = SDL_GetTicks64() * ONE_MS_IN_TICKS - startTick;
 
 	SDL_Thread* emulatorthreadID = SDL_CreateThread(emulatorthread, "emulator", ectx.emulator);
 	SDL_Thread* audiothreadID = SDL_CreateThread(audiothread, "audio", ectx.emulator);
@@ -343,7 +345,7 @@ int SDL_main(int argc, char** argv)
 			}
 		}
 
-		s_wallclock = SDL_GetTicks64() * 10000 - startTick;
+		s_wallclock = SDL_GetTicks64() * ONE_MS_IN_TICKS - startTick;
 	} while(s_alive);
 
 #if defined(CPU_STATS)

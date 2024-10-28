@@ -27,8 +27,8 @@ void CCSRMem::Reset()
 
 void CCSRMem::UpdateTime(uint64_t wallclock, uint32_t executeCount)
 {
-	m_cycle = executeCount; // each instruction takes about 5 to 6 clocks
-	m_wallclocktime = wallclock; // 150MHz clock / 15 = 10MHz clock for wallclock
+	m_cycle = executeCount;
+	m_wallclocktime = wallclock; // 10MHz clock for wallclock
 }
 
 void CCSRMem::Tick(CBus* bus)
