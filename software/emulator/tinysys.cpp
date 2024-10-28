@@ -31,14 +31,14 @@ struct EmulatorContext
 };
 
 static bool s_alive = true;
+static uint64_t s_wallclock = 0;
 
 int emulatorthread(void* data)
 {
 	CEmulator* emulator = (CEmulator*)data;
 	do
 	{
-		uint64_t wallclock = SDL_GetTicks64() / 10000; // ONE_MILLISECOND_IN_TICKS
-		emulator->Step(wallclock);
+		emulator->Step(s_wallclock);
 	} while(s_alive);
 
 	s_alive = false;
@@ -307,6 +307,9 @@ int SDL_main(int argc, char** argv)
 	if (dev)
 		AudioQueueCapacity = audioSpecObtained.samples;
 
+	uint64_t startTick = SDL_GetTicks64() * 10000;
+	s_wallclock = SDL_GetTicks64() * 10000 - startTick; // ONE_MILLISECOND_IN_TICKS
+
 	SDL_Thread* emulatorthreadID = SDL_CreateThread(emulatorthread, "emulator", ectx.emulator);
 	SDL_Thread* audiothreadID = SDL_CreateThread(audiothread, "audio", ectx.emulator);
 	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, &ectx); // 60fps
@@ -339,6 +342,8 @@ int SDL_main(int argc, char** argv)
 				}
 			}
 		}
+
+		s_wallclock = SDL_GetTicks64() * 10000 - startTick;
 	} while(s_alive);
 
 #if defined(CPU_STATS)
