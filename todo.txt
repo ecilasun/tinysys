@@ -1,0 +1,9 @@
+Horizontal blanking interrupt
+
+Byte aligned DMA
+
+Add video capture trigger via ESP32 GPIO
+
+Add remote reboot trigger via ESP32 GPIO
+
+Build a 3rd board
