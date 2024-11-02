@@ -2,21 +2,28 @@
 #include "core.h"
 #include "vpu.h"
 #include "dma.h"
-#include <stdio.h>
+
+#include <stdlib.h>
+
+#define NUM_SPRITES 128
+
+void DrawSprite(int x, int y, int w, int h, uint8_t *sprite, uint8_t *targetBuffer, int W, int H)
+{
+	for (int r=0; r<h; ++r)
+		DMACopyAutoByteMask((uint32_t)sprite+r*w, (uint32_t)(targetBuffer+(y+r)*320+x), w/16);
+}
 
 int main(int argc, char *argv[])
 {
-	printf("DMA test\n");
-
 	const uint32_t W = 320;
 	const uint32_t H = 240;
 
-	printf("Preparing buffers\n");
-
 	// Create source and target buffers (using VPU functions to get aligned buffer addresses)
-	uint8_t *bufferC = VPUAllocateBuffer(W*H);
-	uint8_t *bufferB = VPUAllocateBuffer(W*H);
-	uint8_t *sprite = VPUAllocateBuffer(64*64);
+	uint8_t *videoPageA = VPUAllocateBuffer(W*H);
+	uint8_t *videoPageB = VPUAllocateBuffer(W*H);
+	uint8_t *backdrop = VPUAllocateBuffer(W*H);
+	uint8_t *spriteA = VPUAllocateBuffer(64*64);
+	uint8_t *spriteB = VPUAllocateBuffer(32*32);
 
 	struct EVideoContext vx;
     vx.m_vmode = EVM_320_Wide;
@@ -24,28 +31,48 @@ int main(int argc, char *argv[])
 	VPUSetVMode(&vx, EVS_Enable);
 
 	// Set buffer B as output
-	VPUSetWriteAddress(&vx, (uint32_t)bufferB);
-	VPUSetScanoutAddress(&vx, (uint32_t)bufferC);
+	VPUSetWriteAddress(&vx, (uint32_t)videoPageB);
+	VPUSetScanoutAddress(&vx, (uint32_t)videoPageA);
 	VPUSetDefaultPalette(&vx);
 
-	// A 64x64 sprite with mask
+	struct EVideoSwapContext sc;
+	sc.cycle = 0;
+	sc.framebufferA = videoPageA;
+	sc.framebufferB = videoPageB;
+	VPUSwapPages(&vx, &sc);
+
+	// A 64x64 donut sprite with mask
 	for (uint32_t y=0;y<64;++y)
 	{
 		for (uint32_t x=0;x<64;++x)
 		{
-			// Draw a donut
 			int C = (x-31)*(x-31)+(y-31)*(y-31);
-			if (C < 31*31 && C > 15*15)
-				sprite[x+y*64] = 1 + ((x-y)%250);
+			if (C < 28*28 && C > 15*15)
+				spriteA[x+y*64] = 1 + ((x-y)%250);
+			else if (C < 31*31 && C > 28*28)
+				spriteA[x+y*64] = 1; // Blue border
 			else
-				sprite[x+y*64] = 0; // Zero is transparent for masked DMA
+				spriteA[x+y*64] = 0; // Zero is transparent for masked DMA
+		}
+	}
+
+	// A 32x32 donut sprite with mask
+	for (uint32_t y=0;y<32;++y)
+	{
+		for (uint32_t x=0;x<32;++x)
+		{
+			int C = (x-15)*(x-15)+(y-15)*(y-15);
+			if (C < 15*15 && C > 7*7)
+				spriteB[x+y*32] = 1 + ((x+y)%250);
+			else
+				spriteB[x+y*32] = 0; // Zero is transparent for masked DMA
 		}
 	}
 
 	// Fill buffer B with background data
 	for (uint32_t y=0;y<H;++y)
 		for (uint32_t x=0;x<W;++x)
-			bufferB[x+y*W] = (x^y)%255;
+			backdrop[x+y*W] = (x^y)%255;
 
 	// DMA operatins work directly on memory.
 	// Therefore, we need to insert a cache flush here so that
@@ -57,39 +84,44 @@ int main(int argc, char *argv[])
 	// Figure out how many DMAs this splits into
 	const uint32_t leftoverDMA = blockCountInMultiplesOf16bytes%256;
 	const uint32_t fullDMAs = blockCountInMultiplesOf16bytes/256;
-	printf("Initiating copy loop of %ld*256*16byte blocks and %ld*1*16byte block for a total of %ld bytes\n", fullDMAs, leftoverDMA, fullDMAs*4096+leftoverDMA*16);
 
-	//int32_t offset = 0;
-	//int32_t dir = 2;
-	int32_t averagetime = 20000;
-	int32_t outstats = 0;
-	uint32_t prevvsync = VPUReadVBlankCounter();
-	int ox = 32, dx = 1;
-	int oy = 32, dy = 2;
+	// Sprite coordinates and velocities
+	int ox[NUM_SPRITES], dx[NUM_SPRITES];
+	int oy[NUM_SPRITES], dy[NUM_SPRITES];
+	int spriteIndex[NUM_SPRITES];
+	for (int i=0;i<NUM_SPRITES;++i)
+	{
+		ox[i] = 16 + (rand()%128);
+		oy[i] = 16 + (rand()%128);
+		dx[i] = (rand()%8) - (rand()%8);
+		dy[i] = (rand()%8) - (rand()%8);
+		if (dx[i]==0 && dy[i]==0)
+		{
+			dx[i] = 1;
+			dy[i] = 1;
+		}
+		spriteIndex[i] = rand()%2;
+	}
+
 	while (1)
 	{
-		uint64_t starttime = E32ReadTime();
-
+		// Copy solid background
 		uint32_t fulloffset = 0;
 		for (uint32_t full=0;full<fullDMAs;++full)
 		{
-			DMACopy4K((uint32_t)(bufferB+fulloffset), (uint32_t)bufferC+fulloffset);
-			fulloffset += 256*16; // 16 bytes for each 256-block, total of 4K
+			DMACopy4K((uint32_t)(backdrop+fulloffset), (uint32_t)sc.writepage+fulloffset);
+			fulloffset += 256*16; // Stride is 4K bytes for 256*16 byte blocks
 		}
-		if (leftoverDMA!=0)
-			DMACopy((uint32_t)(bufferB+fulloffset), (uint32_t)(bufferC+fulloffset), leftoverDMA);
+		if (leftoverDMA != 0)
+			DMACopy((uint32_t)(backdrop+fulloffset), (uint32_t)(sc.writepage+fulloffset), leftoverDMA); // Copy the remaining bytes if any
 
-		// Copy a 64x64 block of masked sprite data onto the back buffer.
-		// Note that minimum DMA size is 16 bytes so the sprite has to be at least 16 pixels wide.
-		// There are no height restrictions for sprites.
-		for (int r=0; r<64; ++r)
-			DMACopyAutoByteMask((uint32_t)sprite+r*64, (uint32_t)(bufferC+(oy+r)*320+ox), 4);
-
-		// Copy some unaligned data
-		//DMACopyUnaligned();
-
-		// Copy some unaligned masked data
-		//DMACopyUnalignedMask();
+		// Sprites
+		for (int i=0; i<NUM_SPRITES; ++i)
+		{
+			uint8_t *sprite = spriteIndex[i] ? spriteA : spriteB;
+			int swh = spriteIndex[i] ? 64 : 32; // Sprites are square in this case, so one dimension is enough
+			DrawSprite(ox[i], oy[i], swh, swh, sprite, sc.writepage, W, H);
+		}
 
 		// Tag for DMA sync.
 		// This is essentially an item that gets processed after the last DMA, therefore we can wait for FIFO to become empty.
@@ -106,39 +138,32 @@ int main(int argc, char *argv[])
 		// reload what the DMA has written, and add our data on top.
 		/*for (int y = 0; y<96; ++y)
 			for (int x = 0; x<96; ++x)
-				bufferC[(x+ox)+(y+oy)*320] = x^y;*/
-
-		// Bounce the image around the screen
-		ox += dx;
-		oy += dy;
-		if (ox>255 ) {ox = 255; dx = -dx;}
-		if (ox<0) {ox = 0; dx = -dx;}
-		if (oy>175) {oy = 175; dy = -dy;}
-		if (oy<0) {oy = 0; dy = -dy;}
-
+				sc.writepage[(x+ox)+(y+oy)*320] = x^y;
 		// Scan-out hardware can only see the actual RAM contents so we need to make sure
 		// we've flushed everything in cache to RAM before we can see a stable image.
 		// This is only necessary if we're writing to the buffer on the CPU side.
 		// DMA writes are always visible to the scan-out hardware.
-		//CFLUSH_D_L1;
+		CFLUSH_D_L1;*/
 
-		// Wait for vsync before we continue.
-		// Ideally one would swap to the next backbuffer after this wait.
-		if (argc<=1)
+		// Bounce the image around the screen
+		for (int i=0;i<NUM_SPRITES;++i)
 		{
-			uint32_t currentvsync;
-			do {
-				currentvsync = VPUReadVBlankCounter();
-			} while (currentvsync == prevvsync);
-			prevvsync = currentvsync;
+			ox[i] += dx[i];
+			oy[i] += dy[i];
+			int swhPlusOne = spriteIndex[i] ? 65 : 33;
+			int bx = W-swhPlusOne;
+			int by = H-swhPlusOne;
+			if (ox[i]<0) {ox[i] = 0; dx[i] = -dx[i];}
+			if (oy[i]<0) {oy[i] = 0; dy[i] = -dy[i];}
+			if (ox[i]>bx) {ox[i] = bx; dx[i] = -dx[i];}
+			if (oy[i]>by) {oy[i] = by; dy[i] = -dy[i];}
 		}
 
-		uint64_t endtime = E32ReadTime();
-		averagetime = (averagetime + (uint32_t)(endtime-starttime))/2;
-
-		if (outstats % 512 == 0)
-			printf("DMA clocks (average): %ld\n", averagetime);
-		++outstats;
+		// Wait for vsync before we continue if argv[1] is not set.
+		// Ideally one would swap to the next backbuffer after this wait.
+		if (argc<=1)
+			VPUWaitVSync();
+		VPUSwapPages(&vx, &sc);
 	}
 	return 0;
 }
