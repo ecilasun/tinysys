@@ -19,7 +19,7 @@ module tinysoc #(
 	// LEDs
 	output wire [3:0] leds,
 	// ESP32
-	inout wire [16:0] esp_io,
+	inout wire [16:0] esp_io, // [16] is reserved for CPU reset
 	output wire esp_txd_out,
 	input wire esp_rxd_in,
 	// Video output
@@ -338,7 +338,7 @@ axi4gpio gpiodevice(
 	.aresetn(aresetn),
 	.gpioirq(gpioirq),
 	.s_axi(gpioif),
-	.gpio(esp_io) );
+	.gpio(esp_io[15:0]) );
 
 axi4led leddevice(
 	.aclk(aclk),
@@ -418,7 +418,7 @@ axi4CSRFile #( .HARTID(4'd0)) csrfile0 (
 	.gpioirq(gpioirq),
 	.uartirq(uartirq),
 	// CPU reset
-	.cpuresetreq(cpuresetreq0),
+	.cpuresetreq(cpuresetreq0), // TODO: || CPU reset request line driven by esp_io[16]
 	// Shadow registers
 	.mepc(mepcHart0),
 	.mtvec(mtvecHart0),
@@ -441,7 +441,7 @@ axi4CSRFile #( .HARTID(4'd1)) csrfile1 (
 	.gpioirq(gpioirq),
 	.uartirq(uartirq),
 	// CPU reset
-	.cpuresetreq(cpuresetreq1),
+	.cpuresetreq(cpuresetreq1), // TODO: || CPU reset request line driven by esp_io[16]
 	// Shadow registers
 	.mepc(mepcHart1),
 	.mtvec(mtvecHart1),

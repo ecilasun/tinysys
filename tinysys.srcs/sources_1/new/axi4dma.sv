@@ -51,15 +51,16 @@ typedef enum logic [3:0] {
 dmacmdmodetype cmdmode;
 
 logic [31:0] dmacmd;
-logic [31:0] dmasourceaddr;
+logic [27:0] dmasourceaddr;
 logic [31:0] dmatargetaddr;
 logic [7:0] dmasingleburstcount;
+logic misaligned;
 
 // Work fifo
 wire dfull, dempty, dvalid;
 logic dwre, dre;
-logic [72:0] ddin; // {masked,len,src,dest}
-wire [72:0] ddout;
+logic [69:0] ddin; // {misaligned,masked,len,src[31:4],dest[31:0]}
+wire [69:0] ddout;
 
 dmaworkfifo dmaworkfifoinst(
 	.full(dfull),
@@ -76,11 +77,12 @@ always_ff @(posedge aclk) begin
 	if (~delayedresetn) begin
 		cmdre <= 1'b0;
 		dmacmd <= 32'd0;
-		dmasourceaddr <= 32'd0;
+		dmasourceaddr <= 28'd0;
 		dmatargetaddr <= 32'd0;
+		misaligned <= 1'b0;
 		dmasingleburstcount <= 8'd0;
 		dwre <= 1'b0;
-		ddin <= 73'd0;
+		ddin <= 70'd0;
 		cmdmode <= INIT;
 	end else begin
 		cmdre <= 1'b0;
@@ -115,7 +117,7 @@ always_ff @(posedge aclk) begin
 
 			DMASOURCE: begin
 				if (dmafifovalid && ~dmafifoempty) begin
-					dmasourceaddr <= dmafifodout;
+					dmasourceaddr <= dmafifodout[31:4];
 					// Advance FIFO
 					cmdre <= 1'b1;
 					cmdmode <= FINALIZE;
@@ -125,6 +127,7 @@ always_ff @(posedge aclk) begin
 			DMATARGET: begin
 				if (dmafifovalid && ~dmafifoempty) begin
 					dmatargetaddr <= dmafifodout;
+					misaligned <= dmacmd[9];
 					// Advance FIFO
 					cmdre <= 1'b1;
 					cmdmode <= FINALIZE;
@@ -142,10 +145,12 @@ always_ff @(posedge aclk) begin
 			end
 
 			DMASTART: begin
-				// maskmode, burstcount, sourceaddr, targetaddr
-				ddin <= {dmacmd[8], dmasingleburstcount, dmasourceaddr, dmatargetaddr};
-				dwre <= 1'b1;
-				cmdmode <= FINALIZE;
+				if (!dfull) begin
+					// misaligned, maskmode, burstcount, sourceaddr[31:4], targetaddr[31:0]
+					ddin <= {misaligned, dmacmd[8], dmasingleburstcount, dmasourceaddr, dmatargetaddr};
+					dwre <= 1'b1;
+					cmdmode <= FINALIZE;
+				end
 			end
 
 
@@ -169,10 +174,22 @@ always_ff @(posedge aclk) begin
 end
 
 // ------------------------------------------------------------------------------------
+// Address and mask registers
+// ------------------------------------------------------------------------------------
+
+logic wmisaligned;
+logic wmasked;
+logic [27:0] wsourceaddr;
+logic [31:0] wtargetaddr;
+logic [7:0] wsingleburstcount;
+
+// ------------------------------------------------------------------------------------
 // Aligned / Aligned masked packet worker
 // ------------------------------------------------------------------------------------
 
-logic [7:0] burstcursor;
+logic [7:0] rburstcursor;
+logic [7:0] rburstcursorPrev;
+logic [7:0] wburstcursor;
 logic [127:0] burstcache[0:255];
 
 initial begin
@@ -184,28 +201,34 @@ logic burstwe;
 logic [127:0] burstdin;
 always @(posedge aclk) begin
 	if (burstwe)
-		burstcache[burstcursor] <= burstdin;
+		burstcache[wburstcursor] <= burstdin;
 end
-wire [127:0] burstdout = burstcache[burstcursor];
+wire [127:0] burstdout = burstcache[rburstcursor];
+wire [127:0] burstdoutPrev = burstcache[rburstcursorPrev];
 
+wire lastburst = rburstcursor == wsingleburstcount;
+wire firstburst = rburstcursor == 0;
+wire midburst = !(lastburst || firstburst);
+
+wire [3:0] targetAlignMask = wtargetaddr[3:0];
+wire [6:0] targetAlignByte = {targetAlignMask, 3'd0};
+wire [127:0] targetAlignedBytes = {{burstdout, burstdoutPrev}<<targetAlignByte}[255:128];
+logic [15:0] leadingMask;
+logic [15:0] trailingMask;
+
+// Generate an optional write mask to avoid writing zero bytes to the target, controlled by the wmasked flag
 wire [15:0] automask = {
-	|burstdout[127:120], |burstdout[119:112], |burstdout[111:104], |burstdout[103:96],
-	|burstdout[95:88], |burstdout[87:80], |burstdout[79:72], |burstdout[71:64],
-	|burstdout[63:56], |burstdout[55:48], |burstdout[47:40], |burstdout[39:32],
-	|burstdout[31:23], |burstdout[23:16], |burstdout[15:7], |burstdout[7:0]
-};
+	|targetAlignedBytes[127:120], |targetAlignedBytes[119:112], |targetAlignedBytes[111:104], |targetAlignedBytes[103:96],
+	|targetAlignedBytes[95:88], |targetAlignedBytes[87:80], |targetAlignedBytes[79:72], |targetAlignedBytes[71:64],
+	|targetAlignedBytes[63:56], |targetAlignedBytes[55:48], |targetAlignedBytes[47:40], |targetAlignedBytes[39:32],
+	|targetAlignedBytes[31:23], |targetAlignedBytes[23:16], |targetAlignedBytes[15:7], |targetAlignedBytes[7:0] };
 
 typedef enum logic [3:0] {
 	WINIT,
 	DMACMD, DMABEGIN,
-	WAITREADADDR, READLOOP, SETUPWRITE, WAITWRITEADDR, WRITEBEGIN, WRITELOOP, WRITETRAIL,
+	WAITREADADDR, READLOOP, SETUPWRITE, SETUPWRITEADDR, WAITWRITEADDR, WRITEBEGIN, WRITELOOP, WRITETRAIL,
 	WFINALIZE } workercmdtype;
 workercmdtype workmode;
-
-logic wmask;
-logic [31:0] wsourceaddr;
-logic [31:0] wtargetaddr;
-logic [7:0] wsingleburstcount;
 
 always @(posedge aclk) begin
 	if (~delayedresetn) begin
@@ -217,11 +240,16 @@ always @(posedge aclk) begin
 		m_axi.arvalid <= 0;
 		m_axi.rready <= 0;
 		burstwe <= 1'b0;
-		burstcursor <= 8'd0;
-		wmask <= 1'b0;
-		wsourceaddr <= 32'd0;
+		rburstcursor <= 8'd0;
+		rburstcursorPrev <= 8'd0;
+		wburstcursor <= 8'd0;
+		wmasked <= 1'b0;
+		wmisaligned <= 1'b0;
+		wsourceaddr <= 28'd0;
 		wtargetaddr <= 32'd0;
 		wsingleburstcount <= 8'd0;
+		leadingMask <= 16'h0000;
+		trailingMask <= 16'h0000;
 		dre <= 1'b0;
 		workmode <= WINIT;
 	end else begin
@@ -236,7 +264,7 @@ always @(posedge aclk) begin
 
 			DMACMD: begin
 				if (dvalid && ~dempty) begin
-					{wmask, wsingleburstcount, wsourceaddr, wtargetaddr} <= ddout;
+					{wmisaligned, wmasked, wsingleburstcount, wsourceaddr, wtargetaddr} <= ddout;
 					workmode <= DMABEGIN;
 				end
 			end
@@ -246,7 +274,7 @@ always @(posedge aclk) begin
 				// NOTE: Not to complicate hardware, we make sure to set this to burstcount-8'd1 in software
 				m_axi.arlen <= wsingleburstcount;
 				m_axi.arvalid <= 1;
-				m_axi.araddr <= wsourceaddr; 
+				m_axi.araddr <= {wsourceaddr,4'h0}; 
 				workmode <= WAITREADADDR;
 			end
 
@@ -254,7 +282,7 @@ always @(posedge aclk) begin
 				if (m_axi.arready) begin
 					m_axi.arvalid <= 0;
 					m_axi.rready <= 1;
-					burstcursor <= 8'hFF;
+					wburstcursor <= 8'hFF;
 					workmode <= READLOOP;
 				end
 			end
@@ -264,13 +292,31 @@ always @(posedge aclk) begin
 					m_axi.rready <= ~m_axi.rlast;
 					burstwe <= 1'b1;
 					burstdin <= m_axi.rdata;
-					burstcursor <= burstcursor + 8'd1;
+					wburstcursor <= wburstcursor + 8'd1;
 					workmode <= ~m_axi.rlast ? READLOOP : SETUPWRITE;
 				end
 			end
 
 			SETUPWRITE: begin
-				burstcursor <= 8'd0;
+				case (1'b1)
+					wmisaligned: begin
+						leadingMask <= {{32'hFFFF0000}<<targetAlignMask}[31:16];
+						trailingMask <= {{32'h0000FFFF}<<targetAlignMask}[31:16];
+					end
+					default: begin
+						leadingMask <= 16'hFFFF;
+						trailingMask <=  16'hFFFF;
+					end
+				endcase
+				workmode <= SETUPWRITEADDR;
+			end
+
+			SETUPWRITEADDR: begin
+				rburstcursor <= 8'h00;
+				rburstcursorPrev <= 8'hFF;
+				// TODO: We need to write an extra 16 bytes at the end,
+				// masked to clip extra bits due to misalignment. 
+				//m_axi.awlen <= misaligned ? wsingleburstcount+8'd1 : wsingleburstcount;
 				m_axi.awlen <= wsingleburstcount;
 				m_axi.awvalid <= 1;
 				m_axi.awaddr <= wtargetaddr;
@@ -286,16 +332,25 @@ always @(posedge aclk) begin
 			end
 
 			WRITEBEGIN: begin
-				m_axi.wdata <= burstdout;
-				m_axi.wstrb <= wmask ? automask : 16'hFFFF;
+				case (2'b11)
+					{wmasked, firstburst}:	m_axi.wstrb <= automask & leadingMask;
+					{wmasked, lastburst}:	m_axi.wstrb <= automask & trailingMask;
+					{wmasked, midburst}:	m_axi.wstrb <= automask;
+					{!wmasked, firstburst}:	m_axi.wstrb <= leadingMask;
+					{!wmasked, lastburst}:	m_axi.wstrb <= trailingMask;
+					{!wmasked, midburst}:	m_axi.wstrb <= 16'hFFFF;
+					default:				m_axi.wstrb <= 16'hFFFF;
+				endcase
+				m_axi.wdata <= targetAlignedBytes;
 				m_axi.wvalid <= 1'b1;
-				m_axi.wlast <= (burstcursor==wsingleburstcount) ? 1'b1 : 1'b0;
+				m_axi.wlast <= lastburst;
 				workmode <= WRITELOOP;
 			end
 
 			WRITELOOP: begin
 				if (m_axi.wready) begin
-					burstcursor <= burstcursor + 8'd1;
+					rburstcursor <= rburstcursor + 8'h01;
+					rburstcursorPrev <= rburstcursorPrev + 8'h01;
 					m_axi.wvalid <= 1'b0;
 					m_axi.wstrb <= 16'h0000;
 					workmode <= m_axi.wlast ? WRITETRAIL : WRITEBEGIN;

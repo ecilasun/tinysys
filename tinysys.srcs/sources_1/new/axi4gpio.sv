@@ -5,10 +5,10 @@ module axi4gpio(
 	input wire aresetn,
 	output wire gpioirq,
 	axi4if.slave s_axi,
-	inout wire [16:0] gpio );
+	inout wire [15:0] gpio ); // NOTE: gpio[16] is reserved for hard reset triggered by the ESP chip (to recover from hangs etc)
 
 logic gpiowe = 1'b0;
-logic [16:0] gpiodout;
+logic [15:0] gpiodout;
 
 // --------------------------------------------------
 // Reset delay line
@@ -21,13 +21,13 @@ delayreset delayresetinst(
 	.delayedresetn(delayedresetn) );
 
 // Output and input values
-logic [16:0] gpiooutstate;
-logic [16:0] gpioinstate;
-logic [16:0] previnstate;
+logic [15:0] gpiooutstate;
+logic [15:0] gpioinstate;
+logic [15:0] previnstate;
 
 // Nothing is input or output by default (all pins floating)
-logic [16:0] gpioinputmask;
-logic [16:0] gpiooutputmask;
+logic [15:0] gpioinputmask;
+logic [15:0] gpiooutputmask;
 
 assign gpio[0]  = gpiooutputmask[0]==1'b1  ? gpiooutstate[0]  : 1'bz;
 assign gpio[1]  = gpiooutputmask[1]==1'b1  ? gpiooutstate[1]  : 1'bz;
@@ -45,12 +45,11 @@ assign gpio[12] = gpiooutputmask[12]==1'b1 ? gpiooutstate[12] : 1'bz;
 assign gpio[13] = gpiooutputmask[13]==1'b1 ? gpiooutstate[13] : 1'bz;
 assign gpio[14] = gpiooutputmask[14]==1'b1 ? gpiooutstate[14] : 1'bz;
 assign gpio[15] = gpiooutputmask[15]==1'b1 ? gpiooutstate[15] : 1'bz;
-assign gpio[16] = gpiooutputmask[16]==1'b1 ? gpiooutstate[16] : 1'bz;
 
 always @(posedge aclk) begin
 	if (~delayedresetn) begin
-		gpioinstate <= 17'd0;
-		gpiooutstate <= 17'd0;
+		gpioinstate <= 16'd0;
+		gpiooutstate <= 16'd0;
 	end else begin
 
 		if (gpiowe)
@@ -72,14 +71,13 @@ always @(posedge aclk) begin
 		gpioinstate[13] <= gpioinputmask[13]==1'b1 ? gpio[13] : 1'b0;
 		gpioinstate[14] <= gpioinputmask[14]==1'b1 ? gpio[14] : 1'b0;
 		gpioinstate[15] <= gpioinputmask[15]==1'b1 ? gpio[15] : 1'b0;
-		gpioinstate[16] <= gpioinputmask[16]==1'b1 ? gpio[16] : 1'b0;
 	end
 end
 
 wire gpiofifofull, gpiofifovalid;
 wire gpiofifoempty;
-logic [16:0] gpiofifodin;
-wire [16:0] gpiofifodout;
+logic [15:0] gpiofifodin;
+wire [15:0] gpiofifodout;
 logic gpiofifowe, gpiofifore;
 gpiofifo gpiofifoinst(
 	.full(gpiofifofull),
@@ -94,7 +92,7 @@ gpiofifo gpiofifoinst(
 
 always @(posedge aclk) begin
 	if (~delayedresetn) begin
-		previnstate <= 17'd0;
+		previnstate <= 16'd0;
 		gpiofifowe <= 1'b0;
 	end else begin
 		gpiofifowe <= 1'b0;
@@ -108,9 +106,9 @@ end
 
 always @(posedge aclk) begin
 	if (~delayedresetn) begin
-		gpiodout <= 17'd0;
-		gpioinputmask <= 17'd0;
-		gpiooutputmask <= 17'd0;
+		gpiodout <= 16'd0;
+		gpioinputmask <= 16'd0;
+		gpiooutputmask <= 16'd0;
 		gpiofifore <= 1'b0;
 		s_axi.awready <= 1'b0;
 		s_axi.arready <= 1'b0;
@@ -137,12 +135,12 @@ always @(posedge aclk) begin
 
 		if (s_axi.rready) begin
 			unique case (s_axi.araddr[3:0])
-				4'h4: s_axi.rdata[31:0] <= {15'd0, gpioinputmask};	// 4'h4: Write mask port
-				4'h8: s_axi.rdata[31:0] <= {15'd0, gpiooutputmask}; // 4'h8: Read mask port
+				4'h4: s_axi.rdata[31:0] <= {16'd0, gpioinputmask};	// 4'h4: Write mask port
+				4'h8: s_axi.rdata[31:0] <= {16'd0, gpiooutputmask}; // 4'h8: Read mask port
 				4'hC: s_axi.rdata[31:0] <= {31'd0, ~gpiofifoempty};	// 4'hC: I/O fifo status
 				default: begin
 					if (~gpiofifoempty && gpiofifovalid) begin
-						s_axi.rdata[31:0] <= {15'd0, gpiofifodout}; // 4'h0: Output data
+						s_axi.rdata[31:0] <= {16'd0, gpiofifodout}; // 4'h0: Output data
 						// Advance fifo
 						gpiofifore <= 1'b1;
 					end else begin
@@ -155,17 +153,17 @@ always @(posedge aclk) begin
 		if (s_axi.wvalid) begin
 			unique case (s_axi.awaddr[3:0])
 				4'h4: begin
-					gpioinputmask <= s_axi.wdata[16:0];
+					gpioinputmask <= s_axi.wdata[15:0];
 				end
 				4'h8: begin
-					gpiooutputmask <= s_axi.wdata[16:0];
+					gpiooutputmask <= s_axi.wdata[15:0];
 				end
 				4'hC: begin
 					// Can't write to fifo state register
 				end
 				default: begin	// 4'h0 and any other address
 					gpiowe <= 1'b1;
-					gpiodout <= s_axi.wdata[16:0];
+					gpiodout <= s_axi.wdata[15:0];
 				end
 			endcase
 		end

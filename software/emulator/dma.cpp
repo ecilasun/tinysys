@@ -107,8 +107,12 @@ void CDMA::Tick(CSysMem* mem)
 			for (uint32_t i = 0; i < dmalen; ++i)
 			{
 				uint32_t data[4];
-				mem->Read128bits(m_dmasourceaddr, data);
+
+				uint32_t alignedSource = m_dmasourceaddr & ~0xF;
+				mem->Read128bits(alignedSource, data);
+
 				mem->Write128bits(m_dmatargetaddr, data);
+
 				m_dmasourceaddr += 16;
 				m_dmatargetaddr += 16;
 			}
@@ -118,16 +122,26 @@ void CDMA::Tick(CSysMem* mem)
 
 		case 3:
 		{
-			// Each burst is 16 bytes in hardware (therefore 4 words)
-			uint32_t dmalen = m_dmaburstcount*4;
+			uint32_t dmalen = m_dmaburstcount;
 			for (uint32_t i = 0; i < dmalen; ++i)
 			{
-				uint32_t data = 0;
-				mem->Read(m_dmasourceaddr, data);
-				uint32_t mask = (data & 0x000000FF ? 0x1 : 0x0) | (data & 0x0000FF00 ? 0x2 : 0x0) | (data & 0x00FF0000 ? 0x4 : 0x0) | (data & 0xFF000000 ? 0x8 : 0x0);
-				mem->Write(m_dmatargetaddr, data, mask);
-				m_dmasourceaddr += 4;
-				m_dmatargetaddr += 4;
+				uint32_t data[4];
+
+				uint32_t alignedSource = m_dmasourceaddr & ~0xF;
+				mem->Read128bits(alignedSource, data);
+
+				uint32_t mask0 = (data[0] & 0x000000FF ? 0x1 : 0x0) | (data[0] & 0x0000FF00 ? 0x2 : 0x0) | (data[0] & 0x00FF0000 ? 0x4 : 0x0) | (data[0] & 0xFF000000 ? 0x8 : 0x0);
+				uint32_t mask1 = (data[1] & 0x000000FF ? 0x1 : 0x0) | (data[1] & 0x0000FF00 ? 0x2 : 0x0) | (data[1] & 0x00FF0000 ? 0x4 : 0x0) | (data[1] & 0xFF000000 ? 0x8 : 0x0);
+				uint32_t mask2 = (data[2] & 0x000000FF ? 0x1 : 0x0) | (data[2] & 0x0000FF00 ? 0x2 : 0x0) | (data[2] & 0x00FF0000 ? 0x4 : 0x0) | (data[2] & 0xFF000000 ? 0x8 : 0x0);
+				uint32_t mask3 = (data[3] & 0x000000FF ? 0x1 : 0x0) | (data[3] & 0x0000FF00 ? 0x2 : 0x0) | (data[3] & 0x00FF0000 ? 0x4 : 0x0) | (data[3] & 0xFF000000 ? 0x8 : 0x0);
+
+				mem->Write(m_dmatargetaddr, data[0], mask0);
+				mem->Write(m_dmatargetaddr+4, data[1], mask1);
+				mem->Write(m_dmatargetaddr+8, data[2], mask2);
+				mem->Write(m_dmatargetaddr+12, data[3], mask3);
+
+				m_dmasourceaddr += 16;
+				m_dmatargetaddr += 16;
 			}
 			m_state = 0;
 		}

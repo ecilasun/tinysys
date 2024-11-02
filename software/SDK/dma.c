@@ -19,17 +19,17 @@ volatile uint32_t *DMAIO = (volatile uint32_t* ) DEVICE_DMAC;
  * @brief Copy 4K of data from source to target
  * 
  * The function will copy 4K of data in 16 byte chunks (256 blocks) from source to target.
- * The source and target addresses must be 16 byte aligned.
+ * The source address must be 16 byte aligned.
  * 
  * @param _sourceAddress16ByteAligned 16 byte aligned source address
- * @param _targetAddress16ByteAligned 16 byte aligned target address
+ * @param _targetAddress Byte aligned target address
  */
-void DMACopy4K(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned)
+void DMACopy4K(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress)
 {
 	*DMAIO = DMACMD_SETSOURCE;
 	*DMAIO = _sourceAddress16ByteAligned;
 	*DMAIO = DMACMD_SETTARGET;
-	*DMAIO = _targetAddress16ByteAligned;
+	*DMAIO = _targetAddress;
 	*DMAIO = DMACMD_SETLENGHT;
 	*DMAIO = 255;
 	*DMAIO = DMACMD_ENQUEUE;
@@ -39,84 +39,41 @@ void DMACopy4K(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targe
  * @brief Copy data from source to target
  * 
  * The function will copy data in 16 byte chunks (256 blocks) from source to target.
- * The source and target addresses must be 16 byte aligned.
+ * The source address must be 16 byte aligned.
  * Any zero bytes in the data stream will be ignored and not written to the target.
  * 
  * @param _sourceAddress16ByteAligned 16 byte aligned source address
- * @param _targetAddress16ByteAligned 16 byte aligned target address
+ * @param _targetAddress Byte aligned target address
  */
-void DMACopyAutoByteMask4K(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned)
+void DMACopyAutoByteMask4K(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress)
 {
 	*DMAIO = DMACMD_SETSOURCE;
 	*DMAIO = _sourceAddress16ByteAligned;
 	*DMAIO = DMACMD_SETTARGET;
-	*DMAIO = _targetAddress16ByteAligned;
+	*DMAIO = _targetAddress;
 	*DMAIO = DMACMD_SETLENGHT;
 	*DMAIO = 255;
 	*DMAIO = DMACMD_ENQUEUE_AUTOBYTEMASK;
 }
 
 /**
- * @brief Copy unaligned data from source to target
- * 
- * The function will copy data in given byte count from source to target.
- * The source and target addresses do not have to be aligned, and the byte count does not have to be a multiple of 16.
- * 
- * @param _sourceAddress Unaligned source address
- * @param _targetAddress Unaligned target address
- * @param _byteCount Number of bytes to copy
- */
-/*void DMACopyUnaligned(const uint32_t _sourceAddress, const uint32_t _targetAddress, const uint8_t _byteCount)
-{
-	*DMAIO = DMACMD_SETSOURCE;
-	*DMAIO = _sourceAddress;
-	*DMAIO = DMACMD_SETTARGET;
-	*DMAIO = _targetAddress;
-	*DMAIO = DMACMD_SETLENGHT;
-	*DMAIO = (_byteCount+15)/16 - 1;;
-	*DMAIO = DMACMD_ENQUEUEUNALIGNED;
-}*/
-
-/**
- * @brief Copy unaligned data from source to target
- * 
- * The function will copy data in given byte count from source to target.
- * The source and target addresses do not have to be aligned, and the byte count does not have to be a multiple of 16.
- * Any zero bytes in the data stream will be ignored and not written to the target.
- * 
- * @param _sourceAddress Unaligned source address
- * @param _targetAddress Unaligned target address
- * @param _byteCount Number of bytes to copy
- */
-/*void DMACopyUnalignedMask(const uint32_t _sourceAddress, const uint32_t _targetAddress, const uint8_t _byteCount)
-{
-	*DMAIO = DMACMD_SETSOURCE;
-	*DMAIO = _sourceAddress;
-	*DMAIO = DMACMD_SETTARGET;
-	*DMAIO = _targetAddress;
-	*DMAIO = DMACMD_SETLENGHT;
-	*DMAIO = (_byteCount+15)/16 - 1;
-	*DMAIO = DMACMD_ENQUEUEUNALIGNED_AUTOBYTEMASK;
-}*/
-
-/**
  * @brief Copy data from source to target
  * 
  * The function will copy data in given multiples of 16 byte chunks from source to target (up to 256 blocks).
- * The source and target addresses must be 16 byte aligned.
+ * The source address must be 16 byte aligned.
  * 
  * @param _sourceAddress16ByteAligned 16 byte aligned source address
- * @param _targetAddress16ByteAligned 16 byte aligned target address
+ * @param _targetAddress Byte aligned target address
  * @param _blockCountInMultiplesOf16bytes Number of 16 byte blocks to copy
  */
-void DMACopy(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned, const uint8_t _blockCountInMultiplesOf16bytes)
+void DMACopy(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress, const uint8_t _blockCountInMultiplesOf16bytes)
 {
 	*DMAIO = DMACMD_SETSOURCE;
 	*DMAIO = _sourceAddress16ByteAligned;
-	*DMAIO = DMACMD_SETTARGET;
-	*DMAIO = _targetAddress16ByteAligned;
+	*DMAIO = DMACMD_SETTARGET | DMACMD_MISALIGNED;
+	*DMAIO = _targetAddress;
 	*DMAIO = DMACMD_SETLENGHT;
-	*DMAIO = (_blockCountInMultiplesOf16bytes-1);
+	*DMAIO = _blockCountInMultiplesOf16bytes; // No minus one since we need it for the byte alignment shift
 	*DMAIO = DMACMD_ENQUEUE;
 }
 
@@ -124,29 +81,29 @@ void DMACopy(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetA
  * @brief Copy data from source to target
  * 
  * The function will copy data in given multiples of 16 byte chunks from source to target (up to 256 blocks).
- * The source and target addresses must be 16 byte aligned.
- * Any zero bytes in the data will be ignored and not written to the target.
+ * The source addresses must be 16 byte aligned.
+ * Any value of zero in the source byte stream will be ignored and not written to the target.
  * 
  * @param _sourceAddress16ByteAligned 16 byte aligned source address
- * @param _targetAddress16ByteAligned 16 byte aligned target address
+ * @param _targetAddress Byte aligned target address
  * @param _blockCountInMultiplesOf16bytes Number of 16 byte blocks to copy
  */
-void DMACopyAutoByteMask(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress16ByteAligned, const uint8_t _blockCountInMultiplesOf16bytes)
+void DMACopyAutoByteMask(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress, const uint8_t _blockCountInMultiplesOf16bytes)
 {
 	*DMAIO = DMACMD_SETSOURCE;
 	*DMAIO = _sourceAddress16ByteAligned;
-	*DMAIO = DMACMD_SETTARGET;
-	*DMAIO = _targetAddress16ByteAligned;
+	*DMAIO = DMACMD_SETTARGET | DMACMD_MISALIGNED;
+	*DMAIO = _targetAddress;
 	*DMAIO = DMACMD_SETLENGHT;
-	*DMAIO = (_blockCountInMultiplesOf16bytes-1);
+	*DMAIO = _blockCountInMultiplesOf16bytes; // No minus one since we need it for the byte alignment shift
 	*DMAIO = DMACMD_ENQUEUE_AUTOBYTEMASK;
 }
 
 /**
  * @brief Set DMA tag
  * 
- * The function will set a tag value that can be used to identify a DMA operation.
- * @note The tag value is not used by the DMA hardware at this point in time, but can still be used to synchronize DMA with software.
+ * The function is used as a marker at the end of DMA operations to signal the end of all DMA work.
+ * @note The tag value is reserved for future use and must be set to zero.
  * 
  * @param _tag Tag value
  */
@@ -160,31 +117,31 @@ void DMATag(const uint32_t _tag)
  * @brief Resolve 4x1 rasterizer tiles
  * 
  * The function will resolve 4x1 rasterizer tiles from source to target and change their layout to 2x2 pixel blocks.
- * The source and target addresses must be 16 byte aligned.
+ * The source address must be 16 byte aligned.
  * 
  * @note This function is a software emulation of the hardware tile resolver, and isn't used just yet.
  * 
  * @param _rpuTileBuffer16ByteAligned 16 byte aligned source address
- * @param _vpuWritePage16ByteAligned 16 byte aligned target address
+ * @param _vpuWritePage Byte aligned target address
  */
-void DMAResolveTiles(const uint32_t _rpuTileBuffer16ByteAligned, const uint32_t _vpuWritePage16ByteAligned)
+void DMAResolveTiles(const uint32_t _rpuTileBuffer16ByteAligned, const uint32_t _vpuWritePage)
 {
 	// NOTE: 4x1 tile software version is a straigth memcpy
-	__builtin_memcpy((void*)_vpuWritePage16ByteAligned, (void*)_rpuTileBuffer16ByteAligned, 240*320);
+	__builtin_memcpy((void*)_vpuWritePage, (void*)_rpuTileBuffer16ByteAligned, 240*320);
 
 	// TODO: Let hardware handle this
 	/*
 	*DMAIO = DMACMD_SETSOURCE;
 	*DMAIO = _rpuTileBuffer16ByteAligned;
-	*DMAIO = DMACMD_SETTARGET;
-	*DMAIO = _vpuWritePage16ByteAligned;
+	*DMAIO = DMACMD_SETTARGET | (_vpuWritePage&0xF ? DMACMD_MISALIGNED : 0);
+	*DMAIO = _vpuWritePage;
 	*DMAIO = DMACMD_RESOLVETILES;*/
 
 	// Software emulation
 	/*for (uint32_t ty=0; ty<60; ++ty) // 240/4
 	{
 		uint32_t Y = _rpuTileBuffer16ByteAligned + ty*80*16;
-		uint32_t U = _vpuWritePage16ByteAligned + ty*4*320;
+		uint32_t U = _vpuWritePage + ty*4*320;
 		for (uint32_t tx=0;tx<80;++tx) // 320/4
 		{
 			// Read 16 byte source

@@ -98,16 +98,25 @@ def build(bld):
         use=['sdcard', 'fat32'])
 
     sourcefile = os.path.abspath('build/release/tinysys.exe')
+    targetfile = os.path.abspath('bin/tinysys.exe')
+    if (os.path.isfile(targetfile)):
+        os.unlink(targetfile)
     if (os.path.isfile(sourcefile)):
-        targetfile = os.path.abspath('bin/tinysys.exe')
+        print("Copying " + sourcefile + " to " + targetfile)
         copyfile(sourcefile, targetfile)
 
     sourcefile = os.path.abspath('build/release/SDL2_ttf.dll')
+    targetfile = os.path.abspath('bin/SDL2_ttf.dll')
+    if (os.path.isfile(targetfile)):
+        os.unlink(targetfile)
     if (os.path.isfile(sourcefile)):
-        targetfile = os.path.abspath('bin/SDL2_ttf.dll')
+        print("Copying " + sourcefile + " to " + targetfile)
         copyfile(sourcefile, targetfile)
 
     sourcefile = os.path.abspath('build/release/SDL2.dll')
+    targetfile = os.path.abspath('bin/SDL2.dll')
+    if (os.path.isfile(targetfile)):
+        os.unlink(targetfile)
     if (os.path.isfile(sourcefile)):
-        targetfile = os.path.abspath('bin/SDL2.dll')
+        print("Copying " + sourcefile + " to " + targetfile)
         copyfile(sourcefile, targetfile)

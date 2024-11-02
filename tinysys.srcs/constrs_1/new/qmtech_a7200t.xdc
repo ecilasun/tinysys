@@ -329,3 +329,5 @@ resize_pblock [get_pblocks pblock_hart1] -add {CLOCKREGION_X1Y2:CLOCKREGION_X1Y2
 create_pblock pblock_hart0
 add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list socinstance/hart0]]
 resize_pblock [get_pblocks pblock_hart0] -add {CLOCKREGION_X1Y3:CLOCKREGION_X1Y3}
+
+
