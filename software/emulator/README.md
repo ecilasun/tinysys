@@ -48,8 +48,7 @@ Here's a list of features implemented so far
 And here's the list of what's missing
 
 - ESP32-C6 module emulation is missing and won't be supported
-- GPIO isn't supported (as that requires emulation of ESP32-C6)
-- USB-A isn't supported
+- USB-A port emulation isn't supported
 
 Please note that this is not a clock precise emulation and instructions will almost always retire in 1 CPU clock. Also all devices clock at the same speed so there's going to be some mismatch there as well. Since the aim of this emulator is to provide a testbed for ROM or user software in the absence of real hardware, it should be close enough to get development rolling.
 

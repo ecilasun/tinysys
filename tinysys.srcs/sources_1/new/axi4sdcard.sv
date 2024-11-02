@@ -59,8 +59,8 @@ wire keyfifofull, keyfifovalid;
 wire keyfifoempty;
 wire keyfifodout;
 logic keyfifodin;
-logic keyfifowe = 1'b0;
-logic keyfifore = 1'b0;
+logic keyfifowe;
+logic keyfifore;
 bitfifo keyfifo(
 	.full(keyfifofull),
 	.din(keyfifodin),
@@ -236,6 +236,7 @@ end
 
 always @(posedge aclk) begin
 	if (~delayedresetn) begin
+		keyfifore <= 1'b0;
 		raddrstate <= 2'b00;
 	end else begin
 		infifore <= 1'b0;

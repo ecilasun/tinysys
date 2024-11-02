@@ -1,11 +1,9 @@
 #include "rombase.h"
 #include "sdcard.h"
-#include "gpio.h"
 #include "uart.h"
 #include "mini-printf.h"
 #include "serialinringbuffer.h"
 #include "usbhidhandler.h"
-#include "gpioringbuffer.h"
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -449,15 +447,6 @@ uint32_t IsFileHandleAllocated(const uint32_t _bitIndex, const uint32_t  _input)
 	return (_input & mask) ? 1 : 0;
 }
 
-void HandleGPIO(const uint32_t _PC)
-{
-	while (*GPIO_FIFOHASDATA)
-	{
-		uint32_t data = *GPIO_DATA;
-		GPIORingBufferWrite(&data, sizeof(uint32_t));
-	}
-}
-
 void HandleUART()
 {
 	// Incoming EP1 data package
@@ -550,7 +539,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 
 				if (hwid&1) HandleUSBHID();
 				else if (hwid&2) HandleSDCardDetect();
-				else if (hwid&4) HandleGPIO(PC);
+				//else if (hwid&4) this is going to be for hard CPU reset, therefore can't be handled here
 				else if (hwid&8) HandleUART();
 				else // No familiar bit set, unknown device
 				{
@@ -900,7 +889,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				{
 					// TODO: support devices (i.e. names starting with /dev/)
 					// /dev/file -> file i/o
-					// /dev/gpio -> DEVICE_GPIO
+					// /dev/null -> DEVICE_NULL
 					// /dev/leds -> DEVICE_LEDS
 					// /dev/vpuc -> DEVICE_VPUC
 					// /dev/spic -> DEVICE_SPIC

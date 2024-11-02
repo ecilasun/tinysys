@@ -36,7 +36,7 @@ always @(posedge clk) begin
 			end else if (e > 8'd126) begin // Values greater than 1.0 go directly to saturate
 				result <= 15;
 			end else begin // All other values follow adjusted f2i shift.
-				shift <= (8'd127 + 8'd23 - 8'd4) - e;
+				shift <= {(8'd146) - e}[5:0]; // (8'd127 + 8'd23 - 8'd4) - e;
 				result <= ((m | 32'h800000) >> shift) & 4'hF;
 			end
 		end

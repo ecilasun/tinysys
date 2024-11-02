@@ -42,14 +42,14 @@ int main(int argc, char *argv[])
 	VPUSwapPages(&vx, &sc);
 
 	// A 64x64 donut sprite with mask
-	for (uint32_t y=0;y<64;++y)
+	for (int y=0;y<64;++y)
 	{
-		for (uint32_t x=0;x<64;++x)
+		for (int x=0;x<64;++x)
 		{
 			int C = (x-31)*(x-31)+(y-31)*(y-31);
-			if (C < 28*28 && C > 15*15)
+			if (C <= 28*28 && C > 15*15)
 				spriteA[x+y*64] = 1 + ((x-y)%250);
-			else if (C < 31*31 && C > 28*28)
+			else if (C <= 31*31 && C > 28*28)
 				spriteA[x+y*64] = 1; // Blue border
 			else
 				spriteA[x+y*64] = 0; // Zero is transparent for masked DMA
@@ -57,12 +57,12 @@ int main(int argc, char *argv[])
 	}
 
 	// A 32x32 donut sprite with mask
-	for (uint32_t y=0;y<32;++y)
+	for (int y=0;y<32;++y)
 	{
-		for (uint32_t x=0;x<32;++x)
+		for (int x=0;x<32;++x)
 		{
 			int C = (x-15)*(x-15)+(y-15)*(y-15);
-			if (C < 15*15 && C > 7*7)
+			if (C <= 15*15 && C > 7*7)
 				spriteB[x+y*32] = 1 + ((x+y)%250);
 			else
 				spriteB[x+y*32] = 0; // Zero is transparent for masked DMA

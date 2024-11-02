@@ -14,7 +14,6 @@
 #include "keyringbuffer.h"
 #include "serialinringbuffer.h"
 #include "serialoutringbuffer.h"
-#include "gpioringbuffer.h"
 #include "serialinput.h"
 
 #include <string.h>
@@ -23,9 +22,7 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "v1.08"
-// On-storage version
-#define DEVVERSIONSTRING "v1.08"
+#define VERSIONSTRING "v1.09"
 
 static char s_execName[33] = "";
 static char s_execParam0[33] = "";
@@ -139,34 +136,29 @@ void ShowVersion(int waterMark)
 	VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
 	kprintf("\n                                                   \n");
 
-	if (waterMark == 0)
-		kprintf(" OS version          : " VERSIONSTRING "                       \n");
+	kprintf(" OS version          : " VERSIONSTRING "                       \n");
+	if (waterMark != 0)
+		kprintf(" ROM overlay loaded from sdcard                    \n");
 	else
-		kprintf(" OS version (dev)    : " DEVVERSIONSTRING "                       \n");
+		kprintf(" Using ROM image from firmware                     \n");
 
 	// TODO: These two values need to come from a CSR,
 	// pointing at a memory location with device config data (machineconfig?)
 	// That memory location will in turn point at an onboard EEPROM we can
 	// read device versions/presence from.
-	kprintf(" Board               : issue 2E:2024               \n");
+	kprintf(" Board               : issue 2E:2024 Engin Cilasun \n");
 	kprintf(" CPU & bus clock     : 150MHz                      \n");
 	kprintf(" ARCH                : rv32im_zicsr_zifencei_zfinx \n");
 	kprintf(" ESP32               : ESP32-C6-WROOM-1-N8         \n");
 
-	// Report USB host chip version
+	// Report USB host chip version if found
 	uint8_t m3421rev = MAX3421ReadByte(rREVISION);
 	if (m3421rev != 0xFF)
 		kprintf(" MAX3421(USB Host)   : 0x%X                        \n", m3421rev);
-	else
-		kprintf(" MAX3421(USB Host)   : n/a                         \n");
 
 	// Video circuit on 2B has no info we can read so this is hardcoded
 	kprintf(" SII164(video)       : 12bpp DVI                   \n");
 	kprintf(" CS4344(audio)       : 11/22/44KHz stereo          \n");
-	kprintf("                                                   \n");
-	kprintf(" Run HELP for a list of available commands         \n");
-	kprintf("                                                   \n");
-	kprintf(" tinysys (c)2024 Engin Cilasun                     \n");
 	kprintf("                                                   \n\n");
 	VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 }
@@ -754,7 +746,6 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	KeyRingBufferReset();
 	SerialInRingBufferReset();
 	SerialOutRingBufferReset();
-	GPIORingBufferReset();
 
 	// Reset peripherals to default states
 	LEDSetState(0x8);															// Oxxx

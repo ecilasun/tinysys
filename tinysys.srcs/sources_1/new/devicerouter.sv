@@ -6,36 +6,35 @@ module devicerouter(
 	input wire aclk,
 	input wire aresetn,
     axi4if.slave axi_s,
-    wire [3:0] addressmask[11:0], // Bits [19:16] of the physical address
-    axi4if.master axi_m[11:0]);
+    wire [3:0] addressmask[10:0], // Bits [19:16] of the physical address
+    axi4if.master axi_m[10:0]);
 
 // ------------------------------------------------------------------------------------
 // Write router
 // ------------------------------------------------------------------------------------
 
-logic [11:0] validwaddr = 12'd0;
+logic [10:0] validwaddr = 11'd0;
 
 always_comb begin
 	unique case(axi_s.awaddr[19:16])
-		addressmask[0]:  validwaddr = 12'b000000000001;
-		addressmask[1]:  validwaddr = 12'b000000000010;
-		addressmask[2]:  validwaddr = 12'b000000000100;
-		addressmask[3]:  validwaddr = 12'b000000001000;
-		addressmask[4]:  validwaddr = 12'b000000010000;
-		addressmask[5]:  validwaddr = 12'b000000100000;
-		addressmask[6]:  validwaddr = 12'b000001000000;
-		addressmask[7]:  validwaddr = 12'b000010000000;
-		addressmask[8]:  validwaddr = 12'b000100000000;
-		addressmask[9]:  validwaddr = 12'b001000000000;
-		addressmask[10]: validwaddr = 12'b010000000000;
-		addressmask[11]: validwaddr = 12'b100000000000;
-		default:		 validwaddr = 12'b000000000000;
+		addressmask[0]:  validwaddr = 11'b00000000001;
+		addressmask[1]:  validwaddr = 11'b00000000010;
+		addressmask[2]:  validwaddr = 11'b00000000100;
+		addressmask[3]:  validwaddr = 11'b00000001000;
+		addressmask[4]:  validwaddr = 11'b00000010000;
+		addressmask[5]:  validwaddr = 11'b00000100000;
+		addressmask[6]:  validwaddr = 11'b00001000000;
+		addressmask[7]:  validwaddr = 11'b00010000000;
+		addressmask[8]:  validwaddr = 11'b00100000000;
+		addressmask[9]:  validwaddr = 11'b01000000000;
+		addressmask[10]: validwaddr = 11'b10000000000;
+		default:		 validwaddr = 11'b00000000000;
 	endcase
 end
 
 genvar rgen;
 generate
-for (rgen=0; rgen<12; rgen++) begin
+for (rgen=0; rgen<11; rgen++) begin
 	always_comb begin
 		axi_m[rgen].awaddr  = validwaddr[rgen] ? axi_s.awaddr	: 32'd0;
 		axi_m[rgen].awvalid = validwaddr[rgen] ? axi_s.awvalid	: 1'b0;
@@ -53,12 +52,6 @@ endgenerate
 
 always_comb begin
 	unique case(1'b1)
-		validwaddr[11]: begin
-			axi_s.awready = axi_m[11].awready;
-			axi_s.bresp   = axi_m[11].bresp;
-			axi_s.bvalid  = axi_m[11].bvalid;
-			axi_s.wready  = axi_m[11].wready;
-		end
 		validwaddr[10]: begin
 			axi_s.awready = axi_m[10].awready;
 			axi_s.bresp   = axi_m[10].bresp;
@@ -139,29 +132,28 @@ end
 // Read router
 // ------------------------------------------------------------------------------------
 
-logic [11:0] validraddr = 12'd0;
+logic [10:0] validraddr = 11'd0;
 
 always_comb begin
 	unique case(axi_s.araddr[19:16])
-		addressmask[0]:  validraddr = 12'b000000000001;
-		addressmask[1]:  validraddr = 12'b000000000010;
-		addressmask[2]:  validraddr = 12'b000000000100;
-		addressmask[3]:  validraddr = 12'b000000001000;
-		addressmask[4]:  validraddr = 12'b000000010000;
-		addressmask[5]:  validraddr = 12'b000000100000;
-		addressmask[6]:  validraddr = 12'b000001000000;
-		addressmask[7]:  validraddr = 12'b000010000000;
-		addressmask[8]:  validraddr = 12'b000100000000;
-		addressmask[9]:  validraddr = 12'b001000000000;
-		addressmask[10]: validraddr = 12'b010000000000;
-		addressmask[11]: validraddr = 12'b100000000000;
-		default:		 validraddr = 12'b000000000000;
+		addressmask[0]:  validraddr = 11'b00000000001;
+		addressmask[1]:  validraddr = 11'b00000000010;
+		addressmask[2]:  validraddr = 11'b00000000100;
+		addressmask[3]:  validraddr = 11'b00000001000;
+		addressmask[4]:  validraddr = 11'b00000010000;
+		addressmask[5]:  validraddr = 11'b00000100000;
+		addressmask[6]:  validraddr = 11'b00001000000;
+		addressmask[7]:  validraddr = 11'b00010000000;
+		addressmask[8]:  validraddr = 11'b00100000000;
+		addressmask[9]:  validraddr = 11'b01000000000;
+		addressmask[10]: validraddr = 11'b10000000000;
+		default:		 validraddr = 11'b00000000000;
 	endcase
 end
 
 genvar wgen;
 generate
-for (wgen=0; wgen<12; wgen++) begin
+for (wgen=0; wgen<11; wgen++) begin
 	always_comb begin
 		axi_m[wgen].araddr   = validraddr[wgen] ? axi_s.araddr	: 32'd0;
 		axi_m[wgen].arlen    = validraddr[wgen] ? axi_s.arlen	: 0;
@@ -175,13 +167,6 @@ endgenerate
 
 always_comb begin
 	unique case(1'b1)
-		validraddr[11]: begin
-			axi_s.arready = axi_m[11].arready;
-			axi_s.rdata   = axi_m[11].rdata;
-			axi_s.rresp   = axi_m[11].rresp;
-			axi_s.rvalid  = axi_m[11].rvalid;
-			axi_s.rlast   = axi_m[11].rlast;
-		end
 		validraddr[10]: begin
 			axi_s.arready = axi_m[10].arready;
 			axi_s.rdata   = axi_m[10].rdata;

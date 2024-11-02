@@ -43,7 +43,6 @@ void CCSRMem::Tick(CBus* bus)
 	}
 
 	uint32_t uartirq = uart ? uart->m_uartirq : 0;
-	uint32_t gpioirq = 0; // Ignoring GPIO from/to ESP32 pins for now
 	uint32_t keyirq = 0; // Ignoring sdcard insert/remove signal for now
 	uint32_t usbirq = 0; // Ignoring USB for now
 
@@ -53,14 +52,14 @@ void CCSRMem::Tick(CBus* bus)
 	uint32_t timerInterrupt = ((m_mieshadow & 0x080 ? 1 : 0) && ie && (m_wallclocktime >= m_timecmp)) ? 1 : 0;
 
 	// Machine external interrupts
-	uint32_t hwInterrupt = ((m_mieshadow & 0x800 ? 1 : 0) && ie && (uartirq || gpioirq || keyirq || usbirq)) ? 1 : 0;
+	uint32_t hwInterrupt = ((m_mieshadow & 0x800 ? 1 : 0) && ie && (uartirq || keyirq || usbirq)) ? 1 : 0;
 
 	// Software interrupt
 	m_sie = (m_mieshadow & 0x008 ? 1 : 0) && ie;
 	m_irq = (timerInterrupt << 1) | (hwInterrupt);
 
 	// IRQ state shadow
-	m_irqstate = (uartirq << 3) | (gpioirq << 2) | (keyirq << 1) | (usbirq);
+	m_irqstate = (uartirq << 3) | (keyirq << 1) | (usbirq);
 }
 
 void CCSRMem::Read(uint32_t address, uint32_t& data)

@@ -203,8 +203,16 @@ always @(posedge aclk) begin
 	if (burstwe)
 		burstcache[wburstcursor] <= burstdin;
 end
-wire [127:0] burstdout = burstcache[rburstcursor];
-wire [127:0] burstdoutPrev = burstcache[rburstcursorPrev];
+
+logic burstre;
+logic [127:0] burstdout;
+logic [127:0] burstdoutPrev;
+always @(posedge aclk) begin
+	if (burstre) begin
+		burstdout <= burstcache[rburstcursor];
+		burstdoutPrev <= burstcache[rburstcursorPrev];
+	end
+end
 
 wire lastburst = rburstcursor == wsingleburstcount;
 wire firstburst = rburstcursor == 0;
@@ -226,7 +234,7 @@ wire [15:0] automask = {
 typedef enum logic [3:0] {
 	WINIT,
 	DMACMD, DMABEGIN,
-	WAITREADADDR, READLOOP, SETUPWRITE, SETUPWRITEADDR, WAITWRITEADDR, WRITEBEGIN, WRITELOOP, WRITETRAIL,
+	WAITREADADDR, READLOOP, SETUPWRITE, WAITWRITEADDR, WRITEBEGIN, WRITELOOP, WRITETRAIL,
 	WFINALIZE } workercmdtype;
 workercmdtype workmode;
 
@@ -240,6 +248,7 @@ always @(posedge aclk) begin
 		m_axi.arvalid <= 0;
 		m_axi.rready <= 0;
 		burstwe <= 1'b0;
+		burstre <= 1'b0;
 		rburstcursor <= 8'd0;
 		rburstcursorPrev <= 8'd0;
 		wburstcursor <= 8'd0;
@@ -254,6 +263,7 @@ always @(posedge aclk) begin
 		workmode <= WINIT;
 	end else begin
 		burstwe <= 1'b0;
+		burstre <= 1'b0;
 		dre <= 1'b0;
 
 		case (workmode)
@@ -270,6 +280,17 @@ always @(posedge aclk) begin
 			end
 			
 			DMABEGIN: begin
+				case (1'b1)
+					wmisaligned: begin
+						leadingMask <= {{32'hFFFF0000}<<targetAlignMask}[31:16];
+						trailingMask <= {{32'h0000FFFF}<<targetAlignMask}[31:16];
+					end
+					default: begin
+						leadingMask <= 16'hFFFF;
+						trailingMask <=  16'hFFFF;
+					end
+				endcase
+
 				// Auto byte mask enable/disable flag
 				// NOTE: Not to complicate hardware, we make sure to set this to burstcount-8'd1 in software
 				m_axi.arlen <= wsingleburstcount;
@@ -298,28 +319,18 @@ always @(posedge aclk) begin
 			end
 
 			SETUPWRITE: begin
-				case (1'b1)
-					wmisaligned: begin
-						leadingMask <= {{32'hFFFF0000}<<targetAlignMask}[31:16];
-						trailingMask <= {{32'h0000FFFF}<<targetAlignMask}[31:16];
-					end
-					default: begin
-						leadingMask <= 16'hFFFF;
-						trailingMask <=  16'hFFFF;
-					end
-				endcase
-				workmode <= SETUPWRITEADDR;
-			end
-
-			SETUPWRITEADDR: begin
-				rburstcursor <= 8'h00;
-				rburstcursorPrev <= 8'hFF;
 				// TODO: We need to write an extra 16 bytes at the end,
 				// masked to clip extra bits due to misalignment. 
 				//m_axi.awlen <= misaligned ? wsingleburstcount+8'd1 : wsingleburstcount;
 				m_axi.awlen <= wsingleburstcount;
 				m_axi.awvalid <= 1;
 				m_axi.awaddr <= wtargetaddr;
+
+				// First read from the cache
+				rburstcursor <= 8'h00;
+				rburstcursorPrev <= 8'hFF;
+				burstre <= 1'b1;
+
 				workmode <= WAITWRITEADDR;
 			end
 
@@ -341,16 +352,21 @@ always @(posedge aclk) begin
 					{!wmasked, midburst}:	m_axi.wstrb <= 16'hFFFF;
 					default:				m_axi.wstrb <= 16'hFFFF;
 				endcase
+
 				m_axi.wdata <= targetAlignedBytes;
 				m_axi.wvalid <= 1'b1;
 				m_axi.wlast <= lastburst;
+
+				// Set up for next read
+				rburstcursor <= rburstcursor + 8'h01;
+				rburstcursorPrev <= rburstcursorPrev + 8'h01;
+				burstre <= 1'b1;
+
 				workmode <= WRITELOOP;
 			end
 
 			WRITELOOP: begin
 				if (m_axi.wready) begin
-					rburstcursor <= rburstcursor + 8'h01;
-					rburstcursorPrev <= rburstcursorPrev + 8'h01;
 					m_axi.wvalid <= 1'b0;
 					m_axi.wstrb <= 16'h0000;
 					workmode <= m_axi.wlast ? WRITETRAIL : WRITEBEGIN;

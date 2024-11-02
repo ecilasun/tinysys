@@ -19,7 +19,7 @@ module tinysoc #(
 	// LEDs
 	output wire [3:0] leds,
 	// ESP32
-	inout wire [16:0] esp_io, // [16] is reserved for CPU reset
+	//inout wire [16:0] esp_io,
 	output wire esp_txd_out,
 	input wire esp_rxd_in,
 	// Video output
@@ -56,7 +56,6 @@ axi4if audiobus();				// Bus for audio device output
 axi4if memorybus();				// Arbitrated access to main memory
 axi4if devicebus();				// Arbitrated access to devices
 
-axi4if gpioif();				// Sub bus: GPIO port
 axi4if ledif();					// Sub bus: LED contol device (debug LEDs)
 axi4if vpucmdif();				// Sub bus: VPU command fifo (video scan out logic)
 axi4if spiif();					// Sub bus: SPI control device (sdcard)
@@ -284,7 +283,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 
 // 16bit (64K) address space for up to 255 devices
 // dev   start     end       addrs[19:16]  size  notes
-// GPIO: 80000000  8xx0FFFF  4'b0000  64KB	 GPIO pins
+// ----: 80000000  8xx0FFFF  4'b0000  64KB	 Unused
 // LEDS: 8xx10000  8xx1FFFF  4'b0001  64KB	 Debug LEDs
 // VPUC: 8xx20000  8xx2FFFF  4'b0010  64KB	 Video Processing Unit
 // SDCC: 8xx30000  8xx3FFFF  4'b0011  64KB	 SDCard SPI Unit
@@ -316,15 +315,13 @@ devicerouter devicerouterinst(
     	4'b0100,		// XADC Analog / Digital Converter Interface
 		4'b0011,		// SDCC SDCard access via SPI
 		4'b0010,		// VPUC Graphics Processing Unit Command Fifo
-		4'b0001,		// LEDS Debug / Status LED interface
-		4'b0000}),		// GPIO Input/output pins to ESP32 module
-    .axi_m({csrif1, csrif0, uartif, mailif, audioif, usbaif, dmaif, xadcif, spiif, vpucmdif, ledif, gpioif}));
+		4'b0001 }),		// LEDS Debug / Status LED interface
+    .axi_m({csrif1, csrif0, uartif, mailif, audioif, usbaif, dmaif, xadcif, spiif, vpucmdif, ledif}));
 
 // --------------------------------------------------
 // Interrupt wires
 // --------------------------------------------------
 
-wire gpioirq;
 wire keyirq;
 wire usbairq;
 wire uartirq;
@@ -332,13 +329,6 @@ wire uartirq;
 // --------------------------------------------------
 // Memory mapped devices
 // --------------------------------------------------
-
-axi4gpio gpiodevice(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.gpioirq(gpioirq),
-	.s_axi(gpioif),
-	.gpio(esp_io[15:0]) );
 
 axi4led leddevice(
 	.aclk(aclk),
@@ -415,10 +405,9 @@ axi4CSRFile #( .HARTID(4'd0)) csrfile0 (
 	// External hardware interrupt wires
 	.keyirq(keyirq),
 	.usbirq(usbairq),
-	.gpioirq(gpioirq),
 	.uartirq(uartirq),
 	// CPU reset
-	.cpuresetreq(cpuresetreq0), // TODO: || CPU reset request line driven by esp_io[16]
+	.cpuresetreq(cpuresetreq0),
 	// Shadow registers
 	.mepc(mepcHart0),
 	.mtvec(mtvecHart0),
@@ -438,10 +427,9 @@ axi4CSRFile #( .HARTID(4'd1)) csrfile1 (
 	// External hardware interrupt wires
 	.keyirq(keyirq),
 	.usbirq(usbairq),
-	.gpioirq(gpioirq),
 	.uartirq(uartirq),
 	// CPU reset
-	.cpuresetreq(cpuresetreq1), // TODO: || CPU reset request line driven by esp_io[16]
+	.cpuresetreq(cpuresetreq1),
 	// Shadow registers
 	.mepc(mepcHart1),
 	.mtvec(mtvecHart1),

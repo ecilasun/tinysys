@@ -48,10 +48,10 @@
 // Serial buffers (first words are counters)
 #define SERIN_RINGBUFFER_BASE			0x02050000 // Serial input (16384 bytes)
 #define SEROUT_RINGBUFFER_BASE			0x02054000 // Serial output (16384 bytes)
-#define GPIO_RINGBUFFER_BASE			0x02058000 // GPIO pin input (16384 bytes)
+#define NULL_REGION0					0x02058000 // Unused region (16384 bytes)
 #define SERIN_RINGBUFFER_STATE			0x0205C010 // Serial input state
 #define SEROUT_RINGBUFFER_STATE			0x0205C020 // Serial output state
-#define GPIO_RINGBUFFER_STATE			0x0205C030 // GPIO input state
+#define NULL_REGION1					0x0205C030 // Unused region (16 bytes)
 #define KERNEL_GFX_CONTEXT				0x0205C040 // Kernel terminal graphics context
 // Executable
 #define HEAP_START_APPMEM_END			0x02070000 // Executable space above this
@@ -77,7 +77,7 @@
 #define DEVICE_BASE 0x80000000
 
 // Each device has 64 Kbytes of uncached memory region mapped to it (not all is guaranteed to be accessible)
-#define DEVICE_GPIO (DEVICE_BASE+0x00000)
+#define DEVICE_NULL (DEVICE_BASE+0x00000)
 #define DEVICE_LEDS (DEVICE_BASE+0x10000)
 #define DEVICE_VPUC (DEVICE_BASE+0x20000)
 #define DEVICE_SPIC (DEVICE_BASE+0x30000)

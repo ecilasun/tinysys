@@ -41,7 +41,7 @@ module tophat(
 	,output wire usba_resn
 	,input wire usba_int
 	// Coprocessor via ESP32-C6-WROOM-1-N8 (only on rev. 2E boards)
-	,inout wire [16:0] esp_io
+	//,inout wire [16:0] esp_io // NOTE: These pins are grounded in the XDC file for now
 	,output wire esp_txd_out
 	,input wire esp_rxd_in
 	// Audio out
@@ -147,7 +147,7 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.preresetn(preresetn),
 	// Device wires
 	.leds(leds),
-	.esp_io(esp_io),
+	//.esp_io(esp_io),
 	.esp_rxd_in(esp_rxd_in),
 	.esp_txd_out(esp_txd_out),
 	.ddr3conn(ddr3conn),

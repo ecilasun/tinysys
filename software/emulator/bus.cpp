@@ -18,7 +18,7 @@ CBus::CBus(uint32_t resetvector)
 	m_dummydevice = new CDummyDevice();
 
 	// Device array
-	m_devices[0] = m_dummydevice; // GPIO
+	m_devices[0] = m_dummydevice; // NULL
 	m_devices[1] = m_leds;
 	m_devices[2] = m_vpuc;
 	m_devices[3] = m_sdcc;
