@@ -1,4 +1,4 @@
-# Latest Gateware Build is: v1.07
+# Latest Gateware Build is: v1.09
 # Latest Board version is: 2F
 
 # Gateware binary
@@ -14,6 +14,8 @@ r1.01: Initial release version<br>
 r1.03: Improvements for dual core boot stability, fixed audio hardware playback rate issue<br>
 r1.06: Minor improvements to inner ROM loop and some other bug fixes<br>
 r1.07: DMA hardware change in preparation for misaligned DMA support<br>
+r1.08: Stability fixes<br>
+r1.09: Added misaligned DMA support and removed ESP32/FPGA GPIO bridge device (to be re-done later)<br>
 
 # Device gateware
 
