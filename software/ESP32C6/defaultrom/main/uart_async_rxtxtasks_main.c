@@ -25,7 +25,6 @@
 #define UART_PORT_NUM 1
 
 QueueHandle_t uart_send_queue;
-QueueHandle_t ble_send_queue;
 QueueHandle_t jtag_send_queue;
 
 static void jtag_rx_task(void *arg)
@@ -66,7 +65,6 @@ static void uart_tx_task(void *arg)
 static void uart_rx_task(void *arg)
 {
 	CMD_t cmdBuf;
-	cmdBuf.BLE_event_id = BLE_UART_EVT;
 	while (1)
 	{
 		cmdBuf.length = uart_read_bytes(UART_PORT_NUM, cmdBuf.payload, PAYLOAD_SIZE, portMAX_DELAY);
@@ -74,13 +72,9 @@ static void uart_rx_task(void *arg)
 		{
 			// Queue to JTAG/USB
 			xQueueSendFromISR(jtag_send_queue, &cmdBuf, NULL);
-			// Queue to BLE
-			xQueueSendFromISR(ble_send_queue, &cmdBuf, NULL);
 		}
 	}
 }
-
-void ble_server_task(void * arg);
 
 void app_main(void)
 {
@@ -92,7 +86,11 @@ void app_main(void)
 	}
 	ESP_ERROR_CHECK( ret );
 
-	usb_serial_jtag_driver_config_t usb_serial_config = {.tx_buffer_size = PAYLOAD_SIZE * 2, .rx_buffer_size = PAYLOAD_SIZE * 2};
+    // Enable blocking mode on stdin and stdout
+    fcntl(fileno(stdout), F_SETFL, 0);
+    fcntl(fileno(stdin), F_SETFL, 0);
+
+	usb_serial_jtag_driver_config_t usb_serial_config =  USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
 	ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&usb_serial_config));
 
 	uart_config_t uart_config = {
@@ -104,7 +102,6 @@ void app_main(void)
 		.source_clk = UART_SCLK_DEFAULT,
 	};
 
-	ble_send_queue = xQueueCreate(32, sizeof(CMD_t));
 	uart_send_queue = xQueueCreate(32, sizeof(CMD_t));
 	jtag_send_queue = xQueueCreate(32, sizeof(CMD_t));
 
@@ -119,6 +116,5 @@ void app_main(void)
 	xTaskCreate(jtag_tx_task, "jtag_tx", 1024, NULL, 3, NULL);
 	xTaskCreate(uart_rx_task, "uart_rx", 1024, NULL, 2, NULL);
 	xTaskCreate(uart_tx_task, "uart_tx", 1024, NULL, 3, NULL);
-	xTaskCreate(ble_server_task, "ble_server", 1024*4, NULL, 4, NULL);
 	ESP_LOGI(pcTaskGetName(0), "TinySys ready");
 }
