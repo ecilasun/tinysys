@@ -135,39 +135,22 @@ set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports au_mclk]
 
 ## 2E/2F
 ## IO11
-set_property -dict {PACKAGE_PIN K14 IOSTANDARD LVCMOS33} [get_ports {esp_io[0]}]
 ## IO10
-set_property -dict {PACKAGE_PIN K13 IOSTANDARD LVCMOS33} [get_ports {esp_io[1]}]
 ## IO1
-set_property -dict {PACKAGE_PIN H14 IOSTANDARD LVCMOS33} [get_ports {esp_io[2]}]
 ## IO0
-set_property -dict {PACKAGE_PIN J14 IOSTANDARD LVCMOS33} [get_ports {esp_io[3]}]
 ## IO7
-set_property -dict {PACKAGE_PIN L20 IOSTANDARD LVCMOS33} [get_ports {esp_io[4]}]
 ## IO6
-set_property -dict {PACKAGE_PIN L19 IOSTANDARD LVCMOS33} [get_ports {esp_io[5]}]
 ## IO5
-set_property -dict {PACKAGE_PIN J17 IOSTANDARD LVCMOS33} [get_ports {esp_io[6]}]
 ## IO4
-set_property -dict {PACKAGE_PIN K17 IOSTANDARD LVCMOS33} [get_ports {esp_io[7]}]
 ## IO19
-set_property -dict {PACKAGE_PIN J21 IOSTANDARD LVCMOS33} [get_ports {esp_io[8]}]
 ## IO20
-set_property -dict {PACKAGE_PIN J20 IOSTANDARD LVCMOS33} [get_ports {esp_io[9]}]
 ## IO18
-set_property -dict {PACKAGE_PIN J19 IOSTANDARD LVCMOS33} [get_ports {esp_io[10]}]
 ## RXD0
-set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports {esp_io[11]}]
 ## IO21
-set_property -dict {PACKAGE_PIN H20 IOSTANDARD LVCMOS33} [get_ports {esp_io[12]}]
 ## IO15
-set_property -dict {PACKAGE_PIN K22 IOSTANDARD LVCMOS33} [get_ports {esp_io[13]}]
 ## TXD0
-set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports {esp_io[14]}]
 ## IO2
-set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports {esp_io[15]}]
 ## IO3
-set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports {esp_io[16]}]
 
 ## IO22 (TXD1)
 set_property -dict {PACKAGE_PIN G20 IOSTANDARD LVCMOS33} [get_ports esp_rxd_in]
@@ -175,23 +158,6 @@ set_property -dict {PACKAGE_PIN G20 IOSTANDARD LVCMOS33} [get_ports esp_rxd_in]
 set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports esp_txd_out]
 
 ## Ground these pins for now
-set_property PULLDOWN true [get_ports esp_io[0]]
-set_property PULLDOWN true [get_ports esp_io[1]]
-set_property PULLDOWN true [get_ports esp_io[2]]
-set_property PULLDOWN true [get_ports esp_io[3]]
-set_property PULLDOWN true [get_ports esp_io[4]]
-set_property PULLDOWN true [get_ports esp_io[5]]
-set_property PULLDOWN true [get_ports esp_io[6]]
-set_property PULLDOWN true [get_ports esp_io[7]]
-set_property PULLDOWN true [get_ports esp_io[8]]
-set_property PULLDOWN true [get_ports esp_io[9]]
-set_property PULLDOWN true [get_ports esp_io[10]]
-set_property PULLDOWN true [get_ports esp_io[11]]
-set_property PULLDOWN true [get_ports esp_io[12]]
-set_property PULLDOWN true [get_ports esp_io[13]]
-set_property PULLDOWN true [get_ports esp_io[14]]
-set_property PULLDOWN true [get_ports esp_io[15]]
-set_property PULLDOWN true [get_ports esp_io[16]]
 
 ## ------------------------------------------------------------------------------------------------------
 ## USB-C - MAX3420EECJ over SPI interface, USB Device
@@ -333,3 +299,10 @@ add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list socinstan
 resize_pblock [get_pblocks pblock_hart0] -add {CLOCKREGION_X1Y3:CLOCKREGION_X1Y3}
 
 
+
+create_pblock pblock_COPYROM
+add_cells_to_pblock [get_pblocks pblock_COPYROM] [get_cells -quiet [list socinstance/COPYROM]]
+resize_pblock [get_pblocks pblock_COPYROM] -add {SLICE_X0Y100:SLICE_X23Y139}
+resize_pblock [get_pblocks pblock_COPYROM] -add {DSP48_X0Y40:DSP48_X1Y55}
+resize_pblock [get_pblocks pblock_COPYROM] -add {RAMB18_X0Y40:RAMB18_X1Y55}
+resize_pblock [get_pblocks pblock_COPYROM] -add {RAMB36_X0Y20:RAMB36_X1Y27}

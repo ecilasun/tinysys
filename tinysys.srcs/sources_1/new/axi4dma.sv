@@ -220,7 +220,7 @@ wire midburst = !(lastburst || firstburst);
 
 wire [3:0] targetAlignMask = wtargetaddr[3:0];
 wire [6:0] targetAlignByte = {targetAlignMask, 3'd0};
-wire [127:0] targetAlignedBytes = {{burstdout, burstdoutPrev}<<targetAlignByte}[255:128];
+wire [127:0] targetAlignedBytes = targetAlignMask == 4'h0 ? burstdout : {{burstdout, burstdoutPrev}<<targetAlignByte}[255:128];
 logic [15:0] leadingMask;
 logic [15:0] trailingMask;
 
@@ -229,7 +229,7 @@ wire [15:0] automask = {
 	|targetAlignedBytes[127:120], |targetAlignedBytes[119:112], |targetAlignedBytes[111:104], |targetAlignedBytes[103:96],
 	|targetAlignedBytes[95:88], |targetAlignedBytes[87:80], |targetAlignedBytes[79:72], |targetAlignedBytes[71:64],
 	|targetAlignedBytes[63:56], |targetAlignedBytes[55:48], |targetAlignedBytes[47:40], |targetAlignedBytes[39:32],
-	|targetAlignedBytes[31:23], |targetAlignedBytes[23:16], |targetAlignedBytes[15:7], |targetAlignedBytes[7:0] };
+	|targetAlignedBytes[31:24], |targetAlignedBytes[23:16], |targetAlignedBytes[15:8], |targetAlignedBytes[7:0] };
 
 typedef enum logic [3:0] {
 	WINIT,

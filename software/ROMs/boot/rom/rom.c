@@ -138,7 +138,11 @@ void ShowVersion(int waterMark)
 
 	kprintf(" OS version          : " VERSIONSTRING "                       \n");
 	if (waterMark != 0)
+	{
+		VPUConsoleSetColors(kernelgfx, CONSOLERED, CONSOLEGRAY);
 		kprintf(" ROM overlay loaded from sdcard                    \n");
+		VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
+	}
 	else
 		kprintf(" Using ROM image from firmware                     \n");
 
@@ -465,10 +469,28 @@ void _cliTask()
 				}
 				break;
 
-				case 3:		// EXT (Ctrl+C)
+				/*case 26:	// Ctrl+Z - PAUSE
 				{
+					s_cmdLen = 0;
 					++s_refreshConsoleOut;
-					execcmd++;
+				}*/
+
+				/*case 24:	// Ctrl+X - ABORT
+				{
+					s_cmdLen = 0;
+					++s_refreshConsoleOut;
+				}*/
+
+				/*case 25:	// Ctrl+Y - REDO
+				{
+					s_cmdLen = 0;
+					++s_refreshConsoleOut;
+				}*/
+				
+				case 3:		// EXT (Ctrl+C) - BREAK
+				{
+					s_cmdLen = 0;
+					++s_refreshConsoleOut;
 					if (s_runOnCPU == 0)
 						TaskExitTaskWithID(taskctx, s_userTaskID, 0); // Sig:0, terminate process if no debugger is attached
 
@@ -483,8 +505,8 @@ void _cliTask()
 
 				case 8:		// Backspace
 				{
-					++s_refreshConsoleOut;
 					s_cmdLen--;
+					++s_refreshConsoleOut;
 					if (s_cmdLen<0)
 						s_cmdLen = 0;
 				}
@@ -492,8 +514,8 @@ void _cliTask()
 
 				case 27:	// ESC
 				{
-					++s_refreshConsoleOut;
 					s_cmdLen = 0;
+					++s_refreshConsoleOut;
 					// TODO: Erase current line
 				}
 				break;
