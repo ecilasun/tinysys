@@ -65,13 +65,13 @@
     <Option Name="WTVcsLaunchSim" Val="0"/>
     <Option Name="WTRivieraLaunchSim" Val="0"/>
     <Option Name="WTActivehdlLaunchSim" Val="0"/>
-    <Option Name="WTXSimExportSim" Val="748"/>
-    <Option Name="WTModelSimExportSim" Val="748"/>
-    <Option Name="WTQuestaExportSim" Val="748"/>
+    <Option Name="WTXSimExportSim" Val="760"/>
+    <Option Name="WTModelSimExportSim" Val="760"/>
+    <Option Name="WTQuestaExportSim" Val="760"/>
     <Option Name="WTIesExportSim" Val="0"/>
-    <Option Name="WTVcsExportSim" Val="748"/>
-    <Option Name="WTRivieraExportSim" Val="748"/>
-    <Option Name="WTActivehdlExportSim" Val="748"/>
+    <Option Name="WTVcsExportSim" Val="760"/>
+    <Option Name="WTRivieraExportSim" Val="760"/>
+    <Option Name="WTActivehdlExportSim" Val="760"/>
     <Option Name="GenerateIPUpgradeLog" Val="TRUE"/>
     <Option Name="XSimRadix" Val="hex"/>
     <Option Name="XSimTimeUnit" Val="ns"/>
@@ -1198,7 +1198,9 @@
         <Step Id="route_design">
           <Option Id="MoreOptsStr"><![CDATA[-tns_cleanup]]></Option>
         </Step>
-        <Step Id="post_route_phys_opt_design" EnableStepBool="1"/>
+        <Step Id="post_route_phys_opt_design" EnableStepBool="1">
+          <Option Id="Directive">3</Option>
+        </Step>
         <Step Id="write_bitstream">
           <Option Id="BinFile">1</Option>
         </Step>

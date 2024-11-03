@@ -37,10 +37,26 @@ static uint32_t s_startAddress = 0;
 static int s_refreshConsoleOut = 1;
 static int s_runOnCPU = 0;
 
-static const char *s_taskstates[]={ "????", "HALT", "EXEC", "TERM", "DEAD"};
-static const char *s_regnames[]={"PC", "ra", "sp", "gp", "tp", "t0", "t1", "t2", "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s1", "s1", "t3", "t4", "t5", "t6"};
+// Names of task states for process dump
+static const char *s_taskstates[]={ "NONE", "HALT", "EXEC", "TERM", "DEAD"};
+// Names of registers for crash dump
+static const char *s_regnames[]={"pc", "ra", "sp", "gp", "tp", "t0", "t1", "t2", "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s1", "s1", "t3", "t4", "t5", "t6"};
 
 static struct SUSBHostContext s_usbhostctx;
+
+void ClearStatics()
+{
+	memset(s_execName, 0, sizeof(s_execName));
+	memset(s_execParam0, 0, sizeof(s_execParam0));
+	s_execParamCount = 1;
+	s_userTaskID = 0;
+	memset(s_cmdString, 0, sizeof(s_cmdString));
+	memset(s_pathtmp, 0, sizeof(s_pathtmp));
+	s_cmdLen = 0;
+	s_startAddress = 0;
+	s_refreshConsoleOut = 1;
+	s_runOnCPU = 0;
+}
 
 void UnrecoverableError()
 {
@@ -130,7 +146,7 @@ void DeviceDefaultState(int _bootTime)
 		VPUClear(kernelgfx, 0x09090909);
 }
 
-void ShowVersion(int waterMark)
+void ShowVersion(uint32_t waterMark)
 {
 	struct EVideoContext *kernelgfx = GetKernelGfxContext();
 	VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
@@ -199,15 +215,18 @@ uint32_t ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "reboot"))
 	{
-		// TODO: Instead, talk to ESP32-C6 to get it to hard-reboot us
+		// Reset things back to how they were, since we might not get static variables cleared for us.
 		VPUConsoleClear(kernelgfx);
-		// Clear to reboot color
+		ClearStatics();
+
+		// Clear to "we're rebooting" color
 		VPUClear(kernelgfx, 0x0C0C0C0C);
 		VPUSetVMode(kernelgfx, EVS_Disable);
-		// Remove watermark since we might have deleted / changed the rom image before reboot
+
+		// Remove watermark since we might have deleted / changed the rom image for next boot.
 		write_csr(0xFF0, 0x0);
 
-		// Reset to default ROM entry points without override (thus ending up in main())
+		// Reset to default ROM entry points and reset each CPU. Make sure main CPU ist last to go.
 		E32SetupCPU(1, (void*)0x0);
 		E32ResetCPU(1);
 		E32SetupCPU(0, (void*)0x0);
@@ -237,11 +256,11 @@ uint32_t ExecuteCmd(char *_cmd)
 			struct STaskContext *ctx = GetTaskContext(hartid);
 			if (ctx->numTasks == 0)
 			{
-				kprintf("No tasks running on core #%d\n", hartid);
+				kprintf("No tasks on core #%d\n", hartid);
 			}
 			else
 			{
-				kprintf("%d tasks running on core #%d\n", ctx->numTasks, hartid);
+				kprintf("%d tasks on core #%d\n", ctx->numTasks, hartid);
 				for (int i=0;i<ctx->numTasks;++i)
 				{
 					struct STask *task = &ctx->tasks[i];
