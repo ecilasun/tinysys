@@ -65,13 +65,13 @@
     <Option Name="WTVcsLaunchSim" Val="0"/>
     <Option Name="WTRivieraLaunchSim" Val="0"/>
     <Option Name="WTActivehdlLaunchSim" Val="0"/>
-    <Option Name="WTXSimExportSim" Val="760"/>
-    <Option Name="WTModelSimExportSim" Val="760"/>
-    <Option Name="WTQuestaExportSim" Val="760"/>
+    <Option Name="WTXSimExportSim" Val="762"/>
+    <Option Name="WTModelSimExportSim" Val="762"/>
+    <Option Name="WTQuestaExportSim" Val="762"/>
     <Option Name="WTIesExportSim" Val="0"/>
-    <Option Name="WTVcsExportSim" Val="760"/>
-    <Option Name="WTRivieraExportSim" Val="760"/>
-    <Option Name="WTActivehdlExportSim" Val="760"/>
+    <Option Name="WTVcsExportSim" Val="762"/>
+    <Option Name="WTRivieraExportSim" Val="762"/>
+    <Option Name="WTActivehdlExportSim" Val="762"/>
     <Option Name="GenerateIPUpgradeLog" Val="TRUE"/>
     <Option Name="XSimRadix" Val="hex"/>
     <Option Name="XSimTimeUnit" Val="ns"/>
@@ -89,6 +89,15 @@
   <FileSets Version="1" Minor="32">
     <FileSet Name="sources_1" Type="DesignSrcs" RelSrcDir="$PSRCDIR/sources_1" RelGenDir="$PGENDIR/sources_1">
       <Filter Type="Srcs"/>
+      <File Path="$PSRCDIR/sources_1/ip/uartoutfifo/uartoutfifo.xci">
+        <FileInfo>
+          <Attr Name="ImportPath" Val="$PSRCDIR/sources_1/ip/uartoutfifo/uartoutfifo.xci"/>
+          <Attr Name="ImportTime" Val="1713767041"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
       <File Path="$PSRCDIR/sources_1/ip/axi4interconnect/axi4interconnect.xci">
         <FileInfo>
           <Attr Name="ImportPath" Val="$PSRCDIR/sources_1/ip/axi4interconnect/axi4interconnect.xci"/>
@@ -726,21 +735,6 @@
         <Option Name="UseBlackboxStub" Val="1"/>
       </Config>
     </FileSet>
-    <FileSet Name="uartoutfifo" Type="BlockSrcs" RelSrcDir="$PSRCDIR/uartoutfifo" RelGenDir="$PGENDIR/uartoutfifo">
-      <File Path="$PSRCDIR/sources_1/ip/uartoutfifo/uartoutfifo.xci">
-        <FileInfo>
-          <Attr Name="ImportPath" Val="$PSRCDIR/sources_1/ip/uartoutfifo/uartoutfifo.xci"/>
-          <Attr Name="ImportTime" Val="1713767041"/>
-          <Attr Name="UsedIn" Val="synthesis"/>
-          <Attr Name="UsedIn" Val="implementation"/>
-          <Attr Name="UsedIn" Val="simulation"/>
-        </FileInfo>
-      </File>
-      <Config>
-        <Option Name="TopModule" Val="uartoutfifo"/>
-        <Option Name="UseBlackboxStub" Val="1"/>
-      </Config>
-    </FileSet>
     <FileSet Name="maildeviceram" Type="BlockSrcs" RelSrcDir="$PSRCDIR/maildeviceram" RelGenDir="$PGENDIR/maildeviceram">
       <File Path="$PSRCDIR/sources_1/ip/maildeviceram/maildeviceram.xci">
         <FileInfo>
@@ -987,9 +981,7 @@
   <Runs Version="1" Minor="22">
     <Run Id="synth_1" Type="Ft3:Synth" SrcSet="sources_1" Part="xc7a200tfbg484-1" ConstrsSet="constrs_1" Description="Default options plus the AreaMultThresholdDSP directive which will lower the threshold for inference of multipliers into DSP blocks" AutoIncrementalCheckpoint="true" IncrementalCheckpoint="$PSRCDIR/utils_1/imports/synth_1/tophat.dcp" WriteIncrSynthDcp="false" State="current" Dir="$PRUNDIR/synth_1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/synth_1" ParallelReportGen="true">
       <Strategy Version="1" Minor="2">
-        <StratHandle Name="Flow_AreaMultThresholdDSP" Flow="Vivado Synthesis 2024">
-          <Desc>Default options plus the AreaMultThresholdDSP directive which will lower the threshold for inference of multipliers into DSP blocks</Desc>
-        </StratHandle>
+        <StratHandle Name="Flow_AreaMultThresholdDSP" Flow="Vivado Synthesis 2024"/>
         <Step Id="synth_design">
           <Option Id="Directive">5</Option>
           <Option Id="IncrementalMode">0</Option>
@@ -1011,16 +1003,6 @@
       <RQSFiles/>
     </Run>
     <Run Id="uartinfifo_synth_1" Type="Ft3:Synth" SrcSet="uartinfifo" Part="xc7a200tfbg484-1" ConstrsSet="uartinfifo" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/uartinfifo_synth_1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/uartinfifo_synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/uartinfifo_synth_1" ParallelReportGen="true">
-      <Strategy Version="1" Minor="2">
-        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2024"/>
-        <Step Id="synth_design"/>
-      </Strategy>
-      <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
-      <ReportStrategy Name="Vivado Synthesis Default Reports" Flow="Vivado Synthesis 2024"/>
-      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
-      <RQSFiles/>
-    </Run>
-    <Run Id="uartoutfifo_synth_1" Type="Ft3:Synth" SrcSet="uartoutfifo" Part="xc7a200tfbg484-1" ConstrsSet="uartoutfifo" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/uartoutfifo_synth_1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/uartoutfifo_synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/uartoutfifo_synth_1" ParallelReportGen="true">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2024"/>
         <Step Id="synth_design"/>
@@ -1182,9 +1164,7 @@
     </Run>
     <Run Id="impl_1" Type="Ft2:EntireDesign" Part="xc7a200tfbg484-1" ConstrsSet="constrs_1" Description="Similar to the Implementation Run Defaults, but enables the physical optimization step (phys_opt_design) before and after routing." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" State="current" Dir="$PRUNDIR/impl_1" SynthRun="synth_1" IncludeInArchive="true" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/impl_1" LaunchOptions="-jobs 32 " AutoRQSDir="$PSRCDIR/utils_1/imports/impl_1" ParallelReportGen="true">
       <Strategy Version="1" Minor="2">
-        <StratHandle Name="Flow_RunPostRoutePhysOpt" Flow="Vivado Implementation 2024">
-          <Desc>Similar to the Implementation Run Defaults, but enables the physical optimization step (phys_opt_design) before and after routing.</Desc>
-        </StratHandle>
+        <StratHandle Name="Flow_RunPostRoutePhysOpt" Flow="Vivado Implementation 2024"/>
         <Step Id="init_design"/>
         <Step Id="opt_design"/>
         <Step Id="power_opt_design" EnableStepBool="1"/>
@@ -1228,23 +1208,6 @@
       <RQSFiles/>
     </Run>
     <Run Id="uartinfifo_impl_1" Type="Ft2:EntireDesign" Part="xc7a200tfbg484-1" ConstrsSet="uartinfifo" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="uartinfifo_synth_1" IncludeInArchive="false" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/uartinfifo_impl_1" AutoRQSDir="$PSRCDIR/utils_1/imports/uartinfifo_impl_1" ParallelReportGen="true">
-      <Strategy Version="1" Minor="2">
-        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2024"/>
-        <Step Id="init_design"/>
-        <Step Id="opt_design"/>
-        <Step Id="power_opt_design"/>
-        <Step Id="place_design"/>
-        <Step Id="post_place_power_opt_design"/>
-        <Step Id="phys_opt_design"/>
-        <Step Id="route_design"/>
-        <Step Id="post_route_phys_opt_design"/>
-        <Step Id="write_bitstream"/>
-      </Strategy>
-      <ReportStrategy Name="Vivado Implementation Default Reports" Flow="Vivado Implementation 2024"/>
-      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
-      <RQSFiles/>
-    </Run>
-    <Run Id="uartoutfifo_impl_1" Type="Ft2:EntireDesign" Part="xc7a200tfbg484-1" ConstrsSet="uartoutfifo" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="uartoutfifo_synth_1" IncludeInArchive="false" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/uartoutfifo_impl_1" AutoRQSDir="$PSRCDIR/utils_1/imports/uartoutfifo_impl_1" ParallelReportGen="true">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2024"/>
         <Step Id="init_design"/>

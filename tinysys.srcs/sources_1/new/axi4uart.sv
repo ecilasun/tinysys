@@ -54,12 +54,12 @@ always @(posedge uartbaseclock) begin
 		transmitbyte <= 1'b0;
 		datatotransmit <= 8'h00;
 	end else begin
-		outfifore <= 1'b0; // Stop read request
+		outfifore <= 1'b0;
 		transmitbyte <= 1'b0;
 		if (~uarttxbusy && (transmitbyte == 1'b0) && (~outfifoempty) && outfifovalid) begin
 			datatotransmit <= outfifoout;
 			transmitbyte <= 1'b1;
-			outfifore <= 1'b1;
+			outfifore <= 1'b1; // advance fifo
 		end
 	end
 end
@@ -132,43 +132,44 @@ always @(posedge aclk) begin
 		outfifowe <= 1'b0;
 		outfifodin <= 8'h00;
 		writestate <= 2'b00;
+		controlregister <= 5'b10000; // [... : intena : reserved1 : reserved0 : resetrxfifo : resettxfifo]
+		s_axi.bresp = 2'b00;
 	end else begin
 		outfifowe <= 1'b0;
 		s_axi.wready <= 1'b0;
 		s_axi.bvalid <= 1'b0;
-		outfifodin <= 8'h00;
 	
 		unique case (writestate)
 			2'b00: begin
-				controlregister <= 5'b10000; // [... : intena : reserved1 : reserved0 : resetrxfifo : resettxfifo]
-				s_axi.bresp = 2'b00;
-				outfifodin <= 8'd0;
-				outfifowe <= 1'b0;
-				writestate <= 2'b01;
-			end
-			2'b01: begin
-				if (s_axi.wvalid && (~outfifofull)) begin
+				if (s_axi.wvalid) begin
 					case (s_axi.awaddr[3:0])
-						4'h4:		writestate <= 2'b10;	// Transmit
-						4'hC:		writestate <= 2'b11;	// Control
-						default:	writestate <= 2'b01;	// Ignore
+						4'h4:		writestate <= 2'b01;	// Transmit
+						4'hC:		writestate <= 2'b10;	// Control
+						default:	writestate <= 2'b11;	// Ignore
 					endcase
 					s_axi.wready <= 1'b1;
 				end
 			end
-			2'b10: begin
-				if(s_axi.bready) begin
+			2'b01: begin
+				if(s_axi.bready && (~outfifofull)) begin
 					outfifodin <= s_axi.wdata[7:0];
 					outfifowe <= 1'b1;
 					s_axi.bvalid <= 1'b1;
-					writestate <= 2'b01;
+					writestate <= 2'b00;
+				end
+			end
+			2'b10: begin
+				if(s_axi.bready) begin
+					controlregister <= s_axi.wdata[4:0];
+					s_axi.bvalid <= 1'b1;
+					writestate <= 2'b00;
 				end
 			end
 			2'b11: begin
 				if(s_axi.bready) begin
-					controlregister <= s_axi.wdata[4:0];
+					// NOOP
 					s_axi.bvalid <= 1'b1;
-					writestate <= 2'b01;
+					writestate <= 2'b00;
 				end
 			end
 		endcase

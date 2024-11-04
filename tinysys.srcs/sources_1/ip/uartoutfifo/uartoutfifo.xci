@@ -15,7 +15,7 @@
         "Performance_Options": [ { "value": "First_Word_Fall_Through", "value_src": "user", "resolve_type": "user", "usage": "all" } ],
         "asymmetric_port_width": [ { "value": "false", "resolve_type": "user", "format": "bool", "enabled": false, "usage": "all" } ],
         "Input_Data_Width": [ { "value": "8", "value_src": "user", "resolve_type": "user", "format": "long", "usage": "all" } ],
-        "Input_Depth": [ { "value": "1024", "resolve_type": "user", "usage": "all" } ],
+        "Input_Depth": [ { "value": "1024", "value_src": "user", "resolve_type": "user", "usage": "all" } ],
         "Output_Data_Width": [ { "value": "8", "value_src": "user", "resolve_type": "user", "enabled": false, "usage": "all" } ],
         "Output_Depth": [ { "value": "1024", "resolve_type": "user", "format": "long", "enabled": false, "usage": "all" } ],
         "Enable_ECC": [ { "value": "false", "resolve_type": "user", "format": "bool", "usage": "all" } ],
