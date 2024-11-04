@@ -10,6 +10,7 @@
 #include "hal/usb_serial_jtag_ll.h"
 #include "sdkconfig.h"
 #include "esp_log.h"
+#include "esp_vfs_common.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "freertos/queue.h"
@@ -86,9 +87,11 @@ void app_main(void)
 	}
 	ESP_ERROR_CHECK( ret );
 
-    // Enable blocking mode on stdin and stdout
-    fcntl(fileno(stdout), F_SETFL, 0);
-    fcntl(fileno(stdin), F_SETFL, 0);
+	setvbuf(stdin, NULL, _IONBF, 0);
+
+	// Enable blocking mode on stdin and stdout
+	fcntl(fileno(stdout), F_SETFL, 0);
+	fcntl(fileno(stdin), F_SETFL, 0);
 
 	usb_serial_jtag_driver_config_t usb_serial_config =  USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
 	ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&usb_serial_config));
