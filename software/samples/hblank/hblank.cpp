@@ -9,21 +9,25 @@
 #include "basesystem.h"
 #include "core.h"
 #include "vpu.h"
-#include "dma.h"
+#include "task.h"
+#include "leds.h"
 
 #include <stdlib.h>
 
-static int s_prevFrame = 0;
-static int s_currentFrame = 0;
+static int s_ledstate = 0x1;
+static int s_prevFrame = 0xFFFFFFFF;
 static struct EVideoContext s_vx;
 static struct EVideoSwapContext s_sc;
 
-void HBlankIntreuptHandler()
+// This is the HBlank interrupt handler
+// It will be called directly within OS context, therefore it has no access to any
+// local variables or global variables that are in this code.
+// Instead, use mailbox memory to store any data.
+void HBlankInterruptHandler()
 {
-	// We're on line 479, time to flip the buffers
-	VPUSwapPages(&s_vx, &s_sc);
+	volatile int *sharedmem = (volatile int*)TaskGetSharedMemory();
 	// Let the main code know it can advance to the next frame
-	++s_currentFrame;
+	sharedmem[0] += 1;
 }
 
 int main(int argc, char *argv[])
@@ -34,9 +38,6 @@ int main(int argc, char *argv[])
 	// Create source and target buffers (using VPU functions to get aligned buffer addresses)
 	uint8_t *videoPageA = VPUAllocateBuffer(W*H);
 	uint8_t *videoPageB = VPUAllocateBuffer(W*H);
-	uint8_t *backdrop = VPUAllocateBuffer(W*H);
-	uint8_t *spriteA = VPUAllocateBuffer(64*64);
-	uint8_t *spriteB = VPUAllocateBuffer(32*32);
 
     s_vx.m_vmode = EVM_320_Wide;
     s_vx.m_cmode = ECM_8bit_Indexed;
@@ -53,18 +54,27 @@ int main(int argc, char *argv[])
 	VPUSwapPages(&s_vx, &s_sc);
 
 	// Set up HBlank interrupt for last scanline (479) so it acts as a VBlank interrupt
-	VPUSetHBlankHandler((uint32_t)HBlankIntreuptHandler);
+	VPUSetHBlankHandler((uint32_t)HBlankInterruptHandler);
 	VPUSetHBlankScanline(479);
 	VPUEnableHBlankInterrupt();
 
+	volatile int *sharedmem = (volatile int*)TaskGetSharedMemory();
+
 	while (1)
 	{
-		if (s_currentFrame != s_prevFrame)
+		// NOTE: See HBlankInterruptHandler() code about not having access to any task variables
+		int currentFrame = sharedmem[0];
+		if (currentFrame != s_prevFrame)
 		{
-			s_prevFrame = s_currentFrame;
+			s_prevFrame = currentFrame;
+
+			// We're on line 479, time to flip the buffers
+			VPUSwapPages(&s_vx, &s_sc);
 
 			// Clear the backdrop to the swap counter
 			VPUClear(&s_vx, s_sc.cycle);
+
+			LEDSetState(s_ledstate++);
 
 			// TODO: Draw your game to the memory address in 's_sc.writepage'
 			// Depending on the game, you may want to DMA in the backdrop buffer and then DMA the sprites on top of it

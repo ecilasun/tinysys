@@ -51,6 +51,10 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 							pixels[linetop0 + x*2+1] = expandedcolor;
 							pixels[linetop1 + x*2+1] = expandedcolor;
 						}
+						if (y*2 == m_regB || y*2-1 == m_regB)
+							m_hirq = m_regA & 1;
+						else
+							m_hirq = 0;
 					}
 				}
 				else
@@ -71,6 +75,10 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 							uint32_t expandedcolor = 0xFF000000 | (R << 20) | (G << 12) | (B << 4);
 							pixels[linetop + x] = expandedcolor;
 						}
+						if (y == m_regB)
+							m_hirq = m_regA & 1;
+						else
+							m_hirq = 0;
 					}
 				}
 			}
@@ -96,6 +104,10 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 							pixelPos1[0] = color;
 							pixelPos1[1] = color;
 						}
+						if (y*2 == m_regB || y*2+1 == m_regB)
+							m_hirq = m_regA & 1;
+						else
+							m_hirq = 0;
 					}
 				}
 				else
@@ -112,6 +124,10 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 							uint32_t color = m_vgapalette[sourceRow[x]];
 							pixelRow[x] = color;
 						}
+						if (y == m_regB)
+							m_hirq = m_regA & 1;
+						else
+							m_hirq = 0;
 					}
 				}
 			}
@@ -120,7 +136,13 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 		{
 			// This is going to reset evrything including the 8 pixel status bar
 			for (uint32_t i = 0; i < 640 * 488; i++)
-				pixels[i] = (i%2) ? 0xFF201515 : 0xFF001515;
+			{
+				pixels[i] = (i % 2) ? 0xFF201515 : 0xFF001515;
+				if (i/640 == m_regB)
+					m_hirq = m_regA & 1;
+				else
+					m_hirq = 0;
+			}
 		}
 	}
 
@@ -190,8 +212,41 @@ void CVPU::Tick(CBus* bus)
 					}
 				}
 				break;
+				case 0x00000003:
+				{
+					// REGSEL
+					if (m_fifo.size())
+					{
+						m_data = m_fifo.front();
+						m_fifo.pop();
+						m_state = 5;
+					}
+				}
+				break;
+				case 0x00000004:
+				{
+					// REGSET
+					if (m_fifo.size())
+					{
+						m_data = m_fifo.front();
+						m_fifo.pop();
+						m_state = 6;
+					}
+				}
+				break;
+				case 0x00000005:
+				{
+					// REGCLR
+					if (m_fifo.size())
+					{
+						m_data = m_fifo.front();
+						m_fifo.pop();
+						m_state = 7;
+					}
+				}
+				break;
 				default:
-					m_state = 5;
+					m_state = 8;
 				break;
 			}
 		}
@@ -230,6 +285,36 @@ void CVPU::Tick(CBus* bus)
 			m_scanlength = m_scanwidth * m_scanheight;
 			if (m_12bppmode)
 				m_scanlength *= 2;
+			m_state = 0;
+		}
+		break;
+
+		case 5:
+		{
+			// REGSEL
+			m_ctlreg = m_data & 0x1 ? 1 : 0;	// 0:regA, 1:regB
+			m_state = 0;
+		}
+		break;
+
+		case 6:
+		{
+			// REGSET
+			if (m_ctlreg == 0)
+				m_regA = m_regA | m_data;
+			else
+				m_regB = m_data;
+			m_state = 0;
+		}
+		break;
+
+		case 7:
+		{
+			// REGCLR
+			if (m_ctlreg == 0)
+				m_regA = m_regA & ~m_data;
+			else
+				m_regB = 0;
 			m_state = 0;
 		}
 		break;

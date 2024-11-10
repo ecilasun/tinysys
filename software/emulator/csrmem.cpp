@@ -34,6 +34,7 @@ void CCSRMem::UpdateTime(uint64_t wallclock, uint32_t executeCount)
 void CCSRMem::Tick(CBus* bus)
 {
 	CUART* uart = bus->GetUART();
+	CVPU* vpu = bus->GetVPU();
 
 	// Detect reset request
 	if (m_cpuresetreq)
@@ -45,6 +46,7 @@ void CCSRMem::Tick(CBus* bus)
 	uint32_t uartirq = uart ? uart->m_uartirq : 0;
 	uint32_t keyirq = 0; // Ignoring sdcard insert/remove signal for now
 	uint32_t usbirq = 0; // Ignoring USB for now
+	uint32_t hblankirq = vpu ? vpu->m_hirq : 0;
 
 	uint32_t ie = m_mstatusshadow & 0x8;
 
@@ -52,14 +54,14 @@ void CCSRMem::Tick(CBus* bus)
 	uint32_t timerInterrupt = ((m_mieshadow & 0x080 ? 1 : 0) && ie && (m_wallclocktime >= m_timecmp)) ? 1 : 0;
 
 	// Machine external interrupts
-	uint32_t hwInterrupt = ((m_mieshadow & 0x800 ? 1 : 0) && ie && (uartirq || keyirq || usbirq)) ? 1 : 0;
+	uint32_t hwInterrupt = ((m_mieshadow & 0x800 ? 1 : 0) && ie && (hblankirq || uartirq || keyirq || usbirq)) ? 1 : 0;
 
 	// Software interrupt
 	m_sie = (m_mieshadow & 0x008 ? 1 : 0) && ie;
 	m_irq = (timerInterrupt << 1) | (hwInterrupt);
 
 	// IRQ state shadow
-	m_irqstate = (uartirq << 3) | (keyirq << 1) | (usbirq);
+	m_irqstate = (hblankirq << 3) | (uartirq << 2) | (keyirq << 1) | (usbirq);
 }
 
 void CCSRMem::Read(uint32_t address, uint32_t& data)
@@ -96,6 +98,8 @@ void CCSRMem::Read(uint32_t address, uint32_t& data)
 		data = (uint32_t)((m_retired & 0xFFFFFFFF00000000U) >> 32);
 	else if (csrindex == CSR_PROGRAMCOUNTER)
 		data = m_pc;
+	else if (csrindex == CSR_HBLANKHANDLER)
+		data = m_csrmem[csrindex];
 	else
 		data = m_csrmem[csrindex];
 }

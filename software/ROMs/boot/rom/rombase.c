@@ -543,6 +543,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				else if (hwid&8)
 				{
 					// Chain into user installed horizontal blank handler
+					// NOTE: We're not in any application context here, so we can't expect acess to any user data
+					// that is in the task space. Instead this routine should be using the mailbox memory for temp data
 					void(*handler)(void) = (void (*)())read_csr(0xFE0);
 					if (handler) handler();
 				}

@@ -46,6 +46,7 @@ public:
 
 	CAPU* GetAPU() { return m_apu; }
 	CUART* GetUART() { return m_uart; }
+	CVPU* GetVPU() { return m_vpuc; }
 	CLEDs* GetLEDs() { return m_leds; }
 	CCSRMem* GetCSR(uint32_t hartid) { return m_csr[hartid]; }
 

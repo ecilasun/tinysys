@@ -78,12 +78,13 @@ void CBus::QueueByte(uint8_t byte)
 bool CBus::Tick()
 {
 	m_dmac->Tick(m_mem);
-	m_csr[0]->Tick(this);
-	m_csr[1]->Tick(this);
 	m_sdcc->Tick(this);
 	m_uart->Tick(this);
 	m_vpuc->Tick(this);
 	m_apu->Tick(this);
+
+	m_csr[0]->Tick(this);
+	m_csr[1]->Tick(this);
 
 	return true;
 }
