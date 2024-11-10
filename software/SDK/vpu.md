@@ -77,6 +77,22 @@ This blocking function will stall the CPU until a vertical blank event occurs. A
 
 If you do not wish to block while waiting, please see `VPUReadVBlankCounter()` instead. However that is not a recommended way to wait for vblank, as having a split read and swap will most likely cause undesired tearing effects.
 
+`void VPUSetHBlankHandler(uintptr_t _handler)`
+
+This function installs a horizontal blank handler function. The function itself is not an ISR, but rather chained to from the OS ISR routine. This allows for the function to be built as regular C++ code and does not have any special requirements apart form adhering to the following signature: `void func()`
+
+`void VPUSetHBlankScanline(uintptr_t _scanline)`
+
+This function sets up the video line at which the horizontal blanking interrupt should be triggered. One thing to note here is that for 320x240 video modes, scanline count still counts from 0 to 479, and the scan lines are always in 640x480 space.
+
+`void VPUEnableHBlankInterrupt()`
+
+This allows the VPU to trigger a horizontal blanking interrupt on the CSR unit which then passes it to the fetch unit as a hardware interrupt.
+
+`void VPUDisableHBlankInterrupt()`
+
+This turns off the interrupt generation on the VPU for horizontal blanking.
+
 ### Video backbuffer
 `void VPUSetWriteAddress(struct EVideoContext *_context, const uint32_t _cpuWriteAddress64ByteAligned)`
 
@@ -96,5 +112,15 @@ The 16 bit color mode in fact uses 12 bit colors packed as follows:
 The lowest 4 bits are green, followed by 4 bits of blue, and 4 bits of red.
 
 The remaining 4 bits are reserved for future and should always be set to zeros.
+
+### Horizontal blanking interrupts
+
+The horizontal blanking interrupt is set up to trigger at a given scanline.
+
+This allows for secondary uses of this interrupt as a vertical blanking interrupt, if one were to wait for last line of the video and swap the scan-out buffer.
+
+One could also change the interrupt scanline register on the VPU on the fly (from inside the interrupt handler) to generate copper effects or switch to an entirely diferent video resolution in the middle of a frame.
+
+For a full sample that uses the hblank handlers, see the sample code in 'samples/hblank' directory.
 
 ### Back to [SDK Documentation](README.md)
