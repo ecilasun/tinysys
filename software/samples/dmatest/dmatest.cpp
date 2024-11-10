@@ -1,3 +1,12 @@
+/** \file
+ * DMA usage example.
+ * \ingroup examples
+ * This example demonstrates how to use the DMA engine to copy data between two memory locations.
+ * In this case the source is a buffer containing a sprite and the target is the video buffer.
+ * Several sprites are drawn, which move around the screen and bounce off the edges.
+ * Set NUM_SPRITES to a higher value to find out how many sprites can be drawn before performance drops.
+ */
+
 #include "basesystem.h"
 #include "core.h"
 #include "vpu.h"
@@ -5,8 +14,11 @@
 
 #include <stdlib.h>
 
+// By default we draw 128 sprites, some of which are 64x64 and some are set to 32x32
 #define NUM_SPRITES 128
 
+// This function draws a sprite onto a target buffer by copying the sprite data to the target buffer line by line.
+// Please note that each line has to be a multiple of 16 bytes.
 void DrawSprite(int x, int y, int w, int h, uint8_t *sprite, uint8_t *targetBuffer, int W, int H)
 {
 	for (int r=0; r<h; ++r)
@@ -74,7 +86,7 @@ int main(int argc, char *argv[])
 		for (uint32_t x=0;x<W;++x)
 			backdrop[x+y*W] = (x^y)%255;
 
-	// DMA operatins work directly on memory.
+	// DMA operations work directly on memory.
 	// Therefore, we need to insert a cache flush here so that
 	// the writes to buffer A are all written back to RAM.
 	CFLUSH_D_L1;

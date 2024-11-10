@@ -1,3 +1,10 @@
+/** \file
+ * Analog to Digital Converter (ADC) example.
+ * \ingroup examples
+ * This example demonstrates how to use the ADC to read the temperature sensor.
+ * The temperature is read and shown on the screen as a line graph.
+ */
+
 #include <stdio.h>
 #include <cstdlib>
 

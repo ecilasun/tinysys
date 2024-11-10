@@ -114,6 +114,9 @@ void _runExecTask()
 
 void DeviceDefaultState(int _bootTime)
 {
+	// Stop any pending horizontal blanking interrupt
+	VPUDisableHBlankInterrupt();
+
 	// Stop output
 	APUSetSampleRate(ASR_Halt);
 

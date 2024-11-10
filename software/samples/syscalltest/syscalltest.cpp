@@ -1,3 +1,10 @@
+/** \file
+ * Syscall test program.
+ *
+ * \ingroup examples
+ * This program tests the basic printf, file I/O and the getcwd() syscall.
+ */
+
 #define _GNU_SOURCE 1
 #define _POSIX_TIMERS 1
 

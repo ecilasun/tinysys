@@ -28,7 +28,12 @@
 		"string_view": "c",
 		"cstring": "c",
 		"esp_log.h": "c",
-		"esp_gatts_api.h": "c"
+		"esp_gatts_api.h": "c",
+		"chrono": "c",
+		"format": "c",
+		"regex": "c",
+		"thread": "c",
+		"*.tcc": "c"
 	},
 	"idf.gitPathWin": "C:\\Users\\ecila\\.espressif\\tools\\idf-git\\2.39.2\\cmd\\git.exe"
 }

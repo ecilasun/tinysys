@@ -1,3 +1,13 @@
+/** \file
+ * imgui demo
+ *
+ * \ingroup examples
+ * This is a simple example of using imgui with the SDK. It includes a simple
+ * demo window and a stats window, and a plot of the temperature read from the
+ * XADC. There is also a simple mouse cursor that can be moved around the screen
+ * if a mouse is connected to the board's USB host port.
+ */
+
 #include <math.h>
 #include "core.h"
 #include "vpu.h"

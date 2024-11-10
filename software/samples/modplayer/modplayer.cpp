@@ -1,3 +1,15 @@
+/** \file
+ * Music player example using the libxmp library.
+ *
+ * \ingroup examples
+ * This example demonstrates how to use the libxmp library to play music files.
+ * It can play a variety of module formats, such as MOD, S3M, XM, IT.
+ * The example uses the APU to mix the audio data and the VPU to display the
+ * waveform of the audio data currently being played.
+ * Please note that some module formats may be taxing on the tinsys CPU and may not
+ * play back smoothly.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

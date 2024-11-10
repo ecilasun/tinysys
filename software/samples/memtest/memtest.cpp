@@ -1,3 +1,10 @@
+/** \file
+ * Memory test example
+ *
+ * \ingroup examples
+ * This example demonstrates how to test the memory on the system using the memtest library.
+ */
+
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>

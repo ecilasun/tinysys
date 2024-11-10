@@ -449,7 +449,6 @@ uint32_t IsFileHandleAllocated(const uint32_t _bitIndex, const uint32_t  _input)
 
 void HandleUART()
 {
-	// Incoming EP1 data package
 	uint32_t currLED = LEDGetState();
 	LEDSetState(currLED | 0x8);
 	while (UARTGetStatus() & UARTSTA_RXFIFO_VALID)
@@ -537,10 +536,16 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				// Bit mask of devices causing the current interrupt
 				uint32_t hwid = read_csr(0xFFF);
 
+				// See axi4csrfile.v for the device bit assignments
 				if (hwid&1) HandleUSBHID();
 				else if (hwid&2) HandleSDCardDetect();
-				//else if (hwid&4) this is going to be for hard CPU reset, therefore can't be handled here
-				else if (hwid&8) HandleUART();
+				else if (hwid&4) HandleUART();
+				else if (hwid&8)
+				{
+					// Chain into user installed horizontal blank handler
+					void(*handler)(void) = (void (*)())read_csr(0xFE0);
+					if (handler) handler();
+				}
 				else // No familiar bit set, unknown device
 				{
 					taskctx->kernelError = 1;

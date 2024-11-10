@@ -1,3 +1,10 @@
+/** \file
+ * Mouse input example.
+ *
+ * \ingroup examples
+ * This example demonstrates how to use the mouse input to draw lines on the screen.
+ */
+
 #include "basesystem.h"
 #include "core.h"
 #include "vpu.h"

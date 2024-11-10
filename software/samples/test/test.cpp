@@ -1,3 +1,12 @@
+/** \file
+ * Crash handler test.
+ *
+ * \ingroup examples
+ * This example deliberately crashes the system by executing an illegal instruction.
+ * The system will then trap the error and display a message on the console.
+ * The exection will then return to the OS and this task will be terminated.
+ */
+
 #include "basesystem.h"
 #include "encoding.h"
 #include <stdio.h>

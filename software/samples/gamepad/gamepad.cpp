@@ -1,3 +1,10 @@
+/** \file
+ * Gamepad example.
+ *
+ * \ingroup examples
+ * This example reads the gamepad input and displays it on the console.
+ */
+
 #include "basesystem.h"
 #include "core.h"
 #include "task.h"

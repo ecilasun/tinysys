@@ -1,3 +1,13 @@
+/** \file
+ * Task management example
+ *
+ * \ingroup examples
+ * This sample shows how to manage multiple tasks on the two HARTs of the tinysys RISC-V core.
+ * The two HARTs communicate with each other using shared memory.
+ * Both HARTs run a task that increments a counter in their respective shared memory slots.
+ * The main task running on HART0 displays the counter values for both HARTs on the screen.
+ */
+
 #include "basesystem.h"
 #include "core.h"
 #include "task.h"

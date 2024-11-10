@@ -5,6 +5,9 @@
 #define VPUCMD_SETVPAGE				0x00000000
 #define VPUCMD_SETPAL				0x00000001
 #define VPUCMD_SETVMODE				0x00000002
+#define VPUCMD_CTLREGSEL			0x00000003
+#define VPUCMD_CTLREGSET			0x00000004
+#define VPUCMD_CTLREGCLR			0x00000005
 
 #define CONSOLEDIMGRAY 0x00
 #define CONSOLEDIMBLUE 0x01
@@ -100,3 +103,9 @@ void VPUConsoleSetCursor(struct EVideoContext *_context, const uint16_t _x, cons
 void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _length);
 void VPUConsoleResolve(struct EVideoContext *_context);
 void VPUClear(struct EVideoContext *_context, const uint32_t _colorWord);
+
+// Horizontal blanking interrupt
+void VPUSetHBlankHandler(uintptr_t _handler);
+void VPUSetHBlankScanline(uintptr_t _scanline);
+void VPUEnableHBlankInterrupt();
+void VPUDisableHBlankInterrupt();

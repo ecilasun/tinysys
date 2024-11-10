@@ -1,4 +1,10 @@
-#define _GNU_SOURCE 1
+/** \file
+ * Hexadecimal and ASCII dump of a file.
+ *
+ * \ingroup examples
+ * This program reads a file and dumps its content in hexadecimal and ASCII format.
+ * It is useful to inspect the content of a file, especially binary files.
+ */
 
 #include <inttypes.h>
 #include <unistd.h>

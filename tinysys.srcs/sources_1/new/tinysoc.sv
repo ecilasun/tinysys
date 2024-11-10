@@ -19,9 +19,10 @@ module tinysoc #(
 	// LEDs
 	output wire [3:0] leds,
 	// ESP32
-	//inout wire [16:0] esp_io,
-	output wire esp_txd_out,
-	input wire esp_rxd_in,
+	//output wire esp_txd0_out,
+	//input wire esp_rxd0_in,
+	output wire esp_txd1_out,
+	input wire esp_rxd1_in,
 	// Video output
 	output wire vvsync,
 	output wire vhsync,
@@ -157,6 +158,7 @@ riscv #( .CSRBASE(16'h800B), .RESETVECTOR(RESETVECTOR)) hart1(
 // Video output unit
 // --------------------------------------------------
 
+wire hirq;
 wire vpufifoempty;
 wire [31:0] vpufifodout;
 wire vpufifore;
@@ -177,7 +179,8 @@ videocore VPU(
 	.vpufifodout(vpufifodout),
 	.vpufifore(vpufifore),
 	.vpufifovalid(vpufifovalid),
-	.vpustate(vpustate));
+	.vpustate(vpustate),
+	.hirq(hirq));
 
 // --------------------------------------------------
 // DMA unit
@@ -315,7 +318,7 @@ devicerouter devicerouterinst(
     	4'b0100,		// XADC Analog / Digital Converter Interface
 		4'b0011,		// SDCC SDCard access via SPI
 		4'b0010,		// VPUC Graphics Processing Unit Command Fifo
-		4'b0001 }),		// LEDS Debug / Status LED interface
+		4'b0001}),		// LEDS Debug / Status LED interface
     .axi_m({csrif1, csrif0, uartif, mailif, audioif, usbaif, dmaif, xadcif, spiif, vpucmdif, ledif}));
 
 // --------------------------------------------------
@@ -406,6 +409,7 @@ axi4CSRFile #( .HARTID(4'd0)) csrfile0 (
 	.keyirq(keyirq),
 	.usbirq(usbairq),
 	.uartirq(uartirq),
+	.hirq(hirq),
 	// CPU reset
 	.cpuresetreq(cpuresetreq0),
 	// Shadow registers
@@ -428,6 +432,7 @@ axi4CSRFile #( .HARTID(4'd1)) csrfile1 (
 	.keyirq(keyirq),
 	.usbirq(usbairq),
 	.uartirq(uartirq),
+	.hirq(hirq),
 	// CPU reset
 	.cpuresetreq(cpuresetreq1),
 	// Shadow registers
@@ -442,8 +447,8 @@ axi4uart uartinst(
 	.uartbaseclock(clk10),
 	.aresetn(aresetn),
 	.rst10n(rst10n),
-	.uartrx(esp_rxd_in),
-	.uarttx(esp_txd_out),
+	.uartrx(esp_rxd1_in),
+	.uarttx(esp_txd1_out),
 	.s_axi(uartif),
 	.uartirq(uartirq) );
 

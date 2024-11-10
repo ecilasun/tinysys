@@ -327,6 +327,9 @@
 `define CSR_MIMPID		12'hF13
 `define CSR_MHARTID		12'hF14
 
+// Horizontal and vertical blank handlers for the ISR to chain to
+`define CSR_HBLANKIRQ_HANDLER	12'hFE0
+
 // Set lowest bit to 1'b1 to trigger reset, 1'b0 to stop reset
 `define CSR_CPURESET		12'hFEE
 // Machine boot state (watermark) register, survives soft reboot intact

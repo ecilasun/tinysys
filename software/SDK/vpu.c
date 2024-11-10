@@ -664,3 +664,59 @@ void VPUWaitVSync()
 		currentvsync = VPUReadVBlankCounter();
 	} while (currentvsync == prevvsync);
 }
+
+/** @brief Set HBlank handler
+ * 
+ * This function sets the handler function that will be called when the horizontal blanking
+ * ISR triggers. The handler function should match the signature void func(void).
+ * It is advisable to return from this function as quickly as possible.
+ * 
+ * @param _handler Handler function pointer
+ */
+void VPUSetHBlankHandler(uintptr_t _handler)
+{
+	write_csr(0xFE0, _handler);
+}
+
+/** @brief Set HBlank scanline
+ * 
+ * This function sets the scanline at which the horizontal blanking ISR will trigger.
+ * The scanline is a number between 0 and 479, where 0 is the top of the screen and 479 is the bottom.
+ * 
+ * @param _scanline Scanline number
+ */
+void VPUSetHBlankScanline(uintptr_t _scanline)
+{
+	*VPUIO = VPUCMD_CTLREGSEL;
+	*VPUIO = 0x00000001; // control register B
+	*VPUIO = VPUCMD_CTLREGSET;
+	*VPUIO = _scanline; // set hblank scanline
+}
+
+/** @brief Enable HBlank interrupt
+ * 
+ * This function enables the VPU horizontal blank interrupt generation.
+ * The OS will handle the interrupt and then directly chain into the handler function set by VPUSetHBlankHandler().
+ * 
+ * @see VPUSetHBlankHandler
+ */
+void VPUEnableHBlankInterrupt()
+{
+	*VPUIO = VPUCMD_CTLREGSEL;
+	*VPUIO = 0x00000000; // control register A
+	*VPUIO = VPUCMD_CTLREGSET;
+	*VPUIO = 0x00000001; // enable hblank interrupt	
+}
+
+/** @brief Disable HBlank interrupt
+ * 
+ * This function disables the VPU horizontal blank interrupt generation.
+ * 
+ */
+void VPUDisableHBlankInterrupt()
+{
+	*VPUIO = VPUCMD_CTLREGSEL;
+	*VPUIO = 0x00000000; // control register A
+	*VPUIO = VPUCMD_CTLREGCLR;
+	*VPUIO = 0x00000001; // disable hblank interrupt
+}

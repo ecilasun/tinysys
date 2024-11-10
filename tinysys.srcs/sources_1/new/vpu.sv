@@ -17,7 +17,8 @@ module videocore(
 	input wire [31:0] vpufifodout,
 	output wire vpufifore,
 	input wire vpufifovalid,
-	output wire [31:0] vpustate);
+	output wire [31:0] vpustate,
+	output wire hirq);
 
 // A simple video unit with the following features:
 // - Four video output modes (320x240 or 640x480, indexed or 16bpp)
@@ -249,15 +250,20 @@ assign m_axi.bready = 0;
 // Command FIFO
 // --------------------------------------------------
 
-typedef enum logic [2:0] {
+typedef enum logic [3:0] {
 	WCMD, DISPATCH,
 	SETVPAGE,
 	SETPAL,
-	VMODE, VSCANSIZE,
+	VMODE,
+	CTLREGSEL, CTLREGSET, CTLREGCLR,
+	VSCANSIZE,
 	FINALIZE } vpucmdmodetype;
 vpucmdmodetype cmdmode = WCMD;
 
 logic [31:0] vpucmd;
+logic controlregA;
+logic [11:0] controlregB;
+logic regIndex;
 
 always_ff @(posedge aclk) begin
 	if (~delayedresetn) begin
@@ -271,6 +277,9 @@ always_ff @(posedge aclk) begin
 		scanwidth <= 1'b0;
 		colormode <= 1'b0;
 		palettewe <= 1'b0;
+		regIndex <= 1'b0;
+		controlregA <= 1'd0;
+		controlregB <= 12'd0;
 		cmdmode <= WCMD;
 	end else begin
 		cmdre <= 1'b0;
@@ -288,11 +297,14 @@ always_ff @(posedge aclk) begin
 			end
 
 			DISPATCH: begin
-				case (vpucmd)
-					32'h00000000:	cmdmode <= SETVPAGE;	// Set the scanout start address (followed by 32bit cached memory address, 64 byte cache aligned)
-					32'h00000001:	cmdmode <= SETPAL;		// Set 24 bit color palette entry (followed by 8bit address+24bit color in next word)
-					32'h00000002:	cmdmode <= VMODE;		// Set up video mode or turn off scan logic (default is 320x240*8bit paletted)
-					default:		cmdmode <= FINALIZE;	// Invalid command, wait one clock and try next
+				case (vpucmd[7:0])
+					8'h00:		cmdmode <= SETVPAGE;	// Set the scanout start address (followed by 32bit cached memory address, 64 byte cache aligned)
+					8'h01:		cmdmode <= SETPAL;		// Set 24 bit color palette entry (followed by 8bit address+24bit color in next word)
+					8'h02:		cmdmode <= VMODE;		// Set up video mode or turn off scan logic (default is 320x240*8bit paletted)
+					8'h03:		cmdmode <= CTLREGSEL;	// Select control register
+					8'h04:		cmdmode <= CTLREGSET;	// Set given bits of control register
+					8'h05:		cmdmode <= CTLREGCLR;	// Clear given bits of control register
+					default:	cmdmode <= FINALIZE;	// Invalid command, wait one clock and try next
 				endcase
 			end
 
@@ -337,6 +349,36 @@ always_ff @(posedge aclk) begin
 					// Advance FIFO
 					cmdre <= 1'b1;
 					cmdmode <= VSCANSIZE;
+				end
+			end
+			
+			CTLREGSEL: begin
+				if (vpufifovalid && ~vpufifoempty) begin
+					regIndex <= vpufifodout[0];
+					cmdre <= 1'b1;
+					cmdmode <= FINALIZE;
+				end
+			end
+
+			CTLREGSET: begin
+				if (vpufifovalid && ~vpufifoempty) begin
+					case (regIndex)
+						1'b0: controlregA <= controlregA | vpufifodout[0];	// {hirq_ena_cpu0}}
+						1'b1: controlregB <= vpufifodout[11:0];				// hirq scanline does not allow setting individual bits
+					endcase
+					cmdre <= 1'b1;
+					cmdmode <= FINALIZE;
+				end
+			end
+
+			CTLREGCLR: begin
+				if (vpufifovalid && ~vpufifoempty) begin
+					case (regIndex)
+						1'b0: controlregA <= controlregA & (~vpufifodout[0]);	// {hirq_ena_cpu0}}
+						1'b1: controlregB <= 12'd0;								// hirq scanline does not allow per-bit clears
+					endcase
+					cmdre <= 1'b1;
+					cmdmode <= FINALIZE;
 				end
 			end
 
@@ -478,6 +520,23 @@ always_ff @(posedge aclk) begin
 			end
 
 		endcase
+	end
+end
+
+// Horizontal and Vertical blank interrupt logic
+
+logic horizontalinterrupt;
+logic pixelMatched;
+
+assign hirq = horizontalinterrupt;
+
+always @(posedge aclk) begin
+	if (~delayedresetn) begin
+		pixelMatched <= 1'b0;
+		horizontalinterrupt <= 1'b0;
+	end else begin
+		pixelMatched <= scanline == controlregB;
+		horizontalinterrupt <= controlregA && pixelMatched ? 1'b1 : 1'b0;
 	end
 end
 

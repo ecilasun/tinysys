@@ -1,4 +1,9 @@
-#define _GNU_SOURCE 1
+/** \file
+ * Text dump example
+ *
+ * \ingroup examples
+ * This example reads a file and dumps it to the console in ASCII format.
+ */
 
 #include <inttypes.h>
 #include <stdio.h>

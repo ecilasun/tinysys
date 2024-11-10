@@ -1,3 +1,10 @@
+/** \file
+ * Mandelbrot set example.
+ *
+ * \ingroup examples
+ * This example demonstrates the use of the VPU frame buffers to render a Mandelbrot set.
+ */
+
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>

@@ -48,13 +48,15 @@
 // Serial buffers (first words are counters)
 #define SERIN_RINGBUFFER_BASE			0x02050000 // Serial input (16384 bytes)
 #define SEROUT_RINGBUFFER_BASE			0x02054000 // Serial output (16384 bytes)
-#define NULL_REGION0					0x02058000 // Unused region (16384 bytes)
-#define SERIN_RINGBUFFER_STATE			0x0205C010 // Serial input state
-#define SEROUT_RINGBUFFER_STATE			0x0205C020 // Serial output state
-#define NULL_REGION1					0x0205C030 // Unused region (16 bytes)
-#define KERNEL_GFX_CONTEXT				0x0205C040 // Kernel terminal graphics context
+#define UNUSED_BUFFER_BASE0				0x02058000 // Reserved for future (16384 bytes)
+#define UNUSED_BUFFER_BASE1				0x0205C000 // Reserved for future (16384 bytes)
+#define SERIN_RINGBUFFER_STATE			0x02060000 // Serial input state (16 bytes)
+#define SEROUT_RINGBUFFER_STATE			0x02060010 // Serial output state (16 bytes)
+#define UNUSED_STATE0					0x02060020 // Reserved for future (16 bytes)
+#define UNUSED_STATE1					0x02060030 // Reserved for future (16 bytes)
+#define KERNEL_GFX_CONTEXT				0x02060040 // Kernel terminal graphics context
 // Executable
-#define HEAP_START_APPMEM_END			0x02070000 // Executable space above this
+#define HEAP_START_APPMEM_END			0x02080000 // Executable space above this
 // Heap
 #define HEAP_END_CONSOLEMEM_START		0x0FF00000 // Heap space above this
 // Kernel console text+attrib/scratch

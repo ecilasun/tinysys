@@ -1,3 +1,10 @@
+/** \file
+ * Audio generation example.
+ * \ingroup examples
+ * This example demonstrates how to generate a simple audio tone and play it back using the APU.
+ * The example generates a simple stereo tone, please connect headphones or speakers to the audio output of the board.
+ */
+
 #include <stdio.h>
 #include <math.h>
 #include <cstdlib>

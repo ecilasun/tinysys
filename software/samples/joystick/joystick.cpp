@@ -1,3 +1,10 @@
+/** \file
+ * Joystick example
+ *
+ * \ingroup examples
+ * This example demonstrates how to read the joystick position and buttons.
+ */
+
 #include "basesystem.h"
 #include "core.h"
 #include "task.h"
