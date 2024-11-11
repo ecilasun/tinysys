@@ -331,6 +331,20 @@ resize_pblock [get_pblocks pblock_DMA] -add {RAMB36_X1Y16:RAMB36_X2Y19}
 create_pblock pblock_FPU
 add_cells_to_pblock [get_pblocks pblock_FPU] [get_cells -quiet [list socinstance/hart0/controlunitinst/FPU]]
 resize_pblock [get_pblocks pblock_FPU] -add {CLOCKREGION_X1Y4:CLOCKREGION_X1Y4}
+
 create_pblock pblock_FPU_1
 add_cells_to_pblock [get_pblocks pblock_FPU_1] [get_cells -quiet [list socinstance/hart1/controlunitinst/FPU]]
 resize_pblock [get_pblocks pblock_FPU_1] -add {CLOCKREGION_X1Y1:CLOCKREGION_X1Y1}
+
+## create_pblock pblock_uartinst
+## add_cells_to_pblock [get_pblocks pblock_uartinst] [get_cells -quiet [list socinstance/uartinst]]
+## resize_pblock [get_pblocks pblock_uartinst] -add {SLICE_X0Y151:SLICE_X11Y165}
+## resize_pblock [get_pblocks pblock_uartinst] -add {RAMB18_X0Y62:RAMB18_X0Y65}
+## resize_pblock [get_pblocks pblock_uartinst] -add {RAMB36_X0Y31:RAMB36_X0Y32}
+
+## create_pblock pblock_usbhostport
+## add_cells_to_pblock [get_pblocks pblock_usbhostport] [get_cells -quiet [list socinstance/usbhostport]]
+## resize_pblock [get_pblocks pblock_usbhostport] -add {SLICE_X150Y27:SLICE_X163Y46}
+## resize_pblock [get_pblocks pblock_usbhostport] -add {DSP48_X8Y12:DSP48_X8Y17}
+## resize_pblock [get_pblocks pblock_usbhostport] -add {RAMB18_X8Y12:RAMB18_X8Y17}
+## resize_pblock [get_pblocks pblock_usbhostport] -add {RAMB36_X8Y6:RAMB36_X8Y8}

@@ -459,6 +459,15 @@ void HandleUART()
 	LEDSetState(currLED);
 }
 
+void HandleHBlank()
+{
+	// Chain into user installed horizontal blank handler
+	// NOTE: We're not in any application context here, so we can't expect acess to any user data
+	// that is in the task space. Instead this routine should be using the mailbox memory for temp data
+	void(*handler)(void) = (void (*)())read_csr(0xFE0);
+	if (handler) handler();
+}
+
 //void __attribute__((aligned(16))) __attribute__((interrupt("machine"))) interrupt_service_routine() // Auto-saves registers
 void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routine() // Manual register save
 {
@@ -528,8 +537,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				// TODO: Use time slice request returned from TaskSwitchToNext()
 				uint64_t future = now + runLength;
 				E32SetTimeCompare(future);
-				break;
 			}
+			break;
 
 			case IRQ_M_EXT:
 			{
@@ -537,33 +546,26 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				uint32_t hwid = read_csr(0xFFF);
 
 				// See axi4csrfile.v for the device bit assignments
+				// NOTE: We will handle _ALL_ device interrupts in this order
 				if (hwid&1) HandleUSBHID();
 				else if (hwid&2) HandleSDCardDetect();
 				else if (hwid&4) HandleUART();
-				else if (hwid&8)
+				else if (hwid&8) HandleHBlank();
+				else
 				{
-					// Chain into user installed horizontal blank handler
-					// NOTE: We're not in any application context here, so we can't expect acess to any user data
-					// that is in the task space. Instead this routine should be using the mailbox memory for temp data
-					void(*handler)(void) = (void (*)())read_csr(0xFE0);
-					if (handler) handler();
-				}
-				else // No familiar bit set, unknown device
-				{
+					// No familiar bit set, unknown device
 					taskctx->kernelError = 1;
 					taskctx->kernelErrorData[0] = hwid;	// The unknown hardwareid received
-					break;
 				}
-
-				break;
 			}
+			break;
 
 			default:
 			{
 				taskctx->kernelError = 2;
 				taskctx->kernelErrorData[0] = code;	// The unknown IRQ code received
-				break;
 			}
+			break;
 		}
 	}
 	else
@@ -582,9 +584,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				TaskExitCurrentTask(taskctx);
 				// Force switch to next task
 				TaskSwitchToNext(taskctx);
-
-				break;
 			}
+			break;
 
 			case CAUSE_BREAKPOINT:
 			{
@@ -597,9 +598,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				TaskExitCurrentTask(taskctx);
 				// Force switch to next task
 				TaskSwitchToNext(taskctx);
-
-				break;
 			}
+			break;
 
 			case CAUSE_MACHINE_ECALL:
 			{
@@ -1049,8 +1049,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					errno = EIO;
 					write_csr(0x8AA, 0xFFFFFFFF);
 				}
-				break;
 			}
+			break;
 
 			/*case CAUSE_MISALIGNED_FETCH:
 			case CAUSE_FETCH_ACCESS:
@@ -1068,8 +1068,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			{
 				taskctx->kernelError = 3;
 				taskctx->kernelErrorData[0] = code;	// The unknown cause code
-				break;
 			}
+			break;
 		}
 	}
 

@@ -74,7 +74,7 @@ bit [31:0] A;	// rval1
 bit [31:0] B;	// rval2
 bit [31:0] D;	// immed
 bit [31:0] E;	// rval3
-bit F;		// immsel
+bit [31:0] F;	// immsel ? immed : rval2
 
 // Writeback data
 bit [31:0] wbdin;
@@ -124,7 +124,7 @@ arithmeticlogic ALU(
 	.aresetn(delayedresetn),
 	.aluout(aluout),
 	.val1(A),
-	.val2(F ? D : B),
+	.val2(F),
 	.aluop(aluop) );
 
 // --------------------------------------------------
@@ -356,7 +356,7 @@ always @(posedge aclk) begin
 		B <= 32'd0;
 		D <= 32'd0;
 		E <= 32'd0;
-		F <= 1'd0;
+		F <= 32'd0;
 		mulstrobe <= 1'b0;
 		divstrobe <= 1'b0;
 		fmaddstrobe <= 1'b0;
@@ -448,7 +448,7 @@ always @(posedge aclk) begin
 					B <= rval2;
 					D <= immed;
 					E <= rval3;
-					F <= immsel;
+					F <= immsel ? immed : rval2;
 					wbdest <= rd;
 					rwaddress <= rval1 + immed;
 					offsetPC <= PC + immed;

@@ -1,5 +1,3 @@
-# Setup
-
 ifeq ($(OS),Windows_NT)
 	ifeq ($(MSYSTEM), MINGW32)
 		UNAME := MSYS
@@ -10,13 +8,14 @@ else
 	UNAME := $(shell uname)
 endif
 
-default: all
+TARGET = starthere.elf
+
+.DEFAULT: $(TARGET)
 
 # Directories
 
 src_dir = .
 corelib_dir = ../../SDK
-# my_3rdparty_libs = ../../3rdparty/libfoldernamehere
 
 # Rules
 
@@ -30,30 +29,22 @@ RISCV_GCC ?= $(RISCV_PREFIX)g++
 RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++20 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Ofast -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
 endif
 
-# add your third party include folder here before src_dir as -I$(my_3rdparty_libs)/
-incs  += -I$(src_dir) -I$(corelib_dir)/ -I$(src_dir)/.
-# add your third party libs / sources here at the end as $(wildcard $(my_3rdparty_libs)/*.c) or *.cpp
-libs += $(wildcard $(corelib_dir)/*.c)
-objs  := starthere.elf
+RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump
 
-$(foreach folder,$(folders),$(eval $(call compile_template,$(folder))))
+incs  += -I$(src_dir) -I$(corelib_dir) $(addprefix -I$(src_dir)/, $(folders))
+libs += $(wildcard $(corelib_dir)/*.S) $(wildcard $(corelib_dir)/*.c)
+objs  := 
 
-# Build
+$(TARGET):
+	$(RISCV_GCC) $(incs) -o $(TARGET) $(wildcard $(src_dir)/*.cpp) $(libs) $(RISCV_GCC_OPTS)
 
-starthere.elf: $(wildcard $(src_dir)/*)
-	$(RISCV_GCC) $(incs) -o $@ $(wildcard $(src_dir)/*.cpp) $(libs) $(RISCV_GCC_OPTS)
+dump: $(TARGET)
+	$(RISCV_OBJDUMP) $(TARGET) -x -D -S >> $(TARGET).txt
 
-junk += $(folders_riscv_bin)
-
-# Default
-
-all: starthere.elf
-
-# Clean
-
+.PHONY: clean
 clean:
 ifeq ($(UNAME), Windows)
-	del $(objs) $(junk)
+	del *.elf *.txt
 else
-	rm -rf $(objs) $(junk)
+	rm -rf *.elf *.txt
 endif
