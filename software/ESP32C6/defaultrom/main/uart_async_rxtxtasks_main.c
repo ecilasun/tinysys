@@ -96,6 +96,7 @@ void app_main(void)
 	usb_serial_jtag_driver_config_t usb_serial_config =  USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
 	ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&usb_serial_config));
 
+	// Comm setup between tinysys Soc and the ESP32
 	uart_config_t uart_config = {
 		.baud_rate = 115200,
 		.data_bits = UART_DATA_8_BITS,
@@ -108,7 +109,7 @@ void app_main(void)
 	uart_send_queue = xQueueCreate(256, sizeof(CMD_t));
 	jtag_send_queue = xQueueCreate(256, sizeof(CMD_t));
 
-	ESP_ERROR_CHECK(uart_driver_install(UART_PORT_NUM, PAYLOAD_SIZE * 2, 0, 0, NULL, 0));
+	ESP_ERROR_CHECK(uart_driver_install(UART_PORT_NUM, 2*UART_HW_FIFO_LEN(UART_PORT_NUM), 2*UART_HW_FIFO_LEN(UART_PORT_NUM), 0, NULL, ESP_INTR_FLAG_IRAM));
 	ESP_ERROR_CHECK(uart_param_config(UART_PORT_NUM, &uart_config));
 	ESP_ERROR_CHECK(uart_set_pin(UART_PORT_NUM, PIN_TXD, PIN_RXD, PIN_RTS, PIN_CTS));
 	ESP_ERROR_CHECK(uart_disable_pattern_det_intr(UART_PORT_NUM));

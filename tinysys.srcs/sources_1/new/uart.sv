@@ -51,7 +51,8 @@ begin
 		4'b1101: if(BitTick) TxD_state <= 4'b1110;  // bit 5
 		4'b1110: if(BitTick) TxD_state <= 4'b1111;  // bit 6
 		4'b1111: if(BitTick) TxD_state <= 4'b0010;  // bit 7
-		4'b0010: if(BitTick) TxD_state <= 4'b0000;  // stop bit
+		4'b0010: if(BitTick) TxD_state <= 4'b0011;  // stop1
+		4'b0011: if(BitTick) TxD_state <= 4'b0000;  // stop2
 		default: if(BitTick) TxD_state <= 4'b0000;
 	endcase
 end
@@ -164,7 +165,7 @@ module BaudTickGen(
 
 parameter ClkFrequency = 10000000;	// 10MHz
 parameter Baud = 115200;
-parameter Oversampling = 2;
+parameter Oversampling = 1;
 
 function integer log2(input integer v); begin log2=0; while(v>>log2) log2=log2+1; end endfunction
 localparam AccWidth = log2(ClkFrequency/Baud)+8;  // +/- 2% max timing error over a byte
