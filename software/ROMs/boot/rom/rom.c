@@ -733,6 +733,9 @@ void HandleCPUError(struct STaskContext *ctx, const uint32_t cpu)
 		default: kprintf("Unknown kernel error"); break;
 	}
 
+	if (ctx->kernelError == 1)
+		kprintf(" (0x%08X)", ctx->kernelErrorData[0]);
+
 	kprintf(" on CPU #%d\n", cpu);
 
 	ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);

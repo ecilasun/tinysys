@@ -547,10 +547,22 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 
 				// See axi4csrfile.v for the device bit assignments
 				// NOTE: We will handle _ALL_ device interrupts in this order
-				if (hwid&1) HandleUSBHID();
-				else if (hwid&2) HandleSDCardDetect();
-				else if (hwid&4) HandleUART();
-				else if (hwid&8) HandleHBlank();
+				if (hwid&1)
+				{
+					HandleUSBHID();
+				}
+				else if (hwid&2)
+				{
+					HandleSDCardDetect();
+				}
+				else if (hwid&4)
+				{
+					HandleUART();
+				}
+				else if (hwid&8)
+				{
+					HandleHBlank();
+				}
 				else
 				{
 					// No familiar bit set, unknown device

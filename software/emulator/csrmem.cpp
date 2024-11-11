@@ -53,15 +53,15 @@ void CCSRMem::Tick(CBus* bus)
 	// Timer interrupt
 	uint32_t timerInterrupt = ((m_mieshadow & 0x080 ? 1 : 0) && ie && (m_wallclocktime >= m_timecmp)) ? 1 : 0;
 
+	// IRQ state shadow
+	m_irqstate = (hblankirq << 3) | (uartirq << 2) | (keyirq << 1) | (usbirq);
+
 	// Machine external interrupts
-	uint32_t hwInterrupt = ((m_mieshadow & 0x800 ? 1 : 0) && ie && (hblankirq || uartirq || keyirq || usbirq)) ? 1 : 0;
+	uint32_t hwInterrupt = ((m_mieshadow & 0x800 ? 1 : 0) && ie && m_irqstate) ? 1 : 0;
 
 	// Software interrupt
 	m_sie = (m_mieshadow & 0x008 ? 1 : 0) && ie;
 	m_irq = (timerInterrupt << 1) | (hwInterrupt);
-
-	// IRQ state shadow
-	m_irqstate = (hblankirq << 3) | (uartirq << 2) | (keyirq << 1) | (usbirq);
 }
 
 void CCSRMem::Read(uint32_t address, uint32_t& data)
@@ -106,11 +106,13 @@ void CCSRMem::Read(uint32_t address, uint32_t& data)
 
 void CCSRMem::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 {
-	uint32_t csrindex = (address>>2) & 0xFFF;
+	uint32_t csrindex = (address >> 2) & 0xFFF;
 	//if (csrindex == CSR_MSCRATCH)
 	//	__debugbreak();
 
-	if (csrindex == CSR_CPURESET)
+	if (csrindex == CSR_HWSTATE)
+		;
+	else if (csrindex == CSR_CPURESET)
 		m_cpuresetreq = word & 1 ? 1 : 0;
 	else if (csrindex == CSR_TIMELO)
 		;
