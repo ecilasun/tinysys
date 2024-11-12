@@ -19,7 +19,7 @@ public:
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
 	void Tick(CBus* bus);
 
-	void UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus);
+	void UpdateVideoLink(uint32_t* pixels, int pitch, int scanline, CBus* bus);
 
 	uint32_t m_hirq{ 0 };
 

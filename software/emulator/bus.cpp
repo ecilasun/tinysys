@@ -65,9 +65,9 @@ void CBus::Reset(uint8_t* rombin, uint32_t romsize)
 	if (m_csr[1]) m_csr[1]->Reset();
 }
 
-void CBus::UpdateVideoLink(uint32_t *pixels, int pitch)
+void CBus::UpdateVideoLink(uint32_t *pixels, int pitch, int scanline)
 {
-	m_vpuc->UpdateVideoLink(pixels, pitch, this);
+	m_vpuc->UpdateVideoLink(pixels, pitch, scanline, this);
 }
 
 void CBus::QueueByte(uint8_t byte)

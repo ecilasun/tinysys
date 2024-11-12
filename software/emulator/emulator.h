@@ -11,7 +11,7 @@ public:
 
 	bool Reset(const char* romFile, uint32_t resetvector);
 	void Step(uint64_t wallclock);
-	void UpdateVideoLink(uint32_t* pixels, int pitch);
+	void UpdateVideoLink(uint32_t* pixels, int pitch, int scanline);
 	void QueueBytes(uint8_t *bytes, uint32_t count);
 	void QueueByte(uint8_t byte);
 

@@ -19,8 +19,11 @@ void CVPU::Reset()
 	m_count = 0;
 }
 
-void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
+void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, int scanline, CBus* bus)
 {
+	if (scanline >= 480) // Scanlines go up to 525 and are 800 pixels wide for our fake VGA signal
+		return;
+
 	if (m_scanoutpointer)
 	{
 		uint32_t* devicemem = bus->GetHostAddress(m_scanoutpointer);
@@ -34,7 +37,8 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 					// 16bpp
 					uint16_t* devicememas12bpp = (uint16_t*)devicemem;
 					const int W = pitch / 4;
-					for (uint32_t y = 0; y < m_scanheight; y++)
+					//for (uint32_t y = 0; y < m_scanheight; y++)
+					uint32_t y = scanline / 2;
 					{
 						const int linetop0 = 2 * W * y;
 						const int linetop1 = 2 * W * y + W;
@@ -62,7 +66,8 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 					// 16bpp
 					uint16_t* devicememas12bpp = (uint16_t*)devicemem;
 					const int W = pitch / 4;
-					for (uint32_t y = 0; y < m_scanheight; y++)
+					//for (uint32_t y = 0; y < m_scanheight; y++)
+					uint32_t y = scanline;
 					{
 						const int linetop = W * y;
 						uint16_t* sourceRow = &devicememas12bpp[m_scanwidth * y];
@@ -89,7 +94,8 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 					// 8bpp
 					uint8_t* devicememas8bpp = (uint8_t*)devicemem;
 					const int W = pitch / 4;
-					for (uint32_t y = 0; y < m_scanheight; y++)
+					//for (uint32_t y = 0; y < m_scanheight; y++)
+					uint32_t y = scanline / 2;
 					{
 						uint32_t* pixelRow0 = &pixels[2*W*y];
 						uint32_t* pixelRow1 = pixelRow0 + W;
@@ -115,7 +121,8 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 					// 8bpp
 					uint8_t* devicememas8bpp = (uint8_t*)devicemem;
 					const int W = pitch / 4;
-					for (uint32_t y = 0; y < m_scanheight; y++)
+					//for (uint32_t y = 0; y < m_scanheight; y++)
+					uint32_t y = scanline;
 					{
 						uint32_t* pixelRow = &pixels[W*y];
 						uint8_t* sourceRow = &devicememas8bpp[m_scanwidth * y];
