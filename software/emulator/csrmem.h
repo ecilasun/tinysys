@@ -26,7 +26,6 @@
 #define CSR_MARCHID			0xF12
 #define CSR_MIMPID			0xF13
 #define CSR_MHARTID			0xF14
-#define CSR_HWSTATE			0xFFF
 #define CSR_REGISTERSHADOW	0x8A0
 
 // Custom CSRs
