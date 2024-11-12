@@ -141,7 +141,7 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, int scanline, CBus* bus)
 		}
 		else
 		{
-			// This is going to reset evrything including the 8 pixel status bar
+			// This is going to reset everything including the 8 pixel status bar
 			for (uint32_t i = 0; i < 640 * 488; i++)
 			{
 				pixels[i] = (i % 2) ? 0xFF201515 : 0xFF001515;
@@ -160,8 +160,9 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, int scanline, CBus* bus)
 			pixels[i] = ((i/640)%2) ? 0xFF151515 : 0xFF000015;
 	}
 
-	// This function is invoked at 13ms intervals, so this counter acts as our vsync
-	++m_count;
+	// Vsync triggers on scanline 479
+	if (scanline==479)
+		++m_count;
 }
 
 void CVPU::Tick(CBus* bus)
