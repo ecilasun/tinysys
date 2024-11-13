@@ -14,6 +14,49 @@ volatile uint32_t *UARTTRANSMIT = (volatile uint32_t* ) (DEVICE_UART+0x04);
 volatile uint32_t *UARTSTATUS = (volatile uint32_t* ) (DEVICE_UART+0x08);
 volatile uint32_t *UARTCONTROL = (volatile uint32_t* ) (DEVICE_UART+0x0C);
 
+// Borrowed from mini-printf (please see mini-printf.c for details and credits)
+static unsigned int fast_itoa(int value, unsigned int radix, unsigned int uppercase, unsigned int unsig, char *buffer, unsigned int zero_pad)
+{
+	char *pbuffer = buffer;
+	int	negative = 0;
+	unsigned int	i, len;
+
+	/* No support for unusual radixes. */
+	if (radix > 16)
+		return 0;
+
+	if (value < 0 && !unsig) {
+		negative = 1;
+		value = -value;
+	}
+
+	/* This builds the string back to front ... */
+	do {
+		int digit = value % radix;
+		*(pbuffer++) = (digit < 10 ? '0' + digit : (uppercase ? 'A' : 'a') + digit - 10);
+		value /= radix;
+	} while (value > 0);
+
+	for (i = (pbuffer - buffer); i < zero_pad; i++)
+		*(pbuffer++) = '0';
+
+	if (negative)
+		*(pbuffer++) = '-';
+
+	*(pbuffer) = '\0';
+
+	/* ... now we reverse it (could do it recursively but will
+	 * conserve the stack space) */
+	len = (pbuffer - buffer);
+	for (i = 0; i < len / 2; i++) {
+		char j = buffer[i];
+		buffer[i] = buffer[len-i-1];
+		buffer[len-i-1] = j;
+	}
+
+	return len;
+}
+
 /**
  * @brief Receive a byte from the UART
  * 
@@ -87,27 +130,6 @@ int UARTWrite(const char *outstring)
 }
 
 /**
- * @brief Write a byte in hexadecimal format to the UART
- * 
- * Write a byte in hexadecimal format to the serial output ring buffer to be sent over the UART at a later time.
- * 
- * @return Number of bytes written
- */
-int UARTWriteHexByte(const uint8_t i)
-{
-	const char hexdigits[] = "0123456789ABCDEF";
-	char msg[] = "  ";
-
-	msg[0] = hexdigits[((i>>4)%16)];
-	msg[1] = hexdigits[(i%16)];
-
-	while (!SerialOutRingBufferWrite(msg, 2))
-		asm volatile ("nop");
-
-	return 2;
-}
-
-/**
  * @brief Write a 32-bit integer in hexadecimal format to the UART
  * 
  * Write a 32-bit integer in hexadecimal format to the serial output ring buffer to be sent over the UART at a later time.
@@ -116,23 +138,16 @@ int UARTWriteHexByte(const uint8_t i)
  */
 int UARTWriteHex(const uint32_t i)
 {
-	const char hexdigits[] = "0123456789ABCDEF";
-	char msg[] = "        ";
+	char msg[16];
+	unsigned int len = fast_itoa(i, 16, 1, 1, msg, 0);
 
-	msg[0] = hexdigits[((i>>28)%16)];
-	msg[1] = hexdigits[((i>>24)%16)];
-	msg[2] = hexdigits[((i>>20)%16)];
-	msg[3] = hexdigits[((i>>16)%16)];
-	msg[4] = hexdigits[((i>>12)%16)];
-	msg[5] = hexdigits[((i>>8)%16)];
-	msg[6] = hexdigits[((i>>4)%16)];
-	msg[7] = hexdigits[(i%16)];
+	if (len)
+	{
+		while (!SerialOutRingBufferWrite(msg, len))
+			asm volatile ("nop");
+	}
 
-
-	while (!SerialOutRingBufferWrite(msg, 8))
-		asm volatile ("nop");
-
-	return 8;
+	return len;
 }
 
 /**
@@ -144,33 +159,16 @@ int UARTWriteHex(const uint32_t i)
  */
 int UARTWriteDecimal(const int32_t i)
 {
-	const char digits[] = "0123456789";
-	char msg[] = "                                ";
+	char msg[16];
+	unsigned int len = fast_itoa(i, 10, 1, 1, msg, 0);
 
-	int d = 1000000000;
-	uint32_t enableappend = 0;
-	uint32_t m = 0;
-
-	if (i<0)
-		msg[m++] = '-';
-
-	for (int c=0;c<10;++c)
+	if (len)
 	{
-		uint32_t r = ((i/d)%10)&0x7FFFFFFF;
-		// Ignore preceeding zeros
-		if ((r!=0) || enableappend || d==1)
-		{
-			enableappend = 1; // Rest of the digits can be appended
-			msg[m++] = digits[r];
-		}
-		d = d/10;
+		while (!SerialOutRingBufferWrite(msg, len))
+			asm volatile ("nop");
 	}
-	msg[m] = 0;
 
-	while (!SerialOutRingBufferWrite(msg, m))
-		asm volatile ("nop");
-
-	return m;
+	return len;
 }
 
 /**

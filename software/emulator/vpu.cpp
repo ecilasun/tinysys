@@ -21,13 +21,10 @@ void CVPU::Reset()
 
 void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, int scanline, CBus* bus)
 {
-	if (scanline >= 480) // Scanlines go up to 525 and are 800 pixels wide for our fake VGA signal
-		return;
-
 	if (m_scanoutpointer)
 	{
 		uint32_t* devicemem = bus->GetHostAddress(m_scanoutpointer);
-		if (m_videoscanoutenable && devicemem)
+		if (m_videoscanoutenable && devicemem && scanline < 480)
 		{
 			// Copy vram scan out pointer contents to SDL surface
 			if (m_12bppmode)
@@ -141,27 +138,23 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, int scanline, CBus* bus)
 		}
 		else
 		{
-			// This is going to reset everything including the 8 pixel status bar
-			for (uint32_t i = 0; i < 640 * 488; i++)
+			// This is going to reset the 8 pixel status bar
+			for (uint32_t i = 640 * 480; i < 640 * 488; i++)
 			{
 				pixels[i] = (i % 2) ? 0xFF201515 : 0xFF001515;
-				if (i/640 == m_regB)
-					m_hirq = m_regA & 1;
-				else
-					m_hirq = 0;
 			}
 		}
 	}
 
 	if (m_scanoutpointer == 0x0 || m_videoscanoutenable == 0x0)
 	{
-		// This is going to reset evrything including the 8 pixel status bar
+		// No video signal
 		for (uint32_t i = 0; i < 640 * 488; i++)
-			pixels[i] = ((i/640)%2) ? 0xFF151515 : 0xFF000015;
+			pixels[i] = 0x0;
 	}
 
-	// Vsync triggers on scanline 479
-	if (scanline==479)
+	// Vsync triggers on first pixel of scanline 490
+	if (scanline == 490)
 		++m_count;
 }
 

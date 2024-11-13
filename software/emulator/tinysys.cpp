@@ -36,20 +36,22 @@ static uint64_t s_wallclock = 0;
 int emulatorthread(void* data)
 {
 	EmulatorContext* ctx = (EmulatorContext*)data;
+	thread_local int scanline = 0;
 	do
 	{
 		CEmulator *emulator = ctx->emulator;
 
 		emulator->Step(s_wallclock);
 
-		if (emulator->m_steps > 20)
+		// we can do 793 instructions per scanline on average
+		// This is 6 cpi on average at 150 MHz yielding 25 million instr/sec, divided by 60 for each frame for 60Hz, divided by 525 for one scanline
+		if (emulator->m_steps > 793)
 		{
 			emulator->m_steps = 0;
 
 			if (SDL_MUSTLOCK(ctx->compositesurface))
 				SDL_LockSurface(ctx->compositesurface);
 
-			static int scanline = 0;
 			uint32_t* pixels = (uint32_t*)ctx->compositesurface->pixels;
 			ctx->emulator->UpdateVideoLink(pixels, scanline, ctx->compositesurface->pitch);
 			scanline++;

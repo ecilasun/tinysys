@@ -192,12 +192,13 @@ void DataCache::LoadLine(CBus* bus, uint32_t tag, uint32_t line)
 	m_cachelinetags[line] = tag | 0x4000;
 }
 
-void DataCache::Read(CBus* bus, uint32_t address, uint32_t& data)
+uint32_t DataCache::Read(CBus* bus, uint32_t address, uint32_t& data)
 {
 	uint32_t tag = SelectBitRange(address, 27, 15);		// 13 bits
 	uint32_t line = SelectBitRange(address, 14, 6);		// 9 bits
 	uint32_t offset = SelectBitRange(address, 5, 2);	// 4 bits
 
+	uint32_t retVal = 0;
 	if ((tag | 0x4000) != m_cachelinetags[line])
 	{
 		WriteLine(bus, line);
@@ -205,14 +206,19 @@ void DataCache::Read(CBus* bus, uint32_t address, uint32_t& data)
 #if defined(CPU_STATS)
 		m_readmisses++;
 #endif
+		retVal = 80;
 	}
-#if defined(CPU_STATS)
 	else
+	{
+#if defined(CPU_STATS)
 		m_readhits++;
 #endif
+		retVal = 4;
+	}
 
 	// Read from cache
 	data = m_cache[(line << 4) + offset];
+	return retVal;
 }
 
 void DataCache::Write(CBus* bus, uint32_t address, uint32_t data, uint32_t wstrobe)
@@ -1109,7 +1115,7 @@ bool CRV32::Execute(CBus* bus)
 
 			case OP_STORE:
 			{
-				m_cycles += 2; // PENDINGWRITE + BUSDONE_W
+				m_cycles += 8;
 
 				uint32_t byte = SelectBitRange(instr.m_rval2, 7, 0);
 				uint32_t half = SelectBitRange(instr.m_rval2, 15, 0);
@@ -1134,13 +1140,16 @@ bool CRV32::Execute(CBus* bus)
 
 			case OP_LOAD:
 			{
-				m_cycles += 2; // PENDINGWRITE + BUSDONE_W
-
 				uint32_t dataword;
 				if (rwaddress & 0x80000000)
+				{
+					m_cycles += 2;
 					bus->Read(rwaddress, dataword);
+				}
 				else
-					m_dcache.Read(bus, rwaddress, dataword);
+				{
+					m_cycles += m_dcache.Read(bus, rwaddress, dataword);
+				}
 
 				uint32_t range1 = SelectBitRange(rwaddress, 1, 1);
 				uint32_t range2 = SelectBitRange(rwaddress, 1, 0);
@@ -1188,7 +1197,7 @@ bool CRV32::Execute(CBus* bus)
 			case OP_FLOAT_NMSUB:
 			case OP_FLOAT_NMADD:
 			{
-				m_cycles += 8; // DISPATCH + OP + WAIT
+				m_cycles += 19; // all of them take 19 cycles
 
 				// We use zfinx extension (floating point registers in integer registers) so we need to alias them
 				float A = *(float*)&instr.m_rval1;
@@ -1214,8 +1223,6 @@ bool CRV32::Execute(CBus* bus)
 
 			case OP_FLOAT_OP:
 			{
-				m_cycles += 8; // DISPATCH + OP + WAIT
-
 				float A = *(float*)&instr.m_rval1;
 				float B = *(float*)&instr.m_rval2;
 				float* D = (float*)&rdin;
@@ -1225,31 +1232,37 @@ bool CRV32::Execute(CBus* bus)
 				{
 					case 0b0000000: // fadd.s
 					{
+						m_cycles += 11;
 						*D = A + B;
 					}
 					break;
 					case 0b0000100: // fsub.s
 					{
+						m_cycles += 11;
 						*D = A - B;
 					}
 					break;
 					case 0b0001000: // fmul.s
 					{
+						m_cycles += 8;
 						*D = A * B;
 					}
 					break;
 					case 0b0001100: // fdiv.s
 					{
+						m_cycles += 28;
 						*D = A / B;
 					}
 					break;
 					case 0b0101100: // fsqrt.s
 					{
+						m_cycles += 28;
 						*D = sqrtf(A);
 					}
 					break;
 					case 0b0010000: // fsgnj.s / fsgnjn.s / fsgnjx.s
 					{
+						m_cycles += 1;
 						switch (instr.m_f3)
 						{
 							case 0b000: rdin = (instr.m_rval2 & 0x80000000) | (instr.m_rval1 & 0x7FFFFFFF); break;
@@ -1260,6 +1273,7 @@ bool CRV32::Execute(CBus* bus)
 					break;
 					case 0b0010100: // fmin.s / fmax.s
 					{
+						m_cycles += 1;
 						switch (instr.m_f3)
 						{
 							case 0b000: *D = fminf(A, B); break;
@@ -1269,6 +1283,7 @@ bool CRV32::Execute(CBus* bus)
 					break;
 					case 0b1010000: // feq.s / flt.s / fle.s
 					{
+						m_cycles += 2;
 						switch (instr.m_f3)
 						{
 							case 0b010: rdin = A == B ? 1 : 0; break;
@@ -1279,6 +1294,7 @@ bool CRV32::Execute(CBus* bus)
 					break;
 					case 0b1110000: // fclass
 					{
+						m_cycles += 1; // Not implemented
 						switch (instr.m_f3)
 						{
 							case 0b000: {
@@ -1304,16 +1320,20 @@ bool CRV32::Execute(CBus* bus)
 					break;
 					case 0b1100000: // fcvtws / fcvtwus
 					{
+						m_cycles += 8; // fcvtws
+						//m_cycles += 5; // fcvtwus
 						rdin = (int)A;
 					}
 					break;
 					case 0b1101000: // fcvtsw / fcvtwus
 					{
+						m_cycles += 6;
 						*D = (float)instr.m_rval1;
 					}
 					break;
 					case 0b1100001: // fcvtswu4sat.s
 					{
+						m_cycles += 2;
 						int sat = (int)(16.0f * A);
 						sat = sat > 15 ? 15 : sat;
 						sat = sat < 0 ? 0 : sat;

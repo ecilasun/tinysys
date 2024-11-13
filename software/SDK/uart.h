@@ -30,6 +30,5 @@ void UARTSendBlock(uint8_t *data, uint32_t numBytes);
 void UARTEmitBufferedOutput();
 
 int UARTWrite(const char *outstring);
-int UARTWriteHexByte(const uint8_t i);
 int UARTWriteHex(const uint32_t i);
 int UARTWriteDecimal(const int32_t i);
