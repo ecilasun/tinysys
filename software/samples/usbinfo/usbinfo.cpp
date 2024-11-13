@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 		for (uint32_t i=0; i<*desclen; ++i)
 		{
 			printf("%.2x", devdesc[i]);
-			UARTWriteHexByte(devdesc[i]);
+			UARTWriteHex(devdesc[i]);
 		}
 		UARTWrite("\n");
 		printf("\n");

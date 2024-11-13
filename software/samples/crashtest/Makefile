@@ -8,7 +8,7 @@ else
 	UNAME := $(shell uname)
 endif
 
-TARGET = test.elf
+TARGET = crashtest.elf
 
 default: $(TARGET)
 
