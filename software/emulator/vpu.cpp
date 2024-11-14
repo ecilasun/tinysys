@@ -16,11 +16,13 @@ void CVPU::Reset()
 {
 	m_scanoutpointer = 0x0;
 	m_videoscanoutenable = 0;
-	m_count = 0;
+	m_vsyncCount = 0;
 }
 
 void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, int scanline, CBus* bus)
 {
+	m_scanline = scanline;
+
 	if (m_scanoutpointer)
 	{
 		uint32_t* devicemem = bus->GetHostAddress(m_scanoutpointer);
@@ -155,7 +157,7 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, int scanline, CBus* bus)
 
 	// Vsync triggers on first pixel of scanline 490
 	if (scanline == 490)
-		++m_count;
+		++m_vsyncCount;
 }
 
 void CVPU::Tick(CBus* bus)
@@ -330,7 +332,7 @@ void CVPU::Tick(CBus* bus)
 void CVPU::Read(uint32_t address, uint32_t& data)
 {
 	// Every time we call UpdateVideoLink we increment m_count, so we can use this as a vsync signal
-	data = m_count%2;
+	data = (m_scanline<<1) | (m_vsyncCount%2);
 }
 
 void CVPU::Write(uint32_t address, uint32_t word, uint32_t wstrobe)

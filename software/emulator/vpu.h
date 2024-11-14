@@ -33,7 +33,8 @@ private:
 	uint32_t m_scanwidth{ 320 };
 	uint32_t m_scanheight{ 240 };
 	uint32_t m_scanlength{ 320 * 240 };
-	uint32_t m_count{ 0 };
+	uint32_t m_vsyncCount{ 0 };
+	uint32_t m_scanline{ 0 };
 	uint32_t m_vgapalette[256];
 	uint32_t m_fakevsync{ 0 };
 	uint32_t m_ctlreg{ 0 };
