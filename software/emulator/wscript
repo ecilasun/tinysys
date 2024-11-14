@@ -25,12 +25,6 @@ def configure(conf):
         conf.env.MSVC_TARGETS = ['x64']
         conf.load('msvc')
         conf.env.PLATFORM = ['windows']
-        sdlsourcepath = os.path.abspath('3rdparty/SDL2/lib/x64/SDL2.dll')
-        sdltargetpath = os.path.abspath('./build/release/SDL2.dll')
-        copyfile(sdlsourcepath, sdltargetpath)
-        sdlttfsourcepath = os.path.abspath('3rdparty/SDL2_ttf/lib/x64/SDL2_ttf.dll')
-        sdlttftargetpath = os.path.abspath('./build/release/SDL2_ttf.dll')
-        copyfile(sdlttfsourcepath, sdlttftargetpath)
     else:
         conf.load('clang++')
         conf.load('clang')
@@ -97,26 +91,11 @@ def build(bld):
         lib=libs,
         use=['sdcard', 'fat32'])
 
-    sourcefile = os.path.abspath('build/release/tinysys.exe')
-    targetfile = os.path.abspath('bin/tinysys.exe')
-    if (os.path.isfile(targetfile)):
-        os.unlink(targetfile)
-    if (os.path.isfile(sourcefile)):
-        print("Copying " + sourcefile + " to " + targetfile)
-        copyfile(sourcefile, targetfile)
-
-    sourcefile = os.path.abspath('build/release/SDL2_ttf.dll')
-    targetfile = os.path.abspath('bin/SDL2_ttf.dll')
-    if (os.path.isfile(targetfile)):
-        os.unlink(targetfile)
-    if (os.path.isfile(sourcefile)):
-        print("Copying " + sourcefile + " to " + targetfile)
-        copyfile(sourcefile, targetfile)
-
-    sourcefile = os.path.abspath('build/release/SDL2.dll')
-    targetfile = os.path.abspath('bin/SDL2.dll')
-    if (os.path.isfile(targetfile)):
-        os.unlink(targetfile)
-    if (os.path.isfile(sourcefile)):
-        print("Copying " + sourcefile + " to " + targetfile)
-        copyfile(sourcefile, targetfile)
+    if platform.system().lower().startswith('win'):
+        bld(features='subst', source=glob.glob('3rdparty/SDL2/lib/x64/SDL2.dll'), target=os.path.abspath('bin/SDL2.dll'), is_copy=True)
+        bld(features='subst', source=glob.glob('3rdparty/SDL2_ttf/lib/x64/SDL2_ttf.dll'), target=os.path.abspath('bin/SDL2_ttf.dll'), is_copy=True)
+        bld(features='subst', source='tinysys.exe', target=os.path.abspath('bin/tinysys.exe'), is_copy=True)
+    else:
+        bld(features='subst', source=glob.glob('/opt/homebrew/Cellar/sdl2/2.30.5/lib/libSDL2.dylib'), target=os.path.abspath('bin/libSDL2.dylib'), is_copy=True)
+        bld(features='subst', source=glob.glob('/opt/homebrew/Cellar/sdl2_ttf/2.22.0/lib/libSDL2_ttf.dylib'), target=os.path.abspath('bin/libSDL2_ttf.dylib'), is_copy=True)
+        bld(features='subst', source='tinysys', target=os.path.abspath('bin/tinysys'), is_copy=True)
