@@ -261,9 +261,9 @@ typedef enum logic [3:0] {
 vpucmdmodetype cmdmode = WCMD;
 
 logic [31:0] vpucmd;
-logic controlregA;
-logic [11:0] controlregB;
-logic regIndex;
+logic controlregA;			// register 0: HBlank interrupt enable/disable control
+logic [11:0] controlregB;	// register 1: HBlank trigger point. Set it beyong scan range to avoid triggering
+logic regIndex;				// Currently selected VPU register
 
 always_ff @(posedge aclk) begin
 	if (~delayedresetn) begin
@@ -443,7 +443,8 @@ always_ff @(posedge aclk) begin
 	end
 end
 
-assign vpustate = {31'd0, blanktoggle};
+// {0,scanline[9:0],vsynctoggle[0:0]}
+assign vpustate = {21'd0, scanline, blanktoggle};
 
 typedef enum logic [2:0] {DETECTFRAMESTART, STARTLOAD, TRIGGERBURST, DATABURST, ADVANCESCANLINEADDRESS} scanstatetype;
 scanstatetype scanstate = DETECTFRAMESTART;
@@ -526,17 +527,17 @@ end
 // Horizontal and Vertical blank interrupt logic
 
 logic horizontalinterrupt;
-logic pixelMatched;
+logic beyondScanline;
 
 assign hirq = horizontalinterrupt;
 
 always @(posedge aclk) begin
 	if (~delayedresetn) begin
-		pixelMatched <= 1'b0;
+		beyondScanline <= 1'b0;
 		horizontalinterrupt <= 1'b0;
 	end else begin
-		pixelMatched <= scanline == controlregB;
-		horizontalinterrupt <= controlregA && pixelMatched ? 1'b1 : 1'b0;
+		beyondScanline <= scanline >= controlregB; // Stays enabled as long as the scan beam is on or below the hblank point
+		horizontalinterrupt <= controlregA && beyondScanline ? 1'b1 : 1'b0;
 	end
 end
 

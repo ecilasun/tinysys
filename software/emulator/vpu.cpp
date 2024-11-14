@@ -52,7 +52,7 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, int scanline, CBus* bus)
 							pixels[linetop0 + x*2+1] = expandedcolor;
 							pixels[linetop1 + x*2+1] = expandedcolor;
 						}
-						if (y*2 == m_regB || y*2-1 == m_regB)
+						if (scanline >= m_regB)
 							m_hirq = m_regA & 1;
 						else
 							m_hirq = 0;
@@ -77,7 +77,7 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, int scanline, CBus* bus)
 							uint32_t expandedcolor = 0xFF000000 | (R << 20) | (G << 12) | (B << 4);
 							pixels[linetop + x] = expandedcolor;
 						}
-						if (y == m_regB)
+						if (scanline >= m_regB)
 							m_hirq = m_regA & 1;
 						else
 							m_hirq = 0;
@@ -107,7 +107,7 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, int scanline, CBus* bus)
 							pixelPos1[0] = color;
 							pixelPos1[1] = color;
 						}
-						if (y*2 == m_regB || y*2+1 == m_regB)
+						if (scanline >= m_regB)
 							m_hirq = m_regA & 1;
 						else
 							m_hirq = 0;
@@ -128,7 +128,7 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, int scanline, CBus* bus)
 							uint32_t color = m_vgapalette[sourceRow[x]];
 							pixelRow[x] = color;
 						}
-						if (y == m_regB)
+						if (scanline >= m_regB)
 							m_hirq = m_regA & 1;
 						else
 							m_hirq = 0;

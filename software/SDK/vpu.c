@@ -614,11 +614,25 @@ void VPUClear(struct EVideoContext *_context, const uint32_t _colorWord)
  * @return Current vblank counter value
  * @see VPUSwapPages
  * @see VPUWaitVSync
+ * @see VPUGetScanline
  */
 uint32_t VPUReadVBlankCounter()
 {
 	// vblank counter lives at this address
-	return *VPUIO;
+	return (*VPUIO) & 0x00000001;
+}
+
+/** @brief Get current scanline
+ * 
+ * This function reads the current scanline value from the VPU.
+ * The scanline is a number between 0 and 1023, however only the range 0..525 are valid values
+ * 
+ * @return Current scanline value
+ * @see VPUReadVBlankCounter
+ */
+uint32_t VPUGetScanline()
+{
+	return ((*VPUIO) & 0x000007FE) >> 1;
 }
 
 /** @brief Swap video buffers

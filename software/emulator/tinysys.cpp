@@ -43,9 +43,7 @@ int emulatorthread(void* data)
 
 		emulator->Step(s_wallclock);
 
-		// we can do 793 instructions per scanline on average
-		// This is 6 cpi on average at 150 MHz yielding 25 million instr/sec, divided by 60 for each frame for 60Hz, divided by 525 for one scanline
-		if (emulator->m_steps > 793)
+		if (emulator->m_steps > 20)
 		{
 			emulator->m_steps = 0;
 

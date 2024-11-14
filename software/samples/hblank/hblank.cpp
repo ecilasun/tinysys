@@ -30,14 +30,15 @@ void HBlankInterruptHandler()
 {
 	volatile int *sharedmem = (volatile int*)TaskGetSharedMemory();
 
+	uint32_t scanline = VPUGetScanline();
+
 	// Let the main code know it can advance to the next frame
 	sharedmem[0] += 1;
 
-	// Change where the hblank triggers based on even/odd frame
-	// Also toggle the color palette entry for color 0xBA between red and black
-	if (sharedmem[0]%2 == 0)
+	// We've hit the hblank before 240th scanline
+	if (scanline < 240)
 	{
-		// Next time we'll trigger at bottom section of screen
+		// Next time we'll trigger at 240
 		VPUSetHBlankScanline(240);
 
 		// We're in top section of screen
@@ -45,12 +46,13 @@ void HBlankInterruptHandler()
 		EVideoContext* vx = (EVideoContext*)&sharedmem[1];
 		vx->m_vmode = EVM_320_Wide;
 		VPUSetVMode(vx, EVS_Enable);
-		// Red strips
-		VPUSetPal(0xBA, 0xFF, 0, 0);
+
+		// Color using scanline number at the point we could catch the beam
+		VPUSetPal(0xBA, scanline%255, (scanline+127)%255, (scanline+200)%255);
 	}
-	else
+	else // We've hit the hblank on or after 240th scanline
 	{
-		// Next time we'll trigger at top section of screen
+		// Next time we'll trigger at 0 (start of screen)
 		VPUSetHBlankScanline(0);
 
 		// We're in bottom section of screen

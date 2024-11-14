@@ -65,6 +65,12 @@ The normal usage case is to read this value once, do some work, then come back t
 
 If the synchonization point is well known (typically end of frame for a game) then it is more suitable to use the blocking `VPUWaitVSync()` function instead.
 
+`uint32_t VPUGetScanline()`
+
+This function will return the scanline from the VPU at the time this function was called. It is not ordinarily useful from regular code, but is quite helpul to detect the line at which a hblank interrupt is triggered, from an active hblank hanler.
+
+The returned value has a range of 0 to 1023, however the hardware returns only the valid range, which is from 0 to 525.
+
 `void VPUSwapPages(struct EVideoContext* _vx, struct EVideoSwapContext *_sc)`
 
 This function will swap the pointers for video scan output and CPU accessible backbuffer. If the CPU always reads the backbuffer address from the video context, this function will ensure the correct value is visible to both the CPU and the VPU.
@@ -115,11 +121,9 @@ The remaining 4 bits are reserved for future and should always be set to zeros.
 
 ### Horizontal blanking interrupts
 
-The horizontal blanking interrupt is set up to trigger at a given scanline.
+The horizontal blanking interrupt is set up to trigger at a given scanline. The trigger will fire on the desired line, and for all lines below it until the handler detects and changes the new line to another, for example to generate copper-like effects.
 
-This allows for secondary uses of this interrupt as a vertical blanking interrupt, if one were to wait for last line of the video and swap the scan-out buffer.
-
-One could also change the interrupt scanline register on the VPU on the fly (from inside the interrupt handler) to generate copper effects or switch to an entirely diferent video resolution in the middle of a frame.
+This allows for secondary uses of this interrupt as a vertical blanking interrupt, if one were to wait for last line of the video output (line 525) and swap the scan-out buffer.
 
 For a full sample that uses the hblank handlers, see the sample code in 'samples/hblank' directory.
 
