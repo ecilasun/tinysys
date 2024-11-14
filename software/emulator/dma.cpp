@@ -122,26 +122,20 @@ void CDMA::Tick(CSysMem* mem)
 
 		case 3:
 		{
-			uint32_t dmalen = m_dmaburstcount;
-			for (uint32_t i = 0; i < dmalen; ++i)
+			uint8_t *src = (uint8_t*)mem->GetHostAddress(m_dmasourceaddr);
+			uint8_t *trg = (uint8_t*)mem->GetHostAddress(m_dmatargetaddr);
+			if (m_dmamaskmode)
 			{
-				uint32_t data[4];
-
-				uint32_t alignedSource = m_dmasourceaddr & ~0xF;
-				mem->Read128bits(alignedSource, data);
-
-				uint32_t mask0 = (data[0] & 0x000000FF ? 0x1 : 0x0) | (data[0] & 0x0000FF00 ? 0x2 : 0x0) | (data[0] & 0x00FF0000 ? 0x4 : 0x0) | (data[0] & 0xFF000000 ? 0x8 : 0x0);
-				uint32_t mask1 = (data[1] & 0x000000FF ? 0x1 : 0x0) | (data[1] & 0x0000FF00 ? 0x2 : 0x0) | (data[1] & 0x00FF0000 ? 0x4 : 0x0) | (data[1] & 0xFF000000 ? 0x8 : 0x0);
-				uint32_t mask2 = (data[2] & 0x000000FF ? 0x1 : 0x0) | (data[2] & 0x0000FF00 ? 0x2 : 0x0) | (data[2] & 0x00FF0000 ? 0x4 : 0x0) | (data[2] & 0xFF000000 ? 0x8 : 0x0);
-				uint32_t mask3 = (data[3] & 0x000000FF ? 0x1 : 0x0) | (data[3] & 0x0000FF00 ? 0x2 : 0x0) | (data[3] & 0x00FF0000 ? 0x4 : 0x0) | (data[3] & 0xFF000000 ? 0x8 : 0x0);
-
-				mem->Write(m_dmatargetaddr, data[0], mask0);
-				mem->Write(m_dmatargetaddr+4, data[1], mask1);
-				mem->Write(m_dmatargetaddr+8, data[2], mask2);
-				mem->Write(m_dmatargetaddr+12, data[3], mask3);
-
-				m_dmasourceaddr += 16;
-				m_dmatargetaddr += 16;
+				uint32_t dmalen = (m_dmaburstcount-1)*16;
+				for (uint32_t i=0;i<dmalen;++i)
+				{
+					if (src[i]!=0) trg[i] = src[i];
+				}
+			}
+			else
+			{
+				uint32_t dmalen = m_dmaburstcount*16;
+				memcpy(trg, src, dmalen);
 			}
 			m_state = 0;
 		}
