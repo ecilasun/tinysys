@@ -36,6 +36,12 @@ uint32_t* CSysMem::GetHostAddress(uint32_t address)
 	return &wordmem[address>>2];
 }
 
+uint8_t* CSysMem::GetHostByteAddress(uint32_t address)
+{
+	uint8_t *wordmem = (uint8_t*)m_devicemem;
+	return wordmem + address;
+}
+
 void CSysMem::CopyROM(uint32_t resetvector, uint8_t *bin, uint32_t size)
 {
 	uint32_t *wordmem = (uint32_t*)m_devicemem;

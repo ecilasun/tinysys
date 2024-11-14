@@ -123,7 +123,7 @@ void CDMA::Tick(CSysMem* mem)
 		case 3:
 		{
 			uint8_t *src = (uint8_t*)mem->GetHostAddress(m_dmasourceaddr);
-			uint8_t *trg = (uint8_t*)mem->GetHostAddress(m_dmatargetaddr);
+			uint8_t *trg = (uint8_t*)mem->GetHostByteAddress(m_dmatargetaddr);
 			if (m_dmamaskmode)
 			{
 				uint32_t dmalen = (m_dmaburstcount-1)*16;

@@ -23,4 +23,5 @@ public:
 	void* m_devicemem;
 	void CopyROM(uint32_t resetvector, uint8_t *bin, uint32_t size);
 	uint32_t* GetHostAddress(uint32_t address);
+	uint8_t* GetHostByteAddress(uint32_t address);
 };
