@@ -55,8 +55,7 @@ bool CEmulator::Reset(const char* romFile, uint32_t resetvector)
 void CEmulator::Step(uint64_t wallclock)
 {
 	++m_steps;
-	m_bus->Tick();
-	m_cpu[0]->Tick(wallclock, m_bus);
+	m_cpu[0]->Tick(wallclock, m_bus); // CPUs will tick the bus
 	m_cpu[1]->Tick(wallclock, m_bus);
 }
 

@@ -82,10 +82,7 @@ bool CBus::Tick()
 	m_uart->Tick(this);
 	m_vpuc->Tick(this);
 	m_apu->Tick(this);
-
-	m_csr[0]->Tick(this);
-	m_csr[1]->Tick(this);
-
+	// NOTE: CPU will tick the CSR
 	return true;
 }
 

@@ -17,6 +17,10 @@
 #include "nvs_flash.h"
 #include "esp_task_wdt.h"
 
+// SDCard:
+// https://github.com/espressif/esp-idf/tree/v5.2.3/examples/storage/sd_card/sdspi
+// https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sdspi_host.html
+
 #define PIN_TXD GPIO_NUM_22
 #define PIN_RXD GPIO_NUM_23
 #define PIN_RTS UART_PIN_NO_CHANGE

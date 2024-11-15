@@ -221,12 +221,13 @@ uint32_t DataCache::Read(CBus* bus, uint32_t address, uint32_t& data)
 	return retVal;
 }
 
-void DataCache::Write(CBus* bus, uint32_t address, uint32_t data, uint32_t wstrobe)
+uint32_t DataCache::Write(CBus* bus, uint32_t address, uint32_t data, uint32_t wstrobe)
 {
 	uint32_t tag = SelectBitRange(address, 27, 15);		// 13 bits
 	uint32_t line = SelectBitRange(address, 14, 6);		// 9 bits
 	uint32_t offset = SelectBitRange(address, 5, 2);	// 4 bits
 
+	uint32_t retVal = 0;
 	if ((tag | 0x4000) != m_cachelinetags[line])
 	{
 		WriteLine(bus, line);
@@ -234,11 +235,15 @@ void DataCache::Write(CBus* bus, uint32_t address, uint32_t data, uint32_t wstro
 #if defined(CPU_STATS)
 		m_writemisses++;
 #endif
+		retVal = 80;
 	}
-#if defined(CPU_STATS)
 	else
+	{
+#if defined(CPU_STATS)
 		m_writehits++;
 #endif
+		retVal = 4;
+	}
 
 	// Write to cache
 	uint32_t fullmask = s_quadexpand[wstrobe];
@@ -248,12 +253,16 @@ void DataCache::Write(CBus* bus, uint32_t address, uint32_t data, uint32_t wstro
 
 	// This line is now dirty and requres write back to memory
 	m_cachelinewb[line] = 1;
+
+	return retVal;
 }
 
-void DataCache::Flush(CBus* bus)
+uint32_t DataCache::Flush(CBus* bus)
 {
 	for (uint32_t line = 0; line < 512; line++)
 		WriteLine(bus, line);
+	
+	return 128;
 }
 
 void DataCache::Discard()
@@ -971,7 +980,7 @@ bool CRV32::Execute(CBus* bus)
 		uint32_t wdata = 0;
 		uint32_t wstrobe = 0;
 
-		m_cycles += 5; // READINSTR + WAIT + READREG + WAIT + DISPATCH
+		m_cycles += 4; // cache read + read registers + dispatch
 
 		// Execute
 		switch (instr.m_opcode)
@@ -1046,8 +1055,7 @@ bool CRV32::Execute(CBus* bus)
 				else if (instr.m_f12 == F12_CFLUSH)
 				{
 					// cacheop=0b11
-					m_cycles += 50; // CACHE OP
-					m_dcache.Flush(bus);
+					m_cycles += m_dcache.Flush(bus);
 				}
 				else if (instr.m_f12 == F12_MRET)
 				{
@@ -1115,7 +1123,7 @@ bool CRV32::Execute(CBus* bus)
 
 			case OP_STORE:
 			{
-				m_cycles += 8;
+				m_cycles += 1; // + bus busy wait
 
 				uint32_t byte = SelectBitRange(instr.m_rval2, 7, 0);
 				uint32_t half = SelectBitRange(instr.m_rval2, 15, 0);
@@ -1140,14 +1148,17 @@ bool CRV32::Execute(CBus* bus)
 
 			case OP_LOAD:
 			{
+				m_cycles += 1; // + bus busy wait
+
 				uint32_t dataword;
 				if (rwaddress & 0x80000000)
 				{
-					m_cycles += 2;
+					m_cycles += 2; // uncached access
 					bus->Read(rwaddress, dataword);
 				}
 				else
 				{
+					// Read from cache or miss cache
 					m_cycles += m_dcache.Read(bus, rwaddress, dataword);
 				}
 
@@ -1342,6 +1353,7 @@ bool CRV32::Execute(CBus* bus)
 					break;
 					default:
 					{
+						m_cycles += 1;
 						rwen = 0;
 						fprintf(stderr, "- unknown floatop2\n");
 					}
@@ -1359,11 +1371,14 @@ bool CRV32::Execute(CBus* bus)
 
 		if (wstrobe)
 		{
+			m_cycles += 1;
 			//fprintf(stderr, "- W @%.8X val=%.8x mask=%.8x\n", rwaddress, wdata, wstrobe);
 			if (rwaddress & 0x80000000)
 				bus->Write(rwaddress, wdata, wstrobe);
 			else
-				m_dcache.Write(bus, rwaddress, wdata, wstrobe);
+			{
+				m_cycles += m_dcache.Write(bus, rwaddress, wdata, wstrobe);
+			}
 		}
 
 		if (rwen && instr.m_rd != 0)
@@ -1389,6 +1404,8 @@ bool CRV32::Tick(uint64_t wallclock, CBus* bus)
 
 	// Gather a block of code (or grab precompiled version)
 	bool fetchok = FetchDecode(bus);
+	bus->Tick();
+	csr->Tick(bus);
 	csr->UpdateTime(wallclock, m_cycles);
 	// Execute the whole block
 	Execute(bus);

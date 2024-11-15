@@ -136,8 +136,8 @@ public:
 	void WriteLine(CBus* bus, uint32_t line);
 	void LoadLine(CBus* bus, uint32_t tag, uint32_t line);
 	uint32_t Read(CBus* bus, uint32_t address, uint32_t& data);
-	void Write(CBus* bus, uint32_t address, uint32_t data, uint32_t wstrobe);
-	void Flush(CBus* bus);
+	uint32_t Write(CBus* bus, uint32_t address, uint32_t data, uint32_t wstrobe);
+	uint32_t Flush(CBus* bus);
 	void Discard();
 
 	// 512 entries, 16 words each
