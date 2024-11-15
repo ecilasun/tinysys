@@ -6,8 +6,7 @@
  */
 
 #include "basesystem.h"
-#include "serialoutringbuffer.h"
-#include "leds.h"
+#include "uart.h"
 
 volatile uint32_t *UARTRECEIVE = (volatile uint32_t* ) (DEVICE_UART+0x00);
 volatile uint32_t *UARTTRANSMIT = (volatile uint32_t* ) (DEVICE_UART+0x04);
@@ -72,23 +71,22 @@ uint32_t UARTReceiveData()
 /**
  * @brief Send a byte over the UART
  * 
- * Write a byte to the serial output ring buffer to be sent over the UART at a later time.
+ * Write a byte to the serial output.
  */
 void UARTSendByte(uint8_t data)
 {
-	while (!SerialOutRingBufferWrite(&data, 1))
-		asm volatile ("nop");
+	*UARTTRANSMIT = data;
 }
 
 /**
  * @brief Send a block of data over the UART
  * 
- * Write a block of data to the serial output ring buffer to be sent over the UART at a later time.
+ * Write a block of data to the serial output.
  */
 void UARTSendBlock(uint8_t *data, uint32_t numBytes)
 {
-	while (!SerialOutRingBufferWrite(data, numBytes))
-		asm volatile ("nop");
+	for (uint32_t i = 0; i < numBytes; i++)
+		*UARTTRANSMIT = data[i];
 }
 
 /**
@@ -116,7 +114,7 @@ void UARTSetControl(uint32_t ctl)
 /**
  * @brief Write a string to the UART
  * 
- * Write a string to the serial output ring buffer to be sent over the UART at a later time.
+ * Write a string to the serial output.
  * 
  * @return Number of bytes written
  */
@@ -124,15 +122,15 @@ int UARTWrite(const char *outstring)
 {
 	uint32_t count = 0;
 	while(outstring[count]!=0) { count++; }
-	while (!SerialOutRingBufferWrite(outstring, count))
-		asm volatile ("nop");
+	if (count)
+		UARTSendBlock((uint8_t*)outstring, count);
 	return count;
 }
 
 /**
  * @brief Write a 32-bit integer in hexadecimal format to the UART
  * 
- * Write a 32-bit integer in hexadecimal format to the serial output ring buffer to be sent over the UART at a later time.
+ * Write a 32-bit integer in hexadecimal format to the serial output.
  * 
  * @return Number of bytes written
  */
@@ -140,20 +138,15 @@ int UARTWriteHex(const uint32_t i)
 {
 	char msg[16];
 	unsigned int len = fast_itoa(i, 16, 1, 1, msg, 0);
-
 	if (len)
-	{
-		while (!SerialOutRingBufferWrite(msg, len))
-			asm volatile ("nop");
-	}
-
+		UARTSendBlock((uint8_t*)msg, len);
 	return len;
 }
 
 /**
  * @brief Write a 32-bit integer in decimal format to the UART
  * 
- * Write a 32-bit integer in decimal format to the serial output ring buffer to be sent over the UART at a later time.
+ * Write a 32-bit integer in decimal format to the serial output.
  * 
  * @return Number of bytes written
  */
@@ -161,26 +154,7 @@ int UARTWriteDecimal(const int32_t i)
 {
 	char msg[16];
 	unsigned int len = fast_itoa(i, 10, 1, 1, msg, 0);
-
 	if (len)
-	{
-		while (!SerialOutRingBufferWrite(msg, len))
-			asm volatile ("nop");
-	}
-
+		UARTSendBlock((uint8_t*)msg, len);
 	return len;
-}
-
-/**
- * @brief Dump serial output ring buffer to UART
- * 
- * Write everything in the serial output ring buffer to the memory mapped UART device.
- * It will consume the entire buffer in one go.
- */
-void UARTEmitBufferedOutput()
-{
-	// Copy out from FIFO to send buffer
-	uint8_t out;
-	while (SerialOutRingBufferRead(&out, 1))
-		*UARTTRANSMIT = out;
 }

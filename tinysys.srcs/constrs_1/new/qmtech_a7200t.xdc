@@ -133,23 +133,6 @@ set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports au_mclk]
 ## IO12 - USB D-
 ## IO13 - USB D+
 
-## 2E/2F - tied but not used
-## IO11
-## IO10
-## IO1
-## IO0
-## IO7
-## IO6
-## IO5
-## IO4
-## IO19
-## IO20
-## IO18
-## IO21
-## IO15
-## IO2
-## IO3
-
 ## TXD0 - TBD
 ## set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports esp_rxd0_in]
 ## RXD0 - TBD
@@ -159,33 +142,17 @@ set_property -dict {PACKAGE_PIN G20 IOSTANDARD LVCMOS33} [get_ports esp_rxd1_in]
 ## IO23 (RXD1)
 set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports esp_txd1_out]
 
-## Ground these pins for now
-
-## ------------------------------------------------------------------------------------------------------
-## USB-C - MAX3420EECJ over SPI interface, USB Device
-## ------------------------------------------------------------------------------------------------------
-
-## 2D
-## set_property -dict {PACKAGE_PIN J21 IOSTANDARD LVCMOS33} [get_ports usbc_resn]
-## set_property -dict {PACKAGE_PIN J17 IOSTANDARD LVCMOS33} [get_ports usbc_ss_n]
-## set_property -dict {PACKAGE_PIN K17 IOSTANDARD LVCMOS33} [get_ports usbc_clk]
-## set_property -dict {PACKAGE_PIN L20 IOSTANDARD LVCMOS33} [get_ports usbc_mosi]
-## set_property -dict {PACKAGE_PIN L19 IOSTANDARD LVCMOS33} [get_ports usbc_miso]
-## set_property -dict {PACKAGE_PIN H14 IOSTANDARD LVCMOS33} [get_ports usbc_int]
-## set_property -dict {PACKAGE_PIN J14 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
-## ## set_property -dict {PACKAGE_PIN H19 IOSTANDARD LVCMOS33} [get_ports usbc_gpi]
-
-## 2E
-## set_property -dict {PACKAGE_PIN M2 IOSTANDARD LVCMOS33} [get_ports usbc_resn]
-## set_property -dict {PACKAGE_PIN K3 IOSTANDARD LVCMOS33} [get_ports usbc_ss_n]
-## set_property -dict {PACKAGE_PIN M3 IOSTANDARD LVCMOS33} [get_ports usbc_clk]
-## set_property -dict {PACKAGE_PIN J4 IOSTANDARD LVCMOS33} [get_ports usbc_mosi]
-## set_property -dict {PACKAGE_PIN L3 IOSTANDARD LVCMOS33} [get_ports usbc_miso]
-## set_property -dict {PACKAGE_PIN L1 IOSTANDARD LVCMOS33} [get_ports usbc_int]
-## set_property -dict {PACKAGE_PIN K4 IOSTANDARD LVCMOS33} [get_ports usbc_gpx]
-
-## set_property PULLUP true [get_ports usbc_int]
-## set_property PULLUP true [get_ports usbc_resn]
+## ESP to SDCard link
+## IO01: CS - sdcard_cs_n (AA19)
+## set_property -dict {PACKAGE_PIN H14 IOSTANDARD LVCMOS33} [get_ports esp_cs]
+## IO4: MOSI - sdcard_mosi (AA20)
+## set_property -dict {PACKAGE_PIN K17 IOSTANDARD LVCMOS33} [get_ports esp_mosi]
+## IO5: SCK - sdcard_clk (AB21)
+## set_property -dict {PACKAGE_PIN J17 IOSTANDARD LVCMOS33} [get_ports esp_sck]
+## IO6: MISO - sdcard_miso (V18)
+## set_property -dict {PACKAGE_PIN L19 IOSTANDARD LVCMOS33} [get_ports esp_miso]
+## IO?: SWITCH - sdcard_swtch (U32)
+## set_property -dict {PACKAGE_PIN ??? IOSTANDARD LVCMOS33} [get_ports esp_switch]
 
 ## ------------------------------------------------------------------------------------------------------
 ## USB-A - MAX3421EECJ over SPI interface, USB Host

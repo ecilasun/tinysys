@@ -13524,6 +13524,17 @@
 		)
 		(uuid "b2190d0b-5867-4552-b58e-d2ae5379c818")
 	)
+	(text "ESP32 to SDCard routing:\nIO1: CS\nIO4: MOSI\nIO5: SCK\nIO6: MISO"
+		(exclude_from_sim no)
+		(at 259.842 183.896 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "c5277578-c835-4ab4-b0ca-cec4d004d298")
+	)
 	(text "Audio Out"
 		(exclude_from_sim no)
 		(at 165.1 73.66 0)

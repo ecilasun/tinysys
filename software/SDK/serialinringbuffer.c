@@ -18,7 +18,6 @@ const static uint32_t c_sizeMask = c_cbBufferSize - 1;
 
 // These need to persist in same memory location betwen ROM and loaded ELF
 // so that we don't read from wrong space (or not read at all)
-// NOTE: Ring buffer is normally placed at 0x80000200 in the mailbox
 volatile uint32_t *m_si_readOffset  = (volatile uint32_t*)(SERIN_RINGBUFFER_STATE+4);
 volatile uint32_t *m_si_writeOffset = (volatile uint32_t*)(SERIN_RINGBUFFER_STATE+8);
 

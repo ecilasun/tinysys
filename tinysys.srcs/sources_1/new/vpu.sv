@@ -262,7 +262,7 @@ vpucmdmodetype cmdmode = WCMD;
 
 logic [31:0] vpucmd;
 logic controlregA;			// register 0: HBlank interrupt enable/disable control
-logic [11:0] controlregB;	// register 1: HBlank trigger point. Set it beyong scan range to avoid triggering
+logic [9:0] controlregB;	// register 1: HBlank trigger point. Set it beyong scan range to avoid triggering
 logic regIndex;				// Currently selected VPU register
 
 always_ff @(posedge aclk) begin
@@ -279,7 +279,7 @@ always_ff @(posedge aclk) begin
 		palettewe <= 1'b0;
 		regIndex <= 1'b0;
 		controlregA <= 1'd0;
-		controlregB <= 12'd0;
+		controlregB <= 10'd0;
 		cmdmode <= WCMD;
 	end else begin
 		cmdre <= 1'b0;
@@ -364,7 +364,7 @@ always_ff @(posedge aclk) begin
 				if (vpufifovalid && ~vpufifoempty) begin
 					case (regIndex)
 						1'b0: controlregA <= controlregA | vpufifodout[0];	// {hirq_ena_cpu0}}
-						1'b1: controlregB <= vpufifodout[11:0];				// hirq scanline does not allow setting individual bits
+						1'b1: controlregB <= vpufifodout[9:0];				// hirq scanline does not allow setting individual bits
 					endcase
 					cmdre <= 1'b1;
 					cmdmode <= FINALIZE;
@@ -375,7 +375,7 @@ always_ff @(posedge aclk) begin
 				if (vpufifovalid && ~vpufifoempty) begin
 					case (regIndex)
 						1'b0: controlregA <= controlregA & (~vpufifodout[0]);	// {hirq_ena_cpu0}}
-						1'b1: controlregB <= 12'd0;								// hirq scanline does not allow per-bit clears
+						1'b1: controlregB <= 10'd0;								// hirq scanline does not allow per-bit clears
 					endcase
 					cmdre <= 1'b1;
 					cmdmode <= FINALIZE;

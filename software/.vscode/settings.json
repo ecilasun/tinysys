@@ -70,6 +70,7 @@
 		"serialinringbuffer.h": "c",
 		"stdlib.h": "c",
 		"inttypes.h": "c",
-		"basesystem.h": "c"
+		"basesystem.h": "c",
+		"xtree": "c"
 	}
 }

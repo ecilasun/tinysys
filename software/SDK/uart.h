@@ -27,8 +27,6 @@ uint32_t UARTReceiveData();
 void UARTSendByte(uint8_t data);
 void UARTSendBlock(uint8_t *data, uint32_t numBytes);
 
-void UARTEmitBufferedOutput();
-
 int UARTWrite(const char *outstring);
 int UARTWriteHex(const uint32_t i);
 int UARTWriteDecimal(const int32_t i);

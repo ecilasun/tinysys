@@ -13,7 +13,6 @@
 #include "mini-printf.h"
 #include "keyringbuffer.h"
 #include "serialinringbuffer.h"
-#include "serialoutringbuffer.h"
 #include "serialinput.h"
 
 #include <string.h>
@@ -792,7 +791,6 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	LEDSetState(0x4);															// xOxx
 	KeyRingBufferReset();
 	SerialInRingBufferReset();
-	SerialOutRingBufferReset();
 
 	// Reset peripherals to default states
 	LEDSetState(0x8);															// Oxxx
@@ -860,15 +858,7 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 		set_csr(mstatus, MSTATUS_MIE);
 
 		// ----------------------------------------------------------------
-		// Tasks which should not switch context to avoid memory conflicts
-		// ----------------------------------------------------------------
-
-		clear_csr(mie, MIP_MTIP);
-		UARTEmitBufferedOutput();
-		set_csr(mie, MIP_MTIP);
-
-		// ----------------------------------------------------------------
-		// Serial input to feed to keyboard buffer
+		// Handle serial input to feed to keyboard buffer
 		// ----------------------------------------------------------------
 
 		HandleSerialInput();

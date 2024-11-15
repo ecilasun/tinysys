@@ -38,7 +38,7 @@ private:
 	uint32_t m_vgapalette[256];
 	uint32_t m_fakevsync{ 0 };
 	uint32_t m_ctlreg{ 0 };
-	uint32_t m_regA{ 0 };
-	uint32_t m_regB{ 0xFFFFFFFF };
+	int32_t m_regA{ 0 };
+	int32_t m_regB{ 65536 };
 	std::queue<uint32_t> m_fifo;
 };

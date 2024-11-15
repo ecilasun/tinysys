@@ -46,14 +46,14 @@
 // Temp memory
 #define KERNEL_TEMP_MEMORY				0x0204D580 // Temporary kernel memory (10880 bytes)
 // Serial buffers (first words are counters)
-#define SERIN_RINGBUFFER_BASE			0x02050000 // Serial input (16384 bytes)
-#define SEROUT_RINGBUFFER_BASE			0x02054000 // Serial output (16384 bytes)
-#define UNUSED_BUFFER_BASE0				0x02058000 // Reserved for future (16384 bytes)
-#define UNUSED_BUFFER_BASE1				0x0205C000 // Reserved for future (16384 bytes)
-#define SERIN_RINGBUFFER_STATE			0x02060000 // Serial input state (16 bytes)
-#define SEROUT_RINGBUFFER_STATE			0x02060010 // Serial output state (16 bytes)
-#define UNUSED_STATE0					0x02060020 // Reserved for future (16 bytes)
-#define UNUSED_STATE1					0x02060030 // Reserved for future (16 bytes)
+#define SERIN_RINGBUFFER_BASE			0x02050000 // Serial data input ring buffer (16384 bytes)
+#define UNUSED_BUFFER_BASE0				0x02054000 // Reserved for future (16384 bytes)
+#define UNUSED_BUFFER_BASE1				0x02058000 // Reserved for future (16384 bytes)
+#define UNUSED_BUFFER_BASE2				0x0205C000 // Reserved for future (16384 bytes)
+#define SERIN_RINGBUFFER_STATE			0x02060000 // Serial data input ring buffer state (16 bytes)
+#define UNUSED_STATE0					0x02060010 // Reserved for future (16 bytes)
+#define UNUSED_STATE1					0x02060020 // Reserved for future (16 bytes)
+#define UNUSED_STATE2					0x02060030 // Reserved for future (16 bytes)
 #define KERNEL_GFX_CONTEXT				0x02060040 // Kernel terminal graphics context
 // Executable
 #define HEAP_START_APPMEM_END			0x02080000 // Executable space above this
@@ -113,3 +113,6 @@ uint32_t E32ReadMemMappedCSR(uint32_t _hart, uint32_t _csr);
 // Reset given hardware thread and start executing the supplied task
 void E32SetupCPU(uint32_t hartid, void *workerThread);
 void E32ResetCPU(uint32_t hartid);
+
+void E32BeginCriticalSection();
+void E32EndCriticalSection();

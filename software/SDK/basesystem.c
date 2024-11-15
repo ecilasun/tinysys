@@ -194,3 +194,23 @@ void E32ResetCPU(uint32_t hartid)
 	// This triggers a hardware jump to mscratch after all queued instructions execute
 	E32WriteMemMappedCSR(hartid, CSR_CPURESET, 0x1);
 }
+
+/**
+ * @brief Begins a critical section.
+ * 
+ * This function begins a critical section by disabling the machine timer interrupt.
+ */
+void E32BeginCriticalSection()
+{
+	clear_csr(mie, MIP_MTIP);
+}
+
+/**
+ * @brief Ends a critical section.
+ * 
+ * This function ends a critical section by enabling the machine timer interrupt.
+ */
+void E32EndCriticalSection()
+{
+	set_csr(mie, MIP_MTIP);
+}
