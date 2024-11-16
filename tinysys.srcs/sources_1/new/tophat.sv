@@ -45,6 +45,7 @@ module tophat(
 	//,input wire esp_rxd0_in
 	,output wire esp_txd1_out
 	,input wire esp_rxd1_in
+	,input wire esp_reboot
 	// Audio out
 	,output wire au_sdin
 	,output wire au_sclk
@@ -152,6 +153,7 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	//.esp_txd0_out(esp_txd0_out),
 	.esp_rxd1_in(esp_rxd1_in),
 	.esp_txd1_out(esp_txd1_out),
+	.esp_reboot(esp_reboot),
 	.ddr3conn(ddr3conn),
 	.i2sconn(i2sconn),
 	.vvsync(vvsync),

@@ -26,10 +26,14 @@
 #define PIN_RTS UART_PIN_NO_CHANGE
 #define PIN_CTS UART_PIN_NO_CHANGE
 
+// Send reset request to tinysys CPUs
+#define PIN_REBOOT GPIO_NUM_18
+
 static const char *TAG = "tinysys";
 
 // external port going to tinysys
 #define EX_UART_NUM UART_NUM_0
+#define PATTERN_CHR_NUM	(3)
 
 #define BUF_SIZE (1024)
 #define RD_BUF_SIZE (BUF_SIZE)
@@ -43,7 +47,15 @@ static void jtag_task(void *arg)
 		int datasize = usb_serial_jtag_read_bytes(dtmp, RD_BUF_SIZE, portMAX_DELAY);
 		if (datasize > 0)
 		{
-			uart_write_bytes(EX_UART_NUM, (const char*) dtmp, datasize);
+			if (dtmp[0] == '~')
+			{
+				ESP_LOGI(TAG, "restarting tinysys CPUs");
+				gpio_set_level(PIN_REBOOT, 0);
+				vTaskDelay(100 / portTICK_PERIOD_MS);
+				gpio_set_level(PIN_REBOOT, 1);
+			}
+			else // Pass through
+				uart_write_bytes(EX_UART_NUM, (const char*) dtmp, datasize);
 		}
 	} while(1);
 }
@@ -153,6 +165,14 @@ void app_main(void)
 	fcntl(fileno(stdout), F_SETFL, 0);
 	fcntl(fileno(stdin), F_SETFL, 0);
 
+	gpio_config(& (gpio_config_t) {
+		.pin_bit_mask = 1ULL << PIN_REBOOT,
+		.mode = GPIO_MODE_OUTPUT,
+		.pull_up_en = GPIO_PULLUP_DISABLE,
+		.pull_down_en = GPIO_PULLDOWN_DISABLE,
+		.intr_type = GPIO_INTR_DISABLE
+	});
+
 	usb_serial_jtag_driver_config_t usb_serial_config =  {
 			.tx_buffer_size = 1024,
 			.rx_buffer_size = 1024 };
@@ -188,4 +208,7 @@ void app_main(void)
     //Create a task to handler UART event from ISR
     xTaskCreate(uart_event_task, "tinysys_uart_task", 2048, NULL, 12, NULL);
 	xTaskCreate(jtag_task, "tinysys_jtag_task", 2048, NULL, 12, NULL);
+
+	// Let the tinysys CPUs know we are ready
+	gpio_set_level(PIN_REBOOT, 1);
 }

@@ -19,6 +19,8 @@ module axi4CSRFile #(
 	input wire usbirq,
 	input wire uartirq,
 	input wire hirq,
+	// Reboot request via ESP32 pin held high
+	input wire rebootreqn,
 	// CPU reset line
 	output wire cpuresetreq,
 	// Expose certain registers to fetch unit
@@ -96,7 +98,7 @@ logic softInterruptEna;
 
 // This will stay high untill CPU responds with an ack
 logic cpuresetreq_r;
-assign cpuresetreq = cpuresetreq_r;
+assign cpuresetreq = cpuresetreq_r | rebootreqn;
 
 always @(posedge aclk) begin
 	if (~delayedresetn) begin

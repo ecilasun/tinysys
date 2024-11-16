@@ -154,6 +154,10 @@ set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports esp_txd1_out
 ## IO?: SWITCH - sdcard_swtch (U32)
 ## set_property -dict {PACKAGE_PIN ??? IOSTANDARD LVCMOS33} [get_ports esp_switch]
 
+## IO18: REBOOT from esp32
+set_property -dict {PACKAGE_PIN J19 IOSTANDARD LVCMOS33} [get_ports esp_reboot]
+set_property PULLTYPE PULLUP [get_ports esp_reboot]
+
 ## ------------------------------------------------------------------------------------------------------
 ## USB-A - MAX3421EECJ over SPI interface, USB Host
 ## ------------------------------------------------------------------------------------------------------
