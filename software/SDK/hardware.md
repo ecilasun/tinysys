@@ -25,6 +25,38 @@ The cache controllers aim to return data and code fast and not access memory as 
 
 The only downside is that, due to the nature of how this cache works, data is not delivered in a single clock cycle and might take from 3 to 4 cycles. This is still faster than hitting memory, populating the cache, and returning data form the now-correctly-populated cache.
 
+### Memory layout
+
+The memory address space has been divided into RAM and devices, at address 0x80000000.
+
+All devices are placed at addresses 0x8... onwards, and system RAM starts at address 0x0... This is the opposite of what most embedded CPUs do, but for ease of software development tinysys has adopted this layout.
+
+The device memory space is split into 64Kbyte regions. Not all devices have access to the full 64Kbyte memory space, except the scratchpad memory at address 0x80000000.
+
+Here is a list of all devices, their starting addresses, and their purpose. Please note that this is for illustration purposes only; it is highly recommended to use the corresponding device functions from the SDK instead of these numbers so that the code is compatible with future OS/device changes.
+
+> **Warning:** Accessing any memory regions outside the following, or those reserved by the OS will most likely hang the hardware and require a reset. Try to adhere to memory allocation functions and utilities provided in the SDK files to get valid addresses when possible to avoid this scenario.
+
+```
+	SYSTEM_RAM  0x00000000 - 0x0FFFFFFF OS RAM: 256Mbytes of system memory, further subdivided into dedicated regions by the OS
+	DEVICE_SPAD 0x80000000 - 0x8000FFFF Scratchpad: 64Kbyte word addressible, uncached memory, accessible from all cores coherently
+	DEVICE_LEDS 0x80010000 - 0x8001FFFF Debug LEDs: 4 LEDs that are on board the device, suitable for simple debugging purposes
+	DEVICE_VPUC 0x80020000 - 0x8002FFFF VPU fifo: Command fifo for the video processing unit (VPU)
+	DEVICE_SPIC 0x80030000 - 0x8003FFFF SPI fifo: Command fifo for the SPI device tied to the SDCard controller
+	DEVICE_XADC 0x80040000 - 0x8004FFFF ADC fifo: Command fifo for the digital/analog converter, used to read FPGA temperature
+	DEVICE_DMAC 0x80050000 - 0x8005FFFF DMA fifo: Command fifo for the DMA controller, used to set up memory transfers
+	DEVICE_USBA 0x80060000 - 0x8006FFFF USB fifo: Command fifo for the SPI device tied to the USB host chip
+	DEVICE_APUC 0x80070000 - 0x8007FFFF APU fifo: Command fifo for the audio unit, used to control audio playback
+	DEVICE_MAIL 0x80080000 - 0x8008FFFF Mailbox: A 4Kbyte word addressible uncached memory region used to store task state for the scheduler
+	DEVICE_UART 0x80090000 - 0x8009FFFF UART: I/O port used to read from and write data to the UART device tied to the ESP32-C6 module
+	DEVICE_CSR0 0x800A0000 - 0x800AFFFF CSR0: The 4Kbyte memory mapped CSR file for hardware thread zero
+	DEVICE_CSR1 0x800B0000 - 0x800BFFFF CSR1: The 4Kbyte memory mapped CSR file for hardware thread one
+	DEVICE_DEV0 0x800C0000 - 0x800CFFFF Unused - reserved for future use / do not access
+	DEVICE_DEV1 0x800D0000 - 0x800DFFFF Unused - reserved for future use / do not access
+	DEVICE_DEV2 0x800E0000 - 0x800EFFFF Unused - reserved for future use / do not access
+	DEVICE_DEV3 0x800F0000 - 0x800FFFFF Unused - reserved for future use / do not access
+```
+
 ### Memory arbitration
 There is a memory arbiter implemented in the FPGA fabric, which is the backbone of all I/O coming from the CPU or other devices.
 
