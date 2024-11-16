@@ -21,7 +21,7 @@
 #include <stdlib.h>
 
 // On-device version
-#define VERSIONSTRING "v1.09"
+#define VERSIONSTRING "v1.0A"
 
 static char s_execName[33] = "";
 static char s_execParam0[33] = "";
@@ -217,10 +217,6 @@ uint32_t ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "reboot"))
 	{
-		// Reset things back to how they were, since we might not get static variables cleared for us.
-		VPUConsoleClear(kernelgfx);
-		ClearStatics();
-
 		// Clear to "we're rebooting" color
 		VPUClear(kernelgfx, 0x0C0C0C0C);
 		VPUSetVMode(kernelgfx, EVS_Disable);
@@ -869,6 +865,9 @@ int main()
 {
 	// Zero out the task memory (this will survive a soft reboot)
 	ClearTaskMemory();
+
+	// Reset static variable pool just in case we're rebooted
+	ClearStatics();
 
 	// Reset and wake up all CPUs again, this time with their correct entry points
 	E32SetupCPU(1, UserMain);

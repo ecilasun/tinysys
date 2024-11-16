@@ -1,5 +1,10 @@
 # SDK Documentation
 
+## Base System
+Base system routines provide useful facilities such as reading the clock, or setting up critical sections.
+
+Please see [BASE](base.md) for documentation about base system utilities.
+
 ## Audio Processing Unit
 The audio processing unit is responsible for generating stereo signals at various output frequencies.
 

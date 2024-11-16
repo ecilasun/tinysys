@@ -28,6 +28,8 @@ void DMACopyAutoByteMask4K(const uint32_t _sourceAddress16ByteAligned, const uin
 void DMACopyAutoByteMask(const uint32_t _sourceAddress16ByteAligned, const uint32_t _targetAddress, const uint8_t _blockCountInMultiplesOf16bytes);
 
 void DMATag(const uint32_t _tag);
-void DMAResolveTiles(const uint32_t _rpuTileBuffer16ByteAligned, const uint32_t _vpuWritePage16ByteAligned);
 void DMAWait(enum ECPUCoherency _cpucoherency);
 uint32_t DMAPending();
+
+// Work in progress
+void DMAResolveTiles(const uint32_t _rpuTileBuffer16ByteAligned, const uint32_t _vpuWritePage16ByteAligned);

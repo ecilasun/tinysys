@@ -45,88 +45,6 @@ int emulatorthread(void* data)
 			emulator->Step(s_wallclock);
 		} while (emulator->m_steps < 20);
 		emulator->m_steps = 0;
-
-		/*if (SDL_MUSTLOCK(ctx->compositesurface))
-			SDL_LockSurface(ctx->compositesurface);
-
-		uint32_t* pixels = (uint32_t*)ctx->compositesurface->pixels;
-		ctx->emulator->UpdateVideoLink(pixels, scanline, ctx->compositesurface->pitch);
-		scanline++;
-
-		uint32_t W = ctx->compositesurface->w;
-		uint32_t H = ctx->compositesurface->h - 8;
-		uint32_t S = ctx->emulator->m_bus->GetLEDs()->m_ledstate;
-
-		// TODO: LED image instead of flat colors
-		{
-			uint32_t L1 = S & 0x1 ? 0xFFFF7F00 : 0xFF201000;
-			uint32_t L2 = S & 0x2 ? 0xFFFF7F00 : 0xFF201000;
-			uint32_t L3 = S & 0x4 ? 0xFFFF7F00 : 0xFF201000;
-			uint32_t L4 = S & 0x8 ? 0xFFFF7F00 : 0xFF201000;
-
-			// Lowest bit LED is on the right
-			for (uint32_t j = H; j < H + 8; j++)
-			{
-				for (uint32_t i = 8; i < 16; i++)
-				{
-					pixels[W * j + i] = L4;
-					pixels[W * j + i + 9] = L3;
-					pixels[W * j + i + 18] = L2;
-					pixels[W * j + i + 27] = L1;
-				}
-			}
-		}
-
-		SDL_Rect splashRect;
-		if (scanline == 525)
-		{
-			// Center the splash image
-			splashRect = s_textSurface ? s_textSurface->clip_rect : SDL_Rect();
-			splashRect.x = (W - splashRect.w) / 2;
-			splashRect.y = (H - splashRect.h) / 2;
-
-			// Stay up for 2 seconds
-			if (s_logotime < 120)
-			{
-				int m = 0;
-				int top = splashRect.y - 4;
-				int bottom = splashRect.y + splashRect.h + 4;
-				int d = bottom - top;
-				for (int j = top; j < bottom; j++)
-				{
-					m = 255 * (j - top) / d;
-					for (uint32_t i = 0; i < W; i++)
-						pixels[W * j + i] = 0xFF000000 | (m);
-				}
-			}
-		}
-
-		if (SDL_MUSTLOCK(ctx->compositesurface))
-			SDL_UnlockSurface(ctx->compositesurface);
-
-		if (scanline == 525)
-		{
-			scanline = 0;
-
-			if (s_logotime < 120 && s_textSurface)
-				SDL_BlitSurface(s_textSurface, nullptr, ctx->compositesurface, &splashRect);
-			++s_logotime;
-
-#if defined(CPU_STATS)
-			if (s_statSurface)
-			{
-				SDL_Rect statRect = s_statSurface->clip_rect;
-				statRect.y = H - statRect.h;
-
-				SDL_BlitSurface(s_statSurface, nullptr, ctx->compositesurface, &statRect);
-		}
-#endif
-
-			// Update window surface
-			SDL_BlitSurface(ctx->compositesurface, nullptr, ctx->surface, nullptr);
-			SDL_UpdateWindowSurface(ctx->window);
-		}*/
-
 	} while(s_alive);
 
 	s_alive = false;
@@ -415,6 +333,8 @@ int SDL_main(int argc, char** argv)
 
 	s_textSurface = TTF_RenderText_Blended_Wrapped(s_debugfont, bootString, {255,255,255}, WIDTH);
 
+	printf("Use the ~ key to reset the emulated CPUs in case of hangs during development\n");
+
 	SDL_Event ev;
 	do
 	{
@@ -424,7 +344,14 @@ int SDL_main(int argc, char** argv)
 				s_alive = false;
 			else if (ev.type == SDL_KEYUP)
 			{
-				if ((ev.key.keysym.mod & KMOD_CTRL) && ev.key.keysym.sym == 'c')
+				if (ev.key.keysym.scancode == SDL_SCANCODE_GRAVE) // ESP32-C6 does something similar to pass the CPUs a reset signal via CSRs
+				{
+					CCSRMem* csr0 = ectx.emulator->m_bus->GetCSR(0);
+					CCSRMem* csr1 = ectx.emulator->m_bus->GetCSR(1);
+					csr0->RequestReset();
+					csr1->RequestReset();
+				}
+				else if ((ev.key.keysym.mod & KMOD_CTRL) && ev.key.keysym.sym == 'c')
 					ectx.emulator->QueueByte(3);
 				else if (ev.key.keysym.sym != SDLK_LCTRL && ev.key.keysym.sym != SDLK_LSHIFT && ev.key.keysym.sym != SDLK_RSHIFT)
 				{

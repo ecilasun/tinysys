@@ -35,7 +35,7 @@ The DMA unit, CPUs, and the VPU are the main clients of this bus. All of the int
 When video scan-out is enabled, the CPUs will share memory access with the VPU, and the VPU will take up most of the read bandwidth while it's populating its scan-out cache. This means, for memory I/O intensive algorithms, one might benefit from turning off video scan-out slightly, for example when startup up a game that needs to generate some procedural data.
 
 ### Hardware interrupts
-Most of the devices, such as the USB module or the SDCard module, will generate EI (external interrupts) when certain conditions occur, such as inserting or removing an SDCard.
+Most of the devices, such as the USB module or the SDCard module, will generate EI (external interrupts) when certain conditions occur, such as inserting or removing an SDCard, or when a horizontal scanline is encountered, depending on setup.
 
 In addition to the peripheral interrupts, there is a timer interrupt that will periodically fire. This interrupt type is how the task system implements its scheduler. Each task is given a 'timeout' value after which they will break execution and switch to the next, or if so desired, preemt execution by calling `TaskYield()`. In all cases, the timer control registers are utilized to trigger the scheduler interrupt on each HART so they can manage their task pools simultaneously.
 

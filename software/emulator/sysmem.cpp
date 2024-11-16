@@ -16,7 +16,7 @@ static const uint32_t quadexpand[] = {
 
 CSysMem::CSysMem()
 {
-	// Warning! Allocating 256Mbytes in one go!
+	// TODO: Allocate on demand
 	m_devicemem = malloc(256*1024*1024);
 }
 
@@ -27,6 +27,7 @@ CSysMem::~CSysMem()
 
 void CSysMem::Reset()
 {
+	// TODO: Clear only allocated blocks
 	memset(m_devicemem, 0xCC, 256*1024*1024);
 }
 

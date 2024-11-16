@@ -79,7 +79,7 @@
 #define DEVICE_BASE 0x80000000
 
 // Each device has 64 Kbytes of uncached memory region mapped to it (not all is guaranteed to be accessible)
-#define DEVICE_NULL (DEVICE_BASE+0x00000)
+#define DEVICE_SPAD (DEVICE_BASE+0x00000)
 #define DEVICE_LEDS (DEVICE_BASE+0x10000)
 #define DEVICE_VPUC (DEVICE_BASE+0x20000)
 #define DEVICE_SPIC (DEVICE_BASE+0x30000)
@@ -116,3 +116,5 @@ void E32ResetCPU(uint32_t hartid);
 
 void E32BeginCriticalSection();
 void E32EndCriticalSection();
+
+uint32_t* E32GetScratchpad();

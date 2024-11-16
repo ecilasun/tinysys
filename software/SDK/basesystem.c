@@ -214,3 +214,15 @@ void E32EndCriticalSection()
 {
 	set_csr(mie, MIP_MTIP);
 }
+
+/**
+ * @brief Returns the scratchpad memory address.
+ * 
+ * This function returns the scratchpad memory address, which is a 64 Kbytes uncached memory region shared between all cores.
+ * 
+ * @return The scratchpad memory address.
+ */
+uint32_t* E32GetScratchpad()
+{
+	return (uint32_t*)DEVICE_SPAD;
+}

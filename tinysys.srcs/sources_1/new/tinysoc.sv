@@ -58,6 +58,7 @@ axi4if audiobus();				// Bus for audio device output
 axi4if memorybus();				// Arbitrated access to main memory
 axi4if devicebus();				// Arbitrated access to devices
 
+axi4if scratchif();				// Sub bus: SPAD scratchpad memory (uncached)
 axi4if ledif();					// Sub bus: LED contol device (debug LEDs)
 axi4if vpucmdif();				// Sub bus: VPU command fifo (video scan out logic)
 axi4if spiif();					// Sub bus: SPI control device (sdcard)
@@ -287,7 +288,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 
 // 16bit (64K) address space for up to 255 devices
 // dev   start     end       addrs[19:16]  size  notes
-// ----: 80000000  8xx0FFFF  4'b0000  64KB	 Unused
+// SPAD: 80000000  8xx0FFFF  4'b0000  64KB	 Scratchpad
 // LEDS: 8xx10000  8xx1FFFF  4'b0001  64KB	 Debug LEDs
 // VPUC: 8xx20000  8xx2FFFF  4'b0010  64KB	 Video Processing Unit
 // SDCC: 8xx30000  8xx3FFFF  4'b0011  64KB	 SDCard SPI Unit
@@ -307,20 +308,21 @@ axi4ddr3sdram axi4ddr3sdraminst(
 devicerouter devicerouterinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
-    .axi_s(devicebus),
-    .addressmask({
-    	4'b1011,		// CRS1 CSR file for HART#1
-    	4'b1010,		// CRS0 CSR file for HART#0
-    	4'b1001,		// UART ESP32 to RISC-V UART channel
+	.axi_s(devicebus),
+	.addressmask({
+		4'b1011,		// CRS1 CSR file for HART#1
+		4'b1010,		// CRS0 CSR file for HART#0
+		4'b1001,		// UART ESP32 to RISC-V UART channel
 		4'b1000,		// MAIL Mailbox for HART-to-HART commmunication
-    	4'b0111,		// APUC	Audio Processing Unit Command Fifo
-    	4'b0110,		// USBA USB-A access via SPI
-    	4'b0101,		// DMAC DMA Command Fifo
-    	4'b0100,		// XADC Analog / Digital Converter Interface
+		4'b0111,		// APUC	Audio Processing Unit Command Fifo
+		4'b0110,		// USBA USB-A access via SPI
+		4'b0101,		// DMAC DMA Command Fifo
+		4'b0100,		// XADC Analog / Digital Converter Interface
 		4'b0011,		// SDCC SDCard access via SPI
 		4'b0010,		// VPUC Graphics Processing Unit Command Fifo
-		4'b0001}),		// LEDS Debug / Status LED interface
-    .axi_m({csrif1, csrif0, uartif, mailif, audioif, usbaif, dmaif, xadcif, spiif, vpucmdif, ledif}));
+		4'b0001,		// LEDS Debug / Status LED interface
+		4'b0000}),		// SPAD Scratchpad for inter-core data transfer
+    .axi_m({csrif1, csrif0, uartif, mailif, audioif, usbaif, dmaif, xadcif, spiif, vpucmdif, ledif, scratchif}));
 
 // --------------------------------------------------
 // Interrupt wires
@@ -459,5 +461,10 @@ axi4mail maildevice(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.s_axi(mailif));
+	
+axi4scratch scratchpaddevice(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.s_axi(scratchif));
 
 endmodule

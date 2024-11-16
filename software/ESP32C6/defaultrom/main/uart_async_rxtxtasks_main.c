@@ -203,7 +203,7 @@ void app_main(void)
 	esp_task_wdt_deinit();
 
 	esp_log_level_set(TAG, ESP_LOG_INFO);
-	ESP_LOGI(TAG, "starting up TinySys terminal\n");
+	//ESP_LOGI(TAG, "starting up TinySys terminal\n");
 
     //Create a task to handler UART event from ISR
     xTaskCreate(uart_event_task, "tinysys_uart_task", 2048, NULL, 12, NULL);

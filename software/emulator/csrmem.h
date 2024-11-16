@@ -49,6 +49,7 @@ public:
 	void UpdateTime(uint64_t wallclock, uint32_t executeCount);
 	void SetRetiredInstructions(uint64_t retired) { m_retired = retired; }
 	void SetPC(uint32_t pc) { m_pc = pc; }
+	void RequestReset() { m_cpuresetreq = 1; }
 
 	uint64_t m_retired{ 0 };
 	uint64_t m_cycle{ 0 };

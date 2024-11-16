@@ -13,9 +13,13 @@ The device can generate video at 320x240 or 640x480 pixels in size. However in r
 
 This function will allocate an adequately aligned block of memory to be used as a backbuffer or a scan-out buffer by the VPU. The allocated buffers can be set in the current video context and be swapped on vsync signal to implement double-buffering effects.
 
+---
+
 `void VPUGetDimensions(const enum EVideoMode _mode, uint32_t *_width, uint32_t *_height)`
 
 This function fills in the with and height values with those of a given video mode provided by `_mode` parameter.
+
+---
 
 `void VPUClear(struct EVideoContext *_context, const uint32_t _colorWord)`
 
@@ -25,6 +29,8 @@ This function writes the `_colorWord` to current write page (the backbuffer) to 
 `void VPUSetDefaultPalette(struct EVideoContext *_context)`
 
 This function will reset the color palette to the default VGA color palette, which is the same palette used by the OS on startup.
+
+---
 
 `void VPUSetPal(const uint8_t _paletteIndex, const uint32_t _red, const uint32_t _green, const uint32_t _blue)`
 
@@ -42,6 +48,8 @@ EVM_640_Wide: 640x480 pixels
 ECM_8bit_Indexed: 8 bit paletted scanout buffer
 ECM_16bit_RGB: 16 bit RGB scanout buffer
 ```
+
+---
 
 `void VPUSetScanoutAddress(struct EVideoContext *_context, const uint32_t _scanOutAddress64ByteAligned)`
 
@@ -65,11 +73,15 @@ The normal usage case is to read this value once, do some work, then come back t
 
 If the synchonization point is well known (typically end of frame for a game) then it is more suitable to use the blocking `VPUWaitVSync()` function instead.
 
+---
+
 `uint32_t VPUGetScanline()`
 
 This function will return the scanline from the VPU at the time this function was called. It is not ordinarily useful from regular code, but is quite helpul to detect the line at which a hblank interrupt is triggered, from an active hblank hanler.
 
 The returned value has a range of 0 to 1023, however the hardware returns only the valid range, which is from 0 to 525.
+
+---
 
 `void VPUSwapPages(struct EVideoContext* _vx, struct EVideoSwapContext *_sc)`
 
@@ -77,23 +89,33 @@ This function will swap the pointers for video scan output and CPU accessible ba
 
 If the caller does not wait for vblank, the swap occurs immediately, typically in the middle of a scanline, and will most likely cause a rolling / tearing artifact. It is adviseable to have a vsync wait function before the swap occurs to avoid this.
 
+---
+
 `void VPUWaitVSync()`
 
 This blocking function will stall the CPU until a vertical blank event occurs. A vertical blank event is tracked by detecting the changes in the vertical blank counter in a tight loop.
 
 If you do not wish to block while waiting, please see `VPUReadVBlankCounter()` instead. However that is not a recommended way to wait for vblank, as having a split read and swap will most likely cause undesired tearing effects.
 
+---
+
 `void VPUSetHBlankHandler(uintptr_t _handler)`
 
 This function installs a horizontal blank handler function. The function itself is not an ISR, but rather chained to from the OS ISR routine. This allows for the function to be built as regular C++ code and does not have any special requirements apart form adhering to the following signature: `void func()`
+
+---
 
 `void VPUSetHBlankScanline(uintptr_t _scanline)`
 
 This function sets up the video line at which the horizontal blanking interrupt should be triggered. One thing to note here is that for 320x240 video modes, scanline count still counts from 0 to 479, and the scan lines are always in 640x480 space.
 
+---
+
 `void VPUEnableHBlankInterrupt()`
 
 This allows the VPU to trigger a horizontal blanking interrupt on the CSR unit which then passes it to the fetch unit as a hardware interrupt.
+
+---
 
 `void VPUDisableHBlankInterrupt()`
 
@@ -126,5 +148,7 @@ The horizontal blanking interrupt is set up to trigger at a given scanline. The 
 This allows for secondary uses of this interrupt as a vertical blanking interrupt, if one were to wait for last line of the video output (line 525) and swap the scan-out buffer.
 
 For a full sample that uses the hblank handlers, see the sample code in 'samples/hblank' directory.
+
+> **Warning:** hblank interrupts will never yield back to the system until they return, therefore try to keep them as short as possible
 
 ### Back to [SDK Documentation](README.md)
