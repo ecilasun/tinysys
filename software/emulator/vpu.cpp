@@ -16,7 +16,6 @@ void CVPU::Reset()
 {
 	m_scanoutpointer = 0x0;
 	m_videoscanoutenable = 0;
-	m_vsyncCount = 0;
 }
 
 void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, int scanline, CBus* bus)

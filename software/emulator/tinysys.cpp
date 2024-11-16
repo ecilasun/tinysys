@@ -46,7 +46,7 @@ int emulatorthread(void* data)
 		} while (emulator->m_steps < 20);
 		emulator->m_steps = 0;
 
-		if (SDL_MUSTLOCK(ctx->compositesurface))
+		/*if (SDL_MUSTLOCK(ctx->compositesurface))
 			SDL_LockSurface(ctx->compositesurface);
 
 		uint32_t* pixels = (uint32_t*)ctx->compositesurface->pixels;
@@ -125,7 +125,7 @@ int emulatorthread(void* data)
 			// Update window surface
 			SDL_BlitSurface(ctx->compositesurface, nullptr, ctx->surface, nullptr);
 			SDL_UpdateWindowSurface(ctx->window);
-		}
+		}*/
 
 	} while(s_alive);
 
@@ -221,19 +221,17 @@ int audiothread(void* data)
 	return 0;
 }
 
-/*uint32_t videoCallback(Uint32 interval, void* param)
+uint32_t videoCallback(Uint32 interval, void* param)
 {
 	EmulatorContext* ctx = (EmulatorContext*)param;
 
 	if (SDL_MUSTLOCK(ctx->compositesurface))
 		SDL_LockSurface(ctx->compositesurface);
 
-	static int scanline = 0;
 	uint32_t* pixels = (uint32_t*)ctx->compositesurface->pixels;
-	ctx->emulator->UpdateVideoLink(pixels, scanline, ctx->compositesurface->pitch);
-	scanline++;
-	if (scanline >= 525)
-		scanline = 0;
+
+	for (int scanline = 0; scanline < 525; ++scanline)
+		ctx->emulator->UpdateVideoLink(pixels, scanline, ctx->compositesurface->pitch);
 
 	uint32_t W = ctx->compositesurface->w;
 	uint32_t H = ctx->compositesurface->h-8;
@@ -301,7 +299,7 @@ int audiothread(void* data)
 	SDL_UpdateWindowSurface(ctx->window);
 
 	return interval;
-}*/
+}
 
 // Print CPU stats
 #if defined(CPU_STATS)
@@ -407,7 +405,7 @@ int SDL_main(int argc, char** argv)
 
 	SDL_Thread* emulatorthreadID = SDL_CreateThread(emulatorthread, "emulator", &ectx);
 	SDL_Thread* audiothreadID = SDL_CreateThread(audiothread, "audio", ectx.emulator);
-	//SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, &ectx); // 60fps
+	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, &ectx); // 60fps
 #if defined(CPU_STATS)
 	SDL_TimerID statsTimer = SDL_AddTimer(1000, statsCallback, &ectx);
 #endif
@@ -448,7 +446,7 @@ int SDL_main(int argc, char** argv)
 	SDL_FreeSurface(s_textSurface);
 	TTF_CloseFont(s_debugfont);
 	TTF_Quit();
-	//SDL_RemoveTimer(videoTimer);
+	SDL_RemoveTimer(videoTimer);
 	SDL_WaitThread(emulatorthreadID, nullptr);
 	SDL_WaitThread(audiothreadID, nullptr);
 	SDL_ClearQueuedAudio(ectx.emulator->m_audioDevice);
