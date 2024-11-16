@@ -23,7 +23,7 @@ This folder contains the gateware that will reprogram the FPGA board on tinysys 
 
 The intended device is the QMTECH A7200T core board, which is a blank FPGA board with nothing but an XCA7200T AMD/Xilinx part and a 256Mbytes DDR3 memory. The firmare also needs at least a revision 2E tinysys board to be attached to it to provide USB serial / HID / audio and video connections as well as the sdcard port.
 
-Programmin the gateware onto the device requires a JTAG adapter (such as the HS2 REVA from Digilent or a Xilinx compatible 6-pin adapter), a PC, and Vivado 2023.1 installed.
+Programmin the gateware onto the device requires a JTAG adapter (such as the HS2 REVA from Digilent or a Xilinx compatible 6-pin adapter), a PC, and Vivado 2024.1 installed.
 
 NOTE: Make sure to never attempt this unless absolutely necessary and a hardware bug needs addressing / fixing or a new feature is added to the device!
 
@@ -37,7 +37,7 @@ For this step, attach a USB cable to the HS2(revA or later), attach one end to y
 
 When properly connected, the text on the HS2 should be facing away from the board (easiest way to make sure it's correct is to find the GND marker on the 6 pin connector on the FPGA board, and line up the GND marker on the HS2 to that)
 
-Start Vivado 2023.1 (or newer version) and on the first page, select Open Hardware Manager.
+Start Vivado 2024.1 (or newer version) and on the first page, select Open Hardware Manager.
 You should then see a note that says 'No hardware target is open.' Click the `Open Target` button next to it and select the `Auto Connect` option.
 
 This should bring up a view which shows a 'xc7a200t' device listed. Right click on it and select `Add Configuration Memory Device`
