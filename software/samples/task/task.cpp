@@ -28,7 +28,7 @@ static uint8_t *s_framebufferB;
 void MyTask()
 {
 	// Set up shared memory for this HART
-	volatile int *sharedmem = (volatile int*)TaskGetSharedMemory();
+	volatile int *sharedmem = (volatile int*)E32GetScratchpad();
 	volatile int *s_frame1 = sharedmem+4;
 
 	while(1)
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 	s_sc.framebufferB = s_framebufferB;
 
 	// Set up shared memory for this HART
-	volatile int *sharedmem = (volatile int*)TaskGetSharedMemory();
+	volatile int *sharedmem = (volatile int*)E32GetScratchpad();
 	volatile int *s_frame0 = sharedmem;
 	volatile int *s_frame1 = sharedmem+4;
 
