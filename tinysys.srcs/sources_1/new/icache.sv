@@ -28,7 +28,6 @@ data_t cachedin[0:3];
 logic memreadstrobe;
 
 logic [13:0] ctag;			// current cache tag (14 bits)
-logic [3:0] coffset;		// current word offset 0..15
 logic [7:0] clineaddr;		// current cache line 0..256
 
 logic [14:0] cachelinetags[0:255];	// cache line tags (14 bits) + 1 bit for valid flag
@@ -97,24 +96,29 @@ wire countdone = (dccount == 8'hFF);
 
 always_ff @(posedge aclk) begin
 	if (~aresetn) begin
+		dataout <= 32'd0;
+	end else begin
+		dataout <= cdout[offset*32 +: 32];
+	end
+end
+
+always_ff @(posedge aclk) begin
+	if (~aresetn) begin
 		memreadstrobe <= 1'b0;
 		readdone <= 1'b0;
 		cachewe <= 1'b0;
 		ctagwe <= 1'b0;
 		dccount <= 8'h00;
-		dataout <= 32'd0;
 		ctag <= 14'd0;
-		coffset <= 4'd0;
 		clineaddr <= 8'd0;
 	end else begin
 		memreadstrobe <= 1'b0;
 		readdone <= 1'b0;
 		cachewe <= 1'b0;
 		ctagwe <= 1'b0;
-		
+
 		unique case(cachestate)
 			IDLE : begin
-				coffset <= offset;	// Cache offset 0..15
 				clineaddr <= line;	// Cache line
 				ctag <= tag;		// Cache tag 0000..3fff
 				dccount <= 8'h00;
@@ -143,7 +147,6 @@ always_ff @(posedge aclk) begin
 			CREAD: begin
 				if (cachehit) begin
 					// Cache hit
-					dataout <= cdout[coffset*32 +: 32];
 					readdone <= 1'b1;
 					cachestate <= IDLE;
 				end else begin
