@@ -260,6 +260,8 @@ int SDL_main(int argc, char** argv)
 	ectx.emulator = new CEmulator;
 	bool success;
 
+	fprintf(stderr, "tinysys emulator v1.0A\n");
+
 	const uint32_t resetvector = 0x0FFE0000;
 	char bootRom[256] = "rom.bin";
 	if (argc>1)
@@ -333,7 +335,7 @@ int SDL_main(int argc, char** argv)
 
 	s_textSurface = TTF_RenderText_Blended_Wrapped(s_debugfont, bootString, {255,255,255}, WIDTH);
 
-	printf("Use the ~ key to reset the emulated CPUs in case of hangs during development\n");
+	fprintf(stderr, "Use the ~ key to reset the emulated CPUs in case of hangs during development\n");
 
 	SDL_Event ev;
 	do

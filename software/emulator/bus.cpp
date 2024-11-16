@@ -6,6 +6,7 @@ CBus::CBus(uint32_t resetvector)
 	m_resetvector = resetvector;
 
 	m_mem = new CSysMem();
+	m_scratchpad = new CScratchpadMem();
 	m_vpuc = new CVPU();
 	m_apu = new CAPU();
 	m_dmac = new CDMA();
@@ -18,7 +19,7 @@ CBus::CBus(uint32_t resetvector)
 	m_dummydevice = new CDummyDevice();
 
 	// Device array
-	m_devices[0] = m_dummydevice; // NULL
+	m_devices[0] = m_scratchpad;
 	m_devices[1] = m_leds;
 	m_devices[2] = m_vpuc;
 	m_devices[3] = m_sdcc;
@@ -35,6 +36,7 @@ CBus::CBus(uint32_t resetvector)
 
 CBus::~CBus()
 {
+	if (m_scratchpad) delete m_scratchpad;
 	if (m_csr[0]) delete m_csr[0];
 	if (m_csr[1]) delete m_csr[1];
 	if (m_sdcc) delete m_sdcc;
@@ -60,9 +62,10 @@ void CBus::Reset(uint8_t* rombin, uint32_t romsize)
 	m_mail->Reset();
 	m_dummydevice->Reset();
 	m_apu->Reset();
+	m_scratchpad->Reset();
 
 	m_csr[0]->Reset();
-	if (m_csr[1]) m_csr[1]->Reset();
+	m_csr[1]->Reset();
 }
 
 void CBus::UpdateVideoLink(uint32_t *pixels, int pitch, int scanline)

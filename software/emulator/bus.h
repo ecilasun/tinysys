@@ -5,6 +5,7 @@
 #include "csrmem.h"
 #include "sdcard.h"
 #include "mailmem.h"
+#include "scratchpadmem.h"
 #include "vpu.h"
 #include "apu.h"
 #include "dma.h"
@@ -15,7 +16,7 @@
 
 #define DEVICE_BASE 0x80000000
 
-#define DEVICE_NULL (DEVICE_BASE+0x00000)
+#define DEVICE_SPAD (DEVICE_BASE+0x00000)
 #define DEVICE_LEDS (DEVICE_BASE+0x10000)
 #define DEVICE_VPUC (DEVICE_BASE+0x20000)
 #define DEVICE_SPIC (DEVICE_BASE+0x30000)
@@ -58,6 +59,7 @@ public:
 private:
 	CCSRMem* m_csr[2]{ nullptr, nullptr };
 	CMailMem* m_mail{ nullptr };
+	CScratchpadMem* m_scratchpad{ nullptr };
 	CSDCard* m_sdcc{ nullptr };
 	CVPU* m_vpuc{ nullptr };
 	CDMA* m_dmac{ nullptr };
