@@ -16,7 +16,7 @@ r1.06: Minor improvements to inner ROM loop and some other bug fixes<br>
 r1.07: DMA hardware change in preparation for misaligned DMA support<br>
 r1.08: Stability fixes<br>
 r1.09: Added misaligned DMA support and removed ESP32/FPGA GPIO bridge device (to be re-done later), also added hblank interrupt mechanism and remote reboot ability (~ character over UART)<br>
-r1.0A: Added 64Kbytes of scratchpad RAM, shared across all cores<br>
+r1.0A: Added 64Kbytes of scratchpad RAM, shared across all cores, WNS relaxed to leave room for any future bug fixes<br>
 
 # Device gateware
 
