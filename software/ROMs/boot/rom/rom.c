@@ -831,7 +831,7 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 		// ----------------------------------------------------------------
 
 		// Kernel error / crash handler for this CPU
-		// TODO: Catch kernerl errors on CPU#1 onwards
+		// TODO: Catch kernel errors on CPU#1 onwards
 		for (int cpu=0;cpu<2;++cpu)
 		{
 			if (taskctx[cpu]->kernelError)
