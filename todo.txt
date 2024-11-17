@@ -2,4 +2,5 @@
 [+] Byte aligned DMA
 [ ] Work on file upload support via ESP32 GPIO
 [+] Add remote reboot trigger via ESP32 GPIO
+[ ] Add memory access exception (physical memory access)
 [ ] Build a 3rd board

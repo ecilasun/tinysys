@@ -143,7 +143,7 @@ set_property -dict {PACKAGE_PIN G20 IOSTANDARD LVCMOS33} [get_ports esp_rxd1_in]
 set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports esp_txd1_out]
 
 ## ESP to SDCard link
-## IO01: CS - sdcard_cs_n (AA19)
+## IO1: CS - sdcard_cs_n (AA19)
 ## set_property -dict {PACKAGE_PIN H14 IOSTANDARD LVCMOS33} [get_ports esp_cs]
 ## IO4: MOSI - sdcard_mosi (AA20)
 ## set_property -dict {PACKAGE_PIN K17 IOSTANDARD LVCMOS33} [get_ports esp_mosi]

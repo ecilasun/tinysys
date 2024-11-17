@@ -50,9 +50,11 @@ static void jtag_task(void *arg)
 			if (dtmp[0] == '~')
 			{
 				ESP_LOGI(TAG, "restarting tinysys CPUs");
+				gpio_hold_dis(PIN_REBOOT);
 				gpio_set_level(PIN_REBOOT, 0);
 				vTaskDelay(100 / portTICK_PERIOD_MS);
 				gpio_set_level(PIN_REBOOT, 1);
+				gpio_hold_en(PIN_REBOOT);
 			}
 			else // Pass through
 				uart_write_bytes(EX_UART_NUM, (const char*) dtmp, datasize);
@@ -149,8 +151,7 @@ static void uart_event_task(void *pvParameters)
 
 void app_main(void)
 {
-    esp_log_level_set(TAG, ESP_LOG_NONE);
-
+	esp_log_level_set(TAG, ESP_LOG_NONE);
 	// Initialize NVS.
 	esp_err_t ret = nvs_flash_init();
 	if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -159,12 +160,6 @@ void app_main(void)
 	}
 	ESP_ERROR_CHECK( ret );
 
-	setvbuf(stdin, NULL, _IONBF, 0);
-
-	// Enable blocking mode on stdin and stdout
-	fcntl(fileno(stdout), F_SETFL, 0);
-	fcntl(fileno(stdin), F_SETFL, 0);
-
 	gpio_config(& (gpio_config_t) {
 		.pin_bit_mask = 1ULL << PIN_REBOOT,
 		.mode = GPIO_MODE_OUTPUT,
@@ -172,6 +167,14 @@ void app_main(void)
 		.pull_down_en = GPIO_PULLDOWN_DISABLE,
 		.intr_type = GPIO_INTR_DISABLE
 	});
+
+	gpio_set_level(PIN_REBOOT, 0); // Hold in reset
+
+	setvbuf(stdin, NULL, _IONBF, 0);
+
+	// Enable blocking mode on stdin and stdout
+	fcntl(fileno(stdout), F_SETFL, 0);
+	fcntl(fileno(stdin), F_SETFL, 0);
 
 	usb_serial_jtag_driver_config_t usb_serial_config =  {
 			.tx_buffer_size = 1024,
@@ -211,4 +214,5 @@ void app_main(void)
 
 	// Let the tinysys CPUs know we are ready
 	gpio_set_level(PIN_REBOOT, 1);
+	gpio_hold_en(PIN_REBOOT);
 }
