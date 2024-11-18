@@ -52,7 +52,7 @@ static void jtag_task(void *arg)
 				ESP_LOGI(TAG, "restarting tinysys CPUs");
 				gpio_hold_dis(PIN_REBOOT);
 				gpio_set_level(PIN_REBOOT, 0);
-				vTaskDelay(100 / portTICK_PERIOD_MS);
+				vTaskDelay(250 / portTICK_PERIOD_MS);
 				gpio_set_level(PIN_REBOOT, 1);
 				gpio_hold_en(PIN_REBOOT);
 			}
