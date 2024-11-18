@@ -39,7 +39,7 @@ int main()
 	VPUSetScanoutAddress(&vx, (uint32_t)framebuffer);
 	VPUClear(&vx, 0x03030303);
 
-	struct STaskContext* taskctx = GetTaskContext(0);
+	struct STaskContext* taskctx = TaskGetContext(0);
 	taskctx->interceptUART = 1;
 
 	// At startup, acknowledge the sender so that it can start sending the file header
