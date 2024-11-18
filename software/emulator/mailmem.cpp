@@ -11,8 +11,8 @@ static const uint32_t quadexpand[] = {
 
 CMailMem::CMailMem()
 {
-	// 1024 words
-	m_mailmem = (uint32_t*)malloc(1024 * sizeof(uint32_t));
+	// Mailbox memory is 16Kbytes
+	m_mailmem = (uint32_t*)malloc(4096 * sizeof(uint32_t));
 }
 
 CMailMem::~CMailMem()
@@ -23,20 +23,19 @@ CMailMem::~CMailMem()
 void CMailMem::Reset()
 {
 	// Clear memory
-	memset(m_mailmem, 0, 1024 * sizeof(uint32_t));
+	memset(m_mailmem, 0, 4096 * sizeof(uint32_t));
 }
 
 void CMailMem::Read(uint32_t address, uint32_t& data)
 {
-	uint32_t mailslot = (address >> 2) & 0x3FF;
+	uint32_t mailslot = (address >> 2) & 0xFFF;
 	data = m_mailmem[mailslot];
-	//printf("MR: %.8X -> %.8X\n", mailslot, data);
 }
 
 void CMailMem::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 {
 	uint32_t olddata;
-	uint32_t mailslot = (address >> 2) & 0x3FF;
+	uint32_t mailslot = (address >> 2) & 0xFFF;
 	olddata = m_mailmem[mailslot];
 
 	// Expand the wstrobe
@@ -46,5 +45,4 @@ void CMailMem::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 	// Mask and mix incoming and old data
 	uint32_t newword = (olddata & invfullmask) | (word & fullmask);
 	m_mailmem[mailslot] = newword;
-	//printf("MW: %.8X -> %.8X (%.8X) \n", mailslot, word, newword);
 }

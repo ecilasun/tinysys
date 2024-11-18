@@ -9,35 +9,18 @@
 #include "uart.h"
 #include "usbhost.h"
 #include "usbhidhandler.h"
-#include "max3421e.h"
 #include "mini-printf.h"
-#include "keyringbuffer.h"
 #include "serialinringbuffer.h"
+#include "keyringbuffer.h"
 #include "serialinput.h"
+#include "commandline.h"
+#include "device.h"
 
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-// On-device version
-#define VERSIONSTRING "v1.0A"
-
-static char s_execName[33] = "";
-static char s_execParam0[33] = "";
-static uint32_t s_execParamCount = 1;
-// ID of task executing on hart#1
-static uint32_t s_userTaskID = 0;
-
-static char s_cmdString[128] = "";
-static char s_pathtmp[PATH_MAX];
-static int32_t s_cmdLen = 0;
-static uint32_t s_startAddress = 0;
-static int s_refreshConsoleOut = 1;
-static int s_runOnCPU = 0;
-
-// Names of task states for process dump
-static const char *s_taskstates[]={ "NONE", "HALT", "EXEC", "TERM", "DEAD"};
 // Names of registers for crash dump
 static const char *s_regnames[]={"pc", "ra", "sp", "gp", "tp", "t0", "t1", "t2", "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s1", "s1", "t3", "t4", "t5", "t6"};
 
@@ -45,16 +28,8 @@ static struct SUSBHostContext s_usbhostctx;
 
 void ClearStatics()
 {
-	memset(s_execName, 0, sizeof(s_execName));
-	memset(s_execParam0, 0, sizeof(s_execParam0));
-	s_execParamCount = 1;
-	s_userTaskID = 0;
-	memset(s_cmdString, 0, sizeof(s_cmdString));
-	memset(s_pathtmp, 0, sizeof(s_pathtmp));
-	s_cmdLen = 0;
-	s_startAddress = 0;
-	s_refreshConsoleOut = 1;
-	s_runOnCPU = 0;
+	// Clear static variables for all systems that use them
+	CLIClearStatics();
 }
 
 void UnrecoverableError()
@@ -82,510 +57,6 @@ void _stubTask()
 	while(1)
 	{
 		asm volatile("nop;");
-	}
-}
-
-// This task is a trampoline to the loaded executable
-void _runExecTask()
-{
-	// Start the loaded executable
-	asm volatile(
-		"addi sp, sp, -16;"
-		"sw %3, 0(sp);"		// Store argc
-		"sw %1, 4(sp);"		// Store argv[1] (path to exec)
-		"sw %2, 8(sp);"		// Store argv[2] (exec params0)
-		"sw zero, 12(sp);"	// Store argv[3] (nullptr)
-		".insn 0xFC000073;"	// Invalidate & Write Back D$ (CFLUSH.D.L1)
-		"fence.i;"			// Invalidate I$
-		"lw s0, %0;"		// Target branch address
-		"jalr s0;"			// Branch to the entry point
-		"addi sp, sp, 16;"	// We most likely won't return here
-		: "=m" (s_startAddress)
-		: "r" (s_execName), "r" (s_execParam0), "r" (s_execParamCount)
-		// Clobber list
-		: "s0"
-	);
-
-	// NOTE: Execution should never reach here since the ELF will invoke ECALL(0x5D) to quit
-	// and will be removed from the task list, thus removing this function from the
-	// execution pool.
-}
-
-void DeviceDefaultState(int _bootTime)
-{
-	// Stop any pending horizontal blanking interrupt
-	VPUDisableHBlankInterrupt();
-
-	// Stop output
-	APUSetSampleRate(ASR_Halt);
-
-	// Turn off LEDs
-	LEDSetState(0x0);
-
-	// TODO: Wait for any pending raster ops to complete
-
-	// Wait for any pending DMA to complete
-	DMAWait(CPUIncoherent);
-
-	// Set up console view
-	struct EVideoContext *kernelgfx = GetKernelGfxContext();
-	VPUSetWriteAddress(kernelgfx, CONSOLE_FRAMEBUFFER_START);
-	VPUSetScanoutAddress(kernelgfx, CONSOLE_FRAMEBUFFER_START);
-	VPUSetDefaultPalette(kernelgfx);
-	kernelgfx->m_vmode = EVM_640_Wide;
-	kernelgfx->m_cmode = ECM_8bit_Indexed;
-	VPUSetVMode(kernelgfx, EVS_Enable);
-
-	// Preserve contents of screen for non-boot time
-	if (_bootTime)
-	{
-		VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
-		VPUConsoleClear(kernelgfx);
-	}
-
-	// Clear screen to overlay loader color
-	if (_bootTime == 2)
-		VPUClear(kernelgfx, 0x09090909);
-}
-
-void ShowVersion(uint32_t waterMark)
-{
-	struct EVideoContext *kernelgfx = GetKernelGfxContext();
-	VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
-	kprintf("\n                                                   \n");
-
-	kprintf(" OS version          : " VERSIONSTRING "                       \n");
-	if (waterMark != 0)
-	{
-		VPUConsoleSetColors(kernelgfx, CONSOLERED, CONSOLEGRAY);
-		kprintf(" ROM overlay loaded from sdcard                    \n");
-		VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
-	}
-	else
-		kprintf(" Using ROM image from firmware                     \n");
-
-	// TODO: These two values need to come from a CSR,
-	// pointing at a memory location with device config data (machineconfig?)
-	// That memory location will in turn point at an onboard EEPROM we can
-	// read device versions/presence from.
-	kprintf(" Board               : issue 2E:2024 Engin Cilasun \n");
-	kprintf(" CPU & bus clock     : 150MHz                      \n");
-	kprintf(" ARCH                : rv32im_zicsr_zifencei_zfinx \n");
-	kprintf(" ESP32               : ESP32-C6-WROOM-1-N8         \n");
-
-	// Report USB host chip version if found
-	uint8_t m3421rev = MAX3421ReadByte(rREVISION);
-	if (m3421rev != 0xFF)
-		kprintf(" MAX3421(USB Host)   : 0x%X                        \n", m3421rev);
-
-	// Video circuit on 2B has no info we can read so this is hardcoded
-	kprintf(" SII164(video)       : 12bpp DVI                   \n");
-	kprintf(" CS4344(audio)       : 11/22/44KHz stereo          \n");
-	kprintf("                                                   \n\n");
-	VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
-}
-
-uint32_t ExecuteCmd(char *_cmd)
-{
-	const char *command = strtok(_cmd, " ");
-	if (!command)
-		return 1;
-
-	uint32_t loadELF = 0;
-	struct EVideoContext *kernelgfx = GetKernelGfxContext();
-
-	if (!strcmp(command, "dir"))
-	{
-		const char *path = strtok(NULL, " ");
-		if (!path)
-			ListFiles(GetWorkDir());
-		else
-			ListFiles(path);
-	}
-	else if (!strcmp(command, "mount"))
-	{
-		SetWorkDir("sd:/");
-		MountDrive();
-	}
-	else if (!strcmp(command, "unmount"))
-	{
-		UnmountDrive();
-	}
-	else if (!strcmp(command, "cls"))
-	{
-		VPUConsoleClear(kernelgfx);
-	}
-	else if (!strcmp(command, "reboot"))
-	{
-		// Clear to "we're rebooting" color
-		VPUClear(kernelgfx, 0x0C0C0C0C);
-		VPUSetVMode(kernelgfx, EVS_Disable);
-
-		// Remove watermark since we might have deleted / changed the rom image for next boot.
-		write_csr(0xFF0, 0x0);
-
-		// Reset to default ROM entry points and reset each CPU. Make sure main CPU ist last to go.
-		E32SetupCPU(1, (void*)0x0);
-		E32ResetCPU(1);
-		E32SetupCPU(0, (void*)0x0);
-		E32ResetCPU(0);
-	}
-	else if (!strcmp(command, "mem"))
-	{
-		kprintf("Available memory:");
-		uint32_t inkbytes = core_memavail()/1024;
-		uint32_t inmbytes = inkbytes/1024;
-		if (inmbytes!=0)
-			kprintf("%d Mbytes\n", inmbytes);
-		else
-			kprintf("%d Kbytes\n", inkbytes);
-	}
-	else if (!strcmp(command, "proc"))
-	{
-		const char *cpuindex = strtok(NULL, " ");
-		if (!cpuindex)
-		{
-			kprintf("usage: proc cpu\n");
-		}
-		else
-		{
-			uint32_t hartid = atoi(cpuindex);
-			// TODO: We need atomics here to accurately view memory contents written by another core
-			struct STaskContext *ctx = GetTaskContext(hartid);
-			if (ctx->numTasks == 0)
-			{
-				kprintf("No tasks on core #%d\n", hartid);
-			}
-			else
-			{
-				kprintf("%d tasks on core #%d\n", ctx->numTasks, hartid);
-				for (int i=0;i<ctx->numTasks;++i)
-				{
-					struct STask *task = &ctx->tasks[i];
-					kprintf("#%d:%s PC=0x%08X Name:'%s'\n", i, s_taskstates[task->state], task->regs[0], task->name);
-				}
-			}
-		}
-	}
-	else if (!strcmp(command, "del"))
-	{
-		const char *path = strtok(NULL, " ");
-		if (!path)
-			kprintf("usage: rm fname\n");
-		else
-		{
-			int res = remove(path);
-			if (res < 0)
-				kprintf("file '%s' not found\n", path);
-			else
-				kprintf("file '%s' removed\n", path);
-		}
-	}
-	else if (!strcmp(command, "kill"))
-	{
-		const char *processid = strtok(NULL, " ");
-		if (!processid)
-			kprintf("usage: kill processid cpu\n");
-		else
-		{
-			const char *hartindex = strtok(NULL, " ");
-			if (!hartindex)
-			{
-				kprintf("usage: kill processid cpu\n");
-			}
-			else
-			{
-				uint32_t hartid = atoi(hartindex);
-				// Warning! This can also kill PID(1) which is the CLI
-				struct STaskContext *ctx = GetTaskContext(hartid);
-				int taskid = atoi(processid);
-				TaskExitTaskWithID(ctx, taskid, 0);
-			}
-		}
-	}
-	else if (!strcmp(command, "ren"))
-	{
-		const char *path = strtok(NULL, " ");
-		const char *newpath = strtok(NULL, " ");
-		if (!path || !newpath)
-			kprintf("usage: ren oldname newname\n");
-		else
-			rename(path, newpath);
-	}
-	else if (!strcmp(command, "pwd"))
-	{
-		kprintf("%s\n", GetWorkDir());
-	}
-	else if (!strcmp(command, "cd"))
-	{
-		const char *path = strtok(NULL, " ");
-		// Change working directory
-		if (!path)
-			kprintf("usage: cd path\n");
-		else
-		{
-			if (krealpath(path, s_pathtmp))
-			{
-				// Append missing trailing slash
-				int L = (int)strlen(s_pathtmp);
-				if (L != 0 && s_pathtmp[L-1] != '/')
-					strcat(s_pathtmp, "/");
-
-				// Finally, change to this new path
-				FRESULT cwdres = f_chdir(s_pathtmp);
-				if (cwdres == FR_OK)
-					SetWorkDir(s_pathtmp);
-				else
-				{
-					kprintf("invalid path(0) '%s'\n", s_pathtmp);
-				}
-			}
-			else
-				kprintf("invalid path(1) '%s'\n", s_pathtmp);
-		}
-	}
-	else if (!strcmp(command, "ver"))
-	{
-		uint32_t waterMark = read_csr(0xFF0);
-		ShowVersion(waterMark);
-	}
-	else if(!strcmp(command, "runon"))
-	{
-		const char *runcpu = strtok(NULL, " ");
-		if (!runcpu)
-			kprintf("usage: runon cpu\n");
-		else
-			s_runOnCPU = atoi(runcpu);
-		kprintf("Will run next task on CPU#%d\n", s_runOnCPU);
-	}
-	else if (!strcmp(command, "help"))
-	{
-		VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
-
-		kprintf("\n                                                     \n");
-		kprintf(" COMMAND      | USAGE                                \n");
-		kprintf(" cls          | Clear terminal                       \n");
-		kprintf(" cd path      | Change working directory             \n");
-		kprintf(" del fname    | Delete file                          \n");
-		kprintf(" dir [path]   | Show list of files in cwd or path    \n");
-		kprintf(" mem          | Show available memory                \n");
-		kprintf(" proc cpu     | Show process info for given CPU(0/1) \n");
-		kprintf(" pwd          | Show current work directory          \n");
-		kprintf(" reboot       | Reboot the device                    \n");
-		kprintf(" ren old new  | Rename file from old to new name     \n");
-		kprintf(" ver          | Show version info                    \n");
-		kprintf("                                                     \n");
-
-		// Hidden commands for dev mode reveal when running from overlay
-		uint32_t waterMark = read_csr(0xFF0);
-		if (waterMark != 0)
-		{
-			kprintf(" DEV MODE SPECIFIC - USE AT YOUR OWN RISK            \n");
-			kprintf(" COMMAND      | USAGE                                \n");
-			kprintf(" kill pid cpu | Kill process with id pid on CPU      \n");
-			kprintf(" mount        | Mount drive sd:                      \n");
-			kprintf(" runon cpu    | Run ELF files on given cpu           \n");
-			kprintf(" unmount      | Unmount drive sd:                    \n");
-			kprintf("                                                     \n");
-		}
-		kprintf("\n");
-
-		VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
-	}
-	else // Anything else defers to being a command on storage
-		loadELF = 1;
-
-	if (loadELF)
-	{
-		// TODO: load user ELF files on HART#1.
-		struct STaskContext* tctx[2] = {GetTaskContext(0), GetTaskContext(1)};
-		int32_t taskcounts[2] = {tctx[0]->numTasks, tctx[1]->numTasks};
-		int32_t maxcounts[2] = {2, 1};
-
-		// Temporary measure to avoid loading another executable while the first one is running
-		// until we get a virtual memory device
-		if (taskcounts[s_runOnCPU] > maxcounts[s_runOnCPU])
-		{
-			kprintf("Virtual memory / code relocator not implemented.\n");
-		}
-		else
-		{
-			char filename[64];
-			strcpy(filename, GetWorkDir());	// Current path already contains a trailing slash
-			strcat(filename, command);		// User supplied string
-			strcat(filename, ".elf");		// We don't expect command to contain the .elf extension
-
-			// First parameter is excutable name
-			s_startAddress = LoadExecutable(filename, 0, false);
-			// TODO: Scan and push all argv and the correct argc onto stack
-
-			// If we could not find the executable where we are, look into the 'sys/bin' directory
-			if (s_startAddress == 0x0)
-			{
-				strcpy(filename, "sd:/sys/bin/");
-				strcat(filename, command);
-				strcat(filename, ".elf");
-				s_startAddress = LoadExecutable(filename, 0, false);
-			}
-
-			// If we succeeded in loading the executable, the trampoline task can branch into it.
-			// NOTE: Without code relocation or virtual memory, two executables will ovelap when loaded
-			// even though each gets a new task slot assigned.
-			// This will cause corruption of the runtime environment.
-			if (s_startAddress != 0x0)
-			{
-				// Make sure everything is flushed to RAM and the instruction cache is invalidated
-				CFLUSH_D_L1;
-				FENCE_I;
-
-				strncpy(s_execName, filename, 32);
-
-				const char *param = strtok(NULL, " ");
-				// Change working directory
-				if (!param)
-					s_execParamCount = 1;
-				else
-				{
-					strncpy(s_execParam0, param, 32);
-					s_execParamCount = 2;
-				}
-
-				s_userTaskID = TaskAdd(tctx[s_runOnCPU], command, _runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
-
-				return 0;
-			}
-			else
-				kprintf("Executable '%s' not found\n", command);
-		}
-	}
-
-	return 1;
-}
-
-void _cliTask()
-{
-	while(1)
-	{
-		struct STaskContext *taskctx = GetTaskContext(0);
-
-		// Echo all of the characters we can find back to the sender
-		uint32_t uartData = 0;
-		int execcmd = 0;
-
-		// Keyboard input
-		while (KeyRingBufferRead(&uartData, sizeof(uint32_t)))
-		{
-			uint8_t asciicode = (uint8_t)(uartData&0xFF);
-
-			switch (asciicode)
-			{
-				case 10:
-				case 13:	// Return / Enter
-				{
-					execcmd++;
-				}
-				break;
-
-				/*case 26:	// Ctrl+Z - PAUSE
-				{
-					s_cmdLen = 0;
-					++s_refreshConsoleOut;
-				}*/
-
-				/*case 24:	// Ctrl+X - ABORT
-				{
-					s_cmdLen = 0;
-					++s_refreshConsoleOut;
-				}*/
-
-				/*case 25:	// Ctrl+Y - REDO
-				{
-					s_cmdLen = 0;
-					++s_refreshConsoleOut;
-				}*/
-				
-				case 3:		// EXT (Ctrl+C) - BREAK
-				{
-					s_cmdLen = 0;
-					++s_refreshConsoleOut;
-					if (s_runOnCPU == 0)
-						TaskExitTaskWithID(taskctx, s_userTaskID, 0); // Sig:0, terminate process if no debugger is attached
-
-					// Stop all other tasks on helper CPUs
-					{
-						struct STaskContext* tctx1 = GetTaskContext(1);
-						for (uint32_t i=1; i<tctx1->numTasks; ++i)
-							TaskExitTaskWithID(tctx1, i, 0);
-					}
-				}
-				break;
-
-				case 8:		// Backspace
-				{
-					s_cmdLen--;
-					++s_refreshConsoleOut;
-					if (s_cmdLen<0)
-						s_cmdLen = 0;
-				}
-				break;
-
-				case 27:	// ESC
-				{
-					s_cmdLen = 0;
-					++s_refreshConsoleOut;
-					// TODO: Erase current line
-				}
-				break;
-
-				default:
-				{
-					// Do not enqueue characters into command string if we're running some app
-					if(taskctx->numTasks <= 2)
-					{
-						++s_refreshConsoleOut;
-						s_cmdString[s_cmdLen++] = (char)asciicode;
-						if (s_cmdLen > 126)
-							s_cmdLen = 126;
-					}
-				}
-				break;
-			}
-		}
-
-		// Report task termination
-		struct STask *task = &taskctx->tasks[s_userTaskID];
-		if (task->state == TS_TERMINATED)
-		{
-			task->state = TS_UNKNOWN;
-			++s_refreshConsoleOut;
-			DeviceDefaultState(0);
-		}
-
-		// Process or echo input only when we have no ELF running on hart#1
-		if(taskctx->numTasks <= 2)
-		{
-			if (execcmd)
-			{
-				kprintf("\n");
-				s_refreshConsoleOut += ExecuteCmd(s_cmdString);
-				// Rewind
-				s_cmdLen = 0;
-				s_cmdString[0] = 0;
-			}
-
-			if (s_refreshConsoleOut)
-			{
-				s_refreshConsoleOut = 0;
-				s_cmdString[s_cmdLen] = 0;
-				// Reset current line and emit the command string
-				int cx,cy;
-				kgetcursor(&cx, &cy);
-				ksetcursor(0, cy);
-				kprintf("%s>%s ", GetWorkDir(), s_cmdString);
-			}
-		}
-
-		TaskYield();
 	}
 }
 
@@ -696,7 +167,7 @@ void __attribute__((aligned(64), noinline)) UserMain()
 	InitializeTaskContext(self);
 
 	struct STaskContext *taskctx = GetTaskContext(self);
-	TaskAdd(taskctx, "cpu1idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+	TaskAdd(taskctx, "CPU1idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 
 	InstallISR(self, false, true);
 
@@ -808,14 +279,13 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	struct STaskContext *taskctx[2];
 	taskctx[0] = GetTaskContext(self);
 	taskctx[1] = GetTaskContext(1);
-	TaskAdd(taskctx[0], "cpu0idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
-	TaskAdd(taskctx[0], "cmd", _cliTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+	TaskAdd(taskctx[0], "CPU0idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+	TaskAdd(taskctx[0], "CLI", _CLITask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 
 	LEDSetState(0x7);															// xOOO
 	InstallISR(self, true, true);
 
 	LEDSetState(0xE);															// OOOx
-	ShowVersion(waterMark);
 
 	// Reset secondary CPUs
 	LEDSetState(0x0);															// xxxx
@@ -854,10 +324,12 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 		set_csr(mstatus, MSTATUS_MIE);
 
 		// ----------------------------------------------------------------
-		// Handle serial input to feed to keyboard buffer
+		// Handle serial input to feed to keyboard buffer if there
+		// are no user tasks running
 		// ----------------------------------------------------------------
 
-		HandleSerialInput();
+		if(taskctx[0]->numTasks <= 2)
+			HandleSerialInput();
 	}
 }
 

@@ -15,7 +15,6 @@ void HandleSerialInput()
 	uint8_t drain;
 	while (SerialInRingBufferRead(&drain, 1))
 	{
-		uint32_t fakeKey = drain;
-		KeyRingBufferWrite(&fakeKey, sizeof(uint32_t));
+		KeyRingBufferWrite(&drain, 1);
 	}
 }

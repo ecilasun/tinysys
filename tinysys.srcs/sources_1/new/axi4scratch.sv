@@ -14,7 +14,7 @@ delayreset delayresetinst(
 	.delayedresetn(delayedresetn) );
 
 // --------------------------------------------------
-// Memory - 64Kbytes
+// Memory - 16Kbytes
 // --------------------------------------------------
 
 scratchram scratchraminst(

@@ -13,7 +13,9 @@ void CCSRMem::Reset()
 	m_csrmem[CSR_TIMECMPLO] = 0xFFFFFFFF;
 	m_csrmem[CSR_TIMECMPHI] = 0xFFFFFFFF;
 	m_csrmem[CSR_MISA] = 0x00801100;
-	m_csrmem[CSR_MARCHID] = 0x80000000;
+	// NOTE: The highest bit is clear when we're running under emulation
+	// This is done to help ROM and user software identify the runtime environment
+	m_csrmem[CSR_MARCHID] = 0x00000000; // Hardware sets this to 0x80000000
 
 	m_csrmem[CSR_CPURESET] = 0x00000000;
 	m_csrmem[CSR_WATERMARK] = 0x00000000; // NOTE: Always preserves contents past soft reset

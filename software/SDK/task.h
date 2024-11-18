@@ -26,17 +26,20 @@ struct STask {
 	uint32_t runLength;		// Time slice dedicated to this task
 	enum ETaskState state;	// State of this task
 	uint32_t exitCode;		// Task termination exit code
-	uint32_t regs[32];		// Integer registers - NOTE: register zero here is actually the PC
+	uint32_t regs[32];		// Integer registers - NOTE: register zero here is actually the PC, 128 bytes
 
 	// Debug support - this will probably move somewhere else
 	char name[16];			// Name of this task
 };
 
+// 672 bytes total for one core (1344 for two cores)
 struct STaskContext {
+	// 160 x 4 bytes (640)
 	struct STask tasks[TASK_MAX];	// List of all the tasks
+	// 32 bytes total below
 	int32_t currentTask;			// Current task index
 	int32_t numTasks;				// Number of tasks
-	int32_t debugFlags;				// Data for debugger
+	int32_t unused;					// TBD
 	int32_t kernelError;			// Current kernel error
 	int32_t kernelErrorData[3];		// Data relevant to the crash
 	int32_t hartID;					// Id of the HART where this task context runs

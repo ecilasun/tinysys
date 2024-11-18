@@ -84,6 +84,15 @@ To make your own project, the recommended way is to copy the 'starthere' sample 
 
 Please refer to the [README.md](./samples/starthere/README.md) file in `starthere` folder for more assistance.
 
+# Uploading your files to tinysys
+
+There is an executable on the default disk image of tinysys, called 'recv.elf', under the sys\bin directory. The riscvtool binary can start this application remotely and start sending a binary file to it.
+
+The syntax for sending a file is:
+..\..\build\release\riscvtool.exe myfile.elf -sendfile
+
+The recv.elf executable will show an upload progress, and make sure the file arrives safely before writing it to the sdcard, as well as report any errors that might occur during the transfer.
+
 # Other notes
 
 NOTE: All software has been tested with and geared to use a gcc-riscv 32bit environment under Windows and Linux, but as always one might fall behind the other at times.

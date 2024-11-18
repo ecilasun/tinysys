@@ -18,7 +18,7 @@
 #if defined(CAT_LINUX) || defined(CAT_MACOS)
 char devicename[512] = "/dev/ttyUSB0";
 #else // CAT_WINDOWS
-char devicename[512] = "\\\\.\\COM9";
+char devicename[512] = "\\\\.\\COM4";
 #endif
 
 unsigned int getfilelength(const fpos_t &endpos)
@@ -96,8 +96,8 @@ class CSerialPort{
 			{
 				serialParams.BaudRate = CBR_115200;		// 115200 baud
 				serialParams.fBinary = true;
-				serialParams.fDtrControl = DTR_CONTROL_ENABLE;
-				serialParams.fRtsControl = RTS_CONTROL_ENABLE;
+				serialParams.fDtrControl = DTR_CONTROL_DISABLE;
+				serialParams.fRtsControl = RTS_CONTROL_DISABLE;
 				serialParams.fParity = 0;
 				serialParams.ByteSize = 8;				// 8 bit bytes
 				serialParams.StopBits = ONESTOPBIT;		// 1 stop bit
@@ -107,8 +107,7 @@ class CSerialPort{
 				if (SetCommState(hComm, &serialParams) != 0)
 				{
 					printf("%s open\n", devicename);
-					return true;
-					/*timeouts.ReadIntervalTimeout = 1;
+					timeouts.ReadIntervalTimeout = MAXDWORD;
 					timeouts.ReadTotalTimeoutConstant = 0;
 					timeouts.ReadTotalTimeoutMultiplier = 0;
 					timeouts.WriteTotalTimeoutConstant = 0;
@@ -116,7 +115,7 @@ class CSerialPort{
 					if (SetCommTimeouts(hComm, &timeouts) != 0)
 						return true;
 					else
-						printf("ERROR: can't set communication timeouts\n");*/
+						printf("ERROR: can't set communication timeouts\n");
 				}
 				else
 					printf("ERROR: can't set communication parameters\n");
@@ -139,12 +138,12 @@ class CSerialPort{
 		return n;
 #else
 		DWORD bytesread = 0;
-		ReadFile(hComm, _target, _rcvlength, &bytesread, nullptr);
-		return bytesread;
+		BOOL success = ReadFile(hComm, _target, _rcvlength, &bytesread, nullptr);
+		return success ? bytesread : 0;
 #endif
 	}
 
-	uint32_t Send(uint8_t *_sendbytes, unsigned int _sendlength)
+	uint32_t Send(void *_sendbytes, unsigned int _sendlength)
 	{
 #if defined(CAT_LINUX) || defined(CAT_MACOS)
 		int n = write(serial_port, _sendbytes, _sendlength);
@@ -372,17 +371,26 @@ void dumpelf(char *_filename, char *_outfilename, unsigned int groupsize, bool i
 	delete [] bytestosend;
 }
 
-void WACK(CSerialPort &serial, const uint8_t waitfor)
+bool WACK(CSerialPort &serial, const uint8_t waitfor, uint8_t& received)
 {
 	int ack = 0;
 	uint8_t dummy;
+	uint8_t bytes = 0;
+	uint32_t timeout = 0;
 	do
 	{
 		if (serial.Receive(&dummy, 1))
+		{
+			received = dummy;
+			++bytes;
 			if (dummy == waitfor)
-				ack = 1;
+				ack = 1; // Valid ACK
+		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));
-	} while (!ack);
+		++timeout;
+	} while (!bytes);
+
+	return (timeout>16384) ? false : (ack ? true : false);
 }
 
 uint64_t WCHK(CSerialPort &serial)
@@ -404,6 +412,22 @@ uint64_t AccumulateHash(const uint64_t inhash, const uint8_t byte)
 	return 16777619U * inhash ^ (uint64_t)byte;
 }
 
+void ConsumeInitialTraffic(CSerialPort& serial)
+{
+	// When we first open the port, ESP32 will respond with a "ESP-ROM:esp32xxxxxx" message
+	// We need to make sure we have no incoming bytes left of that one first
+	uint8_t startup = 0;
+	while (serial.Receive(&startup, 1))
+	{
+		// This usually reads something similar to "ESP-ROM:esp32c6-20220919"
+		// It is likely that some other unfinished traffic will show up here
+		printf("%c", startup);
+	}
+}
+
+// This is meant to be used with the receiver app on the tinysys side
+// It will send the file in 512 byte chunks after header information
+// The receiver app will respond with an ack(~) or error(!) to each request
 void sendfile(char *_filename)
 {
 	char tmpstring[129];
@@ -435,48 +459,78 @@ void sendfile(char *_filename)
 		return;
 	}
 
-	// Send file transfer start
-	snprintf(tmpstring, 128, "~");
-	serial.Send((uint8_t*)tmpstring, 1);
-	// Wait for ack
-	WACK(serial, '~');
+	ConsumeInitialTraffic(serial);
 
-	// Send name+zero terminator
-	snprintf(tmpstring, 128, "!%s", _filename);
-	serial.Send((uint8_t*)tmpstring, strlen(tmpstring)+1);
-	// Wait for ack
-	WACK(serial, '!');
+	uint8_t received;
 
-	// Send file length+zero terminator
-	snprintf(tmpstring, 128, "!%d", filebytesize);
-	serial.Send((uint8_t*)tmpstring, strlen(tmpstring)+1);
-	// Wait for ack
-	WACK(serial, '!');
+	// Start the receiver app on the other end
+	snprintf(tmpstring, 128, "recv\n");
+	serial.Send((uint8_t*)tmpstring, 4+1); // Include return character
+	if (!WACK(serial, '~', received))
+	{
+		printf("Transfer initiation error: '%c'\n", received);
+		serial.Close();
+		delete [] filedata;
+		return;
+	}
 
-	// Send the file bytes
+	// Send file length
+	uint32_t fileLen = filebytesize;
+	serial.Send(&fileLen, 4);
+	if (!WACK(serial, '~', received))
+	{
+		printf("File length error: '%c'\n", received);
+		serial.Close();
+		delete [] filedata;
+		return;
+	}
+
+	// Send name length
+	uint32_t nameLen = strlen(_filename);
+	serial.Send(&nameLen, 4);
+	if (!WACK(serial, '~', received))
+	{
+		printf("File name length error: '%c'\n", received);
+		serial.Close();
+		delete [] filedata;
+		return;
+	}
+
+	// Send name
+	serial.Send(_filename, nameLen);
+	if (!WACK(serial, '~', received))
+	{
+		printf("File name error: '%c'\n", received);
+		serial.Close();
+		delete [] filedata;
+		return;
+	}
+
+	// Send the file bytes in 512 byte chunks
 	uint32_t packetSize = 512;
 	uint32_t numPackets = filebytesize / packetSize;
 	uint32_t leftoverBytes = filebytesize % packetSize;
 	uint32_t i = 0;
 	uint32_t packetOffset = 0;
-	printf("Packet count: %d\n", numPackets);
 	for (i=0; i<numPackets; ++i)
 	{
 		// Generate checksum
-		uint64_t checksum = 2166136261U;
-		for (int j=0; j<packetSize; ++j)
-			checksum = AccumulateHash(checksum, filedata[packetOffset+j]);
+		//uint64_t checksum = 2166136261U;
+		//for (int j=0; j<packetSize; ++j)
+		//	checksum = AccumulateHash(checksum, filedata[packetOffset+j]);
 
-		// Wait for ready
-		snprintf(tmpstring, 128, "#");
-		serial.Send((uint8_t*)tmpstring, 1);
-		WACK(serial, '#');
+		if (!WACK(serial, '~', received)) // Wait for a 'go' signal
+		{
+			printf("Packet error at %d/%d (512): '%c'\n", i, numPackets, received);
+			serial.Close();
+			delete [] filedata;
+			return;
+		}
 
-		// Send data block
+		printf("Sending packet %d/%d\n", i, numPackets);
 		serial.Send(filedata + packetOffset, packetSize);
 
-		// Wait for block checksum
-		uint64_t extChecksum = WCHK(serial);
+		/*uint64_t extChecksum = WCHK(serial);
 		if (extChecksum != checksum)
 		{
 			printf("Checksum error at packet %d/%d\n", i, numPackets);
@@ -486,27 +540,29 @@ void sendfile(char *_filename)
 			serial.Close();
 			delete [] filedata;
 			return;
-		}
+		}*/
+
 		packetOffset += packetSize;
+		// TODO: Wait for ACK from receiver app
 	}
 
 	if (leftoverBytes)
 	{
 		// Generate checksum
-		uint64_t checksum = 2166136261U;
-		for (int j=0; j<leftoverBytes; ++j)
-			checksum = AccumulateHash(checksum, filedata[packetOffset+j]);
+		//uint64_t checksum = 2166136261U;
+		//for (int j=0; j<packetSize; ++j)
+		//	checksum = AccumulateHash(checksum, filedata[packetOffset+j]);
 
-		// Wait for ready
-		snprintf(tmpstring, 128, "#");
-		serial.Send((uint8_t*)tmpstring, 1);
-		WACK(serial, '#');
-
-		// Send data block
 		serial.Send(filedata + packetOffset, leftoverBytes);
+		if (!WACK(serial, '~', received))
+		{
+			printf("Packet error (%d): '%c'\n", leftoverBytes, received);
+			serial.Close();
+			delete [] filedata;
+			return;
+		}
 
-		// Wait for block checksum
-		uint64_t extChecksum = WCHK(serial);
+		/*uint64_t extChecksum = WCHK(serial);
 		if (extChecksum != checksum)
 		{
 			printf("Checksum error at packet %d/%d\n", i, numPackets);
@@ -516,12 +572,12 @@ void sendfile(char *_filename)
 			serial.Close();
 			delete [] filedata;
 			return;
-		}
-		packetOffset += leftoverBytes;
-	}
+		}*/
 
-	// Wait for done
-	WACK(serial, '!');
+		packetOffset += leftoverBytes;
+
+		// TODO: Wait for ACK from receiver app
+	}
 
 	serial.Close();
 	printf("%d bytes sent\n", packetOffset);
@@ -529,7 +585,7 @@ void sendfile(char *_filename)
 	delete [] filedata;
 }
 
-void stop()
+void resetCPUs()
 {
 	CSerialPort serial;
 	if (serial.Open() == false)
@@ -538,38 +594,21 @@ void stop()
 		return;
 	}
 
-	// Send stop request
+	ConsumeInitialTraffic(serial);
+
+	// Send reset request
 	char tmpstring[4];
-	tmpstring[0] = 3;
+	tmpstring[0] = '~';
 	serial.Send((uint8_t*)tmpstring, 1);
 
 	serial.Close();
-	printf("User process stopped\n");
-}
-
-void run(const char *processname)
-{
-	CSerialPort serial;
-	if (serial.Open() == false)
-	{
-		serial.Close();
-		return;
-	}
-
-	// Send stop request
-	char tmpstring[129];
-	snprintf(tmpstring, 128, "%s\n", processname);
-	serial.Send((uint8_t*)tmpstring, strlen(tmpstring));
-
-	serial.Close();
-	printf("User process %s started\n", processname);
+	printf("CPUs reset\n");
 }
 
 void showusage()
 {
 	printf("Usage:\n");
-	printf("riscvtool.exe -stop [usbdevicename]\n");
-	printf("riscvtool.exe executable -run [usbdevicename]\n");
+	printf("riscvtool.exe -reset [usbdevicename]\n");
 	printf("riscvtool.exe binaryfilename -sendfile [usbdevicename]\n");
 	printf("riscvtool.exe binaryfilename -makerom groupbytesize outputfilename\n");
 	printf("riscvtool.exe binaryfilename -makemem groupbytesize outputfilename\n");
@@ -586,19 +625,11 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	if (argc>=2 && strstr(argv[1], "-stop"))
+	if (argc>=2 && strstr(argv[1], "-reset"))
 	{
 		if (argc > 2)
 			strcpy(devicename, argv[2]);
-		stop();
-		return 0;
-	}
-
-	if (argc>=3 && strstr(argv[2], "-run"))
-	{
-		if (argc > 3)
-			strcpy(devicename, argv[3]);
-		run(argv[1]);
+		resetCPUs();
 		return 0;
 	}
 
@@ -631,7 +662,7 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	printf("RISCVTool 1.0\n");
+	printf("RISCVTool 1.0A\n");
 	printf("Unknown arguments.\n");
 	showusage();
 

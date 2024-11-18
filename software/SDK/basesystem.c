@@ -222,7 +222,7 @@ void E32EndCriticalSection()
  * 
  * @return The scratchpad memory address.
  */
-uint32_t* E32GetScratchpad()
+uint32_t E32GetScratchpad()
 {
-	return (uint32_t*)DEVICE_SPAD;
+	return DEVICE_SPAD;
 }

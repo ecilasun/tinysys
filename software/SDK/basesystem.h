@@ -21,9 +21,9 @@
 
 // Physical address map for no-MMU raw mode at boot time
 #define APPMEM_START					0x00000000 // Top of RAM
-// Keyboard ring buffer (1Kbytes)
-#define KEY_RINGBUFFER_BASE				0x00000200
-#define KEY_RINGBUFFER_STATE			0x00000600
+// Unused buffer and state (1Kbytes)
+#define UNUSED_BUFFER_BASE3				0x00000200
+#define UNUSED_STATE3					0x00000600
 // Keyboard input map (512 bytes)
 #define KEYBOARD_KEYSTATE_BASE			0x00000800
 #define KEYBOARD_KEYSTATE_END			0x00000A00
@@ -46,11 +46,11 @@
 // Temp memory
 #define KERNEL_TEMP_MEMORY				0x0204D580 // Temporary kernel memory (10880 bytes)
 // Serial buffers (first words are counters)
-#define SERIN_RINGBUFFER_BASE			0x02050000 // Serial data input ring buffer (16384 bytes)
+#define UNUSED_BUFFER_BASE4				0x02050000 // Reserved for future (16384 bytes)
 #define UNUSED_BUFFER_BASE0				0x02054000 // Reserved for future (16384 bytes)
 #define UNUSED_BUFFER_BASE1				0x02058000 // Reserved for future (16384 bytes)
 #define UNUSED_BUFFER_BASE2				0x0205C000 // Reserved for future (16384 bytes)
-#define SERIN_RINGBUFFER_STATE			0x02060000 // Serial data input ring buffer state (16 bytes)
+#define UNUSED_STATE4					0x02060000 // Reserved for future (16 bytes)
 #define UNUSED_STATE0					0x02060010 // Reserved for future (16 bytes)
 #define UNUSED_STATE1					0x02060020 // Reserved for future (16 bytes)
 #define UNUSED_STATE2					0x02060030 // Reserved for future (16 bytes)
@@ -78,7 +78,11 @@
 // Device address base
 #define DEVICE_BASE 0x80000000
 
-// Each device has 64 Kbytes of uncached memory region mapped to it (not all is guaranteed to be accessible)
+// Each device has 64 Kbytes of uncached memory space mapped to it
+// - Mailbox device only implements 16 Kbytes of memory (lower half of address space)
+// - CSR devices only implement 4 Kbytes of memory and is not byte addressable
+// - UART and most devices with a FIFO only implement about 16 bytes of physical memory for data and status registers
+// - Scratchpad device implements a 16 Kbytes region of memory (lower half of address space)
 #define DEVICE_SPAD (DEVICE_BASE+0x00000)
 #define DEVICE_LEDS (DEVICE_BASE+0x10000)
 #define DEVICE_VPUC (DEVICE_BASE+0x20000)
@@ -117,4 +121,4 @@ void E32ResetCPU(uint32_t hartid);
 void E32BeginCriticalSection();
 void E32EndCriticalSection();
 
-uint32_t* E32GetScratchpad();
+uint32_t E32GetScratchpad();

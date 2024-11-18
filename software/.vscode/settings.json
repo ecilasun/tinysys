@@ -71,6 +71,9 @@
 		"stdlib.h": "c",
 		"inttypes.h": "c",
 		"basesystem.h": "c",
-		"xtree": "c"
+		"xtree": "c",
+		"task.h": "c",
+		"stdbool.h": "c",
+		"string.h": "c",
 	}
 }

@@ -14,7 +14,7 @@ delayreset delayresetinst(
 	.delayedresetn(delayedresetn) );
 
 // --------------------------------------------------
-// Memory - 4Kbytes
+// Memory - 16Kbytes
 // --------------------------------------------------
 
 maildeviceram mailboxinst(
