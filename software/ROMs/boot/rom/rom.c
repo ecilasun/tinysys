@@ -328,7 +328,7 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 		// are no user tasks running
 		// ----------------------------------------------------------------
 
-		if(taskctx[0]->numTasks <= 2)
+		if(!taskctx[0]->interceptUART)
 			HandleSerialInput();
 	}
 }

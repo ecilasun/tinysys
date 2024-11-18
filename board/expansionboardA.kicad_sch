@@ -13280,6 +13280,19 @@
 		(uuid 00a30b51-ebc4-40ca-9930-69647ac44983)
 	)
 	(arc
+		(start 269.24 213.36)
+		(mid 257.4063 211.1675)
+		(end 246.8 205.48)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill
+			(type none)
+		)
+		(uuid 326922cb-a216-4ed2-9da3-354b97816d7e)
+	)
+	(arc
 		(start 246.38 200.66)
 		(mid 252.362 197.5468)
 		(end 259.08 198.12)
@@ -13545,6 +13558,16 @@
 			(justify left bottom)
 		)
 		(uuid "ccdbf273-2946-4dd2-91bf-f7d0cc3b1fa9")
+	)
+	(text "This pin is supposed to\nstop ROM logging when low"
+		(exclude_from_sim no)
+		(at 280.924 214.63 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "d2964191-713b-47d7-a215-bf702a13488f")
 	)
 	(text "3v3 Power Regulator"
 		(exclude_from_sim no)

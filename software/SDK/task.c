@@ -24,7 +24,7 @@ void TaskInitSystem(struct STaskContext *_ctx, uint32_t _hartid)
 {
 	_ctx->currentTask = 0;
 	_ctx->numTasks = 0;
-	_ctx->unused = 0;
+	_ctx->interceptUART = 0;
 	_ctx->kernelError = 0;
 	_ctx->hartID = _hartid;
 

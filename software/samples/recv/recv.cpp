@@ -7,6 +7,7 @@
 #include "basesystem.h"
 #include "uart.h"
 #include "vpu.h"
+#include "task.h"
 #include "encoding.h"
 #include "serialinringbuffer.h"
 
@@ -38,6 +39,9 @@ int main()
 	VPUSetScanoutAddress(&vx, (uint32_t)framebuffer);
 	VPUClear(&vx, 0x03030303);
 
+	struct STaskContext* taskctx = GetTaskContext(0);
+	taskctx->interceptUART = 1;
+
 	// At startup, acknowledge the sender so that it can start sending the file header
 	UARTSendBlock((uint8_t*)ACK, 1);
 
@@ -65,10 +69,12 @@ int main()
 			++i;
 		}
 	}
+
 	if (fileNameLen > 63)
 	{
 		// Respond to the sender with an error code as the file name is too long
 		UARTSendBlock((uint8_t*)NACK, 1);
+		taskctx->interceptUART = 0;
 		return 0;
 	}
 	else
@@ -96,6 +102,7 @@ int main()
 	{
 		// Respond to the sender with an error code as we couldn't open the file
 		UARTSendBlock((uint8_t*)NACK, 1);
+		taskctx->interceptUART = 0;
 		return 0;
 	}
 
@@ -146,5 +153,6 @@ int main()
 
 	fclose(fp);
 
+	taskctx->interceptUART = 0;
     return 0;
 }

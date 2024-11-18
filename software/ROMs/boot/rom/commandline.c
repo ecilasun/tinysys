@@ -451,6 +451,7 @@ void _CLITask()
 		{
 			task->state = TS_UNKNOWN;
 			++s_cliCtx.refreshConsoleOut;
+			taskctx->interceptUART = 0;
 			DeviceDefaultState(0);
 		}
 
