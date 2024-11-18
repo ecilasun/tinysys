@@ -324,8 +324,8 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 		set_csr(mstatus, MSTATUS_MIE);
 
 		// ----------------------------------------------------------------
-		// Handle serial input to feed to keyboard buffer if there
-		// are no user tasks running
+		// Handle serial input to feed to keyboard buffer if there are no
+		// user tasks that intercept UART input (only OS apps should)
 		// ----------------------------------------------------------------
 
 		if(!taskctx[0]->interceptUART)
