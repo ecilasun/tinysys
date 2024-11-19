@@ -293,7 +293,7 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	//kprintf("CPU1 entry:%x mtvec:%x rst:%x\n", (uint32_t)UserMain, E32ReadMemMappedCSR(1, CSR_MSCRATCH), E32ReadMemMappedCSR(1, CSR_CPURESET));
 
 	// Main CLI loop
-	struct EVideoContext *kernelgfx = GetKernelGfxContext();
+	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
 	while (1)
 	{
 		// ----------------------------------------------------------------

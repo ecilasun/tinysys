@@ -26,9 +26,6 @@ void UnmountDrive();
 void ListFiles(const char *path);
 uint32_t LoadExecutable(const char *filename, int _relocOffset, const bool reportError);
 
-// Shared graphics context
-struct EVideoContext *GetKernelGfxContext();
-
 // Kernel print
 void ksetcolor(int8_t fg, int8_t bg);
 int kprintf(const char *fmt, ...);

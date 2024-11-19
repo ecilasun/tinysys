@@ -110,3 +110,6 @@ void VPUSetHBlankHandler(uintptr_t _handler);
 void VPUSetHBlankScanline(uintptr_t _scanline);
 void VPUEnableHBlankInterrupt();
 void VPUDisableHBlankInterrupt();
+
+// OS graphics context
+struct EVideoContext *VPUGetKernelGfxContext();

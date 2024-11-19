@@ -17,7 +17,7 @@ void DeviceDefaultState(int _bootTime)
 	DMAWait(CPUIncoherent);
 
 	// Set up console view
-	struct EVideoContext *kernelgfx = GetKernelGfxContext();
+	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
 	VPUSetWriteAddress(kernelgfx, CONSOLE_FRAMEBUFFER_START);
 	VPUSetScanoutAddress(kernelgfx, CONSOLE_FRAMEBUFFER_START);
 	VPUSetDefaultPalette(kernelgfx);

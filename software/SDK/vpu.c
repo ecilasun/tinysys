@@ -196,6 +196,8 @@ const uint16_t vgapalette[] __attribute__((aligned(16))) = {
 0x0224, 0x0234, 0x0234, 0x0234, 0x0244, 0x0243, 0x0243, 0x0243,
 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000 };
 
+static struct EVideoContext *s_kernelgfxcontext = (struct EVideoContext *)KERNEL_GFX_CONTEXT;
+
 // NOTE: Writes to this address will end up in the VPU command FIFO
 // NOTE: Reads from this address will return the vblank counter
 volatile uint32_t *VPUIO = (volatile uint32_t* ) DEVICE_VPUC;
@@ -733,4 +735,17 @@ void VPUDisableHBlankInterrupt()
 	*VPUIO = 0x00000000; // control register A
 	*VPUIO = VPUCMD_CTLREGCLR;
 	*VPUIO = 0x00000001; // disable hblank interrupt
+}
+
+/** @brief Get kernel graphics context
+ * 
+ * This function returns the kernel graphics context that is used by the kernel to draw
+ * the CLI and other graphics.
+ * 
+ * @return Kernel graphics context
+ * 
+ */
+struct EVideoContext *VPUGetKernelGfxContext()
+{
+	return s_kernelgfxcontext;
 }

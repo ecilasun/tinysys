@@ -70,7 +70,7 @@ void ShowVersion()
 	uint32_t waterMark = read_csr(0xFF0);
 	uint32_t isEmulator = read_csr(0xF12) & 0x80000000 ? 0 : 1; // CSR_MARCHID is 0x80000000 for read hardware, 0x00000000 for emulator
 
-	struct EVideoContext *kernelgfx = GetKernelGfxContext();
+	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
 	VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
 	kprintf("\n                                                   \n");
 
@@ -105,7 +105,7 @@ uint32_t ExecuteCmd(char *_cmd)
 		return 1;
 
 	uint32_t loadELF = 0;
-	struct EVideoContext *kernelgfx = GetKernelGfxContext();
+	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
 
 	if (!strcmp(command, "dir"))
 	{

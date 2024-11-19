@@ -5,6 +5,7 @@
  */
 
 #include "basesystem.h"
+#include "core.h"
 #include "uart.h"
 #include "vpu.h"
 #include "task.h"
@@ -12,6 +13,33 @@
 #include "serialinringbuffer.h"
 
 #include <stdio.h>
+
+void DrawProgress(const uint32_t bytesWritten, const uint32_t filebytesize, uint8_t* framebuffer)
+{
+	uint32_t progress = (256 * bytesWritten / filebytesize);
+
+	for (uint32_t i=192; i<192+progress; ++i)
+	{
+		framebuffer[i + 236*640] = 0x0C;
+		framebuffer[i + 237*640] = 0x0C;
+		framebuffer[i + 238*640] = 0x0C;
+		framebuffer[i + 239*640] = 0x0C;
+		framebuffer[i + 240*640] = 0x0C;
+		framebuffer[i + 241*640] = 0x0C;
+	}
+	for (uint32_t i=192+progress; i<448; ++i)
+	{
+		framebuffer[i + 236*640] = 0x00;
+		framebuffer[i + 237*640] = 0x00;
+		framebuffer[i + 238*640] = 0x00;
+		framebuffer[i + 239*640] = 0x00;
+		framebuffer[i + 240*640] = 0x00;
+		framebuffer[i + 241*640] = 0x00;
+	}
+
+	// Kernel isn't double buffered, flush cache so we can see the progress
+	CFLUSH_D_L1;
+}
 
 int main()
 {
@@ -30,14 +58,10 @@ int main()
 	if (isEmulator)
 		return 0;
 
-	uint8_t* framebuffer = VPUAllocateBuffer(320*240);
-	struct EVideoContext vx;
-	vx.m_vmode = EVM_320_Wide;
-	vx.m_cmode = ECM_8bit_Indexed;
-	VPUSetVMode(&vx, EVS_Enable);
-	VPUSetWriteAddress(&vx, (uint32_t)framebuffer);
-	VPUSetScanoutAddress(&vx, (uint32_t)framebuffer);
-	VPUClear(&vx, 0x03030303);
+	struct EVideoContext* osVideoContext = VPUGetKernelGfxContext();
+	uint8_t* osFramebuffer = (uint8_t*)osVideoContext->m_cpuWriteAddressCacheAligned;
+
+	DrawProgress(0, 100, osFramebuffer);
 
 	struct STaskContext* taskctx = TaskGetContext(0);
 	taskctx->interceptUART = 1;
@@ -106,9 +130,6 @@ int main()
 		return 0;
 	}
 
-	// Print the file name to the screen
-	VPUPrintString(&vx, 0x00, 0x0F, 0, 0, fileName, fileNameLen);
-
 	uint32_t bytesWritten = 0;
 	for (uint32_t i=0; i<numPackets; ++i)
 	{
@@ -124,8 +145,7 @@ int main()
 				uint32_t written = (uint32_t)fwrite(&byte, 1, 1, fp);
 				bytesWritten += written;
 				++j;
-				// Progress bar
-				framebuffer[bytesWritten%76800] = 0x0C;
+				DrawProgress(bytesWritten, filebytesize, osFramebuffer);
 			}
 		}
 	}
@@ -145,8 +165,7 @@ int main()
 				uint32_t written = (uint32_t)fwrite(&byte, 1, 1, fp);
 				bytesWritten += written;
 				++j;
-				// Progress bar
-				framebuffer[bytesWritten%76800] = 0x0C;
+				DrawProgress(bytesWritten, filebytesize, osFramebuffer);
 			}
 		}
 	}

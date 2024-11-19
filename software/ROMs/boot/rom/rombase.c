@@ -10,7 +10,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-static struct EVideoContext *s_kernelgfxcontext = (struct EVideoContext *)KERNEL_GFX_CONTEXT;
 static FATFS Fs;
 static char s_workdir[PATH_MAX] = "sd:/";
 
@@ -27,7 +26,7 @@ int kprintfn(const int count, const char *fmt, ...)
 	va_end(va);
 	l = count < l ? count : l;
 
-	struct EVideoContext *kernelgfx = GetKernelGfxContext();
+	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
 	VPUConsolePrint(kernelgfx, k_tmpstr, count);
 
 	return l;
@@ -46,7 +45,7 @@ int kprintf(const char *fmt, ...)
 	va_end(va);
 	l = 1023 < l ? 1023 : l;
 
-	struct EVideoContext *kernelgfx = GetKernelGfxContext();
+	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
 	VPUConsolePrint(kernelgfx, k_tmpstr, l);
 
 	return l;
@@ -54,20 +53,20 @@ int kprintf(const char *fmt, ...)
 
 void ksetcolor(int8_t fg, int8_t bg)
 {
-	struct EVideoContext *kernelgfx = GetKernelGfxContext();
+	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
 	VPUConsoleSetColors(kernelgfx, fg, bg);
 }
 
 void kgetcursor(int *_x, int *_y)
 {
-	struct EVideoContext *kernelgfx = GetKernelGfxContext();
+	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
 	*_x = kernelgfx->m_cursorX;
 	*_y = kernelgfx->m_cursorY;
 }
 
 void ksetcursor(const int _x, const int _y)
 {
-	struct EVideoContext *kernelgfx = GetKernelGfxContext();
+	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
 	VPUConsoleSetCursor(kernelgfx, _x, _y);
 }
 
@@ -1142,9 +1141,4 @@ void InstallISR(uint32_t _hartid, bool _allowMachineHwInt, bool _allowMachineSwI
 
 	// Allow all machine interrupts to trigger (thus also enabling task system)
 	write_csr(mstatus, MSTATUS_MIE);
-}
-
-struct EVideoContext *GetKernelGfxContext()
-{
-	return s_kernelgfxcontext;
 }
