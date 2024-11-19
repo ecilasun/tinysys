@@ -16,7 +16,7 @@ static struct SCommandLineContext s_cliCtx;
 static const char *s_taskstates[]={ "NONE", "HALT", "EXEC", "TERM", "DEAD"};
 
 // Device version
-#define VERSIONSTRING "v1.0A"
+#define VERSIONSTRING "v1.0B"
 
 // File transfer timeout
 #define FILE_TRANSFER_TIMEOUT 1000
