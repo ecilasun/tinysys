@@ -13,32 +13,104 @@
 #include "serialinringbuffer.h"
 
 #include <stdio.h>
+#include <string.h>
+
+static const uint8_t base64lookup[256] = {
+    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, // 0-15
+    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, // 16-31
+    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 62, 64, 64, 64, 63, // 32-47
+    52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 64, 64, 64, 64, 64, 64, // 48-63
+    64, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, // 64-79
+    15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 64, 64, 64, 64, 64, // 80-95
+    64, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, // 96-111
+    41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 64, 64, 64, 64, 64, // 112-127
+    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, // 128-143
+    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, // 144-159
+    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, // 160-175
+    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, // 176-191
+    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, // 192-207
+    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, // 208-223
+    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, // 224-239
+    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64  // 240-255
+};
 
 void DrawProgress(const uint32_t bytesWritten, const uint32_t filebytesize, uint8_t* framebuffer)
 {
 	uint32_t progress = (256 * bytesWritten / filebytesize);
 
+	framebuffer[191 + 236*640] = 0x0F;
+	framebuffer[191 + 237*640] = 0x0F;
+	framebuffer[191 + 238*640] = 0x0F;
+	framebuffer[191 + 239*640] = 0x0F;
+	framebuffer[191 + 240*640] = 0x0F;
+	framebuffer[191 + 241*640] = 0x0F;
+	framebuffer[191 + 242*640] = 0x0F;
+	framebuffer[191 + 243*640] = 0x0F;
+
 	for (uint32_t i=192; i<192+progress; ++i)
 	{
-		framebuffer[i + 236*640] = 0x0C;
+		framebuffer[i + 236*640] = 0x0F;
 		framebuffer[i + 237*640] = 0x0C;
 		framebuffer[i + 238*640] = 0x0C;
 		framebuffer[i + 239*640] = 0x0C;
 		framebuffer[i + 240*640] = 0x0C;
 		framebuffer[i + 241*640] = 0x0C;
+		framebuffer[i + 242*640] = 0x0C;
+		framebuffer[i + 243*640] = 0x0F;
 	}
 	for (uint32_t i=192+progress; i<448; ++i)
 	{
-		framebuffer[i + 236*640] = 0x00;
+		framebuffer[i + 236*640] = 0x0F;
 		framebuffer[i + 237*640] = 0x00;
 		framebuffer[i + 238*640] = 0x00;
 		framebuffer[i + 239*640] = 0x00;
 		framebuffer[i + 240*640] = 0x00;
 		framebuffer[i + 241*640] = 0x00;
+		framebuffer[i + 242*640] = 0x00;
+		framebuffer[i + 243*640] = 0x0F;
 	}
+
+	framebuffer[448 + 236*640] = 0x0F;
+	framebuffer[448 + 237*640] = 0x0F;
+	framebuffer[448 + 238*640] = 0x0F;
+	framebuffer[448 + 239*640] = 0x0F;
+	framebuffer[448 + 240*640] = 0x0F;
+	framebuffer[448 + 241*640] = 0x0F;
+	framebuffer[448 + 242*640] = 0x0F;
+	framebuffer[448 + 243*640] = 0x0F;
 
 	// Kernel isn't double buffered, flush cache so we can see the progress
 	CFLUSH_D_L1;
+}
+
+uint32_t Base64Decode(const char* input, const uint32_t inputSize, uint8_t* output)
+{
+    uint32_t outputSize = 0;
+    uint32_t value = 0;
+    uint32_t bits = 0;
+
+    for (uint32_t i = 0; i < inputSize; ++i)
+	{
+        uint8_t c = input[i];
+        if (c == '=') {
+            break;
+        }
+
+        uint8_t decoded = base64lookup[c];
+        if (decoded == 64) {
+            continue;
+        }
+
+        value = (value << 6) | decoded;
+        bits += 6;
+
+        if (bits >= 8) {
+            bits -= 8;
+            output[outputSize++] = (value >> bits) & 0xFF;
+        }
+    }
+
+    return outputSize;
 }
 
 int main()
@@ -105,6 +177,7 @@ int main()
 		UARTSendBlock((uint8_t*)ACK, 1);
 
 	// Grab the file name
+	char fullName[128];
 	char fileName[64];
 	for (uint32_t i=0;i<fileNameLen;)
 	{
@@ -114,12 +187,16 @@ int main()
 	// Null-terminate the file name
 	fileName[fileNameLen] = 0;
 
+	// Decorate the file name with current path
+	getcwd(fullName, 128);
+	strncat(fullName, fileName, 128);
+
 	uint32_t packetSize = 512;
 	uint32_t numPackets = filebytesize / packetSize;
 	uint32_t leftoverBytes = filebytesize % packetSize;
 
 	// Grab the file data
-	FILE *fp = fopen(fileName, "wb");
+	FILE *fp = fopen(fullName, "wb");
 	if (fp)
 		UARTSendBlock((uint8_t*)ACK, 1);
 	else
@@ -130,47 +207,90 @@ int main()
 		return 0;
 	}
 
+	uint8_t* decodeBuffer = new uint8_t[packetSize*4+1];
+	uint8_t* binaryBuffer = new uint8_t[packetSize+1];
+
 	uint32_t bytesWritten = 0;
 	for (uint32_t i=0; i<numPackets; ++i)
 	{
-		// Let the sender know we're ready for the next packet
+		// Let the sender know we're ready for the packet size
 		UARTSendBlock((uint8_t*)ACK, 1);
 
-		// Receive 512 bytes
-		for (uint32_t j=0; j<512;)
+		// Receive packet size
+		uint32_t encodedLen = 0;
+		for (uint32_t i=0;i<4;)
 		{
 			uint8_t byte;
 			if (SerialInRingBufferRead(&byte, 1))
 			{
-				uint32_t written = (uint32_t)fwrite(&byte, 1, 1, fp);
-				bytesWritten += written;
-				++j;
-				DrawProgress(bytesWritten, filebytesize, osFramebuffer);
+				encodedLen |= (byte << (i*8));
+				++i;
 			}
 		}
+
+		// Let the sender know we're ready for the packet data
+		UARTSendBlock((uint8_t*)ACK, 1);
+
+		// Receive encoded bytes
+		for (uint32_t j=0; j<encodedLen;)
+		{
+			uint8_t byte;
+			if (SerialInRingBufferRead(&byte, 1))
+			{
+				decodeBuffer[j] = byte;
+				++j;
+			}
+		}
+
+		// Decode and write to file
+		uint32_t decodedLen = Base64Decode((const char*)decodeBuffer, encodedLen, binaryBuffer);
+		uint32_t written = (uint32_t)fwrite(binaryBuffer, 1, decodedLen, fp);
+		bytesWritten += written;
+		DrawProgress(bytesWritten, filebytesize, osFramebuffer);
 	}
 
 	// Final ACK for partial package
 	if (leftoverBytes != 0)
 	{
-		// Let the sender know we're ready for the next packet
+		// Let the sender know we're ready for the packet size
 		UARTSendBlock((uint8_t*)ACK, 1);
 
-		// Receive 512 bytes
-		for (uint32_t j=0; j<leftoverBytes;)
+		// Receive packet size
+		uint32_t encodedLen = 0;
+		for (uint32_t i=0;i<4;)
 		{
 			uint8_t byte;
 			if (SerialInRingBufferRead(&byte, 1))
 			{
-				uint32_t written = (uint32_t)fwrite(&byte, 1, 1, fp);
-				bytesWritten += written;
-				++j;
-				DrawProgress(bytesWritten, filebytesize, osFramebuffer);
+				encodedLen |= (byte << (i*8));
+				++i;
 			}
 		}
+
+		// Let the sender know we're ready for the packet data
+		UARTSendBlock((uint8_t*)ACK, 1);
+
+		// Receive encoded bytes
+		for (uint32_t j=0; j<encodedLen;)
+		{
+			uint8_t byte;
+			if (SerialInRingBufferRead(&byte, 1))
+			{
+				decodeBuffer[j] = byte;
+				++j;
+			}
+		}
+
+		// Decode and write to file
+		uint32_t decodedLen = Base64Decode((const char*)decodeBuffer, encodedLen, binaryBuffer);
+		uint32_t written = (uint32_t)fwrite(binaryBuffer, 1, decodedLen, fp);
+		bytesWritten += written;
+		DrawProgress(bytesWritten, filebytesize, osFramebuffer);
 	}
 
 	fclose(fp);
+
+	printf("Saved '%s' to storage (%ld bytes)\n", fullName, bytesWritten);
 
 	taskctx->interceptUART = 0;
     return 0;

@@ -49,6 +49,8 @@ static void jtag_task(void *arg)
 		{
 			if (dtmp[0] == '~')
 			{
+				// NOTE: If binary data is sent from the host, we might encounter this symbol in the stream
+				// For that reason, any binary data traffic has to be converted to a different base, such as base64
 				ESP_LOGI(TAG, "restarting tinysys CPUs");
 				gpio_hold_dis(PIN_REBOOT);
 				gpio_set_level(PIN_REBOOT, 0);

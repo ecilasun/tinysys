@@ -425,6 +425,49 @@ void ConsumeInitialTraffic(CSerialPort& serial)
 	}
 }
 
+// Encode incoming binary blob to base64
+// Returns the size of the encoded data
+uint32_t Base64Encode(const uint8_t* input, const uint32_t inputSize, char* output)
+{
+	static const char* base64chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+	uint32_t outputSize = 0;
+	for (uint32_t i = 0; i < inputSize; i += 3)
+	{
+		uint32_t value = 0;
+		uint32_t bytes = 0;
+		for (uint32_t j = 0; j < 3; ++j)
+		{
+			if (i + j < inputSize)
+			{
+				value <<= 8;
+				value |= input[i + j];
+				++bytes;
+			}
+			else
+			{
+				value <<= 8;
+			}
+		}
+
+		for (uint32_t j = 0; j < 4; ++j)
+		{
+			if (j > bytes)
+			{
+				output[outputSize++] = '=';
+			}
+			else
+			{
+				uint32_t index = (value >> 18) & 0x3F;
+				output[outputSize++] = base64chars[index];
+				value <<= 6;
+			}
+		}
+	}
+
+	return outputSize;
+}
+
 // This is meant to be used with the receiver app on the tinysys side
 // It will send the file in 512 byte chunks after header information
 // The receiver app will respond with an ack(~) or error(!) to each request
@@ -512,12 +555,20 @@ void sendfile(char *_filename)
 	uint32_t leftoverBytes = filebytesize % packetSize;
 	uint32_t i = 0;
 	uint32_t packetOffset = 0;
+	char* encoded = new char[packetSize*4 + 1];
 	for (i=0; i<numPackets; ++i)
 	{
-		// Generate checksum
-		//uint64_t checksum = 2166136261U;
-		//for (int j=0; j<packetSize; ++j)
-		//	checksum = AccumulateHash(checksum, filedata[packetOffset+j]);
+		uint32_t encodedSize = Base64Encode(filedata + packetOffset, packetSize, encoded);
+
+		if (!WACK(serial, '~', received)) // Wait for a 'go' signal
+		{
+			printf("Packet size error at %d/%d (512): '%c'\n", i, numPackets, received);
+			serial.Close();
+			delete [] filedata;
+			return;
+		}
+
+		serial.Send(&encodedSize, 4);
 
 		if (!WACK(serial, '~', received)) // Wait for a 'go' signal
 		{
@@ -527,57 +578,39 @@ void sendfile(char *_filename)
 			return;
 		}
 
-		printf("Sending packet %d/%d\n", i, numPackets);
-		serial.Send(filedata + packetOffset, packetSize);
-
-		/*uint64_t extChecksum = WCHK(serial);
-		if (extChecksum != checksum)
-		{
-			printf("Checksum error at packet %d/%d\n", i, numPackets);
-			snprintf(tmpstring, 128, "-");
-			serial.Send((uint8_t*)tmpstring, 1);
-			WACK(serial, '-');
-			serial.Close();
-			delete [] filedata;
-			return;
-		}*/
+		serial.Send(encoded, encodedSize);
 
 		packetOffset += packetSize;
-		// TODO: Wait for ACK from receiver app
 	}
 
 	if (leftoverBytes)
 	{
-		// Generate checksum
-		//uint64_t checksum = 2166136261U;
-		//for (int j=0; j<packetSize; ++j)
-		//	checksum = AccumulateHash(checksum, filedata[packetOffset+j]);
+		uint32_t encodedSize = Base64Encode(filedata + packetOffset, leftoverBytes, encoded);
 
-		serial.Send(filedata + packetOffset, leftoverBytes);
-		if (!WACK(serial, '~', received))
+		if (!WACK(serial, '~', received)) // Wait for a 'go' signal
 		{
-			printf("Packet error (%d): '%c'\n", leftoverBytes, received);
+			printf("Packet size error at %d/%d (512): '%c'\n", i, numPackets, received);
 			serial.Close();
 			delete [] filedata;
 			return;
 		}
 
-		/*uint64_t extChecksum = WCHK(serial);
-		if (extChecksum != checksum)
+		serial.Send(&encodedSize, 4);
+
+		if (!WACK(serial, '~', received)) // Wait for a 'go' signal
 		{
-			printf("Checksum error at packet %d/%d\n", i, numPackets);
-			snprintf(tmpstring, 128, "-");
-			serial.Send((uint8_t*)tmpstring, 1);
-			WACK(serial, '-');
+			printf("Packet error at %d/%d (512): '%c'\n", i, numPackets, received);
 			serial.Close();
 			delete [] filedata;
 			return;
-		}*/
+		}
+
+		serial.Send(encoded, encodedSize);
 
 		packetOffset += leftoverBytes;
-
-		// TODO: Wait for ACK from receiver app
 	}
+
+	delete[] encoded;
 
 	serial.Close();
 	printf("%d bytes sent\n", packetOffset);
