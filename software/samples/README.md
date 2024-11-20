@@ -21,3 +21,29 @@ First, check out the [README.md](..\emulator\README.md) for build instructions.
 Once the emulator is built, next step is to drop your binary into the [sdcard](..\emulator\sdcard\README.md) folder and then start the [emulator.bat](..\emulator\emulator.bat) file.
 
 The emulator will do its best to match the hardware, except the ESP32 device which is not currently emulated.
+
+# Running samples on the actual device
+
+Once the dev environment is set up and riscvtool has been compiled, first switch to the desired directory on the device using:
+
+```
+cd somedirectory
+```
+
+then use the following command to send files across to the actual device:
+
+```
+..\build\release\riscvtool.exe myprogram.elf -sendfile
+```
+
+followed by:
+
+```
+muprogram
+```
+
+to execute the binary.
+
+The file transfer code will split the file into 512 byte chunks, base64 encode them, and send them across serial connection to be reconstructed into a file on the device.
+
+This process will take a little longer than sending a binary stream, an alternative packed solution is being worked on.
