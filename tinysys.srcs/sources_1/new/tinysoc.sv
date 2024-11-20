@@ -288,7 +288,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 
 // 16bit (64K) address space for up to 255 devices
 // dev   start     end       addrs[19:16]  size  notes
-// SPAD: 80000000  8xx0FFFF  4'b0000  64KB	 Scratchpad
+// SPAD: 80000000  8xx0FFFF  4'b0000  64KB	 Scratchpad (16Kbytes)
 // LEDS: 8xx10000  8xx1FFFF  4'b0001  64KB	 Debug LEDs
 // VPUC: 8xx20000  8xx2FFFF  4'b0010  64KB	 Video Processing Unit
 // SDCC: 8xx30000  8xx3FFFF  4'b0011  64KB	 SDCard SPI Unit
@@ -296,7 +296,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // DMAC: 8xx50000  8xx5FFFF  4'b0101  64KB	 Direct Memory Access / Memcopy
 // USBA: 8xx60000  8xx6FFFF  4'b0110  64KB	 USB-A Host Interface Unit
 // APUC: 8xx70000  8xx7FFFF  4'b0111  64KB	 Audio Processing Unit / Mixer
-// MAIL: 8xx80000  8xx8FFFF  4'b1000  64KB	 MAIL inter-HART comm
+// MAIL: 8xx80000  8xx8FFFF  4'b1000  64KB	 MAIL inter-HART comm (16Kbytes)
 // UART: 8xx90000  8xx9FFFF  4'b1001  64KB	 UART HART <-> ESP32-C6 comm
 // CSR0: 8xxA0000  8xxAFFFF  4'b1010  64KB	 CSR#0
 // CSR1: 8xxB0000  8xxBFFFF  4'b1011  64KB	 CSR#1
