@@ -30,9 +30,13 @@ bool CEmulator::Reset(const char* romFile, uint32_t resetvector)
 		if (!fp)
 			return false;
 		fseek(fp, 0, SEEK_END);
-		fpos_t fpos;
-		fgetpos(fp, &fpos);
-		size_t filesize = (size_t)fpos;
+		#if defined(CAT_LINUX)
+				size_t filesize = ftello(fp);
+		#else
+			fpos_t fpos;
+			fgetpos(fp, &fpos);
+			size_t filesize = (size_t)fpos;
+		#endif
 		fseek(fp, 0, SEEK_SET);
 
 		m_rombin = new uint8_t[filesize];

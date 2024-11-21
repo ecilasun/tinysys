@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 #include "rv32.h"
 #include "bus.h"
 
@@ -70,16 +71,16 @@ static const uint32_t s_quadexpand[] = {
 };
 
 // Floating point classification
-#define NEG_INF			0
-#define NEG_NORMAL		1
-#define NEG_SUBNORMAL	2
-#define NEG_ZERO		3
-#define POS_ZERO		4
-#define POS_SUBNORMAL	5
-#define POS_NORMAL		6
-#define POS_INF			7
-#define SNAN			8
-#define QNAN			9
+#define RISCV_NEG_INF			0
+#define RISCV_NEG_NORMAL		1
+#define RISCV_NEG_SUBNORMAL		2
+#define RISCV_NEG_ZERO			3
+#define RISCV_POS_ZERO			4
+#define RISCV_POS_SUBNORMAL		5
+#define RISCV_POS_NORMAL		6
+#define RISCV_POS_INF			7
+#define RISCV_SNAN				8
+#define RISCV_QNAN				9
 
 void InstructionCache::Reset()
 {
@@ -1313,7 +1314,7 @@ bool CRV32::Execute(CBus* bus)
 							}
 							break;
 							case 0b001: {
-								rdin = POS_NORMAL; // Not implementing this for now
+								rdin = RISCV_POS_NORMAL; // Not implementing this for now
 								/*if (instr.m_rval1 == 0x00000000) rdin = POS_ZERO;
 								else if (instr.m_rval1 == 0x80000000) rdin = NEG_ZERO;
 								else if (instr.m_rval1 == 0x7F800000) rdin = POS_INF;

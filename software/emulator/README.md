@@ -2,6 +2,11 @@
 
 This is an emulator for the tinysys project
 
+# Prerequisites
+To build, please make sure you have at least version 2.3 of the following libraries available:
+- libsdl2-dev
+- libsdl2-ttf-dev
+
 # Usage
 To build the project, make sure you have C++ VC compiler tools installed, use the following sequence:
 ```

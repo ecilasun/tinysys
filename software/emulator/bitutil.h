@@ -6,7 +6,7 @@
 #include <immintrin.h> // Include for _bextr_u32 or _bextr_u64
 #endif
 
-#if defined(CAT_WINDOWS) || defined(CAT_LINUX)
+#if defined(CAT_WINDOWS)
 #define FINLINE __forceinline
 #else
 #define FINLINE inline
