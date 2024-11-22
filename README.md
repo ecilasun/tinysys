@@ -11,15 +11,19 @@ Of course, before you ask, it does run DOOM, and with sound and keyboard input!
 # System specifications
 
 - 2x RISC-V based CPUs (architecture: rv32im_zicsr_zifencei_zfinx)
+- First core runs the OS kernel and user processes
+- Second core is fully reserved for user process use
 - 150MHz bus and CPU clock, however we're not pipelined yet (TBD)
 - Supports instruction fence and data cache flush/invalidate operations
-- Single precision FPU (no float control CRSs)
+- Single precision FPU per CPU (no float control CRSs)
 - Float and integer GPRs share the same register space (zfinx extension)
 - 32 GRPs x 32 bits
 - 4096 CSRs x 32 bits (some registers reserved for CPU and some are immutable)
-- DMA with optional zero-masking for 16 byte aligned memory copies, coherency via CPU instructions
-- Integer multiply / divide
-- Software, hardware and timer interrupts
+- Both CPUs have access to each-other's CSR register files via memory mapped addresses
+- DMA unit with optional zero-masking for 16 byte aligned or unaligned (target only) memory copies
+- DMA supports two coherency modes (cpu coherent or not)
+- Integer multiply / divide units per CPU
+- Software, hardware and timer interrupts per CSR per core
 - 16Kbytes of direct mapped instruction cache (256 lines x 64 bytes)
 - 32Kbytes of direct mapped data cache (512 lines x 64 bytes)
 - 128 bit AXI4 bus with 32 bit address line
@@ -34,6 +38,9 @@ Of course, before you ask, it does run DOOM, and with sound and keyboard input!
 - Optionally, a rom.bin image can be loaded from SDCard to replace the OS in ROM
 - ESP32C6 on board for I/O handling (UART serial for CLI)
 - The ESP chip also gives USB serial access and BLE serial terminal access to the board
+- 16Kbytes mailbox memory for task scheduler + general purpose use (uncached)
+- 16Kbytes of scratchpad memory for inter-processor communications or temporary data storage (uncached)
+- Horizontal blanking interrupts to synchronize CPU with VPU for video effects or interrupt driven vsync page flip
 
 # Overview of the processing units
 
@@ -49,13 +56,13 @@ This unit reads an instruction at PC, decodes it and outputs it (together with i
 This unit will read an instruction from the IFIFO if available, load registers with values, execute (ALU/BLU/CSR/SYS) and decide on new branch target if there's a branch involved. After deciding on the branch address, fetch unit is notified so it can resume instruction fetches. Where possible, load or store operations will attempt to overlap with fetch and execution.
 
 ## VPU
-Video processing unit. Handles scan-out of various video sizes (320x240 and 640x480) and bit depths (8bpp index color or 16bpp RGB color)
+Video processing unit. Handles scan-out of various video sizes (320x240 and 640x480) and bit depths (8bpp index color or 16bpp RGB color). It contains a scanline cache which is populated via burst reads from system memory, from which either a scan-doubled or single line is output to the display, based on video mode height. The device allows for mid-frame change of resolution via hblank interrupts.
 
 ## APU
 Audio processing unit. Handles RAW audio outputs, and also manages 44/22/11KHz stereo playback and double-buffer handling of RAW audio.
 
 ## DMA
-Direct memory access unit. Used to copy blocks of memory within memory address space, and won't DMA between or from other devices. It can optionally ignore zeros on input data, and won't write them to the output location, therefore it can be used to overlay UI onto other graphics by automatically masking transparent parts. It will be expanded to support misaligned DMA in the future.
+Direct memory access unit. Used to copy blocks of memory within memory address space, and won't DMA between or from other devices. It can optionally ignore zeros on input data, and won't write them to the output location, therefore it can be used to overlay UI onto other graphics by automatically masking transparent parts. The unit also allows for unaligned address transfers (only target address can be unaligned) therefore it can be used to blit window graphics or sprites.
 
 # Overview of the bus
 
