@@ -218,6 +218,11 @@ void HandleCPUError(struct STaskContext *ctx, const uint32_t cpu)
 		kprintf("\n");
 	}
 
+	// Reset CPU#1 here if anything faulted
+	// This way we won't risk some stale task being hung on CPU#1 if CPU#0 crashes
+	E32SetupCPU(1, UserMain);
+	E32ResetCPU(1);
+
 	// Clear error once handled and reported
 	ctx->kernelError = 0;
 }

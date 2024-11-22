@@ -11,12 +11,15 @@ module f2ui4sat(
     input wire aresetn,
     input wire [31:0] value,
     input wire start,
-    output logic [31:0] result,
+    output wire [31:0] result,
     output wire ready
 );
 
+logic [31:0] saturated;
 logic [5:0] shift;
 logic [1:0] done;
+
+assign result = saturated;
 assign ready = done == 2'b10 ? 1'b1 : 1'b0;
 
 wire s = value[31];
@@ -26,18 +29,21 @@ wire [22:0] m = value[22:0];
 always @(posedge clk) begin
 	if (~aresetn) begin
 		done <= 2'b00;
+		saturated <= 32'd0;
+		shift <= 6'd0;
 	end else begin
 		if (start) begin
 			done <= 2'b01;
 		end else begin
 			done <= {done[0], 1'b0};
 			if (s == 1'b1 || e < 8'd115) begin // Negative or exponents that will overflow shift go directly to zero
-				result <= 0;
+				saturated <= 0;
 			end else if (e > 8'd126) begin // Values greater than 1.0 go directly to saturate
-				result <= 15;
+				saturated <= 15;
 			end else begin // All other values follow adjusted f2i shift.
+				// NOTE: This is pipelined to complete in 2 clocks
 				shift <= {(8'd146) - e}[5:0]; // (8'd127 + 8'd23 - 8'd4) - e;
-				result <= ((m | 32'h800000) >> shift) & 4'hF;
+				saturated <= ((m | 32'h800000) >> shift) & 4'hF;
 			end
 		end
 	end

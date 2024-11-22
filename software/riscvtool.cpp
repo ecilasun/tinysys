@@ -468,6 +468,27 @@ uint32_t Base64Encode(const uint8_t* input, const uint32_t inputSize, char* outp
 	return outputSize;
 }
 
+void sendcmd(char *_command)
+{
+	CSerialPort serial;
+	if (serial.Open() == false)
+		return;
+
+	ConsumeInitialTraffic(serial);
+
+	uint8_t received;
+
+	// Start the receiver app on the other end
+	char tmpstring[64];
+	snprintf(tmpstring, 64, "%s", _command);
+	serial.Send((uint8_t*)tmpstring, strlen(_command));
+	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	snprintf(tmpstring, 64, "\n");
+	serial.Send((uint8_t*)tmpstring, 1); // Include return character and space
+
+	serial.Close();
+}
+
 // This is meant to be used with the receiver app on the tinysys side
 // It will send the file in 512 byte chunks after header information
 // The receiver app will respond with an ack(~) or error(!) to each request
@@ -507,8 +528,11 @@ void sendfile(char *_filename)
 	uint8_t received;
 
 	// Start the receiver app on the other end
-	snprintf(tmpstring, 128, "recv\n");
-	serial.Send((uint8_t*)tmpstring, 4+1); // Include return character
+	snprintf(tmpstring, 128, "recv");
+	serial.Send((uint8_t*)tmpstring, 4);
+	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	snprintf(tmpstring, 128, "\n");
+	serial.Send((uint8_t*)tmpstring, 1);
 	if (!WACK(serial, '~', received))
 	{
 		printf("Transfer initiation error: '%c'\n", received);
@@ -642,6 +666,7 @@ void showusage()
 {
 	printf("Usage:\n");
 	printf("riscvtool.exe -reset [usbdevicename]\n");
+	printf("riscvtool.exe command -sendcmd [usbdevicename]\n");
 	printf("riscvtool.exe binaryfilename -sendfile [usbdevicename]\n");
 	printf("riscvtool.exe binaryfilename -makerom groupbytesize outputfilename\n");
 	printf("riscvtool.exe binaryfilename -makemem groupbytesize outputfilename\n");
@@ -692,6 +717,14 @@ int main(int argc, char **argv)
 		if (argc > 3)
 			strcpy(devicename, argv[3]);
 		sendfile(argv[1]);
+		return 0;
+	}
+
+	if (argc>=3 && strstr(argv[2], "-sendcmd"))
+	{
+		if (argc > 3)
+			strcpy(devicename, argv[3]);
+		sendcmd(argv[1]);
 		return 0;
 	}
 

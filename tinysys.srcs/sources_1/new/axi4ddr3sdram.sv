@@ -36,8 +36,13 @@ axi4retimer axi4retimerinst(
 (* async_reg = "true" *) logic [11:0] device_tempcdcB = 12'd0;
 
 always @(posedge ui_clk) begin
-	device_tempcdcA <= device_temp;
-	device_tempcdcB <= device_tempcdcA;
+	if (ui_clk_sync_rst) begin
+		device_tempcdcA <= 12'd0;
+		device_tempcdcB <= 12'd0;
+	end else begin
+		device_tempcdcA <= device_temp;
+		device_tempcdcB <= device_tempcdcA;
+	end
 end
 
 // --------------------------------------------------

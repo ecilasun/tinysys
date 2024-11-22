@@ -731,7 +731,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 
 					if (file == STDIN_FILENO)
 					{
-						// TODO: Maybe read one character from UART here?
+						// TODO: Read one character from console here, but we need to figure out how to do that
 						errno = EIO;
 						write_csr(0x8AA, 0xFFFFFFFF);
 					}
@@ -905,30 +905,6 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				}
 				else if (value==1024) // open()
 				{
-					// TODO: support devices (i.e. names starting with /dev/)
-					// /dev/file -> file i/o
-					// /dev/null -> DEVICE_NULL
-					// /dev/leds -> DEVICE_LEDS
-					// /dev/vpuc -> DEVICE_VPUC
-					// /dev/spic -> DEVICE_SPIC
-					// /dev/xadc -> DEVICE_XADC
-					// /dev/dmac -> DEVICE_DMAC
-					// /dev/usba -> DEVICE_USBA
-					// /dev/apuc -> DEVICE_APUC
-					// /dev/mail -> DEVICE_MAIL
-					// /dev/uart -> DEVICE_UART
-					// /dev/csr0 -> DEVICE_CSR0
-					// /dev/csr1 -> DEVICE_CSR1
-
-					// Some other thoughts
-					// /dev/mem -> physical memory access
-					// /dev/kmsg -> goes to kprintf()
-					// /dev/tty -> virtual console (UART in our case?)
-					// /dev/kbd -> raw keyboard device
-					// /dev/input/js0 -> first joystick
-					// /dev/input/mouse0 -> first mouse
-					// /dev/fb0 -> first framebuffer (maps to kernel framebuffer)
-
 					uint32_t nptr = read_csr(0x8AA); // A0
 					uint32_t oflags = read_csr(0x8AB); // A1
 					//uint32_t pmode = read_csr(0x8AC); // A2 - permission mode unused for now
@@ -947,8 +923,6 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					}
 					ff_flags |= (oflags&100) ? FA_CREATE_ALWAYS : 0; // O_CREAT
 					ff_flags |= (oflags&2000) ? FA_OPEN_APPEND : 0; // O_APPEND
-
-					// /dev/file/...
 
 					// Grab lowest zero bit's index
 					int currenthandle = FindFreeFileHandle(s_handleAllocMask);
@@ -1063,18 +1037,31 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			}
 			break;
 
-			/*case CAUSE_MISALIGNED_FETCH:
 			case CAUSE_FETCH_ACCESS:
-			case CAUSE_MISALIGNED_LOAD:
 			case CAUSE_LOAD_ACCESS:
-			case CAUSE_MISALIGNED_STORE:
 			case CAUSE_STORE_ACCESS:
-			case CAUSE_USER_ECALL:
-			case CAUSE_SUPERVISOR_ECALL:
-			case CAUSE_HYPERVISOR_ECALL:
+			{
+				kprintf("Memory access fault: %d\b", value);
+				errno = EACCES;
+				write_csr(0x8AA, 0xFFFFFFFF);
+			}
+			break;
+
 			case CAUSE_FETCH_PAGE_FAULT:
 			case CAUSE_LOAD_PAGE_FAULT:
-			case CAUSE_STORE_PAGE_FAULT:*/
+			case CAUSE_STORE_PAGE_FAULT:
+			{
+				kprintf("Memory page fault: %d\b", value);
+				errno = EFAULT;
+				write_csr(0x8AA, 0xFFFFFFFF);
+			}
+
+			/*case CAUSE_MISALIGNED_FETCH:
+			case CAUSE_MISALIGNED_LOAD:
+			case CAUSE_MISALIGNED_STORE:
+			case CAUSE_USER_ECALL:
+			case CAUSE_SUPERVISOR_ECALL:
+			case CAUSE_HYPERVISOR_ECALL:*/
 			default:
 			{
 				taskctx->kernelError = 3;

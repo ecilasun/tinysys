@@ -34,7 +34,7 @@ static const uint8_t base64lookup[256] = {
     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64  // 240-255
 };
 
-void DrawProgress(const uint32_t bytesWritten, const uint32_t filebytesize, uint8_t* framebuffer)
+void DrawProgress(struct EVideoContext* osVideoContext, const uint32_t bytesWritten, const uint32_t filebytesize, const char* filename, uint8_t* framebuffer)
 {
 	uint32_t progress = (256 * bytesWritten / filebytesize);
 
@@ -78,6 +78,10 @@ void DrawProgress(const uint32_t bytesWritten, const uint32_t filebytesize, uint
 	framebuffer[448 + 241*640] = 0x0F;
 	framebuffer[448 + 242*640] = 0x0F;
 	framebuffer[448 + 243*640] = 0x0F;
+
+	char msg[96];
+	sprintf(msg, "Receiving %s", filename);
+	VPUPrintString(osVideoContext, 0x00, 0x0F, 48, 28, msg, strlen(msg));
 
 	// Kernel isn't double buffered, flush cache so we can see the progress
 	CFLUSH_D_L1;
@@ -128,15 +132,18 @@ int main()
 	// Emulator won't have a UART therefore we can't receive a file
 	uint32_t isEmulator = read_csr(0xF12) & 0x80000000 ? 0 : 1; // CSR_MARCHID is 0x80000000 for read hardware, 0x00000000 for emulator
 	if (isEmulator)
+	{
+		printf("Emulator detected, cannot receive files\n");
 		return 0;
+	}
 
 	struct EVideoContext* osVideoContext = VPUGetKernelGfxContext();
 	uint8_t* osFramebuffer = (uint8_t*)osVideoContext->m_cpuWriteAddressCacheAligned;
 
-	DrawProgress(0, 100, osFramebuffer);
-
 	struct STaskContext* taskctx = TaskGetContext(0);
 	taskctx->interceptUART = 1;
+
+	DrawProgress(osVideoContext, 0, 100, "...", osFramebuffer);
 
 	// At startup, acknowledge the sender so that it can start sending the file header
 	UARTSendBlock((uint8_t*)ACK, 1);
@@ -177,8 +184,7 @@ int main()
 		UARTSendBlock((uint8_t*)ACK, 1);
 
 	// Grab the file name
-	char fullName[128];
-	char fileName[64];
+	char fileName[96];
 	for (uint32_t i=0;i<fileNameLen;)
 	{
 		if (SerialInRingBufferRead(&fileName[i], 1))
@@ -187,16 +193,12 @@ int main()
 	// Null-terminate the file name
 	fileName[fileNameLen] = 0;
 
-	// Decorate the file name with current path
-	getcwd(fullName, 128);
-	strncat(fullName, fileName, 128);
-
 	uint32_t packetSize = 512;
 	uint32_t numPackets = filebytesize / packetSize;
 	uint32_t leftoverBytes = filebytesize % packetSize;
 
 	// Grab the file data
-	FILE *fp = fopen(fullName, "wb");
+	FILE *fp = fopen(fileName, "wb");
 	if (fp)
 		UARTSendBlock((uint8_t*)ACK, 1);
 	else
@@ -246,7 +248,7 @@ int main()
 		uint32_t decodedLen = Base64Decode((const char*)decodeBuffer, encodedLen, binaryBuffer);
 		uint32_t written = (uint32_t)fwrite(binaryBuffer, 1, decodedLen, fp);
 		bytesWritten += written;
-		DrawProgress(bytesWritten, filebytesize, osFramebuffer);
+		DrawProgress(osVideoContext, bytesWritten, filebytesize, fileName, osFramebuffer);
 	}
 
 	// Final ACK for partial package
@@ -285,12 +287,10 @@ int main()
 		uint32_t decodedLen = Base64Decode((const char*)decodeBuffer, encodedLen, binaryBuffer);
 		uint32_t written = (uint32_t)fwrite(binaryBuffer, 1, decodedLen, fp);
 		bytesWritten += written;
-		DrawProgress(bytesWritten, filebytesize, osFramebuffer);
+		DrawProgress(osVideoContext, bytesWritten, filebytesize, fileName, osFramebuffer);
 	}
 
 	fclose(fp);
-
-	printf("Saved '%s' to storage (%ld bytes)\n", fullName, bytesWritten);
 
 	taskctx->interceptUART = 0;
     return 0;
