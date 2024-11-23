@@ -34,10 +34,10 @@ folders = \
 
 ifeq ($(UNAME), WINDOWS)
 RISCV_PREFIX ?= riscv32-unknown-elf-
-RISCVTOOL ?= ..\..\build\release\riscvtool.exe
+RISCVTOOL ?= ..\..\riscvtool.exe
 else
 RISCV_PREFIX ?= riscv64-unknown-elf-
-RISCVTOOL ?= ../../build/release/riscvtool
+RISCVTOOL ?= ../../riscvtool
 endif
 RISCV_GCC ?= $(RISCV_PREFIX)gcc
 RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump

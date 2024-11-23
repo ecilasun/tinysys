@@ -23,9 +23,14 @@ Tinysys is a very simple machine so it requires little more than a few files to 
 To run the resulting .elf file, you have two choices.
 
 You can use the riscvtool to send the compiled binary to the machine using base64 encoded format. First, got the directory where your binary is, and use the following command:
+
 ```
-riscvtool.exe -sendfile mybinary.elf
+On windows:
+riscvtool.exe -sendfile myfile.elf
+On Linux and MacOS:
+./riscvtool -sendfile myfile.elf
 ```
+
 This will start a progress bar and copy the file to the target device, however since base64 encoding expands a file, it will not complete this transfer quickly. The file is written to the SDCard at the current directory.
 
 Alternatively, you'll need to copy your binary onto a FAT32 formatted SDCard, insert the card into the machine.

@@ -1,4 +1,5 @@
-This folder contains the riscvtool helper utility, the ROM image, sample code and the SDK for tinysys
+This folder contains the riscvtool helper utility, the ROM image, sample code and the SDK for tinysys.
+> Please note that precompiled binaries for riscvtool have been provided for Windows and Linux, however if the supplied binaries do not run for you or if you wish to build a MacOS version, please rebuild them from source as explained below.
 
 # Prerequisites
 
@@ -89,7 +90,12 @@ Please refer to the [README.md](./samples/starthere/README.md) file in `starther
 There is an executable on the default disk image of tinysys, called 'recv.elf', under the sys\bin directory. The riscvtool binary can start this application remotely and start sending a binary file to it.
 
 The syntax for sending a file is:
-..\..\build\release\riscvtool.exe -sendfile myfile.elf
+```
+On windows:
+riscvtool.exe -sendfile myfile.elf
+On Linux and MacOS:
+./riscvtool -sendfile myfile.elf
+```
 
 The recv.elf executable will show an upload progress, and make sure the file arrives safely before writing it to the sdcard, as well as report any errors that might occur during the transfer.
 

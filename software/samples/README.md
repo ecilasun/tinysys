@@ -33,13 +33,16 @@ cd somedirectory
 then use the following command to send files across to the actual device:
 
 ```
-..\build\release\riscvtool.exe -sendfile myprogram.elf
+On windows:
+riscvtool.exe -sendfile myprogram.elf
+On Linux and MacOS:
+./riscvtool -sendfile myprogram.elf
 ```
 
-followed by:
+followed by the name of your binary + Enter:
 
 ```
-muprogram
+myprogram
 ```
 
 to execute the binary.

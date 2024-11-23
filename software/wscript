@@ -58,3 +58,8 @@ def build(bld):
         includes=includes,
         libpath=sdk_lib_path,
         lib=libs)
+
+    if platform.system().lower().startswith('win'):
+        bld(features='subst', source='riscvtool.exe', target=os.path.abspath('./riscvtool.exe'), is_copy=True)
+    else:
+        bld(features='subst', source='riscvtool', target=os.path.abspath('./riscvtool'), is_copy=True)
