@@ -20,6 +20,20 @@ The SDK directory contains quite a few modules and combined with the samples you
 
 Tinysys is a very simple machine so it requires little more than a few files to do something useful. Observe the layout of the provided Makefile and make necessary changes as you see fit. Only thing to watch out for are the machine architecture and cache size/alignment flags. Rest is up to you!
 
-To run the resulting .elf file, you'll need to copy it to a FAT32 formatted SDCard, insert the card into the machine, and type its name (without the .elf extension) + Enter. That should run your code, and unless it's infinitely looping, should drop you back to the command line of tinysys. If not, simply hit CTRL+C to break execution and you'll be back to the CLI.
+To run the resulting .elf file, you have two choices.
+
+You can use the riscvtool to send the compiled binary to the machine using base64 encoded format. First, got the directory where your binary is, and use the following command:
+```
+riscvtool.exe -sendfile mybinary.elf
+```
+This will start a progress bar and copy the file to the target device, however since base64 encoding expands a file, it will not complete this transfer quickly. The file is written to the SDCard at the current directory.
+
+Alternatively, you'll need to copy your binary onto a FAT32 formatted SDCard, insert the card into the machine.
+
+After either method, type the name of your binary (without the .elf extension) from a connected terminal or keyboard, and the binary will start executing.
+
+If you wish to stop execution, use CTRL+C to break out of the application.
+
+If your system appears to be unresponsive, use the tilde key (~) to break the execution from a connected terminal (this will not work with a keyboard, in that case assuming you're close to the device, please use the reset button on the board instead)
 
 NOTE: The gdb stub has been temporarily removed due space requirements, but it will be added in the future for gdb support. Until then, printf and LEDs are your friend!

@@ -217,4 +217,6 @@ void app_main(void)
 	// Let the tinysys CPUs know we are ready
 	gpio_set_level(PIN_REBOOT, 1);
 	gpio_hold_en(PIN_REBOOT);
+
+	usb_serial_jtag_write_bytes((uint8_t*) "TinySys v1.0C\n", 14, portMAX_DELAY);
 }
