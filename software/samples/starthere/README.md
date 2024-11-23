@@ -26,7 +26,7 @@ You can use the riscvtool to send the compiled binary to the machine using base6
 
 ```
 On windows:
-riscvtool.exe -sendfile myfile.elf
+riscvtool -sendfile myfile.elf
 On Linux and MacOS:
 ./riscvtool -sendfile myfile.elf
 ```

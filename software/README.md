@@ -92,7 +92,7 @@ There is an executable on the default disk image of tinysys, called 'recv.elf', 
 The syntax for sending a file is:
 ```
 On windows:
-riscvtool.exe -sendfile myfile.elf
+riscvtool -sendfile myfile.elf
 On Linux and MacOS:
 ./riscvtool -sendfile myfile.elf
 ```

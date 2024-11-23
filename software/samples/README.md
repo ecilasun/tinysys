@@ -34,7 +34,7 @@ then use the following command to send files across to the actual device:
 
 ```
 On windows:
-riscvtool.exe -sendfile myprogram.elf
+riscvtool -sendfile myprogram.elf
 On Linux and MacOS:
 ./riscvtool -sendfile myprogram.elf
 ```

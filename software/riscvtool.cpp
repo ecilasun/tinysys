@@ -665,12 +665,12 @@ void resetCPUs()
 void showusage()
 {
 	printf("Usage:\n");
-	printf("riscvtool.exe -reset [usbdevicename]\n");
-	printf("riscvtool.exe -sendcmd [usbdevicename] command\n");
-	printf("riscvtool.exe -sendfile [usbdevicename] binaryfilename\n");
-	printf("riscvtool.exe -makerom binaryfilename groupbytesize outputfilename\n");
-	printf("riscvtool.exe -makemem binaryfilename groupbytesize outputfilename\n");
-	printf("riscvtool.exe -makebin binaryfilename groupbytesize outputfilename\n");
+	printf("riscvtool -reset [usbdevicename]\n");
+	printf("riscvtool -sendcmd [usbdevicename] command\n");
+	printf("riscvtool -sendfile [usbdevicename] binaryfilename\n");
+	printf("riscvtool -makerom binaryfilename groupbytesize outputfilename\n");
+	printf("riscvtool -makemem binaryfilename groupbytesize outputfilename\n");
+	printf("riscvtool -makebin binaryfilename groupbytesize outputfilename\n");
 	printf("NOTE: Default device name is %s\n", devicename);
 }
 
