@@ -33,7 +33,7 @@ cd somedirectory
 then use the following command to send files across to the actual device:
 
 ```
-..\build\release\riscvtool.exe myprogram.elf -sendfile
+..\build\release\riscvtool.exe -sendfile myprogram.elf
 ```
 
 followed by:

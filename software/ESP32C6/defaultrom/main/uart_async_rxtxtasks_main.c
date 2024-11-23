@@ -29,13 +29,13 @@
 // Send reset request to tinysys CPUs
 #define PIN_REBOOT GPIO_NUM_18
 
-static const char *TAG = "tinysys";
+static const char *TAG = "tsys_1_0C";
 
 // external port going to tinysys
 #define EX_UART_NUM UART_NUM_0
 #define PATTERN_CHR_NUM	(3)
 
-#define BUF_SIZE (1024)
+#define BUF_SIZE (2048)
 #define RD_BUF_SIZE (BUF_SIZE)
 static QueueHandle_t uart0_queue;
 
@@ -51,7 +51,7 @@ static void jtag_task(void *arg)
 			{
 				// NOTE: If binary data is sent from the host, we might encounter this symbol in the stream
 				// For that reason, any binary data traffic has to be converted to a different base, such as base64
-				ESP_LOGI(TAG, "restarting tinysys CPUs");
+				ESP_LOGI(TAG, "Rebooting CPUs");
 				gpio_hold_dis(PIN_REBOOT);
 				gpio_set_level(PIN_REBOOT, 0);
 				vTaskDelay(250 / portTICK_PERIOD_MS);

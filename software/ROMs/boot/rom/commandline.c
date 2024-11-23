@@ -16,7 +16,7 @@ static struct SCommandLineContext s_cliCtx;
 static const char *s_taskstates[]={ "NONE", "HALT", "EXEC", "TERM", "DEAD"};
 
 // Device version
-#define VERSIONSTRING "v1.0B"
+#define VERSIONSTRING "v1.0C"
 
 // File transfer timeout
 #define FILE_TRANSFER_TIMEOUT 1000
@@ -65,12 +65,11 @@ void _runExecTask()
 	// execution pool.
 }
 
-void ShowVersion()
+void ShowVersion(struct EVideoContext *kernelgfx)
 {
 	uint32_t waterMark = read_csr(0xFF0);
 	uint32_t isEmulator = read_csr(0xF12) & 0x80000000 ? 0 : 1; // CSR_MARCHID is 0x80000000 for read hardware, 0x00000000 for emulator
 
-	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
 	VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
 	kprintf("\n                                                   \n");
 
@@ -98,14 +97,48 @@ void ShowVersion()
 	VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 }
 
-uint32_t ExecuteCmd(char *_cmd)
+void ShowHelp(struct EVideoContext *kernelgfx)
+{
+	VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
+
+	kprintf("\n                                                     \n");
+	kprintf(" COMMAND      | USAGE                                \n");
+	kprintf(" cls          | Clear terminal                       \n");
+	kprintf(" cd path      | Change working directory             \n");
+	kprintf(" del fname    | Delete file                          \n");
+	kprintf(" dir [path]   | Show list of files in cwd or path    \n");
+	kprintf(" mem          | Show available memory                \n");
+	kprintf(" proc cpu     | Show process info for given CPU(0/1) \n");
+	kprintf(" pwd          | Show current work directory          \n");
+	kprintf(" reboot       | Reboot the device                    \n");
+	kprintf(" ren old new  | Rename file from old to new name     \n");
+	kprintf(" ver          | Show version info                    \n");
+	kprintf("                                                     \n");
+
+	// Hidden commands for dev mode reveal when running from overlay
+	uint32_t waterMark = read_csr(0xFF0);
+	if (waterMark != 0)
+	{
+		kprintf(" DEV MODE SPECIFIC - USE AT YOUR OWN RISK            \n");
+		kprintf(" COMMAND      | USAGE                                \n");
+		kprintf(" kill pid cpu | Kill process with id pid on CPU      \n");
+		kprintf(" mount        | Mount drive sd:                      \n");
+		kprintf(" runon cpu    | Run ELF files on given cpu           \n");
+		kprintf(" unmount      | Unmount drive sd:                    \n");
+		kprintf("                                                     \n");
+	}
+	kprintf("\n");
+
+	VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
+}
+
+uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 {
 	const char *command = strtok(_cmd, " ");
 	if (!command)
 		return 1;
 
 	uint32_t loadELF = 0;
-	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
 
 	if (!strcmp(command, "dir"))
 	{
@@ -259,41 +292,11 @@ uint32_t ExecuteCmd(char *_cmd)
 	}
 	else if (!strcmp(command, "ver"))
 	{
-		ShowVersion();
+		ShowVersion(kernelgfx);
 	}
 	else if (!strcmp(command, "help"))
 	{
-		VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
-
-		kprintf("\n                                                     \n");
-		kprintf(" COMMAND      | USAGE                                \n");
-		kprintf(" cls          | Clear terminal                       \n");
-		kprintf(" cd path      | Change working directory             \n");
-		kprintf(" del fname    | Delete file                          \n");
-		kprintf(" dir [path]   | Show list of files in cwd or path    \n");
-		kprintf(" mem          | Show available memory                \n");
-		kprintf(" proc cpu     | Show process info for given CPU(0/1) \n");
-		kprintf(" pwd          | Show current work directory          \n");
-		kprintf(" reboot       | Reboot the device                    \n");
-		kprintf(" ren old new  | Rename file from old to new name     \n");
-		kprintf(" ver          | Show version info                    \n");
-		kprintf("                                                     \n");
-
-		// Hidden commands for dev mode reveal when running from overlay
-		uint32_t waterMark = read_csr(0xFF0);
-		if (waterMark != 0)
-		{
-			kprintf(" DEV MODE SPECIFIC - USE AT YOUR OWN RISK            \n");
-			kprintf(" COMMAND      | USAGE                                \n");
-			kprintf(" kill pid cpu | Kill process with id pid on CPU      \n");
-			kprintf(" mount        | Mount drive sd:                      \n");
-			kprintf(" runon cpu    | Run ELF files on given cpu           \n");
-			kprintf(" unmount      | Unmount drive sd:                    \n");
-			kprintf("                                                     \n");
-		}
-		kprintf("\n");
-
-		VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
+		ShowHelp(kernelgfx);
 	}
 	else // Anything else defers to being a command on storage
 		loadELF = 1;
@@ -380,13 +383,17 @@ int HandleCommandLine(struct STaskContext *taskctx)
 			case 10:
 			case 13:	// Return / Enter
 			{
+				// Properly terminate the command string
+				s_cliCtx.cmdString[s_cliCtx.cmdLen] = 0;
 				execcmd++;
 			}
 			break;
 		
 			case 3:		// EXT (Ctrl+C) - BREAK
 			{
+				// Return with empty command string
 				s_cliCtx.cmdLen = 0;
+				s_cliCtx.cmdString[0] = 0;
 				++s_cliCtx.refreshConsoleOut;
 				// Stop task on main CPU
 				TaskExitTaskWithID(taskctx, s_cliCtx.userTaskID, 0); // Sig:0, terminate process if no debugger is attached
@@ -437,7 +444,9 @@ int HandleCommandLine(struct STaskContext *taskctx)
 
 void _CLITask()
 {
-	ShowVersion();
+	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
+
+	ShowVersion(kernelgfx);
 
 	struct STaskContext *taskctx = GetTaskContext(0);
 	while(1)
@@ -461,8 +470,8 @@ void _CLITask()
 			if (execcmd)
 			{
 				kprintf("\n");
-				s_cliCtx.refreshConsoleOut += ExecuteCmd(s_cliCtx.cmdString);
-				// Rewind
+				s_cliCtx.refreshConsoleOut += ExecuteCmd(s_cliCtx.cmdString, kernelgfx);
+				// Reset command string
 				s_cliCtx.cmdLen = 0;
 				s_cliCtx.cmdString[0] = 0;
 			}
@@ -470,8 +479,9 @@ void _CLITask()
 			if (s_cliCtx.refreshConsoleOut)
 			{
 				s_cliCtx.refreshConsoleOut = 0;
+				// properly terminate the command string
 				s_cliCtx.cmdString[s_cliCtx.cmdLen] = 0;
-				// Reset current line and emit the command string
+				// Rewind cursor and print the command string
 				int cx,cy;
 				kgetcursor(&cx, &cy);
 				ksetcursor(0, cy);

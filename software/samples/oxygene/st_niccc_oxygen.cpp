@@ -49,12 +49,6 @@ static uint16_t next_word(void)
 	return (hi << 8) | lo;
 }
 
-static inline void map_vertex(int16_t* X, int16_t* Y)
-{
-	*X = (*X*125)/100;
-	*Y = (*Y*120)/100;
-}
-
 static void clear(void) {
 	SPrimitive prim;
 	prim.x0 = 0;
@@ -140,9 +134,8 @@ static int read_frame(void)
 		uint8_t nb_vertices = next_byte();
 		for(int v=0; v<nb_vertices; ++v)
 		{
-			X[v] = next_byte();
-			Y[v] = next_byte();
-			map_vertex(&X[v],&Y[v]);
+			X[v] = (next_byte()*160)>>7;
+			Y[v] = (next_byte()*153)>>7;
 		}
 	}
 
@@ -182,9 +175,8 @@ static int read_frame(void)
 			else
 			{
 				int16_t x,y;
-				x = next_byte();
-				y = next_byte();
-				map_vertex(&x,&y);
+				x = (next_byte()*160)>>7;
+				y = (next_byte()*153)>>7;
 				poly[2*i]   = x;
 				poly[2*i+1] = y;
 			}
@@ -242,9 +234,8 @@ static int read_frame_flip(void)
 		uint8_t nb_vertices = next_byte();
 		for(int v=0; v<nb_vertices; ++v)
 		{
-			X[v] = next_byte();
-			Y[v] = next_byte();
-			map_vertex(&X[v],&Y[v]);
+			X[v] = (next_byte()*160)>>7;
+			Y[v] = (next_byte()*153)>>7;
 		}
 	}
 
@@ -284,9 +275,8 @@ static int read_frame_flip(void)
 			else
 			{
 				int16_t x,y;
-				x = next_byte();
-				y = next_byte();
-				map_vertex(&x,&y);
+				x = (next_byte()*160)>>7;
+				y = (next_byte()*153)>>7;
 				poly[2*i]   = x;
 				poly[2*i+1] = y;
 			}

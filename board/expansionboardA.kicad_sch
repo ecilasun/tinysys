@@ -10209,6 +10209,16 @@
 	)
 	(wire
 		(pts
+			(xy 92.71 356.87) (xy 113.03 356.87)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3c6b4117-e9fe-470c-9243-51fce7778b7d")
+	)
+	(wire
+		(pts
 			(xy 36.83 59.69) (xy 41.91 59.69)
 		)
 		(stroke
@@ -13341,6 +13351,19 @@
 		)
 		(uuid 73f7f5ba-ff08-46a4-901d-e0c8c277e288)
 	)
+	(arc
+		(start 177.8 210.82)
+		(mid 182.5244 208.1275)
+		(end 187.96 208.28)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill
+			(type none)
+		)
+		(uuid 867a179b-05fe-40d1-abcf-1762f47ddcc4)
+	)
 	(rectangle
 		(start 22.86 109.22)
 		(end 71.12 175.26)
@@ -13449,6 +13472,16 @@
 		)
 		(uuid "1eaf625c-473a-4efb-9901-efcd4ab7fde1")
 	)
+	(text "12bit mode"
+		(exclude_from_sim no)
+		(at 125.222 362.204 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "2bd54320-419d-4a49-820f-dc23c36e740b")
+	)
 	(text "Video Output"
 		(exclude_from_sim no)
 		(at 24.13 265.43 0)
@@ -13493,6 +13526,26 @@
 		)
 		(uuid "4c07abb0-6a45-459e-9568-1d5c38d27973")
 	)
+	(text "REBOOT\nto tinysys CPU"
+		(exclude_from_sim no)
+		(at 176.276 212.852 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "52a7845c-55b1-4f3f-ab8a-68cea40b9449")
+	)
+	(text "001:\n5 step deskew"
+		(exclude_from_sim no)
+		(at 27.178 348.234 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "5caa1207-1bf2-4036-b898-88f4dfdb8c10")
+	)
 	(text "Micro SD Card"
 		(exclude_from_sim no)
 		(at 24.13 21.59 0)
@@ -13504,6 +13557,16 @@
 		)
 		(uuid "5d51c8ee-42d4-4c05-9301-9c77910ba46c")
 	)
+	(text "Latch on rising edge"
+		(exclude_from_sim no)
+		(at 133.35 367.538 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "739a9ba5-023f-4f42-8172-2d522c1a627e")
+	)
 	(text "USB Host"
 		(exclude_from_sim no)
 		(at 26.67 180.34 0)
@@ -13514,6 +13577,16 @@
 			(justify left bottom)
 		)
 		(uuid "8067b5e2-de12-40f0-9a8a-7a5f0bf9a25e")
+	)
+	(text "I2C disabled"
+		(exclude_from_sim no)
+		(at 125.984 359.664 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "a437ebf7-5aac-4798-b1f6-1c981e475515")
 	)
 	(text "Status LEDs"
 		(exclude_from_sim no)
@@ -13559,6 +13632,16 @@
 		)
 		(uuid "ccdbf273-2946-4dd2-91bf-f7d0cc3b1fa9")
 	)
+	(text "Enable deskew"
+		(exclude_from_sim no)
+		(at 130.302 370.078 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "ce41effd-f061-439a-b80d-8ab1bdadc806")
+	)
 	(text "This pin is supposed to\nstop ROM logging when low"
 		(exclude_from_sim no)
 		(at 280.924 214.63 0)
@@ -13568,6 +13651,16 @@
 			)
 		)
 		(uuid "d2964191-713b-47d7-a215-bf702a13488f")
+	)
+	(text "Dual-edge latch for input data"
+		(exclude_from_sim no)
+		(at 138.43 364.744 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "ed8c3893-1c99-4971-a79e-89ef456c5176")
 	)
 	(text "3v3 Power Regulator"
 		(exclude_from_sim no)
@@ -14538,6 +14631,28 @@
 		(uuid "31579e85-f4e9-4410-9761-23428f02d4ed")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 159.1158 80.01 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "MONITORSENSE"
+		(shape output)
+		(at 113.03 356.87 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "317a3d41-9b60-46c1-a4cc-58d090ec68be")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 130.348 356.87 0)
 			(effects
 				(font
 					(size 1.27 1.27)

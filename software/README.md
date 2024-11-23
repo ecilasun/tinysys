@@ -89,7 +89,7 @@ Please refer to the [README.md](./samples/starthere/README.md) file in `starther
 There is an executable on the default disk image of tinysys, called 'recv.elf', under the sys\bin directory. The riscvtool binary can start this application remotely and start sending a binary file to it.
 
 The syntax for sending a file is:
-..\..\build\release\riscvtool.exe myfile.elf -sendfile
+..\..\build\release\riscvtool.exe -sendfile myfile.elf
 
 The recv.elf executable will show an upload progress, and make sure the file arrives safely before writing it to the sdcard, as well as report any errors that might occur during the transfer.
 

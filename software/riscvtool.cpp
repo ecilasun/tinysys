@@ -666,11 +666,11 @@ void showusage()
 {
 	printf("Usage:\n");
 	printf("riscvtool.exe -reset [usbdevicename]\n");
-	printf("riscvtool.exe command -sendcmd [usbdevicename]\n");
-	printf("riscvtool.exe binaryfilename -sendfile [usbdevicename]\n");
-	printf("riscvtool.exe binaryfilename -makerom groupbytesize outputfilename\n");
-	printf("riscvtool.exe binaryfilename -makemem groupbytesize outputfilename\n");
-	printf("riscvtool.exe binaryfilename -makebin groupbytesize outputfilename\n");
+	printf("riscvtool.exe -sendcmd [usbdevicename] command\n");
+	printf("riscvtool.exe -sendfile [usbdevicename] binaryfilename\n");
+	printf("riscvtool.exe -makerom binaryfilename groupbytesize outputfilename\n");
+	printf("riscvtool.exe -makemem binaryfilename groupbytesize outputfilename\n");
+	printf("riscvtool.exe -makebin binaryfilename groupbytesize outputfilename\n");
 	printf("NOTE: Default device name is %s\n", devicename);
 }
 
@@ -691,45 +691,45 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	if (argc>=3 && strstr(argv[2], "-makerom"))
+	if (argc>=3 && strstr(argv[1], "-makerom"))
 	{
 		unsigned int groupsize = (unsigned int)strtoul(argv[3], nullptr, 10);
-		dumpelf(argv[1], argv[4], groupsize, true, false);
+		dumpelf(argv[2], argv[4], groupsize, true, false);
 		return 0;
 	}
 
-	if (argc>=3 && strstr(argv[2], "-makemem"))
+	if (argc>=3 && strstr(argv[1], "-makemem"))
 	{
 		unsigned int groupsize = (unsigned int)strtoul(argv[3], nullptr, 10);
-		dumpelf(argv[1], argv[4], groupsize, false, false);
+		dumpelf(argv[2], argv[4], groupsize, false, false);
 		return 0;
 	}
 
-	if (argc>=3 && strstr(argv[2], "-makebin"))
+	if (argc>=3 && strstr(argv[1], "-makebin"))
 	{
 		unsigned int groupsize = (unsigned int)strtoul(argv[3], nullptr, 10);
-		dumpelf(argv[1], argv[4], groupsize, false, true);
+		dumpelf(argv[2], argv[4], groupsize, false, true);
 		return 0;
 	}
 
-	if (argc>=3 && strstr(argv[2], "-sendfile"))
+	if (argc>=3 && strstr(argv[1], "-sendfile"))
 	{
 		if (argc > 3)
 			strcpy(devicename, argv[3]);
-		sendfile(argv[1]);
+		sendfile(argv[2]);
 		return 0;
 	}
 
-	if (argc>=3 && strstr(argv[2], "-sendcmd"))
+	if (argc>=3 && strstr(argv[1], "-sendcmd"))
 	{
 		if (argc > 3)
 			strcpy(devicename, argv[3]);
-		sendcmd(argv[1]);
+		sendcmd(argv[2]);
 		return 0;
 	}
 
-	printf("RISCVTool 1.0A\n");
-	printf("Unknown arguments.\n");
+	printf("RISCVTool 1.0C\n");
+	printf("Error: Unknown arguments.\n");
 	showusage();
 
 	return 0;

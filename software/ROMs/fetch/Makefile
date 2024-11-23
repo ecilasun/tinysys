@@ -59,7 +59,7 @@ $(1).elf: $(wildcard $(src_dir)/$(1)/*) $(wildcard $(src_dir)/*)
 	$$(RISCV_GCC) -DBUILDING_ROM $$(FILESYSTEM) $$(incs) $$(RISCV_GCC_OPTS) -o $$@ $(wildcard $(src_dir)/$(1)/*.c) $(wildcard $(corelib_dir)/*.c) $$(libs) -Wl,-T$(1)/rom.lds
 
 $(1).mem: $(wildcard $(src_dir)/$(1).elf)
-	$$(RISCVTOOL) $(src_dir)/$(1).elf -makemem $$(ROMWORDSIZE) $(src_dir)/$(1).mem
+	$$(RISCVTOOL) -makemem $(src_dir)/$(1).elf $$(ROMWORDSIZE) $(src_dir)/$(1).mem
 
 $(1).txt: $(wildcard $(src_dir)/$(1).elf)
 	$$(RISCV_OBJDUMP) $(src_dir)/$(1).elf -x -D -S >>  $(src_dir)/$(1).txt

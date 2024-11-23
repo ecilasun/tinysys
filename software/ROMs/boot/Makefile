@@ -63,8 +63,8 @@ libs  := $(wildcard $(filesystemlib_dir)/*.c)
 define compile_ROM
 $(1).elf: $(wildcard $(src_dir)/$(1)/*) $(wildcard $(src_dir)/*)
 	$$(RISCV_GCC) -DBUILDING_ROM $$(FILESYSTEM) $$(incs) $$(RISCV_GCC_OPTS) -o $$@ $(wildcard $(src_dir)/$(1)/*.c) $(wildcard $(corelib_dir)/*.c) $$(libs) -Wl,-T$(1)/rom.lds
-	$$(RISCVTOOL) $(src_dir)/$(1).elf -makemem $$(ROMWORDSIZE) $(src_dir)/$(1).mem
-	$$(RISCVTOOL) $(src_dir)/$(1).elf -makebin 4 $(src_dir)/$(1).bin
+	$$(RISCVTOOL) -makemem $(src_dir)/$(1).elf $$(ROMWORDSIZE) $(src_dir)/$(1).mem
+	$$(RISCVTOOL) -makebin $(src_dir)/$(1).elf 4 $(src_dir)/$(1).bin
 	$$(RISCV_OBJDUMP) $(src_dir)/$(1).elf -x -D -S >> $(src_dir)/$(1).txt
 endef
 
