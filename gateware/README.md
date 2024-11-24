@@ -19,7 +19,7 @@ r1.08: Stability fixes<br>
 r1.09: Added misaligned DMA support and removed ESP32/FPGA GPIO bridge device (to be re-done later), also added hblank interrupt mechanism and remote reboot ability (~ character over UART)<br>
 r1.0A: Added 64Kbytes of scratchpad RAM, shared across all cores, WNS relaxed to leave room for any future bug fixes<br>
 r1.0B: Minor device cleanup, reduced scratchpad to 16Kbytes, bumped mailbox to 16Kbytes<br>
-r1.0C: CLI improvement to ROM and minor fixes<br>
+r1.0C: Added a third CPU, CLI improvement to ROM and other minor fixes<br>
 
 # Device gateware
 
