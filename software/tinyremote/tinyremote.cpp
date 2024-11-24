@@ -2,18 +2,19 @@
 // libx11-dev
 // libv4l-dev
 
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/keysym.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+
+#if defined(CAT_LINUX)
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/keysym.h>
 #include <termios.h>
 #include <pthread.h>
-
 #include <linux/ioctl.h>
 #include <linux/types.h>
 #include <linux/v4l2-common.h>
@@ -23,9 +24,15 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-
 char commdevicename[512] = "/dev/ttyUSB0";
 char capturedevicename[512] = "/dev/video0";
+#endif
+
+#if defined(CAT_WINDOWS)
+#include <windows.h>
+char commdevicename[512] = "\\\\.\\COM4";
+char capturedevicename[512] = "\\\\.\\VIDEO0"; // ???
+#endif
 
 static uint8_t masktable[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
 

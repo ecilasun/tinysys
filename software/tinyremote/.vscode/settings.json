@@ -1,0 +1,11 @@
+{
+	"files.associations": {
+		"charconv": "cpp",
+		"format": "cpp",
+		"queue": "cpp",
+		"deque": "cpp",
+		"xtree": "cpp",
+		"vector": "cpp",
+		"random": "cpp"
+	}
+}

@@ -1,0 +1,71 @@
+import glob
+import os
+import platform
+from waflib.TaskGen import extension, feature, task_gen
+from waflib.Task import Task
+from waflib import Build
+from shutil import copyfile
+
+VERSION = '0.1'
+APPNAME = 'tinyremote'
+
+top = '.'
+
+
+def options(opt):
+    # Prefers msvc, but could also use conf.load('clang++') instead
+    if ('COMSPEC' in os.environ):
+        opt.load('msvc')
+    else:
+        opt.load('clang++')
+
+def configure(conf):
+    # Prefers msvc, but could also use conf.load('clang++') instead
+    if ('COMSPEC' in os.environ):
+        conf.env.MSVC_TARGETS = ['x64']
+        conf.load('msvc')
+        conf.env.PLATFORM = ['windows']
+    else:
+        conf.load('clang++')
+
+def build(bld):
+
+    bld.post_mode = Build.POST_LAZY
+
+    # RELEASE
+    if platform.system().lower().startswith('win'):
+        libs = ['ws2_32', 'shell32', 'user32', 'Comdlg32', 'gdi32', 'ole32', 'kernel32', 'winmm', 'SDL2main', 'SDL2', 'SDL2_ttf']
+        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_WINDOWS', 'RELEASE']
+        includes = ['source', 'includes', '3rdparty/SDL2/include', '3rdparty/SDL2_ttf/include', '../3rdparty/fat32']
+        sdk_lib_path = [os.path.abspath('3rdparty/SDL2/lib/x64/'), os.path.abspath('3rdparty/SDL2_ttf/lib/x64/')]
+        compile_flags =  ['/permissive-', '/arch:AVX2', '/GL', '/WX', '/Ox', '/Ot', '/Oy', '/fp:fast', '/Qfast_transcendentals', '/Zi', '/EHsc', '/FS', '/DRELEASE', '/D_SECURE_SCL 0']
+        platform_flags = ['/std:c++20']
+        linker_flags = ['/SUBSYSTEM:CONSOLE', '/LTCG', '/RELEASE']
+    elif platform.system().lower().startswith('darwin'):
+        libs = []
+        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_DARWIN', 'RELEASE']
+        includes = ['source', 'includes']
+        sdk_lib_path = []
+        compile_flags = ['-march=native', '-O3', '-arch', 'arm64']
+        platform_flags = ['-std=c++20']
+        linker_flags = []
+    elif platform.system().lower().startswith('linux'):
+        libs = ['X11', 'v412', 'stdc++']
+        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_LINUX', 'RELEASE']
+        includes = ['source', 'includes']
+        sdk_lib_path = []
+        compile_flags = ['-march=native', '-Ofast', '-pthread', '-flto', '-fomit-frame-pointer', '-Iincludes']
+        platform_flags = ['-std=c++20']
+        linker_flags = []
+
+    # Build tinyremote
+    bld.program(
+        source=glob.glob('*.cpp'),
+        cxxflags=compile_flags + platform_flags,
+        ldflags=linker_flags,
+        target='tinyremote',
+        defines=platform_defines,
+        includes=includes,
+        libpath=sdk_lib_path,
+        lib=libs,
+        use=[])

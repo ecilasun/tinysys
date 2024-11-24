@@ -1,0 +1,27 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+    "configurations": [
+	    {
+            "name": "C++ Launch (Win)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\build\\release\\tinyremote.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}\\",
+            "stopAtEntry": false,
+            "environment": [],
+            "externalConsole": false
+        },
+	    {
+            "name": "C++ Launch (Linux / Darwin)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/release/tinyremote",
+            "args": [],
+            "cwd": "${workspaceFolder}/"
+        }
+    ]
+}
