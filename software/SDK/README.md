@@ -16,9 +16,9 @@ The direct memory access unit is used to move blocks of memory faster than the C
 Please see [DMA](dma.md) for documentation about memory block moves.
 
 ## Multitasking
-The task library helps start and stop tasks that can run on either of the two CPUs in the system.
+The task library helps start and stop tasks that can run on any hardware thread in the system.
 
-Please see [TASK](task.md) for documentation about multitasking and the two CPU cores.
+Please see [TASK](task.md) for documentation about multitasking and the CPU cores.
 
 ## Video Processing Unit
 The video processing unit controls video scan out from selected system memory location as well as controlling color depth and video dimensions.

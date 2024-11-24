@@ -580,13 +580,22 @@ void sendfile(char *_filename)
 	uint32_t i = 0;
 	uint32_t packetOffset = 0;
 	char* encoded = new char[packetSize*4 + 1];
+	char progress[65];
+	for (i=0; i<64; ++i)
+		progress[i] = 176;
+	progress[64] = 0;
 	for (i=0; i<numPackets; ++i)
 	{
 		uint32_t encodedSize = Base64Encode(filedata + packetOffset, packetSize, encoded);
+		int idx = (i*64)/numPackets;
+		progress[idx] = 219;
+		printf("\r %8X : Uploading [%s] ", i*packetSize, progress);
 
 		if (!WACK(serial, '~', received)) // Wait for a 'go' signal
 		{
 			printf("Packet size error at %d/%d (512): '%c'\n", i, numPackets, received);
+			encoded[encodedSize] = 0;
+			printf("Packet content: %s\n", encoded);
 			serial.Close();
 			delete [] filedata;
 			return;
@@ -633,6 +642,8 @@ void sendfile(char *_filename)
 
 		packetOffset += leftoverBytes;
 	}
+
+	printf("\r\n");
 
 	delete[] encoded;
 

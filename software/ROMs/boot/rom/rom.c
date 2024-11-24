@@ -134,6 +134,7 @@ uint32_t LoadOverlay(const char *filename)
 
 		// New ROM image will do its own thing to initialize the CPUs,
 		// remove our previous function pointers to branch to on reboot.
+		E32SetupCPU(2, (void*)0x0);
 		E32SetupCPU(1, (void*)0x0);
 		E32SetupCPU(0, (void*)0x0);
 
@@ -167,7 +168,7 @@ void __attribute__((aligned(64), noinline)) UserMain()
 	InitializeTaskContext(self);
 
 	struct STaskContext *taskctx = GetTaskContext(self);
-	TaskAdd(taskctx, "CPU1idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+	TaskAdd(taskctx, "CPUIdle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 
 	InstallISR(self, false, true);
 
@@ -218,10 +219,12 @@ void HandleCPUError(struct STaskContext *ctx, const uint32_t cpu)
 		kprintf("\n");
 	}
 
-	// Reset CPU#1 here if anything faulted
+	// Reset CPU#1/2 here if anything faulted
 	// This way we won't risk some stale task being hung on CPU#1 if CPU#0 crashes
 	E32SetupCPU(1, UserMain);
 	E32ResetCPU(1);
+	E32SetupCPU(2, UserMain);
+	E32ResetCPU(2);
 
 	// Clear error once handled and reported
 	ctx->kernelError = 0;
@@ -281,10 +284,11 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	InitializeTaskContext(self);
 
 	LEDSetState(0x3);			// xxOO
-	struct STaskContext *taskctx[2];
+	struct STaskContext *taskctx[3];
 	taskctx[0] = GetTaskContext(self);
 	taskctx[1] = GetTaskContext(1);
-	TaskAdd(taskctx[0], "CPU0idle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+	taskctx[2] = GetTaskContext(2);
+	TaskAdd(taskctx[0], "CPUIdle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 	TaskAdd(taskctx[0], "CLI", _CLITask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 
 	LEDSetState(0x7);															// xOOO
@@ -307,7 +311,7 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 
 		// Kernel error / crash handler for this CPU
 		// TODO: Catch kernel errors on CPU#1 onwards
-		for (int cpu=0;cpu<2;++cpu)
+		for (int cpu=0; cpu<MAX_HARTS; ++cpu)
 		{
 			if (taskctx[cpu]->kernelError)
 				HandleCPUError(taskctx[cpu], cpu);
@@ -347,6 +351,8 @@ int main()
 	ClearStatics();
 
 	// Reset and wake up all CPUs again, this time with their correct entry points
+	E32SetupCPU(2, UserMain);
+	E32ResetCPU(2);
 	E32SetupCPU(1, UserMain);
 	E32ResetCPU(1);
 	E32SetupCPU(0, KernelMain);

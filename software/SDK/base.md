@@ -56,6 +56,6 @@ The accuracy of the sleep depends on active interrupts and caching of the functi
 
 `uint32_t* E32GetScratchpad()`
 
-This function returns the scratchpad memory address. You can use this 64Kbyte uncached memory region to store temporary data or act as a shared memory location between the two CPU cores. Since there is no caching of reads or writes to this area, they complete in fixed speed, and writes are immediately visible from all cores.
+This function returns the scratchpad memory address. You can use this 64Kbyte uncached memory region to store temporary data or act as a shared memory location between the CPU cores. Since there is no caching of reads or writes to this area, they complete in fixed speed, and writes are immediately visible from all cores.
 
 ### Back to [SDK Documentation](README.md)

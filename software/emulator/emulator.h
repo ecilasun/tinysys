@@ -18,7 +18,7 @@ public:
 	int m_audioDevice {0};
 
 	CBus* m_bus{ nullptr };
-	CRV32* m_cpu[2]{ nullptr,nullptr };
+	CRV32* m_cpu[3]{ nullptr,nullptr,nullptr };
 
 	uint8_t* m_rombin{ nullptr };
 	uint32_t m_romsize{ 0 };

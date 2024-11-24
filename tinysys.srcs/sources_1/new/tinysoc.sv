@@ -45,10 +45,13 @@ module tinysoc #(
 
 axi4if instructionbusHart0();	// Fetch bus for HART#0
 axi4if instructionbusHart1();	// Fetch bus for HART#1
+axi4if instructionbusHart2();	// Fetch bus for HART#2
 axi4if databusHart0();			// Data bus for HART#0
 axi4if databusHart1();			// Data bus for HART#1
+axi4if databusHart2();			// Data bus for HART#2
 axi4if devicebusHart0();		// Direct access to devices from data unit of HART#0
 axi4if devicebusHart1();		// Direct access to devices from data unit of HART#1
+axi4if devicebusHart2();		// Direct access to devices from data unit of HART#2
 
 axi4if videobus();				// Video output unit bus
 axi4if dmabus();				// Direct memory access bus
@@ -64,6 +67,7 @@ axi4if vpucmdif();				// Sub bus: VPU command fifo (video scan out logic)
 axi4if spiif();					// Sub bus: SPI control device (sdcard)
 axi4if csrif0();				// Sub bus: CSR#0 file device (control registers)
 axi4if csrif1();				// Sub bus: CSR#1 file device (control registers)
+axi4if csrif2();				// Sub bus: CSR#2 file device (control registers)
 axi4if xadcif();				// Sub bus: ADC controller (temperature sensor)
 axi4if dmaif();					// Sub bus: DMA controller (memcopy)
 axi4if audioif();				// Sub bus: APU i2s audio output unit (raw audio)
@@ -157,6 +161,34 @@ riscv #( .CSRBASE(16'h800B), .RESETVECTOR(RESETVECTOR)) hart1(
 	.retired(retiredHart1));
 
 // --------------------------------------------------
+// HART#2
+// --------------------------------------------------
+
+wire sieHart2, cpuresetreq2;
+wire [63:0] cpuclocktimeHart2;
+wire [63:0] retiredHart2;
+wire [31:0] mepcHart2;
+wire [31:0] mtvecHart2;
+wire [31:0] PCHart2;
+wire [1:0] irqReqHart2;
+
+riscv #( .CSRBASE(16'h800C), .RESETVECTOR(RESETVECTOR)) hart2(
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.romReady(romReady),
+	.sie(sieHart2),
+	.mepc(mepcHart2),
+	.mtvec(mtvecHart2),
+	.pc_out(PCHart2),
+	.cpuresetreq(cpuresetreq2),
+	.irqReq(irqReqHart2),
+	.instructionbus(instructionbusHart2),
+	.databus(databusHart2),
+	.devicebus(devicebusHart2),
+	.cpuclocktime(cpuclocktimeHart2),
+	.retired(retiredHart2));
+
+// --------------------------------------------------
 // Video output unit
 // --------------------------------------------------
 
@@ -247,16 +279,16 @@ axi4i2saudio APU(
 // Traffic between master units / memory / devices
 // --------------------------------------------------
 
-arbiter2x arbiter2x1instdev(
+arbitersmall arbiter3x1instdev(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.axi_s({devicebusHart1, devicebusHart0}),
+	.axi_s({devicebusHart2, devicebusHart1, devicebusHart0}),
 	.axi_m(devicebus) );
 
-arbiter arbiter8x1instSDRAM(
+arbiterlarge arbiter10x1instSDRAM(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.axi_s({romcopybus, audiobus, dmabus, videobus, databusHart1, databusHart0, instructionbusHart1, instructionbusHart0}),
+	.axi_s({romcopybus, audiobus, dmabus, videobus, databusHart2, databusHart1, databusHart0, instructionbusHart2, instructionbusHart1, instructionbusHart0}),
 	.axi_m(memorybus) );
 
 // --------------------------------------------------
@@ -300,13 +332,14 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // UART: 8xx90000  8xx9FFFF  4'b1001  64KB	 UART HART <-> ESP32-C6 comm
 // CSR0: 8xxA0000  8xxAFFFF  4'b1010  64KB	 CSR#0
 // CSR1: 8xxB0000  8xxBFFFF  4'b1011  64KB	 CSR#1
-// ----: 8xxC0000  8xxCFFFF  4'b1100  64KB	 Unused
+// CSR2: 8xxC0000  8xxCFFFF  4'b1100  64KB	 CSR#2
 // ----: 8xxD0000  8xxDFFFF  4'b1101  64KB	 Unused
 // ----: 8xxE0000  8xxEFFFF  4'b1110  64KB	 Unused
 // ----: 8xxF0000  8xxFFFFF  4'b1111  64KB	 Unused
 
-devicerouter devicerouterinst(
+devicerouter devicerouter13inst(
 	.addressmask({
+		4'b1100,		// CRS2 CSR file for HART#2
 		4'b1011,		// CRS1 CSR file for HART#1
 		4'b1010,		// CRS0 CSR file for HART#0
 		4'b1001,		// UART ESP32 to RISC-V UART channel
@@ -320,7 +353,7 @@ devicerouter devicerouterinst(
 		4'b0001,		// LEDS Debug / Status LED interface
 		4'b0000}),		// SPAD Scratchpad for inter-core data transfer
 	.axi_s(devicebus),
-    .axi_m({csrif1, csrif0, uartif, mailif, audioif, usbaif, dmaif, xadcif, spiif, vpucmdif, ledif, scratchif}));
+    .axi_m({csrif2, csrif1, csrif0, uartif, mailif, audioif, usbaif, dmaif, xadcif, spiif, vpucmdif, ledif, scratchif}));
 
 // --------------------------------------------------
 // Interrupt wires
@@ -444,6 +477,30 @@ axi4CSRFile #( .HARTID(4'd1)) csrfile1 (
 	.sie(sieHart1),
 	// Bus
 	.s_axi(csrif1) );
+
+axi4CSRFile #( .HARTID(4'd2)) csrfile2 (
+	.aclk(aclk),
+	.aresetn(aresetn),
+	.cpuclocktime(cpuclocktimeHart2),
+	.wallclocktime(wallclocktime),
+	.retired(retiredHart2),
+	.pc_in(PCHart2),
+	// IRQ state for hardware or timer
+	.irqReq(irqReqHart2),
+	// External hardware interrupt wires
+	.keyirq(keyirq),
+	.usbirq(usbairq),
+	.uartirq(uartirq),
+	.hirq(hirq),
+	.rebootreqn(~esp_reboot),
+	// CPU reset
+	.cpuresetreq(cpuresetreq2),
+	// Shadow registers
+	.mepc(mepcHart2),
+	.mtvec(mtvecHart2),
+	.sie(sieHart2),
+	// Bus
+	.s_axi(csrif2) );
 
 axi4uart uartinst(
 	.aclk(aclk),

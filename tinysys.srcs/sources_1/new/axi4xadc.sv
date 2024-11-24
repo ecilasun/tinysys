@@ -80,12 +80,10 @@ assign s_axi.bvalid = 1'b1;
 assign s_axi.bresp = 2'b00;
 
 logic [1:0] raddrstate;
-logic [2:0] chsel;
 
 always @(posedge aclk) begin
 	if (~delayedresetn) begin
 		raddrstate <= 2'b00;
-		chsel <= 3'b000;
 	end else begin
 		s_axi.rvalid <= 1'b0;
 		s_axi.arready <= 1'b0;
@@ -96,20 +94,6 @@ always @(posedge aclk) begin
 			2'b00: begin
 				if (s_axi.arvalid) begin
 					s_axi.arready <= 1'b1;
-
-					// Channel index mapping
-					//5 432 10.0
-					//0_000_00 0x00 CH0
-					//0_001_00 0x04 CH1
-					//0_010_00 0x08 CH2
-					//0_011_00 0x0C CH3
-					//0_100_00 0x10 CH4
-					//0_101_00 0x14 CH5
-					//0_110_00 0x18 CH6
-					//0_111_00 0x1C CH7
-					//1_000_00 0x20 TMP
-
-					chsel <= s_axi.araddr[4:2];
 					raddrstate <= 2'b01;
 				end
 			end

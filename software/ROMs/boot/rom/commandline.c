@@ -303,10 +303,10 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 
 	if (loadELF)
 	{
-		// TODO: load user ELF files on HART#1.
-		struct STaskContext* tctx[2] = {GetTaskContext(0), GetTaskContext(1)};
-		int32_t taskcounts[2] = {tctx[0]->numTasks, tctx[1]->numTasks};
-		int32_t maxcounts[2] = {2, 1};
+		// TODO: Add support to load user ELF files on HART#1/2
+		struct STaskContext* tctx[MAX_HARTS] = {GetTaskContext(0), GetTaskContext(1), GetTaskContext(2)};
+		int32_t taskcounts[MAX_HARTS] = {tctx[0]->numTasks, tctx[1]->numTasks, tctx[2]->numTasks};
+		int32_t maxcounts[MAX_HARTS] = {2, 1, 1};
 
 		// Temporary measure to avoid loading another executable while the first one is running
 		// until we get a virtual memory device
@@ -403,6 +403,9 @@ int HandleCommandLine(struct STaskContext *taskctx)
 					struct STaskContext* tctx1 = GetTaskContext(1);
 					for (uint32_t i=1; i<tctx1->numTasks; ++i)
 						TaskExitTaskWithID(tctx1, i, 0);
+					struct STaskContext* tctx2 = GetTaskContext(2);
+					for (uint32_t i=1; i<tctx2->numTasks; ++i)
+						TaskExitTaskWithID(tctx2, i, 0);
 				}
 			}
 			break;

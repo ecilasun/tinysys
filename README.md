@@ -10,7 +10,7 @@ Of course, before you ask, it does run DOOM, and with sound and keyboard input!
 
 # System specifications
 
-- 2x RISC-V based CPUs (architecture: rv32im_zicsr_zifencei_zfinx)
+- 3x RISC-V based CPUs (architecture: rv32im_zicsr_zifencei_zfinx)
 - First core runs the OS kernel and user processes
 - Second core is fully reserved for user process use
 - 150MHz bus and CPU clock, however we're not pipelined yet (TBD)
@@ -19,7 +19,7 @@ Of course, before you ask, it does run DOOM, and with sound and keyboard input!
 - Float and integer GPRs share the same register space (zfinx extension)
 - 32 GRPs x 32 bits
 - 4096 CSRs x 32 bits (some registers reserved for CPU and some are immutable)
-- Both CPUs have access to each-other's CSR register files via memory mapped addresses
+- All CPUs have access to each-other's CSR register files via memory mapped addresses
 - DMA unit with optional zero-masking for 16 byte aligned or unaligned (target only) memory copies
 - DMA supports two coherency modes (cpu coherent or not)
 - Integer multiply / divide units per CPU

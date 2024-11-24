@@ -1405,7 +1405,6 @@ bool CRV32::Tick(uint64_t wallclock, CBus* bus)
 
 	// Gather a block of code (or grab precompiled version)
 	bool fetchok = FetchDecode(bus);
-	bus->Tick();
 	csr->Tick(bus);
 	csr->UpdateTime(wallclock, m_cycles);
 	// Execute the whole block

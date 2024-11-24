@@ -376,8 +376,8 @@ static UINT tmpresult = 0;
 void ClearTaskMemory()
 {
 	void *taskmem = (void *)DEVICE_MAIL;
-	// Clear the task space used by two CPUs
-	__builtin_memset(taskmem, 0, sizeof(struct STaskContext)*2);
+	// Clear the task space used by all CPUs
+	__builtin_memset(taskmem, 0, sizeof(struct STaskContext)*MAX_HARTS);
 }
 
 struct STaskContext *GetTaskContext(uint32_t _hartid)

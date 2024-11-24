@@ -73,7 +73,7 @@
 // ROM SHADOW
 #define ROMSHADOW_END_MEM_END			0x0FFFFFFF // ROM shadow copy above this (128 KBytes, but normally OS ROM fits in upper 64 KByte half)
 
-#define MAX_HARTS 2
+#define MAX_HARTS 3
 
 // Device address base
 #define DEVICE_BASE 0x80000000
@@ -95,7 +95,7 @@
 #define DEVICE_UART (DEVICE_BASE+0x90000)
 #define DEVICE_CSR0 (DEVICE_BASE+0xA0000)
 #define DEVICE_CSR1 (DEVICE_BASE+0xB0000)
-//#define DEVICE_DEV0 (DEVICE_BASE+0xC0000)
+#define DEVICE_CSR2 (DEVICE_BASE+0xC0000)
 //#define DEVICE_DEV1 (DEVICE_BASE+0xD0000)
 //#define DEVICE_DEV2 (DEVICE_BASE+0xE0000)
 //#define DEVICE_DEV3 (DEVICE_BASE+0xF0000)

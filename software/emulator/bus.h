@@ -28,7 +28,7 @@
 #define DEVICE_UART (DEVICE_BASE+0x90000)
 #define DEVICE_CSR0 (DEVICE_BASE+0xA0000)
 #define DEVICE_CSR1 (DEVICE_BASE+0xB0000)
-//#define DEVICE_DEV0 (DEVICE_BASE+0xC0000)
+#define DEVICE_CSR2 (DEVICE_BASE+0xC0000)
 //#define DEVICE_DEV1 (DEVICE_BASE+0xD0000)
 //#define DEVICE_DEV2 (DEVICE_BASE+0xE0000)
 //#define DEVICE_DEV3 (DEVICE_BASE+0xF0000)
@@ -57,7 +57,7 @@ public:
 	CSysMem* m_mem{ nullptr };
 
 private:
-	CCSRMem* m_csr[2]{ nullptr, nullptr };
+	CCSRMem* m_csr[3]{ nullptr, nullptr, nullptr };
 	CMailMem* m_mail{ nullptr };
 	CScratchpadMem* m_scratchpad{ nullptr };
 	CSDCard* m_sdcc{ nullptr };
@@ -68,7 +68,7 @@ private:
 	CAPU* m_apu{ nullptr };
 	CDummyDevice* m_dummydevice{ nullptr };
 
-	MemMappedDevice* m_devices[13]{ nullptr };
+	MemMappedDevice* m_devices[14]{ nullptr };
 
 	uint32_t m_resetvector{ 0 };
 };

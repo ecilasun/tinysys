@@ -25,7 +25,7 @@ static struct EVideoSwapContext s_sc;
 static uint8_t *s_framebufferA;
 static uint8_t *s_framebufferB;
 
-void MyTask()
+void MyTaskOne()
 {
 	// Set up shared memory for this HART
 	volatile int *sharedmem = (volatile int*)E32GetScratchpad();
@@ -39,6 +39,21 @@ void MyTask()
 		E32Sleep(150*ONE_MILLISECOND_IN_TICKS);
 
 		*s_frame1 = *s_frame1 + 1;
+	}
+}
+
+void MyTaskTwo()
+{
+	// Set up shared memory for this HART
+	volatile int *sharedmem = (volatile int*)E32GetScratchpad();
+	volatile int *s_frame2 = sharedmem+8;
+
+	while(1)
+	{
+		TaskYield();
+		E32Sleep(250*ONE_MILLISECOND_IN_TICKS);
+
+		*s_frame2 = *s_frame2 + 1;
 	}
 }
 
@@ -64,16 +79,24 @@ int main(int argc, char *argv[])
 	volatile int *sharedmem = (volatile int*)E32GetScratchpad();
 	volatile int *s_frame0 = sharedmem;
 	volatile int *s_frame1 = sharedmem+4;
+	volatile int *s_frame2 = sharedmem+8;
 
 	// Grab task context of CPU#1
-	struct STaskContext *taskctx = TaskGetContext(1);
+	struct STaskContext *taskctx1 = TaskGetContext(1);
+	struct STaskContext *taskctx2 = TaskGetContext(2);
 
-	// Add a new task to run
-	int taskID = TaskAdd(taskctx, "mytask", MyTask, TS_RUNNING, QUARTER_MILLISECOND_IN_TICKS);
-
-	if (taskID == 0)
+	// Add a new tasks to run for each HART
+	int taskID1 = TaskAdd(taskctx1, "MyTaskOne", MyTaskOne, TS_RUNNING, QUARTER_MILLISECOND_IN_TICKS);
+	if (taskID1== 0)
 	{
-		printf("Error: No room to add new task\n");
+		printf("Error: No room to add new task on CPU 1\n");
+		return -1;
+	}
+
+	int taskID2 = TaskAdd(taskctx2, "MyTaskTwo", MyTaskTwo, TS_RUNNING, QUARTER_MILLISECOND_IN_TICKS);
+	if (taskID2== 0)
+	{
+		printf("Error: No room to add new task on CPU 2\n");
 		return -1;
 	}
 
@@ -82,11 +105,14 @@ int main(int argc, char *argv[])
 	{
 		VPUClear(&s_vx, 0x03050305);
 
+		int L2 = snprintf(tmpstr, 127, "HART#2: %d", *s_frame2);
+		VPUPrintString(&s_vx, 0x00, 0x0F, 8, 8, tmpstr, L2);
+
 		int L1 = snprintf(tmpstr, 127, "HART#1: %d", *s_frame1);
-		VPUPrintString(&s_vx, 0x00, 0x0F, 8, 8, tmpstr, L1);
+		VPUPrintString(&s_vx, 0x00, 0x0F, 8, 10, tmpstr, L1);
 
 		int L0 = snprintf(tmpstr, 127, "HART#0: %d", *s_frame0);
-		VPUPrintString(&s_vx, 0x00, 0x0F, 8, 16, tmpstr, L0);
+		VPUPrintString(&s_vx, 0x00, 0x0F, 8, 12, tmpstr, L0);
 
 		TaskYield();
 		E32Sleep(50*ONE_MILLISECOND_IN_TICKS);
@@ -101,7 +127,8 @@ int main(int argc, char *argv[])
 	} while(1);
 
 	// We're done with the test, remove our task
-	TaskExitTaskWithID(taskctx, taskID, 0);
+	TaskExitTaskWithID(taskctx1, taskID1, 0);
+	TaskExitTaskWithID(taskctx2, taskID2, 0);
 
 	return 0;
 }

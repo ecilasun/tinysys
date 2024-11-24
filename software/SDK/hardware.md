@@ -12,7 +12,7 @@ RISC V is the CPU of choice for tinysys, though it could easily have been OpenRI
 
 For easer of development, the choice was made to implement the open RISC V standard, as there are mature enough compilers and tools today that allow for portin complex applications including Linux to this architecture.
 
-There are two CPUs on board (inside the FPGA) of tinysys. Technically, they're termed 'hardware threads' and the term HART is used for short.
+There are three CPUs on board (inside the FPGA) of tinysys. Technically, they're termed 'hardware threads' and the term HART is used for short.
 
 Each HART contains its own dedicated data (D$) and code (I$) cache, which are 32 and 16 Kbytes in size respectively.
 
@@ -51,7 +51,7 @@ Here is a list of all devices, their starting addresses, and their purpose. Plea
 	DEVICE_UART 0x80090000 - 0x8009FFFF UART: I/O port used to read from and write data to the UART device tied to the ESP32-C6 module
 	DEVICE_CSR0 0x800A0000 - 0x800AFFFF CSR0: The 4Kbyte memory mapped CSR file for hardware thread zero
 	DEVICE_CSR1 0x800B0000 - 0x800BFFFF CSR1: The 4Kbyte memory mapped CSR file for hardware thread one
-	DEVICE_DEV0 0x800C0000 - 0x800CFFFF Unused - reserved for future use / do not access
+	DEVICE_CSR2 0x800C0000 - 0x800CFFFF CSR2: The 4Kbyte memory mapped CSR file for hardware thread two
 	DEVICE_DEV1 0x800D0000 - 0x800DFFFF Unused - reserved for future use / do not access
 	DEVICE_DEV2 0x800E0000 - 0x800EFFFF Unused - reserved for future use / do not access
 	DEVICE_DEV3 0x800F0000 - 0x800FFFFF Unused - reserved for future use / do not access
