@@ -306,9 +306,6 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // ----: 8xxF0000  8xxFFFFF  4'b1111  64KB	 Unused
 
 devicerouter devicerouterinst(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.axi_s(devicebus),
 	.addressmask({
 		4'b1011,		// CRS1 CSR file for HART#1
 		4'b1010,		// CRS0 CSR file for HART#0
@@ -322,6 +319,7 @@ devicerouter devicerouterinst(
 		4'b0010,		// VPUC Graphics Processing Unit Command Fifo
 		4'b0001,		// LEDS Debug / Status LED interface
 		4'b0000}),		// SPAD Scratchpad for inter-core data transfer
+	.axi_s(devicebus),
     .axi_m({csrif1, csrif0, uartif, mailif, audioif, usbaif, dmaif, xadcif, spiif, vpucmdif, ledif, scratchif}));
 
 // --------------------------------------------------

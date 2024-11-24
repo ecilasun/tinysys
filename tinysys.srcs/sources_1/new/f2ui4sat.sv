@@ -16,7 +16,7 @@ module f2ui4sat(
 );
 
 logic [31:0] saturated;
-logic [5:0] shift;
+logic [7:0] shift;
 logic [1:0] done;
 
 assign result = saturated;
@@ -30,7 +30,7 @@ always @(posedge clk) begin
 	if (~aresetn) begin
 		done <= 2'b00;
 		saturated <= 32'd0;
-		shift <= 6'd0;
+		shift <= 8'd0;
 	end else begin
 		if (start) begin
 			done <= 2'b01;
@@ -42,8 +42,8 @@ always @(posedge clk) begin
 				saturated <= 15;
 			end else begin // All other values follow adjusted f2i shift.
 				// NOTE: This is pipelined to complete in 2 clocks
-				shift <= {(8'd146) - e}[5:0]; // (8'd127 + 8'd23 - 8'd4) - e;
-				saturated <= ((m | 32'h800000) >> shift) & 4'hF;
+				shift <= {(8'd146) - e}; // (8'd127 + 8'd23 - 8'd4) - e;
+				saturated <= ((m | 32'h800000) >> shift[5:0]) & 4'hF;
 			end
 		end
 	end

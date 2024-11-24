@@ -36,3 +36,6 @@ software/emulator/bin/**
 !software/emulator/bin/_ensurefolderexists.txt
 software/emulator/emulator/.vs/**
 software/emulator/emulator/tinysys/x64/**
+software/tinyremote/build/**
+software/tinyremote/waf**
+software/tinyremote/.lock**

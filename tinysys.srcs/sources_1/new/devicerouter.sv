@@ -3,10 +3,8 @@
 // 1x5 Device Address Router
 
 module devicerouter(
-	input wire aclk,
-	input wire aresetn,
+    input wire [3:0] addressmask[11:0], // Bits [19:16] of the physical address
     axi4if.slave axi_s,
-    wire [3:0] addressmask[11:0], // Bits [19:16] of the physical address
     axi4if.master axi_m[11:0]);
 
 // ------------------------------------------------------------------------------------

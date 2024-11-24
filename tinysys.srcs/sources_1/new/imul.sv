@@ -17,7 +17,7 @@ logic busy2 = 1'b0;
 logic [32:0] a = 33'd0;
 logic [32:0] b = 33'd0;
 logic [3:0] count = 4'd0;
-wire [65:0] dspproduct;
+wire [64:0] dspproduct;
 logic done = 1'b0;
 assign ready = done;
 
@@ -74,7 +74,7 @@ always_ff @(posedge aclk) begin
 						product <= dspproduct[31:0];
 					end
 					default : begin // `f3_mulh, `f3_mulhsu, `f3_mulhu
-						product <= dspproduct[63:32]; // or is this 64:33 ?
+						product <= dspproduct[63:32];
 					end
 				endcase
 				mulce <= 1'b0;
