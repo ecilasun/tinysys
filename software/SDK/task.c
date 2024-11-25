@@ -128,9 +128,9 @@ int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum E
 	if (prevcount >= TASK_MAX)
 		return 0;
 
-	// Task stacks
+	// Task stacks, 1KBytes each
 	const uint32_t stacksizeword = 1024;
-	uint32_t stackpointer = TASKMEM_END_STACK_END - (prevcount*stacksizeword);
+	uint32_t stackpointer = TASKMEM_END_STACK_END - ((_ctx->hartID*TASK_MAX+prevcount)*stacksizeword);
 
 	// Stop timer interrupts on this core during this operation
 	clear_csr(mie, MIP_MTIP);

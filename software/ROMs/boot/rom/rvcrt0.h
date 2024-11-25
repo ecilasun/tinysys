@@ -51,7 +51,9 @@ extern "C"
 
 			// All other cores have reached here before CPU#0 and are in a WFI loop
 			"_helpercore: "						// Put hardware thread to sleep (NOTE: even with MIE disabled we can reset this core later)
-			"li sp, 0x0FFDFEF0;"				// Stack is 256 bytes away for CPU#1
+			"li sp, 0x0FFDFFF0;"				// Stack base
+			"slli a3, a3, 8;"					// hartid*256
+			"sub sp, sp, a3;"					// Stack offset for this CPU
 			"mv s0, sp;"						// Set frame pointer to current stack pointer
 			"_freezecore: "						// Go to sleep (will be 'reset' by CPU#0 to jump to address in mscratch)
 			"wfi;"

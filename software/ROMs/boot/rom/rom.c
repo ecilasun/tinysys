@@ -158,7 +158,10 @@ void __attribute__((aligned(64), noinline)) UserMain()
 		"fence.i;"				// Discard I$
 		"csrw 0xFEE, 0;"		// Stop reset
 		"csrw mstatus,0;"		// Disable all interrupts (mstatus:mie=0)
-		"li sp, 0x0FFDFEF0;"	// Stack pointer for CPU#1 (256 bytes above CPU#0)
+		"li sp, 0x0FFDFFF0;"	// Stack base
+		"csrr a3, mhartid;"
+		"slli a3, a3, 8;"		// hartid*256
+		"sub sp, sp, a3;"		// Stack offset for this CPU
 		"mv s0, sp;"			// Set frame pointer to current stack pointer
 	);
 
