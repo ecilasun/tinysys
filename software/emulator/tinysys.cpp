@@ -40,11 +40,7 @@ int emulatorthread(void* data)
 	do
 	{
 		CEmulator *emulator = ctx->emulator;
-
-		do {
-			emulator->Step(s_wallclock);
-		} while (emulator->m_steps < 20);
-		emulator->m_steps = 0;
+		emulator->Step(s_wallclock);
 	} while(s_alive);
 
 	s_alive = false;
@@ -260,7 +256,7 @@ int SDL_main(int argc, char** argv)
 	ectx.emulator = new CEmulator;
 	bool success;
 
-	fprintf(stderr, "tinysys emulator v1.0A\n");
+	fprintf(stderr, "tinysys emulator v1.0C\n");
 
 	const uint32_t resetvector = 0x0FFE0000;
 	char bootRom[256] = "rom.bin";
@@ -346,7 +342,7 @@ int SDL_main(int argc, char** argv)
 				s_alive = false;
 			else if (ev.type == SDL_KEYUP)
 			{
-				if (ev.key.keysym.scancode == SDL_SCANCODE_GRAVE) // ESP32-C6 does something similar to pass the CPUs a reset signal via CSRs
+				if (ev.key.keysym.scancode == SDL_SCANCODE_GRAVE) // ESP32-C6 does something similar to pass the CPUs a reset signal via CSRs over a dedicated wire
 				{
 					CCSRMem* csr0 = ectx.emulator->m_bus->GetCSR(0);
 					CCSRMem* csr1 = ectx.emulator->m_bus->GetCSR(1);

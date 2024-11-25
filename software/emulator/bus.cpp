@@ -6,7 +6,7 @@ CBus::CBus(uint32_t resetvector)
 	m_resetvector = resetvector;
 
 	m_mem = new CSysMem();
-	m_scratchpad = new CScratchpadMem();
+	m_spad = new CScratchpadMem();
 	m_vpuc = new CVPU();
 	m_apu = new CAPU();
 	m_dmac = new CDMA();
@@ -17,16 +17,16 @@ CBus::CBus(uint32_t resetvector)
 	m_csr[2] = new CCSRMem(2);
 	m_sdcc = new CSDCard();
 	m_uart = new CUART();
-	m_dummydevice = new CDummyDevice();
+	m_null = new CDummyDevice();
 
 	// Device array
-	m_devices[0] = m_scratchpad;
+	m_devices[0] = m_spad;
 	m_devices[1] = m_leds;
 	m_devices[2] = m_vpuc;
 	m_devices[3] = m_sdcc;
-	m_devices[4] = m_dummydevice; // XADC
+	m_devices[4] = m_null; // XADC
 	m_devices[5] = m_dmac;
-	m_devices[6] = m_dummydevice; // USBA
+	m_devices[6] = m_null; // USBA
 	m_devices[7] = m_apu;
 	m_devices[8] = m_mail;
 	m_devices[9] = m_uart;
@@ -38,7 +38,7 @@ CBus::CBus(uint32_t resetvector)
 
 CBus::~CBus()
 {
-	if (m_scratchpad) delete m_scratchpad;
+	if (m_spad) delete m_spad;
 	if (m_csr[0]) delete m_csr[0];
 	if (m_csr[1]) delete m_csr[1];
 	if (m_csr[2]) delete m_csr[2];
@@ -63,9 +63,9 @@ void CBus::Reset(uint8_t* rombin, uint32_t romsize)
 	m_uart->Reset();
 	m_leds->Reset();
 	m_mail->Reset();
-	m_dummydevice->Reset();
+	m_null->Reset();
 	m_apu->Reset();
-	m_scratchpad->Reset();
+	m_spad->Reset();
 
 	m_csr[0]->Reset();
 	m_csr[1]->Reset();
@@ -89,7 +89,9 @@ bool CBus::Tick()
 	m_uart->Tick(this);
 	m_vpuc->Tick(this);
 	m_apu->Tick(this);
-	// NOTE: CPU will tick the CSR
+	m_csr[0]->Tick(this);
+	m_csr[1]->Tick(this);
+	m_csr[2]->Tick(this);
 	return true;
 }
 
@@ -104,12 +106,12 @@ uint32_t* CBus::GetHostAddress(uint32_t address)
 
 void CBus::Read(uint32_t address, uint32_t& data)
 {
-	uint32_t dev = address & 0x80000000 ? ((address & 0xF0000) >> 16) : 13;
+	uint32_t dev = (address & 0x80000000) ? ((address & 0xF0000) >> 16) : 13;
 	m_devices[dev]->Read(address, data);
 }
 
 void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 {
-	uint32_t dev = address & 0x80000000 ? ((address & 0xF0000) >> 16) : 13;
+	uint32_t dev = (address & 0x80000000) ? ((address & 0xF0000) >> 16) : 13;
 	m_devices[dev]->Write(address, data, wstrobe);
 }

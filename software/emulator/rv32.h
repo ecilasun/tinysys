@@ -63,9 +63,6 @@ enum FetchState{
 #define F12_EBREAK     0x001
 #define F12_ECALL      0x000
 
-#define CSR0BASE 0x800A0000
-#define CSR1BASE 0x800B0000
-
 struct SDecodedInstruction
 {
 	uint32_t m_pc;

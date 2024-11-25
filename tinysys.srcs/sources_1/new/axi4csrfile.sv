@@ -98,7 +98,21 @@ logic softInterruptEna;
 
 // This will stay high untill CPU responds with an ack
 logic cpuresetreq_r;
-assign cpuresetreq = cpuresetreq_r | rebootreqn;
+
+// Reboot wire comes from ESP32 with a different clock
+(* async_reg = "true" *) logic cpurebootreq;
+(* async_reg = "true" *) logic cpurebootreq_r;
+always @(posedge aclk) begin
+	if (~delayedresetn) begin
+		cpurebootreq <= 1'b0;
+		cpurebootreq_r <= 1'b0;
+	end else begin
+		cpurebootreq <= rebootreqn;
+		cpurebootreq_r <= cpurebootreq; 
+	end
+end
+
+assign cpuresetreq = cpuresetreq_r || cpurebootreq_r;
 
 always @(posedge aclk) begin
 	if (~delayedresetn) begin

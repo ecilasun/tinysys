@@ -28,7 +28,7 @@ CSysMem::~CSysMem()
 void CSysMem::Reset()
 {
 	// TODO: Clear only allocated blocks
-	memset(m_devicemem, 0xCC, 256*1024*1024);
+	memset(m_devicemem, 0x00, 256*1024*1024);
 }
 
 uint32_t* CSysMem::GetHostAddress(uint32_t address)

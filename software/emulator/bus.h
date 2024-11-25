@@ -59,14 +59,14 @@ public:
 private:
 	CCSRMem* m_csr[3]{ nullptr, nullptr, nullptr };
 	CMailMem* m_mail{ nullptr };
-	CScratchpadMem* m_scratchpad{ nullptr };
+	CScratchpadMem* m_spad{ nullptr };
 	CSDCard* m_sdcc{ nullptr };
 	CVPU* m_vpuc{ nullptr };
 	CDMA* m_dmac{ nullptr };
 	CLEDs* m_leds{ nullptr };
 	CUART* m_uart{ nullptr };
 	CAPU* m_apu{ nullptr };
-	CDummyDevice* m_dummydevice{ nullptr };
+	CDummyDevice* m_null{ nullptr };
 
 	MemMappedDevice* m_devices[14]{ nullptr };
 

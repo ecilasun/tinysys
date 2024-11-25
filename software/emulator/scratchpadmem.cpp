@@ -35,16 +35,15 @@ void CScratchpadMem::Read(uint32_t address, uint32_t& data)
 
 void CScratchpadMem::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 {
-	uint32_t olddata;
 	uint32_t memslot = (address >> 2);
 	memslot &= 0xFFF;
-	olddata = m_scratchmem[memslot];
 
 	// Expand the wstrobe
 	uint32_t fullmask = quadexpand[wstrobe];
 	uint32_t invfullmask = ~fullmask;
 
 	// Mask and mix incoming and old data
+	uint32_t olddata = m_scratchmem[memslot];
 	uint32_t newword = (olddata & invfullmask) | (word & fullmask);
 	m_scratchmem[memslot] = newword;
 }

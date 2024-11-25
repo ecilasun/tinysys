@@ -97,7 +97,7 @@ void MandelTask()
 		}
 		if (tiley >= 15)
 		{
-			tiley = self;
+			tiley = self; // 0, 1, 2
 		}
 
 		*g_tX[self] = tilex;
@@ -163,9 +163,9 @@ int main()
 		TaskYield();
 
 		// Zoom in when last task reaches the end
-		if (*g_tY[2] >= 15)
+		if (*g_tY[2] == 2 && *g_tX[2] == 0)
 		{
-			*g_R = R + 0.001f;
+			*g_R = *g_R + 0.001f;
 		}
 	}
 

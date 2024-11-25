@@ -48,6 +48,10 @@ const char *regnames[] = {
 	"s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11",
 	"t3", "t4", "t5", "t6" };
 
+// Base CSR address per core
+uint32_t csrBaseTable[] = { 0x800A0000, 0x800B0000, 0x800C0000 };
+
+
 // This is an exact copy of the ISR ROM contents of the real hardware
 // Please see the fetch ROM source code for hardware implementation
 uint32_t ISR_ROM[] = {
@@ -844,7 +848,7 @@ void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 		else
 			m_instructions.push_back(decoded);
 
-		const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
+		const uint32_t csrbase = csrBaseTable[m_hartid];
 
 		// Determine next PC
 		if (branchtomtvecforinstr) // Route execution to mtvec
@@ -1089,7 +1093,7 @@ bool CRV32::Execute(CBus* bus)
 					// Keep it in a register
 					rwen = 1;
 					rdin = csrprevval;
-					const uint32_t csrbase = (m_hartid == 0) ? CSR0BASE : CSR1BASE;
+					const uint32_t csrbase = csrBaseTable[m_hartid];
 					rwaddress = csrbase + csraddress;
 
 					// Apply operation
@@ -1405,7 +1409,6 @@ bool CRV32::Tick(uint64_t wallclock, CBus* bus)
 
 	// Gather a block of code (or grab precompiled version)
 	bool fetchok = FetchDecode(bus);
-	csr->Tick(bus);
 	csr->UpdateTime(wallclock, m_cycles);
 	// Execute the whole block
 	Execute(bus);
