@@ -11,8 +11,8 @@ static const uint32_t quadexpand[] = {
 
 CScratchpadMem::CScratchpadMem()
 {
-	// 16384 words
-	m_scratchmem = (uint32_t*)malloc(16384 * sizeof(uint32_t));
+	// Scratchpad memory is 16KBytes
+	m_scratchmem = (uint32_t*)malloc(4096 * sizeof(uint32_t));
 }
 
 CScratchpadMem::~CScratchpadMem()
@@ -23,19 +23,21 @@ CScratchpadMem::~CScratchpadMem()
 void CScratchpadMem::Reset()
 {
 	// Clear memory
-	memset(m_scratchmem, 0, 16384 * sizeof(uint32_t));
+	memset(m_scratchmem, 0, 4096 * sizeof(uint32_t));
 }
 
 void CScratchpadMem::Read(uint32_t address, uint32_t& data)
 {
-	uint32_t memslot = (address >> 2) & 0x3FF;
+	uint32_t memslot = (address >> 2);
+	memslot &= 0xFFF;
 	data = m_scratchmem[memslot];
 }
 
 void CScratchpadMem::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 {
 	uint32_t olddata;
-	uint32_t memslot = (address >> 2) & 0x3FF;
+	uint32_t memslot = (address >> 2);
+	memslot &= 0xFFF;
 	olddata = m_scratchmem[memslot];
 
 	// Expand the wstrobe
