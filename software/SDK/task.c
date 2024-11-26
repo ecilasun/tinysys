@@ -124,42 +124,28 @@ uint32_t TaskGetPC(struct STaskContext *_ctx, const uint32_t _taskid)
  */
 int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength)
 {
-	int32_t prevcount = _ctx->numTasks;
-	if (prevcount >= TASK_MAX)
-		return 0;
+	uint32_t context = (uint32_t)_ctx;
+	uint32_t name = (uint32_t)_name;
+	uint32_t task = (uint32_t)_task;
 
-	// Task stacks, 1KBytes each
-	const uint32_t stacksizeword = 1024;
-	uint32_t stackpointer = TASKMEM_END_STACK_END - ((_ctx->hartID*TASK_MAX+prevcount)*stacksizeword);
-
-	// Stop timer interrupts on this core during this operation
-	clear_csr(mie, MIP_MTIP);
-
-	// Insert the task before we increment task count
-	struct STask *task = &(_ctx->tasks[prevcount]);
-	task->regs[0] = (uint32_t)_task;	// Initial PC
-	task->regs[2] = stackpointer;		// Stack pointer
-	task->regs[8] = stackpointer;		// Frame pointer
-	task->runLength = _runLength;		// Time slice dedicated to this task
-
-	char *np = (char*)_name;
-	int idx = 0;
-	while(np!=0 && idx<15)
-	{
-		task->name[idx++] = *np;
-		++np;
-	}
-	task->name[idx] = 0;
-
-	// We assume running state as soon as we start
-	task->state = _initialState;
-
-	++_ctx->numTasks;
-
-	// Resume timer interrupts on this core
-	set_csr(mie, MIP_MTIP);
-
-	return prevcount;
+	int retval = 0;
+	asm (
+		"li a7, 16384;" // _task_add custom syscall
+		"mv a0, %1;"
+		"mv a1, %2;"
+		"mv a2, %3;"
+		"mv a3, %4;"
+		"mv a4, %5;"
+		"ecall;"
+		"mv %0, a0;" :
+		// Return values
+		"=r" (retval) :
+		// Input parameters
+		"r" (context), "r" (name), "r" (task), "r" (_initialState), "r" (_runLength) :
+		// Clobber list
+		"a0", "a1", "a2", "a3", "a4", "a7"
+	);
+	return retval;
 }
 
 /**

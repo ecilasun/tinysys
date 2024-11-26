@@ -59,10 +59,6 @@
 #define HEAP_START_APPMEM_END			0x02080000 // Executable space above this
 // Heap
 #define HEAP_END_CONSOLEMEM_START		0x0FF00000 // Heap space above this
-// Kernel console text+attrib/scratch
-#define CONSOLEMEM_END_KERNEL_VRAM_TOP	0x0FF10000 // Console text+attrib+scratch memory above this (64 KBytes)
-// Kernel VRAM/scratch
-#define VRAM_END_TASKMEM_START			0x0FF30000 // Kernel VRAM above this (128 KBytes)
 // Task stack space
 #define TASKMEM_END_STACK_END			0x0FFD0000 // Tasks stack space above this
 //  Kernel stacks for all cores, 256 bytes each

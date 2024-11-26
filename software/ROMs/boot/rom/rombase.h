@@ -35,3 +35,4 @@ void ksetcursor(const int _x, const int _y);
 // Path helpers
 #define PATH_MAX 64
 char *krealpath(const char *path, char resolved[PATH_MAX]);
+int _task_add(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength);

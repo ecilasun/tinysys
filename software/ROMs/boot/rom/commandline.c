@@ -357,7 +357,7 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 				}
 
 				// User tasks always boot on main CPU, and can then add their own tasks to the other CPUs
-				s_cliCtx.userTaskID = TaskAdd(tctx[0], command, _runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+				s_cliCtx.userTaskID = _task_add(tctx[0], command, _runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 
 				return 0;
 			}

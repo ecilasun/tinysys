@@ -70,6 +70,47 @@ void ksetcursor(const int _x, const int _y)
 	VPUConsoleSetCursor(kernelgfx, _x, _y);
 }
 
+int _task_add(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength)
+{
+	int32_t prevcount = _ctx->numTasks;
+	if (prevcount >= TASK_MAX)
+		return 0;
+
+	// Reserve and clear task stack
+	const uint32_t stacksize = 1024;
+	uint32_t stackpointer = TASKMEM_END_STACK_END - ((_ctx->hartID*TASK_MAX+prevcount)*stacksize);
+	//__builtin_memset((void*)stackpointer, 0, stacksize);
+
+	// Stop timer interrupts on this core during this operation
+	clear_csr(mie, MIP_MTIP);
+
+	// Insert the task before we increment task count
+	struct STask *task = &(_ctx->tasks[prevcount]);
+	task->regs[0] = (uint32_t)_task;	// Initial PC
+	task->regs[2] = stackpointer;		// Stack pointer
+	task->regs[8] = stackpointer;		// Frame pointer
+	task->runLength = _runLength;		// Time slice dedicated to this task
+
+	char *np = (char*)_name;
+	int idx = 0;
+	while(np!=0 && idx<15)
+	{
+		task->name[idx++] = *np;
+		++np;
+	}
+	task->name[idx] = 0;
+
+	// We assume running state as soon as we start
+	task->state = _initialState;
+
+	++_ctx->numTasks;
+
+	// Resume timer interrupts on this core
+	set_csr(mie, MIP_MTIP);
+
+	return prevcount;
+}
+
 uint32_t MountDrive()
 {
 	// Delayed mount the volume
@@ -633,6 +674,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				// 1025			rename			int rename(const char *oldpath, const char *newpath);
 				// 1026			remove			remove(const char *fname);
 				// 1038 		_stat			int stat(const char *path, struct stat *buf);
+				// 16384		task_add		int task_add(void* _func, int runLength, int initialState);
 
 				if (value==0) // io_setup()
 				{
@@ -1027,6 +1069,16 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 						buf->st_ctim.tv_nsec = 0;
 						write_csr(0x8AA, 0x0);
 					}
+				}
+				else if (value==16384) // int task_add(void* _func, int runLength, int initialState);
+				{
+					struct STaskContext * context = (struct STaskContext *)read_csr(0x8AA); // A0
+					const char * name = (const char *)read_csr(0x8AB); // A1
+					taskfunc task = (taskfunc)read_csr(0x8AC); // A2
+					enum ETaskState initialState = read_csr(0x8AD); // A3
+					const uint32_t runLength = read_csr(0x8AE); // A4
+					int retVal = _task_add(context, name, task,  initialState, runLength);
+					write_csr(0x8AA, retVal);
 				}
 				else // Unimplemented syscalls drop here
 				{

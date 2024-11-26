@@ -25,7 +25,7 @@ static struct EVideoSwapContext s_sc;
 static uint8_t *s_framebufferA;
 static uint8_t *s_framebufferB;
 
-void MyTaskOne()
+void __attribute__((noreturn, naked)) MyTaskOne()
 {
 	// Set up shared memory for this HART
 	volatile int *sharedmem = (volatile int*)E32GetScratchpad();
@@ -42,7 +42,7 @@ void MyTaskOne()
 	}
 }
 
-void MyTaskTwo()
+void __attribute__((noreturn, naked)) MyTaskTwo()
 {
 	// Set up shared memory for this HART
 	volatile int *sharedmem = (volatile int*)E32GetScratchpad();
@@ -51,7 +51,7 @@ void MyTaskTwo()
 	while(1)
 	{
 		TaskYield();
-		E32Sleep(250*ONE_MILLISECOND_IN_TICKS);
+		E32Sleep(500*ONE_MILLISECOND_IN_TICKS);
 
 		*s_frame2 = *s_frame2 + 1;
 	}
@@ -80,6 +80,10 @@ int main(int argc, char *argv[])
 	volatile int *s_frame0 = sharedmem;
 	volatile int *s_frame1 = sharedmem+4;
 	volatile int *s_frame2 = sharedmem+8;
+
+	*s_frame0 = 0;
+	*s_frame1 = 0;
+	*s_frame2 = 0;
 
 	// Grab task context of CPU#1
 	struct STaskContext *taskctx1 = TaskGetContext(1);
@@ -115,7 +119,7 @@ int main(int argc, char *argv[])
 		VPUPrintString(&s_vx, 0x00, 0x0F, 8, 12, tmpstr, L0);
 
 		TaskYield();
-		E32Sleep(50*ONE_MILLISECOND_IN_TICKS);
+		E32Sleep(60*ONE_MILLISECOND_IN_TICKS);
 
 		// Make sure the video memory write is visible to the VPU
 		CFLUSH_D_L1;
