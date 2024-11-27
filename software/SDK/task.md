@@ -33,15 +33,11 @@ typedef void(*taskfunc)();
 The function will return a handle to the task created, which can then be stopped by calling the `TaskExitTaskWithID()` function listed below.
 
 ### Yielding time to other tasks
-`uint64_t TaskYield()`
+`void TaskYield()`
 
-This function has two purposes. Its primary purpose is to switch to the next task in the queue for the calling CPU, as quickly as possible.
+This function switches to the next task in the queue for the calling CPU, as quickly as possible.
 
-The second function is to return the current internal CSR time register's value that was read when the task switch took place.
-
-Call this function in a tight loop that might be blocking other tasks or the OS.
-
-If this function is not called, the tasks will switch automatically after their run length expires, therefore it is entirely optional. Still, it is recommended as a good practice to do this at least once, for example, in a main game loop.
+Call this function in a tight loop that might be blocking other tasks or the OS, to yield time back to the calling CPU's scheduler before the task's run length is up.
 
 ### Stopping a task
 `void TaskExitTaskWithID(struct STaskContext *_ctx, uint32_t _taskid, uint32_t _signal)`

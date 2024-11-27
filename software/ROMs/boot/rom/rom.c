@@ -185,7 +185,7 @@ void __attribute__((aligned(64), noinline)) UserMain()
 		asm volatile("wfi;");
 
 		// Yield time back to any tasks running on this core after handling an interrupt
-		/*uint64_t currentTime =*/ TaskYield();
+		/*uint64_t currentTime =*/ _task_yield();
 	}
 }
 
@@ -325,7 +325,7 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 			VPUConsoleResolve(kernelgfx);
 
 		// Yield time as soon as we're done here (disables/enables interrupts)
-		uint64_t currentTime = TaskYield();
+		uint64_t currentTime = _task_yield();
 
 		// ----------------------------------------------------------------
 		// H/W related tasks which should't cause IRQs or be interrupted

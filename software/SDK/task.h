@@ -67,8 +67,7 @@ void TaskExitCurrentTask(struct STaskContext *_ctx);
 void TaskExitTaskWithID(struct STaskContext *_ctx, uint32_t _taskid, uint32_t _signal);
 
 // Yield leftover time back to the next task in chain
-// Also returns the current time
-uint64_t TaskYield();
+void TaskYield();
 
 void TaskSetState(struct STaskContext *_ctx, const uint32_t _taskid, enum ETaskState _state);
 enum ETaskState TaskGetState(struct STaskContext *_ctx, const uint32_t _taskid);

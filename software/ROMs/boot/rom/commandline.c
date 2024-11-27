@@ -245,7 +245,7 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 				// Warning! This can also kill PID(1) which is the CLI
 				struct STaskContext *ctx = GetTaskContext(hartid);
 				int taskid = atoi(processid);
-				TaskExitTaskWithID(ctx, taskid, 0);
+				_task_exit_task_with_id(ctx, taskid, 0);
 			}
 		}
 	}
@@ -396,16 +396,16 @@ int HandleCommandLine(struct STaskContext *taskctx)
 				s_cliCtx.cmdString[0] = 0;
 				++s_cliCtx.refreshConsoleOut;
 				// Stop task on main CPU
-				TaskExitTaskWithID(taskctx, s_cliCtx.userTaskID, 0); // Sig:0, terminate process if no debugger is attached
+				_task_exit_task_with_id(taskctx, s_cliCtx.userTaskID, 0); // Sig:0, terminate process if no debugger is attached
 
 				// Stop all other tasks on helper CPUs
 				{
 					struct STaskContext* tctx1 = GetTaskContext(1);
 					for (uint32_t i=1; i<tctx1->numTasks; ++i)
-						TaskExitTaskWithID(tctx1, i, 0);
+						_task_exit_task_with_id(tctx1, i, 0);
 					struct STaskContext* tctx2 = GetTaskContext(2);
 					for (uint32_t i=1; i<tctx2->numTasks; ++i)
-						TaskExitTaskWithID(tctx2, i, 0);
+						_task_exit_task_with_id(tctx2, i, 0);
 				}
 			}
 			break;
@@ -492,6 +492,6 @@ void _CLITask()
 			}
 		}
 
-		TaskYield();
+		_task_yield();
 	}
 }
