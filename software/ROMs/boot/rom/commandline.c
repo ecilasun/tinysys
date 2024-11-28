@@ -16,7 +16,7 @@ static struct SCommandLineContext s_cliCtx;
 static const char *s_taskstates[]={ "NONE", "HALT", "EXEC", "TERM", "DEAD"};
 
 // Device version
-#define VERSIONSTRING "v1.0C"
+#define VERSIONSTRING "v1.0D"
 
 // File transfer timeout
 #define FILE_TRANSFER_TIMEOUT 1000
@@ -132,6 +132,23 @@ void ShowHelp(struct EVideoContext *kernelgfx)
 	VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 }
 
+void DumpTasks(const uint32_t _hartid)
+{
+	struct STaskContext *ctx = _task_get_context(_hartid);
+	if (ctx->numTasks == 0)
+	{
+		kprintf("CPU%d : no tasks running\n", _hartid);
+	}
+	else
+	{
+		for (int i=0;i<ctx->numTasks;++i)
+		{
+			struct STask *task = &ctx->tasks[i];
+			kprintf("CPU%d : #%d : %s : PC=0x%08X : '%s'\n", _hartid, i, s_taskstates[task->state], task->regs[0], task->name);
+		}
+	}
+}
+
 uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 {
 	const char *command = strtok(_cmd, " ");
@@ -191,26 +208,13 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 		const char *cpuindex = strtok(NULL, " ");
 		if (!cpuindex)
 		{
-			kprintf("usage: proc cpu\n");
+			for (uint32_t i=0; i<MAX_HARTS; ++i)
+				DumpTasks(i);
 		}
 		else
 		{
 			uint32_t hartid = atoi(cpuindex);
-			// TODO: We need atomics here to accurately view memory contents written by another core
-			struct STaskContext *ctx = GetTaskContext(hartid);
-			if (ctx->numTasks == 0)
-			{
-				kprintf("No tasks on core #%d\n", hartid);
-			}
-			else
-			{
-				kprintf("%d tasks on core #%d\n", ctx->numTasks, hartid);
-				for (int i=0;i<ctx->numTasks;++i)
-				{
-					struct STask *task = &ctx->tasks[i];
-					kprintf("#%d:%s PC=0x%08X Name:'%s'\n", i, s_taskstates[task->state], task->regs[0], task->name);
-				}
-			}
+			DumpTasks(hartid);
 		}
 	}
 	else if (!strcmp(command, "del"))
@@ -243,7 +247,7 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 			{
 				uint32_t hartid = atoi(hartindex);
 				// Warning! This can also kill PID(1) which is the CLI
-				struct STaskContext *ctx = GetTaskContext(hartid);
+				struct STaskContext *ctx = _task_get_context(hartid);
 				int taskid = atoi(processid);
 				_task_exit_task_with_id(ctx, taskid, 0);
 			}
@@ -304,7 +308,7 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 	if (loadELF)
 	{
 		// TODO: Add support to load user ELF files on HART#1/2
-		struct STaskContext* tctx[MAX_HARTS] = {GetTaskContext(0), GetTaskContext(1), GetTaskContext(2)};
+		struct STaskContext* tctx[MAX_HARTS] = {_task_get_context(0), _task_get_context(1), _task_get_context(2)};
 		int32_t taskcounts[MAX_HARTS] = {tctx[0]->numTasks, tctx[1]->numTasks, tctx[2]->numTasks};
 		int32_t maxcounts[MAX_HARTS] = {2, 1, 1};
 
@@ -400,10 +404,10 @@ int HandleCommandLine(struct STaskContext *taskctx)
 
 				// Stop all other tasks on helper CPUs
 				{
-					struct STaskContext* tctx1 = GetTaskContext(1);
+					struct STaskContext* tctx1 = _task_get_context(1);
 					for (uint32_t i=1; i<tctx1->numTasks; ++i)
 						_task_exit_task_with_id(tctx1, i, 0);
-					struct STaskContext* tctx2 = GetTaskContext(2);
+					struct STaskContext* tctx2 = _task_get_context(2);
 					for (uint32_t i=1; i<tctx2->numTasks; ++i)
 						_task_exit_task_with_id(tctx2, i, 0);
 				}
@@ -451,7 +455,7 @@ void _CLITask()
 
 	ShowVersion(kernelgfx);
 
-	struct STaskContext *taskctx = GetTaskContext(0);
+	struct STaskContext *taskctx = _task_get_context(0);
 	while(1)
 	{
 		int execcmd = 0;
@@ -492,6 +496,8 @@ void _CLITask()
 			}
 		}
 
+		clear_csr(mie, MIP_MTIP);
 		_task_yield();
+		set_csr(mie, MIP_MTIP);
 	}
 }

@@ -94,14 +94,12 @@ int main(int argc, char *argv[])
 	if (taskID1== 0)
 	{
 		printf("Error: No room to add new task on CPU 1\n");
-		return -1;
 	}
 
 	int taskID2 = TaskAdd(taskctx2, "MyTaskTwo", MyTaskTwo, TS_RUNNING, QUARTER_MILLISECOND_IN_TICKS);
 	if (taskID2== 0)
 	{
 		printf("Error: No room to add new task on CPU 2\n");
-		return -1;
 	}
 
 	char tmpstr[128];

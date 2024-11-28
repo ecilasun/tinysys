@@ -168,9 +168,9 @@ void __attribute__((aligned(64), noinline)) UserMain()
 	// Worker cores do not handle hardware interrupts by default,
 	// only task switching (timer) and software (illegal instruction)
 	uint32_t self = read_csr(mhartid);
-	InitializeTaskContext(self);
+	_task_init_context(self);
 
-	struct STaskContext *taskctx = GetTaskContext(self);
+	struct STaskContext *taskctx = _task_get_context(self);
 	_task_add(taskctx, "CPUIdle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 
 	InstallISR(self, false, true);
@@ -185,7 +185,9 @@ void __attribute__((aligned(64), noinline)) UserMain()
 		asm volatile("wfi;");
 
 		// Yield time back to any tasks running on this core after handling an interrupt
+		clear_csr(mie, MIP_MTIP);
 		/*uint64_t currentTime =*/ _task_yield();
+		set_csr(mie, MIP_MTIP);
 	}
 }
 
@@ -284,13 +286,13 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	// only task switching (timer) and software (illegal instruction)
 	LEDSetState(0x6);															// xOOx
 	uint32_t self = read_csr(mhartid);
-	InitializeTaskContext(self);
+	_task_init_context(self);
 
 	LEDSetState(0x3);			// xxOO
 	struct STaskContext *taskctx[3];
-	taskctx[0] = GetTaskContext(self);
-	taskctx[1] = GetTaskContext(1);
-	taskctx[2] = GetTaskContext(2);
+	taskctx[0] = _task_get_context(self);
+	taskctx[1] = _task_get_context(1);
+	taskctx[2] = _task_get_context(2);
 	_task_add(taskctx[0], "CPUIdle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 	_task_add(taskctx[0], "CLI", _CLITask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
 
@@ -325,7 +327,9 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 			VPUConsoleResolve(kernelgfx);
 
 		// Yield time as soon as we're done here (disables/enables interrupts)
+		clear_csr(mie, MIP_MTIP);
 		uint64_t currentTime = _task_yield();
+		set_csr(mie, MIP_MTIP);
 
 		// ----------------------------------------------------------------
 		// H/W related tasks which should't cause IRQs or be interrupted
@@ -347,9 +351,6 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 
 int main()
 {
-	// Zero out the task memory (this will survive a soft reboot)
-	ClearTaskMemory();
-
 	// Reset static variable pool just in case we're rebooted
 	ClearStatics();
 

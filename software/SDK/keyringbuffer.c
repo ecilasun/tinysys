@@ -16,7 +16,7 @@ const static uint8_t c_cbBufferSizeLog2 = cbBufferSizeLog2 < 31 ? cbBufferSizeLo
 const static uint32_t c_cbBufferSize = ( 1 << c_cbBufferSizeLog2 );
 const static uint32_t c_sizeMask = c_cbBufferSize - 1;
 
-// Ring buffer at TaskGetSharedMemory()
+// Ring buffer at _task_get_shared_memory()
 #define BUFFER_BASE (DEVICE_MAIL + sizeof(struct STaskContext)*MAX_HARTS)
 volatile uint32_t *m_readOffset  = (volatile uint32_t *)(BUFFER_BASE + 1024);
 volatile uint32_t *m_writeOffset = (volatile uint32_t *)(BUFFER_BASE + 1028);

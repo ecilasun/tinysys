@@ -81,9 +81,6 @@ int _task_add(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum
 	uint32_t stackpointer = TASKMEM_END_STACK_END - ((_ctx->hartID*TASK_MAX+prevcount)*stacksize);
 	//__builtin_memset((void*)stackpointer, 0, stacksize);
 
-	// Stop timer interrupts on this core during this operation
-	clear_csr(mie, MIP_MTIP);
-
 	// Insert the task before we increment task count
 	struct STask *task = &(_ctx->tasks[prevcount]);
 	task->regs[0] = (uint32_t)_task;	// Initial PC
@@ -104,9 +101,6 @@ int _task_add(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum
 	task->state = _initialState;
 
 	++_ctx->numTasks;
-
-	// Resume timer interrupts on this core
-	set_csr(mie, MIP_MTIP);
 
 	return prevcount;
 }
@@ -249,11 +243,52 @@ uint64_t _task_yield()
 {
 	// Set up the next task switch interrupt to almost-now
 	// so we can yield as soon as possible.
-	clear_csr(mie, MIP_MTIP);
 	uint64_t now = E32ReadTime();
 	E32SetTimeCompare(now);
-	set_csr(mie, MIP_MTIP);
 	return now;
+}
+
+struct STaskContext *_task_get_context(uint32_t _hartid)
+{
+	// Each task starts at 1Kbyte boundary
+	// We have >80Kbytes in the task space so this should support plenty of cores
+	struct STaskContext *contextpool = (struct STaskContext *)DEVICE_MAIL;
+	return &contextpool[_hartid];
+}
+
+void *_task_get_shared_memory()
+{
+	// One entry away from the last task context
+	return (void*)_task_get_context(MAX_HARTS);
+}
+
+void _task_init_context(uint32_t _hartid)
+{
+	// Initialize task context memory
+	struct STaskContext *ctx = _task_get_context(_hartid);
+
+	ctx->currentTask = 0;
+	ctx->numTasks = 0;
+	ctx->interceptUART = 0;
+	ctx->kernelError = 0;
+	ctx->kernelErrorData[0] = 0;
+	ctx->kernelErrorData[1] = 0;
+	ctx->kernelErrorData[2] = 0;
+	ctx->hartID = _hartid;
+
+	// Clean out all tasks
+	struct STask *task = ctx->tasks;
+	for (uint32_t i=0; i<TASK_MAX; ++i)
+	{
+		task->HART = 0x0;				// Default affinity mask is HART#0
+		task->runLength = 0x0;			// Default time slice
+		task->exitCode = 0x0;			// Default exit code
+		for (uint32_t j=0; j<32; ++j)
+			task->regs[j] = 0x0;		// Clear all registers
+		task->state = TS_UNKNOWN;
+		task->name[0] = 0;				// No name
+		++task;
+	}
 }
 
 uint32_t MountDrive()
@@ -559,28 +594,6 @@ static char s_fileNames[MAX_HANDLES][MAXFILENAMELEN+1] = {
 
 static UINT tmpresult = 0;
 
-void ClearTaskMemory()
-{
-	void *taskmem = (void *)DEVICE_MAIL;
-	// Clear the task space used by all CPUs
-	__builtin_memset(taskmem, 0, sizeof(struct STaskContext)*MAX_HARTS);
-}
-
-struct STaskContext *GetTaskContext(uint32_t _hartid)
-{
-	// Each task starts at 1Kbyte boundary
-	// We have >80Kbytes in the task space so this should support plenty of cores
-	struct STaskContext *contextpool = (struct STaskContext *)DEVICE_MAIL;
-	return &contextpool[_hartid];
-}
-
-void InitializeTaskContext(uint32_t _hartid)
-{
-	// Initialize task context memory
-	struct STaskContext *ctx = GetTaskContext(_hartid);
-	TaskInitSystem(ctx, _hartid);
-}
-
 void HandleSDCardDetect()
 {
 	uint32_t cardState = *IO_CARDDETECT;
@@ -702,7 +715,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 
 	// Grab the task context that belongs to this HART
 	uint32_t hartid = read_csr(mhartid);
-	struct STaskContext *taskctx = GetTaskContext(hartid);
+	struct STaskContext *taskctx = _task_get_context(hartid);
 
 	if (cause & 0x80000000) // Hardware interrupts
 	{
@@ -1241,14 +1254,26 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				}
 				else if (value==16387) // _task_exit_current_task
 				{
-					struct STaskContext * context = (struct STaskContext *)read_csr(0x8AA); // A0
+					struct STaskContext *context = (struct STaskContext *)read_csr(0x8AA); // A0
 					_task_exit_current_task(context);
 					write_csr(0x8AA, 0);
 				}
 				else if (value==16388) // _task_yield
 				{
-					/*uint64_t retVal =*/ _task_yield();
-					write_csr(0x8AA, 0); // Ignore return value, only OS has access to it
+					// Ignore return value, only OS has access to it
+					_task_yield();
+					write_csr(0x8AA, 0);
+				}
+				else if (value==16389) // _task_get_context
+				{
+					uint32_t taskhartid = read_csr(0x8AA); // A0
+					struct STaskContext *context = _task_get_context(taskhartid);
+					write_csr(0x8AA, (uint32_t)context);
+				}
+				else if (value==16390) // _task_get_shared_memory
+				{
+					void* sharedmem = _task_get_shared_memory();
+					write_csr(0x8AA, (uint32_t)sharedmem);
 				}
 				else // Unimplemented syscalls drop here
 				{

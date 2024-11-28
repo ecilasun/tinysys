@@ -582,14 +582,17 @@ void sendfile(char *_filename)
 	char* encoded = new char[packetSize*4 + 1];
 	char progress[65];
 	for (i=0; i<64; ++i)
-		progress[i] = 176;
+		progress[i] = ' ';//176;
 	progress[64] = 0;
+	printf("Uploading '%s'\n", _filename);
 	for (i=0; i<numPackets; ++i)
 	{
 		uint32_t encodedSize = Base64Encode(filedata + packetOffset, packetSize, encoded);
+
 		int idx = (i*64)/numPackets;
-		progress[idx] = 219;
-		printf("\r %8X : Uploading [%s] ", i*packetSize, progress);
+		for (int j=0; j<=idx; ++j) // Progress bar
+			progress[j] = '=';//219;
+		printf("\r [%s] %.2f%%\r", progress, (i*100)/float(numPackets));
 
 		if (!WACK(serial, '~', received)) // Wait for a 'go' signal
 		{
@@ -619,6 +622,10 @@ void sendfile(char *_filename)
 	if (leftoverBytes)
 	{
 		uint32_t encodedSize = Base64Encode(filedata + packetOffset, leftoverBytes, encoded);
+
+		for (int j=0; j<64; ++j) // Progress bar
+			progress[j] = '=';//219;
+		printf("\r [%s] %.2f%%\r", progress, (i*100)/float(numPackets));
 
 		if (!WACK(serial, '~', received)) // Wait for a 'go' signal
 		{
@@ -739,7 +746,7 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	printf("RISCVTool 1.0C\n");
+	printf("RISCVTool 1.0D\n");
 	printf("Error: Unknown arguments.\n");
 	showusage();
 

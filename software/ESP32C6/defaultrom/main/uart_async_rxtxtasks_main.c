@@ -29,7 +29,7 @@
 // Send reset request to tinysys CPUs
 #define PIN_REBOOT GPIO_NUM_18
 
-static const char *TAG = "tsys_1_0C";
+static const char *TAG = "TSYS";
 
 // external port going to tinysys
 #define EX_UART_NUM UART_NUM_0
@@ -218,5 +218,5 @@ void app_main(void)
 	gpio_set_level(PIN_REBOOT, 1);
 	gpio_hold_en(PIN_REBOOT);
 
-	usb_serial_jtag_write_bytes((uint8_t*) "TinySys v1.0C\n", 14, portMAX_DELAY);
+	usb_serial_jtag_write_bytes((uint8_t*) "TinySys v1.0D\n", 14, portMAX_DELAY);
 }

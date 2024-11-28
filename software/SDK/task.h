@@ -45,9 +45,6 @@ struct STaskContext {
 	int32_t hartID;					// Id of the HART where this task context runs
 };
 
-// Start up the task system
-void TaskInitSystem(struct STaskContext *_ctx, uint32_t _hartid);
-
 // Get task context for given HART
 struct STaskContext *TaskGetContext(uint32_t _hartid);
 

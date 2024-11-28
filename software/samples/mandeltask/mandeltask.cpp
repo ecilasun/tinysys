@@ -160,13 +160,12 @@ int main()
 
 	while(1)
 	{
-		TaskYield();
-
 		// Zoom in when last task reaches the end
 		if (*g_tY[2] == 2 && *g_tX[2] == 0)
 		{
 			*g_R = *g_R + 0.001f;
 		}
+		TaskYield();
 	}
 
 	TaskExitTaskWithID(taskctx[0], taskID0, 0);

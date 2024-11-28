@@ -12,36 +12,6 @@
 #include <stdlib.h>
 
 /**
- * @brief Initialize the task system
- * 
- * Initialize the task system with the given task context and HART ID.
- * @note Tasks are core local at this point, and won't migrate between cores.
- * 
- * @param _ctx Task context
- * @param _hartid HART ID
- */
-void TaskInitSystem(struct STaskContext *_ctx, uint32_t _hartid)
-{
-	_ctx->currentTask = 0;
-	_ctx->numTasks = 0;
-	_ctx->interceptUART = 0;
-	_ctx->kernelError = 0;
-	_ctx->hartID = _hartid;
-
-	// Clean out all tasks
-	for (uint32_t i=0; i<TASK_MAX; ++i)
-	{
-		struct STask *task = &_ctx->tasks[i];
-		task->HART = 0x0;				// Default affinity mask is HART#0
-		task->regs[0] = 0x0;			// Initial PC
-		task->regs[2] = 0x0;			// Initial stack pointer
-		task->regs[8] = 0x0;			// Frame pointer
-		task->state = TS_UNKNOWN;
-		task->name[0] = 0; // No name
-	}
-}
-
-/**
  * @brief Get the task context of a specific HART
  * 
  * Get the task context of a specific HART.
@@ -51,7 +21,22 @@ void TaskInitSystem(struct STaskContext *_ctx, uint32_t _hartid)
  */
 struct STaskContext *TaskGetContext(uint32_t _hartid)
 {
-	return (struct STaskContext *)(DEVICE_MAIL + sizeof(struct STaskContext)*_hartid);
+	uint32_t context;
+
+	asm (
+		"li a7, 16389;" // _task_get_context custom syscall
+		"mv a0, %1;"
+		"ecall;"
+		"mv %0, a0;" :
+		// Return values
+		"=r" (context) :
+		// Input parameters
+		"r" (_hartid) :
+		// Clobber list
+		"a0", "a7"
+	);
+
+	return (struct STaskContext *)context;
 }
 
 /**
@@ -64,7 +49,21 @@ struct STaskContext *TaskGetContext(uint32_t _hartid)
  */
 void *TaskGetSharedMemory()
 {
-	return (void *)(DEVICE_MAIL + sizeof(struct STaskContext)*MAX_HARTS);
+	uint32_t sharedmem;
+
+	asm (
+		"li a7, 16390;" // _task_get_shared_memory custom syscall
+		"ecall;"
+		"mv %0, a0;" :
+		// Return values
+		"=r" (sharedmem) :
+		// Input parameters
+		:
+		// Clobber list
+		"a0", "a7"
+	);
+
+	return (void *)sharedmem;
 }
 
 /**
