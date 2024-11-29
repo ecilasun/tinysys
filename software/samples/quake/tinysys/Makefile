@@ -18,9 +18,9 @@ CC = $(CROSS)gcc
 SIZE = $(CROSS)size
 
 ifeq ($(UNAME), Windows)
-CFLAGS = -mcmodel=medany -std=gnu99 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wdouble-promotion -fno-common -Ofast -flto -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -I../include/ -I../winquake/ -I../../../SDK/ -I../
+CFLAGS = -mcmodel=medany --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wdouble-promotion -fno-common -Ofast -flto -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -I../include/ -I../winquake/ -I../../../SDK/ -I../
 else
-CFLAGS = -mcmodel=medany -std=gnu99 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wdouble-promotion -fno-common -Ofast -flto -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -I../include/ -I../winquake/ -I../../SDK/  -I../
+CFLAGS = -mcmodel=medany --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wdouble-promotion -fno-common -Ofast -flto -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -I../include/ -I../winquake/ -I../../SDK/  -I../
 endif
 
 CFLAGS += \
@@ -116,7 +116,7 @@ quake.elf: $(addprefix ../,$(SOURCES_quake)) $(SOURCES_quake_arch)
 	$(CC) $(CFLAGS) -o ../$@ $(addprefix ../,$(SOURCES_quake)) $(SOURCES_quake_arch) $(CLIBS)
 
 dump: quake.elf
-	$(RISCV_OBJDUMP) quake.elf -x -D -S >> quake.elf.txt
+	$(RISCV_OBJDUMP) ../quake.elf -x -D -S >> ../quake.elf.txt
 
 clean:
 ifeq ($(UNAME), Windows)

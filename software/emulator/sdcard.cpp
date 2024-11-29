@@ -147,7 +147,7 @@ uint32_t CSDCard::SPIRead(uint8_t *buffer, uint32_t len)
 void CSDCard::Tick(CBus* bus)
 {
 	// Run the SPI bus
-	while (!m_spiinfifo.empty())
+	if (!m_spiinfifo.empty())
 	{
 		if (m_spimode == 0) // cmd
 		{

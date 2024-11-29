@@ -381,7 +381,7 @@ uint32_t CRV32::ALU(SDecodedInstruction& instr)
 					aluout = uint32_t(sign1ext / sign2ext);
 				} break; //  div
 				case 0b101: {
-					aluout = uint32_t(instr.m_rval1 / instr.m_rval2);
+					aluout = instr.m_rval1 / instr.m_rval2;
 				} break; // divu
 				case 0b110: {
 					aluout = uint32_t(sign1ext % sign2ext);
@@ -404,25 +404,28 @@ uint32_t CRV32::BLU(SDecodedInstruction& instr)
 {
 	uint32_t bluout = 0;
 
+	uint32_t eq = instr.m_rval1 == instr.m_rval2 ? 1 : 0;
+	uint32_t sless = (int32_t)instr.m_rval1 < (int32_t)instr.m_rval2 ? 1 : 0;
+	uint32_t less = instr.m_rval1 < instr.m_rval2 ? 1 : 0;
 	switch (instr.m_bluop)
 	{
 		case BLU_EQ:
-			bluout = instr.m_rval1 == instr.m_rval2 ? 1 : 0;
+			bluout = eq;
 		break;
 		case BLU_NE:
-			bluout = instr.m_rval1 != instr.m_rval2 ? 1 : 0;
+			bluout = !eq;
 		break;
 		case BLU_L:
-			bluout = (int32_t)instr.m_rval1 < (int32_t)instr.m_rval2 ? 1 : 0;
+			bluout = sless;
 		break;
 		case BLU_GE:
-			bluout = (int32_t)instr.m_rval1 >= (int32_t)instr.m_rval2 ? 1 : 0;
+			bluout = !sless;
 		break;
 		case BLU_LU:
-			bluout = instr.m_rval1 < instr.m_rval2 ? 1 : 0;
+			bluout = less;
 		break;
 		case BLU_GEU:
-			bluout = instr.m_rval1 >= instr.m_rval2 ? 1 : 0;
+			bluout = !less;
 		break;
 	}
 
@@ -491,7 +494,7 @@ void CRV32::DecodeInstruction(uint32_t pc, uint32_t instr, SDecodedInstruction& 
 			uint32_t middle = SelectBitRange(instr, 20, 20);	// +1
 			uint32_t lower = SelectBitRange(instr, 30, 21);		// +10
 			uint32_t zero = 0;									// +1 == 20
-			dec.m_immed = sign | (upper<<12) | (middle<<11) | (lower<<1);
+			dec.m_immed = sign | (upper<<12) | (middle<<11) | (lower<<1) | zero;
 		}
 		break;
 
@@ -503,7 +506,7 @@ void CRV32::DecodeInstruction(uint32_t pc, uint32_t instr, SDecodedInstruction& 
 			uint32_t middle = SelectBitRange(instr, 30, 25);	// +6
 			uint32_t lower = SelectBitRange(instr, 11, 8);		// +4
 			uint32_t zero = 0x0;								// +1 == 12
-			dec.m_immed = sign | (upper<<11) | (middle<<5) | (lower<<1);
+			dec.m_immed = sign | (upper<<11) | (middle<<5) | (lower<<1) | zero;
 		}
 		break;
 
@@ -514,20 +517,17 @@ void CRV32::DecodeInstruction(uint32_t pc, uint32_t instr, SDecodedInstruction& 
 		}
 		break;
 
-		case OP_OP_IMM:
+		default:
+		/*case OP_OP_IMM:
 		case OP_LOAD:
-		case OP_JALR:
+		case OP_JALR:*/
 		{
+			// Includes OP_FENCE, OP_FLOAT_OP, OP_FLOAT_MADD, OP_FLOAT_MSUB, OP_FLOAT_NMSUB, OP_FLOAT_NMADD which don't need this
+
 			// I-imm
 			int32_t sign = int32_t(instr & 0x80000000) >> 20;	// 32-11 == 21
 			uint32_t lower = SelectBitRange(instr, 30, 20);		// 11
 			dec.m_immed = sign | lower;
-		}
-		break;
-
-		default: // OP_FENCE, OP_FLOAT_OP, OP_FLOAT_MADD, OP_FLOAT_MSUB, OP_FLOAT_NMSUB, OP_FLOAT_NMADD
-		{
-			dec.m_immed = 0;
 		}
 		break;
 	}
