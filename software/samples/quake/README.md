@@ -1,7 +1,7 @@
 # Quake port for tinysys
 
 Based on work from
-https://github.com/FantomJAC/quakembd
+https://github.com/sysprog21/quake-embedded
 
 This one is easy to build, just use:
 
