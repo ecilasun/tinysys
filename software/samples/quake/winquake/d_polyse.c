@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "r_local.h"
 #include "d_local.h"
-#include "uart.h"
 
 // TODO: put in span spilling to shrink list size
 // !!! if this is changed, it must be changed in d_polysa.s too !!!
@@ -645,10 +644,7 @@ void D_PolysetDrawSpans8 (spanpackage_t *pspanpackage)
 			{
 				if ((lzi >> 16) >= *lpz)
 				{
-					if ((uint32_t)lptex&0x80000000)
-						*lpdest = cmap[0 + (llight & 0xFF00)];
-					else
-						*lpdest = cmap[*lptex + (llight & 0xFF00)];
+					*lpdest = cmap[*lptex + (llight & 0xFF00)];
 // gel mapping					*lpdest = gelmap[*lpdest];
 					*lpz = lzi >> 16;
 				}
@@ -908,7 +904,7 @@ void D_RasterizeAliasPolySmooth (void)
 	d_countextrastep = ubasestep + 1;
 	originalcount = a_spans[initialrightheight].count;
 	a_spans[initialrightheight].count = -999999; // mark end of the spanpackages
-	UARTWrite(":908\n"); D_PolysetDrawSpans8 (a_spans);
+	D_PolysetDrawSpans8 (a_spans);
 
 // scan out the bottom part of the right edge, if it exists
 	if (pedgetable->numrightedges == 2)
@@ -932,7 +928,7 @@ void D_RasterizeAliasPolySmooth (void)
 		d_countextrastep = ubasestep + 1;
 		a_spans[initialrightheight + height].count = -999999;
 											// mark end of the spanpackages
-		UARTWrite(":932\n"); D_PolysetDrawSpans8 (pstart);
+		D_PolysetDrawSpans8 (pstart);
 	}
 }
 
