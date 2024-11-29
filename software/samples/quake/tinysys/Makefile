@@ -44,7 +44,7 @@ SOURCES_quake_arch := \
 	main.c \
 	cd_null.c \
 	in_port.c \
-	snd.c \
+	snd_null.c \
 	sys_port.c \
 	vid_port.c \
 	../winquake/chase.c \

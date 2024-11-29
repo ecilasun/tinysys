@@ -1,24 +1,3 @@
-/*
-Copyright (C) 2023 Chin Yik Ming
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
-See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-*/
-/* snd.c -- include this instead of all the other snd_* files to have sound */
-
 #include "quakedef.h"
 
 cvar_t bgmvolume = {"bgmvolume", "1", true};
@@ -40,16 +19,9 @@ enum {
  
 void S_Init (void)
 {
-    Con_Printf("Sound init\n");
+    /*Con_Printf("Sound init\n");
 
-    Cvar_RegisterVariable(&volume);
-
-    /*int request_type = INIT_AUDIO;
-
-    register int a0 asm("a0") = request_type;
-    register int a7 asm("a7") = 0xBABE;
-
-    asm volatile("scall" : "+r"(a0) : "r"(a7));*/
+    Cvar_RegisterVariable(&volume);*/
 }
 
 void S_AmbientOff (void)
@@ -62,14 +34,7 @@ void S_AmbientOn (void)
 
 void S_Shutdown (void)
 {
-    Con_Printf("Sound shutdown\n");
-
-    /*int request_type = SHUTDOWN_AUDIO;
-
-    register int a0 asm("a0") = request_type;
-    register int a7 asm("a7") = 0xBABE;
-
-    asm volatile("scall" : "+r"(a0) : "r"(a7));*/
+    /*Con_Printf("Sound shutdown\n");*/
 
 }
 
@@ -91,7 +56,7 @@ static sfx_t *S_CacheSound(char *sample);
 sfxcache_t sfxcache;
 sfxcache_t *S_LoadSound (sfx_t *sfx)
 {
-    char buf[64];
+    /*char buf[64];
     sprintf(buf, "sound/%s", sfx->name);
     
     sfx_t *tmp = S_FindcacheSound(buf);
@@ -104,24 +69,19 @@ done:
     sfxcache.data = tmp->cache.data;
     sfxcache.length = tmp->cache_data_size;
 
-    return &sfxcache;
+    return &sfxcache;*/
+	return NULL;
 }
 
 void S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol,  float attenuation)
 {
-    if(!sfx)
+    /*if(!sfx)
         return;
 
     sfxcache_t *sfxcache = S_LoadSound(sfx);
-
-    /*int request_type = PLAY_SFX;
-
-    register int a0 asm("a0") = request_type;
-    register int a1 asm("a1") = (uintptr_t) sfxcache;
-    register int a2 asm("a2") = (int) (volume.value * 255);
-    register int a7 asm("a7") = 0xD00D;
-
-    asm volatile("scall" : "+r"(a0) : "r"(a1), "r"(a2), "r"(a7));*/
+	
+	// PLAY
+	*/
 }
 
 void S_StopSound (int entnum, int entchannel)
@@ -130,10 +90,10 @@ void S_StopSound (int entnum, int entchannel)
 
 static sfx_t *S_FindcacheSound (char *sample)
 {
-    for(int i = 0; i < precache_sound_idx; i++){
+    /*for(int i = 0; i < precache_sound_idx; i++){
         if(!strcmp(precache_sound[i]->name, sample))
             return precache_sound[i];
-    }
+    }*/
 
     return NULL;
 }
@@ -141,7 +101,7 @@ static sfx_t *S_FindcacheSound (char *sample)
 extern int len_for_emu;
 static sfx_t *S_CacheSound(char *sample)
 { 
-    sfx_t *sfx;
+    /*sfx_t *sfx;
     byte *data;
 
     sfx = malloc(sizeof(sfx_t));
@@ -157,19 +117,21 @@ static sfx_t *S_CacheSound(char *sample)
 
     precache_sound[precache_sound_idx++] = sfx;
 
-    return sfx;
+    return sfx;*/
+	return NULL;
 }
 
 sfx_t *S_PrecacheSound (char *sample)
 {
-    char buf[64];
+    /*char buf[64];
     sprintf(buf, "sound/%s", sample);
 
     sfx_t *sfx = S_FindcacheSound(buf);
     if(sfx)
         return sfx;
     
-    return S_CacheSound(buf);
+    return S_CacheSound(buf);*/
+	return NULL;
 }
 
 void S_ClearPrecache (void)
@@ -198,12 +160,12 @@ void S_ExtraUpdate (void)
 
 void S_LocalSound (char *s)
 {
-    sfx_t *sfx = S_PrecacheSound(s);
+    /*sfx_t *sfx = S_PrecacheSound(s);
     if(!sfx){
         Con_Printf("S_LocalSound: cannot cache %s\n", s);
         return;
     }
 
-    S_StartSound(-1, 0, sfx, vec3_origin, 1, 1);
+    S_StartSound(-1, 0, sfx, vec3_origin, 1, 1);*/
 }
 
