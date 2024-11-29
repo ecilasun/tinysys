@@ -405,20 +405,20 @@ void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _
 	{
 		int currentchar = _message[i];
 
-		if (currentchar == '\n') // Line feed
+		if (currentchar == '\n') // Line feed moves to the next line
 		{
 			cx = 0; // We assume carriage return here as well as line feed
 			cy++;
 		}
-		else if (currentchar == '\t') // Tab
+		else if (currentchar == '\t') // Tab steps 4 places without touching the text
 		{
 			cx += 4; // Based on DOS console tab width
 			// NOTE: This is not supposed to trigger any behavior except wrap around on same line
 			isNotTab = 0;
 		}
-		else if (currentchar == '\r') // Carriage return is ignored for now
+		else if (currentchar == '\r') // Carriage return rewinds to top of line
 		{
-			//cx=0; // TODO:
+			cx=0;
 		}
 		else
 		{
@@ -436,6 +436,7 @@ void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _
 		if (cy > H_1)
 		{
 			// We're trying to write past end of console; scroll up the contents of the console
+			// NOTE: This does not save the contents of the text buffer that has scrolled off
 			uint32_t targettext = CONSOLE_CHARACTERBUFFER_START;
 			uint32_t targetcolor = CONSOLE_COLORBUFFER_START;
 			uint32_t sourcetext = CONSOLE_CHARACTERBUFFER_START + W;

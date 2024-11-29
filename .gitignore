@@ -39,3 +39,4 @@ software/emulator/emulator/tinysys/x64/**
 software/tinyremote/build/**
 software/tinyremote/waf**
 software/tinyremote/.lock**
+software/emulator/sdcard/quake/ID1/**
