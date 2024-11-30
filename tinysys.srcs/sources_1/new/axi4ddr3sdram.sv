@@ -7,8 +7,7 @@ module axi4ddr3sdram(
 	input wire clk_sys_i,
 	input wire clk_ref_i,
 	axi4if.slave m_axi,
-	ddr3sdramwires.def ddr3conn,
-    input wire [11:0] device_temp);
+	ddr3sdramwires.def ddr3conn);
 
 // --------------------------------------------------
 // AXI4 re-timer from 100MHz to DDR3 ui_clk
@@ -27,23 +26,6 @@ axi4retimer axi4retimerinst(
 	.destclk(ui_clk),
 	.destbus(s_axi),
 	.destrst(aresetm) );
-
-// --------------------------------------------------
-// Device temperature cdc from aclk to uiclk
-// --------------------------------------------------
-
-(* async_reg = "true" *) logic [11:0] device_tempcdcA = 12'd0;
-(* async_reg = "true" *) logic [11:0] device_tempcdcB = 12'd0;
-
-always @(posedge ui_clk) begin
-	if (ui_clk_sync_rst) begin
-		device_tempcdcA <= 12'd0;
-		device_tempcdcB <= 12'd0;
-	end else begin
-		device_tempcdcA <= device_temp;
-		device_tempcdcB <= device_tempcdcA;
-	end
-end
 
 // --------------------------------------------------
 // MIG7 - AXI4
@@ -75,7 +57,6 @@ mig_7series_0 ddr3instance (
     .ui_clk                         (ui_clk),
     .ui_clk_sync_rst                (ui_clk_sync_rst),
     .device_temp					(),
-    .device_temp_i					(device_tempcdcB),
 
     .mmcm_locked                    (mmcm_locked),
     .aresetn                        (aresetm),

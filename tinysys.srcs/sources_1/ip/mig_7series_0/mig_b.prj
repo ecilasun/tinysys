@@ -17,7 +17,7 @@
 
   <LowPower_En>ON</LowPower_En>
 
-  <XADC_En>Disabled</XADC_En>
+  <XADC_En>Enabled</XADC_En>
 
   <TargetFPGA>xc7a200t-fbg484/-1</TargetFPGA>
 
@@ -59,7 +59,7 @@
     <DataMask>1</DataMask>
     <ECC>Disabled</ECC>
     <Ordering>Normal</Ordering>
-    <BankMachineCnt>3</BankMachineCnt>
+    <BankMachineCnt>8</BankMachineCnt>
     <CustomPart>TRUE</CustomPart>
     <NewPartName>MT41K128M16JT-125</NewPartName>
     <RowAddress>14</RowAddress>

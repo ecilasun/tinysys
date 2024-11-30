@@ -103,7 +103,7 @@ void CBus::Read(uint32_t address, uint32_t& data)
 	uint32_t dev = (address & 0x80000000) ? ((address & 0xF0000) >> 16) : 11;
 	m_devices[dev]->Read(address, data);
 }
-
+ 
 void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 {
 	uint32_t dev = (address & 0x80000000) ? ((address & 0xF0000) >> 16) : 11;

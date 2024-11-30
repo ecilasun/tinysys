@@ -46,7 +46,8 @@
 		"array": "c",
 		"deque": "c",
 		"ranges": "c",
-		"encoding.h": "c"
+		"encoding.h": "c",
+		"iosfwd": "c"
 	},
 	"terminal.integrated.profiles.windows": {
 		"MSYS2": {

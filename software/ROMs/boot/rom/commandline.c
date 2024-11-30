@@ -397,6 +397,7 @@ void _CLITask()
 	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
 
 	ShowVersion(kernelgfx);
+	s_cliCtx.refreshConsoleOut = 1;
 
 	struct STaskContext *taskctx = _task_get_context(0);
 	while(1)

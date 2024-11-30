@@ -262,13 +262,6 @@ arbiterlarge arbiter8x1instSDRAM(
 // RAM
 // --------------------------------------------------
 
-wire [11:0] device_temp;
-
-xadcmodule xadcinst(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.device_temp(device_temp) );
-
 // dev   start     end      size
 // DDR3: 00000000  0FFFFFFF (256 Mbytes, 16 byte r/w only)
 
@@ -279,8 +272,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 	.clk_sys_i(clk166),
 	.clk_ref_i(clk200),
 	.m_axi(memorybus),
-	.ddr3conn(ddr3conn),
-	.device_temp(device_temp) );
+	.ddr3conn(ddr3conn));
 
 // --------------------------------------------------
 // Memory mapped device router
@@ -408,7 +400,7 @@ axi4CSRFile #( .HARTID(4'd0)) csrfile0 (
 	.usbirq(usbairq),
 	.uartirq(uartirq),
 	.hirq(hirq),
-	.rebootreqn(~esp_reboot),
+	.rebootreq(~esp_reboot),
 	// CPU reset
 	.cpuresetreq(cpuresetreq0),
 	// Shadow registers
@@ -432,7 +424,7 @@ axi4CSRFile #( .HARTID(4'd1)) csrfile1 (
 	.usbirq(usbairq),
 	.uartirq(uartirq),
 	.hirq(hirq),
-	.rebootreqn(~esp_reboot),
+	.rebootreq(~esp_reboot),
 	// CPU reset
 	.cpuresetreq(cpuresetreq1),
 	// Shadow registers

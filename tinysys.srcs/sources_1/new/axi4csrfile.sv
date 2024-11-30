@@ -20,7 +20,7 @@ module axi4CSRFile #(
 	input wire uartirq,
 	input wire hirq,
 	// Reboot request via ESP32 pin held high
-	input wire rebootreqn,
+	input wire rebootreq,
 	// CPU reset line
 	output wire cpuresetreq,
 	// Expose certain registers to fetch unit
@@ -100,19 +100,19 @@ logic softInterruptEna;
 logic cpuresetreq_r;
 
 // Reboot wire comes from ESP32 with a different clock
-(* async_reg = "true" *) logic cpurebootreq;
-(* async_reg = "true" *) logic cpurebootreq_r;
+(* async_reg = "true" *) logic rebootreqA;
+(* async_reg = "true" *) logic rebootreqB;
 always @(posedge aclk) begin
 	if (~delayedresetn) begin
-		cpurebootreq <= 1'b0;
-		cpurebootreq_r <= 1'b0;
+		rebootreqA <= 1'b0;
+		rebootreqB <= 1'b0;
 	end else begin
-		cpurebootreq <= rebootreqn;
-		cpurebootreq_r <= cpurebootreq; 
+		rebootreqA <= rebootreq;
+		rebootreqB <= rebootreqA; 
 	end
 end
 
-assign cpuresetreq = cpuresetreq_r || cpurebootreq_r;
+assign cpuresetreq = cpuresetreq_r || rebootreqB;
 
 always @(posedge aclk) begin
 	if (~delayedresetn) begin
