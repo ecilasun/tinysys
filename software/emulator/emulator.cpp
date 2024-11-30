@@ -9,7 +9,6 @@ CEmulator::~CEmulator()
 		delete m_bus;
 	if (m_cpu[0]) delete m_cpu[0];
 	if (m_cpu[1]) delete m_cpu[1];
-	if (m_cpu[2]) delete m_cpu[2];
 }
 
 bool CEmulator::Reset(const char* romFile, uint32_t resetvector)
@@ -51,10 +50,8 @@ bool CEmulator::Reset(const char* romFile, uint32_t resetvector)
 
 	m_cpu[0] = new CRV32(0, resetvector);
 	m_cpu[1] = new CRV32(1, resetvector);
-	m_cpu[2] = new CRV32(2, resetvector);
 	m_cpu[0]->Reset();
 	m_cpu[1]->Reset();
-	m_cpu[2]->Reset();
 
 	return true;
 }
@@ -65,7 +62,6 @@ void CEmulator::Step(uint64_t wallclock)
 	m_bus->Tick();
 	m_cpu[0]->Tick(wallclock, m_bus);
 	m_cpu[1]->Tick(wallclock, m_bus);
-	m_cpu[2]->Tick(wallclock, m_bus);
 }
 
 void CEmulator::UpdateVideoLink(uint32_t *pixels, int scanline, int pitch)

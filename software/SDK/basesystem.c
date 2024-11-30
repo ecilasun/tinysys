@@ -155,7 +155,9 @@ void E32SetTimeCompare(const uint64_t future)
  */
 void E32WriteMemMappedCSR(uint32_t _hart, uint32_t _csr, uint32_t _value)
 {
-	uint32_t csrbase[] = {DEVICE_CSR0, DEVICE_CSR1, DEVICE_CSR2};
+	if (_hart >= MAX_HARTS) return;
+
+	uint32_t csrbase[MAX_HARTS] = {DEVICE_CSR0, DEVICE_CSR1};
 	*(uint32_t*)(csrbase[_hart] | (_csr<<2)) = _value;
 }
 
@@ -168,7 +170,9 @@ void E32WriteMemMappedCSR(uint32_t _hart, uint32_t _csr, uint32_t _value)
  */
 uint32_t E32ReadMemMappedCSR(uint32_t _hart, uint32_t _csr)
 {
-	uint32_t csrbase[] = {DEVICE_CSR0, DEVICE_CSR1, DEVICE_CSR2};
+	if (_hart >= MAX_HARTS) return 0;
+	// Return the address of the CSR for the given hart
+	uint32_t csrbase[MAX_HARTS] = {DEVICE_CSR0, DEVICE_CSR1};
 	return *(uint32_t*)(csrbase[_hart] | (_csr<<2));
 }
 
@@ -180,6 +184,7 @@ uint32_t E32ReadMemMappedCSR(uint32_t _hart, uint32_t _csr)
  */
 void E32SetupCPU(uint32_t hartid, void *workerThread)
 {
+	if (hartid >= MAX_HARTS) return;
 	// Set up reset vector as if it's an ISR
 	E32WriteMemMappedCSR(hartid, CSR_MSCRATCH, (uint32_t)workerThread);
 }
@@ -191,6 +196,7 @@ void E32SetupCPU(uint32_t hartid, void *workerThread)
  */
 void E32ResetCPU(uint32_t hartid)
 {
+	if (hartid >= MAX_HARTS) return;
 	// This triggers a hardware jump to mscratch after all queued instructions execute
 	E32WriteMemMappedCSR(hartid, CSR_CPURESET, 0x1);
 }

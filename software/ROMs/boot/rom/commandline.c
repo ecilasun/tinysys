@@ -66,44 +66,23 @@ void __attribute__((aligned(64))) _runExecTask()
 	// execution pool.
 }
 
-void ShowVersion(struct EVideoContext *kernelgfx, uint32_t longFormat)
+void ShowVersion(struct EVideoContext *kernelgfx)
 {
 	uint32_t waterMark = read_csr(0xFF0);
 	uint32_t isEmulator = read_csr(0xF12) & 0x80000000 ? 0 : 1; // CSR_MARCHID is 0x80000000 for read hardware, 0x00000000 for emulator
 
-	if (longFormat)
-	{
-		VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
-		kprintf("\n                                                   \n");
-		kprintf(" OS version          : " VERSIONSTRING " (%s)              \n", waterMark == 0 ? "IN-ROM" : "SDCARD");
-
-		// TODO: These two values need to come from a CSR,
-		// pointing at a memory location with device config data (machineconfig?)
-		// That memory location will in turn point at an onboard EEPROM we can
-		// read device versions/presence from.
-		kprintf(" Board               : issue 2E:2024 (%s)    \n", isEmulator ? "EMULATED" : "HARDWARE");
-		kprintf(" CPU & bus clock     : 150MHz                      \n");
-		kprintf(" ARCH                : rv32im_zicsr_zifencei_zfinx \n");
-		kprintf(" ESP32               : ESP32-C6-WROOM-1-N8         \n");
-
-		// Report USB host chip version if found
-		uint8_t m3421rev = MAX3421ReadByte(rREVISION);
-		if (m3421rev != 0xFF)
-			kprintf(" MAX3421(USB Host)   : 0x%X                        \n", m3421rev);
-
-		// Video circuit on 2B has no info we can read so this is hardcoded
-		kprintf(" SII164(video)       : 12bpp DVI                   \n");
-		kprintf(" CS4344(audio)       : 11/22/44KHz stereo          \n");
-		kprintf("                                                   \n\n");
-		VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
-	}
-	else
-	{
-		VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
-		kprintf("    OS build: "__TIME__" "__DATE__" " VERSIONSTRING "%s%s    \n", waterMark == 0 ? "R" : "S", isEmulator ? "E" : "H");
-		VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
-		kprintf("\n");
-	}
+	VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
+	kprintf("\n                                                   \n");
+	kprintf(" OS version          : " VERSIONSTRING " (%s)              \n", waterMark == 0 ? "IN-ROM" : "SDCARD");
+	kprintf(" Board               : issue 2E:2024 (%s)    \n", isEmulator ? "EMULATED" : "HARDWARE");
+	kprintf(" ARCH                : rv32im_zicsr_zifencei_zfinx \n");
+	// Report USB host chip version if found
+	uint8_t m3421rev = MAX3421ReadByte(rREVISION);
+	if (m3421rev != 0xFF)
+		kprintf(" MAX3421(USB Host)   : 0x%X                        \n", m3421rev);
+	// Video circuit on 2B has no info we can read so this is hardcoded
+	kprintf("                                                   \n\n");
+	VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 }
 
 void DumpTasks(const uint32_t _hartid)
@@ -111,7 +90,7 @@ void DumpTasks(const uint32_t _hartid)
 	struct STaskContext *ctx = _task_get_context(_hartid);
 	if (ctx->numTasks == 0)
 	{
-		kprintf("CPU%d : no tasks running\n", _hartid);
+		kprintf("CPU%d : no tasks\n", _hartid);
 	}
 	else
 	{
@@ -156,9 +135,10 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 	{
 		// Clear to "we're rebooting" color
 		VPUClear(kernelgfx, 0x0C0C0C0C);
+		// Turn video output off
 		VPUSetVMode(kernelgfx, EVS_Disable);
 
-		// Remove watermark since we might have deleted / changed the rom image for next boot.
+		// Remove watermark since we might have deleted / changed the rom image oin the sdcard for next boot.
 		write_csr(0xFF0, 0x0);
 
 		// Reset to default ROM entry points and reset each CPU. Make sure main CPU ist last to go.
@@ -269,19 +249,15 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 				kprintf("Invalid: '%s'\n", s_cliCtx.pathtmp);
 		}
 	}
-	else if (!strcmp(command, "ver"))
-	{
-		ShowVersion(kernelgfx, 1);
-	}
 	else // Anything else defers to being a command on storage
 		loadELF = 1;
 
 	if (loadELF)
 	{
 		// TODO: Add support to load user ELF files on HART#1/2
-		struct STaskContext* tctx[MAX_HARTS] = {_task_get_context(0), _task_get_context(1), _task_get_context(2)};
-		int32_t taskcounts[MAX_HARTS] = {tctx[0]->numTasks, tctx[1]->numTasks, tctx[2]->numTasks};
-		int32_t maxcounts[MAX_HARTS] = {2, 1, 1};
+		struct STaskContext* tctx[MAX_HARTS] = {_task_get_context(0), _task_get_context(1)};
+		int32_t taskcounts[MAX_HARTS] = {tctx[0]->numTasks, tctx[1]->numTasks};
+		int32_t maxcounts[MAX_HARTS] = {2, 1};
 
 		// Temporary measure to avoid loading another executable while the first one is running
 		// until we get a virtual memory device
@@ -420,7 +396,7 @@ void _CLITask()
 {
 	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
 
-	ShowVersion(kernelgfx, 0);
+	ShowVersion(kernelgfx);
 
 	struct STaskContext *taskctx = _task_get_context(0);
 	while(1)

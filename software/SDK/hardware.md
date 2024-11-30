@@ -12,7 +12,7 @@ RISC V is the CPU of choice for tinysys, though it could easily have been OpenRI
 
 For easer of development, the choice was made to implement the open RISC V standard, as there are mature enough compilers and tools today that allow for portin complex applications including Linux to this architecture.
 
-There are three CPUs on board (inside the FPGA) of tinysys. Technically, they're termed 'hardware threads' and the term HART is used for short.
+There are multiple CPUs on board (inside the FPGA) of tinysys. Technically, they're termed 'hardware threads' and the term HART is used for short.
 
 Each HART contains its own dedicated data (D$) and code (I$) cache, which are 32 and 16 Kbytes in size respectively.
 
@@ -43,18 +43,18 @@ Here is a list of all devices, their starting addresses, and their purpose. Plea
 	DEVICE_LEDS 0x80010000 - 0x8001FFFF Debug LEDs: 4 LEDs that are on board the device, suitable for simple debugging purposes
 	DEVICE_VPUC 0x80020000 - 0x8002FFFF VPU fifo: Command fifo for the video processing unit (VPU)
 	DEVICE_SPIC 0x80030000 - 0x8003FFFF SPI fifo: Command fifo for the SPI device tied to the SDCard controller
-	DEVICE_XADC 0x80040000 - 0x8004FFFF ADC fifo: Command fifo for the digital/analog converter, used to read FPGA temperature
-	DEVICE_DMAC 0x80050000 - 0x8005FFFF DMA fifo: Command fifo for the DMA controller, used to set up memory transfers
-	DEVICE_USBA 0x80060000 - 0x8006FFFF USB fifo: Command fifo for the SPI device tied to the USB host chip
-	DEVICE_APUC 0x80070000 - 0x8007FFFF APU fifo: Command fifo for the audio unit, used to control audio playback
-	DEVICE_MAIL 0x80080000 - 0x8008FFFF Mailbox: A 4Kbyte word addressible uncached memory region used to store task state for the scheduler
-	DEVICE_UART 0x80090000 - 0x8009FFFF UART: I/O port used to read from and write data to the UART device tied to the ESP32-C6 module
-	DEVICE_CSR0 0x800A0000 - 0x800AFFFF CSR0: The 4Kbyte memory mapped CSR file for hardware thread zero
-	DEVICE_CSR1 0x800B0000 - 0x800BFFFF CSR1: The 4Kbyte memory mapped CSR file for hardware thread one
-	DEVICE_CSR2 0x800C0000 - 0x800CFFFF CSR2: The 4Kbyte memory mapped CSR file for hardware thread two
-	DEVICE_DEV1 0x800D0000 - 0x800DFFFF Unused - reserved for future use / do not access
-	DEVICE_DEV2 0x800E0000 - 0x800EFFFF Unused - reserved for future use / do not access
-	DEVICE_DEV3 0x800F0000 - 0x800FFFFF Unused - reserved for future use / do not access
+	DEVICE_DMAC 0x80040000 - 0x8004FFFF DMA fifo: Command fifo for the DMA controller, used to set up memory transfers
+	DEVICE_USBA 0x80050000 - 0x8005FFFF USB fifo: Command fifo for the SPI device tied to the USB host chip
+	DEVICE_APUC 0x80060000 - 0x8006FFFF APU fifo: Command fifo for the audio unit, used to control audio playback
+	DEVICE_MAIL 0x80070000 - 0x8007FFFF Mailbox: A 4Kbyte word addressible uncached memory region used to store task state for the scheduler
+	DEVICE_UART 0x80080000 - 0x8008FFFF UART: I/O port used to read from and write data to the UART device tied to the ESP32-C6 module
+	DEVICE_CSR0 0x80090000 - 0x8009FFFF CSR0: The 4Kbyte memory mapped CSR file for hardware thread zero
+	DEVICE_CSR1 0x800A0000 - 0x800AFFFF CSR1: The 4Kbyte memory mapped CSR file for hardware thread one
+	DEVICE_DEV1 0x800B0000 - 0x800BFFFF Unused - reserved for future use / do not access
+	DEVICE_DEV2 0x800C0000 - 0x800CFFFF Unused - reserved for future use / do not access
+	DEVICE_DEV3 0x800D0000 - 0x800DFFFF Unused - reserved for future use / do not access
+	DEVICE_DEV4 0x800E0000 - 0x800EFFFF Unused - reserved for future use / do not access
+	DEVICE_DEV5 0x800F0000 - 0x800FFFFF Unused - reserved for future use / do not access
 ```
 
 ### Memory arbitration

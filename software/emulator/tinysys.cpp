@@ -221,6 +221,7 @@ uint32_t statsCallback(Uint32 interval, void* param)
 {
 	EmulatorContext* ctx = (EmulatorContext*)param;
 	char stats[513];
+
 	CRV32 *cpu0 = ctx->emulator->m_cpu[0];
 	snprintf(stats, 512, "CPU0 stats (over last second)\n");
 	snprintf(stats, 512, "%sI$  read hits / misses: %d / %d\n", stats, cpu0->m_icache.m_hits, cpu0->m_icache.m_misses);

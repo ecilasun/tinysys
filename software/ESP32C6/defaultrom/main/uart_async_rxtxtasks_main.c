@@ -54,7 +54,7 @@ static void jtag_task(void *arg)
 				ESP_LOGI(TAG, "Rebooting CPUs");
 				gpio_hold_dis(PIN_REBOOT);
 				gpio_set_level(PIN_REBOOT, 0);
-				vTaskDelay(250 / portTICK_PERIOD_MS);
+				vTaskDelay(1000 / portTICK_PERIOD_MS);
 				gpio_set_level(PIN_REBOOT, 1);
 				gpio_hold_en(PIN_REBOOT);
 			}
@@ -151,8 +151,15 @@ static void uart_event_task(void *pvParameters)
     vTaskDelete(NULL);
 }
 
+// IMPORTANT NOTE:
+// This routine will restart when the remote host disconnects and the RTS pin status changes (which is always the case with putty)
+// This is the reason why we will see the TinySys boot message every time we connect to the device via putty
 void app_main(void)
 {
+	// Prevent CPU reset
+	gpio_set_level(PIN_REBOOT, 1);
+	gpio_hold_en(PIN_REBOOT);
+
 	esp_log_level_set(TAG, ESP_LOG_NONE);
 	// Initialize NVS.
 	esp_err_t ret = nvs_flash_init();
@@ -169,8 +176,6 @@ void app_main(void)
 		.pull_down_en = GPIO_PULLDOWN_DISABLE,
 		.intr_type = GPIO_INTR_DISABLE
 	});
-
-	gpio_set_level(PIN_REBOOT, 0); // Hold in reset
 
 	setvbuf(stdin, NULL, _IONBF, 0);
 
@@ -213,10 +218,6 @@ void app_main(void)
     //Create a task to handler UART event from ISR
     xTaskCreate(uart_event_task, "tinysys_uart_task", 2048, NULL, 12, NULL);
 	xTaskCreate(jtag_task, "tinysys_jtag_task", 2048, NULL, 12, NULL);
-
-	// Let the tinysys CPUs know we are ready
-	gpio_set_level(PIN_REBOOT, 1);
-	gpio_hold_en(PIN_REBOOT);
 
 	usb_serial_jtag_write_bytes((uint8_t*) "TinySys v1.0D\n", 14, portMAX_DELAY);
 }

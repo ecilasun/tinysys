@@ -42,21 +42,6 @@ void __attribute__((noreturn, naked)) MyTaskOne()
 	}
 }
 
-void __attribute__((noreturn, naked)) MyTaskTwo()
-{
-	// Set up shared memory for this HART
-	volatile int *sharedmem = (volatile int*)E32GetScratchpad();
-	volatile int *s_frame2 = sharedmem+8;
-
-	while(1)
-	{
-		TaskYield();
-		E32Sleep(500*ONE_MILLISECOND_IN_TICKS);
-
-		*s_frame2 = *s_frame2 + 1;
-	}
-}
-
 int main(int argc, char *argv[])
 {
 	// Grab some framebuffer memory
@@ -79,15 +64,12 @@ int main(int argc, char *argv[])
 	volatile int *sharedmem = (volatile int*)E32GetScratchpad();
 	volatile int *s_frame0 = sharedmem;
 	volatile int *s_frame1 = sharedmem+4;
-	volatile int *s_frame2 = sharedmem+8;
 
 	*s_frame0 = 0;
 	*s_frame1 = 0;
-	*s_frame2 = 0;
 
 	// Grab task context of CPU#1
 	struct STaskContext *taskctx1 = TaskGetContext(1);
-	struct STaskContext *taskctx2 = TaskGetContext(2);
 
 	// Add a new tasks to run for each HART
 	int taskID1 = TaskAdd(taskctx1, "MyTaskOne", MyTaskOne, TS_RUNNING, QUARTER_MILLISECOND_IN_TICKS);
@@ -96,19 +78,10 @@ int main(int argc, char *argv[])
 		printf("Error: No room to add new task on CPU 1\n");
 	}
 
-	int taskID2 = TaskAdd(taskctx2, "MyTaskTwo", MyTaskTwo, TS_RUNNING, QUARTER_MILLISECOND_IN_TICKS);
-	if (taskID2== 0)
-	{
-		printf("Error: No room to add new task on CPU 2\n");
-	}
-
 	char tmpstr[128];
 	do
 	{
 		VPUClear(&s_vx, 0x03050305);
-
-		int L2 = snprintf(tmpstr, 127, "HART#2: %d", *s_frame2);
-		VPUPrintString(&s_vx, 0x00, 0x0F, 8, 8, tmpstr, L2);
 
 		int L1 = snprintf(tmpstr, 127, "HART#1: %d", *s_frame1);
 		VPUPrintString(&s_vx, 0x00, 0x0F, 8, 10, tmpstr, L1);
@@ -130,7 +103,6 @@ int main(int argc, char *argv[])
 
 	// We're done with the test, remove our task
 	TaskExitTaskWithID(taskctx1, taskID1, 0);
-	TaskExitTaskWithID(taskctx2, taskID2, 0);
 
 	return 0;
 }

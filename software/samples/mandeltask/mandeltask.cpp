@@ -68,12 +68,12 @@ void mandelbrotFloat(uint8_t* framebuffer, int tx, int ty, int self, float ox, f
 void MandelTask()
 {
 	volatile int *sharedmem = (volatile int*)E32GetScratchpad();
-	volatile float *g_X[3] = {(float*)(sharedmem), (float*)(sharedmem+4), (float*)(sharedmem+8)};
-	volatile float *g_Y[3] = {(float*)(sharedmem+12), (float*)(sharedmem+16), (float*)(sharedmem+20)};
-	volatile float *g_R = (float*)(sharedmem+24);
-	volatile int *g_tX[3] = {sharedmem+28, sharedmem+32, sharedmem+36};
-	volatile int *g_tY[3] = {sharedmem+40, sharedmem+44, sharedmem+48};
-	volatile uint32_t *image = (uint32_t*)(sharedmem+52);
+	volatile float *g_R = (float*)(sharedmem);
+	volatile uint32_t *image = (uint32_t*)(sharedmem+4);
+	volatile float *g_X[2] = {(float*)(sharedmem+8), (float*)(sharedmem+24)};
+	volatile float *g_Y[2] = {(float*)(sharedmem+12), (float*)(sharedmem+26)};
+	volatile int *g_tX[2] = {sharedmem+16, sharedmem+30};
+	volatile int *g_tY[2] = {sharedmem+20, sharedmem+34};
 	uint8_t *framebuffer = (uint8_t *)(*image);
 
 	uint32_t self = read_csr(mhartid);
@@ -93,11 +93,11 @@ void MandelTask()
 		if (tilex >= 20)
 		{
 			tilex = 0;
-			tiley += 3;
+			tiley += 2; // Skip every other line (two tasks)
 		}
 		if (tiley >= 15)
 		{
-			tiley = self; // 0, 1, 2
+			tiley = self; // 0 or 1 depending on task number
 		}
 
 		*g_tX[self] = tilex;
@@ -135,33 +135,31 @@ int main()
 
 	// Set up our shared memory
 	volatile int *sharedmem = (volatile int*)E32GetScratchpad();
-	volatile float *g_X[3] = {(float*)(sharedmem), (float*)(sharedmem+4), (float*)(sharedmem+8)};
-	volatile float *g_Y[3] = {(float*)(sharedmem+12), (float*)(sharedmem+16), (float*)(sharedmem+20)};
-	volatile float *g_R = (float*)(sharedmem+24);
-	volatile int *g_tX[3] = {sharedmem+28, sharedmem+32, sharedmem+36};
-	volatile int *g_tY[3] = {sharedmem+40, sharedmem+44, sharedmem+48};
-	volatile uint32_t *image = (uint32_t*)(sharedmem+52);
+	volatile float *g_R = (float*)(sharedmem);
+	volatile uint32_t *image = (uint32_t*)(sharedmem+4);
+	volatile float *g_X[2] = {(float*)(sharedmem+8), (float*)(sharedmem+24)};
+	volatile float *g_Y[2] = {(float*)(sharedmem+12), (float*)(sharedmem+26)};
+	volatile int *g_tX[2] = {sharedmem+16, sharedmem+30};
+	volatile int *g_tY[2] = {sharedmem+20, sharedmem+34};
 	*image = (uint32_t)framebuffer;
 
 	// Set up task contexts
-	struct STaskContext *taskctx[MAX_HARTS] = { TaskGetContext(0), TaskGetContext(1), TaskGetContext(2) };
+	struct STaskContext *taskctx[MAX_HARTS] = { TaskGetContext(0), TaskGetContext(1)};
 
 	// Set up initial values
 	// Each task will start at a different line
 	*g_X[0] = X; *g_Y[0] = Y; *g_tX[0] = 0; *g_tY[0] = 0;
 	*g_X[1] = X; *g_Y[1] = Y; *g_tX[1] = 0; *g_tY[1] = 1;
-	*g_X[2] = X; *g_Y[2] = Y; *g_tX[2] = 0; *g_tY[2] = 2;
 	*g_R = R;
 
 	// Start tasks
 	int taskID0 = TaskAdd(taskctx[0], "MandelTask", MandelTask, TS_RUNNING, ONE_MILLISECOND_IN_TICKS);
 	int taskID1 = TaskAdd(taskctx[1], "MandelTask", MandelTask, TS_RUNNING, ONE_MILLISECOND_IN_TICKS);
-	int taskID2 = TaskAdd(taskctx[2], "MandelTask", MandelTask, TS_RUNNING, ONE_MILLISECOND_IN_TICKS);
 
 	while(1)
 	{
 		// Zoom in when last task reaches the end
-		if (*g_tY[2] == 2 && *g_tX[2] == 0)
+		if (*g_tY[1] == 1 && *g_tX[1] == 0)
 		{
 			*g_R = *g_R + 0.001f;
 		}
@@ -170,7 +168,6 @@ int main()
 
 	TaskExitTaskWithID(taskctx[0], taskID0, 0);
 	TaskExitTaskWithID(taskctx[1], taskID1, 0);
-	TaskExitTaskWithID(taskctx[2], taskID2, 0);
 
 	return 0;
 }

@@ -10,7 +10,7 @@ Of course, before you ask, it does run DOOM, and with sound and keyboard input!
 
 # System specifications
 
-- 3x RISC-V based CPUs (architecture: rv32im_zicsr_zifencei_zfinx)
+- 2x RISC-V based CPUs (architecture: rv32im_zicsr_zifencei_zfinx)
 - First core runs the OS kernel and user processes
 - Second core is fully reserved for user process use
 - 150MHz bus and CPU clock, however we're not pipelined yet (TBD)

@@ -49,7 +49,7 @@ const char *regnames[] = {
 	"t3", "t4", "t5", "t6" };
 
 // Base CSR address per core
-uint32_t csrBaseTable[] = { 0x800A0000, 0x800B0000, 0x800C0000 };
+uint32_t csrBaseTable[] = { 0x80090000, 0x800A0000 };
 
 
 // This is an exact copy of the ISR ROM contents of the real hardware

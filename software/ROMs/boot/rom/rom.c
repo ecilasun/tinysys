@@ -2,7 +2,6 @@
 
 #include "rvcrt0.h"
 #include "rombase.h"
-#include "xadc.h"
 #include "apu.h"
 #include "vpu.h"
 #include "dma.h"
@@ -132,7 +131,6 @@ uint32_t LoadOverlay(const char *filename)
 
 		// New ROM image will do its own thing to initialize the CPUs,
 		// remove our previous function pointers to branch to on reboot.
-		E32SetupCPU(2, (void*)0x0);
 		E32SetupCPU(1, (void*)0x0);
 		E32SetupCPU(0, (void*)0x0);
 
@@ -222,12 +220,10 @@ void HandleCPUError(struct STaskContext *ctx, const uint32_t cpu)
 		kprintf("\n");
 	}
 
-	// Reset CPU#1/2 here if anything faulted
+	// Reset CPU#1 here if anything faulted
 	// This way we won't risk some stale task being hung on CPU#1 if CPU#0 crashes
 	E32SetupCPU(1, UserMain);
 	E32ResetCPU(1);
-	E32SetupCPU(2, UserMain);
-	E32ResetCPU(2);
 
 	// Clear error once handled and reported
 	ctx->kernelError = 0;
@@ -353,8 +349,6 @@ int main()
 	ClearStatics();
 
 	// Reset and wake up all CPUs again, this time with their correct entry points
-	E32SetupCPU(2, UserMain);
-	E32ResetCPU(2);
 	E32SetupCPU(1, UserMain);
 	E32ResetCPU(1);
 	E32SetupCPU(0, KernelMain);
