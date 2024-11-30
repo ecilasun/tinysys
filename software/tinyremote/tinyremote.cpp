@@ -24,7 +24,8 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-char commdevicename[512] = "/dev/ttyUSB0";
+//char commdevicename[512] = "/dev/ttyUSB0";
+char commdevicename[512] = "/dev/ttyACM0";
 char capturedevicename[512] = "/dev/video0";
 #endif
 
