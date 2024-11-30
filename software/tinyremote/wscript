@@ -16,15 +16,17 @@ def options(opt):
     # Prefers msvc, but could also use conf.load('clang++') instead
     if ('COMSPEC' in os.environ):
         opt.load('msvc')
+    elif platform.system().lower().startswith('darwin'):
+        opt.load('clang++')
     else:
         opt.load('clang++')
 
 def configure(conf):
     # Prefers msvc, but could also use conf.load('clang++') instead
-    if ('COMSPEC' in os.environ):
-        conf.env.MSVC_TARGETS = ['x64']
+    if platform.system().lower().startswith('win'):
         conf.load('msvc')
-        conf.env.PLATFORM = ['windows']
+    elif platform.system().lower().startswith('darwin'):
+        conf.load('clang++')
     else:
         conf.load('clang++')
 
@@ -69,3 +71,8 @@ def build(bld):
         libpath=sdk_lib_path,
         lib=libs,
         use=[])
+
+    if platform.system().lower().startswith('win'):
+        bld(features='subst', source='tinyremote.exe', target=os.path.abspath('./tinyremote.exe'), is_copy=True)
+    else:
+        bld(features='subst', source='tinyremote', target=os.path.abspath('./tinyremote'), is_copy=True)

@@ -16,7 +16,8 @@
 #include <thread>
 
 #if defined(CAT_LINUX) || defined(CAT_MACOS)
-char devicename[512] = "/dev/ttyUSB0";
+//char devicename[512] = "/dev/ttyUSB0";
+char devicename[512] = "/dev/ttyACM0";
 #else // CAT_WINDOWS
 char devicename[512] = "\\\\.\\COM4";
 #endif
