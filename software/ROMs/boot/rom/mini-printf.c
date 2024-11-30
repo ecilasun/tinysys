@@ -44,14 +44,6 @@
 #include "mini-printf.h"
 
 static unsigned int
-mini_strlen(const char *s)
-{
-	unsigned int len = 0;
-	while (s[len] != '\0') len++;
-	return len;
-}
-
-static unsigned int
 mini_itoa(int value, unsigned int radix, unsigned int uppercase, unsigned int unsig,
 	 char *buffer, unsigned int zero_pad)
 {

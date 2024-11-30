@@ -261,7 +261,7 @@ int SDL_main(int argc, char** argv)
 	const uint32_t resetvector = 0x0FFE0000;
 	char bootRom[256] = "rom.bin";
 	if (argc>1)
-		strncpy(bootRom, argv[1], 255);
+		strncpy(bootRom, argv[1], strlen(argv[1]));
 
 	success = ectx.emulator->Reset(bootRom, resetvector);
 

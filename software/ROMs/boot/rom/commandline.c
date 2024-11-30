@@ -5,6 +5,7 @@
 #include "max3421e.h"
 #include "commandline.h"
 #include "keyringbuffer.h"
+#include "mini-printf.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,7 +41,7 @@ void CLIClearStatics()
 }
 
 // This task is a trampoline to the loaded executable
-void _runExecTask()
+void __attribute__((aligned(64))) _runExecTask()
 {
 	// Start the loaded executable
 	asm volatile(
@@ -49,11 +50,11 @@ void _runExecTask()
 		"sw %1, 4(sp);"		// Store argv[1] (path to exec)
 		"sw %2, 8(sp);"		// Store argv[2] (exec params0)
 		"sw zero, 12(sp);"	// Store argv[3] (nullptr)
-		".insn 0xFC000073;"	// Invalidate & Write Back D$ (CFLUSH.D.L1)
-		"fence.i;"			// Invalidate I$
+		".insn 0xFC000073;"	// Invalidate & Write Back D$ (CFLUSH.D.L1) - ensure we have a clean data cache
+		"fence.i;"			// Invalidate I$ - ensure loaded binary can be fetched as fresh instructions
 		"lw s0, %0;"		// Target branch address
 		"jalr s0;"			// Branch to the entry point
-		"addi sp, sp, 16;"	// We most likely won't return here
+		"addi sp, sp, 16;"	// We most likely won't return here, and will lose stack space slowly. Need to restore this on task exit.
 		: "=m" (s_cliCtx.startAddress)
 		: "r" (s_cliCtx.execName), "r" (s_cliCtx.execParam0), "r" (s_cliCtx.execParamCount)
 		// Clobber list
@@ -65,71 +66,44 @@ void _runExecTask()
 	// execution pool.
 }
 
-void ShowVersion(struct EVideoContext *kernelgfx)
+void ShowVersion(struct EVideoContext *kernelgfx, uint32_t longFormat)
 {
 	uint32_t waterMark = read_csr(0xFF0);
 	uint32_t isEmulator = read_csr(0xF12) & 0x80000000 ? 0 : 1; // CSR_MARCHID is 0x80000000 for read hardware, 0x00000000 for emulator
 
-	VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
-	kprintf("\n                                                   \n");
-
-	kprintf(" OS version          : " VERSIONSTRING " (%s)              \n", waterMark == 0 ? "IN-ROM" : "SDCARD");
-
-	// TODO: These two values need to come from a CSR,
-	// pointing at a memory location with device config data (machineconfig?)
-	// That memory location will in turn point at an onboard EEPROM we can
-	// read device versions/presence from.
-	kprintf(" Board               : issue 2E:2024 (%s)    \n", isEmulator ? "EMULATED" : "HARDWARE");
-	kprintf(" CPU & bus clock     : 150MHz                      \n");
-	kprintf(" ARCH                : rv32im_zicsr_zifencei_zfinx \n");
-	kprintf(" ESP32               : ESP32-C6-WROOM-1-N8         \n");
-
-	// Report USB host chip version if found
-	uint8_t m3421rev = MAX3421ReadByte(rREVISION);
-	if (m3421rev != 0xFF)
-		kprintf(" MAX3421(USB Host)   : 0x%X                        \n", m3421rev);
-
-	// Video circuit on 2B has no info we can read so this is hardcoded
-	kprintf(" SII164(video)       : 12bpp DVI                   \n");
-	kprintf(" CS4344(audio)       : 11/22/44KHz stereo          \n");
-	kprintf("                                                   \n\n");
-
-	VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
-}
-
-void ShowHelp(struct EVideoContext *kernelgfx)
-{
-	VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
-
-	kprintf("\n                                                     \n");
-	kprintf(" COMMAND      | USAGE                                \n");
-	kprintf(" cls          | Clear terminal                       \n");
-	kprintf(" cd path      | Change working directory             \n");
-	kprintf(" del fname    | Delete file                          \n");
-	kprintf(" dir [path]   | Show list of files in cwd or path    \n");
-	kprintf(" mem          | Show available memory                \n");
-	kprintf(" proc cpu     | Show process info for given CPU(0/1) \n");
-	kprintf(" pwd          | Show current work directory          \n");
-	kprintf(" reboot       | Reboot the device                    \n");
-	kprintf(" ren old new  | Rename file from old to new name     \n");
-	kprintf(" ver          | Show version info                    \n");
-	kprintf("                                                     \n");
-
-	// Hidden commands for dev mode reveal when running from overlay
-	uint32_t waterMark = read_csr(0xFF0);
-	if (waterMark != 0)
+	if (longFormat)
 	{
-		kprintf(" DEV MODE SPECIFIC - USE AT YOUR OWN RISK            \n");
-		kprintf(" COMMAND      | USAGE                                \n");
-		kprintf(" kill pid cpu | Kill process with id pid on CPU      \n");
-		kprintf(" mount        | Mount drive sd:                      \n");
-		kprintf(" runon cpu    | Run ELF files on given cpu           \n");
-		kprintf(" unmount      | Unmount drive sd:                    \n");
-		kprintf("                                                     \n");
-	}
-	kprintf("\n");
+		VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
+		kprintf("\n                                                   \n");
+		kprintf(" OS version          : " VERSIONSTRING " (%s)              \n", waterMark == 0 ? "IN-ROM" : "SDCARD");
 
-	VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
+		// TODO: These two values need to come from a CSR,
+		// pointing at a memory location with device config data (machineconfig?)
+		// That memory location will in turn point at an onboard EEPROM we can
+		// read device versions/presence from.
+		kprintf(" Board               : issue 2E:2024 (%s)    \n", isEmulator ? "EMULATED" : "HARDWARE");
+		kprintf(" CPU & bus clock     : 150MHz                      \n");
+		kprintf(" ARCH                : rv32im_zicsr_zifencei_zfinx \n");
+		kprintf(" ESP32               : ESP32-C6-WROOM-1-N8         \n");
+
+		// Report USB host chip version if found
+		uint8_t m3421rev = MAX3421ReadByte(rREVISION);
+		if (m3421rev != 0xFF)
+			kprintf(" MAX3421(USB Host)   : 0x%X                        \n", m3421rev);
+
+		// Video circuit on 2B has no info we can read so this is hardcoded
+		kprintf(" SII164(video)       : 12bpp DVI                   \n");
+		kprintf(" CS4344(audio)       : 11/22/44KHz stereo          \n");
+		kprintf("                                                   \n\n");
+		VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
+	}
+	else
+	{
+		VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
+		kprintf("    OS build: "__TIME__" "__DATE__" " VERSIONSTRING "%s%s    \n", waterMark == 0 ? "R" : "S", isEmulator ? "E" : "H");
+		VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
+		kprintf("\n");
+	}
 }
 
 void DumpTasks(const uint32_t _hartid)
@@ -277,30 +251,27 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 			if (krealpath(path, s_cliCtx.pathtmp))
 			{
 				// Append missing trailing slash
-				int L = (int)strlen(s_cliCtx.pathtmp);
+				int L = mini_strlen(s_cliCtx.pathtmp);
+
 				if (L != 0 && s_cliCtx.pathtmp[L-1] != '/')
 					strcat(s_cliCtx.pathtmp, "/");
-
+				
 				// Finally, change to this new path
 				FRESULT cwdres = f_chdir(s_cliCtx.pathtmp);
 				if (cwdres == FR_OK)
 					SetWorkDir(s_cliCtx.pathtmp);
 				else
 				{
-					kprintf("invalid path(0) '%s'\n", s_cliCtx.pathtmp);
+					kprintf("Invalid: '%s'\n", s_cliCtx.pathtmp);
 				}
 			}
 			else
-				kprintf("invalid path(1) '%s'\n", s_cliCtx.pathtmp);
+				kprintf("Invalid: '%s'\n", s_cliCtx.pathtmp);
 		}
 	}
 	else if (!strcmp(command, "ver"))
 	{
-		ShowVersion(kernelgfx);
-	}
-	else if (!strcmp(command, "help"))
-	{
-		ShowHelp(kernelgfx);
+		ShowVersion(kernelgfx, 1);
 	}
 	else // Anything else defers to being a command on storage
 		loadELF = 1;
@@ -344,10 +315,6 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 			// This will cause corruption of the runtime environment.
 			if (s_cliCtx.startAddress != 0x0)
 			{
-				// Make sure everything is flushed to RAM and the instruction cache is invalidated
-				CFLUSH_D_L1;
-				FENCE_I;
-
 				strncpy(s_cliCtx.execName, filename, 32);
 
 				const char *param = strtok(NULL, " ");
@@ -453,7 +420,7 @@ void _CLITask()
 {
 	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
 
-	ShowVersion(kernelgfx);
+	ShowVersion(kernelgfx, 0);
 
 	struct STaskContext *taskctx = _task_get_context(0);
 	while(1)

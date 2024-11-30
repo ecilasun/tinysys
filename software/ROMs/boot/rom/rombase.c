@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 static FATFS Fs;
-static char s_workdir[PATH_MAX] = "sd:/";
+static char s_workdir[PATH_MAX+4] = "sd:/";
 
 int kprintfn(const int count, const char *fmt, ...)
 {
@@ -300,6 +300,7 @@ uint32_t MountDrive()
 		FRESULT cdattempt = f_chdrive("sd:");
 		if (cdattempt != FR_OK)
 			return 0;
+		// Go to whatever the work directory was set to before
 		f_chdir(s_workdir);
 		return 1;
 	}
@@ -331,7 +332,7 @@ char *krealpath(const char *path, char resolved[PATH_MAX])
 			strlcpy(resolved, ".", PATH_MAX);
 			return (NULL);
 		}
-		resolved_len = strlen(resolved);
+		resolved_len = mini_strlen(resolved);
 		left_len = strlcpy(left, path, sizeof(left));
 	}
 	if (left_len >= sizeof(left) || resolved_len >= PATH_MAX) {
@@ -606,7 +607,10 @@ void HandleSDCardDetect()
 
 void SetWorkDir(const char *_workdir)
 {
-	strncpy(s_workdir, _workdir, PATH_MAX);
+	// Convert to real path
+	int L = mini_strlen(_workdir);
+	strncpy(s_workdir, _workdir, L);
+	s_workdir[L] = 0;
 }
 
 const char* GetWorkDir()

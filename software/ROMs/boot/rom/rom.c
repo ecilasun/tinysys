@@ -9,7 +9,6 @@
 #include "uart.h"
 #include "usbhost.h"
 #include "usbhidhandler.h"
-#include "mini-printf.h"
 #include "serialinringbuffer.h"
 #include "keyringbuffer.h"
 #include "serialinput.h"
@@ -130,7 +129,6 @@ uint32_t LoadOverlay(const char *filename)
 		f_read(&fp, overlay, fileSize, &readsize);	// Load the overlay binary
 		f_close(&fp);								// Done with file access
 		f_mount(NULL, "sd:", 1);					// Unmount the SD card
-		CFLUSH_D_L1;								// Flush D$ to RAM
 
 		// New ROM image will do its own thing to initialize the CPUs,
 		// remove our previous function pointers to branch to on reboot.

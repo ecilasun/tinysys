@@ -812,16 +812,16 @@ void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 		if (branchtomtvecforinstr)
 		{
 			// Most of these prevent instruction execution so they have to come back to same PC
-			if (isillegal) // software - illegal instruction
-				m_exceptionmode = EXC_SWI;
-			else if (isebreak) // ebreak
-				m_exceptionmode = EXC_EBREAK;
+			if (isebreak) // ebreak
+				m_exceptionmode = EXC_EBREAK; 
 			else if (isecall) // ecall
 			{
 				m_exceptionmode = EXC_ECALL;
 				// ECALL assumes current instruction executed and will return to the next one
 				m_PC += 4;
 			}
+			else if (isillegal) // software - illegal instruction
+				m_exceptionmode = EXC_SWI;
 
 			// NOTE: ISR header/footer uses exception mode for address
 			SDecodedBlock *blk;
