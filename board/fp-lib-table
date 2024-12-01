@@ -18,4 +18,5 @@
   (lib (name "403C35D12M00000")(type "KiCad")(uri "${KIPRJMOD}/403C35D12M00000")(options "")(descr ""))
   (lib (name "ESP32_C6")(type "KiCad")(uri "${KIPRJMOD}/ESP32_C6")(options "")(descr ""))
   (lib (name "ESP32_C6_WROOM")(type "KiCad")(uri "${KIPRJMOD}/ESP32-C6-WROOM/footprints.pretty")(options "")(descr ""))
+  (lib (name "ESP32_S3")(type "KiCad")(uri "${KIPRJMOD}/ESP32_S3")(options "")(descr ""))
 )

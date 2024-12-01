@@ -2,30 +2,32 @@
 // Only has access to UART port
 
 #include "rvcrt0.h"
+#include "basesystem.h"
 #include <stdint.h>
 
-volatile uint32_t *UARTFRead = (volatile uint32_t*)0x80000000;
-volatile uint32_t *UARTFWrite = (volatile uint32_t*)0x80000004;
-volatile uint32_t *UARTFByteCount = (volatile uint32_t*)0x80000008;
+volatile uint32_t *UARTRECEIVE = (volatile uint32_t* ) (DEVICE_UART+0x00);
+volatile uint32_t *UARTTRANSMIT = (volatile uint32_t* ) (DEVICE_UART+0x04);
+volatile uint32_t *UARTSTATUS = (volatile uint32_t* ) (DEVICE_UART+0x08);
+volatile uint32_t *UARTCONTROL = (volatile uint32_t* ) (DEVICE_UART+0x0C);
 
 int main()
 {
-	*UARTFWrite = 'H';
-	*UARTFWrite = 'e';
-	*UARTFWrite = 'l';
-	*UARTFWrite = 'l';
-	*UARTFWrite = 'o';
-	*UARTFWrite = ' ';
-	*UARTFWrite = 'W';
-	*UARTFWrite = 'o';
-	*UARTFWrite = 'r';
-	*UARTFWrite = 'l';
-	*UARTFWrite = 'd';
-	*UARTFWrite = '!';
-	*UARTFWrite = '\n';
+	*UARTTRANSMIT = 'H';
+	*UARTTRANSMIT = 'e';
+	*UARTTRANSMIT = 'l';
+	*UARTTRANSMIT = 'l';
+	*UARTTRANSMIT = 'o';
+	*UARTTRANSMIT = ' ';
+	*UARTTRANSMIT = 'W';
+	*UARTTRANSMIT = 'o';
+	*UARTTRANSMIT = 'r';
+	*UARTTRANSMIT = 'l';
+	*UARTTRANSMIT = 'd';
+	*UARTTRANSMIT = '!';
+	*UARTTRANSMIT = '\n';
 
+	// Keep echoing
 	while(1) {
-		if (*UARTFByteCount)
-			*UARTFWrite = *UARTFRead;
+		*UARTTRANSMIT = *UARTRECEIVE;
 	}
 }

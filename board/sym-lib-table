@@ -18,5 +18,6 @@
   (lib (name "403C35D12M00000")(type "KiCad")(uri "${KIPRJMOD}/403C35D12M00000/403C35D12M00000.kicad_sym")(options "")(descr ""))
   (lib (name "ESP32-C3")(type "KiCad")(uri "${KIPRJMOD}/ESP32_C3/2024-03-15_22-53-36.kicad_sym")(options "")(descr ""))
   (lib (name "ESP32-C6")(type "KiCad")(uri "${KIPRJMOD}/ESP32_C6/ESP32-C6.kicad_sym")(options "")(descr ""))
-  (lib (name "2024-03-17_01-27-18")(type "KiCad")(uri "${KIPRJMOD}/ESP32-C6-WROOM/2024-03-17_01-27-18.kicad_sym")(options "")(descr ""))
+  (lib (name "ESP32-C6-WROOM")(type "KiCad")(uri "${KIPRJMOD}/ESP32-C6-WROOM/2024-03-17_01-27-18.kicad_sym")(options "")(descr ""))
+  (lib (name "ESP32S3")(type "KiCad")(uri "${KIPRJMOD}/ESP32_S3/2024-11-30_22-27-31.kicad_sym")(options "")(descr ""))
 )
