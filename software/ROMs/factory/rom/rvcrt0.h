@@ -7,7 +7,7 @@ extern "C"
 	{
 		asm volatile (
 
-		"li sp, 0x00007FF8;"	   // Stack is at near end of BRAM
+		"li sp, 0x000003FC;"		// Assuming only 1kbytes of memory
 
 		// Single hardware thread simply needs to use the setup address
 		"mv s0, sp;"				// Set frame pointer to current stack pointer
