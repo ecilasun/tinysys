@@ -21,7 +21,9 @@
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
+
 #include "basesystem.h"
+#include "keyboard.h"
 
 enum {
 	MOUSE_BUTTON_LEFT = 1,
@@ -52,10 +54,10 @@ typedef struct {
 	};
 } event_t;
 
-typedef struct {
+/*typedef struct {
 	event_t *base;
 	size_t start;
-} event_queue_t;
+} event_queue_t;*/
 
 enum {
 	RELATIVE_MODE_SUBMISSION = 0,
@@ -71,29 +73,29 @@ typedef struct {
 	uint32_t size;
 } title_submission_t;
 
-typedef struct {
+/*typedef struct {
 	uint32_t type;
 	union {
 	   mouse_submission_t mouse;
 	   title_submission_t title;
 	};
-} submission_t;
+} submission_t;*/
 
-typedef struct {
+/*typedef struct {
 	submission_t *base;
 	size_t end;
-} submission_queue_t;
+} submission_queue_t;*/
 
-static const int queues_capacity = 128;
+/*static const int queues_capacity = 128;
 static unsigned int event_count;
 static event_queue_t event_queue = {
 	.base = NULL,
 	.start = 0,
-};
-static submission_queue_t submission_queue = {
+};*/
+/*static submission_queue_t submission_queue = {
 	.base = NULL,
 	.end = 0,
-};
+};*/
 static event_t event;
 static mouse_movement_t mouse_movement;
 
@@ -120,16 +122,16 @@ void qembd_udelay(uint32_t us)
 		end = qembd_get_us_time();
 }
 
-void qembd_set_relative_mode(bool enabled) {
-	/*submission_t submission;
+/*void qembd_set_relative_mode(bool enabled) {
+	submission_t submission;
 	submission.type = RELATIVE_MODE_SUBMISSION;
 	submission.mouse.enabled = enabled;
 	submission_queue.base[submission_queue.end++] = submission;
 	submission_queue.end &= queues_capacity - 1;
 	register int a0 asm("a0") = 1;
 	register int a7 asm("a7") = 0xfeed;
-	asm volatile("scall" : "+r"(a0) : "r"(a7));*/
-}
+	asm volatile("scall" : "+r"(a0) : "r"(a7));
+}*/
 
 int main(int c, char **v)
 {
@@ -153,7 +155,66 @@ void *qembd_allocmain(size_t size)
 
 static int poll_event()
 {
-	if (event_count <= 0)
+	// Do not read same input twice
+	static uint32_t prevGen = 0xFFFFFFFF;
+	uint32_t keyGen = GetKeyStateGeneration();
+	if (keyGen == prevGen)
+		return 0;
+
+	prevGen = keyGen;
+	// Post event for all pressed / released keys
+	uint16_t *keystates = GetKeyStateTable();
+
+	uint16_t updown = 0;
+	for(int i=0; i<255; ++i)
+	{
+		updown = keystates[i]&3;
+		if (updown)
+		{
+			switch(i)
+			{
+				case HKEY_KEYPADBACKSPACE:	{ event.key_event.keycode = K_BACKSPACE; break; }
+				case HKEY_UPARROW:			{ event.key_event.keycode = K_UPARROW; break; }
+				case HKEY_DOWNARROW:		{ event.key_event.keycode = K_DOWNARROW; break; }
+				case HKEY_LEFTARROW:		{ event.key_event.keycode = K_LEFTARROW; break; }
+				case HKEY_RIGHTARROW:		{ event.key_event.keycode = K_RIGHTARROW; break; }
+				case HKEY_RIGHTALT:			{ event.key_event.keycode = K_ALT; break; }
+				case HKEY_LEFTALT:			{ event.key_event.keycode = K_ALT; break; }
+				case HKEY_RIGHTCONTROL:		{ event.key_event.keycode = K_CTRL; break; }
+				case HKEY_LEFTCONTROL:		{ event.key_event.keycode = K_CTRL; break; }
+				case HKEY_RIGHTSHIFT:		{ event.key_event.keycode = K_SHIFT; break; }
+				case HKEY_LEFTSHIFT:		{ event.key_event.keycode = K_SHIFT; break; }
+				case HKEY_F1:				{ event.key_event.keycode = K_F1; break; }
+				case HKEY_F2:				{ event.key_event.keycode = K_F2; break; }
+				case HKEY_F3:				{ event.key_event.keycode = K_F3; break; }
+				case HKEY_F4:				{ event.key_event.keycode = K_F4; break; }
+				case HKEY_F5:				{ event.key_event.keycode = K_F5; break; }
+				case HKEY_F6:				{ event.key_event.keycode = K_F6; break; }
+				case HKEY_F7:				{ event.key_event.keycode = K_F7; break; }
+				case HKEY_F8:				{ event.key_event.keycode = K_F8; break; }
+				case HKEY_F9:				{ event.key_event.keycode = K_F9; break; }
+				case HKEY_F10:				{ event.key_event.keycode = K_F10; break; }
+				case HKEY_F11:				{ event.key_event.keycode = K_F11; break; }
+				case HKEY_F12:				{ event.key_event.keycode = K_F12; break; }
+				case HKEY_INSERT:			{ event.key_event.keycode = K_INS; break; }
+				case HKEY_DELETE:			{ event.key_event.keycode = K_DEL; break; }
+				case HKEY_PAGEUP:			{ event.key_event.keycode = K_PGUP; break; }
+				case HKEY_PAGEDOWN:			{ event.key_event.keycode = K_PGDN; break; }
+				case HKEY_HOME:				{ event.key_event.keycode = K_HOME; break; }
+				case HKEY_END:				{ event.key_event.keycode = K_END; break; }
+				case HKEY_PAUSE:			{ event.key_event.keycode = K_PAUSE; break; }
+				case HKEY_ENTER:			{ event.key_event.keycode = K_ENTER; break; }
+				case HKEY_RETURN:			{ event.key_event.keycode = K_ENTER; break; }
+				case HKEY_TAB:				{ event.key_event.keycode = K_TAB; break; }
+				default:					{ event.key_event.keycode = KeyScanCodeToASCII(i, 0); break; }
+			}
+			event.key_event.keycode |= (updown&1) ? 0x40000000 : 0x00000000;
+			event.type = KEY_EVENT;
+			return 1;
+		}
+	}
+
+	/*if (event_count <= 0)
 		return 0;
 	event = event_queue.base[event_queue.start++];
 	event_queue.start &= queues_capacity - 1;
@@ -162,9 +223,9 @@ static int poll_event()
 	if (event.type == MOUSE_MOTION_EVENT) {
 		mouse_movement.x += event.mouse.motion.xrel;
 		mouse_movement.y += event.mouse.motion.yrel;
-	}
+	}*/
 
-	return 1;
+	return 0;
 }
 
 int qembd_dequeue_key_event(key_event_t *e)

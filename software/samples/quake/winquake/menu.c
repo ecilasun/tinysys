@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "winquake.h"
 #endif
 
-void qembd_set_relative_mode(bool enabled);
+//void qembd_set_relative_mode(bool enabled);
 
 void (*vid_menudrawfn)(void);
 void (*vid_menukeyfn)(int key);
@@ -289,7 +289,7 @@ int	m_main_cursor;
 
 void M_Menu_Main_f (void)
 {
-	qembd_set_relative_mode(false);
+	//qembd_set_relative_mode(false);
 	if (key_dest != key_menu)
 	{
 		m_save_demonum = cls.demonum;
@@ -324,7 +324,7 @@ void M_Main_Key (int key)
 		cls.demonum = m_save_demonum;
 		if (cls.demonum != -1 && !cls.demoplayback && cls.state != ca_connected)
 			CL_NextDemo ();
-		qembd_set_relative_mode(true);
+		//qembd_set_relative_mode(true);
 		break;
 
 	case K_DOWNARROW:
@@ -429,7 +429,7 @@ void M_SinglePlayer_Key (int key)
 				Cbuf_AddText ("disconnect\n");
 			Cbuf_AddText ("maxplayers 1\n");
 			Cbuf_AddText ("map start\n");
-			qembd_set_relative_mode(true);
+			//qembd_set_relative_mode(true);
 			break;
 
 		case 1:
