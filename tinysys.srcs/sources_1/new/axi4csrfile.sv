@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+`default_nettype none
 
 // NOTE: Each HART has a different base address for their CSR
 // This currently houses 1x4K CSR unit for one HART

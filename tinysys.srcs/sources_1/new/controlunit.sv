@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+`default_nettype none
 
 `include "shared.vh"
 
@@ -613,7 +614,7 @@ always @(posedge aclk) begin
 							if (func3==3'b000) // fmin
 								wbdin <= fpuresult[0] ? A : B;
 							else // fmax
-								wbdin <= fpuresult[0] ? B : A;
+								wbdin <= ~fpuresult[0] ? A : B;
 							wback <= 1'b1;
 						end
 						default: begin // add/sub/mul/div/sqrt/cvtsw

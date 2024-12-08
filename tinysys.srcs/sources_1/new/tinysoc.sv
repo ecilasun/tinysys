@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+`default_nettype none
 
 module tinysoc #(
 	parameter int RESETVECTOR = 32'd0

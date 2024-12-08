@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+`default_nettype none
 
 module clockandreset(
 	input wire sys_clock_i,

@@ -230,9 +230,8 @@ set_false_path -to [get_ports {leds[*]}]
 
 ## ------------------------------------------------------------------------------------------------------
 ## Programming
-## ------------------------------------------------------------------------------------------------------
-
 ## Important: Make sure to use bitstream compression to avoid excessively long boot times on the board
+## ------------------------------------------------------------------------------------------------------
 
 set_property BITSTREAM.CONFIG.SPI_BUSWIDTH 4 [current_design]
 set_property CONFIG_VOLTAGE 3.3 [current_design]
@@ -243,8 +242,6 @@ set_property BITSTREAM.CONFIG.CONFIGRATE 33 [current_design]
 ## ------------------------------------------------------------------------------------------------------
 ## Clock groups
 ## ------------------------------------------------------------------------------------------------------
-
-## NOTE: aclk (CLKOUT0) is never related to any device clocks and always crosses using a FIFO
 
 set_clock_groups -name grpA -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT0]] -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1]]
 set_clock_groups -name grpB -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1]] -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT0]]
@@ -260,6 +257,10 @@ set_clock_groups -name grpL -asynchronous -group [get_clocks -of_objects [get_pi
 set_clock_groups -name grpM -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT0]] -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT0]]
 set_clock_groups -name grpO -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1]] -group [get_clocks -of_objects [get_pins socinstance/axi4ddr3sdraminst/ddr3instance/u_mig_7series_0_mig/u_ddr3_infrastructure/gen_mmcm.mmcm_i/CLKFBOUT]]
 set_clock_groups -name grpP -asynchronous -group [get_clocks -of_objects [get_pins socinstance/axi4ddr3sdraminst/ddr3instance/u_mig_7series_0_mig/u_ddr3_infrastructure/gen_mmcm.mmcm_i/CLKFBOUT]] -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1]]
+
+## ------------------------------------------------------------------------------------------------------
+## PBLOCKs
+## ------------------------------------------------------------------------------------------------------
 
 ## create_pblock pblock_hart1
 ## add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list socinstance/hart1/controlunitinst socinstance/hart1/dataunitinst socinstance/hart1/fetchdecodeinst socinstance/hart1/instructioncacheinst]]

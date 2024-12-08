@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+`default_nettype none
 
 module cachedmemorycontroller (
 	// Clock/reset
@@ -7,7 +8,7 @@ module cachedmemorycontroller (
 	// Custom bus from cache controller
 	input wire [31:0] addr,
 	output data_t dout[0:3],
-	input data_t din[0:3], // x4 128 bits
+	input wire data_t din[0:3], // x4 128 bits
 	input wire start_read,
 	input wire start_write,
 	output logic wdone,

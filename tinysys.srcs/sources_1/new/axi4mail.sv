@@ -1,3 +1,6 @@
+`timescale 1ns / 1ps
+`default_nettype none
+
 module axi4mail(
 	input wire aclk,
 	input wire aresetn,

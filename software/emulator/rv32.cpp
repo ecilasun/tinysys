@@ -746,9 +746,6 @@ void CRV32::InjectISRFooter(std::vector<SDecodedInstruction>* code)
 
 void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 {
-	uint32_t mtvec;
-	csr->Read(CSR_MTVEC << 2, mtvec);
-
 	// IRQ handling sequence
 	bool branchtomtvecforinterrupt = csr->m_irq && (m_exceptionmode == EXC_NONE);
 
@@ -758,6 +755,9 @@ void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 			m_exceptionmode = EXC_HWI;
 		else if (csr->m_irq & 2)		// timer
 			m_exceptionmode = EXC_TMI;
+
+		uint32_t mtvec;
+		csr->Read(CSR_MTVEC << 2, mtvec);
 
 		// NOTE: ISR header/footer uses exception mode for address
 		SDecodedBlock *blk;
@@ -775,7 +775,7 @@ void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 		// Grab pre-decoded code block
 		for (auto instr : blk->m_code)
 		{
-			instr.m_pc = m_PC; // NOTE: ISR depends on this to be varying based on current PC
+			instr.m_pc = m_PC; // NOTE: ISR depends on this to be fixed to the interrupt PC
 			m_instructions.push_back(instr);
 		}
 
@@ -797,20 +797,24 @@ void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 		SDecodedInstruction decoded;
 		DecodeInstruction(m_PC, instruction, decoded);
 
-		bool isebreak = csr->m_sie && decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_EBREAK;
-		bool isecall = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_ECALL;
 		bool ismret = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_MRET;
 		bool iswfi = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_WFI;
 		bool isfence = decoded.m_opcode == OP_FENCE;
 		bool isbranch = decoded.m_opcode == OP_BRANCH;
 		bool isjalr = decoded.m_opcode == OP_JALR;
 		bool isjal = decoded.m_opcode == OP_JAL;
+
+		bool isebreak = csr->m_sie && decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_EBREAK;
+		bool isecall = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_ECALL;
 		bool isillegal = csr->m_sie && decoded.m_opindex == 0;
 		bool branchtomtvecforinstr = (isebreak || isecall || isillegal) && (m_exceptionmode == EXC_NONE);
 
 		// Exception handling is part of fetch unit in hardware
 		if (branchtomtvecforinstr)
 		{
+			uint32_t mtvec;
+			csr->Read(CSR_MTVEC << 2, mtvec);
+
 			// Most of these prevent instruction execution so they have to come back to same PC
 			if (isebreak) // ebreak
 				m_exceptionmode = EXC_EBREAK; 
@@ -839,21 +843,21 @@ void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 			// Grab pre-decoded code block
 			for (auto instr : blk->m_code)
 			{
-				instr.m_pc = m_PC; // NOTE: ISR depends on this to be varying based on current PC
+				instr.m_pc = m_PC; // NOTE: ISR depends on this to be fixed to the interrupt PC
 				m_instructions.push_back(instr);
 			}
 
 			m_lasttrap = m_exceptionmode;
+
+			// Resume from ISR handler
+			m_PC = mtvec;
 		}
 		else
 			m_instructions.push_back(decoded);
 
-		const uint32_t csrbase = csrBaseTable[m_hartid];
-
 		// Determine next PC
 		if (branchtomtvecforinstr) // Route execution to mtvec
 		{
-			m_PC = mtvec;
 			doneFetching = true;
 		}
 		else if (iswfi)
@@ -868,7 +872,7 @@ void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 		}
 		else if (isebreak) // EBREAK stays at the same PC until it's replaced by another instruction or SWI is disabled
 			m_PC = decoded.m_pc;
-		else if (!isfence && !isbranch && !isjalr && !ismret) // For anything that doesn't require a branch, just increment PC
+		else if (isfence || (!isbranch && !isjalr && !ismret)) // For anything that doesn't require a branch, just increment PC
 			m_PC = decoded.m_pc + 4;
 		else // For branches, jumps and mret, we need to wait for the branch target
 		{
@@ -953,7 +957,6 @@ bool CRV32::FetchDecode(CBus* bus)
 			m_PC = m_branchtarget;
 			m_fetchstate = EFetchRead;
 		}
-
 		return true;
 	}
 	else

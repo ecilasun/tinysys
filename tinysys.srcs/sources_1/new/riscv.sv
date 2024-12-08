@@ -1,3 +1,6 @@
+`timescale 1ns / 1ps
+`default_nettype none
+
 module riscv #(
 	parameter int CSRBASE = 16'h800A,
 	parameter int RESETVECTOR = 32'd0

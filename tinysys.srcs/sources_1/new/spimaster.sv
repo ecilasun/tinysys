@@ -1,3 +1,6 @@
+`timescale 1ns / 1ps
+`default_nettype none
+
 // https://github.com/nandland/spi-master/blob/master/Verilog/source/SPI_Master.v
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -37,13 +40,13 @@ module SPI_Master
     parameter CLKS_PER_HALF_BIT = 2)
   (
    // Control/Data Signals,
-   input        i_Rst_L,     // FPGA Reset
-   input        i_Clk,       // FPGA Clock
+   input wire   i_Rst_L,     // FPGA Reset
+   input wire   i_Clk,       // FPGA Clock
    
    // TX (MOSI) Signals
-   input [7:0]  i_TX_Byte,        // Byte to transmit on MOSI
-   input        i_TX_DV,          // Data Valid Pulse with i_TX_Byte
-   output reg   o_TX_Ready,       // Transmit Ready for next byte
+   input wire [7:0] i_TX_Byte,        // Byte to transmit on MOSI
+   input wire  i_TX_DV,          // Data Valid Pulse with i_TX_Byte
+   output reg  o_TX_Ready,       // Transmit Ready for next byte
    
    // RX (MISO) Signals
    output reg       o_RX_DV,     // Data Valid pulse (1 clock cycle)
@@ -51,9 +54,8 @@ module SPI_Master
 
    // SPI Interface
    output reg o_SPI_Clk,
-   input      i_SPI_MISO,
-   output reg o_SPI_MOSI
-   );
+   input wire i_SPI_MISO,
+   output reg o_SPI_MOSI );
 
   // SPI Interface (All Runs at SPI Clock Domain)
   wire w_CPOL;     // Clock polarity

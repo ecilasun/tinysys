@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+`default_nettype none
 
 ////////////////////////////////////////////////////////
 // RS-232 RX and TX module

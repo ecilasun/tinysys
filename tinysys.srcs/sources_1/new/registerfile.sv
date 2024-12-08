@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+`default_nettype none
 
 module integerregisterfile(
 	input wire clock,			// Writes are clocked, reads are not
