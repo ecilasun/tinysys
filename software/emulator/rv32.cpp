@@ -1283,7 +1283,7 @@ bool CRV32::Execute(CBus* bus)
 						{
 							case 0b000: rdin = (instr.m_rval2 & 0x80000000) | (instr.m_rval1 & 0x7FFFFFFF); break;
 							case 0b001: rdin = ((instr.m_rval2 & 0x80000000) ^ 0x80000000) | (instr.m_rval1 & 0x7FFFFFFF); break;
-							case 0b010: rdin = ((instr.m_rval2 & 0x80000000) ^ (instr.m_rval1 & 0x80000000)) | (instr.m_rval1 & 0x7FFFFFFF); break;
+							default: rdin = ((instr.m_rval2 & 0x80000000) ^ (instr.m_rval1 & 0x80000000)) | (instr.m_rval1 & 0x7FFFFFFF); break;
 						}
 					}
 					break;
@@ -1314,10 +1314,10 @@ bool CRV32::Execute(CBus* bus)
 						switch (instr.m_f3)
 						{
 							case 0b000: {
-								rdin = instr.m_rval1;
+								rdin = instr.m_rval1; // fmv.x.w
 							}
 							break;
-							case 0b001: {
+							case 0b001: { // fclass.s
 								rdin = RISCV_POS_NORMAL; // Not implementing this for now
 								/*if (instr.m_rval1 == 0x00000000) rdin = POS_ZERO;
 								else if (instr.m_rval1 == 0x80000000) rdin = NEG_ZERO;
@@ -1344,7 +1344,10 @@ bool CRV32::Execute(CBus* bus)
 					case 0b1101000: // fcvtsw / fcvtwus
 					{
 						m_cycles += 6;
-						*D = (float)instr.m_rval1;
+						if (instr.m_rs2 == 0b00000) // signed
+							*D = (float)((double)((int64_t)instr.m_rval1));
+						else // unsigned
+							*D = (float)((double)((uint64_t)instr.m_rval1));
 					}
 					break;
 					case 0b1100001: // fcvtswu4sat.s
