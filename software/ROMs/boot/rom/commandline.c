@@ -5,7 +5,6 @@
 #include "max3421e.h"
 #include "commandline.h"
 #include "keyringbuffer.h"
-#include "mini-printf.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,7 +16,7 @@ static struct SCommandLineContext s_cliCtx;
 static const char *s_taskstates[]={ "NONE", "HALT", "EXEC", "TERM", "DEAD"};
 
 // Device version
-#define VERSIONSTRING "v1.0D"
+#define VERSIONSTRING "v1.1D"
 
 // File transfer timeout
 #define FILE_TRANSFER_TIMEOUT 1000
@@ -55,6 +54,9 @@ void __attribute__((aligned(64))) _runExecTask()
 		"lw s0, %0;"		// Target branch address
 		"jalr s0;"			// Branch to the entry point
 		"addi sp, sp, 16;"	// We most likely won't return here, and will lose stack space slowly. Need to restore this on task exit.
+		"infinite_loop:"	// If we somehow return here, we'll just loop forever until the task system kills us
+		"wfi;"
+		"j infinite_loop;"
 		: "=m" (s_cliCtx.startAddress)
 		: "r" (s_cliCtx.execName), "r" (s_cliCtx.execParam0), "r" (s_cliCtx.execParamCount)
 		// Clobber list
@@ -231,7 +233,7 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 			if (krealpath(path, s_cliCtx.pathtmp))
 			{
 				// Append missing trailing slash
-				int L = mini_strlen(s_cliCtx.pathtmp);
+				int L = strlen(s_cliCtx.pathtmp);
 
 				if (L != 0 && s_cliCtx.pathtmp[L-1] != '/')
 					strcat(s_cliCtx.pathtmp, "/");

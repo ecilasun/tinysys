@@ -79,8 +79,8 @@ class CSerialPort{
 		tty.c_cc[VTIME] = 50;
 		tty.c_cc[VMIN] = 10;
 
-		cfsetispeed(&tty, B115200);
-		cfsetospeed(&tty, B115200); // or only cfsetspeed(&tty, B115200);
+		cfsetispeed(&tty, B460800);
+		cfsetospeed(&tty, B460800); // or only cfsetspeed(&tty, B460800);
 
 		if (tcsetattr(serial_port, TCSANOW, &tty) != 0)
 			printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
@@ -95,7 +95,7 @@ class CSerialPort{
 			serialParams.DCBlength = sizeof(serialParams);
 			if (GetCommState(hComm, &serialParams))
 			{
-				serialParams.BaudRate = CBR_115200;		// 115200 baud
+				serialParams.BaudRate = /*CBR_*/460800;		// 460800 baud
 				serialParams.fBinary = true;
 				serialParams.fDtrControl = DTR_CONTROL_DISABLE;
 				serialParams.fRtsControl = RTS_CONTROL_DISABLE;

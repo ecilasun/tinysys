@@ -6,14 +6,14 @@ module clockandreset(
 	output wire clk10,
 	output wire clkaudio,
 	output wire clk25,
-	output wire clk50,
+	output wire clk100,
 	output wire clkbus,
 	output wire clk166,
 	output wire clk200,
 	output wire aresetn,
 	output wire rst10n,
 	output wire rst25n,
-	output wire rst50n,
+	output wire rst100n,
 	output wire rstaudion,
 	output wire preresetn);
 
@@ -25,10 +25,9 @@ wire centralclocklocked, peripheralclocklocked;
 
 centralclock centralclockinst(
 	.clk_in1(sys_clock_i),
-	.clk100(),
+	.clk100(clk100),
 	.clk10(clk10),
 	.clk25(clk25),
-	.clk50(clk50),
 	.clk166(clk166),
 	.clk200(clk200),
 	.locked(centralclocklocked) );
@@ -103,11 +102,11 @@ always @(posedge clk25) begin
 	rstn25B <= rstn25A;
 end
 
-(* async_reg = "true" *) logic rstn50A = 1'b1;
-(* async_reg = "true" *) logic rstn50B = 1'b1;
-always @(posedge clk50) begin
-	rstn50A <= regaresetn;
-	rstn50B <= rstn50A;
+(* async_reg = "true" *) logic rstn100A = 1'b1;
+(* async_reg = "true" *) logic rstn100B = 1'b1;
+always @(posedge clk100) begin
+	rstn100A <= regaresetn;
+	rstn100B <= rstn100A;
 end
 
 (* async_reg = "true" *) logic rstaudionA = 1'b1;
@@ -119,7 +118,7 @@ end
 
 assign rst10n = rstn10B;
 assign rst25n = rstn25B;
-assign rst50n = rstn50B;
+assign rst100n = rstn100B;
 assign rstaudion = rstaudionB;
 assign aresetn = regaresetn;
 assign preresetn = regpreresetn;

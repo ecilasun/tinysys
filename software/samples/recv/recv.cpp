@@ -10,6 +10,7 @@
 #include "vpu.h"
 #include "task.h"
 #include "encoding.h"
+#include "mini-printf.h"
 #include "serialinringbuffer.h"
 
 #include <stdio.h>
@@ -80,7 +81,7 @@ void DrawProgress(struct EVideoContext* osVideoContext, const uint32_t bytesWrit
 	framebuffer[448 + 243*640] = 0x0F;
 
 	char msg[96];
-	sprintf(msg, "Receiving %s", filename);
+	mini_snprintf(msg, 96, "Receiving %s", filename);
 	VPUPrintString(osVideoContext, 0x00, 0x0F, 48, 28, msg, strlen(msg));
 
 	// Kernel isn't double buffered, flush cache so we can see the progress
@@ -133,7 +134,7 @@ int main()
 	uint32_t isEmulator = read_csr(0xF12) & 0x80000000 ? 0 : 1; // CSR_MARCHID is 0x80000000 for read hardware, 0x00000000 for emulator
 	if (isEmulator)
 	{
-		printf("Emulator detected, cannot receive files\n");
+		UARTPrintf("Emulator detected, cannot receive files\n");
 		return 0;
 	}
 

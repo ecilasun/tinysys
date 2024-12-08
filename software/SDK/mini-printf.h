@@ -37,14 +37,6 @@ extern "C" {
 
 #include <stdarg.h>
 
-static unsigned int
-mini_strlen(const char *s)
-{
-	unsigned int len = 0;
-	while (s[len] != '\0') len++;
-	return len;
-}
-
 int mini_vsnprintf(char* buffer, unsigned int buffer_len, const char *fmt, va_list va);
 int mini_snprintf(char* buffer, unsigned int buffer_len, const char *fmt, ...);
 

@@ -11,28 +11,27 @@
 
 #include "basesystem.h"
 #include "uart.h"
-#include <stdio.h>
 
 int main(int argc, char **argv)
 {
-    printf("USB descriptor dump (serial and console)\n");
-	printf("NOTE: USB serial port must be connected!\n");
-	printf("Check https://eleccelerator.com/usbdescreqparser/ to decode\n\n");
+	UARTPrintf("Check https://eleccelerator.com/usbdescreqparser/ to decode the descriptor dump\n\n");
 
 	uint32_t *desclen = (uint32_t*)(KERNEL_TEMP_MEMORY + 4096);
 	uint8_t *devdesc = (uint8_t*)(KERNEL_TEMP_MEMORY + 4100);
 
-	printf("In-memory device descriptor size: %ld\n", *desclen);
+	UARTPrintf("Device descriptor size: %d\n", *desclen);
 	if (*desclen != 0)
 	{
 		for (uint32_t i=0; i<*desclen; ++i)
 		{
-			printf("%.2x", devdesc[i]);
-			UARTWriteHex(devdesc[i]);
+			UARTPrintf("%02x ", devdesc[i]);
+			if (i!=0 && (i%16)==0)
+				UARTPrintf("\n");
 		}
-		UARTWrite("\n");
-		printf("\n");
+		UARTPrintf("\n");
 	}
+	else
+		UARTPrintf("No device information found\n");
 
     return 0;
 }

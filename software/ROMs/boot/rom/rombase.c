@@ -332,7 +332,7 @@ char *krealpath(const char *path, char resolved[PATH_MAX])
 			strlcpy(resolved, ".", PATH_MAX);
 			return (NULL);
 		}
-		resolved_len = mini_strlen(resolved);
+		resolved_len = strlen(resolved);
 		left_len = strlcpy(left, path, sizeof(left));
 	}
 	if (left_len >= sizeof(left) || resolved_len >= PATH_MAX) {
@@ -608,7 +608,7 @@ void HandleSDCardDetect()
 void SetWorkDir(const char *_workdir)
 {
 	// Convert to real path
-	int L = mini_strlen(_workdir);
+	int L = strlen(_workdir);
 	strncpy(s_workdir, _workdir, L);
 	s_workdir[L] = 0;
 }

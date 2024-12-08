@@ -7,7 +7,7 @@ module axi4sdcard(
 	input wire clk10,
 	input wire spibaseclock,
 	input wire aresetn,
-	input wire rst50n,
+	input wire rst100n,
 	output wire keyirq,
 	sdcardwires.def sdconn,
 	axi4if.slave s_axi);
@@ -99,7 +99,7 @@ wire [7:0] spiincomingdata;
 
 SPI_Master sdcardspi(
    // control/data signals,
-   .i_Rst_L(rst50n),
+   .i_Rst_L(rst100n),
    .i_Clk(spibaseclock),
 
    // tx (mosi) signals
@@ -136,7 +136,7 @@ spimasterinfifo sdcardspiinputfifo(
 	.rst(~delayedresetn) );
 
 always @(posedge spibaseclock) begin
-	if (~rst50n) begin
+	if (~rst100n) begin
 		infifowe <= 1'b0;
 	end else begin
 		infifowe <= 1'b0;
@@ -169,7 +169,7 @@ spimasteroutfifo sdcardoutputfifo(
 	.rst(~delayedresetn) );
 
 always @(posedge spibaseclock) begin
-	if (~rst50n) begin
+	if (~rst100n) begin
 		outfifore <= 1'b0;
 		we <= 1'b0;
 		writedata = 8'd0;

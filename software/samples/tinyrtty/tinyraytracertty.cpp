@@ -59,14 +59,14 @@ static int bench_run = 0;
 
 // Replace with your own stuff to initialize graphics
 static inline void graphics_init() {
-    UARTWrite("\033[48;5;16m\033[H\033[2J");
+    UARTPrintf("\033[48;5;16m\033[H\033[2J");
 }
 
 // Replace with your own stuff to terminate graphics or leave empty
 // Here I send <ctrl><D> to the UART, to exit the simulation in Verilator,
 // it is captured by special code in RTL/DEVICES/uart.v
 static inline void graphics_terminate() {
-    UARTWrite("\033[48;5;16m\033[38;5;15m");
+    UARTPrintf("\033[48;5;16m\033[38;5;15m");
 }
 
 // Replace with your own code.
@@ -81,7 +81,7 @@ void graphics_set_pixel(int x, int y, float r, float g, float b) {
    if(bench_run) {
        if(y & 1) {
 	  if(x == graphics_width-1) {
-	     UARTWriteDecimal(y/2);
+	     UARTPrintf("%d", y/2);
 	  }
        }
        return;
@@ -92,17 +92,17 @@ void graphics_set_pixel(int x, int y, float r, float g, float b) {
    static uint8_t prev_B=0;
    if(y&1) {
        if((R == prev_R) && (G == prev_G) && (B == prev_B)) {
-	   printf("\033[48;2;%d;%d;%dm ",(int)R,(int)G,(int)B);
+	   UARTPrintf("\033[48;2;%d;%d;%dm ",(int)R,(int)G,(int)B);
        } else {
-	   printf("\033[48;2;%d;%d;%dm",(int)prev_R,(int)prev_G,(int)prev_B);
-	   printf("\033[38;2;%d;%d;%dm",(int)R,(int)G,(int)B);
+	   UARTPrintf("\033[48;2;%d;%d;%dm",(int)prev_R,(int)prev_G,(int)prev_B);
+	   UARTPrintf("\033[38;2;%d;%d;%dm",(int)R,(int)G,(int)B);
 	   // https://www.w3.org/TR/xml-entity-names/025.html
 	   // https://onlineunicodetools.com/convert-unicode-to-utf8
-	   printf("\xE2\x96\x83");
+	   UARTPrintf("\xE2\x96\x83");
        }
        if(x == graphics_width-1) {
-	   printf("\033[38;2;0;0;0m");	   
-	   printf("\033[48;2;0;0;0m\n");
+	   UARTPrintf("\033[38;2;0;0;0m");	   
+	   UARTPrintf("\033[48;2;0;0;0m\n");
        }
    } else {
        prev_R = R;
@@ -110,15 +110,9 @@ void graphics_set_pixel(int x, int y, float r, float g, float b) {
        prev_B = B;
    }
 #else   
-    UARTWrite("\033[48;2;");
-    UARTWriteDecimal(R);
-    UARTWrite(";");
-    UARTWriteDecimal(G);
-    UARTWrite(";");
-    UARTWriteDecimal(B);
-    UARTWrite("m ");
+   UARTPrintf("\033[48;2;%d;%d;%dm ", R, G, B);
    if(x==graphics_width-1)
-       UARTWrite("\033[48;2;0;0;0m");
+       UARTPrintf("\033[48;2;0;0;0m");
 #endif   
 }
 
@@ -141,15 +135,7 @@ static inline void stats_end_pixel() {
 static void printk(uint64_t kx) {
     int intpart  = (int)(kx / 1000);
     int fracpart = (int)(kx % 1000);
-    UARTWriteDecimal(intpart);
-    UARTWrite(".");
-    if(fracpart<100) {
-	    UARTWrite("0");
-    }
-    if(fracpart<10) {
-	    UARTWrite("0");
-    }
-    UARTWriteDecimal(fracpart);
+    UARTPrintf("%d.%d",intpart, fracpart<100 ? 0 : (fracpart<10 ? 0 : fracpart));
 }
 
 static uint64_t instret_start;
@@ -172,15 +158,11 @@ static inline void stats_end_frame() {
    uint64_t kCPI       = cycles*1000/instret;
    uint64_t pixels     = graphics_width * graphics_height;
    uint64_t kRAYSTONES = (pixels*1000000000)/cycles;
-   UARTWrite("\n");
-   UARTWriteDecimal(graphics_width);
-   UARTWrite("x");
-   UARTWriteDecimal(graphics_height);
-   UARTWrite("      ");
-   UARTWrite(bench_run ? "no gfx output (measurement is accurate)" : "gfx output (measurement is NOT accurate)");
-   UARTWrite("CPI="); printk(kCPI); UARTWrite("     ");
-   UARTWrite("RAYSTONES="); printk(kRAYSTONES);
-   UARTWrite("\n");
+   UARTPrintf("\n%dx%d\n", graphics_width, graphics_height);
+   UARTPrintf(bench_run ? "no gfx output (measurement is accurate)\n" : "gfx output (measurement is NOT accurate)\n");
+   UARTPrintf("CPI="); printk(kCPI);
+   UARTPrintf("\nRAYSTONES="); printk(kRAYSTONES);
+   UARTPrintf("\n");
 }
 
 // Normally you will not need to modify anything beyond that point.
@@ -506,7 +488,7 @@ int main()
   bench_run = 1;
   graphics_width  = 40;
   graphics_height = 20;
-  UARTWrite("Running without graphic output (for accurate measurement)...\n");
+  UARTPrintf("Running without graphic output (for accurate measurement)...\n");
   render(spheres, nb_spheres, lights, nb_lights);
 
   bench_run = 0;

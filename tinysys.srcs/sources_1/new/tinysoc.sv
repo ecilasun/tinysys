@@ -7,13 +7,13 @@ module tinysoc #(
 	input wire clk10,
 	input wire clkaudio,
 	input wire clk25,
-	input wire clk50,
+	input wire clk100,
 	input wire clk166,
 	input wire clk200,
 	input wire aresetn,
 	input wire rst10n,
 	input wire rst25n,
-	input wire rst50n,
+	input wire rst100n,
 	input wire rstaudion,
 	input wire preresetn,
 	// LEDs
@@ -349,8 +349,8 @@ axi4sdcard sdcardinst(
 	.aclk(aclk),
 	.clk10(clk10),
 	.aresetn(aresetn),
-	.rst50n(rst50n),
-	.spibaseclock(clk50),
+	.rst100n(rst100n),
+	.spibaseclock(clk100),
 	.sdconn(sdconn),
 	.keyirq(keyirq),
 	.s_axi(spiif));
@@ -380,8 +380,8 @@ commandqueue audiocmdinst(
 axi4usbc usbhostport(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.rst50n(rst50n),
-	.spibaseclock(clk50),
+	.rst100n(rst100n),
+	.spibaseclock(clk100),
 	.usbcconn(usbaconn),
 	.usbirq(usbairq),
 	.s_axi(usbaif));
