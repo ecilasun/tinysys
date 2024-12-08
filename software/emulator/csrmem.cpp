@@ -22,7 +22,11 @@ void CCSRMem::Reset()
 	m_csrmem[CSR_PROGRAMCOUNTER] = 0x00000000;
 	m_csrmem[CSR_HWSTATE] = 0x00000000;
 
-	m_timecmp = 0xFFFFFFFFFFFFFFFF;
+	m_timecmpshadow = 0xFFFFFFFFFFFFFFFF;
+	m_mepcshadow = 0;
+	m_mieshadow = 0;
+	m_mtvecshadow = 0;
+
 	m_cycle = 0x0000000000000000;
 	m_wallclocktime = 0x0000000000000000;
 }
@@ -54,7 +58,7 @@ void CCSRMem::Tick(CBus* bus)
 	m_sie = ((m_mieshadow & 0x1) ? 1 : 0) && m_mstatusieshadow;
 
 	// Timer interrupt
-	uint32_t timerInterrupt = ((m_mieshadow & 0x2 ? 1 : 0) && m_mstatusieshadow && (m_wallclocktime >= m_timecmp)) ? 1 : 0;
+	uint32_t timerInterrupt = ((m_mieshadow & 0x2 ? 1 : 0) && m_mstatusieshadow && (m_wallclocktime >= m_timecmpshadow)) ? 1 : 0;
 
 	// IRQ state shadow
 	m_irqstate = (hblankirq << 3) | (uartirq << 2) | (keyirq << 1) | (usbirq);
@@ -71,32 +75,24 @@ void CCSRMem::Read(uint32_t address, uint32_t& data)
 	//if (csrindex == CSR_MSCRATCH)
 	//	__debugbreak();
 
-	if (csrindex == CSR_HWSTATE)
-		data = m_irqstate;
-	else if (csrindex == CSR_CPURESET)
-		data = m_cpuresetreq;
-	else if (csrindex == CSR_TIMELO)
-		data = (uint32_t)(m_wallclocktime & 0x00000000FFFFFFFFU);
-	else if (csrindex == CSR_TIMEHI)
-		data = (uint32_t)((m_wallclocktime & 0xFFFFFFFF00000000U) >> 32);
-	else if (csrindex == CSR_CYCLELO)
-		data = (uint32_t)(m_cycle & 0x00000000FFFFFFFFU);
-	else if (csrindex == CSR_CYCLEHI)
-		data = (uint32_t)((m_cycle & 0xFFFFFFFF00000000U) >> 32);
-	else if (csrindex == CSR_TIMECMPLO)
-		data = (uint32_t)(m_timecmp & 0x00000000FFFFFFFFU);
-	else if (csrindex == CSR_TIMECMPHI)
-		data = (uint32_t)((m_timecmp & 0xFFFFFFFF00000000U) >> 32);
-	else if (csrindex == CSR_MHARTID)
+	if (csrindex == CSR_MHARTID)
 		data = m_hartid;
-	else if (csrindex == CSR_RETILO)
-		data = (uint32_t)(m_retired & 0x00000000FFFFFFFFU);
 	else if (csrindex == CSR_RETIHI)
 		data = (uint32_t)((m_retired & 0xFFFFFFFF00000000U) >> 32);
+	else if (csrindex == CSR_TIMEHI)
+		data = (uint32_t)((m_wallclocktime & 0xFFFFFFFF00000000U) >> 32);
+	else if (csrindex == CSR_CYCLEHI)
+		data = (uint32_t)((m_cycle & 0xFFFFFFFF00000000U) >> 32);
+	else if (csrindex == CSR_RETILO)
+		data = (uint32_t)(m_retired & 0x00000000FFFFFFFFU);
+	else if (csrindex == CSR_TIMELO)
+		data = (uint32_t)(m_wallclocktime & 0x00000000FFFFFFFFU);
+	else if (csrindex == CSR_CYCLELO)
+		data = (uint32_t)(m_cycle & 0x00000000FFFFFFFFU);
+	else if (csrindex == CSR_HWSTATE)
+		data = m_irqstate;
 	else if (csrindex == CSR_PROGRAMCOUNTER)
 		data = m_pc;
-	else if (csrindex == CSR_HBLANKHANDLER)
-		data = m_csrmem[csrindex];
 	else
 		data = m_csrmem[csrindex];
 }
@@ -107,30 +103,21 @@ void CCSRMem::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 	//if (csrindex == CSR_MSCRATCH)
 	//	__debugbreak();
 
-	if (csrindex == CSR_HWSTATE)
-		; // noop
-	else if (csrindex == CSR_CPURESET)
-		m_cpuresetreq = word & 1 ? 1 : 0;
-	else if (csrindex == CSR_TIMELO)
-		; // noop
-	else if (csrindex == CSR_TIMEHI)
-		; // noop
-	else if (csrindex == CSR_CYCLELO)
-		; // noop
-	else if (csrindex == CSR_CYCLEHI)
-		; // noop
-	else if (csrindex == CSR_TIMECMPLO)
-		m_timecmp = (m_timecmp & 0xFFFFFFFF00000000U) | ((uint64_t)word);
-	else if (csrindex == CSR_TIMECMPHI)
-		m_timecmp = ((uint64_t)word << 32) | (m_timecmp & 0x00000000FFFFFFFFU);
-	else if (csrindex == CSR_MHARTID)
-		; // noop
-	else
-		m_csrmem[csrindex] = word;
+	m_csrmem[csrindex] = word;
 
-	// Shadows
-	if (csrindex == CSR_MSTATUS)
-		m_mstatusieshadow = SelectBitRange(word, 3, 3); // Only ie bit is shadowed
+	// Shadow
+	if (csrindex == CSR_CPURESET)
+		m_cpuresetreq = word&1;
+	else if (csrindex == CSR_TIMECMPLO)
+		m_timecmpshadow = (m_timecmpshadow & 0xFFFFFFFF00000000U) | ((uint64_t)word);
+	else if (csrindex == CSR_TIMECMPHI)
+		m_timecmpshadow = ((uint64_t)word << 32) | (m_timecmpshadow & 0x00000000FFFFFFFFU);
+	else if (csrindex == CSR_MEPC)
+		m_mepcshadow = word;
 	else if (csrindex == CSR_MIE)
 		m_mieshadow = (SelectBitRange(word, 11, 11) << 2) | (SelectBitRange(word, 7, 7) << 1) | SelectBitRange(word, 3, 3); // Only timer, software, and external interrupt state is shadowed
+	else if (csrindex == CSR_MSTATUS)
+		m_mstatusieshadow = SelectBitRange(word, 3, 3); // Only ie bit is shadowed
+	else if (csrindex == CSR_MTVEC)
+		m_mtvecshadow = word;
 }

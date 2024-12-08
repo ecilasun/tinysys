@@ -39,6 +39,7 @@ SOURCES_quake_arch := \
 	../../../SDK/dma.c \
 	../../../SDK/keyboard.c \
 	../../../SDK/uart.c \
+	../../../SDK/mini-printf.c \
 	display.c \
 	fio.c \
 	main.c \

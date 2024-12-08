@@ -28,22 +28,20 @@ void CMailMem::Reset()
 
 void CMailMem::Read(uint32_t address, uint32_t& data)
 {
-	uint32_t mailslot = (address >> 2);
-	mailslot &= 0xFFF;
+	uint32_t mailslot = (address >> 2) & 0xFFF;
 	data = m_mailmem[mailslot];
 }
 
 void CMailMem::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 {
-	uint32_t mailslot = (address >> 2);
-	mailslot &= 0xFFF;
+	uint32_t mailslot = (address >> 2) & 0xFFF;
+	uint32_t olddata = m_mailmem[mailslot];
 
 	// Expand the wstrobe
 	uint32_t fullmask = quadexpand[wstrobe];
 	uint32_t invfullmask = ~fullmask;
 
 	// Mask and mix incoming and old data
-	uint32_t olddata = m_mailmem[mailslot];
 	uint32_t newword = (olddata & invfullmask) | (word & fullmask);
 	m_mailmem[mailslot] = newword;
 }

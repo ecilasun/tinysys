@@ -54,9 +54,13 @@ public:
 	uint64_t m_retired{ 0 };
 	uint64_t m_cycle{ 0 };
 	uint64_t m_wallclocktime{ 0 };
-	uint64_t m_timecmp{ 0 };
 	uint32_t m_hartid{ 0 };
 	uint32_t m_pc{ 0 };
+
+	uint64_t m_timecmpshadow{ 0 };
+	uint32_t m_mepcshadow{ 0 };
+	uint32_t m_mieshadow{ 0 };
+	uint32_t m_mtvecshadow{ 0 };
 
 	uint32_t m_sie{0};
 	uint32_t m_irq{0};
@@ -65,7 +69,6 @@ public:
 private:
 	uint32_t* m_csrmem{ nullptr };
 	uint32_t m_cpuresetreq{ 0 };
-	uint32_t m_mieshadow{ 0 };
 	uint32_t m_mstatusieshadow{ 0 };
 	uint32_t m_irqstate{ 0 };
 };
