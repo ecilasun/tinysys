@@ -14,6 +14,9 @@
 #include <string.h>
 
 //#define DEBUG_USB_HOST
+#if defined(DEBUG_USB_HOST)
+#include "uart.h"
+#endif
 
 #define MAXDEVICES 2
 static struct USBDeviceRecord s_deviceTable[MAXDEVICES];
@@ -73,10 +76,16 @@ enum EBusState USBBusProbe()
 		case bmJSTATUS:
 			if((MAX3421ReadByte(rMODE) & bmLOWSPEED) == 0 ) {
 				MAX3421WriteByte(rMODE, MODE_FS_HOST);       //start full-speed host
+#if defined(DEBUG_USB_HOST)
+				UARTPrintf("J:FSHOST\n");
+#endif
 				return FSHOST;
 			}
 			else {
 				MAX3421WriteByte(rMODE, MODE_LS_HOST);        //start low-speed host
+#if defined(DEBUG_USB_HOST)
+				UARTPrintf("J:LSHOST\n");
+#endif
 				return LSHOST;
 			}
 			break;
@@ -84,19 +93,31 @@ enum EBusState USBBusProbe()
 			if(( MAX3421ReadByte(rMODE) & bmLOWSPEED) == 0 )
 			{
 				MAX3421WriteByte(rMODE, MODE_LS_HOST);       //start low-speed host
+#if defined(DEBUG_USB_HOST)
+				UARTPrintf("K:LSHOST\n");
+#endif
 				return LSHOST;
 			}
 			else
 			{
 				MAX3421WriteByte(rMODE, MODE_FS_HOST);       //start full-speed host
+#if defined(DEBUG_USB_HOST)
+				UARTPrintf("K:FSHOST\n");
+#endif
 				return FSHOST;
 			}
 			break;
 		case bmSE1:              //illegal state
+#if defined(DEBUG_USB_HOST)
+			UARTPrintf("SE1\n");
+#endif
 			return SE1;
 			break;
 		case bmSE0:              //disconnected state
 			MAX3421WriteByte(rMODE, bmDPPULLDN | bmDMPULLDN | bmHOST | bmSEPIRQ);
+#if defined(DEBUG_USB_HOST)
+			UARTPrintf("SE0\n");
+#endif
 			return SE0;
 			break;
 	}
@@ -457,42 +478,40 @@ void USBErrorString(uint8_t rcode)
 {
 #ifdef DEBUG_USB_HOST
 	if (rcode == hrSUCCESS)
-		UARTWrite("USB:SUCCESS\n");
+		UARTPrintf("USB:SUCCESS\n");
 	else if (rcode == hrBUSY)
-		UARTWrite("USB:BUSY\n");
+		UARTPrintf("USB:BUSY\n");
 	else if (rcode == hrBADREQ)
-		UARTWrite("USB:BADREQ\n");
+		UARTPrintf("USB:BADREQ\n");
 	else if (rcode == hrUNDEF)
-		UARTWrite("USB:UNDEF\n");
+		UARTPrintf("USB:UNDEF\n");
 	else if (rcode == hrNAK)
-		UARTWrite("USB:NAK\n");
+		UARTPrintf("USB:NAK\n");
 	else if (rcode == hrSTALL)
-		UARTWrite("USB:STALL\n");
+		UARTPrintf("USB:STALL\n");
 	else if (rcode == hrTOGERR)
-		UARTWrite("USB:TOGERR\n");
+		UARTPrintf("USB:TOGERR\n");
 	else if (rcode == hrWRONGPID)
-		UARTWrite("USB:WRONGPID\n");
+		UARTPrintf("USB:WRONGPID\n");
 	else if (rcode == hrBADBC)
-		UARTWrite("USB:BADBC\n");
+		UARTPrintf("USB:BADBC\n");
 	else if (rcode == hrPIDERR)
-		UARTWrite("USB:PIDERR\n");
+		UARTPrintf("USB:PIDERR\n");
 	else if (rcode == hrPKTERR)
-		UARTWrite("USB:PKTERR\n");
+		UARTPrintf("USB:PKTERR\n");
 	else if (rcode == hrCRCERR)
-		UARTWrite("USB:CRCERR\n");
+		UARTPrintf("USB:CRCERR\n");
 	else if (rcode == hrKERR)
-		UARTWrite("USB:KERR\n");
+		UARTPrintf("USB:KERR\n");
 	else if (rcode == hrJERR)
-		UARTWrite("USB:JERR\n");
+		UARTPrintf("USB:JERR\n");
 	else if (rcode == hrTIMEOUT)
-		UARTWrite("USB:TIMEOUT\n");
+		UARTPrintf("USB:TIMEOUT\n");
 	else if (rcode == hrBABBLE)
-		UARTWrite("USB:BABBLE\n");
+		UARTPrintf("USB:BABBLE\n");
 	else
 	{
-		UARTWrite("USB:");
-		UARTWriteHex(rcode);
-		UARTWrite("\n");
+		UARTPrintf("USB:%02X\n", rcode);
 	}
 #endif
 }
@@ -579,11 +598,7 @@ uint8_t USBParseDescriptor(uint8_t _addr, uint8_t *_desc, uint8_t* _dtype, uint8
 			stringCount += desc->iProduct!=0 ? 1:0;
 			stringCount += desc->iSerialNumber!=0 ? 1:0;
 #ifdef DEBUG_USB_HOST
-			UARTWrite("imanu,iprod,iseri: ");
-			UARTWriteHex(desc->iManufacturer);
-			UARTWriteHex(desc->iProduct);
-			UARTWriteHex(desc->iSerialNumber);
-			UARTWrite("\n");
+			UARTPrintf("imanu,iprod,iseri: %x %x %x\n", desc->iManufacturer, desc->iProduct, desc->iSerialNumber);
 
 #endif
 		}
@@ -597,9 +612,7 @@ uint8_t USBParseDescriptor(uint8_t _addr, uint8_t *_desc, uint8_t* _dtype, uint8
 			s_cval = desc->bConfigurationValue;
 			stringCount += desc->iConfiguration!=0 ? 1:0;
 #ifdef DEBUG_USB_HOST
-			UARTWrite("config: ");
-			UARTWriteHex(desc->bConfigurationValue);
-			UARTWrite("\n");
+			UARTPrintf("config: %x\n", desc->bConfigurationValue);
 #endif
 		}
 		break;
@@ -620,9 +633,9 @@ uint8_t USBParseDescriptor(uint8_t _addr, uint8_t *_desc, uint8_t* _dtype, uint8
 			stringCount += desc->iInterface!=0 ? 1:0;
 			if ((desc->bInterfaceClass == USBClass_HID) && (desc->bInterfaceSubClass == 1))
 			{
-				s_protosubclass = 1; // Boot protocol supported
+				//s_protosubclass = 1; // Boot protocol supported
 #ifdef DEBUG_USB_HOST
-				UARTWrite("hasboot\n");
+				UARTPrintf("hasboot\n");
 #endif
 			}
 			if (desc->bInterfaceClass == USBClass_HID)
@@ -644,9 +657,7 @@ uint8_t USBParseDescriptor(uint8_t _addr, uint8_t *_desc, uint8_t* _dtype, uint8
 						break;
 				}
 #ifdef DEBUG_USB_HOST
-				UARTWrite("HIDclass: ");
-				UARTWriteHex(*_hidclass);
-				UARTWrite("\n");
+				UARTPrintf("HIDclass: %x\n", *_hidclass);
 #endif
 			}
 		}
@@ -666,11 +677,7 @@ uint8_t USBParseDescriptor(uint8_t _addr, uint8_t *_desc, uint8_t* _dtype, uint8
 			s_deviceTable[_addr].endpointInfo[eaddr].attribs = desc->bmAttributes;
 
 #ifdef DEBUG_USB_HOST
-			UARTWrite("EP addr, maxsize, interval: ");
-			UARTWriteHex(desc->bEndpointAddress);
-			UARTWriteHex(desc->wMaxPacketSize);
-			UARTWriteHex(desc->bInterval);
-			UARTWrite("\n");
+			UARTPrintf("EP addr, maxsize, interval: %x %x %x\n", desc->bEndpointAddress, desc->wMaxPacketSize, desc->bInterval);
 #endif
 		}
 		break;
@@ -742,6 +749,9 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, v
 
 	if (rcode != 0)
 	{
+#ifdef DEBUG_USB_HOST
+		UARTPrintf("Control request(1) failed\n");
+#endif
 		USBErrorString(rcode);
 		return rcode;
 	}
@@ -754,6 +764,9 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, v
 
 	if (rcode != 0)
 	{
+#ifdef DEBUG_USB_HOST
+		UARTPrintf("Control request(2) failed\n");
+#endif
 		USBErrorString(rcode);
 		return rcode;
 	}
@@ -786,6 +799,9 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, v
 
 		if (rcode != 0)
 		{
+#ifdef DEBUG_USB_HOST
+		UARTPrintf("Control request(3) failed\n");
+#endif
 			USBErrorString(rcode);
 			return rcode;
 		}
@@ -803,6 +819,9 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, v
 
 		if (rcode != 0)
 		{
+#ifdef DEBUG_USB_HOST
+		UARTPrintf("Control request(4) failed\n");
+#endif
 			USBErrorString(rcode);
 			return rcode;
 		}
@@ -833,6 +852,9 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, v
 
 		if (rcode != 0)
 		{
+#ifdef DEBUG_USB_HOST
+		UARTPrintf("Control request(5) failed\n");
+#endif
 			USBErrorString(rcode);
 			return rcode;
 		}
@@ -853,10 +875,7 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, v
 				__builtin_memcpy(target, &str, L);
 				target += L;
 				*_outlen += L;
-#ifdef DEBUG_USB_HOST
-				UARTWriteN((char*)target, L);
-				UARTWrite("\n");
-#endif
+				target[L] = 0;
 			}
 
 			if (rcode)
@@ -866,6 +885,9 @@ uint8_t USBGetDeviceDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_hidclass, v
 				rcode = USBControlRequest(_addr, _ep, bmREQ_CLEAR_FEATURE, USB_REQUEST_CLEAR_FEATURE, USB_FEATURE_ENDPOINT_HALT, 0, epAddress, 0, NULL, 64);
 				if (rcode == 0)
 				{
+#ifdef DEBUG_USB_HOST
+					UARTPrintf("Clear stall failed\n");
+#endif
 					USBErrorString(rcode);
 					break;
 				}
@@ -1008,35 +1030,35 @@ uint8_t USBGetHIDDescriptor(uint8_t _addr, uint8_t _ep, uint8_t *_protocol)
 	{
 		*_protocol = HID_PROTOCOL_MOUSE;
 #ifdef DEBUG_USB_HOST
-		UARTWrite("Mouse\n");
+		UARTPrintf("Mouse\n");
 #endif
 	}
 	else if (tmpdata[3] == 0x04) 
 	{
 		*_protocol = HID_PROTOCOL_JOYSTICK;
 #ifdef DEBUG_USB_HOST
-		UARTWrite("Joystick\n");
+		UARTPrintf("Joystick\n");
 #endif
 	}
 	else if (tmpdata[3] == 0x05) 
 	{
 		*_protocol = HID_PROTOCOL_GAMEPAD;
 #ifdef DEBUG_USB_HOST
-		UARTWrite("Gamepad\n");
+		UARTPrintf("Gamepad\n");
 #endif
 	}
 	else if (tmpdata[3] == 0x06)
 	{
 		*_protocol = HID_PROTOCOL_KEYBOARD;
 #ifdef DEBUG_USB_HOST
-		UARTWrite("Keyboard\n");
+		UARTPrintf("Keyboard\n");
 #endif
 	}
 	else
 	{
 		*_protocol = HID_PROTOCOL_NONE;
 #ifdef DEBUG_USB_HOST
-		UARTWrite("Non-HID\n");
+		UARTPrintf("Non-HID\n");
 #endif
 	}
 

@@ -75,6 +75,7 @@
 		"task.h": "c",
 		"stdbool.h": "c",
 		"string.h": "c",
-		"usbhidhandler.h": "c"
+		"usbhidhandler.h": "c",
+		"uart.h": "c"
 	}
 }

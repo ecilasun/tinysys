@@ -7,6 +7,11 @@
 #include "rombase.h"
 #include "keyboard.h"
 
+//#define DEBUG_USB_HID_HANDLER
+#if defined(DEBUG_USB_HID_HANDLER)
+#include "uart.h"
+#endif
+
 static uint32_t s_devicePollInterval = 10;
 static uint8_t s_deviceProtocol = HID_PROTOCOL_NONE;
 static uint8_t s_hidClass = 0;
@@ -66,7 +71,7 @@ void HandleUSBHID()
 	}
 	/*else
 	{
-		kprintf("irq(unknown):%x\n", irq);
+		UARTPrintf("irq(unknown):%x\n", irq);
 	}*/
 
 	if (hirq_sendback)
@@ -199,6 +204,9 @@ enum EUSBDeviceState HandleKeyboard(enum EUSBDeviceState _currentState)
 		else if (rcode != hrNAK)
 		{
 			// Only stop if not NAK
+#if defined(DEBUG_USB_HID_HANDLER)
+			UARTPrintf("USBReadHIDData failed\n");
+#endif
 			USBErrorString(rcode);
 			returnState = DEVS_ERROR;
 		}
@@ -282,8 +290,8 @@ enum EUSBDeviceState HandleJoystick(enum EUSBDeviceState _currentState)
 		// DEBUG: Dump report
 		// Assuming PS4 controller report with header == 0x01
 		for (uint32_t i=0;i<40;++i)
-			kprintf("%x",gamepaddata[i]);
-		kprintf("\n");
+			UARTPrintf("%x",gamepaddata[i]);
+		UARTPrintf("\n");
 
 		//s_jposxy_buttons[0] = (int32_t)gamepaddata[2]; // left X (4 for right)
 		//s_jposxy_buttons[1] = (int32_t)gamepaddata[3]; // left Y (5 for right)
@@ -350,7 +358,12 @@ void ProcessUSBDevice(uint64_t currentTime)
 				// We're always device #1
 				uint8_t rcode = USBDetach(s_deviceAddress);
 				if (rcode != 0)
+				{
+#if defined(DEBUG_USB_HID_HANDLER)
+					UARTPrintf("USBDetach failed\n");
+#endif
 					USBErrorString(rcode);
+				}
 				//init: usbinit();
 				//waitfordevice: MAX3421WriteByte(rHCTL, bmSAMPLEBUS);
 				//illegal: no idea
@@ -377,7 +390,12 @@ void ProcessUSBDevice(uint64_t currentTime)
 				uint8_t rcode = USBGetDeviceDescriptor(0, 0, &s_hidClass, devdesc, desclen);
 				// Assign device address
 				if (rcode != 0)
+				{
+#if defined(DEBUG_USB_HID_HANDLER)
+					UARTPrintf("USBGetDeviceDescriptor failed\n");
+#endif
 					USBErrorString(rcode);
+				}
 				devState = rcode ? DEVS_ERROR : DEVS_ADDRESSING;
 			}
 			break;
@@ -394,13 +412,28 @@ void ProcessUSBDevice(uint64_t currentTime)
 					{
 						rcode = USBGetHIDDescriptor(s_deviceAddress, s_controlEndpoint, &s_deviceProtocol);
 						if (rcode != 0)
+						{
+#if defined(DEBUG_USB_HID_HANDLER)
+							UARTPrintf("USBGetHIDDescriptor failed\n");
+#endif
 							USBErrorString(rcode);
+						}
 					}
 					else
+					{
+#if defined(DEBUG_USB_HID_HANDLER)
+						UARTPrintf("USBConfigHID failed\n");
+#endif
 						USBErrorString(rcode);
+					}
 				}
 				else
+				{
+#if defined(DEBUG_USB_HID_HANDLER)
+					UARTPrintf("USBAttach failed\n");
+#endif
 					USBErrorString(rcode);
+				}
 				devState = rcode ? DEVS_ERROR : DEVS_RUNNING;
 			}
 			break;
