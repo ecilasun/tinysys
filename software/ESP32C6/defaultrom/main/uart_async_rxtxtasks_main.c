@@ -12,6 +12,7 @@
 #include "driver/uart.h"
 #include "driver/usb_serial_jtag.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "esp_vfs_common.h"
 #include "nvs.h"
 #include "nvs_flash.h"
@@ -39,32 +40,64 @@ static const char *TAG = "TSYS";
 #define RD_BUF_SIZE (BUF_SIZE)
 static QueueHandle_t uart0_queue;
 
+static bool pending_doom;
+esp_timer_handle_t reboot_timer;
+
+// This is the reboot timer callback
+void reboot_timer_callback(void* arg)
+{
+	// Notify console and reboot the remote system
+	usb_serial_jtag_write_bytes((uint8_t*) "Rebooting remote system.\n", 25, portMAX_DELAY);
+	gpio_hold_dis(PIN_REBOOT);
+	gpio_set_level(PIN_REBOOT, 0);
+	vTaskDelay(200 / portTICK_PERIOD_MS);
+	gpio_set_level(PIN_REBOOT, 1);
+	gpio_hold_en(PIN_REBOOT);
+}
+
 static void jtag_task(void *arg)
 {
 	uint8_t* dtmp = (uint8_t*) malloc(RD_BUF_SIZE);
 
 	usb_serial_jtag_write_bytes((uint8_t*) "TinySys v1.1D\n", 14, portMAX_DELAY);
 
+	// Create a timer to reboot the system
+	const esp_timer_create_args_t reboot_timer_args = {
+		.callback = &reboot_timer_callback,
+		.name = "reboot_timer"
+	};
+	ESP_ERROR_CHECK(esp_timer_create(&reboot_timer_args, &reboot_timer));
+
 	do
 	{
 		int datasize = usb_serial_jtag_read_bytes(dtmp, RD_BUF_SIZE, portMAX_DELAY);
 		if (datasize > 0)
 		{
+			// If we're transferring binary data with ~ character included, this makes
+			// sure that the next character that arrives within 1 second of the initial ~
+			// will cancel that reboot.
+			if (pending_doom)
+			{
+				// Cancel the reboot
+				esp_timer_stop(reboot_timer);
+				pending_doom = false;
+			}
+
 			if (dtmp[0] == '~')
 			{
-				// NOTE: If binary data is sent from the host, we might encounter this symbol in the stream
-				// For that reason, any binary data traffic has to be converted to a different base, such as base64
-				usb_serial_jtag_write_bytes((uint8_t*) "Sending reboot signal...\n", 25, portMAX_DELAY);
-				gpio_hold_dis(PIN_REBOOT);
-				gpio_set_level(PIN_REBOOT, 0);
-				vTaskDelay(1000 / portTICK_PERIOD_MS);
-				gpio_set_level(PIN_REBOOT, 1);
-				gpio_hold_en(PIN_REBOOT);
+				// Create a timer task to reboot the system
+				// If we encounter any character within this 1 second period, we will cancel the reboot
+				esp_timer_start_once(reboot_timer, 1000000);
+				pending_doom = true;
 			}
 			else // Pass through
+			{
 				uart_write_bytes(EX_UART_NUM, (const char*) dtmp, datasize);
+			}
 		}
 	} while(1);
+
+	//esp_timer_delete(reboot_timer);
 }
 
 static void uart_event_task(void *pvParameters)
@@ -217,6 +250,9 @@ void app_main(void)
 
 	esp_log_level_set(TAG, ESP_LOG_INFO);
 	//ESP_LOGI(TAG, "starting up TinySys terminal\n");
+
+	// No reboot in progress
+	pending_doom = false;
 
     //Create a task to handler UART event from ISR
     xTaskCreate(uart_event_task, "tinysys_uart_task", 2048, NULL, 12, NULL);

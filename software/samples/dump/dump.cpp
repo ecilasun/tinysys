@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 				readsize = fread(buffer, 1, 16, fp);
 
 				for (int i=0; i<readsize; ++i)
-					UARTPrintf("%.2X ", buffer[i]);
+					UARTPrintf("%02X ", buffer[i]);
 
 				for (int i=0; i<readsize; ++i)
 					if (buffer[i]>=32)
