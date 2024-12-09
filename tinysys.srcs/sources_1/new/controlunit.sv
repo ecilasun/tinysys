@@ -19,6 +19,8 @@ module controlunit #(
 	output wire [63:0] cpuclocktime,
 	output wire [63:0] retired,
 	output wire [31:0] pc_out,
+	// Reset request
+	input wire cpuresetreq,
 	// Internal bus to data unit
 	ibusif.master m_ibus);
 
@@ -806,6 +808,12 @@ always @(posedge aclk) begin
 				ctlmode <= m_ibus.wdone ? READINSTR : SYSWAIT;
 			end
 		endcase
+
+		if (cpuresetreq) begin
+			// This will cause this core to jump directly to the reset vector,
+			// after waiting for the pending instructions to drain from the FIFO
+			ctlmode <= INIT;
+		end
 	end
 end
 

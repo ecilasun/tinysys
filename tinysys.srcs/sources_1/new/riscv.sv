@@ -89,6 +89,7 @@ controlunit #(
 	.cpuclocktime(cpuclocktime),
 	.retired(retired),
 	.pc_out(pc_out),
+	.cpuresetreq(cpuresetreq),
 	.m_ibus(internaldatabus));
 
 endmodule

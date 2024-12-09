@@ -215,8 +215,8 @@ always @(posedge aclk) begin
 				PC <= RESETVECTOR;
 				// We do not proceed until the instruction fifo has been drained (soft reboot)
 				// or the ROM has been copied over (hard reboot)
-				fetchena <= romReady && ififoempty;
-				fetchmode <= (romReady && ififoempty) ? FETCH : INIT;
+				fetchena <= romReady;
+				fetchmode <= romReady ? FETCH : INIT;
 			end
 
 			FETCH: begin
