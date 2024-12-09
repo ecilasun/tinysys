@@ -207,8 +207,6 @@ always_ff @(posedge aclk) begin
 			end
 
 			CFLUSH: begin
-				// Nothing to write back for next time around
-				cachelinewb[dccount] <= 1'b0;
 				// Write back if it's a valid entry and we've modified it
 				if (cachelinewb[dccount] && flushtag[13]) begin
 					// Write current line back to RAM
@@ -236,6 +234,8 @@ always_ff @(posedge aclk) begin
 
 			CFLUSHWAIT: begin
 				if (wdone) begin
+					// Nothing to write back for next time around
+					cachelinewb[dccount] <= 1'b0;
 					// Go to next line (wraps around to 0 at 511)
 					dccount <= dccount + 9'd1;
 					// Stop 'flushing' mode if we're done

@@ -42,6 +42,9 @@ static QueueHandle_t uart0_queue;
 static void jtag_task(void *arg)
 {
 	uint8_t* dtmp = (uint8_t*) malloc(RD_BUF_SIZE);
+
+	usb_serial_jtag_write_bytes((uint8_t*) "TinySys v1.1D\n", 14, portMAX_DELAY);
+
 	do
 	{
 		int datasize = usb_serial_jtag_read_bytes(dtmp, RD_BUF_SIZE, portMAX_DELAY);
@@ -51,7 +54,7 @@ static void jtag_task(void *arg)
 			{
 				// NOTE: If binary data is sent from the host, we might encounter this symbol in the stream
 				// For that reason, any binary data traffic has to be converted to a different base, such as base64
-				ESP_LOGI(TAG, "Rebooting CPUs");
+				usb_serial_jtag_write_bytes((uint8_t*) "Sending reboot signal...\n", 25, portMAX_DELAY);
 				gpio_hold_dis(PIN_REBOOT);
 				gpio_set_level(PIN_REBOOT, 0);
 				vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -156,6 +159,14 @@ static void uart_event_task(void *pvParameters)
 // This is the reason why we will see the TinySys boot message every time we connect to the device via putty
 void app_main(void)
 {
+	gpio_config(& (gpio_config_t) {
+		.pin_bit_mask = 1ULL << PIN_REBOOT,
+		.mode = GPIO_MODE_OUTPUT,
+		.pull_up_en = GPIO_PULLUP_DISABLE,
+		.pull_down_en = GPIO_PULLDOWN_DISABLE,
+		.intr_type = GPIO_INTR_DISABLE
+	});
+
 	// Prevent CPU reset
 	gpio_set_level(PIN_REBOOT, 1);
 	gpio_hold_en(PIN_REBOOT);
@@ -169,19 +180,11 @@ void app_main(void)
 	}
 	ESP_ERROR_CHECK( ret );
 
-	gpio_config(& (gpio_config_t) {
-		.pin_bit_mask = 1ULL << PIN_REBOOT,
-		.mode = GPIO_MODE_OUTPUT,
-		.pull_up_en = GPIO_PULLUP_DISABLE,
-		.pull_down_en = GPIO_PULLDOWN_DISABLE,
-		.intr_type = GPIO_INTR_DISABLE
-	});
-
 	setvbuf(stdin, NULL, _IONBF, 0);
 
 	// Enable blocking mode on stdin and stdout
-	fcntl(fileno(stdout), F_SETFL, 0);
-	fcntl(fileno(stdin), F_SETFL, 0);
+	//fcntl(fileno(stdout), F_SETFL, 0);
+	//fcntl(fileno(stdin), F_SETFL, 0);
 
 	usb_serial_jtag_driver_config_t usb_serial_config =  {
 			.tx_buffer_size = 1024,
@@ -218,6 +221,4 @@ void app_main(void)
     //Create a task to handler UART event from ISR
     xTaskCreate(uart_event_task, "tinysys_uart_task", 2048, NULL, 12, NULL);
 	xTaskCreate(jtag_task, "tinysys_jtag_task", 2048, NULL, 12, NULL);
-
-	usb_serial_jtag_write_bytes((uint8_t*) "TinySys v1.0D\n", 14, portMAX_DELAY);
 }
