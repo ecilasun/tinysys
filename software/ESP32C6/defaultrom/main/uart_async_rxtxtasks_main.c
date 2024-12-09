@@ -254,6 +254,6 @@ void app_main(void)
 	pending_doom = false;
 
     //Create a task to handler UART event from ISR
+	xTaskCreate(jtag_task, "tinysys_jtag_task", 2048, NULL, 13, NULL);
     xTaskCreate(uart_event_task, "tinysys_uart_task", 2048, NULL, 12, NULL);
-	xTaskCreate(jtag_task, "tinysys_jtag_task", 2048, NULL, 12, NULL);
 }
