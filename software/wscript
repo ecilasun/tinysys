@@ -42,7 +42,7 @@ def build(bld):
         sdk_lib_path = []
         compile_flags = ['-std=c++20']
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_LINUX']
-    includes = ['source', 'includes']
+    includes = ['source', 'includes', '3rdparty/lz4']
 
     # RELEASE
     libs = []
@@ -50,7 +50,7 @@ def build(bld):
 
     # Build risctool
     bld.program(
-        source=glob.glob('*.cpp'),
+        source=glob.glob('*.cpp') + glob.glob('3rdparty/lz4/*.c'),
         cxxflags=compile_flags,
         ldflags=linker_flags,
         target='riscvtool',

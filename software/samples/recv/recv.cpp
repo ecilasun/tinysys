@@ -12,6 +12,7 @@
 #include "encoding.h"
 #include "mini-printf.h"
 #include "serialinringbuffer.h"
+#include "lz4.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -35,7 +36,7 @@ static const uint8_t base64lookup[256] = {
     64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64  // 240-255
 };
 
-void DrawProgress(struct EVideoContext* osVideoContext, const uint32_t bytesWritten, const uint32_t filebytesize, const char* filename, uint8_t* framebuffer)
+void DrawProgress(struct EVideoContext* osVideoContext, const uint32_t bytesWritten, const uint32_t filebytesize, const char* filename, uint8_t* framebuffer, int state)
 {
 	uint32_t progress = (256 * bytesWritten / filebytesize);
 
@@ -81,47 +82,22 @@ void DrawProgress(struct EVideoContext* osVideoContext, const uint32_t bytesWrit
 	framebuffer[448 + 243*640] = 0x0F;
 
 	char msg[96];
-	mini_snprintf(msg, 96, "Receiving %s", filename);
+	if (state == 0)
+		mini_snprintf(msg, 96, "Receiving %s", filename);
+	else if (state == 1)
+		mini_snprintf(msg, 96, "Decompressing %s", filename);
+	else if (state == 2)
+		mini_snprintf(msg, 96, "Writing %s", filename);
 	VPUPrintString(osVideoContext, 0x00, 0x0F, 48, 28, msg, strlen(msg));
 
 	// Kernel isn't double buffered, flush cache so we can see the progress
 	CFLUSH_D_L1;
 }
 
-uint32_t Base64Decode(const char* input, const uint32_t inputSize, uint8_t* output)
-{
-    uint32_t outputSize = 0;
-    uint32_t value = 0;
-    uint32_t bits = 0;
-
-    for (uint32_t i = 0; i < inputSize; ++i)
-	{
-        uint8_t c = input[i];
-        if (c == '=') {
-            break;
-        }
-
-        uint8_t decoded = base64lookup[c];
-        if (decoded == 64) {
-            continue;
-        }
-
-        value = (value << 6) | decoded;
-        bits += 6;
-
-        if (bits >= 8) {
-            bits -= 8;
-            output[outputSize++] = (value >> bits) & 0xFF;
-        }
-    }
-
-    return outputSize;
-}
-
 int main()
 {
 	const char* NACK = "!";
-	const char* ACK = "~";
+	const char* ACK = "+";
 
 	// // We have 65536-4 bytes of scratchpad memory to work with
 	// uint32_t tempMem = E32GetScratchpad();
@@ -144,19 +120,32 @@ int main()
 	struct STaskContext* taskctx = TaskGetContext(0);
 	taskctx->interceptUART = 1;
 
-	DrawProgress(osVideoContext, 0, 100, "...", osFramebuffer);
+	DrawProgress(osVideoContext, 0, 100, "...", osFramebuffer, 0);
 
 	// At startup, acknowledge the sender so that it can start sending the file header
 	UARTSendBlock((uint8_t*)ACK, 1);
 
-	// Grab the file size
-	uint32_t filebytesize = 0;
+	// Grab the encoded size
+	uint32_t encodedLen = 0;
 	for (uint32_t i=0;i<4;)
 	{
 		uint8_t byte;
 		if (SerialInRingBufferRead(&byte, 1))
 		{
-			filebytesize |= (byte << (i*8));
+			encodedLen |= (byte << (i*8));
+			++i;
+		}
+	}
+	UARTSendBlock((uint8_t*)ACK, 1);
+
+	// Grab the file size size
+	uint32_t decodedLen = 0;
+	for (uint32_t i=0;i<4;)
+	{
+		uint8_t byte;
+		if (SerialInRingBufferRead(&byte, 1))
+		{
+			decodedLen |= (byte << (i*8));
 			++i;
 		}
 	}
@@ -194,105 +183,73 @@ int main()
 	// Null-terminate the file name
 	fileName[fileNameLen] = 0;
 
-	uint32_t packetSize = 512;
-	uint32_t numPackets = filebytesize / packetSize;
-	uint32_t leftoverBytes = filebytesize % packetSize;
+	// Send ready to receive file
+	UARTSendBlock((uint8_t*)ACK, 1);
 
-	// Grab the file data
-	FILE *fp = fopen(fileName, "wb");
-	if (fp)
+	uint8_t* sourceBuffer = new uint8_t[encodedLen+64];
+
+	uint32_t bytesReceived = 0;
+	do
+	{
+		// Let the sender know we're ready for the packet size
 		UARTSendBlock((uint8_t*)ACK, 1);
+
+		// Receive packet size
+		uint32_t packetLen = 0;
+		for (uint32_t i=0;i<4;)
+		{
+			uint8_t byte;
+			if (SerialInRingBufferRead(&byte, 1))
+			{
+				packetLen |= (byte << (i*8));
+				++i;
+			}
+		}
+
+		// Let the sender know we're ready for the packet data
+		UARTSendBlock((uint8_t*)ACK, 1);
+
+		// Receive encoded bytes
+		for (uint32_t j=0; j<packetLen;)
+		{
+			uint8_t byte;
+			if (SerialInRingBufferRead(&byte, 1))
+			{
+				sourceBuffer[bytesReceived+j] = byte;
+				++j;
+			}
+		}
+
+		bytesReceived += packetLen;
+		DrawProgress(osVideoContext, bytesReceived, encodedLen, fileName, osFramebuffer, 0);
+	}
+	while(bytesReceived < encodedLen);
+
+	// We're done with the UART
+	taskctx->interceptUART = 0;
+
+	uint8_t* targetBuffer = new uint8_t[decodedLen+512];
+	DrawProgress(osVideoContext, bytesReceived, encodedLen, fileName, osFramebuffer, 1);
+	int unpacked = LZ4_decompress_safe((const char*)sourceBuffer, (char*)targetBuffer, bytesReceived, decodedLen+512);
+	if (unpacked > 0)
+	{
+		DrawProgress(osVideoContext, bytesReceived, encodedLen, fileName, osFramebuffer, 2);
+		FILE *fp = fopen(fileName, "wb");
+		if (fp)
+		{
+			/*uint32_t written =*/ (uint32_t)fwrite(targetBuffer, 1, decodedLen, fp);
+			fclose(fp);
+		}
+		else
+			printf("ERROR: can't create file %s\n", fileName);
+	}
 	else
 	{
-		// Respond to the sender with an error code as we couldn't open the file
-		UARTSendBlock((uint8_t*)NACK, 1);
-		taskctx->interceptUART = 0;
-		return 0;
+		printf("ERROR: decompression failed (received:%d, unpacked:%d, originalpacked:%d, originalunpacked:%d)\n", (int)bytesReceived, (int)unpacked, (int)encodedLen, (int)decodedLen);
 	}
 
-	uint8_t* decodeBuffer = new uint8_t[packetSize*4+1];
-	uint8_t* binaryBuffer = new uint8_t[packetSize+1];
+	delete [] sourceBuffer;
+	delete [] targetBuffer;
 
-	uint32_t bytesWritten = 0;
-	for (uint32_t i=0; i<numPackets; ++i)
-	{
-		// Let the sender know we're ready for the packet size
-		UARTSendBlock((uint8_t*)ACK, 1);
-
-		// Receive packet size
-		uint32_t encodedLen = 0;
-		for (uint32_t i=0;i<4;)
-		{
-			uint8_t byte;
-			if (SerialInRingBufferRead(&byte, 1))
-			{
-				encodedLen |= (byte << (i*8));
-				++i;
-			}
-		}
-
-		// Let the sender know we're ready for the packet data
-		UARTSendBlock((uint8_t*)ACK, 1);
-
-		// Receive encoded bytes
-		for (uint32_t j=0; j<encodedLen;)
-		{
-			uint8_t byte;
-			if (SerialInRingBufferRead(&byte, 1))
-			{
-				decodeBuffer[j] = byte;
-				++j;
-			}
-		}
-
-		// Decode and write to file
-		uint32_t decodedLen = Base64Decode((const char*)decodeBuffer, encodedLen, binaryBuffer);
-		uint32_t written = (uint32_t)fwrite(binaryBuffer, 1, decodedLen, fp);
-		bytesWritten += written;
-		DrawProgress(osVideoContext, bytesWritten, filebytesize, fileName, osFramebuffer);
-	}
-
-	// Final ACK for partial package
-	if (leftoverBytes != 0)
-	{
-		// Let the sender know we're ready for the packet size
-		UARTSendBlock((uint8_t*)ACK, 1);
-
-		// Receive packet size
-		uint32_t encodedLen = 0;
-		for (uint32_t i=0;i<4;)
-		{
-			uint8_t byte;
-			if (SerialInRingBufferRead(&byte, 1))
-			{
-				encodedLen |= (byte << (i*8));
-				++i;
-			}
-		}
-
-		// Let the sender know we're ready for the packet data
-		UARTSendBlock((uint8_t*)ACK, 1);
-
-		// Receive encoded bytes
-		for (uint32_t j=0; j<encodedLen;)
-		{
-			uint8_t byte;
-			if (SerialInRingBufferRead(&byte, 1))
-			{
-				decodeBuffer[j] = byte;
-				++j;
-			}
-		}
-
-		// Decode and write to file
-		uint32_t decodedLen = Base64Decode((const char*)decodeBuffer, encodedLen, binaryBuffer);
-		uint32_t written = (uint32_t)fwrite(binaryBuffer, 1, decodedLen, fp);
-		bytesWritten += written;
-		DrawProgress(osVideoContext, bytesWritten, filebytesize, fileName, osFramebuffer);
-	}
-
-	fclose(fp);
-
-	taskctx->interceptUART = 0;
     return 0;
 }

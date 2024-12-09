@@ -73,9 +73,9 @@ static void jtag_task(void *arg)
 		int datasize = usb_serial_jtag_read_bytes(dtmp, RD_BUF_SIZE, portMAX_DELAY);
 		if (datasize > 0)
 		{
-			// If we're transferring binary data with ~ character included, this makes
-			// sure that the next character that arrives within 1 second of the initial ~
-			// will cancel that reboot.
+			// If a pending reboot is in progress, cancel it before we have a chance to reboot
+			// This is to prevent a reboot from happening when the user is sending binary data
+			// which might include the ~ character
 			if (pending_doom)
 			{
 				// Cancel the reboot
@@ -83,17 +83,16 @@ static void jtag_task(void *arg)
 				pending_doom = false;
 			}
 
+			// Start the reboot timer if the first character in the received sequence is ~
+			// If more character are encountered within 1 second of the initial ~, reboot is cancelled
 			if (dtmp[0] == '~')
 			{
-				// Create a timer task to reboot the system
-				// If we encounter any character within this 1 second period, we will cancel the reboot
 				esp_timer_start_once(reboot_timer, 1000000);
 				pending_doom = true;
 			}
-			else // Pass through
-			{
-				uart_write_bytes(EX_UART_NUM, (const char*) dtmp, datasize);
-			}
+
+			// Pass through every byte
+			uart_write_bytes(EX_UART_NUM, (const char*) dtmp, datasize);
 		}
 	} while(1);
 

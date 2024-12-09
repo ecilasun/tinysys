@@ -16,6 +16,7 @@ default: $(TARGET)
 
 src_dir = .
 corelib_dir = ../../SDK
+liblz4 = ../../3rdparty/lz4
 
 # Rules
 
@@ -31,8 +32,8 @@ RISCV_GCC ?= $(RISCV_PREFIX)g++
 RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++20 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Ofast -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -fPIC -lgcc -lm
 endif
 
-incs  += -I$(src_dir) -I$(corelib_dir) $(addprefix -I$(src_dir)/, $(folders))
-libs += $(wildcard $(corelib_dir)/*.S) $(wildcard $(corelib_dir)/*.c)
+incs  += -I$(src_dir) -I$(corelib_dir) -I$(liblz4)/ $(addprefix -I$(src_dir)/, $(folders))
+libs += $(wildcard $(corelib_dir)/*.S) $(wildcard $(liblz4)/*.c) $(wildcard $(corelib_dir)/*.c)
 objs  := 
 
 $(TARGET):

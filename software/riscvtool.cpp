@@ -15,6 +15,8 @@
 #include <chrono>
 #include <thread>
 
+#include "lz4.h"
+
 #if defined(CAT_LINUX) || defined(CAT_MACOS)
 //char devicename[512] = "/dev/ttyUSB0";
 char devicename[512] = "/dev/ttyACM0";
@@ -426,49 +428,6 @@ void ConsumeInitialTraffic(CSerialPort& serial)
 	}
 }
 
-// Encode incoming binary blob to base64
-// Returns the size of the encoded data
-uint32_t Base64Encode(const uint8_t* input, const uint32_t inputSize, char* output)
-{
-	static const char* base64chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-	uint32_t outputSize = 0;
-	for (uint32_t i = 0; i < inputSize; i += 3)
-	{
-		uint32_t value = 0;
-		uint32_t bytes = 0;
-		for (uint32_t j = 0; j < 3; ++j)
-		{
-			if (i + j < inputSize)
-			{
-				value <<= 8;
-				value |= input[i + j];
-				++bytes;
-			}
-			else
-			{
-				value <<= 8;
-			}
-		}
-
-		for (uint32_t j = 0; j < 4; ++j)
-		{
-			if (j > bytes)
-			{
-				output[outputSize++] = '=';
-			}
-			else
-			{
-				uint32_t index = (value >> 18) & 0x3F;
-				output[outputSize++] = base64chars[index];
-				value <<= 6;
-			}
-		}
-	}
-
-	return outputSize;
-}
-
 void sendcmd(char *_command)
 {
 	CSerialPort serial;
@@ -491,8 +450,8 @@ void sendcmd(char *_command)
 }
 
 // This is meant to be used with the receiver app on the tinysys side
-// It will send the file in 512 byte chunks after header information
-// The receiver app will respond with an ack(~) or error(!) to each request
+// It will send the file in chunks after header information
+// The receiver app will respond with an ack(+) or error(!) to each request
 void sendfile(char *_filename)
 {
 	char tmpstring[129];
@@ -528,13 +487,26 @@ void sendfile(char *_filename)
 
 	uint8_t received;
 
+	// Send the file bytes in chunks
+	uint32_t packetSize = 1024;
+	int worstSize = LZ4_compressBound(filebytesize);
+
+	// Pack the data before sending it across
+	char* encoded = new char[worstSize];
+	uint32_t encodedSize = LZ4_compress_default((const char*)filedata, encoded, filebytesize, worstSize);
+	printf("Compression ratio = %.2f%% (%d->%d bytes)\n", 100.f*float(encodedSize)/float(filebytesize), filebytesize, encodedSize);
+
+	// Now we can work out how many packets we need to send
+	uint32_t numPackets = encodedSize / packetSize;
+	uint32_t leftoverBytes = encodedSize % packetSize;
+
 	// Start the receiver app on the other end
 	snprintf(tmpstring, 128, "recv");
 	serial.Send((uint8_t*)tmpstring, 4);
 	std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	snprintf(tmpstring, 128, "\n");
 	serial.Send((uint8_t*)tmpstring, 1);
-	if (!WACK(serial, '~', received))
+	if (!WACK(serial, '+', received))
 	{
 		printf("Transfer initiation error: '%c'\n", received);
 		serial.Close();
@@ -542,12 +514,23 @@ void sendfile(char *_filename)
 		return;
 	}
 
-	// Send file length
-	uint32_t fileLen = filebytesize;
-	serial.Send(&fileLen, 4);
-	if (!WACK(serial, '~', received))
+	// Send encoded length
+	uint32_t encodedLen = encodedSize;
+	serial.Send(&encodedLen, 4);
+	if (!WACK(serial, '+', received))
 	{
-		printf("File length error: '%c'\n", received);
+		printf("Encoded buffer length error: '%c'\n", received);
+		serial.Close();
+		delete [] filedata;
+		return;
+	}
+
+	// Send actual length
+	uint32_t decodedLen = filebytesize;
+	serial.Send(&decodedLen, 4);
+	if (!WACK(serial, '+', received))
+	{
+		printf("Decoded buffer length error: '%c'\n", received);
 		serial.Close();
 		delete [] filedata;
 		return;
@@ -556,7 +539,7 @@ void sendfile(char *_filename)
 	// Send name length
 	uint32_t nameLen = strlen(_filename);
 	serial.Send(&nameLen, 4);
-	if (!WACK(serial, '~', received))
+	if (!WACK(serial, '+', received))
 	{
 		printf("File name length error: '%c'\n", received);
 		serial.Close();
@@ -566,7 +549,7 @@ void sendfile(char *_filename)
 
 	// Send name
 	serial.Send(_filename, nameLen);
-	if (!WACK(serial, '~', received))
+	if (!WACK(serial, '+', received))
 	{
 		printf("File name error: '%c'\n", received);
 		serial.Close();
@@ -574,79 +557,72 @@ void sendfile(char *_filename)
 		return;
 	}
 
-	// Send the file bytes in 512 byte chunks
-	uint32_t packetSize = 512;
-	uint32_t numPackets = filebytesize / packetSize;
-	uint32_t leftoverBytes = filebytesize % packetSize;
 	uint32_t i = 0;
 	uint32_t packetOffset = 0;
-	char* encoded = new char[packetSize*4 + 1];
 	char progress[65];
 	for (i=0; i<64; ++i)
 		progress[i] = ' ';//176;
 	progress[64] = 0;
-	printf("Uploading '%s'\n", _filename);
+	printf("Uploading '%s' (packet size: %dx%d+%d bytes, packer buffer: %d bytes)\n", _filename, numPackets, packetSize, leftoverBytes, worstSize);
 	for (i=0; i<numPackets; ++i)
 	{
-		uint32_t encodedSize = Base64Encode(filedata + packetOffset, packetSize, encoded);
+		const char* source = (const char*)(encoded + packetOffset);
 
 		int idx = (i*64)/numPackets;
 		for (int j=0; j<=idx; ++j) // Progress bar
 			progress[j] = '=';//219;
 		printf("\r [%s] %.2f%%\r", progress, (i*100)/float(numPackets));
 
-		if (!WACK(serial, '~', received)) // Wait for a 'go' signal
+		if (!WACK(serial, '+', received)) // Wait for a 'go' signal
 		{
-			printf("Packet size error at %d/%d (512): '%c'\n", i, numPackets, received);
-			encoded[encodedSize] = 0;
-			printf("Packet content: %s\n", encoded);
+			printf("Packet size error at %d/%d (%d): '%c'\n", i, numPackets, received, packetSize);
 			serial.Close();
 			delete [] filedata;
 			return;
 		}
 
-		serial.Send(&encodedSize, 4);
+		serial.Send(&packetSize, 4);
 
-		if (!WACK(serial, '~', received)) // Wait for a 'go' signal
+		if (!WACK(serial, '+', received)) // Wait for a 'go' signal
 		{
-			printf("Packet error at %d/%d (512): '%c'\n", i, numPackets, received);
+			printf("Packet error at %d/%d (%d): '%c'\n", i, numPackets, received, packetSize);
 			serial.Close();
 			delete [] filedata;
 			return;
 		}
 
-		serial.Send(encoded, encodedSize);
+		serial.Send((void*)source, packetSize);
 
 		packetOffset += packetSize;
 	}
 
 	if (leftoverBytes)
 	{
-		uint32_t encodedSize = Base64Encode(filedata + packetOffset, leftoverBytes, encoded);
+		const char* source = (const char*)(encoded + packetOffset);
 
 		for (int j=0; j<64; ++j) // Progress bar
 			progress[j] = '=';//219;
-		printf("\r [%s] %.2f%%\r", progress, (i*100)/float(numPackets));
+		printf("\r [%s] %.2f%%\r", progress, 100.0f);
 
-		if (!WACK(serial, '~', received)) // Wait for a 'go' signal
+		if (!WACK(serial, '+', received)) // Wait for a 'go' signal
 		{
-			printf("Packet size error at %d/%d (512): '%c'\n", i, numPackets, received);
+			printf("Packet size error at %d/%d (%d): '%c'\n", i, numPackets, received, packetSize);
 			serial.Close();
 			delete [] filedata;
 			return;
 		}
 
-		serial.Send(&encodedSize, 4);
+		serial.Send(&leftoverBytes, 4);
 
-		if (!WACK(serial, '~', received)) // Wait for a 'go' signal
+		if (!WACK(serial, '+', received)) // Wait for a 'go' signal
 		{
-			printf("Packet error at %d/%d (512): '%c'\n", i, numPackets, received);
+			printf("Packet error at %d/%d (%d): '%c'\n", i, numPackets, received, packetSize);
 			serial.Close();
 			delete [] filedata;
 			return;
 		}
 
-		serial.Send(encoded, encodedSize);
+		serial.Send((void*)source, packetSize);
 
 		packetOffset += leftoverBytes;
 	}
@@ -656,7 +632,7 @@ void sendfile(char *_filename)
 	delete[] encoded;
 
 	serial.Close();
-	printf("%d bytes sent\n", packetOffset);
+	printf("%d bytes uploaded\n", packetOffset);
 
 	delete [] filedata;
 }
