@@ -70,23 +70,18 @@ void ksetcursor(const int _x, const int _y)
 	VPUConsoleSetCursor(kernelgfx, _x, _y);
 }
 
-int _task_add(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength)
+int _task_add(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength, const uint32_t _hartid, const uint32_t _parentStackPointer)
 {
 	int32_t prevcount = _ctx->numTasks;
 	if (prevcount >= TASK_MAX)
 		return 0;
 
-	// Reserve and clear task stack
-	const uint32_t stacksize = 1024;
-	uint32_t stackpointer = TASKMEM_END_STACK_END - ((_ctx->hartID*TASK_MAX+prevcount)*stacksize);
-	//__builtin_memset((void*)stackpointer, 0, stacksize);
-
 	// Insert the task before we increment task count
 	struct STask *task = &(_ctx->tasks[prevcount]);
-	task->regs[0] = (uint32_t)_task;	// Initial PC
-	task->regs[2] = stackpointer;		// Stack pointer
-	task->regs[8] = stackpointer;		// Frame pointer
-	task->runLength = _runLength;		// Time slice dedicated to this task
+	task->regs[0] = (uint32_t)_task;		// Initial PC
+	task->regs[2] = _parentStackPointer;	// Stack pointer
+	task->regs[8] = _parentStackPointer;	// Frame pointer
+	task->runLength = _runLength;			// Time slice dedicated to this task
 
 	char *np = (char*)_name;
 	int idx = 0;
@@ -162,7 +157,6 @@ uint32_t _task_switch_to_next(struct STaskContext *_ctx)
 			--_ctx->numTasks;
 			// Rewind back to OS Idle task (always guaranteed to be alive)
 			// We will visit it briefly once and then go to the next task in queue
-			_ctx->currentTask = 0;
 			currentTask = 0;
 		}
 		/*else
@@ -710,6 +704,21 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 		csrr a5, mepc; \
 		csrw 0x8A0, a5; \
 	");
+	// NOTE: 0x8A0 now contains PC of the task we halted to get here
+
+	// Set up ISR stack frame (always at the same location) so that we don't risk overflowing the current task's stack
+	uint32_t stackTop = (uint32_t)ISR_STACK_TOP;
+	asm (
+		"csrr a3, mhartid;"
+		"slli a3, a3, 10;"	// hartid*1024
+		"mv sp, %0;"
+		"sub sp, sp, a3;"	// offset stack
+		"mv s0, sp;"
+		: // Return values (empty)
+		: // Input parameters
+		"r" (stackTop)
+		: // Clobber list
+		"a3" );
 
 	// CSR[0x011] now contains A7 (SYSCALL number)
 	uint32_t value = read_csr(0x8B1);	// Instruction word or hardware bit - A7
@@ -1239,7 +1248,9 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					taskfunc task = (taskfunc)read_csr(0x8AC); // A2
 					enum ETaskState initialState = read_csr(0x8AD); // A3
 					const uint32_t runLength = read_csr(0x8AE); // A4
-					int retVal = _task_add(context, name, task,  initialState, runLength);
+					uint32_t parentSP = read_csr(0x8A2); // SP
+					// Using parent's stack pointer as the new task's stack pointer
+					int retVal = _task_add(context, name, task,  initialState, runLength, hartid, parentSP);
 					write_csr(0x8AA, retVal);
 				}
 				else if (value==16385) // task_switch_to_next

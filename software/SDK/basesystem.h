@@ -46,7 +46,7 @@
 // Temp memory
 #define KERNEL_TEMP_MEMORY				0x0204D580 // Temporary kernel memory (10880 bytes)
 // Serial buffers (first words are counters)
-#define UNUSED_BUFFER_BASE4				0x02050000 // Reserved for future (16384 bytes)
+#define ISR_STACK_TOP					0x02050000 // Interrupt service routine stack space (16384 bytes)
 #define UNUSED_BUFFER_BASE0				0x02054000 // Reserved for future (16384 bytes)
 #define UNUSED_BUFFER_BASE1				0x02058000 // Reserved for future (16384 bytes)
 #define UNUSED_BUFFER_BASE2				0x0205C000 // Reserved for future (16384 bytes)

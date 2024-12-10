@@ -4,6 +4,7 @@
 #include "device.h"
 #include "max3421e.h"
 #include "commandline.h"
+#include "rombase.h"
 #include "keyringbuffer.h"
 #include <string.h>
 #include <stdio.h>
@@ -306,7 +307,7 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 				}
 
 				// User tasks always boot on main CPU, and can then add their own tasks to the other CPUs
-				s_cliCtx.userTaskID = _task_add(tctx[0], command, _runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS);
+				s_cliCtx.userTaskID = _task_add(tctx[0], command, _runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS, 0, TASK_STACK_POINTER(0, 2, TASK_STACK_SIZE));
 
 				return 0;
 			}
@@ -344,17 +345,19 @@ int HandleCommandLine(struct STaskContext *taskctx)
 				s_cliCtx.cmdLen = 0;
 				s_cliCtx.cmdString[0] = 0;
 				++s_cliCtx.refreshConsoleOut;
-				// Stop task on main CPU
-				_task_exit_task_with_id(taskctx, s_cliCtx.userTaskID, 0); // Sig:0, terminate process if no debugger is attached
+
+				// NOTE: This has to be done in reverse order!
+				// NOTE: Sig:0, terminate process if no debugger is attached
+
+				// Stop task on main CPU except IDLE and CLI
+				for (int i=taskctx->numTasks-1; i>=2; i--)
+					_task_exit_task_with_id(taskctx, i, 0);
 
 				// Stop all other tasks on helper CPUs
 				{
 					struct STaskContext* tctx1 = _task_get_context(1);
-					for (uint32_t i=1; i<tctx1->numTasks; ++i)
+					for (int i=tctx1->numTasks-1; i>=1; i--)
 						_task_exit_task_with_id(tctx1, i, 0);
-					struct STaskContext* tctx2 = _task_get_context(2);
-					for (uint32_t i=1; i<tctx2->numTasks; ++i)
-						_task_exit_task_with_id(tctx2, i, 0);
 				}
 			}
 			break;

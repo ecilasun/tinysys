@@ -119,9 +119,10 @@ uint32_t TaskGetPC(struct STaskContext *_ctx, const uint32_t _taskid)
  * @param _task Task function
  * @param _initialState Initial state
  * @param _runLength Time slice dedicated to this task (can be overriden by calling TaskYield())
+ * @param _stackAddress Stack base address to use for the task
  * @return Task ID
  */
-int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength)
+int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength, const uint32_t _stackAddress)
 {
 	uint32_t context = (uint32_t)_ctx;
 	uint32_t name = (uint32_t)_name;
@@ -135,14 +136,15 @@ int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum E
 		"mv a2, %3;"
 		"mv a3, %4;"
 		"mv a4, %5;"
+		"mv a5, %6;"
 		"ecall;"
 		"mv %0, a0;" :
 		// Return values
 		"=r" (retval) :
 		// Input parameters
-		"r" (context), "r" (name), "r" (task), "r" (_initialState), "r" (_runLength) :
+		"r" (context), "r" (name), "r" (task), "r" (_initialState), "r" (_runLength), "r" (_stackAddress) :
 		// Clobber list
-		"a0", "a1", "a2", "a3", "a4", "a7"
+		"a0", "a1", "a2", "a3", "a4", "a5", "a7"
 	);
 
 	return retval;

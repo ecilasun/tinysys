@@ -153,8 +153,10 @@ int main()
 	*g_R = R;
 
 	// Start tasks
-	int taskID0 = TaskAdd(taskctx[0], "MandelTask", MandelTask, TS_RUNNING, ONE_MILLISECOND_IN_TICKS);
-	int taskID1 = TaskAdd(taskctx[1], "MandelTask", MandelTask, TS_RUNNING, ONE_MILLISECOND_IN_TICKS);
+	uint32_t* stackA = new uint32_t[1024];
+	uint32_t* stackB = new uint32_t[1024];
+	int taskID0 = TaskAdd(taskctx[0], "MandelTask", MandelTask, TS_RUNNING, ONE_MILLISECOND_IN_TICKS, (uint32_t)stackA);
+	int taskID1 = TaskAdd(taskctx[1], "MandelTask", MandelTask, TS_RUNNING, ONE_MILLISECOND_IN_TICKS, (uint32_t)stackB);
 
 	while(1)
 	{

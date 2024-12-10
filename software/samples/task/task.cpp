@@ -72,7 +72,8 @@ int main(int argc, char *argv[])
 	struct STaskContext *taskctx1 = TaskGetContext(1);
 
 	// Add a new tasks to run for each HART
-	int taskID1 = TaskAdd(taskctx1, "MyTaskOne", MyTaskOne, TS_RUNNING, QUARTER_MILLISECOND_IN_TICKS);
+	uint32_t* stackAddress = new uint32_t[1024];
+	int taskID1 = TaskAdd(taskctx1, "MyTaskOne", MyTaskOne, TS_RUNNING, QUARTER_MILLISECOND_IN_TICKS, (uint32_t)stackAddress);
 	if (taskID1== 0)
 	{
 		printf("Error: No room to add new task on CPU 1\n");

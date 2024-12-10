@@ -52,7 +52,7 @@ struct STaskContext *TaskGetContext(uint32_t _hartid);
 void *TaskGetSharedMemory();
 
 // Add a new task to the pool
-int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength);
+int TaskAdd(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength, const uint32_t _stackAddress);
 
 // Switch to next task and return its time slice
 uint32_t TaskSwitchToNext(struct STaskContext *_ctx);
