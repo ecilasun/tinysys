@@ -36,9 +36,7 @@ module tinysoc #(
 	// I2S
 	audiowires.def i2sconn,
 	// SDCard
-	sdcardwires.def sdconn,
-	// USB-A (host)
-	max3420wires.def usbaconn );
+	sdcardwires.def sdconn );
 
 // --------------------------------------------------
 // Bus lines
@@ -67,7 +65,6 @@ axi4if csrif0();				// Sub bus: CSR#0 file device (control registers)
 axi4if csrif1();				// Sub bus: CSR#1 file device (control registers)
 axi4if dmaif();					// Sub bus: DMA controller (memcopy)
 axi4if audioif();				// Sub bus: APU i2s audio output unit (raw audio)
-axi4if usbaif();				// Sub bus: USB-A controller (usb host interface)
 axi4if uartif();				// Sub bus: UART serial I/O for ESP32 communication
 axi4if mailif();				// Sub bus: MAIL mailbox for HART communication
 
@@ -290,7 +287,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // VPUC: 8xx20000  8xx2FFFF  4'b0010  64KB	 Video Processing Unit
 // SDCC: 8xx30000  8xx3FFFF  4'b0011  64KB	 SDCard SPI Unit
 // DMAC: 8xx40000  8xx4FFFF  4'b0100  64KB	 Direct Memory Access / Memcopy
-// USBA: 8xx50000  8xx5FFFF  4'b0101  64KB	 USB-A Host Interface Unit
+// ----: 8xx50000  8xx5FFFF  4'b0101  64KB	 Unused - reserved for future use
 // APUC: 8xx60000  8xx6FFFF  4'b0110  64KB	 Audio Processing Unit / Mixer
 // MAIL: 8xx70000  8xx7FFFF  4'b0111  64KB	 MAIL inter-HART comm (16Kbytes)
 // UART: 8xx80000  8xx8FFFF  4'b1000  64KB	 UART HART <-> ESP32-C6 comm
@@ -309,21 +306,19 @@ devicerouter devicerouter13inst(
 		4'b1000,		// UART ESP32 to RISC-V UART channel
 		4'b0111,		// MAIL Mailbox for HART-to-HART commmunication
 		4'b0110,		// APUC	Audio Processing Unit Command Fifo
-		4'b0101,		// USBA USB-A access via SPI
 		4'b0100,		// DMAC DMA Command Fifo
 		4'b0011,		// SDCC SDCard access via SPI
 		4'b0010,		// VPUC Graphics Processing Unit Command Fifo
 		4'b0001,		// LEDS Debug / Status LED interface
 		4'b0000}),		// SPAD Scratchpad for inter-core data transfer
 	.axi_s(devicebus),
-    .axi_m({csrif1, csrif0, uartif, mailif, audioif, usbaif, dmaif, spiif, vpucmdif, ledif, scratchif}));
+    .axi_m({csrif1, csrif0, uartif, mailif, audioif, dmaif, spiif, vpucmdif, ledif, scratchif}));
 
 // --------------------------------------------------
 // Interrupt wires
 // --------------------------------------------------
 
 wire keyirq;
-wire usbairq;
 wire uartirq;
 
 // --------------------------------------------------
@@ -378,15 +373,6 @@ commandqueue audiocmdinst(
 	.fifovalid(audiofifovalid),
     .devicestate(audiobufferswapcount));
 
-axi4usbc usbhostport(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.rst100n(rst100n),
-	.spibaseclock(clk100),
-	.usbcconn(usbaconn),
-	.usbirq(usbairq),
-	.s_axi(usbaif));
-
 axi4CSRFile #( .HARTID(4'd0)) csrfile0 (
 	.aclk(aclk),
 	.aresetn(aresetn),
@@ -398,7 +384,6 @@ axi4CSRFile #( .HARTID(4'd0)) csrfile0 (
 	.irqReq(irqReqHart0),
 	// External hardware interrupt wires
 	.keyirq(keyirq),
-	.usbirq(usbairq),
 	.uartirq(uartirq),
 	.hirq(hirq),
 	.rebootreq(~esp_reboot),
@@ -422,7 +407,6 @@ axi4CSRFile #( .HARTID(4'd1)) csrfile1 (
 	.irqReq(irqReqHart1),
 	// External hardware interrupt wires
 	.keyirq(keyirq),
-	.usbirq(usbairq),
 	.uartirq(uartirq),
 	.hirq(hirq),
 	.rebootreq(~esp_reboot),

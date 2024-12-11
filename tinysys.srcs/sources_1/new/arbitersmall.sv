@@ -85,39 +85,39 @@ always_comb begin
 	endcase
 end
 
-always_ff @(posedge aclk) begin
-	unique case(readstate)
-		INIT: begin
-			rgrant <= 0;
-			readstate <= ARBITRATE0;
-		end
-
-		ARBITRATE0: begin
-			readstate <= (|rreq) ? GRANTED : ARBITRATE0;
-			priority case(1'b1)
-				rreq[1]: begin rgrant <= 2'b10; rarbstate <= ARBITRATE1; end
-				rreq[0]: begin rgrant <= 2'b01; rarbstate <= ARBITRATE0; end
-				default: rgrant <= 2'b00;
-			endcase
-		end
-
-		ARBITRATE1: begin
-			readstate <= (|rreq) ? GRANTED : ARBITRATE1;
-			priority case(1'b1)
-				rreq[0]: begin rgrant <= 2'b01; rarbstate <= ARBITRATE0; end
-				rreq[1]: begin rgrant <= 2'b10; rarbstate <= ARBITRATE1; end
-				default: rgrant <= 2'b00;
-			endcase
-		end
-
-		GRANTED: begin
-			readstate <= rreqcomplete ? rarbstate : GRANTED;
-		end
-	endcase
-
+always_ff @(posedge aclk or negedge aresetn) begin
 	if (~aresetn) begin
 		readstate <= INIT;
 		rarbstate <= ARBITRATE0;
+	end else begin
+		unique case(readstate)
+			INIT: begin
+				rgrant <= 0;
+				readstate <= ARBITRATE0;
+			end
+
+			ARBITRATE0: begin
+				readstate <= (|rreq) ? GRANTED : ARBITRATE0;
+				priority case(1'b1)
+					rreq[1]: begin rgrant <= 2'b10; rarbstate <= ARBITRATE1; end
+					rreq[0]: begin rgrant <= 2'b01; rarbstate <= ARBITRATE0; end
+					default: rgrant <= 2'b00;
+				endcase
+			end
+
+			ARBITRATE1: begin
+				readstate <= (|rreq) ? GRANTED : ARBITRATE1;
+				priority case(1'b1)
+					rreq[0]: begin rgrant <= 2'b01; rarbstate <= ARBITRATE0; end
+					rreq[1]: begin rgrant <= 2'b10; rarbstate <= ARBITRATE1; end
+					default: rgrant <= 2'b00;
+				endcase
+			end
+
+			GRANTED: begin
+				readstate <= rreqcomplete ? rarbstate : GRANTED;
+			end
+		endcase
 	end
 end
 
@@ -200,39 +200,39 @@ always_comb begin
 	endcase
 end
 
-always_ff @(posedge aclk) begin
-	unique case(writestate)
-		INIT: begin
-			wgrant <= 0;
-			writestate <= ARBITRATE0;
-		end
-
-		ARBITRATE0: begin
-			writestate <= (|wreq) ? GRANTED : ARBITRATE0;
-			priority case(1'b1)
-				wreq[1]: begin wgrant <= 2'b10; warbstate <= ARBITRATE1; end
-				wreq[0]: begin wgrant <= 2'b01; warbstate <= ARBITRATE0; end
-				default: wgrant <= 2'b00;
-			endcase
-		end
-
-		ARBITRATE1: begin
-			writestate <= (|wreq) ? GRANTED : ARBITRATE1;
-			priority case(1'b1)
-				wreq[0]: begin wgrant <= 2'b01; warbstate <= ARBITRATE0; end
-				wreq[1]: begin wgrant <= 2'b10; warbstate <= ARBITRATE1; end
-				default: wgrant <= 2'b00;
-			endcase
-		end
-
-		GRANTED: begin
-			writestate <= wreqcomplete ? warbstate : GRANTED;
-		end
-	endcase
-
+always_ff @(posedge aclk or negedge aresetn) begin
 	if (~aresetn) begin
 		writestate <= INIT;
 		warbstate <= ARBITRATE0;
+	end else begin
+		unique case(writestate)
+			INIT: begin
+				wgrant <= 0;
+				writestate <= ARBITRATE0;
+			end
+
+			ARBITRATE0: begin
+				writestate <= (|wreq) ? GRANTED : ARBITRATE0;
+				priority case(1'b1)
+					wreq[1]: begin wgrant <= 2'b10; warbstate <= ARBITRATE1; end
+					wreq[0]: begin wgrant <= 2'b01; warbstate <= ARBITRATE0; end
+					default: wgrant <= 2'b00;
+				endcase
+			end
+
+			ARBITRATE1: begin
+				writestate <= (|wreq) ? GRANTED : ARBITRATE1;
+				priority case(1'b1)
+					wreq[0]: begin wgrant <= 2'b01; warbstate <= ARBITRATE0; end
+					wreq[1]: begin wgrant <= 2'b10; warbstate <= ARBITRATE1; end
+					default: wgrant <= 2'b00;
+				endcase
+			end
+
+			GRANTED: begin
+				writestate <= wreqcomplete ? warbstate : GRANTED;
+			end
+		endcase
 	end
 end
 

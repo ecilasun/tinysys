@@ -195,7 +195,7 @@ typedef enum logic [3:0] {
 fetchstate fetchmode = INIT;
 fetchstate postInject = FETCH;	// Where to go after injection ends
 
-always @(posedge aclk) begin
+always @(posedge aclk or negedge aresetn) begin
 	if (~aresetn) begin
 		PC <= 32'd0;
 		prevPC <= 32'd0;

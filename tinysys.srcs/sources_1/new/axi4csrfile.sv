@@ -17,7 +17,6 @@ module axi4CSRFile #(
 	output wire [1:0] irqReq,
 	// Incoming hardware interrupt requests
 	input wire keyirq,
-	input wire usbirq,
 	input wire uartirq,
 	input wire hirq,
 	// Reboot request via ESP32 pin held high
@@ -127,7 +126,7 @@ always @(posedge aclk) begin
 
 		softInterruptEna <= mieshadow[0] && mstatusIEshadow;										// Software interrupt
 		timerInterrupt <= mieshadow[1] && mstatusIEshadow && (wallclocktime >= timecmpshadow);		// Timer interrupt
-		hwInterrupt <= mieshadow[2] && mstatusIEshadow && (hirq || uartirq || keyirq || usbirq);	// Machine external interrupts
+		hwInterrupt <= mieshadow[2] && mstatusIEshadow && (hirq || uartirq || keyirq);				// Machine external interrupts
 	end
 end
 
@@ -256,7 +255,7 @@ always @(posedge aclk) begin
 						`CSR_TIMELO:			s_axi.rdata[31:0] <= wallclocktime[31:0];
 						`CSR_CYCLELO:			s_axi.rdata[31:0] <= cpuclocktime[31:0];
 						// Interrupt states of all hardware devices
-						`CSR_HWSTATE:			s_axi.rdata[31:0] <= {28'd0, hirq, uartirq, keyirq, usbirq};	// {hblank hit selected line, uart data arrived, sdcard inserted/removed, usb host traffic ocurred}
+						`CSR_HWSTATE:			s_axi.rdata[31:0] <= {28'd0, hirq, uartirq, keyirq, 1'b0};	// {hblank hit selected line, uart data arrived, sdcard inserted/removed, 0}
 						// Shadow of current program counter
 						`CSR_PROGRAMCOUNTER:	s_axi.rdata[31:0] <= pc_in;
 						// Pass through actual data

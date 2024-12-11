@@ -33,16 +33,7 @@ module tophat(
 	,output wire sdcard_clk
 	,output wire sdcard_mosi
 	,input wire sdcard_swtch
-	// USB-A via MAX4321
-	,input wire usba_miso
-	,output wire usba_ss_n
-	,output wire usba_clk
-	,output wire usba_mosi
-	,output wire usba_resn
-	,input wire usba_int
 	// Coprocessor via ESP32-C6-WROOM-1-N8 (only on rev. 2E boards)
-	//,output wire esp_txd0_out
-	//,input wire esp_rxd0_in
 	,output wire esp_txd1_out
 	,input wire esp_rxd1_in
 	,input wire esp_reboot
@@ -110,15 +101,6 @@ sdcardwires sdconn(
 	.mosi(sdcard_mosi),
 	.swtch(sdcard_swtch) );
 
-max3420wires usbaconn(
-	.miso(usba_miso),
-	.cs_n(usba_ss_n),
-	.clk(usba_clk),
-	.mosi(usba_mosi),
-	.resn(usba_resn),
-	.irq(usba_int),
-	.gpx(1'b0));
-
 // --------------------------------------------------
 // Audio wires
 // --------------------------------------------------
@@ -161,7 +143,6 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.vclk(vclk),
 	.vde(vde),
 	.vdat(vdat),
-	.sdconn(sdconn),
-	.usbaconn(usbaconn) );
+	.sdconn(sdconn) );
 
 endmodule

@@ -3,7 +3,6 @@
 #include "uart.h"
 #include "mini-printf.h"
 #include "serialinringbuffer.h"
-#include "usbhidhandler.h"
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -760,7 +759,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				// NOTE: We will handle _ALL_ device interrupts in this order
 				if (hwid&1)
 				{
-					HandleUSBHID();
+					/// Reserved for future use
 				}
 				else if (hwid&2)
 				{

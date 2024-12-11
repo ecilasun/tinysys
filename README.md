@@ -29,7 +29,6 @@ Of course, before you ask, it does run DOOM, and with sound and keyboard input!
 - 128 bit AXI4 bus with 32 bit address line
 - Memory arbiter for on-board devices
 - Memory mapped external hardware
-- USB host controller chip for HID access (WiP, some keyboards and mice work)
 - 16 bit stereo audio output chip (24 bit native in reality, might extend later)
 - DVI 1.0 compatible video output via external chip (12 bits per pixel, RGB or paletted modes)
 - SDCard for file I/O

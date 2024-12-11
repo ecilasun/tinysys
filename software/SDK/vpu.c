@@ -8,6 +8,7 @@
 #include "basesystem.h"
 #include "vpu.h"
 #include "core.h"
+#include "uart.h"
 #include <stdlib.h>
 
 // Video mode control word
@@ -468,13 +469,12 @@ void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _
  * @param _context Video context
  * @see VPUSetWriteAddress
  */
-void VPUConsoleResolve(struct EVideoContext *_context)
+void VPUConsoleResolve(struct EVideoContext *_context/*, const int echoToUART*/)
 {
 	uint32_t *vramBase = (uint32_t*)_context->m_cpuWriteAddressCacheAligned;
 	uint8_t *characterBase = (uint8_t*)CONSOLE_CHARACTERBUFFER_START;
 	uint8_t *colorBase = (uint8_t*)CONSOLE_COLORBUFFER_START;
 	uint32_t stride = _context->m_strideInWords;
-	uint32_t charstride = _context->m_consoleWidth;
 	const uint16_t H = _context->m_consoleHeight;
 	const uint16_t W = _context->m_consoleWidth;
 
@@ -482,11 +482,11 @@ void VPUConsoleResolve(struct EVideoContext *_context)
 	{
 		for (uint16_t cx=0; cx<W; ++cx)
 		{
-			int currentchar = characterBase[cx+cy*charstride];
+			int currentchar = characterBase[cx+cy*W];
 			if (currentchar<32)
 				continue;
 
-			uint8_t currentcolor = colorBase[cx+cy*charstride];
+			uint8_t currentcolor = colorBase[cx+cy*W];
 			uint32_t BG = (currentcolor>>4)&0x0F;
 			BG = (BG<<24) | (BG<<16) | (BG<<8) | BG;
 			uint32_t FG = currentcolor&0x0F;
@@ -517,6 +517,30 @@ void VPUConsoleResolve(struct EVideoContext *_context)
 			}
 		}
 	}
+
+	// For debug purposes
+	/*if (echoToUART)
+	{
+		uint8_t* reinterpLine = (uint8_t*)UNUSED_BUFFER_BASE0;
+		uint32_t rilCursor = 0;
+		// Move cursor to top left
+		UARTPrintf("\033[0;0H");
+		// Dump console to UART
+		for (uint16_t cy=0; cy<H; ++cy)
+		{
+			for (uint16_t cx=0; cx<W; ++cx)
+			{
+				int currentchar = characterBase[cx+cy*W];
+				if (currentchar<32)
+					currentchar = 32;
+				reinterpLine[rilCursor++] = currentchar;
+			}
+			reinterpLine[rilCursor++] = '\r';
+			reinterpLine[rilCursor++] = '\n';
+		}
+		UARTSendBlock(reinterpLine, rilCursor);
+	}*/
+
 	_context->m_consoleUpdated = 0;
 	CFLUSH_D_L1;
 }

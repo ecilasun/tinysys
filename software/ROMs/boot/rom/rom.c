@@ -6,8 +6,6 @@
 #include "vpu.h"
 #include "dma.h"
 #include "uart.h"
-#include "usbhost.h"
-#include "usbhidhandler.h"
 #include "serialinringbuffer.h"
 #include "keyringbuffer.h"
 #include "serialinput.h"
@@ -21,8 +19,6 @@
 
 // Names of registers for crash dump
 static const char *s_regnames[]={"pc", "ra", "sp", "gp", "tp", "t0", "t1", "t2", "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s1", "s1", "t3", "t4", "t5", "t6"};
-
-static struct SUSBHostContext s_usbhostctx;
 
 void ClearStatics()
 {
@@ -270,11 +266,9 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	LEDSetState(0x8);															// Oxxx
 	DeviceDefaultState(1);
 
-	// Start HID driver
+	// External hardware
 	LEDSetState(0xC);															// OOxx
-	InitializeUSBHIDData();
-	USBHostSetContext(&s_usbhostctx);
-	USBHostInit(1);
+	// TODO: Start any external hardware devices here
 
 	// Worker cores do not handle hardware interrupts by default,
 	// only task switching (timer) and software (illegal instruction)
@@ -317,21 +311,22 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 		}
 
 		// Refresh console output
+		// DEBUG: Optionally echo to UART if no task is intercepting it
 		if (kernelgfx->m_consoleUpdated)
-			VPUConsoleResolve(kernelgfx);
+			VPUConsoleResolve(kernelgfx/*, !taskctx[0]->interceptUART*/);
 
 		// Yield time as soon as we're done here (disables/enables interrupts)
 		clear_csr(mie, MIP_MTIP);
-		uint64_t currentTime = _task_yield();
+		/*uint64_t currentTime =*/ _task_yield();
 		set_csr(mie, MIP_MTIP);
 
 		// ----------------------------------------------------------------
 		// H/W related tasks which should't cause IRQs or be interrupted
 		// ----------------------------------------------------------------
 
-		clear_csr(mstatus, MSTATUS_MIE);
-		ProcessUSBDevice(currentTime);
-		set_csr(mstatus, MSTATUS_MIE);
+		/*clear_csr(mstatus, MSTATUS_MIE);
+		ProcessUSBDevice(currentTime); // TODO: Any device driver work goes here
+		set_csr(mstatus, MSTATUS_MIE);*/
 
 		// ----------------------------------------------------------------
 		// Handle serial input to feed to keyboard buffer if there are no

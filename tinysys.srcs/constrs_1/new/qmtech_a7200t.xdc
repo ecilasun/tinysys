@@ -163,16 +163,16 @@ set_property PULLTYPE PULLUP [get_ports esp_reboot]
 ## ------------------------------------------------------------------------------------------------------
 
 ## 2D/2E/2F
-set_property -dict {PACKAGE_PIN AB8 IOSTANDARD LVCMOS33} [get_ports usba_resn]
-set_property -dict {PACKAGE_PIN AB6 IOSTANDARD LVCMOS33} [get_ports usba_ss_n]
-set_property -dict {PACKAGE_PIN AA8 IOSTANDARD LVCMOS33} [get_ports usba_clk]
-set_property -dict {PACKAGE_PIN AB5 IOSTANDARD LVCMOS33} [get_ports usba_mosi]
-set_property -dict {PACKAGE_PIN AB7 IOSTANDARD LVCMOS33} [get_ports usba_miso]
-set_property -dict {PACKAGE_PIN AA4 IOSTANDARD LVCMOS33} [get_ports usba_int]
-## set_property -dict {PACKAGE_PIN AA5 IOSTANDARD LVCMOS33} [get_ports usba_gpx]
+## set_property -dict {PACKAGE_PIN AB8 IOSTANDARD LVCMOS33} [get_ports usba_resn]
+## set_property -dict {PACKAGE_PIN AB6 IOSTANDARD LVCMOS33} [get_ports usba_ss_n]
+## set_property -dict {PACKAGE_PIN AA8 IOSTANDARD LVCMOS33} [get_ports usba_clk]
+## set_property -dict {PACKAGE_PIN AB5 IOSTANDARD LVCMOS33} [get_ports usba_mosi]
+## set_property -dict {PACKAGE_PIN AB7 IOSTANDARD LVCMOS33} [get_ports usba_miso]
+## set_property -dict {PACKAGE_PIN AA4 IOSTANDARD LVCMOS33} [get_ports usba_int]
+## ## set_property -dict {PACKAGE_PIN AA5 IOSTANDARD LVCMOS33} [get_ports usba_gpx]
 
-set_property PULLTYPE PULLUP [get_ports usba_int]
-set_property PULLTYPE PULLUP [get_ports usba_resn]
+## set_property PULLTYPE PULLUP [get_ports usba_int]
+## set_property PULLTYPE PULLUP [get_ports usba_resn]
 
 ## ------------------------------------------------------------------------------------------------------
 ## NMI switch

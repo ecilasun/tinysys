@@ -79,10 +79,6 @@ void ShowVersion(struct EVideoContext *kernelgfx)
 	kprintf(" OS version          : " VERSIONSTRING " (%s)              \n", waterMark == 0 ? "IN-ROM" : "SDCARD");
 	kprintf(" Board               : issue 2E:2024 (%s)    \n", isEmulator ? "EMULATED" : "HARDWARE");
 	kprintf(" ARCH                : rv32im_zicsr_zifencei_zfinx \n");
-	// Report USB host chip version if found
-	uint8_t m3421rev = MAX3421ReadByte(rREVISION);
-	if (m3421rev != 0xFF)
-		kprintf(" MAX3421(USB Host)   : 0x%X                        \n", m3421rev);
 	// Video circuit on 2B has no info we can read so this is hardcoded
 	kprintf("                                                   \n\n");
 	VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
