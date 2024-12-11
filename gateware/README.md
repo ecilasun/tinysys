@@ -1,5 +1,5 @@
-# Latest Gateware Build is: v1.0C
-# Latest ESP32 ROM is: v1.0C
+# Latest Gateware Build is: r1.1D
+# Latest ESP32 ROM is: r1.1D
 # Latest Board version is: 2F
 
 # Gateware binary
@@ -20,6 +20,7 @@ r1.09: Added misaligned DMA support and removed ESP32/FPGA GPIO bridge device (t
 r1.0A: Added 64Kbytes of scratchpad RAM, shared across all cores, WNS relaxed to leave room for any future bug fixes<br>
 r1.0B: Minor device cleanup, reduced scratchpad to 16Kbytes, bumped mailbox to 16Kbytes<br>
 r1.0C: Added a third CPU, CLI improvement to ROM and other minor fixes<br>
+r1.1D: Improvements to reboot / task system and more ROM code cleanup, also updated file upload routines<br>
 
 # Device gateware
 
