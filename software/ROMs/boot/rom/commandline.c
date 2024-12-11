@@ -399,10 +399,12 @@ int HandleCommandLine(struct STaskContext *taskctx)
 
 void _CLITask()
 {
-	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
-
-	ShowVersion(kernelgfx);
 	s_cliCtx.refreshConsoleOut = 1;
+	s_cliCtx.cmdLen = 0;
+	s_cliCtx.cmdString[0] = 0;
+
+	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
+	ShowVersion(kernelgfx);
 
 	struct STaskContext *taskctx = _task_get_context(0);
 	while(1)
