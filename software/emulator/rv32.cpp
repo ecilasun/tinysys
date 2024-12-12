@@ -378,10 +378,10 @@ uint32_t CRV32::ALU(SDecodedInstruction& instr)
 			switch (instr.m_f3)
 			{
 				case 0b100: {
-					aluout = uint32_t(sign1ext / sign2ext);
+					aluout = instr.m_rval2 == 0 ? 0xFFFFFFFF : uint32_t(sign1ext / sign2ext);
 				} break; //  div
 				case 0b101: {
-					aluout = instr.m_rval1 / instr.m_rval2;
+					aluout = instr.m_rval2 == 0 ? 0xFFFFFFFF : instr.m_rval1 / instr.m_rval2;
 				} break; // divu
 				case 0b110: {
 					aluout = uint32_t(sign1ext % sign2ext);
@@ -863,6 +863,7 @@ void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 		else if (iswfi)
 		{
 			m_fetchstate = EFetchWFI;
+			m_PC = decoded.m_pc + 4;
 			doneFetching = true;
 		}
 		else if (isjal) // For JAL instructions, we can calculate the target immediately without having to execute
@@ -903,7 +904,7 @@ bool CRV32::FetchDecode(CBus* bus)
 	{
 		m_wficount = (m_wficount + 1) % 12;
 		CCSRMem* csr = bus->GetCSR(m_hartid);
-		if (m_wficount==0 || csr->m_irq)
+		if (m_wficount == 0 || csr->m_irq)
 			m_fetchstate = EFetchRead;
 		return true;
 	}
@@ -982,7 +983,6 @@ bool CRV32::Execute(CBus* bus)
 		uint32_t adjacentpc = instr.m_pc + 4;
 		uint32_t rwaddress = instr.m_rval1 + instr.m_immed;
 		uint32_t offsetpc = instr.m_pc + instr.m_immed;
-		uint32_t jumpabs = instr.m_rval1 + instr.m_immed;
 		uint32_t rdin = 0;
 		uint32_t rwen = 0;
 		uint32_t wdata = 0;
@@ -1020,7 +1020,7 @@ bool CRV32::Execute(CBus* bus)
 
 			case OP_JALR:
 				m_branchresolved = 1;
-				m_branchtarget = jumpabs;
+				m_branchtarget = rwaddress;
 				rdin = adjacentpc;
 				rwen = 1;
 #if defined(CPU_STATS)
@@ -1230,9 +1230,9 @@ bool CRV32::Execute(CBus* bus)
 				else if (instr.m_opcode == OP_FLOAT_MSUB)
 					*D = A * B - C;
 				else if (instr.m_opcode == OP_FLOAT_NMSUB)
-					*D = -A * B + C;
+					*D = -(A * B - C);
 				else if (instr.m_opcode == OP_FLOAT_NMADD)
-					*D = -A * B - C;
+					*D = -(A * B + C);
 				else
 				{
 					fprintf(stderr, "- unknown floatop3\n");
@@ -1249,36 +1249,6 @@ bool CRV32::Execute(CBus* bus)
 
 				switch (instr.m_f7)
 				{
-					case 0b0000000: // fadd.s
-					{
-						m_cycles += 11;
-						*D = A + B;
-					}
-					break;
-					case 0b0000100: // fsub.s
-					{
-						m_cycles += 11;
-						*D = A - B;
-					}
-					break;
-					case 0b0001000: // fmul.s
-					{
-						m_cycles += 8;
-						*D = A * B;
-					}
-					break;
-					case 0b0001100: // fdiv.s
-					{
-						m_cycles += 28;
-						*D = A / B;
-					}
-					break;
-					case 0b0101100: // fsqrt.s
-					{
-						m_cycles += 28;
-						*D = sqrtf(A);
-					}
-					break;
 					case 0b0010000: // fsgnj.s / fsgnjn.s / fsgnjx.s
 					{
 						m_cycles += 1;
@@ -1287,27 +1257,6 @@ bool CRV32::Execute(CBus* bus)
 							case 0b000: rdin = (instr.m_rval2 & 0x80000000) | (instr.m_rval1 & 0x7FFFFFFF); break;
 							case 0b001: rdin = ((instr.m_rval2 & 0x80000000) ^ 0x80000000) | (instr.m_rval1 & 0x7FFFFFFF); break;
 							default: rdin = ((instr.m_rval2 & 0x80000000) ^ (instr.m_rval1 & 0x80000000)) | (instr.m_rval1 & 0x7FFFFFFF); break;
-						}
-					}
-					break;
-					case 0b0010100: // fmin.s / fmax.s
-					{
-						m_cycles += 1;
-						switch (instr.m_f3)
-						{
-							case 0b000: *D = fminf(A, B); break;
-							case 0b001: *D = fmaxf(A, B); break;
-						}
-					}
-					break;
-					case 0b1010000: // feq.s / flt.s / fle.s
-					{
-						m_cycles += 2;
-						switch (instr.m_f3)
-						{
-							case 0b010: rdin = A == B ? 1 : 0; break;
-							case 0b001: rdin = A < B ? 1 : 0; break;
-							case 0b000: rdin = A <= B ? 1 : 0; break;
 						}
 					}
 					break;
@@ -1337,11 +1286,32 @@ bool CRV32::Execute(CBus* bus)
 						}
 					}
 					break;
+					case 0b0010100: // fmin.s / fmax.s
+					{
+						m_cycles += 1;
+						switch (instr.m_f3)
+						{
+							case 0b000: *D = A < B ? A : B; break;
+							case 0b001: *D = A > B ? A : B; break;
+						}
+					}
+					break;
+					case 0b1010000: // feq.s / flt.s / fle.s
+					{
+						m_cycles += 2;
+						switch (instr.m_f3)
+						{
+							case 0b010: rdin = A == B ? 1 : 0; break;
+							case 0b001: rdin = A < B ? 1 : 0; break;
+							case 0b000: rdin = A <= B ? 1 : 0; break;
+						}
+					}
+					break;
 					case 0b1100000: // fcvtws / fcvtwus
 					{
 						m_cycles += 8; // fcvtws
 						//m_cycles += 5; // fcvtwus
-						if (instr.m_rs2==0b00000) // Signed
+						if (instr.m_rs2 == 0b00000) // Signed
 							rdin = (int32_t)A;
 						else // Unsigned - 5'b00000
 							rdin = (uint32_t)A;
@@ -1352,8 +1322,41 @@ bool CRV32::Execute(CBus* bus)
 						m_cycles += 6;
 						if (instr.m_rs2 == 0b00000) // signed
 							*D = (float)((double)((int64_t)instr.m_rval1));
-						else // unsigned
-							*D = (float)((double)((uint64_t)instr.m_rval1));
+						else // unsigned - NOTE: doing the abs() trick the hardware does here
+							*D = (float)((double)((uint64_t)(instr.m_rval1&0x7FFFFFFF)));
+					}
+					break;
+					case 0b0000000: // fadd.s
+					{
+						m_cycles += 11;
+						*D = A + B;
+					}
+					break;
+					case 0b0000100: // fsub.s
+					{
+						m_cycles += 11;
+						*D = A - B;
+					}
+					break;
+					case 0b0001000: // fmul.s
+					{
+						m_cycles += 8;
+						*D = A * B;
+					}
+					break;
+					case 0b0001100: // fdiv.s
+					{
+						m_cycles += 28;
+						if (instr.m_rval2 == 0)
+							rdin = 0x7fc00000;
+						else
+							*D = A / B;
+					}
+					break;
+					case 0b0101100: // fsqrt.s
+					{
+						m_cycles += 28;
+						*D = sqrtf(abs(A)); // NOTE: hardware drops sign bit i.e. abs()
 					}
 					break;
 					case 0b1100001: // fcvtswu4sat.s

@@ -38,7 +38,7 @@ void qembd_vidinit()
 
 void qembd_fillrect(uint8_t *src, uint16_t x, uint16_t y, uint16_t xsize, uint16_t ysize)
 {
-	// TODO: Use DMA to blit the window
+	// TODO: Use unaligned DMA to blit the window
 	for (int py = 0; py < ysize; py++) {
 		int offset = (y + py) * DISPLAY_WIDTH + x;
 		for (int px = 0; px < xsize; px++)

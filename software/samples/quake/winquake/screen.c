@@ -61,7 +61,7 @@ qboolean	scr_skipupdate;
 
 qboolean	block_drawing;
 
-#define SHOW_FPS 1
+//#define SHOW_FPS 1
 
 #ifdef SHOW_FPS
 static float	scr_frame_dt;
