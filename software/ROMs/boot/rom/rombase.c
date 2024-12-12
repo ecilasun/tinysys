@@ -1084,7 +1084,6 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				{
 					// Terminate and remove from list of running tasks
 					_task_exit_current_task(taskctx);
-					write_csr(0x8AA, 0x0);
 					// Task return value is store in AO
 					uint32_t retval = read_csr(0x8AA); // A0
 					write_csr(0x8AA, retval);

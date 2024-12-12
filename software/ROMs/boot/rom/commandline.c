@@ -11,7 +11,7 @@
 #include <stdlib.h>
 
 // Console input context
-static struct SCommandLineContext s_cliCtx;
+extern struct SCommandLineContext* s_cliCtx;
 
 // Names of task states for process dump
 static const char *s_taskstates[]={ "NONE", "HALT", "EXEC", "TERM", "DEAD"};
@@ -24,20 +24,20 @@ static const char *s_taskstates[]={ "NONE", "HALT", "EXEC", "TERM", "DEAD"};
 
 struct SCommandLineContext* CLIGetContext()
 {
-	return &s_cliCtx;
+	return s_cliCtx;
 }
 
 void CLIClearStatics()
 {
-	s_cliCtx.cmdLen = 0;
-	s_cliCtx.refreshConsoleOut = 1;
-	s_cliCtx.execParamCount = 1;
-	s_cliCtx.userTaskID = 0;
-	s_cliCtx.cmdString[0] = 0;
-	s_cliCtx.pathtmp[0] = 0;
-	s_cliCtx.startAddress = 0;
-	s_cliCtx.execName[0] = 0;
-	s_cliCtx.execParam0[0] = 0;
+	s_cliCtx->cmdLen = 0;
+	s_cliCtx->refreshConsoleOut = 1;
+	s_cliCtx->execParamCount = 1;
+	s_cliCtx->userTaskID = 0;
+	s_cliCtx->cmdString[0] = 0;
+	s_cliCtx->pathtmp[0] = 0;
+	s_cliCtx->startAddress = 0;
+	s_cliCtx->execName[0] = 0;
+	s_cliCtx->execParam0[0] = 0;
 }
 
 // This task is a trampoline to the loaded executable
@@ -52,16 +52,16 @@ void __attribute__((aligned(64))) _runExecTask()
 		"sw zero, 12(sp);"	// Store argv[3] (have to end list with a nullptr)
 		".insn 0xFC000073;"	// Invalidate & Write Back D$ (CFLUSH.D.L1) - ensure we have a clean data cache
 		"fence.i;"			// Invalidate I$ - ensure loaded binary can be fetched as fresh instructions
-		"lw s0, %0;"		// Target branch address
-		"jalr s0;"			// Branch to the entry point
+		"lw t0, %0;"		// Target branch address
+		"jalr t0;"			// Branch to the entry point
 		"addi sp, sp, 16;"	// Restore stack
 		"infinite_loop:"	// If we somehow return here, we'll just loop forever until the task system kills us
 		"wfi;"
 		"j infinite_loop;"
-		: "=m" (s_cliCtx.startAddress)
-		: "r" (s_cliCtx.execName), "r" (s_cliCtx.execParam0), "r" (s_cliCtx.execParamCount)
+		: "=m" (s_cliCtx->startAddress)
+		: "r" (s_cliCtx->execName), "r" (s_cliCtx->execParam0), "r" (s_cliCtx->execParamCount)
 		// Clobber list
-		: "s0"
+		: "t0"
 	);
 	// NOTE: Execution should never reach here since the ELF will invoke ECALL(0x5D) to quit
 	// and will be removed from the task list, thus removing this function from the
@@ -226,25 +226,25 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 			kprintf("usage: cd path\n");
 		else
 		{
-			if (krealpath(path, s_cliCtx.pathtmp))
+			if (krealpath(path, s_cliCtx->pathtmp))
 			{
 				// Append missing trailing slash
-				int L = strlen(s_cliCtx.pathtmp);
+				int L = strlen(s_cliCtx->pathtmp);
 
-				if (L != 0 && s_cliCtx.pathtmp[L-1] != '/')
-					strcat(s_cliCtx.pathtmp, "/");
+				if (L != 0 && s_cliCtx->pathtmp[L-1] != '/')
+					strcat(s_cliCtx->pathtmp, "/");
 				
 				// Finally, change to this new path
-				FRESULT cwdres = f_chdir(s_cliCtx.pathtmp);
+				FRESULT cwdres = f_chdir(s_cliCtx->pathtmp);
 				if (cwdres == FR_OK)
-					SetWorkDir(s_cliCtx.pathtmp);
+					SetWorkDir(s_cliCtx->pathtmp);
 				else
 				{
-					kprintf("Invalid: '%s'\n", s_cliCtx.pathtmp);
+					kprintf("Invalid: '%s'\n", s_cliCtx->pathtmp);
 				}
 			}
 			else
-				kprintf("Invalid: '%s'\n", s_cliCtx.pathtmp);
+				kprintf("Invalid: '%s'\n", s_cliCtx->pathtmp);
 		}
 	}
 	else // Anything else defers to being a command on storage
@@ -271,38 +271,38 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 			strcat(filename, ".elf");		// We don't expect command to contain the .elf extension
 
 			// First parameter is excutable name
-			s_cliCtx.startAddress = LoadExecutable(filename, 0, false);
+			s_cliCtx->startAddress = LoadExecutable(filename, 0, false);
 			// TODO: Scan and push all argv and the correct argc onto stack
 
 			// If we could not find the executable where we are, look into the 'sys/bin' directory
-			if (s_cliCtx.startAddress == 0x0)
+			if (s_cliCtx->startAddress == 0x0)
 			{
 				strcpy(filename, "sd:/sys/bin/");
 				strcat(filename, command);
 				strcat(filename, ".elf");
-				s_cliCtx.startAddress = LoadExecutable(filename, 0, false);
+				s_cliCtx->startAddress = LoadExecutable(filename, 0, false);
 			}
 
 			// If we succeeded in loading the executable, the trampoline task can branch into it.
 			// NOTE: Without code relocation or virtual memory, two executables will ovelap when loaded
 			// even though each gets a new task slot assigned.
 			// This will cause corruption of the runtime environment.
-			if (s_cliCtx.startAddress != 0x0)
+			if (s_cliCtx->startAddress != 0x0)
 			{
-				strncpy(s_cliCtx.execName, filename, 32);
+				strncpy(s_cliCtx->execName, filename, 32);
 
 				const char *param = strtok(NULL, " ");
 				// Change working directory
 				if (!param)
-					s_cliCtx.execParamCount = 1;
+					s_cliCtx->execParamCount = 1;
 				else
 				{
-					strncpy(s_cliCtx.execParam0, param, 32);
-					s_cliCtx.execParamCount = 2;
+					strncpy(s_cliCtx->execParam0, param, 32);
+					s_cliCtx->execParamCount = 2;
 				}
 
 				// User tasks always boot on main CPU, and can then add their own tasks to the other CPUs
-				s_cliCtx.userTaskID = _task_add(tctx[0], command, _runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS, 0, TASK_STACK_POINTER(0, 2, TASK_STACK_SIZE));
+				s_cliCtx->userTaskID = _task_add(tctx[0], command, (taskfunc)_runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS, 0, TASK_STACK_POINTER(0, 2, TASK_STACK_SIZE));
 
 				return 0;
 			}
@@ -329,7 +329,7 @@ int HandleCommandLine(struct STaskContext *taskctx)
 			case 13:	// Return / Enter
 			{
 				// Properly terminate the command string
-				s_cliCtx.cmdString[s_cliCtx.cmdLen] = 0;
+				s_cliCtx->cmdString[s_cliCtx->cmdLen] = 0;
 				execcmd++;
 			}
 			break;
@@ -337,9 +337,9 @@ int HandleCommandLine(struct STaskContext *taskctx)
 			case 3:		// EXT (Ctrl+C) - BREAK
 			{
 				// Return with empty command string
-				s_cliCtx.cmdLen = 0;
-				s_cliCtx.cmdString[0] = 0;
-				++s_cliCtx.refreshConsoleOut;
+				s_cliCtx->cmdLen = 0;
+				s_cliCtx->cmdString[0] = 0;
+				++s_cliCtx->refreshConsoleOut;
 
 				// NOTE: This has to be done in reverse order!
 				// NOTE: Sig:0, terminate process if no debugger is attached
@@ -359,17 +359,17 @@ int HandleCommandLine(struct STaskContext *taskctx)
 
 			case 8:		// Backspace
 			{
-				s_cliCtx.cmdLen--;
-				++s_cliCtx.refreshConsoleOut;
-				if (s_cliCtx.cmdLen<0)
-					s_cliCtx.cmdLen = 0;
+				s_cliCtx->cmdLen--;
+				++s_cliCtx->refreshConsoleOut;
+				if (s_cliCtx->cmdLen<0)
+					s_cliCtx->cmdLen = 0;
 			}
 			break;
 
 			case 27:	// ESC
 			{
-				s_cliCtx.cmdLen = 0;
-				++s_cliCtx.refreshConsoleOut;
+				s_cliCtx->cmdLen = 0;
+				++s_cliCtx->refreshConsoleOut;
 				// TODO: Erase current line
 			}
 			break;
@@ -379,10 +379,10 @@ int HandleCommandLine(struct STaskContext *taskctx)
 				// Do not enqueue characters into command string if we're running some app
 				if(taskctx->numTasks <= 2)
 				{
-					++s_cliCtx.refreshConsoleOut;
-					s_cliCtx.cmdString[s_cliCtx.cmdLen++] = (char)asciicode;
-					if (s_cliCtx.cmdLen > 126)
-						s_cliCtx.cmdLen = 126;
+					++s_cliCtx->refreshConsoleOut;
+					s_cliCtx->cmdString[s_cliCtx->cmdLen++] = (char)asciicode;
+					if (s_cliCtx->cmdLen > 126)
+						s_cliCtx->cmdLen = 126;
 				}
 			}
 			break;
@@ -394,9 +394,9 @@ int HandleCommandLine(struct STaskContext *taskctx)
 
 void _CLITask()
 {
-	s_cliCtx.refreshConsoleOut = 1;
-	s_cliCtx.cmdLen = 0;
-	s_cliCtx.cmdString[0] = 0;
+	s_cliCtx->refreshConsoleOut = 1;
+	s_cliCtx->cmdLen = 0;
+	s_cliCtx->cmdString[0] = 0;
 
 	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
 	ShowVersion(kernelgfx);
@@ -408,11 +408,11 @@ void _CLITask()
 		execcmd = HandleCommandLine(taskctx);
 
 		// Report task termination and reset device to default state
-		struct STask *task = &taskctx->tasks[s_cliCtx.userTaskID];
+		struct STask *task = &taskctx->tasks[s_cliCtx->userTaskID];
 		if (task->state == TS_TERMINATED)
 		{
 			task->state = TS_UNKNOWN;
-			++s_cliCtx.refreshConsoleOut;
+			++s_cliCtx->refreshConsoleOut;
 			taskctx->interceptUART = 0;
 			DeviceDefaultState(0);
 		}
@@ -423,22 +423,22 @@ void _CLITask()
 			if (execcmd)
 			{
 				kprintf("\n");
-				s_cliCtx.refreshConsoleOut += ExecuteCmd(s_cliCtx.cmdString, kernelgfx);
+				s_cliCtx->refreshConsoleOut += ExecuteCmd(s_cliCtx->cmdString, kernelgfx);
 				// Reset command string
-				s_cliCtx.cmdLen = 0;
-				s_cliCtx.cmdString[0] = 0;
+				s_cliCtx->cmdLen = 0;
+				s_cliCtx->cmdString[0] = 0;
 			}
 
-			if (s_cliCtx.refreshConsoleOut)
+			if (s_cliCtx->refreshConsoleOut)
 			{
-				s_cliCtx.refreshConsoleOut = 0;
+				s_cliCtx->refreshConsoleOut = 0;
 				// properly terminate the command string
-				s_cliCtx.cmdString[s_cliCtx.cmdLen] = 0;
+				s_cliCtx->cmdString[s_cliCtx->cmdLen] = 0;
 				// Rewind cursor and print the command string
 				int cx,cy;
 				kgetcursor(&cx, &cy);
 				ksetcursor(0, cy);
-				kprintf("%s>%s ", GetWorkDir(), s_cliCtx.cmdString);
+				kprintf("%s>%s ", GetWorkDir(), s_cliCtx->cmdString);
 			}
 		}
 

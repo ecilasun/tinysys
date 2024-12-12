@@ -76,6 +76,7 @@
 		"stdbool.h": "c",
 		"string.h": "c",
 		"usbhidhandler.h": "c",
-		"uart.h": "c"
+		"uart.h": "c",
+		"device.h": "c"
 	}
 }

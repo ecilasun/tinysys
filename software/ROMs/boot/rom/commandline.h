@@ -1,5 +1,6 @@
 #include "basesystem.h"
 
+// Console input and user ELF context
 struct SCommandLineContext
 {
 	int32_t cmdLen;
@@ -9,7 +10,7 @@ struct SCommandLineContext
 	char cmdString[128];
 	char pathtmp[PATH_MAX];
 	uint32_t startAddress;
-	char execName[33];
+	char execName[36];
 	char execParam0[33];
 };
 
