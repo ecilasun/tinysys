@@ -1341,7 +1341,10 @@ bool CRV32::Execute(CBus* bus)
 					{
 						m_cycles += 8; // fcvtws
 						//m_cycles += 5; // fcvtwus
-						rdin = (int)A;
+						if (instr.m_rs2==0b00000) // Signed
+							rdin = (int32_t)A;
+						else // Unsigned - 5'b00000
+							rdin = (uint32_t)A;
 					}
 					break;
 					case 0b1101000: // fcvtsw / fcvtwus
