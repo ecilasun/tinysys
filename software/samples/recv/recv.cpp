@@ -16,25 +16,7 @@
 
 #include <stdio.h>
 #include <string.h>
-
-static const uint8_t base64lookup[256] = {
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, // 0-15
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, // 16-31
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 62, 64, 64, 64, 63, // 32-47
-    52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 64, 64, 64, 64, 64, 64, // 48-63
-    64, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, // 64-79
-    15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 64, 64, 64, 64, 64, // 80-95
-    64, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, // 96-111
-    41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 64, 64, 64, 64, 64, // 112-127
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, // 128-143
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, // 144-159
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, // 160-175
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, // 176-191
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, // 192-207
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, // 208-223
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, // 224-239
-    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64  // 240-255
-};
+#include <stdlib.h>
 
 void DrawProgress(struct EVideoContext* osVideoContext, const uint32_t bytesWritten, const uint32_t filebytesize, const char* filename, uint8_t* framebuffer, int state)
 {
@@ -94,23 +76,25 @@ void DrawProgress(struct EVideoContext* osVideoContext, const uint32_t bytesWrit
 	CFLUSH_D_L1;
 }
 
+void cleanupComms()
+{
+	struct STaskContext* taskctx = TaskGetContext(0);
+	taskctx->interceptUART = 0;
+}
+
 int main()
 {
+	atexit(cleanupComms);
+
+	// NOTE: We have to be absolutely still with the UART chatter as the other side will not tolerate any noise other than ACK/NACK
 	const char* NACK = "!";
 	const char* ACK = "+";
-
-	// // We have 65536-4 bytes of scratchpad memory to work with
-	// uint32_t tempMem = E32GetScratchpad();
-	// uint32_t *transferSize = (uint32_t*)tempMem;
-	// uint32_t *transferBuffer = (uint32_t*)(tempMem + 4);
-	// *transferBuffer = drain;
-	// *transferSize += 1;
 
 	// Emulator won't have a UART therefore we can't receive a file
 	uint32_t isEmulator = read_csr(0xF12) & 0x80000000 ? 0 : 1; // CSR_MARCHID is 0x80000000 for read hardware, 0x00000000 for emulator
 	if (isEmulator)
 	{
-		UARTPrintf("Emulator detected, cannot receive files\n");
+		UARTPrintf("! Emulator detected, cannot receive files\n");
 		return 0;
 	}
 
@@ -241,11 +225,11 @@ int main()
 			fclose(fp);
 		}
 		else
-			printf("ERROR: can't create file %s\n", fileName);
+			printf("! ERROR: can't create file %s\n", fileName);
 	}
 	else
 	{
-		printf("ERROR: decompression failed (received:%d, unpacked:%d, originalpacked:%d, originalunpacked:%d)\n", (int)bytesReceived, (int)unpacked, (int)encodedLen, (int)decodedLen);
+		printf("! ERROR: decompression failed (received:%d, unpacked:%d, originalpacked:%d, originalunpacked:%d)\n", (int)bytesReceived, (int)unpacked, (int)encodedLen, (int)decodedLen);
 	}
 
 	delete [] sourceBuffer;

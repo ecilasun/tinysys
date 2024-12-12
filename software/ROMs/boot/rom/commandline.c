@@ -48,13 +48,13 @@ void __attribute__((aligned(64))) _runExecTask()
 		"addi sp, sp, -16;"
 		"sw %3, 0(sp);"		// Store argc
 		"sw %1, 4(sp);"		// Store argv[1] (path to exec)
-		"sw %2, 8(sp);"		// Store argv[2] (exec params0)
-		"sw zero, 12(sp);"	// Store argv[3] (nullptr)
+		"sw %2, 8(sp);"		// Store argv[2] (exec param0)
+		"sw zero, 12(sp);"	// Store argv[3] (have to end list with a nullptr)
 		".insn 0xFC000073;"	// Invalidate & Write Back D$ (CFLUSH.D.L1) - ensure we have a clean data cache
 		"fence.i;"			// Invalidate I$ - ensure loaded binary can be fetched as fresh instructions
 		"lw s0, %0;"		// Target branch address
 		"jalr s0;"			// Branch to the entry point
-		"addi sp, sp, 16;"	// We most likely won't return here, and will lose stack space slowly. Need to restore this on task exit.
+		"addi sp, sp, 16;"	// Restore stack
 		"infinite_loop:"	// If we somehow return here, we'll just loop forever until the task system kills us
 		"wfi;"
 		"j infinite_loop;"
@@ -63,7 +63,6 @@ void __attribute__((aligned(64))) _runExecTask()
 		// Clobber list
 		: "s0"
 	);
-
 	// NOTE: Execution should never reach here since the ELF will invoke ECALL(0x5D) to quit
 	// and will be removed from the task list, thus removing this function from the
 	// execution pool.

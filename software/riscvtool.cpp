@@ -417,8 +417,8 @@ uint64_t AccumulateHash(const uint64_t inhash, const uint8_t byte)
 
 void ConsumeInitialTraffic(CSerialPort& serial)
 {
-	// When we first open the port, ESP32 will respond with a "ESP-ROM:esp32xxxxxx" message
-	// We need to make sure we have no incoming bytes left of that one first
+	// When we first open the port, ESP32 will respond with a "ESP-ROM:esp32xxxxxx" and tinysys version message
+	// or sometimes with nothing. We need to consume this traffic before we can send any commands
 	uint8_t startup = 0;
 	while (serial.Receive(&startup, 1))
 	{
@@ -483,10 +483,6 @@ void sendfile(char *_filename)
 		return;
 	}
 
-	ConsumeInitialTraffic(serial);
-
-	uint8_t received;
-
 	// Send the file bytes in chunks
 	uint32_t packetSize = 1024;
 	int worstSize = LZ4_compressBound(filebytesize);
@@ -499,6 +495,10 @@ void sendfile(char *_filename)
 	// Now we can work out how many packets we need to send
 	uint32_t numPackets = encodedSize / packetSize;
 	uint32_t leftoverBytes = encodedSize % packetSize;
+
+	uint8_t received;
+
+	ConsumeInitialTraffic(serial);
 
 	// Start the receiver app on the other end
 	snprintf(tmpstring, 128, "recv");

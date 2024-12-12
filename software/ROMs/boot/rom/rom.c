@@ -1,6 +1,5 @@
 // Boot ROM
 
-#include "rvcrt0.h"
 #include "rombase.h"
 #include "apu.h"
 #include "vpu.h"

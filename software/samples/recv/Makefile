@@ -39,6 +39,9 @@ objs  :=
 $(TARGET):
 	$(RISCV_GCC) $(incs) -o $(TARGET) $(wildcard $(src_dir)/*.cpp) $(libs) $(RISCV_GCC_OPTS)
 
+dump:
+	$(RISCV_OBJDUMP) $(TARGET) -x -D -S >> $(TARGET).txt
+
 clean:
 ifeq ($(UNAME), Windows)
 	del $(TARGET)

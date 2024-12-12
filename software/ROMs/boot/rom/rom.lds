@@ -22,26 +22,18 @@ SECTIONS
   /*--------------------------------------------------------------------*/
 
   /* boot code */
-  .boot :
+  .text :
   {
-     /* _start at top of binary blob */
-     . = 0x00000000;
-     *(.boot)
-     _boot = .;
+	. = 0x00000000;
+    *(.text)
+    *(.text.*)
+    *(.gnu.linkonce.t.*)
   }
 
   /* Begining of code and text segment */
   /* . = 0x00010000; */
   _ftext = .;
   PROVIDE( eprol = . );
-
-  /* text: Program code section */
-  .text : 
-  {
-    *(.text)
-    *(.text.*)
-    *(.gnu.linkonce.t.*)
-  }
 
   /* init: Code to execute before main (called by crt0.S) */
   .init : 
