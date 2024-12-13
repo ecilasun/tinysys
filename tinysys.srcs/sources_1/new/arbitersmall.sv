@@ -85,7 +85,7 @@ always_comb begin
 	endcase
 end
 
-always_ff @(posedge aclk or negedge aresetn) begin
+always_ff @(posedge aclk) begin
 	if (~aresetn) begin
 		readstate <= INIT;
 		rarbstate <= ARBITRATE0;
@@ -200,7 +200,7 @@ always_comb begin
 	endcase
 end
 
-always_ff @(posedge aclk or negedge aresetn) begin
+always_ff @(posedge aclk) begin
 	if (~aresetn) begin
 		writestate <= INIT;
 		warbstate <= ARBITRATE0;

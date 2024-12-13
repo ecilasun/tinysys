@@ -341,7 +341,7 @@ bit [31:0] adjacentPC;
 
 // EXEC
 always @(posedge aclk) begin
-	if (~aresetn) begin
+	if (~aresetn || cpuresetreq) begin
 		m_ibus.raddr <= 32'd0;
 		m_ibus.waddr <= 32'd0;
 		m_ibus.rstrobe <= 1'b0;
@@ -808,12 +808,6 @@ always @(posedge aclk) begin
 				ctlmode <= m_ibus.wdone ? READINSTR : SYSWAIT;
 			end
 		endcase
-
-		if (cpuresetreq) begin
-			// This will cause this core to jump directly to the reset vector,
-			// after waiting for the pending instructions to drain from the FIFO
-			ctlmode <= INIT;
-		end
 	end
 end
 

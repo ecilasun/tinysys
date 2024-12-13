@@ -45,7 +45,7 @@ uint8_t* SDCardGetPhysicalBlock(uint32_t blockaddress)
 	// We can fit 2048 blocks per mbyte
 	uint32_t mbyteblock = blockaddress / 2048;
 	uint32_t blockoffset = blockaddress % 2048;
-	uint32_t byteoffset = blockoffset * 512;
+	uint32_t byteoffset = blockoffset * 512; // block address is divided by 512
 
 	if (!s_alloctable[mbyteblock])
 	{
@@ -54,7 +54,7 @@ uint8_t* SDCardGetPhysicalBlock(uint32_t blockaddress)
 		s_alloctable[mbyteblock] = (intptr_t)ptr;
 	}
 
-	//printf("Total memory used:%d MBytes (block#:%d, offset:%d ptr:%llx)\n", s_blockcount, mbyteblock, byteoffset, (size_t)s_alloctable[mbyteblock]);
+	//printf("Total memory used:%d MBytes (block#:%08X, offset:%08X ptr:%llx)\n", s_blockcount, mbyteblock, byteoffset, (size_t)s_alloctable[mbyteblock]);
 
 	intptr_t physical = s_alloctable[mbyteblock] + byteoffset;
 
@@ -78,7 +78,10 @@ int SDIOControl(const uint8_t cmd, void* buffer)
 int SDReadBlock(uint32_t blockaddress, uint8_t* datablock)
 {
 	if (blockaddress >= 262144)
+	{
+		printf("Error: out of bounds when reading SDCard block\n");
 		return -1;
+	}
 	uint8_t* source = SDCardGetPhysicalBlock(blockaddress);
 	memcpy(datablock, source, 512);
 	return 0;
@@ -87,7 +90,10 @@ int SDReadBlock(uint32_t blockaddress, uint8_t* datablock)
 int SDWriteBlock(uint32_t blockaddress, const uint8_t* datablock)
 {
 	if (blockaddress >= 262144)
+	{
+		printf("Error: out of bounds when writing SDCard block\n");
 		return -1;
+	}
 	uint8_t* target = SDCardGetPhysicalBlock(blockaddress);
 	memcpy(target, datablock, 512);
 	return 0;
@@ -96,7 +102,10 @@ int SDWriteBlock(uint32_t blockaddress, const uint8_t* datablock)
 int SDReadMultipleBlocks(uint8_t* datablock, uint32_t numblocks, uint32_t blockaddress)
 {
 	if (numblocks == 0)
+	{
+		printf("Error: reading zero SDCard blocks\n");
 		return -1;
+	}
 
 	uint32_t cursor = 0;
 
@@ -114,7 +123,10 @@ int SDReadMultipleBlocks(uint8_t* datablock, uint32_t numblocks, uint32_t blocka
 int SDWriteMultipleBlocks(const uint8_t* datablock, uint32_t numblocks, uint32_t blockaddress)
 {
 	if (numblocks == 0)
+	{
+		printf("Error: writing zero SDCard blocks\n");
 		return -1;
+	}
 
 	uint32_t cursor = 0;
 

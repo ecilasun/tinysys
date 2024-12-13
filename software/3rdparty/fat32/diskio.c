@@ -136,7 +136,12 @@ DRESULT disk_read (
 			res = RES_OK;
 		else
 #endif
+		{
 			res = RES_ERROR;
+#if !defined(DISABLE_FILESYSTEM) && defined(CAT_WINDOWS)
+			exit(-1);
+#endif
+		}
 
 		// translate the result code here
 
@@ -184,8 +189,13 @@ DRESULT disk_write (
 			if (SDWriteMultipleBlocks(buff, count, sector) != -1)
 				res = RES_OK;
 			else
-		#endif
+#endif
+			{
 				res = RES_ERROR;
+#if !defined(DISABLE_FILESYSTEM) && defined(CAT_WINDOWS)
+				exit(-1);
+#endif
+			}
 		}
 		break;
 		case DEV_USB :

@@ -59,7 +59,7 @@ static void jtag_task(void *arg)
 {
 	uint8_t* dtmp = (uint8_t*) malloc(RD_BUF_SIZE);
 
-	usb_serial_jtag_write_bytes((uint8_t*) "TinySys v1.1D\n", 14, portMAX_DELAY);
+	usb_serial_jtag_write_bytes((uint8_t*) "TinySys v1.1E\n", 14, portMAX_DELAY);
 
 	// Create a timer to reboot the system
 	const esp_timer_create_args_t reboot_timer_args = {
@@ -212,8 +212,7 @@ void app_main(void)
 	}
 	ESP_ERROR_CHECK( ret );
 
-	setvbuf(stdin, NULL, _IONBF, 0);
-
+	//setvbuf(stdin, NULL, _IONBF, 0);
 	// Enable blocking mode on stdin and stdout
 	//fcntl(fileno(stdout), F_SETFL, 0);
 	//fcntl(fileno(stdin), F_SETFL, 0);

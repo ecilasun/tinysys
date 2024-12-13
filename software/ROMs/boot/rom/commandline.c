@@ -17,7 +17,7 @@ extern struct SCommandLineContext* s_cliCtx;
 static const char *s_taskstates[]={ "NONE", "HALT", "EXEC", "TERM", "DEAD"};
 
 // Device version
-#define VERSIONSTRING "v1.1D"
+#define VERSIONSTRING "v1.1E"
 
 // File transfer timeout
 #define FILE_TRANSFER_TIMEOUT 1000
@@ -50,12 +50,12 @@ void __attribute__((aligned(64))) _runExecTask()
 		"sw %1, 4(sp);"		// Store argv[1] (path to exec)
 		"sw %2, 8(sp);"		// Store argv[2] (exec param0)
 		"sw zero, 12(sp);"	// Store argv[3] (have to end list with a nullptr)
-		".insn 0xFC000073;"	// Invalidate & Write Back D$ (CFLUSH.D.L1) - ensure we have a clean data cache
-		"fence.i;"			// Invalidate I$ - ensure loaded binary can be fetched as fresh instructions
-		"lw t0, %0;"		// Target branch address
+		".insn 0xFC000073;"	// Invalidate & Write Back D$ (CFLUSH.D.L1) - ensure that we have written all loaded code to memory
+		"fence.i;"			// Invalidate I$ - ensure loaded binary can be fetched as fresh instructions by the CPU
+		"lw t0, %0;"		// Set target branch address
 		"jalr t0;"			// Branch to the entry point
-		"addi sp, sp, 16;"	// Restore stack
-		"infinite_loop:"	// If we somehow return here, we'll just loop forever until the task system kills us
+		"addi sp, sp, 16;"	// We really won't come back here, but do the proper stack cleanup anyway
+		"infinite_loop:"	// However, if ra register was correct and we do somehow return here, we'll just loop forever until killed
 		"wfi;"
 		"j infinite_loop;"
 		: "=m" (s_cliCtx->startAddress)

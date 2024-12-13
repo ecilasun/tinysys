@@ -8,6 +8,12 @@
  * Please note that the actual screen scan-out is always done at 640x480 resolution,
  * therefore the 320x240 resolution is actually pixel doubled by hardware
  * which allows this trick to work.
+ * 
+ * /////////////// DANGER! ///////////////
+ * NOTE: HBlank interrupts are not recommended for general use. They have no access to any local
+ * variables or global variables in their parent executable, as they use the OS stack and environment.
+ * They can permanently cause damage to files or lock up the system if not implemented correctly.
+ * * /////////////// DANGER! ///////////////
  */
 
 #include "basesystem.h"
@@ -24,8 +30,7 @@ static struct EVideoSwapContext s_sc;
 
 // This is the HBlank interrupt handler
 // It will be called directly within OS context, therefore it has no access to any
-// local variables or global variables that are in this code (as all the existing registers & stack will be garbled).
-// Instead, use mailbox memory to store any data.
+// local variables or global variables.
 void HBlankInterruptHandler()
 {
 	volatile int *sharedmem = (volatile int*)TaskGetSharedMemory();
@@ -116,6 +121,10 @@ int main(int argc, char *argv[])
 	VPUSwapPages(vx, &s_sc);
 
 	// Set up HBlank interrupt to trigger in the middle of the screen
+	// WARNING! HBlank interrupt handler has no access to any local variables or global variables in this code
+	// as it runs in OS context.
+	// Also note that the handler will not throw any exceptions, and can't be stopped via normal means
+	// until it's uninstalled.
 	VPUSetHBlankHandler((uint32_t)HBlankInterruptHandler);
 	VPUSetHBlankScanline(240); // Bottom section of screen
 

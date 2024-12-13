@@ -116,6 +116,20 @@ decoder decoderinst(
 	leaveIllegalISR    93          100
 */
 
+/*
+For now, a software routine handles this
+logic [31:0] mcause;
+always @(*) begin
+	case (1'b1)
+		irqReq[0]				: begin mcause <= 32'h80000007; end  // timer
+		irqReq[1]				: begin mcause <= 32'h8000000B; end  // hardware
+		isecall					: begin mcause <= 32'h0000000B; end  // software - ecall
+		isebreak				: begin mcause <= 32'h00000003; end  // software - ebreak
+		isillegalinstruction	: begin mcause <= 32'h00000002; end  // software - illegal
+		default 				: begin mcause <= 32'h00000000; end  // none
+	endcase
+end*/
+
 bit [6:0] enterStartStop[0:11];
 bit [6:0] exitStartStop[0:11];
 
@@ -195,8 +209,8 @@ typedef enum logic [3:0] {
 fetchstate fetchmode = INIT;
 fetchstate postInject = FETCH;	// Where to go after injection ends
 
-always @(posedge aclk or negedge aresetn) begin
-	if (~aresetn) begin
+always @(posedge aclk) begin
+	if (~aresetn || cpuresetreq) begin
 		PC <= 32'd0;
 		prevPC <= 32'd0;
 		emitPC <= 32'd0;
@@ -205,6 +219,7 @@ always @(posedge aclk or negedge aresetn) begin
 		entryState <= 5'd0;
 		wficount <= 4'd0;
 		fetchmode <= INIT;
+		IR <= 32'd0;
 	end else begin
 		fetchena <= 1'b0;
 		ififowr_en <= 1'b0;
@@ -368,10 +383,11 @@ always @(posedge aclk or negedge aresetn) begin
 			STARTINJECT: begin
 				// NOTE: This destroys decoded values from the actual instruction
 				IR <= injectInstruction;
-				injectAddr <= injectAddr + 1;
-				fetchmode <= injectAddr == injectStop ? postInject : INJECT;
+				fetchmode <= (injectAddr == injectStop) ? postInject : INJECT;
 			end
 
+			// WARNING: Injection ignores all instruction handling and never advances the PC
+			// Care must be taken to not use any fetch-handled instructions in the 'fetch' ROM
 			INJECT: begin
 				ififowr_en <= ~ififofull;
 				ififodin <= {
@@ -383,8 +399,7 @@ always @(posedge aclk or negedge aresetn) begin
 					rs1, rs2, rs3, rd,
 					immed, emitPC};
 
-				// WARNING: Injection ignores all instruction handling and never advances the PC
-				// NOTE: We will spin here if instruction fifo is full
+				injectAddr <= injectAddr + 1;
 				fetchmode <= ~ififofull ? STARTINJECT : INJECT;
 			end
 
@@ -398,6 +413,7 @@ always @(posedge aclk or negedge aresetn) begin
 				// NOTE: control unit possibly hasn't set mtvec yet
 				PC <= mtvec;
 
+				// Wait until control unit has executed everything in the FIFO
 				// This ensures that the entry routine turns off global interrupts
 				// so that the next time around we don't get irqReq, and also any
 				// change to mtvec to be reflected properly
@@ -410,6 +426,7 @@ always @(posedge aclk or negedge aresetn) begin
 				// NOTE: control unit possibly hasn't set mepc yet
 				PC <= mepc;
 
+				// Wait until control unit has executed everything in the FIFO
 				// This ensures that the entry routine turns on global interrupts
 				// so that the next time around we get irqReq, and also that a
 				// change to mepc by a task manager is reflected properly
@@ -418,19 +435,12 @@ always @(posedge aclk or negedge aresetn) begin
 			end
 
 			WFI: begin
-				// Wait for 16 clocks at most
+				// Wait for 16 clocks at most, as this is a hint rather than a blocking call
 				wficount <= wficount + 4'd1;
 				fetchena <= ((|irqReq) || wficount == 4'd0);
 				fetchmode <= ((|irqReq) || wficount == 4'd0) ? FETCH : WFI;
 			end
 		endcase
-
-		if (cpuresetreq) begin
-			// This will cause this core to jump directly to the reset vector,
-			// after waiting for the pending instructions to drain from the FIFO
-			fetchmode <= INIT;
-		end
-
 	end
 end
 
