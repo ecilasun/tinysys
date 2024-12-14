@@ -89,6 +89,7 @@ always_ff @(posedge aclk) begin
 	if (~aresetn) begin
 		readstate <= INIT;
 		rarbstate <= ARBITRATE0;
+		rgrant <= 0;
 	end else begin
 		unique case(readstate)
 			INIT: begin
@@ -204,6 +205,7 @@ always_ff @(posedge aclk) begin
 	if (~aresetn) begin
 		writestate <= INIT;
 		warbstate <= ARBITRATE0;
+		wgrant <= 0;
 	end else begin
 		unique case(writestate)
 			INIT: begin

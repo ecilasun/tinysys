@@ -87,13 +87,13 @@ _freezecore:						// Go to sleep (will be 'reset' by CPU#0 to jump to address in
 	wfi
 	j _freezecore
 
-    .align 6               // Align to 64-byte boundary
+	.align 6						// Align to 64-byte boundary
 _exit:
-	csrw mie,0;						// No external (hardware) interrupts
-	csrw mstatus,0;					// Disable all interrupts (mstatus:mie=0)
+	csrw mie,0						// No external (hardware) interrupts
+	csrw mstatus,0					// Disable all interrupts (mstatus:mie=0)
 _romfreeze:							// Halt if we ever attempt to exit ROM
-	wfi;
-	j _romfreeze;
+	wfi
+	j _romfreeze
 
 /// Data section
 

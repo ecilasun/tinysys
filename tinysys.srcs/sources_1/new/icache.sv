@@ -112,6 +112,7 @@ always_ff @(posedge aclk) begin
 		dccount <= 8'h00;
 		ctag <= 14'd0;
 		clineaddr <= 8'd0;
+		cacheaddress <= 32'd0;
 	end else begin
 		memreadstrobe <= 1'b0;
 		readdone <= 1'b0;

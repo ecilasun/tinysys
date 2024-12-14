@@ -13,14 +13,12 @@ module dataunit(
 	// To memory mapped devices
 	axi4if.master devicebus );
 
-logic datare = 1'b0;
-logic [3:0] datawe = 4'h0;
+logic datare;
+logic [3:0] datawe;
 wire [31:0] dataout;
-logic [31:0] addrs = 32'd0;
-logic [31:0] datain = 32'd0;
-logic [4:0] dreg = 5'd0;
-logic [4:0] wbtype = 5'd0;
-logic [1:0] dcacheop = 2'b00;
+logic [31:0] addrs;
+logic [31:0] datain;
+logic [1:0] dcacheop;
 
 wire rready, wready;
 
@@ -50,10 +48,12 @@ end
 
 always @(posedge aclk) begin
 	if (~aresetn) begin
-		datare <= 1'b0;
-		datawe <= 1'b0;
+		datare <= 1'd0;
+		datawe <= 4'd0;
 		dcacheop <= 2'b00;
 		datamode <= WCMD;
+		addrs <= 32'd0;
+		datain <= 32'd0;
 	end else begin
 		datare <= 1'b0;
 		datawe <= 1'b0;

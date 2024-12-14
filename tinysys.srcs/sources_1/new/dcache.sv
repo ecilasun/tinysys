@@ -141,6 +141,12 @@ always_ff @(posedge aclk) begin
 		flushtag <= 14'd0;
 		dccount <= 9'd0;
 		cachestate <= CRESET;
+		ptag <= 14'd0;
+		ctag <= 14'd0;
+		cline <= 9'd0;
+		coffset <= 4'd0;
+		inputdata <= 32'd0;
+		cacheaddress <= 32'd0;
 	end else begin
 		memwritestrobe <= 1'b0;
 		memreadstrobe <= 1'b0;
