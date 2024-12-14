@@ -47,7 +47,7 @@ bit [3:0] wficount;
 bit [31:0] prevPC;
 bit [31:0] PC;
 bit [31:0] emitPC;
-(* extract_reset = "yes" *) bit [31:0] IR;
+bit [31:0] IR;
 wire rready;
 wire [31:0] instruction;
 bit icacheflush;
@@ -411,7 +411,11 @@ always @(posedge aclk) begin
 
 				// Set up a jump to ISR
 				// NOTE: control unit possibly hasn't set mtvec yet
-				PC <= mtvec;
+				//if (mtvec[1:0] == 2'b00) begin
+					PC <= {mtvec[31:2],2'b00};
+				//end else begin
+				//	PC <= {mtvec[31:2],2'b00} + exceptioncode*4;
+				//end
 
 				// Wait until control unit has executed everything in the FIFO
 				// This ensures that the entry routine turns off global interrupts

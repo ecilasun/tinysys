@@ -15,6 +15,9 @@ logic [1:0] writestate;
 logic [1:0] raddrstate;
 logic [4:0] controlregister;
 
+parameter Baud = 460800;
+parameter ClkFrequency = 10000000;	// 10MHz
+
 // TX
 
 wire [7:0] outfifoout;
@@ -23,7 +26,7 @@ logic [7:0] datatotransmit;
 logic transmitbyte;
 logic outfifore;
 
-async_transmitter UART_transmit(
+async_transmitter #(.Baud(Baud), .ClkFrequency(ClkFrequency)) UART_transmit(
 	.clk(uartbaseclock),
 	.TxD_start(transmitbyte),
 	.TxD_data(datatotransmit),
@@ -72,7 +75,7 @@ wire infifofull, infifovalid, uartbyteavailable;
 logic [7:0] inuartbyte;
 logic infifowe;
 
-async_receiver UART_receive(
+async_receiver #(.Baud(Baud), .ClkFrequency(ClkFrequency)) UART_receive(
 	.clk(uartbaseclock),
 	.RxD(uartrx),
 	.RxD_data_ready(uartbyteavailable),
