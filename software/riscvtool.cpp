@@ -661,8 +661,8 @@ void showusage()
 {
 	printf("Usage:\n");
 	printf("riscvtool -reset [usbdevicename]\n");
-	printf("riscvtool -sendcmd [usbdevicename] command\n");
-	printf("riscvtool -sendfile [usbdevicename] binaryfilename\n");
+	printf("riscvtool -sendcmd command [usbdevicename]\n");
+	printf("riscvtool -sendfile binaryfilename [usbdevicename]\n");
 	printf("riscvtool -makerom binaryfilename groupbytesize outputfilename\n");
 	printf("riscvtool -makemem binaryfilename groupbytesize outputfilename\n");
 	printf("riscvtool -makebin binaryfilename groupbytesize outputfilename\n");
