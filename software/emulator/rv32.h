@@ -188,6 +188,7 @@ public:
 	uint32_t m_cycles{0};
 
 	void Reset();
+	void SecondaryReset();
 	bool Tick(uint64_t wallclock, CBus* bus);
 	bool FetchDecode(CBus* bus);
 	bool Execute(CBus* bus);

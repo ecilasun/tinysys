@@ -282,11 +282,16 @@ void DataCache::Discard()
 
 void CRV32::Reset()
 {
+	m_fetchstate = EFetchInit;
+	SecondaryReset();
+}
+
+void CRV32::SecondaryReset()
+{
 	m_icache.Reset();
 	m_dcache.Reset();
 
 	m_wficount = 0;
-	m_fetchstate = EFetchInit;
 
 	m_PC = m_resetvector;
 	m_branchresolved = 0;
@@ -302,6 +307,7 @@ void CRV32::Reset()
 
 	m_instructions.clear();
 	m_decodedBlocks.clear();
+	m_fetchstate = EFetchRead;
 }
 
 uint32_t CRV32::ALU(SDecodedInstruction& instr)
@@ -889,16 +895,8 @@ bool CRV32::FetchDecode(CBus* bus)
 	if (m_fetchstate == EFetchInit)
 	{
 		CCSRMem* csr = bus->GetCSR(m_hartid);
+		SecondaryReset();
 		csr->m_pendingCPUReset = false;
-		if (m_instructions.size() == 0)
-		{
-			m_exceptionmode = EXC_NONE;
-			m_lasttrap = EXC_NONE;
-			m_branchresolved = 0;
-			m_wasmret = 0;
-			m_PC = m_resetvector;
-			m_fetchstate = EFetchRead;
-		}
 		return true;
 	}
 	else if (m_fetchstate == EFetchWFI)
@@ -1417,14 +1415,15 @@ bool CRV32::Execute(CBus* bus)
 bool CRV32::Tick(uint64_t wallclock, CBus* bus)
 {
 	CCSRMem* csr = bus->GetCSR(m_hartid);
-	if (csr->m_pendingCPUReset)
-		m_fetchstate = EFetchInit;
 
 	// Gather a block of code (or grab precompiled version)
 	bool fetchok = FetchDecode(bus);
 	csr->UpdateTime(wallclock, m_cycles);
 	// Execute the whole block
 	Execute(bus);
+
+	if (csr->m_pendingCPUReset)
+		m_fetchstate = EFetchInit;
 
 	return fetchok;
 }
