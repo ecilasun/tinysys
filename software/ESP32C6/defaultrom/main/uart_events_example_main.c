@@ -1,40 +1,46 @@
 // Based on ESR32 UART event example
 // Part of tinysys SoC
 
-#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
-#include "hal/usb_serial_jtag_ll.h"
-#include "driver/gpio.h"
 #include "driver/uart.h"
+#include "driver/gpio.h"
 #include "driver/usb_serial_jtag.h"
-#include "esp_log.h"
-#include "esp_timer.h"
-#include "esp_vfs_common.h"
+#include "soc/gpio_num.h"
 #include "nvs.h"
 #include "nvs_flash.h"
+#include "esp_log.h"
+#include "esp_timer.h"
 #include "esp_task_wdt.h"
 
-// SDCard:
-// https://github.com/espressif/esp-idf/tree/v5.2.3/examples/storage/sd_card/sdspi
-// https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/sdspi_host.html
-
-#define PIN_TXD GPIO_NUM_22
-#define PIN_RXD GPIO_NUM_23
+#define PIN_TXD GPIO_NUM_37
+#define PIN_RXD GPIO_NUM_36
 #define PIN_RTS UART_PIN_NO_CHANGE
 #define PIN_CTS UART_PIN_NO_CHANGE
 
-// Send reset request to tinysys CPUs
-#define PIN_REBOOT GPIO_NUM_18
+// GIPO45 tied to FPGA CPU reset line
+#define PIN_REBOOT GPIO_NUM_45
 
 static const char *TAG = "TSYS";
 
-// external port going to tinysys
+/**
+ * This example shows how to use the UART driver to handle special UART events.
+ *
+ * It also reads data from UART0 directly, and echoes it to console.
+ *
+ * - Port: UART0
+ * - Receive (Rx) buffer: on
+ * - Transmit (Tx) buffer: off
+ * - Flow control: off
+ * - Event queue: on
+ * - Pin assignment: TxD (default), RxD (default)
+ */
+
 #define EX_UART_NUM UART_NUM_0
-#define PATTERN_CHR_NUM	(3)
+#define PATTERN_CHR_NUM    (3)         /*!< Set the number of consecutive and identical characters received by receiver which defines a UART pattern*/
 
 #define BUF_SIZE (2048)
 #define RD_BUF_SIZE (BUF_SIZE)
@@ -59,7 +65,7 @@ static void jtag_task(void *arg)
 {
 	uint8_t* dtmp = (uint8_t*) malloc(RD_BUF_SIZE);
 
-	usb_serial_jtag_write_bytes((uint8_t*) "TinySys v1.1E\n", 14, portMAX_DELAY);
+	usb_serial_jtag_write_bytes((uint8_t*) "TinySys v1.1F\n", 14, portMAX_DELAY);
 
 	// Create a timer to reboot the system
 	const esp_timer_create_args_t reboot_timer_args = {
@@ -186,9 +192,6 @@ static void uart_event_task(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-// IMPORTANT NOTE:
-// This routine will restart when the remote host disconnects and the RTS pin status changes (which is always the case with putty)
-// This is the reason why we will see the TinySys boot message every time we connect to the device via putty
 void app_main(void)
 {
 	gpio_config(& (gpio_config_t) {
@@ -203,7 +206,7 @@ void app_main(void)
 	gpio_set_level(PIN_REBOOT, 1);
 	gpio_hold_en(PIN_REBOOT);
 
-	esp_log_level_set(TAG, ESP_LOG_NONE);
+    esp_log_level_set(TAG, ESP_LOG_NONE);
 	// Initialize NVS.
 	esp_err_t ret = nvs_flash_init();
 	if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -254,5 +257,5 @@ void app_main(void)
 
     //Create a task to handler UART event from ISR
 	xTaskCreate(jtag_task, "tinysys_jtag_task", 2048, NULL, 13, NULL);
-    xTaskCreate(uart_event_task, "tinysys_uart_task", 2048, NULL, 12, NULL);
+    xTaskCreate(uart_event_task, "tinysys_uart_task", 2048, NULL, 13, NULL);
 }

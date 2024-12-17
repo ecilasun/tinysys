@@ -138,9 +138,9 @@ set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports au_mclk]
 ## RXD0 - TBD
 ## set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports esp_txd0_out]
 ## IO22 (TXD1)
-set_property -dict {PACKAGE_PIN G20 IOSTANDARD LVCMOS33} [get_ports esp_rxd1_in]
+set_property -dict {PACKAGE_PIN AB18 IOSTANDARD LVCMOS33} [get_ports esp_rxd1_in]
 ## IO23 (RXD1)
-set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports esp_txd1_out]
+set_property -dict {PACKAGE_PIN Y19 IOSTANDARD LVCMOS33} [get_ports esp_txd1_out]
 
 ## ESP to SDCard link
 ## IO1: CS - sdcard_cs_n (AA19)
@@ -155,7 +155,7 @@ set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS33} [get_ports esp_txd1_out
 ## set_property -dict {PACKAGE_PIN ??? IOSTANDARD LVCMOS33} [get_ports esp_switch]
 
 ## IO18: REBOOT from esp32
-set_property -dict {PACKAGE_PIN J19 IOSTANDARD LVCMOS33} [get_ports esp_reboot]
+set_property -dict {PACKAGE_PIN V19 IOSTANDARD LVCMOS33} [get_ports esp_reboot]
 set_property PULLTYPE PULLUP [get_ports esp_reboot]
 
 ## ------------------------------------------------------------------------------------------------------
