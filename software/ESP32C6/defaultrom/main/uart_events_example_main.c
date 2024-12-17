@@ -17,7 +17,8 @@
 #include "esp_task_wdt.h"
 
 #define PIN_TXD GPIO_NUM_37
-#define PIN_RXD GPIO_NUM_36
+//GPIO_NUM_36
+#define PIN_RXD UART_PIN_NO_CHANGE
 #define PIN_RTS UART_PIN_NO_CHANGE
 #define PIN_CTS UART_PIN_NO_CHANGE
 
@@ -25,19 +26,6 @@
 #define PIN_REBOOT GPIO_NUM_45
 
 static const char *TAG = "TSYS";
-
-/**
- * This example shows how to use the UART driver to handle special UART events.
- *
- * It also reads data from UART0 directly, and echoes it to console.
- *
- * - Port: UART0
- * - Receive (Rx) buffer: on
- * - Transmit (Tx) buffer: off
- * - Flow control: off
- * - Event queue: on
- * - Pin assignment: TxD (default), RxD (default)
- */
 
 #define EX_UART_NUM UART_NUM_0
 #define PATTERN_CHR_NUM    (3)         /*!< Set the number of consecutive and identical characters received by receiver which defines a UART pattern*/
@@ -63,7 +51,7 @@ void reboot_timer_callback(void* arg)
 
 static void jtag_task(void *arg)
 {
-	uint8_t* dtmp = (uint8_t*) malloc(RD_BUF_SIZE);
+	uint8_t* dtmp = (uint8_t*) malloc(RD_BUF_SIZE*2);
 
 	usb_serial_jtag_write_bytes((uint8_t*) "TinySys v1.1F\n", 14, portMAX_DELAY);
 
@@ -109,7 +97,7 @@ static void uart_event_task(void *pvParameters)
 {
     uart_event_t event;
     //size_t buffered_size;
-    uint8_t* dtmp = (uint8_t*) malloc(RD_BUF_SIZE);
+    uint8_t* dtmp = (uint8_t*) malloc(RD_BUF_SIZE*2);
     for (;;) {
         //Waiting for UART event.
         if (xQueueReceive(uart0_queue, (void *)&event, (TickType_t)portMAX_DELAY)) {
@@ -238,6 +226,9 @@ void app_main(void)
     //Install UART driver, and get the queue.
     uart_driver_install(EX_UART_NUM, BUF_SIZE * 2, BUF_SIZE * 2, 20, &uart0_queue, 0);
     uart_param_config(EX_UART_NUM, &uart_config);
+	uart_set_rts(EX_UART_NUM, 0);
+	uart_set_dtr(EX_UART_NUM, 0);
+	uart_set_mode(EX_UART_NUM, UART_MODE_UART);
 
     //Set UART pins (using UART0 default pins ie no changes.)
     uart_set_pin(EX_UART_NUM, PIN_TXD, PIN_RXD, PIN_RTS, PIN_CTS);
@@ -256,6 +247,6 @@ void app_main(void)
 	pending_doom = false;
 
     //Create a task to handler UART event from ISR
-	xTaskCreate(jtag_task, "tinysys_jtag_task", 2048, NULL, 13, NULL);
-    xTaskCreate(uart_event_task, "tinysys_uart_task", 2048, NULL, 13, NULL);
+	xTaskCreate(jtag_task, "tinysys_jtag_task", 4096, NULL, 12, NULL);
+    xTaskCreate(uart_event_task, "tinysys_uart_task", 4096, NULL, 12, NULL);
 }
