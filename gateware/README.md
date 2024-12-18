@@ -1,6 +1,6 @@
-# Latest Gateware Build is: r1.1E
-# Latest ESP32 ROM is: r1.1E
-# Latest Board version is: 2F
+# Latest Gateware Build is: r1.1F
+# Latest ESP32 ROM is: r1.1F
+# Latest Board version is: 2G
 
 # Gateware binary
 The gateware binary contains latest version of the device.
@@ -21,7 +21,8 @@ r1.0A: Added 64Kbytes of scratchpad RAM, shared across all cores, WNS relaxed to
 r1.0B: Minor device cleanup, reduced scratchpad to 16Kbytes, bumped mailbox to 16Kbytes<br>
 r1.0C: Added a third CPU, CLI improvement to ROM and other minor fixes<br>
 r1.1D: Improvements to reboot / task system and more ROM code cleanup, also updated file upload routines<br>
-r1.1E: Updated UART to run at 460800<br>
+r1.1E: Updated UART to run at 460800<br>\
+r1.1F: Completely switched to ESP32S3 and new board(2G), added reset lines to UART, some helper tool improvements<br>\
 
 # Device gateware
 

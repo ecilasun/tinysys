@@ -1,6 +1,0 @@
-(fp_lib_table
-  (version 7)
-  (lib (name "esp32c6wroomfp")(type "KiCad")(uri "D:/repos/tinysys/board/ESP32-C6-WROOM/footprints.pretty")(options "")(descr ""))
-  (lib (name "LM1117fp")(type "KiCad")(uri "D:/repos/tinysys/board/LM1117MPX33NOPB")(options "")(descr ""))
-  (lib (name "USB4085fp")(type "KiCad")(uri "D:/repos/tinysys/board/USB4085-GF-A_REVA4")(options "")(descr ""))
-)
