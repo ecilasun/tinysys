@@ -250,4 +250,10 @@ void app_main(void)
     //Create a task to handler UART event from ISR
 	xTaskCreate(jtag_task, "tinysys_jtag_task", 4096, NULL, 12, NULL);
     xTaskCreate(uart_event_task, "tinysys_uart_task", 4096, NULL, 12, NULL);
+
+	while (1)
+	{
+		vTaskDelay(1000 / portTICK_PERIOD_MS);
+	}
+	
 }
