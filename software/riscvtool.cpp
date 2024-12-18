@@ -679,6 +679,7 @@ void terminal()
 
 	//fcntl(0, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
 
+	uint8_t ctrlcchar = 3;
 	do {
 		uint32_t bytesReceived = serial.Receive(&received, 4096);
 		for (uint32_t i=0; i<bytesReceived; ++i)
@@ -688,12 +689,20 @@ void terminal()
 		{
 			int chr = getch();
 			serial.Send((uint8_t*)&chr, 1);
+			// TODO: Echo back, is it the same way as in Windows?
 		}
 #else
 		if (_kbhit())
 		{
 			int chr = _getch();
-			serial.Send((uint8_t*)&chr, 1);
+			if (chr == 27) // ESC
+				serial.Send(&ctrlcchar, 1);
+			else
+				serial.Send((uint8_t*)&chr, 1);
+			// Echo back
+			printf("%c", chr);
+			if (chr == 13)
+				printf("%c", 10);
 		}
 #endif
 	} while (true);
