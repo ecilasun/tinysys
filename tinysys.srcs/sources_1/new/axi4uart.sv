@@ -28,6 +28,7 @@ logic outfifore;
 
 async_transmitter #(.Baud(Baud), .ClkFrequency(ClkFrequency)) UART_transmit(
 	.clk(uartbaseclock),
+	.resetn(rst10n),
 	.TxD_start(transmitbyte),
 	.TxD_data(datatotransmit),
 	.TxD(uarttx),
@@ -77,6 +78,7 @@ logic infifowe;
 
 async_receiver #(.Baud(Baud), .ClkFrequency(ClkFrequency)) UART_receive(
 	.clk(uartbaseclock),
+	.resetn(rst10n),
 	.RxD(uartrx),
 	.RxD_data_ready(uartbyteavailable),
 	.RxD_data(uartbytein),

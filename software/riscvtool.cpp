@@ -21,6 +21,7 @@
 //char devicename[512] = "/dev/ttyUSB0";
 char devicename[512] = "/dev/ttyACM0";
 #else // CAT_WINDOWS
+#include <conio.h>
 char devicename[512] = "\\\\.\\COM4";
 #endif
 
@@ -428,7 +429,7 @@ void ConsumeInitialTraffic(CSerialPort& serial)
 	}
 }
 
-void sendcmd(char *_command)
+void sendcmd(int startarg, int argc, char **argv)
 {
 	CSerialPort serial;
 	if (serial.Open() == false)
@@ -440,9 +441,14 @@ void sendcmd(char *_command)
 
 	// Start the receiver app on the other end
 	char tmpstring[64];
-	snprintf(tmpstring, 64, "%s", _command);
-	serial.Send((uint8_t*)tmpstring, strlen(_command));
-	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	for (int i=startarg; i<argc; ++i)
+	{
+		snprintf(tmpstring, 64, "%s", argv[i]);
+		serial.Send((uint8_t*)tmpstring, strlen(argv[i]));
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		if (i!=argc-1)
+			serial.Send(" ", 1); // Add spaces in between arguments
+	}
 	snprintf(tmpstring, 64, "\n");
 	serial.Send((uint8_t*)tmpstring, 1); // Include return character and space
 
@@ -657,15 +663,54 @@ void resetCPUs()
 	printf("CPUs reset\n");
 }
 
+void terminal()
+{
+	CSerialPort serial;
+	if (serial.Open() == false)
+	{
+		serial.Close();
+		return;
+	}
+
+	ConsumeInitialTraffic(serial);
+
+	// Terminal loop
+	uint8_t received[4096];
+
+	//fcntl(0, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
+
+	do {
+		uint32_t bytesReceived = serial.Receive(&received, 4096);
+		for (uint32_t i=0; i<bytesReceived; ++i)
+			printf("%c", received[i]);
+#ifdef CAT_LINUX
+		if (kbhit())
+		{
+			int chr = getch();
+			serial.Send((uint8_t*)&chr, 1);
+		}
+#else
+		if (_kbhit())
+		{
+			int chr = _getch();
+			serial.Send((uint8_t*)&chr, 1);
+		}
+#endif
+	} while (true);
+
+	serial.Close();
+}
+
 void showusage()
 {
 	printf("Usage:\n");
-	printf("riscvtool -reset [usbdevicename]\n");
-	printf("riscvtool -sendcmd command [usbdevicename]\n");
-	printf("riscvtool -sendfile binaryfilename [usbdevicename]\n");
-	printf("riscvtool -makerom binaryfilename groupbytesize outputfilename\n");
-	printf("riscvtool -makemem binaryfilename groupbytesize outputfilename\n");
-	printf("riscvtool -makebin binaryfilename groupbytesize outputfilename\n");
+	printf("riscvtool -terminal [usbdevicename]\n  Go into terminal mode to interact with the target device\n");
+	printf("riscvtool -reset [usbdevicename]\n  Send a reset command to the target device\n");
+	printf("riscvtool -sendcmd [usbdevicename] command\n  Send a command to the target device\n");
+	printf("riscvtool -sendfile [usbdevicename] binaryfilename\n  Send a binary file to the target device\n");
+	printf("riscvtool -makerom binaryfilename groupbytesize outputfilename\n  Generate a ROM file from an ELF binary. This is a COE format file, which is no longer used by newer versions of tinysys and is kept as legacy\n");
+	printf("riscvtool -makemem binaryfilename groupbytesize outputfilename\n  Generate a memory initialization file for FPGA from an ELF binary. This is used when building a new hardware device with an embedded ROM image\n");
+	printf("riscvtool -makebin binaryfilename groupbytesize outputfilename\n  Generate a loadable binary image from an ELF binary. It is often used to test ROM images by dropping this into the boot folder on the device\n");
 	printf("NOTE: Default device name is %s\n", devicename);
 }
 
@@ -673,57 +718,73 @@ int main(int argc, char **argv)
 {
 	if (argc==1)
 	{
-		printf("RISCVTool 1.0\n");
+		printf("RISCVTool 1.1F\n");
 		showusage();
 		return 0;
 	}
 
-	if (argc>=2 && strstr(argv[1], "-reset"))
+	int i=1;
+	if (argc>=2 && strstr(argv[i++], "-reset"))
 	{
 		if (argc > 2)
-			strcpy(devicename, argv[2]);
+			strcpy(devicename, argv[i++]);
 		resetCPUs();
 		return 0;
 	}
 
-	if (argc>=3 && strstr(argv[1], "-makerom"))
+	i=1;
+	if (argc>=3 && strstr(argv[i++], "-sendcmd"))
+	{
+		if (argc > 3)
+			strcpy(devicename, argv[i++]);
+		sendcmd(i, argc, argv);
+		return 0;
+	}
+
+	i=1;
+	if (argc>=3 && strstr(argv[i++], "-sendfile"))
+	{
+		if (argc > 3)
+			{strcpy(devicename, argv[i++]); printf("Device: %s\n", devicename);}
+		printf("Sending file %s\n", argv[i]);
+		sendfile(argv[i++]);
+		return 0;
+	}
+
+	i=1;
+	if (argc>=2 && strstr(argv[i++], "-terminal"))
+	{
+		if (argc > 2)
+			strcpy(devicename, argv[i++]);
+		terminal();
+		return 0;
+	}
+
+	i=1;
+	if (argc>=3 && strstr(argv[i++], "-makerom"))
 	{
 		unsigned int groupsize = (unsigned int)strtoul(argv[3], nullptr, 10);
 		dumpelf(argv[2], argv[4], groupsize, true, false);
 		return 0;
 	}
 
-	if (argc>=3 && strstr(argv[1], "-makemem"))
+	i=1;
+	if (argc>=3 && strstr(argv[i++], "-makemem"))
 	{
 		unsigned int groupsize = (unsigned int)strtoul(argv[3], nullptr, 10);
 		dumpelf(argv[2], argv[4], groupsize, false, false);
 		return 0;
 	}
 
-	if (argc>=3 && strstr(argv[1], "-makebin"))
+	i=1;
+	if (argc>=3 && strstr(argv[i++], "-makebin"))
 	{
 		unsigned int groupsize = (unsigned int)strtoul(argv[3], nullptr, 10);
 		dumpelf(argv[2], argv[4], groupsize, false, true);
 		return 0;
 	}
 
-	if (argc>=3 && strstr(argv[1], "-sendfile"))
-	{
-		if (argc > 3)
-			strcpy(devicename, argv[3]);
-		sendfile(argv[2]);
-		return 0;
-	}
-
-	if (argc>=3 && strstr(argv[1], "-sendcmd"))
-	{
-		if (argc > 3)
-			strcpy(devicename, argv[3]);
-		sendcmd(argv[2]);
-		return 0;
-	}
-
-	printf("RISCVTool 1.0D\n");
+	printf("RISCVTool 1.1F\n");
 	printf("Error: Unknown arguments.\n");
 	showusage();
 
