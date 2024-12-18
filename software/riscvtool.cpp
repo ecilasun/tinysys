@@ -423,7 +423,7 @@ void ConsumeInitialTraffic(CSerialPort& serial)
 	uint8_t startup = 0;
 	while (serial.Receive(&startup, 1))
 	{
-		// This usually reads something similar to "ESP-ROM:esp32c6-20220919"
+		// This usually reads something similar to "ESP-ROM:esp32s3-*"
 		// It is likely that some other unfinished traffic will show up here
 		printf("%c", startup);
 	}

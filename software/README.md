@@ -66,7 +66,7 @@ The .mem image is the actual physical ROM version of the same binary. If you don
 
 # Programming the ESP32 communications firmware
 
-Tinysys uses an ESP32-C6 to communucate with the outside world. For this to function properly, the ROM image for the ESP chip has to be built. You need first plug in the previously-unprogrammed tinysys device, then open 'software/ESP32C6/defaultrom' in Visual Studio Code, and Hit the ESP-IDF 'Build, Flash and Monitor' button (looks like a little flame) to build and deploy it to the device.
+Tinysys uses an ESP32-C6 to communucate with the outside world. For this to function properly, the ROM image for the ESP chip has to be built. You need first plug in the previously-unprogrammed tinysys device, then open 'software/ESP32S3/defaultrom' in Visual Studio Code, and Hit the ESP-IDF 'Build, Flash and Monitor' button (looks like a little flame) to build and deploy it to the device.
 
 # Default SDCard layout
 

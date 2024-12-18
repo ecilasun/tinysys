@@ -35,7 +35,7 @@ Of course, before you ask, it does run DOOM, and with sound and keyboard input!
 - 4 debug LEDs (also shared by OS as indicators)
 - Custom preemptive multitasking OS, with file I/O and basic memory allocator via syscalls
 - Optionally, a rom.bin image can be loaded from SDCard to replace the OS in ROM
-- ESP32C6 on board for I/O handling (UART serial for CLI)
+- ESP32S3 on board for I/O handling (UART serial for CLI and other future connectivity)
 - The ESP chip also gives USB serial access and BLE serial terminal access to the board
 - 16Kbytes mailbox memory for task scheduler + general purpose use (uncached)
 - 16Kbytes of scratchpad memory for inter-processor communications or temporary data storage (uncached)
