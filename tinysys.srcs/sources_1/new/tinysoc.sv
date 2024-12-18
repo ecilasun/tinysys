@@ -386,7 +386,7 @@ axi4CSRFile #( .HARTID(4'd0)) csrfile0 (
 	.keyirq(keyirq),
 	.uartirq(uartirq),
 	.hirq(hirq),
-	.rebootreq(~esp_reboot),
+	.rebootreq(esp_reboot),
 	// CPU reset
 	.cpuresetreq(cpuresetreq0),
 	// Shadow registers
@@ -409,7 +409,7 @@ axi4CSRFile #( .HARTID(4'd1)) csrfile1 (
 	.keyirq(keyirq),
 	.uartirq(uartirq),
 	.hirq(hirq),
-	.rebootreq(~esp_reboot),
+	.rebootreq(esp_reboot),
 	// CPU reset
 	.cpuresetreq(cpuresetreq1),
 	// Shadow registers

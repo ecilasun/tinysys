@@ -13594,7 +13594,7 @@
 		)
 	)
 	(global_label "CPU_RESET"
-		(shape input)
+		(shape output)
 		(at 251.46 215.9 0)
 		(fields_autoplaced yes)
 		(effects

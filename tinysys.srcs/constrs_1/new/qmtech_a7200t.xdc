@@ -156,7 +156,7 @@ set_property -dict {PACKAGE_PIN Y19 IOSTANDARD LVCMOS33} [get_ports esp_txd1_out
 
 ## IO18: REBOOT from esp32
 set_property -dict {PACKAGE_PIN V19 IOSTANDARD LVCMOS33} [get_ports esp_reboot]
-set_property PULLTYPE PULLUP [get_ports esp_reboot]
+set_property PULLTYPE PULLDOWN [get_ports esp_reboot]
 
 ## ------------------------------------------------------------------------------------------------------
 ## USB-A - MAX3421EECJ over SPI interface, USB Host

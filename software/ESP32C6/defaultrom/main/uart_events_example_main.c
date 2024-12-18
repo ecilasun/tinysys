@@ -23,6 +23,7 @@
 #define PIN_CTS UART_PIN_NO_CHANGE
 
 // GIPO45 tied to FPGA CPU reset line
+// NOTE: Keep this set to zero by default as it's also the voltage control line (3.3V/1.8V)
 #define PIN_REBOOT GPIO_NUM_45
 
 static const char *TAG = "TSYS";
@@ -43,9 +44,9 @@ void reboot_timer_callback(void* arg)
 	// Notify console and reboot the remote system
 	usb_serial_jtag_write_bytes((uint8_t*) "Rebooting remote system.\n", 25, portMAX_DELAY);
 	gpio_hold_dis(PIN_REBOOT);
-	gpio_set_level(PIN_REBOOT, 0);
+	gpio_set_level(PIN_REBOOT, 1); // Hold high to reset the CPUs
 	vTaskDelay(200 / portTICK_PERIOD_MS);
-	gpio_set_level(PIN_REBOOT, 1);
+	gpio_set_level(PIN_REBOOT, 0);
 	gpio_hold_en(PIN_REBOOT);
 }
 
@@ -190,8 +191,8 @@ void app_main(void)
 		.intr_type = GPIO_INTR_DISABLE
 	});
 
-	// Prevent CPU reset
-	gpio_set_level(PIN_REBOOT, 1);
+	// Prevent CPU reset, hold low
+	gpio_set_level(PIN_REBOOT, 0);
 	gpio_hold_en(PIN_REBOOT);
 
     esp_log_level_set(TAG, ESP_LOG_NONE);
