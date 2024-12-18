@@ -6,14 +6,14 @@
 
 Tinysys started out as a hobby project. It now has two RISC-V cores, and several other facilities listed below, and can happily run most software with minimal tweaks.
 
-Of course, before you ask, it does run DOOM, and with sound and keyboard input!
+Of course, before you ask, it does run DOOM, and with sound and keyboard input! (Lately, it has been running Quake as well.)
 
 # System specifications
 
 - 2x RISC-V based CPUs (architecture: rv32im_zicsr_zifencei_zfinx)
 - First core runs the OS kernel and user processes
-- Second core is fully reserved for user process use
-- 150MHz bus and CPU clock, however we're not pipelined yet (TBD)
+- Second core is reserved for user processes
+- 150MHz bus and CPU clock, semi-pipelined execution
 - Supports instruction fence and data cache flush/invalidate operations
 - Single precision FPU per CPU (no float control CRSs)
 - Float and integer GPRs share the same register space (zfinx extension)
@@ -21,22 +21,22 @@ Of course, before you ask, it does run DOOM, and with sound and keyboard input!
 - 4096 CSRs x 32 bits (some registers reserved for CPU and some are immutable)
 - All CPUs have access to each-other's CSR register files via memory mapped addresses
 - DMA unit with optional zero-masking for 16 byte aligned or unaligned (target only) memory copies
-- DMA supports two coherency modes (cpu coherent or not)
+- DMA supports two coherency modes; cpu coherent and noncoherent
 - Integer multiply / divide units per CPU
 - Software, hardware and timer interrupts per CSR per core
 - 16Kbytes of direct mapped instruction cache (256 lines x 64 bytes)
 - 32Kbytes of direct mapped data cache (512 lines x 64 bytes)
 - 128 bit AXI4 bus with 32 bit address line
-- Memory arbiter for on-board devices
-- Memory mapped external hardware
+- Memory arbiter for on-board device system memory access (round-robin)
+- Memory mapped external hardware (audio / video etc)
 - 16 bit stereo audio output chip (24 bit native in reality, might extend later)
-- DVI 1.0 compatible video output via external chip (12 bits per pixel, RGB or paletted modes)
+- DVI 1.0 compatible video output via external chip (12 bits per pixel, RGB or paletted modes - note: this chip is deprecated, will be replaced later)
 - SDCard for file I/O
 - 4 debug LEDs (also shared by OS as indicators)
 - Custom preemptive multitasking OS, with file I/O and basic memory allocator via syscalls
 - Optionally, a rom.bin image can be loaded from SDCard to replace the OS in ROM
-- ESP32S3 on board for I/O handling (UART serial for CLI and other future connectivity)
-- The ESP chip also gives USB serial access and BLE serial terminal access to the board
+- ESP32S3 on board for I/O handling (UART serial connected directly for CLI and other future connectivity, running at 460800 baud)
+- Future revisions will use USB-OTG on the ESP32S3 module to allow for mass storage access to the device
 - 16Kbytes mailbox memory for task scheduler + general purpose use (uncached)
 - 16Kbytes of scratchpad memory for inter-processor communications or temporary data storage (uncached)
 - Horizontal blanking interrupts to synchronize CPU with VPU for video effects or interrupt driven vsync page flip
@@ -45,7 +45,7 @@ Of course, before you ask, it does run DOOM, and with sound and keyboard input!
 
 ## CPU
 Based on 32 bit RISC-V ISA. Implements base integer instruction set, required cache operations (I$ and D$) and a large CSR file.
-The core currently has an average instruction retirement rate of 6 CPI (clocks per instruction) and runs at 150.000MHZ, which
+The core currently has an average instruction retirement rate of ~6 CPI (clocks per instruction) and runs at 150.000MHZ, which
 is also the speed of the AXI4 bus, where all peripherals and memory reside.
 
 ### Fetch/Decode/IRQ
