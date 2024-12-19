@@ -44,6 +44,9 @@ void HBlankInterruptHandler()
 	// We've hit the hblank before 240th scanline
 	if (scanline < 240)
 	{
+		// Next time we'll trigger at 240
+		VPUSetHBlankScanline(240);
+
 		// We're in top section of screen
 		// This section of the screen runs at 320x240 resolution
 		vx->m_vmode = EVM_320_Wide;
@@ -51,33 +54,18 @@ void HBlankInterruptHandler()
 
 		// Red
 		VPUSetPal(0xBA, 255, 0, 0);
-
-		// Next time we'll trigger at 240
-		VPUSetHBlankScanline(240);
 	}
 	else // We've hit the hblank on or after 240th scanline
 	{
+		// Next time we'll trigger at 0 (start of screen)
+		VPUSetHBlankScanline(0);
+
 		// This section of the screen runs at 640x480 resolution
 		vx->m_vmode = EVM_640_Wide;
 		VPUSetVMode(vx, EVS_Enable);
 
-		// Draw 60 lines of color bars then set up a new scanline
-		uint32_t nextscanline = 0;
-		do {
-			nextscanline = VPUGetScanline();
-			if (nextscanline!=scanline)
-			{
-				scanline = nextscanline;
-				// Change colors for strips here
-				VPUSetPal(0xBA, 0, 0, nextscanline%255);
-			}
-		} while (nextscanline < 300);
-
-		// Try to shut off the color bar at the end
-		VPUSetPal(0xBA, 0, 0, nextscanline%255);
-
-		// Next time we'll trigger at 0 (start of screen)
-		VPUSetHBlankScanline(0);
+		// Color based on scanline
+		VPUSetPal(0xBA, 0, 0, VPUGetScanline()%255);
 	}
 }
 
