@@ -112,7 +112,7 @@ void graphics_set_pixel(int x, int y, float r, float g, float b) {
 #else   
    UARTPrintf("\033[48;2;%d;%d;%dm ", R, G, B);
    if(x==graphics_width-1)
-       UARTPrintf("\033[48;2;0;0;0m");
+       UARTPrintf("\033[48;2;0;0;0m\n");
 #endif   
 }
 
