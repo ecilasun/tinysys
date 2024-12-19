@@ -80,8 +80,8 @@ int UARTPrintf(const char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	char buffer[256];
-	int len = mini_vsnprintf(buffer, 256, fmt, va);
+	char buffer[1024];
+	int len = mini_vsnprintf(buffer, 1024, fmt, va);
 	va_end(va);
 	if (len)
 		UARTSendBlock((uint8_t*)buffer, len);

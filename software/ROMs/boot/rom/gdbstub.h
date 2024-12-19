@@ -1,5 +1,5 @@
 #include <inttypes.h>
 
-void GDBStubBeginCommand();
-void GDBStubEndCommand();
+void GDBStubBeginPacket();
+void GDBStubEndPacket();
 void GDBStubAddByte(uint8_t byte);

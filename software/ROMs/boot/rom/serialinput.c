@@ -22,28 +22,49 @@ void HandleSerialInput()
 		{
 			if (drain == '#')
 			{
-				// End of GDB command, process and respond
-				GDBStubEndCommand();
-
 				// Read checksum
 				int chkcount = 0;
-				while(SerialInRingBufferRead(&drain, 1) && chkcount!=2) chkcount++;
+				do
+				{
+					if (SerialInRingBufferRead(&drain, 1))
+						chkcount++;
+				} while (chkcount != 2);
+
+				// Parse and respond to GDB packet contents
+				GDBStubEndPacket();
+
 				in_gdb_mode = 0;
 			}
 			else
 			{
-				// GDB command body
+				// GDB packet body
 				GDBStubAddByte(drain);
-				kprintf("%c", drain);
 			}
 		}
 		else
 		{
 			if (drain == '$')
 			{
-				// Start of GDB command
-				GDBStubBeginCommand();
+				// Start of GDB packet
+				GDBStubBeginPacket();
 				in_gdb_mode = 1;
+			}
+			else if (drain == '+')
+			{
+				// ACK received from GDB
+				//GDBAck();
+				UARTPrintf("+");
+			}
+			else if (drain == '-')
+			{
+				// NACK received from GDB
+				//GDBNack();
+			}
+			else if (drain == 0x03) // CTRL+C
+			{
+				// Pass this through to the CLI for now
+				// Later on we'll let the GDB stub handle this
+				KeyRingBufferWrite(&drain, 1);
 			}
 			else
 				KeyRingBufferWrite(&drain, 1); // Regular keyboard input
