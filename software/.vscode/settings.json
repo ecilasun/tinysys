@@ -77,6 +77,7 @@
 		"string.h": "c",
 		"usbhidhandler.h": "c",
 		"uart.h": "c",
-		"device.h": "c"
+		"device.h": "c",
+		"keyringbuffer.h": "c"
 	}
 }
