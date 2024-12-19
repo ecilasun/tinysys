@@ -666,14 +666,6 @@ void resetCPUs()
 
 void terminal()
 {
-#ifdef CAT_LINUX
-    termios term;
-    tcgetattr(0, &term);
-    termios term2 = term;
-    term2.c_lflag &= ~(ICANON | ECHO);
-    tcsetattr(0, TCSANOW, &term2);
-#endif
-
 	CSerialPort serial;
 	if (serial.Open() == false)
 	{
@@ -687,6 +679,13 @@ void terminal()
 	uint8_t received[4096];
 
 	//fcntl(0, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
+#ifdef CAT_LINUX
+    termios term;
+    tcgetattr(0, &term);
+    termios term2 = term;
+    term2.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(0, TCSANOW, &term2);
+#endif
 
 	uint8_t ctrlcchar = 3;
 	do {
