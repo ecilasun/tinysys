@@ -1,2 +1,3 @@
 set debug remote 1
+set architecture riscv:rv32
 target remote \\.\COM6
