@@ -1,6 +1,7 @@
 // Based on ESR32 UART event example
 // Part of tinysys SoC
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
@@ -86,8 +87,9 @@ static void jtag_task(void *arg)
 				pending_doom = true;
 			}
 
-			// Pass through every byte
-			uart_write_bytes(EX_UART_NUM, (const char*) dtmp, datasize);
+			// Pass through every byte if receiving side is ready
+			//if (??)
+				uart_write_bytes(EX_UART_NUM, (const char*) dtmp, datasize);
 		}
 	} while(1);
 
@@ -204,10 +206,12 @@ void app_main(void)
 	}
 	ESP_ERROR_CHECK( ret );
 
-	//setvbuf(stdin, NULL, _IONBF, 0);
-	// Enable blocking mode on stdin and stdout
-	//fcntl(fileno(stdout), F_SETFL, 0);
-	//fcntl(fileno(stdin), F_SETFL, 0);
+	// No buffering on stdin
+	setvbuf(stdin, NULL, _IONBF, 0);
+
+	// Enable non-blocking mode on stdin and stdout
+	fcntl(fileno(stdout), F_SETFL, 0);
+	fcntl(fileno(stdin), F_SETFL, 0);
 
 	usb_serial_jtag_driver_config_t usb_serial_config =  {
 			.tx_buffer_size = 1024,
@@ -248,8 +252,8 @@ void app_main(void)
 	pending_doom = false;
 
     //Create a task to handler UART event from ISR
-	xTaskCreate(jtag_task, "tinysys_jtag_task", 4096, NULL, 12, NULL);
     xTaskCreate(uart_event_task, "tinysys_uart_task", 4096, NULL, 12, NULL);
+	xTaskCreate(jtag_task, "tinysys_jtag_task", 4096, NULL, 12, NULL);
 
 	while (1)
 	{
