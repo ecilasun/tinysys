@@ -18,6 +18,7 @@
 #include "lz4.h"
 
 #if defined(CAT_LINUX) || defined(CAT_MACOS)
+#include <sys/ioctl.h>
 //char devicename[512] = "/dev/ttyUSB0";
 char devicename[512] = "/dev/ttyACM0";
 #else // CAT_WINDOWS
@@ -49,14 +50,14 @@ class CSerialPort{
 		serial_port = open(devicename, O_RDWR);
 		if (serial_port < 0 )
 		{
-			printf("Error %i from open: %s\n", errno, strerror(errno));
+			printf("Error %i from open('%s'): %s\nPlease try another COM port path.\n", errno, devicename, strerror(errno));
 			return false;
 		}
 
 		struct termios tty;
 		if(tcgetattr(serial_port, &tty) != 0)
 		{
-			printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
+			printf("Error %i from tcgetattr: %s\nPlease make sure your user has access to the COM device %s.\n", errno, strerror(errno), devicename);
 			return false;
 		}
 
@@ -447,7 +448,7 @@ void sendcmd(int startarg, int argc, char **argv)
 		serial.Send((uint8_t*)tmpstring, strlen(argv[i]));
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		if (i!=argc-1)
-			serial.Send(" ", 1); // Add spaces in between arguments
+			serial.Send((void*)" ", 1); // Add spaces in between arguments
 	}
 	snprintf(tmpstring, 64, "\n");
 	serial.Send((uint8_t*)tmpstring, 1); // Include return character and space
@@ -665,6 +666,14 @@ void resetCPUs()
 
 void terminal()
 {
+#ifdef CAT_LINUX
+    termios term;
+    tcgetattr(0, &term);
+    termios term2 = term;
+    term2.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(0, TCSANOW, &term2);
+#endif
+
 	CSerialPort serial;
 	if (serial.Open() == false)
 	{
@@ -685,11 +694,18 @@ void terminal()
 		for (uint32_t i=0; i<bytesReceived; ++i)
 			printf("%c", received[i]);
 #ifdef CAT_LINUX
-		if (kbhit())
+    	int byteswaiting;
+    	ioctl(0, FIONREAD, &byteswaiting);
+		if (byteswaiting)
 		{
-			int chr = getch();
-			serial.Send((uint8_t*)&chr, 1);
-			// TODO: Echo back, is it the same way as in Windows?
+			unsigned char chr;
+			int nread = read(0,&chr,1);
+			//serial.Send((uint8_t*)&chr, 1);
+			// Echo back
+			printf("%c", chr);
+			fflush(stdout);
+			if (chr == 13)
+				printf("%c", 10);
 		}
 #else
 		if (_kbhit())
@@ -706,6 +722,10 @@ void terminal()
 		}
 #endif
 	} while (true);
+
+#ifdef CAT_LINUX
+	tcsetattr(0, TCSANOW, &term);
+#endif
 
 	serial.Close();
 }
