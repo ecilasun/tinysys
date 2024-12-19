@@ -203,6 +203,39 @@ void GDBReadRegisters()
 	haveResponse = 1;
 }
 
+void GDBVCont()
+{
+	packetData += 6; // Skip 'vCont'
+
+	// Parse commands
+	char *command = strtok(packetData, ";");
+	while (command != NULL)
+	{
+		if (strstr(command, "?") == command)
+		{
+			strcpy(responseData, "vCont;c;C;s;S;");
+			haveResponse = 1;
+		}
+		else if (strstr(command, "c") == command)
+		{
+			// Continue
+			strcpy(responseData, "S05");
+			haveResponse = 1;
+		}
+		else if (strstr(command, "s") == command)
+		{
+			// Step
+			strcpy(responseData, "S05");
+			haveResponse = 1;
+		}
+		else
+		{
+			kprintf("Unknown vCont: %s\n", command);
+		}
+		command = strtok(NULL, ";");
+	}
+}
+
 void GDBParseCommands()
 {
 	//kprintf("%s\n", packetData);
@@ -220,6 +253,18 @@ void GDBParseCommands()
 	{
 		GDBThreadOp();
 	}
+	else if (strstr(packetData, "c") == packetData)
+	{
+		// Continue
+		strcpy(responseData, "OK");
+		haveResponse = 1;
+	}
+	else if (strstr(packetData, "D") == packetData)
+	{
+		// Detach
+		strcpy(responseData, "OK");
+		haveResponse = 1;
+	}
 	else if (strstr(packetData, "g") == packetData)
 	{
 		GDBReadRegisters();
@@ -227,6 +272,18 @@ void GDBParseCommands()
 	else if (strstr(packetData, "qC") == packetData)
 	{
 		strcpy(responseData, "p0.0");
+		haveResponse = 1;
+	}
+	else if (strstr(packetData, "Z0") == packetData)
+	{
+		// TODO: Insert breakpoint
+		strcpy(responseData, "OK");
+		haveResponse = 1;
+	}
+	else if (strstr(packetData, "z0") == packetData)
+	{
+		// TODO: Remove breakpoint
+		strcpy(responseData, "OK");
 		haveResponse = 1;
 	}
 	else if (strstr(packetData, "qSupported") == packetData)
@@ -244,6 +301,11 @@ void GDBParseCommands()
 	else if (strstr(packetData, "qAttached") == packetData)
 	{
 		GDBQAttached();
+	}
+	else if (strstr(packetData, "qSymbol") == packetData)
+	{
+		// Empty response
+		haveResponse = 1;
 	}
 	else if (strstr(packetData, "qsThreadInfo") == packetData)
 	{
@@ -266,10 +328,9 @@ void GDBParseCommands()
 		strcpy(responseData, "S00");
 		haveResponse = 1;
 	}
-	else if (strstr(packetData, "vCont?") == packetData)
+	else if (strstr(packetData, "vCont") == packetData)
 	{
-		kprintf("vCont?\n");
-		strcpy(responseData, "vCont;c;C;s;S;");
+		GDBVCont();
 		haveResponse = 1;
 	}
 	else
