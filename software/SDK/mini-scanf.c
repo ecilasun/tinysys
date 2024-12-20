@@ -32,6 +32,24 @@ int	c_isdigit(int c)
 		return (0);
 }
 
+int	c_ishex(int c)
+{
+	if ((c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f'))
+		return (1);
+	else
+		return (0);
+}
+
+int hext2int(int c)
+{
+	if (c >= 'A' && c <= 'F')
+		return (c - 'A' + 10);
+	else if (c >= 'a' && c <= 'f')
+		return (c - 'a' + 10);
+	else
+		return (0);
+}
+
 // parodies the standard
 #ifdef C_SSCANF
 	#define NEXTCHAR (PointBuf++)
@@ -130,6 +148,22 @@ int	c_isdigit(int c)
 					if (save)
 						*(int*)va_arg(ap, int*) = value * sign;
 					//if (save) // ignore %* (std)
+					count++;
+					break;
+				}
+				case 'X':
+				case 'x':
+				{
+					long value = 0;
+					while ((c_isdigit(CURCHAR) || c_ishex(CURCHAR)) && (lenEn != true || len > 0))
+					{
+						value *= 16;
+						value += c_isdigit(CURCHAR) ? (int)(CURCHAR - '0') : hext2int(CURCHAR);
+						NEXTCHAR;
+						len--;
+					}
+					if (save)
+						*(int*)va_arg(ap, int*) = value;
 					count++;
 					break;
 				}

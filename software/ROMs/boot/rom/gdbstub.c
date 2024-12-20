@@ -21,6 +21,34 @@ static uint32_t currentGProcess = 0;
 static uint32_t currentCProcess = 0;
 static uint32_t currentThread = 0;
 
+uint32_t GDBHexToUint(char *hex)
+{
+	uint32_t val = 0;
+	while (*hex) {
+		uint8_t nibble = *hex++;
+		if (nibble >= '0' && nibble <= '9')
+			nibble = nibble - '0';
+		else if (nibble >= 'a' && nibble <='f')
+			nibble = nibble - 'a' + 10;
+		else if (nibble >= 'A' && nibble <='F')
+			nibble = nibble - 'A' + 10;
+		val = (val << 4) | (nibble & 0xF);
+	}
+	return val;
+}
+
+uint32_t GDBDecToUint(char *dec)
+{
+	uint32_t val = 0;
+	while (*dec) {
+		uint8_t digit = *dec++;
+		if (digit >= '0' && digit <= '9')
+			digit = digit - '0';
+		val = (val*10) + digit;
+	}
+	return val;
+}
+
 uint8_t GDBChecksum(const char *data)
 {
     uint8_t sum = 0;
@@ -102,9 +130,10 @@ void GDBThreadOp()
 		{
 			int procid, tid;
 			c_sscanf(threadStr, "p%d.%d", &procid, &tid);
+			tid = tid <= 0 ? 0 : tid - 1;
 
-			kprintf("proc %d thread %d\n", procid, tid);
-			currentGProcess = tid - 1;
+			kprintf("g %d.%d\n", procid, tid);
+			currentGProcess = tid;
 
 			strcpy(responseData, "OK");
 			haveResponse = 1;
@@ -119,9 +148,10 @@ void GDBThreadOp()
 		{
 			int procid, tid;
 			c_sscanf(threadStr, "p%d.%d", &procid, &tid);
+			tid = tid <= 0 ? 0 : tid - 1;
 
-			kprintf("proc %d thread %d\n", procid, tid);
-			currentCProcess = tid - 1;
+			kprintf("c %d.%d\n", procid, tid);
+			currentCProcess = tid;
 
 			strcpy(responseData, "OK");
 			haveResponse = 1;
@@ -170,7 +200,7 @@ void GDBThreadInfo()
 	// GDB expects the first thread in the response to be able to stop.
 	// We'll have to deny that for the OS threads.
 	strcpy(responseData, "m");
-	for (int i=0;i<ctx->numTasks;++i)
+	for (int i=0; i<ctx->numTasks; ++i)
 	{
 		//struct STask *task = &ctx->tasks[i];
 		// Process ID, Thread ID (we consider our tasks to be processes)
@@ -201,39 +231,17 @@ void GDBMemRead()
 	packetData++; // Skip 'm'
 
 	// Parse address
-	char *addressStr = strtok(packetData, ",");
-	if (addressStr != NULL)
+	uint32_t addrs, numbytes;
+	c_sscanf(packetData, "%x,%d", &addrs, &numbytes);
+
+	// Read memory and format response
+	for (uint32_t i = 0; i < numbytes; ++i)
 	{
-		// Reverse the hex bytes of the address
-		size_t len = strlen(addressStr);
-		char reversedAddressStr[9] = {0}; // 8 hex digits + null terminator
-		for (size_t i = 0; i < len; i += 2)
-		{
-			reversedAddressStr[len - 2 - i] = addressStr[i];
-			reversedAddressStr[len - 1 - i] = addressStr[i + 1];
-		}
-
-		uint32_t address = (uint32_t)strtol(reversedAddressStr, NULL, 16);
-
-		packetData += strlen(addressStr) + 1; // Skip address
-
-		// Parse length
-		char *lengthStr = strtok(packetData, ",");
-		if (lengthStr != NULL)
-		{
-			uint32_t length = (uint32_t)strtol(lengthStr, NULL, 16);
-
-			// Read memory and format response
-			responseData[0] = '\0';
-			for (uint32_t i = 0; i < length; ++i)
-			{
-				uint8_t byte = *((uint8_t *)(address + i));
-				mini_snprintf(responseData + strlen(responseData), 1023 - strlen(responseData), "%02x", byte);
-			}
-
-			haveResponse = 1;
-		}
+		uint8_t byte = *((uint8_t *)(addrs + i));
+		mini_snprintf(responseData, 1023, "%s%02x", responseData, byte);
 	}
+
+	haveResponse = 1;
 }
 
 void GDBReadRegisters()
@@ -311,9 +319,10 @@ void GDBSetThread()
 	{
 		int procid, tid;
 		c_sscanf(threadStr, "p%d.%d", &procid, &tid);
+		tid = tid <= 0 ? 0 : tid - 1;
 
-		kprintf("proc %d thread %d\n", procid, tid);
-		currentThread = tid - 1;
+		kprintf("T %d.%d\n", procid, tid);
+		currentThread = tid;
 
 		strcpy(responseData, "OK");
 		haveResponse = 1;
