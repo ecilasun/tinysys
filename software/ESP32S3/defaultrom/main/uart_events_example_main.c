@@ -197,12 +197,6 @@ void app_main(void)
 	gpio_set_level(PIN_REBOOT, 0);
 	gpio_hold_en(PIN_REBOOT);
 
-	// Disable watchdog timer
-	esp_task_wdt_deinit();
-
-	// Delay startup to allow USB to enumerate
-	vTaskDelay(500 / portTICK_PERIOD_MS);
-
     esp_log_level_set(TAG, ESP_LOG_NONE);
 	// Initialize NVS.
 	esp_err_t ret = nvs_flash_init();
@@ -211,6 +205,12 @@ void app_main(void)
 		ret = nvs_flash_init();
 	}
 	ESP_ERROR_CHECK( ret );
+
+	// Disable watchdog timer
+	esp_task_wdt_deinit();
+
+	// Delay startup to allow USB to enumerate
+	vTaskDelay(1000 / portTICK_PERIOD_MS);
 
 	// No buffering on stdin
 	setvbuf(stdin, NULL, _IONBF, 0);
