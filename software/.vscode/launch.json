@@ -9,7 +9,7 @@
 			"name": "C/C++(RISCV) - Debug",
 			"type": "cppdbg",
 			"request": "launch",
-			"program": "${workspaceFolder}/samples/helloworld/helloworld.elf",
+			"program": "${workspaceFolder}/samples/led/led.elf",
 			"args": [],
 			"stopAtEntry": false,
 			"cwd": "${fileDirname}",
