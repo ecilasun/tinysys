@@ -12,8 +12,8 @@
 
 static char *packetData = (char *)GDB_PACKET_BUFFER;
 static char *responseData = (char *)GDB_RESPONSE_BUFFER;
+static uint32_t debuggerAttached = 0;
 static uint32_t packetCursor = 0;
-static uint32_t responseCursor = 0;
 static uint32_t haveResponse = 0;
 static uint32_t isackresponse = 0;
 static uint32_t currentGProcess = 0;
@@ -236,16 +236,30 @@ void GDBVCont()
 	}
 }
 
+void GDBBreak()
+{
+	if (debuggerAttached == 0)
+	{
+		// Pass this through to the CLI for now
+		// Later on we'll let the GDB stub handle this
+		uint8_t drain = 0x03;
+		KeyRingBufferWrite(&drain, 1);
+	}
+	else
+	{
+		// Stopped due to CTRL+C
+		strcpy(responseData, "T02");
+		haveResponse = 1;
+	}
+}
+
 void GDBParseCommands()
 {
-	//kprintf("%s\n", packetData);
-
-	// Reset response buffer	
-	responseData[0] = 0;
-	haveResponse = 0;
-	isackresponse = 0;
-
-	if (strstr(packetData, "m") == packetData)
+	if (packetData[0] == 0x03) // CTRL+C
+	{
+		GDBBreak();
+	}
+	else if (strstr(packetData, "m") == packetData)
 	{
 		GDBMemRead();
 	}
@@ -256,11 +270,12 @@ void GDBParseCommands()
 	else if (strstr(packetData, "c") == packetData)
 	{
 		// Continue
-		strcpy(responseData, "OK");
+		strcpy(responseData, "OK"); // or S05 or other codes if process stops
 		haveResponse = 1;
 	}
 	else if (strstr(packetData, "D") == packetData)
 	{
+		debuggerAttached = 0;
 		// Detach
 		strcpy(responseData, "OK");
 		haveResponse = 1;
@@ -288,7 +303,15 @@ void GDBParseCommands()
 	}
 	else if (strstr(packetData, "qSupported") == packetData)
 	{
+		debuggerAttached = 1;
 		GDBQSupported();
+	}
+	else if (strstr(packetData, "vKill") == packetData)
+	{
+		debuggerAttached = 0;
+		// TODO: Kill attached process
+		strcpy(responseData, "OK");
+		haveResponse = 1;
 	}
 	else if (strstr(packetData, "qTStatus") == packetData)
 	{
@@ -359,8 +382,10 @@ void GDBParseCommands()
 
 void GDBStubBeginPacket()
 {
-	responseCursor = 0;
+	responseData[0] = 0;
 	packetCursor = 0;
+	haveResponse = 0;
+	isackresponse = 0;
 }
 
 void GDBStubEndPacket()

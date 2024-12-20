@@ -60,13 +60,12 @@ void HandleSerialInput()
 				// NACK received from GDB
 				//GDBNack();
 			}
-			else if (drain == 0x03) // CTRL+C
+			else if (drain == 0x03)
 			{
-				// NOTE: This is sent when we're debugging for 'pause'
-
-				// Pass this through to the CLI for now
-				// Later on we'll let the GDB stub handle this
-				KeyRingBufferWrite(&drain, 1);
+				// Break request
+				GDBStubBeginPacket();
+				GDBStubAddByte(drain);
+				GDBStubEndPacket();
 			}
 			else
 				KeyRingBufferWrite(&drain, 1); // Regular keyboard input
