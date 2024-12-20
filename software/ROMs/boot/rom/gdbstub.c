@@ -339,6 +339,8 @@ void GDBBreak()
 	}
 	else
 	{
+		// TODO: halt the user task
+
 		// Stopped due to CTRL+C
 		strcpy(responseData, "T02");
 		haveResponse = 1;
