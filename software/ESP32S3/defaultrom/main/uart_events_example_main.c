@@ -197,6 +197,12 @@ void app_main(void)
 	gpio_set_level(PIN_REBOOT, 0);
 	gpio_hold_en(PIN_REBOOT);
 
+	// Disable watchdog timer
+	esp_task_wdt_deinit();
+
+	// Delay startup to allow USB to enumerate
+	vTaskDelay(500 / portTICK_PERIOD_MS);
+
     esp_log_level_set(TAG, ESP_LOG_NONE);
 	// Initialize NVS.
 	esp_err_t ret = nvs_flash_init();
@@ -243,8 +249,6 @@ void app_main(void)
     //Reset the pattern queue length to record at most 20 pattern positions.
     //uart_pattern_queue_reset(EX_UART_NUM, 20);
 
-	esp_task_wdt_deinit();
-
 	esp_log_level_set(TAG, ESP_LOG_INFO);
 	//ESP_LOGI(TAG, "starting up TinySys terminal\n");
 
@@ -254,10 +258,4 @@ void app_main(void)
     //Create a task to handler UART event from ISR
     xTaskCreate(uart_event_task, "tinysys_uart_task", 4096, NULL, 12, NULL);
 	xTaskCreate(jtag_task, "tinysys_jtag_task", 4096, NULL, 12, NULL);
-
-	while (1)
-	{
-		vTaskDelay(1000 / portTICK_PERIOD_MS);
-	}
-	
 }
