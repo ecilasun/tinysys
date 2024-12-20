@@ -8,6 +8,7 @@
 #include "task.h"
 #include "keyringbuffer.h"
 #include "mini-printf.h"
+#include "mini-scanf.h"
 #include <stdlib.h>
 
 static char *packetData = (char *)GDB_PACKET_BUFFER;
@@ -38,7 +39,7 @@ void GDBQSupported()
 	if (packetData[0] == ':')
 		packetData++;
 	
-	strcat(responseData, "PacketSize=1024;");
+	strcat(responseData, "PacketSize=1024;qXfer:threads:read+;");
 
 	// Parse queries
 	char *command = strtok(packetData, ";");
@@ -126,6 +127,28 @@ void GDBQTStatus()
 	haveResponse = 1;
 }
 
+void GDBThreadsRead()
+{
+	packetData += 19; // Skip 'qXfer:threads:read:'
+	packetData++; // Skip ':'
+
+	int offset, length;
+	c_sscanf(packetData, "%d,%d", &offset, &length);
+
+	struct STaskContext *ctx = _task_get_context(0);
+
+	// m: more data l: last packet
+	strcpy(responseData, "l<?xml version=\"1.0\"?>\n<threads>\n");
+	for (int i=0; i<ctx->numTasks; ++i)
+	{
+		struct STask *task = &ctx->tasks[i];
+		mini_snprintf(responseData, 1023, "%s\t<thread id=\"%x\" core=\"0\" name=\"%s\"></thread>\n", responseData, i+1, task->name);
+	}
+	strcat(responseData, "</threads>\n");
+
+	haveResponse = 1;
+}
+
 void GDBThreadInfo()
 {
 	struct STaskContext *ctx = _task_get_context(0);
@@ -137,7 +160,7 @@ void GDBThreadInfo()
 	{
 		//struct STask *task = &ctx->tasks[i];
 		// Process ID, Thread ID (we consider our tasks to be processes)
-		mini_snprintf(responseData, 1023, "%sp%d.%d", responseData, i, 0);
+		mini_snprintf(responseData, 1023, "%sp%d.%d", responseData, i+1, 1); // process and thread IDs are one-based (and hex unless there's a - sign?)
 		if (i != ctx->numTasks-1)
 			strcat(responseData, ",");
 	}
@@ -286,7 +309,7 @@ void GDBParseCommands()
 	}
 	else if (strstr(packetData, "qC") == packetData)
 	{
-		strcpy(responseData, "p0.0");
+		strcpy(responseData, "p1.0");
 		haveResponse = 1;
 	}
 	else if (strstr(packetData, "Z0") == packetData)
@@ -312,6 +335,10 @@ void GDBParseCommands()
 		// TODO: Kill attached process
 		strcpy(responseData, "OK");
 		haveResponse = 1;
+	}
+	else if (strstr(packetData, "qXfer:threads:read") == packetData)
+	{
+		GDBThreadsRead();
 	}
 	else if (strstr(packetData, "qTStatus") == packetData)
 	{
