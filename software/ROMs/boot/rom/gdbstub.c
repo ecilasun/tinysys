@@ -187,24 +187,35 @@ void GDBMemRead()
 	packetData++; // Skip 'm'
 
 	// Parse address
-	char *address = strtok(packetData, ",");
-	if (address != NULL)
+	char *addressStr = strtok(packetData, ",");
+	if (addressStr != NULL)
 	{
-		packetData += strlen(address) + 1; // Skip address
+		// Reverse the hex bytes of the address
+		size_t len = strlen(addressStr);
+		char reversedAddressStr[9] = {0}; // 8 hex digits + null terminator
+		for (size_t i = 0; i < len; i += 2)
+		{
+			reversedAddressStr[len - 2 - i] = addressStr[i];
+			reversedAddressStr[len - 1 - i] = addressStr[i + 1];
+		}
+
+		uint32_t address = (uint32_t)strtol(reversedAddressStr, NULL, 16);
+
+		packetData += strlen(addressStr) + 1; // Skip address
 
 		// Parse length
-		char *length = strtok(packetData, ":");
-		if (length != NULL)
+		char *lengthStr = strtok(packetData, ",");
+		if (lengthStr != NULL)
 		{
-			packetData += strlen(length) + 1; // Skip length
+			uint32_t length = (uint32_t)strtol(lengthStr, NULL, 16);
 
-			uint32_t addr = strtol(address, NULL, 16);
-			uint32_t len = strtol(length, NULL, 16);
-
-			// Read memory
-			uint8_t *mem = (uint8_t *)addr;
-			for (int i=0; i<len; ++i)
-				mini_snprintf(responseData, 1023, "%s%02X", responseData, mem[i]);
+			// Read memory and format response
+			responseData[0] = '\0';
+			for (uint32_t i = 0; i < length; ++i)
+			{
+				uint8_t byte = *((uint8_t *)(address + i));
+				mini_snprintf(responseData + strlen(responseData), 1023 - strlen(responseData), "%02x", byte);
+			}
 
 			haveResponse = 1;
 		}
@@ -218,10 +229,27 @@ void GDBReadRegisters()
 	struct STaskContext *ctx = _task_get_context(0); // CPU0
 	struct STask *task = &ctx->tasks[currentGProcess];
 
-	mini_snprintf(responseData, 1023, "%s00000000", responseData); // Since we're stashing PC here, we'll just return 0 for zero register instead
+	// Since we're stashing PC here, we'll just return 0 for zero register instead
+	mini_snprintf(responseData, 1023, "%s00000000", responseData);
+
+	// General purpose registers - float registers are aliased to these in our arhitecture
 	for (int i=1; i<32; ++i)
-		mini_snprintf(responseData, 1023, "%s%08X", responseData, task->regs[i]);
-	mini_snprintf(responseData, 1023, "%s%08X", responseData, task->regs[0]); // Now we have to add the PC at the end of the register list
+	{
+		uint32_t reg = task->regs[i];
+		mini_snprintf(responseData + strlen(responseData), 1023 - strlen(responseData), "%02x%02x%02x%02x",
+					(reg >> 0) & 0xFF,
+					(reg >> 8) & 0xFF,
+					(reg >> 16) & 0xFF,
+					(reg >> 24) & 0xFF);
+	}
+
+	// PC comes last
+	uint32_t pc = task->regs[0];
+	mini_snprintf(responseData + strlen(responseData), 1023 - strlen(responseData), "%02x%02x%02x%02x",
+				(pc >> 0) & 0xFF,
+				(pc >> 8) & 0xFF,
+				(pc >> 16) & 0xFF,
+				(pc >> 24) & 0xFF);
 
 	haveResponse = 1;
 }
