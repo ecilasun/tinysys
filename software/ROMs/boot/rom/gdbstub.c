@@ -17,9 +17,12 @@ static uint32_t debuggerAttached = 0;
 static uint32_t packetCursor = 0;
 static uint32_t haveResponse = 0;
 static uint32_t isackresponse = 0;
-static uint32_t currentGProcess = 0;
-static uint32_t currentCProcess = 0;
-static uint32_t currentThread = 0;
+static uint32_t currentGCPU = 0;
+static uint32_t currentGProcess = 2;
+static uint32_t currentCCPU = 0;
+static uint32_t currentCProcess = 2;
+static uint32_t currentCPU = 0;		// First CPU
+static uint32_t currentThread = 2;	// User process
 
 uint32_t GDBHexToUint(char *hex)
 {
@@ -76,32 +79,23 @@ void GDBQSupported()
 	{
 		if (strstr(command, "swbreak") == command)
 		{
-			if (strstr(command, "+"))
-			{
-				strcat(responseData, "swbreak+;");
-			}
+			// Can only do sofware breakpoints (i.e. replace instructions with ebreak and save them in a table)
+			strcat(responseData, "swbreak+;");
 		}
 		else if (strstr(command, "hwbreak") == command)
 		{
-			if (strstr(command, "+"))
-			{
-				// Can't do hardware breakpoints
-				strcat(responseData, "hwbreak-;");
-			}
+			// Can't do hardware breakpoints
+			strcat(responseData, "hwbreak-;");
 		}
 		else if (strstr(command, "vContSupported") == command)
 		{
-			if (strstr(command, "+"))
-			{
-				strcat(responseData, "vContSupported+;");
-			}
+			// vCont supported
+			strcat(responseData, "vContSupported+;");
 		}
 		else if (strstr(command, "multiprocess") == command)
 		{
-			if (strstr(command, "+"))
-			{
-				strcat(responseData, "multiprocess+;");
-			}
+			// Only one user process with multiple threads at one time
+			strcat(responseData, "multiprocess-;");
 		}
 		else
 		{
@@ -126,37 +120,31 @@ void GDBThreadOp()
 		packetData++; // Skip 'g'
 
 		// Parse process/thread ID
-		char *threadStr = strtok(packetData, ";");
-		if (threadStr != NULL)
-		{
-			int procid, tid;
-			c_sscanf(threadStr, "p%d.%d", &procid, &tid);
-			tid = tid <= 0 ? 0 : tid - 1;
+		int tid;
+		c_sscanf(packetData, "p%x", &tid);
+		tid = tid <= 0 ? 0 : tid - 1;
 
-			kprintf("g %d.%d\n", procid, tid);
-			currentGProcess = tid;
+		kprintf("g %d\n", tid);
+		currentGCPU = 0; // TODO: Find out from thread ID
+		currentGProcess = tid;
 
-			strcpy(responseData, "OK");
-			haveResponse = 1;
-		}
+		strcpy(responseData, "OK");
+		haveResponse = 1;
 	}
 	else if (packetData[0] == 'c') // Hc
 	{
 		packetData++; // Skip 'c'
 
-		char *threadStr = strtok(packetData, ";");
-		if (threadStr != NULL)
-		{
-			int procid, tid;
-			c_sscanf(threadStr, "p%d.%d", &procid, &tid);
-			tid = tid <= 0 ? 0 : tid - 1;
+		int tid;
+		c_sscanf(packetData, "p%x", &tid);
+		tid = tid <= 0 ? 0 : tid - 1;
 
-			kprintf("c %d.%d\n", procid, tid);
-			currentCProcess = tid;
+		kprintf("c %d\n", tid);
+		currentCCPU = 0; // TODO: Find out from thread ID
+		currentCProcess = tid;
 
-			strcpy(responseData, "OK");
-			haveResponse = 1;
-		}
+		strcpy(responseData, "OK");
+		haveResponse = 1;
 	}
 }
 
@@ -170,22 +158,25 @@ void GDBQTStatus()
 void GDBThreadsRead()
 {
 	packetData += 19; // Skip 'qXfer:threads:read:'
-	packetData++; // Skip ':'
+	packetData++; // Skip second ':'
 
 	int offset, length;
 	c_sscanf(packetData, "%d,%d", &offset, &length);
 
-	// m: more data l: last packet
+	// m: more data, l: last packet
 	strcpy(responseData, "l<?xml version=\"1.0\"?>\n<threads>\n");
 
-	for (int i=0; i<MAX_HARTS; ++i)
+	// NOTE: The OS thread (CPU#0 thread#0) can't be debugged as it's running the OS and the debugger
+	for (int cpu=0; cpu<MAX_HARTS; ++cpu)
 	{
-		struct STaskContext *ctx = _task_get_context(i);
+		struct STaskContext *ctx = _task_get_context(cpu);
 
-		for (int j=0; j<ctx->numTasks; ++j)
+		// Skip the OS threads
+		for (int j=cpu==0 ? 2 : 1; j<ctx->numTasks; ++j)
 		{
 			struct STask *task = &ctx->tasks[j];
-			mini_snprintf(responseData, 1023, "%s\t<thread id=\"%x\" core=\"%d\" name=\"%s\" handle=\"%04X\"></thread>\n", responseData, j+1, i, task->name, 0xA000+i);
+			// Apparently GDB expects thread IDs across CPUs to be unique
+			mini_snprintf(responseData, 1023, "%s\t<thread id=\"%d\" core=\"%d\" name=\"%s\" handle=\"%x\">%s [CPU%d]</thread>\n", responseData, j+1, cpu, task->name, cpu*TASK_MAX+j, task->name, cpu);
 		}
 	}
 
@@ -196,19 +187,24 @@ void GDBThreadsRead()
 
 void GDBThreadInfo()
 {
-	struct STaskContext *ctx = _task_get_context(0);
-
 	// GDB expects the first thread in the response to be able to stop.
 	// We'll have to deny that for the OS threads.
-	strcpy(responseData, "m");
-	for (int i=0; i<ctx->numTasks; ++i)
+	strcpy(responseData, "m ");
+	for (int cpu=0; cpu<MAX_HARTS; ++cpu)
 	{
-		//struct STask *task = &ctx->tasks[i];
-		// Process ID, Thread ID (we consider our tasks to be processes)
-		mini_snprintf(responseData, 1023, "%sp%d.%d", responseData, i+1, 1); // process and thread IDs are one-based (and hex unless there's a - sign?)
-		if (i != ctx->numTasks-1)
+		struct STaskContext *ctx = _task_get_context(cpu);
+
+		// Skip the OS threads
+		for (int j=cpu==0 ? 2 : 1; j<ctx->numTasks; ++j)
+		{
+			//struct STask *task = &ctx->tasks[i];
+			mini_snprintf(responseData, 1023, "%s%d", responseData, j+1);
 			strcat(responseData, ",");
+		}
 	}
+
+	// Delete the last ','
+	responseData[strlen(responseData)-1] = 0;
 
 	haveResponse = 1;
 }
@@ -218,9 +214,10 @@ void GDBQAttached()
 	packetData += 9; // Skip 'qAttached'
 	packetData++; // Skip ':'
 
-	int processid = atoi(packetData);
-
-	kprintf("?attached(%d)\n", processid);
+	uint32_t processid;
+	c_sscanf(packetData, "%x", &processid);
+	
+	//kprintf("?attached(%d)\n", processid);
 
 	// 1: Attached to existing process, 0: Created new process
 	strcpy(responseData, "1");
@@ -318,11 +315,12 @@ void GDBSetThread()
 	char *threadStr = strtok(packetData, ";");
 	if (threadStr != NULL)
 	{
-		int procid, tid;
-		c_sscanf(threadStr, "p%d.%d", &procid, &tid);
+		int tid;
+		c_sscanf(threadStr, "p%x", &tid);
 		tid = tid <= 0 ? 0 : tid - 1;
 
-		kprintf("T %d.%d\n", procid, tid);
+		kprintf("T %d\n", tid);
+		currentCPU = 0; // TODO: Find out from thread ID
 		currentThread = tid;
 
 		strcpy(responseData, "OK");
@@ -368,13 +366,17 @@ void GDBParseCommands()
 	else if (strstr(packetData, "c") == packetData)
 	{
 		// Continue
+
 		strcpy(responseData, "OK"); // or S05 or other codes if process stops
+
 		haveResponse = 1;
 	}
 	else if (strstr(packetData, "D") == packetData)
 	{
 		debuggerAttached = 0;
-		// Detach
+
+		// TODO: Detach (i.e. resume process and restore all breakpoints)
+
 		strcpy(responseData, "OK");
 		haveResponse = 1;
 	}
@@ -384,7 +386,7 @@ void GDBParseCommands()
 	}
 	else if (strstr(packetData, "qC") == packetData)
 	{
-		strcpy(responseData, "p1.0");
+		mini_snprintf(responseData, 1023, "QC %d", currentThread);
 		haveResponse = 1;
 	}
 	else if (strstr(packetData, "Z0") == packetData)
@@ -407,7 +409,15 @@ void GDBParseCommands()
 	else if (strstr(packetData, "vKill") == packetData)
 	{
 		debuggerAttached = 0;
-		// TODO: Kill attached process
+
+		// Kill user process and its threads
+		struct STaskContext *ctx0 = _task_get_context(0);
+		for (int i=2; i<ctx0->numTasks; ++i)
+			_task_exit_task_with_id(ctx0, i, 0);
+		struct STaskContext *ctx1 = _task_get_context(1);
+		for (int i=1; i<ctx0->numTasks; ++i)
+			_task_exit_task_with_id(ctx1, i, 0);
+
 		strcpy(responseData, "OK");
 		haveResponse = 1;
 	}
@@ -434,7 +444,8 @@ void GDBParseCommands()
 	}
 	else if (strstr(packetData, "qsThreadInfo") == packetData)
 	{
-		// Empty response
+		// No more threads
+		strcpy(responseData, "l");
 		haveResponse = 1;
 	}
 	else if (strstr(packetData, "vMustReplyEmpty"))
@@ -460,7 +471,7 @@ void GDBParseCommands()
 	}
 	else
 	{
-		kprintf("unknown command: %s\n", packetData);
+		//kprintf("unknown command: %s\n", packetData);
 		strcpy(responseData, "-");
 		isackresponse = 1;
 		haveResponse = 1;
@@ -471,7 +482,7 @@ void GDBParseCommands()
 		if (isackresponse)
 		{
 			UARTPrintf("%s", responseData);
-			kprintf("(N)ACK: %s\n", responseData);
+			//kprintf("(N)ACK: %s\n", responseData);
 		}
 		else
 		{
