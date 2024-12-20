@@ -18,7 +18,8 @@ static uint32_t packetCursor = 0;
 static uint32_t haveResponse = 0;
 static uint32_t isackresponse = 0;
 static uint32_t currentGProcess = 0;
-//static uint32_t currentCProcess = 0;
+static uint32_t currentCProcess = 0;
+static uint32_t currentThread = 0;
 
 uint8_t GDBChecksum(const char *data)
 {
@@ -96,12 +97,16 @@ void GDBThreadOp()
 		packetData++; // Skip 'g'
 
 		// Parse process/thread ID
-		char *threadID = strtok(packetData, ";");
-		if (threadID != NULL)
+		char *threadStr = strtok(packetData, ";");
+		if (threadStr != NULL)
 		{
-			kprintf("Hg: %s\n", threadID);
+			int procid, tid;
+			c_sscanf(threadStr, "p%d.%d", &procid, &tid);
+
+			kprintf("proc %d thread %d\n", procid, tid);
+			currentGProcess = tid - 1;
+
 			strcpy(responseData, "OK");
-			//currentGProcess = ??;
 			haveResponse = 1;
 		}
 	}
@@ -109,12 +114,16 @@ void GDBThreadOp()
 	{
 		packetData++; // Skip 'c'
 
-		char *threadID = strtok(packetData, ";");
-		if (threadID != NULL)
+		char *threadStr = strtok(packetData, ";");
+		if (threadStr != NULL)
 		{
-			kprintf("Hc: %s\n", threadID);
+			int procid, tid;
+			c_sscanf(threadStr, "p%d.%d", &procid, &tid);
+
+			kprintf("proc %d thread %d\n", procid, tid);
+			currentCProcess = tid - 1;
+
 			strcpy(responseData, "OK");
-			//currentCProcess = ??;
 			haveResponse = 1;
 		}
 	}
@@ -135,15 +144,20 @@ void GDBThreadsRead()
 	int offset, length;
 	c_sscanf(packetData, "%d,%d", &offset, &length);
 
-	struct STaskContext *ctx = _task_get_context(0);
-
 	// m: more data l: last packet
 	strcpy(responseData, "l<?xml version=\"1.0\"?>\n<threads>\n");
-	for (int i=0; i<ctx->numTasks; ++i)
+
+	for (int i=0; i<MAX_HARTS; ++i)
 	{
-		struct STask *task = &ctx->tasks[i];
-		mini_snprintf(responseData, 1023, "%s\t<thread id=\"%x\" core=\"0\" name=\"%s\"></thread>\n", responseData, i+1, task->name);
+		struct STaskContext *ctx = _task_get_context(i);
+
+		for (int j=0; j<ctx->numTasks; ++j)
+		{
+			struct STask *task = &ctx->tasks[j];
+			mini_snprintf(responseData, 1023, "%s\t<thread id=\"%x\" core=\"%d\" name=\"%s\" handle=\"%04X\"></thread>\n", responseData, j+1, i, task->name, 0xA000+i);
+		}
 	}
+
 	strcat(responseData, "</threads>\n");
 
 	haveResponse = 1;
@@ -287,6 +301,25 @@ void GDBVCont()
 	}
 }
 
+void GDBSetThread()
+{
+	packetData++; // Skip 'T'
+
+	// Parse thread ID
+	char *threadStr = strtok(packetData, ";");
+	if (threadStr != NULL)
+	{
+		int procid, tid;
+		c_sscanf(threadStr, "p%d.%d", &procid, &tid);
+
+		kprintf("proc %d thread %d\n", procid, tid);
+		currentThread = tid - 1;
+
+		strcpy(responseData, "OK");
+		haveResponse = 1;
+	}
+}
+
 void GDBBreak()
 {
 	if (debuggerAttached == 0)
@@ -317,6 +350,10 @@ void GDBParseCommands()
 	else if (strstr(packetData, "H") == packetData)
 	{
 		GDBThreadOp();
+	}
+	else if (strstr(packetData, "T") == packetData)
+	{
+		GDBSetThread();
 	}
 	else if (strstr(packetData, "c") == packetData)
 	{

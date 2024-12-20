@@ -1,4 +1,4 @@
-C:\riscv32-gcc\bin\riscv32-unknown-elf-gdb.exe
+C:\riscv32-gcc\bin\riscv32-unknown-elf-gdb.exe led.elf
 set debug remote 1
 set architecture riscv:rv32
 target remote \\.\COM6
