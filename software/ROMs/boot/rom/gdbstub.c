@@ -105,7 +105,8 @@ void GDBQSupported()
 		}
 		else
 		{
-			kprintf("? %s\n", command);
+			// Ignore unknown queries
+			//kprintf("? %s\n", command);
 			//strcat(responseData, "-");
 		}
 		command = strtok(NULL, ";");
