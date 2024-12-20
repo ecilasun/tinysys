@@ -242,6 +242,27 @@ void GDBMemRead()
 	haveResponse = 1;
 }
 
+void GDBMemWrite()
+{
+	packetData++; // Skip 'M'
+
+	// Parse address
+	uint32_t addrs, numbytes;
+	int skip = c_sscanf(packetData, "%x,%d:", &addrs, &numbytes);
+	packetData += skip;
+
+	// Write memory
+	for (uint32_t i = 0; i < numbytes; ++i)
+	{
+		uint8_t byte = GDBHexToUint(packetData);
+		*((uint8_t *)(addrs + i)) = byte;
+		packetData += 2;
+	}
+
+	strcpy(responseData, "OK");
+	haveResponse = 1;
+}
+
 void GDBReadRegisters()
 {
 	// Registers for 'currentGProcess'
@@ -271,6 +292,29 @@ void GDBReadRegisters()
 				(pc >> 16) & 0xFF,
 				(pc >> 24) & 0xFF);
 
+	haveResponse = 1;
+}
+
+void GDBWriteRegisters()
+{
+	packetData++; // Skip 'G'
+
+	// Parse registers
+	struct STaskContext *ctx = _task_get_context(0); // CPU0
+	struct STask *task = &ctx->tasks[currentGProcess];
+
+	for (int i=1; i<32; ++i)
+	{
+		uint32_t reg = GDBHexToUint(packetData);
+		task->regs[i] = reg;
+		packetData += 8;
+	}
+
+	// PC comes last
+	uint32_t pc = GDBHexToUint(packetData);
+	task->regs[0] = pc;
+
+	strcpy(responseData, "OK");
 	haveResponse = 1;
 }
 
@@ -357,6 +401,18 @@ void GDBParseCommands()
 	{
 		GDBMemRead();
 	}
+	else if (strstr(packetData, "M") == packetData)
+	{
+		GDBMemWrite();
+	}
+	else if (strstr(packetData, "g") == packetData)
+	{
+		GDBReadRegisters();
+	}
+	else if (strstr(packetData, "G") == packetData)
+	{
+		GDBWriteRegisters();
+	}
 	else if (strstr(packetData, "H") == packetData)
 	{
 		GDBThreadOp();
@@ -370,7 +426,6 @@ void GDBParseCommands()
 		// Continue
 
 		strcpy(responseData, "OK"); // or S05 or other codes if process stops
-
 		haveResponse = 1;
 	}
 	else if (strstr(packetData, "D") == packetData)
@@ -381,10 +436,6 @@ void GDBParseCommands()
 
 		strcpy(responseData, "OK");
 		haveResponse = 1;
-	}
-	else if (strstr(packetData, "g") == packetData)
-	{
-		GDBReadRegisters();
 	}
 	else if (strstr(packetData, "qC") == packetData)
 	{
