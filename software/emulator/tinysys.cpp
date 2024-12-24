@@ -1,6 +1,10 @@
 #include <stdio.h>
-#include "emulator.h"
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 
+#include "emulator.h"
 #include "SDL.h"
 #include "SDL_ttf.h"
 
@@ -247,6 +251,244 @@ uint32_t statsCallback(Uint32 interval, void* param)
 }
 #endif
 
+uint8_t gdbchecksum(const char *data)
+{
+    uint8_t sum = 0;
+    while (*data)
+	{
+        sum += (uint8_t)*data++;
+    }
+    return sum;
+}
+
+void gdbresponsepacket(int gdbsocket, const char* buffer)
+{
+	char response[512];
+	snprintf(response, 512, "+$%s#%02x", buffer, gdbchecksum(buffer));
+	write(gdbsocket, response, strlen(response));
+}
+
+void gdbprocessquery(int gdbsocket, CEmulator* emulator, const char* buffer)
+{
+	// Check the query type
+	if(strstr(buffer, "qAttached") == buffer)
+	{
+		// Attached query
+		printf("Attached\n");
+	}
+	else if (strstr(buffer, "qXfer:threads:read:") == buffer)
+	{
+		// Read threads query
+		printf("Threads\n");
+	}
+	else if (strstr(buffer, "qTStatus") == buffer)
+	{
+		// Status query
+		printf("Status\n");
+	}
+	else if (strstr(buffer, "qSupported") == buffer)
+	{
+		// Supported query
+		printf("Supported\n");
+		gdbresponsepacket(gdbsocket, "PacketSize=1024;qXfer:threads:read+;swbreak+;");
+	}
+	else if (strstr(buffer, "qSymbol") == buffer)
+	{
+		// Symbol query
+		printf("Symbol\n");
+	}
+	else if (strstr(buffer, "qfThreadInfo") == buffer)
+	{
+		// Thread info query
+		printf("Thread info\n");
+	}
+	else if (strstr(buffer, "qC") == buffer)
+	{
+		// Current thread query
+		printf("Current thread\n");
+	}
+	else
+	{
+		// Unknown query
+		printf("Unknown query: %s\n", buffer);
+	}
+}
+
+void gdbvcont(int gdbsocket, CEmulator* emulator, char* buffer)
+{
+	// Skip 'vCont'
+	buffer += 5;
+
+	// Parse commands
+	char* command = strtok(buffer, ";");
+	while (command != NULL)
+	{
+		if (strstr(command, "?") == command)
+		{
+			// vCont query
+			gdbresponsepacket(gdbsocket, "vCont;c;C;s;S;");
+		}
+		else if (strstr(command, "c") == command)
+		{
+			// Continue
+			gdbresponsepacket(gdbsocket, "S05");
+		}
+		else if (strstr(command, "s") == command)
+		{
+			// Step
+			gdbresponsepacket(gdbsocket, "S05");
+		}
+		else
+		{
+			// Unknown command
+			printf("Unknown vCont: %s\n", command);
+		}
+		command = strtok(NULL, ";");
+	}
+}
+
+void gdbprocesscommand(int gdbsocket, CEmulator* emulator, char* buffer)
+{
+	// Check the command type
+	switch (buffer[0])
+	{
+		case 'H':
+			// Set thread - Hc or Hg
+			if (buffer[1] == 'c')
+			{
+				//emulator->m_cpu[???]->SetCurrent('c');
+				gdbresponsepacket(gdbsocket, "OK");
+			}
+			else if (buffer[1] == 'g')
+			{
+				//emulator->m_cpu[???]->SetCurrent('g');
+				gdbresponsepacket(gdbsocket, "OK");
+			}
+			break;
+		case 'g':
+			// Write registers
+			break;
+		case 'G':
+			// Read registers
+			break;
+		case 'm':
+			// Read memory
+			break;
+		case 'M':
+			// Write memory
+			break;
+		case 'c':
+			// Continue
+			break;
+		case 's':
+			// Step
+			break;
+		case 'v':
+			// vCont
+			if (strstr(buffer, "vCont") == buffer)
+				gdbvcont(gdbsocket, emulator, buffer);
+			else if(strstr(buffer, "vMustReplyEmpty") == buffer)
+				gdbresponsepacket(gdbsocket, "");
+			else
+				printf("Unknown v command: %s\n", buffer);
+			break;
+		case 'q':
+			// Query
+			gdbprocessquery(gdbsocket, emulator, buffer);
+			break;
+		default:
+			// Unknown command
+			break;
+	}
+}
+
+void gdbstubprocess(int gdbsocket, CEmulator* emulator, char* buffer, int n)
+{
+	// Check the first character of the buffer to determine the packet type
+	switch (buffer[0])
+	{
+		case '+':
+			// ACK packet
+			break;
+		case '-':
+			// NACK packet
+			break;
+		case '$':
+			// Command packet
+			buffer++;
+			gdbprocesscommand(gdbsocket, emulator, buffer);
+			break;
+		case 3:
+			// Ctrl-C packet
+			break;
+		default:
+			// Unknown packet
+			break;
+	}
+}
+
+int gdbstubthread(void* data)
+{
+	EmulatorContext* ctx = (EmulatorContext*)data;
+
+	// Create a socket
+	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	if (sockfd < 0)
+	{
+		fprintf(stderr, "Error opening socket\n");
+		return -1;
+	}
+
+	// Bind the socket to the port
+	struct sockaddr_in serv_addr;
+	memset(&serv_addr, '0', sizeof(serv_addr));
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_addr.s_addr = INADDR_ANY;
+	serv_addr.sin_port = htons(1234);
+	if (bind(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0)
+	{
+		fprintf(stderr, "Error binding socket\n");
+		return -1;
+	}
+
+	// Listen for incoming connections
+	listen(sockfd, 5);
+
+	// Accept a connection
+	struct sockaddr_in cli_addr;
+	socklen_t clilen = sizeof(cli_addr);
+	int newsockfd = accept(sockfd, (struct sockaddr*)&cli_addr, &clilen);
+	if (newsockfd < 0)
+	{
+		fprintf(stderr, "Error accepting connection\n");
+		return -1;
+	}
+
+	fprintf(stderr, "GDB stub listening on //localhost:1234\n");
+
+	// Read from the socket
+	char buffer[256];
+	int n;
+	do
+	{
+		n = read(newsockfd, buffer, 255);
+		if (n < 0)
+			fprintf(stderr, "Error reading from socket\n");
+		else
+		{
+			buffer[n] = 0;
+			fprintf(stderr, "> %s\n", buffer);
+			// Respond to gdb command packets here
+			gdbstubprocess(newsockfd, ctx->emulator, buffer, n);
+		}
+	} while (n > 0);
+
+	close(newsockfd);
+	close(sockfd);
+
+	return 0;
+}
+
 #if defined(CAT_LINUX) || defined(CAT_DARWIN)
 int main(int argc, char** argv)
 #else
@@ -326,6 +568,7 @@ int SDL_main(int argc, char** argv)
 #if defined(CPU_STATS)
 	SDL_TimerID statsTimer = SDL_AddTimer(1000, statsCallback, &ectx);
 #endif
+	SDL_Thread* gdbStubThread = SDL_CreateThread(gdbstubthread, "gdbstub", &ectx);
 
 	char bootString[256];
 	snprintf(bootString, 255, "%s : %s", emulatorVersionString, bootRom);
