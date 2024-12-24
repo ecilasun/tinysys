@@ -15,8 +15,10 @@ software/ROMs/**/*.txt
 software/ROMs/**/*.coe
 software/ROMs/**/*.elf
 software/.lock*
-board/expansionboardA-backups/**.zip
-board/expansionboardA**.lck
+board/**-backups/**.zip
+board/**.lck
+boardB/**-backups/**.zip
+boardB/**.lck
 vivado_*.backup.jou
 vivado_*.backup.log
 software/samples/doom/src/riscv/*.txt
@@ -40,3 +42,4 @@ software/tinyremote/build/**
 software/tinyremote/waf3**
 software/tinyremote/.lock**
 software/emulator/sdcard/quake/ID1/**
+
