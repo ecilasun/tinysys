@@ -3,6 +3,7 @@
 #include "uart.h"
 #include "mini-printf.h"
 #include "serialinringbuffer.h"
+#include "gdbstub.h"
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -324,6 +325,24 @@ uint64_t _task_yield()
 	uint64_t now = E32ReadTime();
 	E32SetTimeCompare(now);
 	return now;
+}
+
+uint32_t _task_replace_instruction(uint32_t _newInstruction, uint32_t _address)
+{
+	// Read the instruction at the address and store it for return
+	uint32_t oldInstruction = *((uint32_t *)_address);
+
+	// Replace the instruction
+	*((uint32_t *)_address) = _newInstruction;
+
+	// Make sure the D$ is flushed to memory
+	CFLUSH_D_L1;
+
+	// Make sure the I$ is invalidated to it can be re-fetched
+	asm volatile ("fence.i");
+
+	// Return the old instruction
+	return oldInstruction;
 }
 
 struct STaskContext *_task_get_context(uint32_t _hartid)
@@ -830,6 +849,10 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				// TODO: Return time slice request of current task
 				uint32_t runLength = _task_switch_to_next(taskctx);
 
+				// Update task breakpoints if we're in debug mode
+				//if (GDBIsDebugging())
+				//	GDBUpdateBreakpoints(hartid, taskctx->currentTask);
+
 				// Task scheduler will re-visit after we've filled run length of this task
 				uint64_t now = E32ReadTime();
 				// TODO: Use time slice request returned from _task_switch_to_next()
@@ -884,30 +907,43 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 		{
 			case CAUSE_ILLEGAL_INSTRUCTION:
 			{
-				// Capture error
-				taskctx->kernelError = 4;
-				taskctx->kernelErrorData[0] = taskctx->currentTask;	// Task that crashed
-				taskctx->kernelErrorData[1] = *((uint32_t*)PC);		// Instruction
-				taskctx->kernelErrorData[2] = PC;					// Program counter
+				//if (!GDBIsDebugging())
+				{
+					// Capture error
+					taskctx->kernelError = 4;
+					taskctx->kernelErrorData[0] = taskctx->currentTask;	// Task that crashed
+					taskctx->kernelErrorData[1] = *((uint32_t*)PC);		// Instruction
+					taskctx->kernelErrorData[2] = PC;					// Program counter
 
-				// Terminate task on first chance and remove from list of running tasks
-				_task_exit_current_task(taskctx);
-				// Force switch to next task
-				_task_switch_to_next(taskctx);
+					// Terminate task on first chance and remove from list of running tasks
+					_task_exit_current_task(taskctx);
+					// Force switch to next task
+					_task_switch_to_next(taskctx);
+				}
+				/*else
+				{
+					GDBSignalBreakpoint(hartid, taskctx->currentTask, PC, GDB_SIGNAL_ILL);
+				}*/
 			}
 			break;
 
 			case CAUSE_BREAKPOINT:
 			{
-				taskctx->kernelError = 5;
-				taskctx->kernelErrorData[0] = taskctx->currentTask;	// Task that invoked ebreak
-				taskctx->kernelErrorData[1] = *((uint32_t*)PC);		// Instruction
-				taskctx->kernelErrorData[2] = PC;					// Program counter
-
-				// Exit task in non-debug mode
-				_task_exit_current_task(taskctx);
-				// Force switch to next task
-				_task_switch_to_next(taskctx);
+				//if (!GDBIsDebugging())
+				{
+					taskctx->kernelError = 5;
+					taskctx->kernelErrorData[0] = taskctx->currentTask;	// Task that invoked ebreak
+					taskctx->kernelErrorData[1] = *((uint32_t*)PC);		// Instruction
+					taskctx->kernelErrorData[2] = PC;					// Program counter
+					// Exit task in non-debug mode
+					_task_exit_current_task(taskctx);
+					// Force switch to next task
+					_task_switch_to_next(taskctx);
+				}
+				/*else
+				{
+					GDBSignalBreakpoint(hartid, taskctx->currentTask, PC, GDB_SIGNAL_TRAP);
+				}*/
 			}
 			break;
 

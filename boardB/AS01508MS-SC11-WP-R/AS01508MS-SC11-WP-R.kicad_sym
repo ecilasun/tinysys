@@ -1,0 +1,83 @@
+
+(kicad_symbol_lib (version 20211014) (generator kicad_symbol_editor)
+  (symbol "AS01508MS-SC11-WP-R" (pin_names (offset 1.016)) (in_bom yes) (on_board yes)
+    (property "Reference" "LS" (id 0) (at -1.27 6.35 0)
+      (effects (font (size 1.27 1.27)) (justify bottom left))
+    )
+    (property "Value" "AS01508MS-SC11-WP-R" (id 1) (at -1.27 -8.255 0)
+      (effects (font (size 1.27 1.27)) (justify bottom left))
+    )
+    (property "Footprint" "SPKR_AS01508MS-SC11-WP-R" (id 2) (at 0 0 0)
+      (effects (font (size 1.27 1.27)) (justify bottom) hide)
+    )
+    (property "PARTREV" "11/20/2017" (id 4) (at 0 0 0)
+      (effects (font (size 1.27 1.27)) (justify bottom) hide)
+    )
+    (property "STANDARD" "Manufacturer Recommendations" (id 5) (at 0 0 0)
+      (effects (font (size 1.27 1.27)) (justify bottom) hide)
+    )
+    (property "MAXIMUM_PACKAGE_HEIGHT" "3.7 mm" (id 6) (at 0 0 0)
+      (effects (font (size 1.27 1.27)) (justify bottom) hide)
+    )
+    (property "MANUFACTURER" "Pui Audio" (id 7) (at 0 0 0)
+      (effects (font (size 1.27 1.27)) (justify bottom) hide)
+    )
+    (symbol "AS01508MS-SC11-WP-R_0_0"
+      (polyline
+        (pts (xy -3.175 1.905) (xy -3.175 -1.905)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy -3.175 -1.905) (xy -2.54 -1.905)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy 0.0 -1.905) (xy 0.0 1.905)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy -3.175 1.905) (xy -2.54 1.905)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy 0.0 -1.905) (xy 2.54 -5.08)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy 2.54 -5.08) (xy 2.54 5.08)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy 0.0 1.905) (xy 2.54 5.08)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy -2.54 -2.54) (xy -2.54 -1.905)) (stroke (width 0.1524))
+      )
+      (polyline
+        (pts (xy -2.54 -1.905) (xy 0.0 -1.905)) (stroke (width 0.254))
+      )
+      (polyline
+        (pts (xy -2.54 2.54) (xy -2.54 1.905)) (stroke (width 0.1524))
+      )
+      (polyline
+        (pts (xy -2.54 1.905) (xy 0.0 1.905)) (stroke (width 0.254))
+      )
+      (text "+" (at -5.08 2.54 0)
+        (effects (font (size 1.778 1.778)) (justify bottom left))
+      )
+      (text "-" (at -5.08 -5.08 0)
+        (effects (font (size 1.778 1.778)) (justify bottom left))
+      )
+      (pin passive line (at -2.54 -5.08 90.0) (length 2.54)
+        (name "~"
+          (effects (font (size 1.016 1.016)))
+        )
+        (number "N"
+          (effects (font (size 1.016 1.016)))
+        )
+      )
+      (pin passive line (at -2.54 5.08 270.0) (length 2.54)
+        (name "~"
+          (effects (font (size 1.016 1.016)))
+        )
+        (number "P"
+          (effects (font (size 1.016 1.016)))
+        )
+      )
+    )
+  )
+)

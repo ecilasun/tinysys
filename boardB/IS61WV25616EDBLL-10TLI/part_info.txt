@@ -1,0 +1,9 @@
+Manufacturer=Integrated Silicon Solution Inc.
+PartNumber=IS61WV25616EDBLL-10TLI
+PartCategory=Integrated Circuit
+PackageCategory=Small Outline Packages
+PinCount=44
+Version=2.1
+Released=2018-02-20 04:59:55
+Downloaded=2023-08-19 07:39:28
+3D=Y

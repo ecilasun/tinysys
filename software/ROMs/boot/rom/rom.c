@@ -10,6 +10,7 @@
 #include "serialinput.h"
 #include "commandline.h"
 #include "device.h"
+#include "gdbstub.h"
 
 #include <string.h>
 #include <stdbool.h>
@@ -22,6 +23,7 @@ static const char *s_regnames[]={"pc", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
 void ClearStatics()
 {
 	// Clear static variables for all systems that use them
+	SerialInitStatics();
 	CLIClearStatics();
 }
 
@@ -259,23 +261,24 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	// Reset buffers
 	LEDSetState(0x4);															// xOxx
 	KeyRingBufferReset();
+	// Initialize serial comm and GDB stub
 	SerialInRingBufferReset();
 
 	// Reset peripherals to default states
 	LEDSetState(0x8);															// Oxxx
 	DeviceDefaultState(1);
 
-	// External hardware
-	LEDSetState(0xC);															// OOxx
-	// TODO: Start any external hardware devices here
-
 	// Worker cores do not handle hardware interrupts by default,
 	// only task switching (timer) and software (illegal instruction)
-	LEDSetState(0x6);															// xOOx
+	LEDSetState(0xC);															// OOxx
 	uint32_t self = read_csr(mhartid);
 	_task_init_context(self);
 
-	LEDSetState(0x3);			// xxOO
+	// Initialize GDB stub - debugger won't run properly without this init!
+	LEDSetState(0x6);															// xOOx
+	//GDBStubInit();
+
+	LEDSetState(0x3);															// xxOO
 	struct STaskContext *taskctx[3];
 	taskctx[0] = _task_get_context(self);
 	taskctx[1] = _task_get_context(1);

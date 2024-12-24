@@ -1,5 +1,5 @@
+#include "gdbstub.h"
 #include <string.h>
-
 #include "basesystem.h"
 #include "uart.h"
 #include "serialinput.h"
@@ -23,6 +23,32 @@ static uint32_t currentCCPU = 0;
 static uint32_t currentCProcess = 2;
 static uint32_t currentCPU = 0;		// First CPU
 static uint32_t currentThread = 2;	// User process
+
+// Breakpoint limit
+#define MAX_BREAKPOINTS 16
+// Breakpoint table per CPU per thread
+static uint32_t *breakpoints = NULL;
+// Table of replaced instructions for software breakpoints
+static uint32_t *replacedInstructions = NULL;
+// Previous and new breakpoint status
+static uint32_t *prevpointStatus = NULL;
+static uint32_t *breakpointStatus = NULL;
+// Signal status
+static uint32_t *breakpointSignalled = NULL;
+
+// Initialize GDB stub
+void GDBStubInit()
+{
+	const uint32_t dbgDataSize = MAX_HARTS*TASK_MAX*MAX_BREAKPOINTS;
+
+	breakpoints = (uint32_t *)GDB_DEBUG_DATA;
+	replacedInstructions = breakpoints + dbgDataSize;
+	prevpointStatus = replacedInstructions + dbgDataSize*2;
+	breakpointStatus = prevpointStatus + dbgDataSize*3;
+	breakpointSignalled = breakpointStatus + dbgDataSize*4;
+
+	__builtin_memset(breakpoints, 0, dbgDataSize*5*sizeof(uint32_t));
+}
 
 uint32_t GDBHexToUint(char *hex)
 {
@@ -54,12 +80,101 @@ uint32_t GDBDecToUint(char *dec)
 
 uint8_t GDBChecksum(const char *data)
 {
-    uint8_t sum = 0;
-    while (*data)
+	uint8_t sum = 0;
+	while (*data)
 	{
-        sum += (uint8_t)*data++;
-    }
-    return sum;
+		sum += (uint8_t)*data++;
+	}
+	return sum;
+}
+
+uint32_t GDBIsDebugging()
+{
+	return debuggerAttached;
+}
+
+void GDBSignalBreakpoint(const uint32_t _hartID, const uint32_t _taskID, const uint32_t _pc, uint32_t _sigtype)
+{
+	uint32_t offset = _hartID*TASK_MAX*MAX_BREAKPOINTS+_taskID*MAX_BREAKPOINTS;
+	if (breakpointSignalled[offset+0] != 1)
+	{
+		if (_sigtype == GDB_SIGNAL_ILL)
+			strcpy(responseData, "S04"); // Illegal instruction
+		else if (_sigtype == GDB_SIGNAL_TRAP)
+			strcpy(responseData, "S05"); // Breakpoint
+		else
+			strcpy(responseData, "S19"); // Generic Stop
+		mini_snprintf(responseData + strlen(responseData), 1023 - strlen(responseData), "thread:%x;", _taskID);
+		uint8_t checksum = GDBChecksum(responseData);
+		UARTPrintf("+$%s#%02X", responseData, checksum);
+		breakpointSignalled[offset+0] = 1; // Now, what does GDB do so that we can reset signalled state?
+	}
+}
+
+void GDBAddBreakpoint(uint32_t _hartID, uint32_t _taskID, uint32_t _address)
+{
+	uint32_t offset = _hartID*TASK_MAX*MAX_BREAKPOINTS+_taskID*MAX_BREAKPOINTS;
+	// Find an empty slot
+	for (int i=0; i<MAX_BREAKPOINTS; ++i)
+	{
+		// Find an empty slot
+		if (breakpoints[offset+i] == 0)
+		{
+			// Enable the breakpoint
+			breakpoints[offset+i] = _address;
+			breakpointStatus[offset+i] = 1;
+			break;
+		}
+	}
+}
+
+void GDBRemoveBreakpoint(uint32_t _hartID, uint32_t _taskID, uint32_t _address)
+{
+	uint32_t offset = _hartID*TASK_MAX*MAX_BREAKPOINTS+_taskID*MAX_BREAKPOINTS;
+	for (int i=0; i<MAX_BREAKPOINTS; ++i)
+	{
+		// Found the breakpoint?
+		if (breakpoints[offset+i] == _address)
+		{
+			// Disable the breakpoint and empty the slot
+			breakpoints[offset+i] = 0;
+			breakpointStatus[offset+i] = 0;
+			break;
+		}
+	}
+}
+
+void GDBUpdateBreakpoints(const uint32_t _hartID, const uint32_t _taskID)
+{
+	// Check if any breakpoint status has changed and swap instructions as needed
+	uint32_t offset = _hartID*TASK_MAX*MAX_BREAKPOINTS+_taskID*MAX_BREAKPOINTS;
+	for (int k=0; k<MAX_BREAKPOINTS; ++k)
+	{
+		if (breakpoints[offset+k] != 0)
+		{
+			// Check if the breakpoint status has changed
+			if (prevpointStatus[offset+k] != breakpointStatus[offset+k])
+			{
+				// Swap instructions
+				if (breakpointStatus[offset+k] == 1)
+				{
+					// Get the instruction at the breakpoint address
+					uint32_t instruction = *((uint32_t *)breakpoints[offset+k]);
+					// Enable breakpoint
+					replacedInstructions[offset+k] = instruction;
+					_task_replace_instruction(0x00100073, breakpoints[offset+k]);
+				}
+				else
+				{
+					// Disable breakpoint
+					_task_replace_instruction(replacedInstructions[offset+k], breakpoints[offset+k]);
+				}
+
+				// Update previous status
+				prevpointStatus[offset+k] = breakpointStatus[offset+k];
+			}
+		}
+	}
 }
 
 void GDBQSupported()
@@ -383,7 +498,8 @@ void GDBBreak()
 	}
 	else
 	{
-		// TODO: halt the user task
+		// Add a software breakpoint at the current PC to stop the process
+		GDBAddBreakpoint(currentGCPU, currentGProcess, _task_get_context(currentGCPU)->tasks[currentGProcess].regs[0]);
 
 		// Stopped due to CTRL+C
 		strcpy(responseData, "T02");

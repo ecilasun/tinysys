@@ -12,6 +12,11 @@
 
 static uint32_t in_gdb_mode = 0;
 
+void SerialInitStatics()
+{
+	in_gdb_mode = 0;
+}
+
 void HandleSerialInput()
 {
 	// Pull more incoming data

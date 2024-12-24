@@ -40,21 +40,18 @@
 // Temp file upload location
 #define TEMP_FILE_UPLOAD_START			0x00100000
 // Console buffer
-#define CONSOLE_FRAMEBUFFER_START		0x02000000 // Console framebuffer == 0x4B000 bytes max at 640*480 resolution
-#define CONSOLE_CHARACTERBUFFER_START	0x0204B000 // Character store == 80*60 bytes max at 640*480 resolution
-#define CONSOLE_COLORBUFFER_START		0x0204C2C0 // BG/FG color indices for characters (4 bits each, 1 byte per character)
+#define CONSOLE_FRAMEBUFFER_START		0x02000000 // Console framebuffer == 0x4B000 bytes max at 640*480 resolution, has to be 64K aligned
+#define CONSOLE_CHARACTERBUFFER_START	0x0204D000 // Character store == 80*60 bytes max at 640*480 resolution (leaving a lot of gap here for future use)
+#define CONSOLE_COLORBUFFER_START		0x0204F000 // BG/FG color indices for characters (4 bits each, 1 byte per character) (leaving 8K gap here for future use)
 // Temp memory
-#define KERNEL_TEMP_MEMORY				0x0204D580 // Temporary kernel memory (10880 bytes)
+#define KERNEL_TEMP_MEMORY				0x02053000 // Temporary kernel memory (16384 bytes)
 // Serial buffers (first words are counters)
-#define ISR_STACK_TOP					0x02050000 // Interrupt service routine stack space (16384 bytes)
-#define UART_OUTPUT_TEMP				0x02054000 // Temporary work space for UART print command (16384 bytes)
-#define GDB_RESPONSE_BUFFER				0x02058000 // GDB packet response buffer (16384 bytes)
-#define GDB_PACKET_BUFFER				0x0205C000 // GDB packet buffer (16384 bytes)
-#define UNUSED_STATE4					0x02060000 // Reserved for future (16 bytes)
-#define UNUSED_STATE0					0x02060010 // Reserved for future (16 bytes)
-#define UNUSED_STATE1					0x02060020 // Reserved for future (16 bytes)
-#define UNUSED_STATE2					0x02060030 // Reserved for future (16 bytes)
-#define KERNEL_GFX_CONTEXT				0x02060040 // Kernel terminal graphics context
+#define ISR_STACK_TOP					0x02057000 // Interrupt service routine stack space (16384 bytes)
+#define UART_OUTPUT_TEMP				0x02059000 // Temporary work space for UART print command (8192 bytes)
+#define GDB_DEBUG_DATA					0x0205B000 // GDB debug state store (8192 bytes)
+#define GDB_RESPONSE_BUFFER				0x0205D000 // GDB packet response buffer (8192 bytes)
+#define GDB_PACKET_BUFFER				0x0205F000 // GDB packet buffer (8192 bytes)
+#define KERNEL_GFX_CONTEXT				0x02060000 // Kernel terminal graphics context (4096 bytes with free space for future use)
 // Executable
 #define HEAP_START_APPMEM_END			0x02080000 // Executable space above this
 // Heap
