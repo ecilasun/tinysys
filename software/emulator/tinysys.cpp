@@ -1,8 +1,15 @@
 #include <stdio.h>
 #include <string.h>
+
+#ifdef CAT_WINDOWS
+#include <winsock2.h>
+#define socket_t SOCKET
+#else
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#define socket_t int
+#endif
 
 #include "emulator.h"
 #include "SDL.h"
@@ -253,43 +260,70 @@ uint32_t statsCallback(Uint32 interval, void* param)
 
 uint8_t gdbchecksum(const char *data)
 {
-    uint8_t sum = 0;
-    while (*data)
+	uint8_t sum = 0;
+	while (*data)
 	{
-        sum += (uint8_t)*data++;
-    }
-    return sum;
+		sum += (uint8_t)*data++;
+	}
+	return sum;
 }
 
-void gdbresponsepacket(int gdbsocket, const char* buffer)
+void gdbresponsepacket(socket_t gdbsocket, const char* buffer)
 {
-	char response[512];
-	snprintf(response, 512, "+$%s#%02x", buffer, gdbchecksum(buffer));
+	char response[1024];
+	snprintf(response, 1024, "+$%s#%02x", buffer, gdbchecksum(buffer));
+#ifdef CAT_WINDOWS
+	send(gdbsocket, response, (int)strlen(response), 0);
+#else
 	write(gdbsocket, response, strlen(response));
+#endif
 }
 
-void gdbprocessquery(int gdbsocket, CEmulator* emulator, const char* buffer)
+void gdbreadthreads(socket_t gdbsocket, CEmulator* emulator, const char* buffer)
+{
+	char response[1024];
+	snprintf(response, 1024, "l<?xml version=\"1.0\"?>\n<threads>\n");
+	snprintf(response, 1024, "%s\t<thread id=\"1\" core=\"0\" name=\"emu\">emulated task</thread>\n", response);
+
+	/*for (int cpu = 0; cpu < 2; ++cpu)
+	{
+		CRV32 *core = emulator->m_cpu[cpu];
+		struct STaskContext* ctx = _task_get_context(cpu);
+
+		// Skip the OS threads
+		for (int j = cpu == 0 ? 2 : 1; j < ctx->numTasks; ++j)
+		{
+			struct STask* task = &ctx->tasks[j];
+			// Apparently GDB expects thread IDs across CPUs to be unique
+			snprintf(response, 1024, "%s\t<thread id=\"%d\" core=\"%d\" name=\"%s\" handle=\"%x\">%s [CPU%d]</thread>\n", response, j + 1, cpu, task->name, cpu * TASK_MAX + j, task->name, cpu);
+		}
+	}*/
+
+	strcat(response, "</threads>\n");
+	gdbresponsepacket(gdbsocket, response);
+}
+
+void gdbprocessquery(socket_t gdbsocket, CEmulator* emulator, const char* buffer)
 {
 	// Check the query type
 	if(strstr(buffer, "qAttached") == buffer)
 	{
 		// Attached query
-		printf("Attached\n");
+		gdbresponsepacket(gdbsocket, "1");
 	}
 	else if (strstr(buffer, "qXfer:threads:read:") == buffer)
 	{
 		// Read threads query
-		printf("Threads\n");
+		gdbreadthreads(gdbsocket, emulator, buffer);
 	}
 	else if (strstr(buffer, "qTStatus") == buffer)
 	{
 		// Status query
-		printf("Status\n");
+		gdbresponsepacket(gdbsocket, "");
 	}
 	else if (strstr(buffer, "qSupported") == buffer)
 	{
 		// Supported query
-		printf("Supported\n");
 		gdbresponsepacket(gdbsocket, "PacketSize=1024;qXfer:threads:read+;swbreak+;");
 	}
 	else if (strstr(buffer, "qSymbol") == buffer)
@@ -305,7 +339,7 @@ void gdbprocessquery(int gdbsocket, CEmulator* emulator, const char* buffer)
 	else if (strstr(buffer, "qC") == buffer)
 	{
 		// Current thread query
-		printf("Current thread\n");
+		gdbresponsepacket(gdbsocket, "QC 1");
 	}
 	else
 	{
@@ -314,7 +348,7 @@ void gdbprocessquery(int gdbsocket, CEmulator* emulator, const char* buffer)
 	}
 }
 
-void gdbvcont(int gdbsocket, CEmulator* emulator, char* buffer)
+void gdbvcont(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 {
 	// Skip 'vCont'
 	buffer += 5;
@@ -347,11 +381,54 @@ void gdbvcont(int gdbsocket, CEmulator* emulator, char* buffer)
 	}
 }
 
-void gdbprocesscommand(int gdbsocket, CEmulator* emulator, char* buffer)
+void gdbreadregisters(socket_t gdbsocket, CEmulator* emulator, char* buffer)
+{
+	char response[1024];
+
+	// x0
+	snprintf(response, 1024, "00000000");
+
+	// x1-x31
+	CRV32* core = emulator->m_cpu[0];
+	for (int i = 1; i < 32; ++i)
+	{
+		uint32_t reg = core->m_GPR[i];
+		snprintf(response, 1024, "%s%02X%02X%02X%02X",
+			response,
+			(reg >> 0) & 0xFF,
+			(reg >> 8) & 0xFF,
+			(reg >> 16) & 0xFF,
+			(reg >> 24) & 0xFF);
+	}
+
+	// PC
+	{
+		uint32_t reg = core->m_PC;
+		snprintf(response, 1024, "%s%02X%02X%02X%02X",
+			response,
+			(reg >> 0) & 0xFF,
+			(reg >> 8) & 0xFF,
+			(reg >> 16) & 0xFF,
+			(reg >> 24) & 0xFF);
+	}
+
+	printf("R:%s\n", response);
+	gdbresponsepacket(gdbsocket, response);
+}
+
+void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 {
 	// Check the command type
 	switch (buffer[0])
 	{
+		case '?':
+			gdbresponsepacket(gdbsocket, "S00");
+			break;
+		case 'D':
+			// Disconnect request
+			gdbresponsepacket(gdbsocket, "OK");
+			// TODO: remove all breakpoints and resume task
+			break;
 		case 'H':
 			// Set thread - Hc or Hg
 			if (buffer[1] == 'c')
@@ -366,7 +443,7 @@ void gdbprocesscommand(int gdbsocket, CEmulator* emulator, char* buffer)
 			}
 			break;
 		case 'g':
-			// Write registers
+			gdbreadregisters(gdbsocket, emulator, buffer);
 			break;
 		case 'G':
 			// Read registers
@@ -402,7 +479,7 @@ void gdbprocesscommand(int gdbsocket, CEmulator* emulator, char* buffer)
 	}
 }
 
-void gdbstubprocess(int gdbsocket, CEmulator* emulator, char* buffer, int n)
+void gdbstubprocess(socket_t gdbsocket, CEmulator* emulator, char* buffer, int n)
 {
 	// Check the first character of the buffer to determine the packet type
 	switch (buffer[0])
@@ -431,8 +508,15 @@ int gdbstubthread(void* data)
 {
 	EmulatorContext* ctx = (EmulatorContext*)data;
 
+#ifdef CAT_WINDOWS
+	WSADATA wsaData;
+	int wsaerr;
+	WORD wVersionRequested = MAKEWORD(2, 2);
+	wsaerr = WSAStartup(wVersionRequested, &wsaData);
+#endif
+
 	// Create a socket
-	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	socket_t sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sockfd < 0)
 	{
 		fprintf(stderr, "Error opening socket\n");
@@ -455,9 +539,13 @@ int gdbstubthread(void* data)
 	listen(sockfd, 5);
 
 	// Accept a connection
+#ifdef CAT_WINDOWS
+	socket_t newsockfd = accept(sockfd, nullptr, nullptr);
+#else
 	struct sockaddr_in cli_addr;
 	socklen_t clilen = sizeof(cli_addr);
-	int newsockfd = accept(sockfd, (struct sockaddr*)&cli_addr, &clilen);
+	socket_t newsockfd = accept(sockfd, (struct sockaddr*)&cli_addr, &clilen);
+#endif
 	if (newsockfd < 0)
 	{
 		fprintf(stderr, "Error accepting connection\n");
@@ -471,7 +559,11 @@ int gdbstubthread(void* data)
 	int n;
 	do
 	{
+#ifdef CAT_WINDOWS
+		n = recv(newsockfd, buffer, 255, 0);
+#else
 		n = read(newsockfd, buffer, 255);
+#endif
 		if (n < 0)
 			fprintf(stderr, "Error reading from socket\n");
 		else
@@ -483,8 +575,11 @@ int gdbstubthread(void* data)
 		}
 	} while (n > 0);
 
+#ifdef CAT_WINDOWS
+#else
 	close(newsockfd);
 	close(sockfd);
+#endif
 
 	return 0;
 }
