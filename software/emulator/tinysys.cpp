@@ -279,6 +279,28 @@ void gdbresponsepacket(socket_t gdbsocket, const char* buffer)
 #endif
 }
 
+void gdbresponseack(socket_t gdbsocket)
+{
+	char response[4];
+	snprintf(response, 4, "+");
+#ifdef CAT_WINDOWS
+	send(gdbsocket, response, (int)strlen(response), 0);
+#else
+	write(gdbsocket, response, strlen(response));
+#endif
+}
+
+void gdbresponsenack(socket_t gdbsocket)
+{
+	char response[4];
+	snprintf(response, 4, "-");
+#ifdef CAT_WINDOWS
+	send(gdbsocket, response, (int)strlen(response), 0);
+#else
+	write(gdbsocket, response, strlen(response));
+#endif
+}
+
 void gdbreadthreads(socket_t gdbsocket, CEmulator* emulator, const char* buffer)
 {
 	char response[1024];
@@ -323,8 +345,8 @@ void gdbprocessquery(socket_t gdbsocket, CEmulator* emulator, const char* buffer
 	}
 	else if (strstr(buffer, "qSupported") == buffer)
 	{
-		// Supported query
-		gdbresponsepacket(gdbsocket, "PacketSize=1024;qXfer:threads:read+;swbreak+;");
+		// Supported query (packetsize is hex therefore 0x1000==4096 bytes)
+		gdbresponsepacket(gdbsocket, "PacketSize=1000;qXfer:threads:read+;swbreak+;");
 	}
 	else if (strstr(buffer, "qSymbol") == buffer)
 	{
@@ -416,6 +438,94 @@ void gdbreadregisters(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	gdbresponsepacket(gdbsocket, response);
 }
 
+void gdbbinarypacket(socket_t gdbsocket, CEmulator* emulator, char* buffer)
+{
+	// Skip 'X'
+	buffer++;
+
+	// Parse the address and length
+	uint32_t addrs;
+	uint32_t len;
+	uint32_t readoffset = sscanf(buffer, "%x,%x", &addrs, &len);
+
+	// This is a support check if len is 0
+	if (len == 0)
+	{
+		// We support binary data
+		gdbresponsepacket(gdbsocket, "OK");
+	}
+	else
+	{
+		// Skip the address and length
+		buffer = strchr(buffer, ':');
+		buffer++;
+
+		// Decode the encoded binary data, paying attention to escape sequences and repeat counts
+		uint8_t* data = new uint8_t[len];
+		uint32_t i = 0;
+		while (i < len)
+		{
+			if (*buffer == '}') // Escape sequence
+			{
+				buffer++;
+				uint8_t count = *buffer - 29;
+				for (uint8_t j = 0; j < count; ++j)
+					data[i++] = *buffer;
+			}
+			else if (*buffer == '*') // Repeat sequence
+			{
+				buffer++;
+				uint8_t count = *buffer - 29;
+				buffer++;
+				for (uint8_t j = 0; j < count; ++j)
+					data[i++] = *buffer;
+			}
+			else // Normal character
+				data[i++] = *buffer;
+			buffer++;
+		}
+
+		// Debug print the binary data
+		printf("0x%X : ", addrs);
+		for (uint32_t i = 0; i < len; ++i)
+			printf("%02X ", data[i]);
+		
+		delete[] data;
+		
+		// Invalidate data caches of both CPUs and write incoming data to memory
+		//emulator->m_cpu[0]->m_dcache.Invalidate();
+		//emulator->m_cpu[1]->m_dcache.Invalidate();
+		//emulator->m_bus->WriteMemory(addrs, data, len);
+
+		// Respond with an ACK on successful memory write
+		gdbresponsepacket(gdbsocket, "OK");
+	}
+}
+
+void gdbsetreg(socket_t gdbsocket, CEmulator* emulator, char* buffer)
+{
+	// Skip 'P'
+	buffer++;
+
+	uint32_t reg, val;
+	sscanf(buffer, "%x=%x", &reg, &val);
+
+	// Reverse the byte order
+	val = (val >> 24) | ((val >> 8) & 0xFF00) | ((val << 8) & 0xFF0000) | (val << 24);
+
+	// TODO: when setting PC, our entire task system breaks down
+	// Therefore we need to add a dummy task to the task list and set its PC to the supplied value
+
+	if (reg == 32) // PC is a special case and is always at lastgpr+1
+		;//emulator->m_cpu[0]->m_PC = val;
+	else
+		emulator->m_cpu[0]->m_GPR[reg] = val;
+
+	printf("reg X%d set to %08X\n", reg, val);
+
+	gdbresponsepacket(gdbsocket, "OK");
+}
+
 void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 {
 	// Check the command type
@@ -423,6 +533,14 @@ void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	{
 		case '?':
 			gdbresponsepacket(gdbsocket, "S00");
+			break;
+		case 'X':
+			// Read binary data
+			gdbbinarypacket(gdbsocket, emulator, buffer);
+			break;
+		case 'P':
+			// Write single register
+			gdbsetreg(gdbsocket, emulator, buffer);
 			break;
 		case 'D':
 			// Disconnect request
@@ -555,14 +673,14 @@ int gdbstubthread(void* data)
 	fprintf(stderr, "GDB stub listening on //localhost:1234\n");
 
 	// Read from the socket
-	char buffer[256];
+	char buffer[4096];
 	int n;
 	do
 	{
 #ifdef CAT_WINDOWS
-		n = recv(newsockfd, buffer, 255, 0);
+		n = recv(newsockfd, buffer, 4096, 0);
 #else
-		n = read(newsockfd, buffer, 255);
+		n = read(newsockfd, buffer, 4096);
 #endif
 		if (n < 0)
 			fprintf(stderr, "Error reading from socket\n");

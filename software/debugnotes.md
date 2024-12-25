@@ -1,16 +1,23 @@
 To start risc32-unknown-elf-gdb set up for our target architecture:
 ```
-C:\riscv32-gcc\bin\riscv32-unknown-elf-gdb.exe led.elf
+C:\riscv32-gcc\bin\riscv32-unknown-elf-gdb.exe
 set debug remote 1
 set architecture riscv:rv32
 ```
 
-To debug on the the actual hardware:
+To start debugging on the the actual hardware:
 ```
 target remote \\.\COM6
 ```
 
-To debug on the emulator:
+To start debugging on the emulator:
 ```
 target remote localhost:1234
 ```
+
+Then load your code to debug and wait for the upload to finish:
+```
+load samples/led/led.elf
+```
+
+Now you can debug your program as usual with GDB
