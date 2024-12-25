@@ -485,17 +485,22 @@ void gdbbinarypacket(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			buffer++;
 		}
 
-		// Debug print the binary data
-		printf("0x%X : ", addrs);
-		for (uint32_t i = 0; i < len; ++i)
-			printf("%02X ", data[i]);
+		// Invalidate data and instruction caches of both CPUs and write incoming data to memory
+		emulator->m_cpu[0]->m_dcache.Flush(emulator->m_bus);
+		emulator->m_cpu[0]->m_dcache.Discard();
+		emulator->m_cpu[0]->m_icache.Discard();
+		emulator->m_cpu[1]->m_dcache.Flush(emulator->m_bus);
+		emulator->m_cpu[1]->m_dcache.Discard();
+		emulator->m_cpu[1]->m_icache.Discard();
+
+		// Write the binary data to memory as 4 byte words
+		for (uint32_t i = 0; i < len; i += 4)
+		{
+			uint32_t word = data[i] | (data[i + 1] << 8) | (data[i + 2] << 16) | (data[i + 3] << 24);
+			emulator->m_bus->Write(addrs + i, word, 0xF);
+		}
 		
 		delete[] data;
-		
-		// Invalidate data caches of both CPUs and write incoming data to memory
-		//emulator->m_cpu[0]->m_dcache.Invalidate();
-		//emulator->m_cpu[1]->m_dcache.Invalidate();
-		//emulator->m_bus->WriteMemory(addrs, data, len);
 
 		// Respond with an ACK on successful memory write
 		gdbresponsepacket(gdbsocket, "OK");
