@@ -6,7 +6,7 @@
 		"version": "0.2.0",
 		"configurations": [
 		  {
-			"name": "C/C++(RISCV) - Debug",
+			"name": "C/C++(RISCV) - Windows",
 			"type": "cppdbg",
 			"request": "launch",
 			"program": "${workspaceFolder}/samples/led/led.elf",
@@ -17,7 +17,28 @@
 			"externalConsole": false,
 			"MIMode": "gdb",
 			"miDebuggerPath": "C:/riscv32-gcc/bin/riscv32-unknown-elf-gdb.exe",
-			"miDebuggerServerAddress": "\\\\.\\COM6",
+			"miDebuggerServerAddress": "localhost:1234",
+			"setupCommands": [
+			  {
+				"description": "Enable pretty-printing for gdb",
+				"text": "-enable-pretty-printing",
+				"ignoreFailures": true
+			  }
+			]
+		  },
+		  {
+			"name": "C/C++(RISCV) - MacOS",
+			"type": "cppdbg",
+			"request": "launch",
+			"program": "${workspaceFolder}/samples/led/led.elf",
+			"args": [],
+			"stopAtEntry": false,
+			"cwd": "${fileDirname}",
+			"environment": [],
+			"externalConsole": false,
+			"MIMode": "gdb",
+			"miDebuggerPath": "/Volumes/src/riscv_gcc/bin/riscv32-unknown-elf-gdb",
+			"miDebuggerServerAddress": "localhost:1234",
 			"setupCommands": [
 			  {
 				"description": "Enable pretty-printing for gdb",

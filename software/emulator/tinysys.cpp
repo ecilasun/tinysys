@@ -359,8 +359,8 @@ void gdbprocessquery(socket_t gdbsocket, CEmulator* emulator, const char* buffer
 	}
 	else if (strstr(buffer, "qSymbol") == buffer)
 	{
-		// Symbol query
-		printf("Symbol\n");
+		// No symbol query
+		gdbresponsepacket(gdbsocket, "");
 	}
 	else if (strstr(buffer, "qfThreadInfo") == buffer)
 	{
@@ -556,6 +556,139 @@ void gdbsetreg(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	gdbresponsepacket(gdbsocket, "OK");
 }
 
+void gdbreadmemory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
+{
+	// Skip 'm'
+	buffer++;
+
+	// Parse the address and length
+	uint32_t addrs;
+	uint32_t len;
+	uint32_t readoffset = sscanf(buffer, "%x,%x", &addrs, &len);
+
+	// Read the memory
+	char* response = new char[len*2+1];
+	response[0] = '\0';
+	for (uint32_t i = 0; i < len; i++)
+	{
+		uint32_t dataword;
+		emulator->m_bus->Read(addrs&0xFFFFFFF0, dataword);
+
+		uint32_t range1 = SelectBitRange(addrs, 1, 1);
+		uint32_t range2 = SelectBitRange(addrs, 1, 0);
+
+		uint32_t b[4];
+		b[3] = SelectBitRange(dataword, 31, 24);
+		b[2] = SelectBitRange(dataword, 23, 16);
+		b[1] = SelectBitRange(dataword, 15, 8);
+		b[0] = SelectBitRange(dataword, 7, 0);
+
+		uint8_t byte = b[range2];
+
+		snprintf(response, len*2, "%s%02X", response, byte);
+		addrs++;
+	}
+
+	gdbresponsepacket(gdbsocket, response);
+	delete[] response;
+}
+
+void gdbwritememory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
+{
+	// Skip 'M'
+	buffer++;
+
+	// Parse the address and length
+	uint32_t addrs;
+	uint32_t len;
+	uint32_t readoffset = sscanf(buffer, "%x,%x:", &addrs, &len);
+
+	// Skip the address and length
+	buffer = strchr(buffer, ':');
+	buffer++;
+
+	// Decode the encoded binary data, paying attention to escape sequences and repeat counts
+	uint8_t* data = new uint8_t[len];
+	uint32_t i = 0;
+	uint8_t lastchar = 0;
+	while (i < len)
+	{
+		if (*buffer == '}') // Escape sequence
+		{
+			buffer++;
+			uint8_t original = *buffer ^ 0x20;
+			data[i++] = original;
+		}
+		else if (*buffer == '*') // Repeat last character as a sequence
+		{
+			buffer++;
+			uint8_t count = *buffer - 29;
+			for (uint8_t j = 0; j < count; ++j)
+				data[i++] = lastchar;
+		}
+		else // Normal character
+			data[i++] = *buffer;
+		lastchar = *buffer;
+		buffer++;
+	}
+
+	for (uint32_t i = 0; i < len; i++)
+	{
+		uint32_t byte = data[i];
+		uint32_t ah = SelectBitRange(addrs, 1, 1);
+		uint32_t ab = SelectBitRange(addrs, 0, 0);
+		uint32_t himask = (ah << 3) | (ah << 2) | ((1 - ah) << 1) | (1 - ah);
+		uint32_t lomask = ((ab << 3) | ((1 - ab) << 2) | (ab << 1) | (1 - ab));
+		uint32_t wstrobe = himask & lomask;
+		uint32_t word = byte | (byte << 8) | (byte << 16) | (byte << 24);
+		
+		emulator->m_bus->Write(addrs&0xFFFFFFF0, word, wstrobe);
+
+		addrs++;
+	}
+
+	delete[] data;
+
+	// Respond with an ACK on successful memory write
+	gdbresponsepacket(gdbsocket, "OK");
+}
+
+void gdbaddbreakpoint(socket_t gdbsocket, CEmulator* emulator, char* buffer)
+{
+	// Skip 'Z'
+	buffer++;
+
+	// Parse the type, address and length
+	uint32_t type, addrs, len;
+	uint32_t readoffset = sscanf(buffer, "%d,%x,%x", &type, &addrs, &len);
+
+	// Add the breakpoint
+//	emulator->m_cpu[0]->AddBreakpoint(addrs);
+
+	printf("Breakpoint added at 0x%08X\n", addrs);
+
+	// Respond with an ACK on successful breakpoint addition
+	gdbresponsepacket(gdbsocket, "OK");
+}
+
+void gdbremovebreakpoint(socket_t gdbsocket, CEmulator* emulator, char* buffer)
+{
+	// Skip 'z'
+	buffer++;
+
+	// Parse the type, address and length
+	uint32_t type, addrs, len;
+	uint32_t readoffset = sscanf(buffer, "%d,%x,%x", &type, &addrs, &len);
+
+	// Remove the breakpoint
+//	emulator->m_cpu[0]->RemoveBreakpoint(addrs);
+
+	printf("Breakpoint removed at 0x%08X\n", addrs);
+
+	// Respond with an ACK on successful breakpoint removal
+	gdbresponsepacket(gdbsocket, "OK");
+}
+
 void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 {
 	// Check the command type
@@ -598,15 +731,25 @@ void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			break;
 		case 'm':
 			// Read memory
+			gdbreadmemory(gdbsocket, emulator, buffer);
 			break;
 		case 'M':
 			// Write memory
+			gdbwritememory(gdbsocket, emulator, buffer);
 			break;
 		case 'c':
 			// Continue
 			break;
 		case 's':
 			// Step
+			break;
+		case 'Z':
+			// Insert breakpoint
+			gdbaddbreakpoint(gdbsocket, emulator, buffer);
+			break;
+		case 'z':
+			// Remove breakpoint
+			gdbremovebreakpoint(gdbsocket, emulator, buffer);
 			break;
 		case 'v':
 			// vCont
@@ -623,6 +766,7 @@ void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			break;
 		default:
 			// Unknown command
+			printf("Unknown sequence start: %s\n", buffer);
 			break;
 	}
 }
