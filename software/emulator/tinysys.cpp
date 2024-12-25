@@ -463,25 +463,25 @@ void gdbbinarypacket(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 		// Decode the encoded binary data, paying attention to escape sequences and repeat counts
 		uint8_t* data = new uint8_t[len];
 		uint32_t i = 0;
+		uint8_t lastchar = 0;
 		while (i < len)
 		{
 			if (*buffer == '}') // Escape sequence
 			{
 				buffer++;
-				uint8_t count = *buffer - 29;
-				for (uint8_t j = 0; j < count; ++j)
-					data[i++] = *buffer;
+				uint8_t original = *buffer ^ 0x20;
+				data[i++] = original;
 			}
-			else if (*buffer == '*') // Repeat sequence
+			else if (*buffer == '*') // Repeat last character as a sequence
 			{
 				buffer++;
 				uint8_t count = *buffer - 29;
-				buffer++;
 				for (uint8_t j = 0; j < count; ++j)
-					data[i++] = *buffer;
+					data[i++] = lastchar;
 			}
 			else // Normal character
 				data[i++] = *buffer;
+			lastchar = *buffer;
 			buffer++;
 		}
 
