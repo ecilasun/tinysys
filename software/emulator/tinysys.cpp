@@ -51,7 +51,16 @@ int emulatorthread(void* data)
 	do
 	{
 		CEmulator *emulator = ctx->emulator;
-		emulator->Step(s_wallclock);
+		if (emulator->m_debugStop)
+		{
+			// Stop for debugger
+			emulator->m_debugAck = 1;
+		}
+		else
+		{
+			emulator->m_debugAck = 0;
+			emulator->Step(s_wallclock);
+		}
 	} while(s_alive);
 
 	s_alive = false;
@@ -522,11 +531,27 @@ void gdbsetreg(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	// Therefore we need to add a dummy task to the task list and set its PC to the supplied value
 
 	if (reg == 32) // PC is a special case and is always at lastgpr+1
-		;//emulator->m_cpu[0]->m_PC = val;
+	{
+		// Stop emulator
+		emulator->m_debugStop = 1;
+		do { } while (!emulator->m_debugAck);
+
+		emulator->m_cpu[0]->m_PC = val;
+
+		emulator->m_debugStop = 0;
+		printf("PC = 0x%08X\n", val);
+	}
 	else
+	{
+		// Stop emulator
+		emulator->m_debugStop = 1;
+		do {} while (!emulator->m_debugAck);
+
 		emulator->m_cpu[0]->m_GPR[reg] = val;
 
-	printf("reg X%d set to %08X\n", reg, val);
+		emulator->m_debugStop = 0;
+		printf("X%d = 0x%08X\n", reg, val);
+	}
 
 	gdbresponsepacket(gdbsocket, "OK");
 }
@@ -675,7 +700,7 @@ int gdbstubthread(void* data)
 		return -1;
 	}
 
-	fprintf(stderr, "GDB stub listening on //localhost:1234\n");
+	fprintf(stderr, "GDB stub on //localhost:1234\n");
 
 	// Read from the socket
 	char buffer[4096];

@@ -24,6 +24,6 @@ Alternatively you can place the set/target/load commands into a file (for exampl
 ```
 C:\riscv32-gcc\bin\riscv32-unknown-elf-gdb.exe -x gbdcmd
 ```
-to make it easier to start debugging.
+to make it easier to start debugging. See this folder for a sample gdbcmd file you can use to add your own setup.
 
 Now you can debug your program as usual with GDB

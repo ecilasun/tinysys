@@ -17,6 +17,9 @@ public:
 
 	int m_audioDevice {0};
 
+	int m_debugStop{ 0 };
+	int m_debugAck{ 0 };
+
 	CBus* m_bus{ nullptr };
 	CRV32* m_cpu[2]{ nullptr, nullptr };
 
