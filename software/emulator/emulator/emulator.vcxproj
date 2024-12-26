@@ -181,6 +181,7 @@ copy .\x64\Release\SDL2_ttf.dll ..\bin\SDL2_ttf.dll</Command>
     <ClCompile Include="..\csrmem.cpp" />
     <ClCompile Include="..\dma.cpp" />
     <ClCompile Include="..\emulator.cpp" />
+    <ClCompile Include="..\gdbstub.cpp" />
     <ClCompile Include="..\leds.cpp" />
     <ClCompile Include="..\mailmem.cpp" />
     <ClCompile Include="..\rv32.cpp" />
@@ -203,6 +204,7 @@ copy .\x64\Release\SDL2_ttf.dll ..\bin\SDL2_ttf.dll</Command>
     <ClInclude Include="..\dma.h" />
     <ClInclude Include="..\dummydevice.h" />
     <ClInclude Include="..\emulator.h" />
+    <ClInclude Include="..\gdbstub.h" />
     <ClInclude Include="..\leds.h" />
     <ClInclude Include="..\mailmem.h" />
     <ClInclude Include="..\memmappeddevice.h" />
@@ -210,6 +212,7 @@ copy .\x64\Release\SDL2_ttf.dll ..\bin\SDL2_ttf.dll</Command>
     <ClInclude Include="..\scratchpadmem.h" />
     <ClInclude Include="..\sdcard.h" />
     <ClInclude Include="..\sysmem.h" />
+    <ClInclude Include="..\tinysys.h" />
     <ClInclude Include="..\uart.h" />
     <ClInclude Include="..\vpu.h" />
   </ItemGroup>
