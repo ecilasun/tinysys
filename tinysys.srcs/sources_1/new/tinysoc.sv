@@ -24,7 +24,8 @@ module tinysoc #(
 	//input wire esp_rxd0_in,
 	output wire esp_txd1_out,
 	input wire esp_rxd1_in,
-	input wire esp_reboot,
+	input wire cpu_reboot,
+	output wire esp_reset,
 	// Video output
 	output wire vvsync,
 	output wire vhsync,
@@ -89,6 +90,23 @@ end
 always @(posedge aclk) begin
 	wallclocktimeA <= wallclockcounter;
 	wallclocktime <= wallclocktimeA;
+end
+
+// --------------------------------------------------
+// Startup reset timer for ESP32
+// --------------------------------------------------
+
+logic [5:0] esp32resetshift;
+assign esp_reset = esp32resetshift[5] ? 1'b0 : 1'bz;
+
+always @(posedge aclk) begin
+	if (~aresetn) begin
+		esp32resetshift <= 6'b111111;
+	end else begin
+		// Holds esp reset set to ground, then to floating so that
+		// the external pullup resistor can hold the enable line high
+		esp32resetshift <= {esp32resetshift[4:0], 1'b0};
+	end
 end
 
 // --------------------------------------------------
@@ -386,7 +404,7 @@ axi4CSRFile #( .HARTID(4'd0)) csrfile0 (
 	.keyirq(keyirq),
 	.uartirq(uartirq),
 	.hirq(hirq),
-	.rebootreq(esp_reboot),
+	.rebootreq(cpu_reboot),
 	// CPU reset
 	.cpuresetreq(cpuresetreq0),
 	// Shadow registers
@@ -409,7 +427,7 @@ axi4CSRFile #( .HARTID(4'd1)) csrfile1 (
 	.keyirq(keyirq),
 	.uartirq(uartirq),
 	.hirq(hirq),
-	.rebootreq(esp_reboot),
+	.rebootreq(cpu_reboot),
 	// CPU reset
 	.cpuresetreq(cpuresetreq1),
 	// Shadow registers

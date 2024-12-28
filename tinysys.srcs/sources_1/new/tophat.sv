@@ -36,7 +36,8 @@ module tophat(
 	// Coprocessor via ESP32-C6-WROOM-1-N8 (only on rev. 2E boards)
 	,output wire esp_txd1_out
 	,input wire esp_rxd1_in
-	,input wire esp_reboot
+	,input wire cpu_reboot
+	,output wire esp_reset
 	// Audio out
 	,output wire au_sdin
 	,output wire au_sclk
@@ -135,7 +136,7 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	//.esp_txd0_out(esp_txd0_out),
 	.esp_rxd1_in(esp_rxd1_in),
 	.esp_txd1_out(esp_txd1_out),
-	.esp_reboot(esp_reboot),
+	.cpu_reboot(cpu_reboot),
 	.ddr3conn(ddr3conn),
 	.i2sconn(i2sconn),
 	.vvsync(vvsync),
