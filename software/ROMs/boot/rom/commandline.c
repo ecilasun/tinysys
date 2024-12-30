@@ -2,7 +2,6 @@
 #include "rombase.h"
 #include "task.h"
 #include "device.h"
-#include "max3421e.h"
 #include "commandline.h"
 #include "rombase.h"
 #include "keyringbuffer.h"

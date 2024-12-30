@@ -158,9 +158,9 @@ set_property -dict {PACKAGE_PIN Y19 IOSTANDARD LVCMOS33} [get_ports esp_txd1_out
 set_property -dict {PACKAGE_PIN V19 IOSTANDARD LVCMOS33} [get_ports cpu_reboot]
 set_property PULLTYPE PULLDOWN [get_ports cpu_reboot]
 
-## This is the reset line to ESP32 module
-set_property -dict {PACKAGE_PIN AA18 IOSTANDARD LVCMOS33} [get_ports esp_reset]
-set_property PULLTYPE PULLDOWN [get_ports esp_reset]
+## Enable pin of ESP32
+set_property -dict {PACKAGE_PIN AA18 IOSTANDARD LVCMOS33} [get_ports esp_ena]
+set_property PULLTYPE PULLDOWN [get_ports esp_ena]
 
 ## ------------------------------------------------------------------------------------------------------
 ## USB-A - MAX3421EECJ over SPI interface, USB Host

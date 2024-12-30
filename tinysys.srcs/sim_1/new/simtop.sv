@@ -3,8 +3,10 @@
 module simtop();
 
 logic boardclock;
+logic old_esp_resetn;
 
 initial begin
+	old_esp_resetn = 1'bz;
 	boardclock = 1'bz;
 	#80;
 	boardclock = 1'b0;
@@ -51,6 +53,7 @@ ddr3_model ddr3simmod(
     .tdqs_n(), // out
     .odt(ddr3_odt) );
 
+wire esp_resetn;
 tophat main(
     .sys_clk(boardclock),
     // LEDs
@@ -82,17 +85,11 @@ tophat main(
 	.sdcard_clk(),
 	.sdcard_mosi(sdcard_mosi),
 	.sdcard_swtch(1'b0),
-	// USB-A via MAX4321
-	.usba_miso(usba_miso),
-	.usba_ss_n(),
-	.usba_clk(),
-	.usba_mosi(usba_mosi),
-	.usba_resn(),
-	.usba_int(1'b0), // no irq
 	// Coprocessor via ESP32-C6-WROOM-1-N8 (only on rev. 2E boards)
-	.esp_io(),
-	.esp_txd_out(),
-	.esp_rxd_in(),
+	.esp_txd1_out(),
+	.esp_rxd1_in(),
+	.cpu_reboot(1'b0),
+	.esp_resetn(esp_resetn),
 	// Audio out
 	.au_sdin(),
 	.au_sclk(),
@@ -102,6 +99,10 @@ tophat main(
 always begin
 	#10
 	boardclock = ~boardclock;
+	if (esp_resetn != old_esp_resetn) begin
+		old_esp_resetn = esp_resetn;
+		$display("ESP32 new state: %h", esp_resetn);
+	end
 end
 
 endmodule

@@ -12445,6 +12445,18 @@
 		(uuid a364c344-356c-4b76-8aad-24d9481eea92)
 	)
 	(rectangle
+		(start 243.84 55.88)
+		(end 294.64 71.12)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill
+			(type none)
+		)
+		(uuid ac53d2b2-a2a3-4419-9616-92e253d68956)
+	)
+	(rectangle
 		(start 22.86 71.12)
 		(end 71.12 106.68)
 		(stroke
@@ -12582,6 +12594,17 @@
 			(justify left bottom)
 		)
 		(uuid "2b25ddc5-bf8a-471d-8b26-e04c8c206008")
+	)
+	(text "ESD Protection"
+		(exclude_from_sim no)
+		(at 244.856 58.928 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "2bbf273f-ea4f-415f-aa9e-c644dcad1e30")
 	)
 	(text "GREEN"
 		(exclude_from_sim no)

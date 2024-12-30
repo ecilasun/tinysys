@@ -25,7 +25,7 @@ module tinysoc #(
 	output wire esp_txd1_out,
 	input wire esp_rxd1_in,
 	input wire cpu_reboot,
-	output wire esp_reset,
+	output wire esp_ena,
 	// Video output
 	output wire vvsync,
 	output wire vhsync,
@@ -96,16 +96,16 @@ end
 // Startup reset timer for ESP32
 // --------------------------------------------------
 
-logic [5:0] esp32resetshift;
-assign esp_reset = esp32resetshift[5] ? 1'b0 : 1'bz;
+logic [7:0] esp32resetshift;
+assign esp_ena = esp32resetshift[7];
 
-always @(posedge aclk) begin
-	if (~aresetn) begin
-		esp32resetshift <= 6'b111111;
+always @(posedge clk10) begin
+	if (~rst10n) begin
+		esp32resetshift <= 8'b00000000;
 	end else begin
 		// Holds esp reset set to ground, then to floating so that
 		// the external pullup resistor can hold the enable line high
-		esp32resetshift <= {esp32resetshift[4:0], 1'b0};
+		esp32resetshift <= {esp32resetshift[6:0], 1'b1};
 	end
 end
 
@@ -305,7 +305,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // VPUC: 8xx20000  8xx2FFFF  4'b0010  64KB	 Video Processing Unit
 // SDCC: 8xx30000  8xx3FFFF  4'b0011  64KB	 SDCard SPI Unit
 // DMAC: 8xx40000  8xx4FFFF  4'b0100  64KB	 Direct Memory Access / Memcopy
-// ----: 8xx50000  8xx5FFFF  4'b0101  64KB	 Unused - reserved for future use
+// ----: 8xx50000  8xx5FFFF  4'b0101  64KB	 Reserved for future use
 // APUC: 8xx60000  8xx6FFFF  4'b0110  64KB	 Audio Processing Unit / Mixer
 // MAIL: 8xx70000  8xx7FFFF  4'b0111  64KB	 MAIL inter-HART comm (16Kbytes)
 // UART: 8xx80000  8xx8FFFF  4'b1000  64KB	 UART HART <-> ESP32-C6 comm
@@ -317,7 +317,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // ----: 8xxE0000  8xxEFFFF  4'b1110  64KB	 Unused
 // ----: 8xxF0000  8xxFFFFF  4'b1111  64KB	 Unused
 
-devicerouter devicerouter13inst(
+devicerouter devicerouterinst(
 	.addressmask({
 		4'b1010,		// CRS1 CSR file for HART#1
 		4'b1001,		// CRS0 CSR file for HART#0
@@ -343,11 +343,11 @@ wire uartirq;
 // Memory mapped devices
 // --------------------------------------------------
 
-axi4led leddevice(
+axi4register leddevice(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.s_axi(ledif),
-	.led(leds) );
+	.regio(leds) );
 
 commandqueue vpucmdinst(
 	.aclk(aclk),

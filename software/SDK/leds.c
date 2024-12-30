@@ -14,7 +14,7 @@ volatile uint32_t *LEDSTATE = (volatile uint32_t* ) DEVICE_LEDS;
 /**
  * @brief Get the current state of the debug LEDs
  * 
- * The debug LEDs are mapped to the lower 5 bits of the LED state register.
+ * The debug LEDs are mapped to the lower 4 bits of the LED state register.
  * 
  * @return Current state of the debug LEDs
  */
@@ -26,7 +26,7 @@ uint32_t LEDGetState()
 /**
  * @brief Set the state of the debug LEDs
  * 
- * The debug LEDs are mapped to the lower 5 bits of the LED state register.
+ * The debug LEDs are mapped to the lower 4 bits of the LED state register.
  *
  * @param state New state of the debug LEDs
  */
