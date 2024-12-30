@@ -1,5 +1,3 @@
-#include "gdbstub.h"
-#include <string.h>
 #include "basesystem.h"
 #include "uart.h"
 #include "serialinput.h"
@@ -9,45 +7,38 @@
 #include "keyringbuffer.h"
 #include "mini-printf.h"
 #include "mini-scanf.h"
+#include "gdbstub.h"
 #include <stdlib.h>
+#include <string.h>
 
 static char *packetData = (char *)GDB_PACKET_BUFFER;
 static char *responseData = (char *)GDB_RESPONSE_BUFFER;
-static uint32_t debuggerAttached = 0;
-static uint32_t packetCursor = 0;
-static uint32_t haveResponse = 0;
-static uint32_t isackresponse = 0;
-static uint32_t currentGCPU = 0;
-static uint32_t currentGProcess = 2;
-static uint32_t currentCCPU = 0;
-static uint32_t currentCProcess = 2;
-static uint32_t currentCPU = 0;		// First CPU
-static uint32_t currentThread = 2;	// User process
-
-// Breakpoint limit
-#define MAX_BREAKPOINTS 16
-// Breakpoint table per CPU per thread
-static uint32_t *breakpoints = NULL;
-// Table of replaced instructions for software breakpoints
-static uint32_t *replacedInstructions = NULL;
-// Previous and new breakpoint status
-static uint32_t *prevpointStatus = NULL;
-static uint32_t *breakpointStatus = NULL;
-// Signal status
-static uint32_t *breakpointSignalled = NULL;
+static struct GDBContext *s_gdbcontext = NULL;
 
 // Initialize GDB stub
 void GDBStubInit()
 {
-	const uint32_t dbgDataSize = MAX_HARTS*TASK_MAX*MAX_BREAKPOINTS;
+	s_gdbcontext = (struct GDBContext *)GDB_DEBUG_DATA;
 
-	breakpoints = (uint32_t *)GDB_DEBUG_DATA;
-	replacedInstructions = breakpoints + dbgDataSize;
-	prevpointStatus = replacedInstructions + dbgDataSize*2;
-	breakpointStatus = prevpointStatus + dbgDataSize*3;
-	breakpointSignalled = breakpointStatus + dbgDataSize*4;
+	for (int i=0; i<MAX_HARTS*TASK_MAX*MAX_BREAKPOINTS; ++i)
+	{
+		s_gdbcontext->breakpoints[i] = 0;
+		s_gdbcontext->replacedInstructions[i] = 0;
+		s_gdbcontext->prevpointStatus[i] = 0;
+		s_gdbcontext->breakpointStatus[i] = 0;
+		s_gdbcontext->breakpointSignalled[i] = 0;
+	}
 
-	__builtin_memset(breakpoints, 0, dbgDataSize*5*sizeof(uint32_t));
+	s_gdbcontext->debuggerAttached = 0;
+	s_gdbcontext->packetCursor = 0;
+	s_gdbcontext->haveResponse = 0;
+	s_gdbcontext->isackresponse = 0;
+	s_gdbcontext->currentGCPU = 0;
+	s_gdbcontext->currentGProcess = 2;
+	s_gdbcontext->currentCCPU = 0;
+	s_gdbcontext->currentCProcess = 2;
+	s_gdbcontext->currentCPU = 0;		// First CPU
+	s_gdbcontext->currentThread = 2;	// User process
 }
 
 uint32_t GDBHexToUint(char *hex)
@@ -90,13 +81,13 @@ uint8_t GDBChecksum(const char *data)
 
 uint32_t GDBIsDebugging()
 {
-	return debuggerAttached;
+	return s_gdbcontext->debuggerAttached;
 }
 
 void GDBSignalBreakpoint(const uint32_t _hartID, const uint32_t _taskID, const uint32_t _pc, uint32_t _sigtype)
 {
 	uint32_t offset = _hartID*TASK_MAX*MAX_BREAKPOINTS+_taskID*MAX_BREAKPOINTS;
-	if (breakpointSignalled[offset+0] != 1)
+	if (s_gdbcontext->breakpointSignalled[offset+0] != 1)
 	{
 		if (_sigtype == GDB_SIGNAL_ILL)
 			strcpy(responseData, "S04"); // Illegal instruction
@@ -107,7 +98,7 @@ void GDBSignalBreakpoint(const uint32_t _hartID, const uint32_t _taskID, const u
 		mini_snprintf(responseData + strlen(responseData), 1023 - strlen(responseData), "thread:%x;", _taskID);
 		uint8_t checksum = GDBChecksum(responseData);
 		UARTPrintf("+$%s#%02X", responseData, checksum);
-		breakpointSignalled[offset+0] = 1; // Now, what does GDB do so that we can reset signalled state?
+		s_gdbcontext->breakpointSignalled[offset+0] = 1; // Now, what does GDB do so that we can reset signalled state?
 	}
 }
 
@@ -118,11 +109,11 @@ void GDBAddBreakpoint(uint32_t _hartID, uint32_t _taskID, uint32_t _address)
 	for (int i=0; i<MAX_BREAKPOINTS; ++i)
 	{
 		// Find an empty slot
-		if (breakpoints[offset+i] == 0)
+		if (s_gdbcontext->breakpoints[offset+i] == 0)
 		{
 			// Enable the breakpoint
-			breakpoints[offset+i] = _address;
-			breakpointStatus[offset+i] = 1;
+			s_gdbcontext->breakpoints[offset+i] = _address;
+			s_gdbcontext->breakpointStatus[offset+i] = 1;
 			break;
 		}
 	}
@@ -134,11 +125,11 @@ void GDBRemoveBreakpoint(uint32_t _hartID, uint32_t _taskID, uint32_t _address)
 	for (int i=0; i<MAX_BREAKPOINTS; ++i)
 	{
 		// Found the breakpoint?
-		if (breakpoints[offset+i] == _address)
+		if (s_gdbcontext->breakpoints[offset+i] == _address)
 		{
 			// Disable the breakpoint and empty the slot
-			breakpoints[offset+i] = 0;
-			breakpointStatus[offset+i] = 0;
+			s_gdbcontext->breakpoints[offset+i] = 0;
+			s_gdbcontext->breakpointStatus[offset+i] = 0;
 			break;
 		}
 	}
@@ -150,28 +141,28 @@ void GDBUpdateBreakpoints(const uint32_t _hartID, const uint32_t _taskID)
 	uint32_t offset = _hartID*TASK_MAX*MAX_BREAKPOINTS+_taskID*MAX_BREAKPOINTS;
 	for (int k=0; k<MAX_BREAKPOINTS; ++k)
 	{
-		if (breakpoints[offset+k] != 0)
+		if (s_gdbcontext->breakpoints[offset+k] != 0)
 		{
 			// Check if the breakpoint status has changed
-			if (prevpointStatus[offset+k] != breakpointStatus[offset+k])
+			if (s_gdbcontext->prevpointStatus[offset+k] != s_gdbcontext->breakpointStatus[offset+k])
 			{
 				// Swap instructions
-				if (breakpointStatus[offset+k] == 1)
+				if (s_gdbcontext->breakpointStatus[offset+k] == 1)
 				{
 					// Get the instruction at the breakpoint address
-					uint32_t instruction = *((uint32_t *)breakpoints[offset+k]);
+					uint32_t instruction = *((uint32_t *)s_gdbcontext->breakpoints[offset+k]);
 					// Enable breakpoint
-					replacedInstructions[offset+k] = instruction;
-					_task_replace_instruction(0x00100073, breakpoints[offset+k]);
+					s_gdbcontext->replacedInstructions[offset+k] = instruction;
+					_task_replace_instruction(0x00100073, s_gdbcontext->breakpoints[offset+k]);
 				}
 				else
 				{
 					// Disable breakpoint
-					_task_replace_instruction(replacedInstructions[offset+k], breakpoints[offset+k]);
+					_task_replace_instruction(s_gdbcontext->replacedInstructions[offset+k], s_gdbcontext->breakpoints[offset+k]);
 				}
 
 				// Update previous status
-				prevpointStatus[offset+k] = breakpointStatus[offset+k];
+				s_gdbcontext->prevpointStatus[offset+k] = s_gdbcontext->breakpointStatus[offset+k];
 			}
 		}
 	}
@@ -221,7 +212,7 @@ void GDBQSupported()
 		command = strtok(NULL, ";");
 	}
 
-	haveResponse = 1;
+	s_gdbcontext->haveResponse = 1;
 }
 
 void GDBThreadOp()
@@ -240,11 +231,11 @@ void GDBThreadOp()
 		tid = tid <= 0 ? 0 : tid - 1;
 
 		kprintf("g %d\n", tid);
-		currentGCPU = 0; // TODO: Find out from thread ID
-		currentGProcess = tid;
+		s_gdbcontext->currentGCPU = 0; // TODO: Find out from thread ID
+		s_gdbcontext->currentGProcess = tid;
 
 		strcpy(responseData, "OK");
-		haveResponse = 1;
+		s_gdbcontext->haveResponse = 1;
 	}
 	else if (packetData[0] == 'c') // Hc
 	{
@@ -255,11 +246,11 @@ void GDBThreadOp()
 		tid = tid <= 0 ? 0 : tid - 1;
 
 		kprintf("c %d\n", tid);
-		currentCCPU = 0; // TODO: Find out from thread ID
-		currentCProcess = tid;
+		s_gdbcontext->currentCCPU = 0; // TODO: Find out from thread ID
+		s_gdbcontext->currentCProcess = tid;
 
 		strcpy(responseData, "OK");
-		haveResponse = 1;
+		s_gdbcontext->haveResponse = 1;
 	}
 }
 
@@ -267,7 +258,7 @@ void GDBQTStatus()
 {
 	// Empty response
 	strcpy(responseData, "");
-	haveResponse = 1;
+	s_gdbcontext->haveResponse = 1;
 }
 
 void GDBThreadsRead()
@@ -297,7 +288,7 @@ void GDBThreadsRead()
 
 	strcat(responseData, "</threads>\n");
 
-	haveResponse = 1;
+	s_gdbcontext->haveResponse = 1;
 }
 
 void GDBThreadInfo()
@@ -321,7 +312,7 @@ void GDBThreadInfo()
 	// Delete the last ','
 	responseData[strlen(responseData)-1] = 0;
 
-	haveResponse = 1;
+	s_gdbcontext->haveResponse = 1;
 }
 
 void GDBQAttached()
@@ -336,7 +327,7 @@ void GDBQAttached()
 
 	// 1: Attached to existing process, 0: Created new process
 	strcpy(responseData, "1");
-	haveResponse = 1;
+	s_gdbcontext->haveResponse = 1;
 }
 
 void GDBMemRead()
@@ -354,7 +345,7 @@ void GDBMemRead()
 		mini_snprintf(responseData, 1023, "%s%02x", responseData, byte);
 	}
 
-	haveResponse = 1;
+	s_gdbcontext->haveResponse = 1;
 }
 
 void GDBMemWrite()
@@ -375,7 +366,7 @@ void GDBMemWrite()
 	}
 
 	strcpy(responseData, "OK");
-	haveResponse = 1;
+	s_gdbcontext->haveResponse = 1;
 }
 
 void GDBReadRegisters()
@@ -383,7 +374,7 @@ void GDBReadRegisters()
 	// Registers for 'currentGProcess'
 
 	struct STaskContext *ctx = _task_get_context(0); // CPU0
-	struct STask *task = &ctx->tasks[currentGProcess];
+	struct STask *task = &ctx->tasks[s_gdbcontext->currentGProcess];
 
 	// Since we're stashing PC here, we'll just return 0 for zero register instead
 	mini_snprintf(responseData, 1023, "%s00000000", responseData);
@@ -407,7 +398,7 @@ void GDBReadRegisters()
 				(pc >> 16) & 0xFF,
 				(pc >> 24) & 0xFF);
 
-	haveResponse = 1;
+	s_gdbcontext->haveResponse = 1;
 }
 
 void GDBWriteRegisters()
@@ -416,7 +407,7 @@ void GDBWriteRegisters()
 
 	// Parse registers
 	struct STaskContext *ctx = _task_get_context(0); // CPU0
-	struct STask *task = &ctx->tasks[currentGProcess];
+	struct STask *task = &ctx->tasks[s_gdbcontext->currentGProcess];
 
 	for (int i=1; i<32; ++i)
 	{
@@ -430,7 +421,7 @@ void GDBWriteRegisters()
 	task->regs[0] = pc;
 
 	strcpy(responseData, "OK");
-	haveResponse = 1;
+	s_gdbcontext->haveResponse = 1;
 }
 
 void GDBVCont()
@@ -444,19 +435,19 @@ void GDBVCont()
 		if (strstr(command, "?") == command)
 		{
 			strcpy(responseData, "vCont;c;C;s;S;");
-			haveResponse = 1;
+			s_gdbcontext->haveResponse = 1;
 		}
 		else if (strstr(command, "c") == command)
 		{
 			// Continue
 			strcpy(responseData, "S05");
-			haveResponse = 1;
+			s_gdbcontext->haveResponse = 1;
 		}
 		else if (strstr(command, "s") == command)
 		{
 			// Step
 			strcpy(responseData, "S05");
-			haveResponse = 1;
+			s_gdbcontext->haveResponse = 1;
 		}
 		else
 		{
@@ -479,17 +470,17 @@ void GDBSetThread()
 		tid = tid <= 0 ? 0 : tid - 1;
 
 		kprintf("T %d\n", tid);
-		currentCPU = 0; // TODO: Find out from thread ID
-		currentThread = tid;
+		s_gdbcontext->currentCPU = 0; // TODO: Find out from thread ID
+		s_gdbcontext->currentThread = tid;
 
 		strcpy(responseData, "OK");
-		haveResponse = 1;
+		s_gdbcontext->haveResponse = 1;
 	}
 }
 
 void GDBBreak()
 {
-	if (debuggerAttached == 0)
+	if (s_gdbcontext->debuggerAttached == 0)
 	{
 		// Pass this through to the CLI for now
 		// Later on we'll let the GDB stub handle this
@@ -499,11 +490,11 @@ void GDBBreak()
 	else
 	{
 		// Add a software breakpoint at the current PC to stop the process
-		GDBAddBreakpoint(currentGCPU, currentGProcess, _task_get_context(currentGCPU)->tasks[currentGProcess].regs[0]);
+		GDBAddBreakpoint(s_gdbcontext->currentGCPU, s_gdbcontext->currentGProcess, _task_get_context(s_gdbcontext->currentGCPU)->tasks[s_gdbcontext->currentGProcess].regs[0]);
 
 		// Stopped due to CTRL+C
 		strcpy(responseData, "T02");
-		haveResponse = 1;
+		s_gdbcontext->haveResponse = 1;
 	}
 }
 
@@ -542,42 +533,42 @@ void GDBParseCommands()
 		// Continue
 
 		strcpy(responseData, "OK"); // or S05 or other codes if process stops
-		haveResponse = 1;
+		s_gdbcontext->haveResponse = 1;
 	}
 	else if (strstr(packetData, "D") == packetData)
 	{
-		debuggerAttached = 0;
+		s_gdbcontext->debuggerAttached = 0;
 
 		// TODO: Detach (i.e. resume process and restore all breakpoints)
 
 		strcpy(responseData, "OK");
-		haveResponse = 1;
+		s_gdbcontext->haveResponse = 1;
 	}
 	else if (strstr(packetData, "qC") == packetData)
 	{
-		mini_snprintf(responseData, 1023, "QC %d", currentThread);
-		haveResponse = 1;
+		mini_snprintf(responseData, 1023, "QC %d", s_gdbcontext->currentThread);
+		s_gdbcontext->haveResponse = 1;
 	}
 	else if (strstr(packetData, "Z0") == packetData)
 	{
 		// TODO: Insert breakpoint
 		strcpy(responseData, "OK");
-		haveResponse = 1;
+		s_gdbcontext->haveResponse = 1;
 	}
 	else if (strstr(packetData, "z0") == packetData)
 	{
 		// TODO: Remove breakpoint
 		strcpy(responseData, "OK");
-		haveResponse = 1;
+		s_gdbcontext->haveResponse = 1;
 	}
 	else if (strstr(packetData, "qSupported") == packetData)
 	{
-		debuggerAttached = 1;
+		s_gdbcontext->debuggerAttached = 1;
 		GDBQSupported();
 	}
 	else if (strstr(packetData, "vKill") == packetData)
 	{
-		debuggerAttached = 0;
+		s_gdbcontext->debuggerAttached = 0;
 
 		// Kill user process and its threads
 		struct STaskContext *ctx0 = _task_get_context(0);
@@ -588,7 +579,7 @@ void GDBParseCommands()
 			_task_exit_task_with_id(ctx1, i, 0);
 
 		strcpy(responseData, "OK");
-		haveResponse = 1;
+		s_gdbcontext->haveResponse = 1;
 	}
 	else if (strstr(packetData, "qXfer:threads:read") == packetData)
 	{
@@ -609,46 +600,46 @@ void GDBParseCommands()
 	else if (strstr(packetData, "qSymbol") == packetData)
 	{
 		// Empty response
-		haveResponse = 1;
+		s_gdbcontext->haveResponse = 1;
 	}
 	else if (strstr(packetData, "qsThreadInfo") == packetData)
 	{
 		// No more threads
 		strcpy(responseData, "l");
-		haveResponse = 1;
+		s_gdbcontext->haveResponse = 1;
 	}
 	else if (strstr(packetData, "vMustReplyEmpty"))
 	{
 		// Empty response
-		haveResponse = 1;
+		s_gdbcontext->haveResponse = 1;
 	}
 	else if (strstr(packetData, "qOffsets") == packetData)
 	{
 		// Empty response
-		haveResponse = 1;
+		s_gdbcontext->haveResponse = 1;
 	}
 	else if (strstr(packetData, "?") == packetData)
 	{
 		// S00 if the process is not halted
 		strcpy(responseData, "S00");
-		haveResponse = 1;
+		s_gdbcontext->haveResponse = 1;
 	}
 	else if (strstr(packetData, "vCont") == packetData)
 	{
 		GDBVCont();
-		haveResponse = 1;
+		s_gdbcontext->haveResponse = 1;
 	}
 	else
 	{
 		//kprintf("unknown command: %s\n", packetData);
 		strcpy(responseData, "-");
-		isackresponse = 1;
-		haveResponse = 1;
+		s_gdbcontext->isackresponse = 1;
+		s_gdbcontext->haveResponse = 1;
 	}
 
-	if (haveResponse)
+	if (s_gdbcontext->haveResponse)
 	{
-		if (isackresponse)
+		if (s_gdbcontext->isackresponse)
 		{
 			UARTPrintf("%s", responseData);
 			//kprintf("(N)ACK: %s\n", responseData);
@@ -665,15 +656,15 @@ void GDBParseCommands()
 void GDBStubBeginPacket()
 {
 	responseData[0] = 0;
-	packetCursor = 0;
-	haveResponse = 0;
-	isackresponse = 0;
+	s_gdbcontext->packetCursor = 0;
+	s_gdbcontext->haveResponse = 0;
+	s_gdbcontext->isackresponse = 0;
 }
 
 void GDBStubEndPacket()
 {
 	// Null-terminate the packet
-	packetData[packetCursor++] = 0;
+	packetData[s_gdbcontext->packetCursor++] = 0;
 
 	// TODO: Parse and respond to packet contents
 	GDBParseCommands();
@@ -681,5 +672,5 @@ void GDBStubEndPacket()
 
 void GDBStubAddByte(uint8_t byte)
 {
-	packetData[packetCursor++] = byte;
+	packetData[s_gdbcontext->packetCursor++] = byte;
 }

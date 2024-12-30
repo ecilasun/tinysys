@@ -23,7 +23,7 @@ void HandleSerialInput()
 	uint8_t drain;
 	while (SerialInRingBufferRead(&drain, 1))
 	{
-		if (in_gdb_mode)
+		/*if (in_gdb_mode)
 		{
 			if (drain == '#')
 			{
@@ -72,8 +72,8 @@ void HandleSerialInput()
 				GDBStubAddByte(drain);
 				GDBStubEndPacket();
 			}
-			else
-				KeyRingBufferWrite(&drain, 1); // Regular keyboard input
-		}
+			else*/
+				KeyRingBufferWrite(&drain, 1); // Feed serial data to key buffer
+		//}
 	}
 }

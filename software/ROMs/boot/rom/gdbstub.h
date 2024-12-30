@@ -13,6 +13,29 @@
 #define GDB_SIGNAL_CONT 18
 #define GDB_SIGNAL_TERM 15
 
+// Breakpoint limit
+#define MAX_BREAKPOINTS 16
+
+struct GDBContext
+{
+	uint32_t breakpoints[MAX_HARTS*TASK_MAX*MAX_BREAKPOINTS];
+	uint32_t replacedInstructions[MAX_HARTS*TASK_MAX*MAX_BREAKPOINTS];
+	uint32_t prevpointStatus[MAX_HARTS*TASK_MAX*MAX_BREAKPOINTS];
+	uint32_t breakpointStatus[MAX_HARTS*TASK_MAX*MAX_BREAKPOINTS];
+	uint32_t breakpointSignalled[MAX_HARTS*TASK_MAX*MAX_BREAKPOINTS];
+
+	uint32_t debuggerAttached;
+	uint32_t packetCursor;
+	uint32_t haveResponse;
+	uint32_t isackresponse;
+	uint32_t currentGCPU;
+	uint32_t currentGProcess;
+	uint32_t currentCCPU;
+	uint32_t currentCProcess;
+	uint32_t currentCPU;
+	uint32_t currentThread;
+};
+
 uint8_t GDBChecksum(const char *data);
 void GDBStubBeginPacket();
 void GDBStubEndPacket();
