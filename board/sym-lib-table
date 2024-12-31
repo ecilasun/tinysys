@@ -20,4 +20,5 @@
   (lib (name "ESP32-C6")(type "KiCad")(uri "${KIPRJMOD}/ESP32_C6/ESP32-C6.kicad_sym")(options "")(descr ""))
   (lib (name "ESP32-C6-WROOM")(type "KiCad")(uri "${KIPRJMOD}/ESP32-C6-WROOM/2024-03-17_01-27-18.kicad_sym")(options "")(descr ""))
   (lib (name "ESP32S3")(type "KiCad")(uri "${KIPRJMOD}/ESP32_S3/2024-11-30_22-27-31.kicad_sym")(options "")(descr ""))
+  (lib (name "MAX20022")(type "KiCad")(uri "${KIPRJMOD}/MAX20022ATIA/2024-12-23_10-42-40.kicad_sym")(options "")(descr ""))
 )
