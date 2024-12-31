@@ -42,15 +42,20 @@ int main()
 
 		// Fill current write buffer with new mix data
 		APUStartDMA((uint32_t)apubuffer);
+
 		// Wait for the APU to finish playing back current read buffer
 		uint32_t currframe;
 		do
 		{
 			currframe = APUFrame();
 		} while (currframe == prevframe);
+
+		// Once we reach this point, the APU has switched to the other buffer we just filled, and playback resumes uninterrupted
+
+		// Remember this frame for next time
 		prevframe = currframe;
 
-		// Read buffer drained, APU swapped to new read buffer
+		// Yield to OS
 		TaskYield();
 
 		offset += 1.f;
