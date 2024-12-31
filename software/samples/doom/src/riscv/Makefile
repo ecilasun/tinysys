@@ -40,7 +40,6 @@ SOURCES_doom_arch := \
 	../../../../SDK/apu.c \
 	../../../../SDK/vpu.c \
 	../../../../SDK/dma.c \
-	../../../../SDK/usbhost.c \
 	../../../../SDK/keyboard.c \
 	mini-printf.c \
 	d_main.c \

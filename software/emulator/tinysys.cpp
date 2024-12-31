@@ -367,7 +367,7 @@ int SDL_main(int argc, char** argv)
 	ectx.emulator = new CEmulator;
 	bool success;
 
-	fprintf(stderr, "tinysys emulator v1.0D\n");
+	fprintf(stderr, "tinysys emulator v1.1E\n");
 
 	const uint32_t resetvector = 0x0FFE0000;
 	char bootRom[256] = "rom.bin";

@@ -107,7 +107,11 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 
 	uint32_t loadELF = 0;
 
-	if (!strcmp(command, "dir"))
+	if (!strcmp(command, "help"))
+	{
+		kprintf("Commands:\ndir, mount, unmount, cls, reboot, mem, proc, del, ren, pwd, cd\n");
+	}
+	else if (!strcmp(command, "dir"))
 	{
 		const char *path = strtok(NULL, " ");
 		if (!path)
@@ -182,28 +186,6 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 				kprintf("file '%s' removed\n", path);
 		}
 	}
-	else if (!strcmp(command, "kill"))
-	{
-		const char *processid = strtok(NULL, " ");
-		if (!processid)
-			kprintf("usage: kill processid cpu\n");
-		else
-		{
-			const char *hartindex = strtok(NULL, " ");
-			if (!hartindex)
-			{
-				kprintf("usage: kill processid cpu\n");
-			}
-			else
-			{
-				uint32_t hartid = atoi(hartindex);
-				// Warning! This can also kill PID(1) which is the CLI
-				struct STaskContext *ctx = _task_get_context(hartid);
-				int taskid = atoi(processid);
-				_task_exit_task_with_id(ctx, taskid, 0);
-			}
-		}
-	}
 	else if (!strcmp(command, "ren"))
 	{
 		const char *path = strtok(NULL, " ");
@@ -258,7 +240,7 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 
 		// Temporary measure to avoid loading another executable while the first one is running
 		// until we get a virtual memory device
-		if (taskcounts[0] > maxcounts[0]) // Tasks always boot on main CPU
+		if (taskcounts[0] > maxcounts[0]) // User programs always boot on main CPU
 		{
 			kprintf("Virtual memory / code relocator not implemented.\n");
 		}
