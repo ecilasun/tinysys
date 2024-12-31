@@ -22,13 +22,19 @@ uint16_t *image;
 #define min(_x_,_y_) (_x_) < (_y_) ? (_x_) : (_y_)
 #define max(_x_,_y_) (_x_) > (_y_) ? (_x_) : (_y_)
 
-// The Bayer matrix for ordered dithering
-const uint8_t dither[4][4] = {
-{ 0, 8, 2,10},
-{12, 4,14, 6},
-{ 3,11, 1, 9},
-{15, 7,13, 5}
-};
+inline uint32_t ftoui4sat(float value)
+{
+  uint32_t retval;
+  asm (
+    "mv a1, %1;"
+    ".insn 0xc2058553;" // fcvtswu4sat a0, a1 // note A0==cpu.x10, A1==cpu.x11
+    "mv %0, a0; "
+    : "=r" (retval)
+    : "r" (value)
+    : "a0", "a1"
+  );
+  return retval;
+}
 
 void DecodeJPEG(const char *fname)
 {
@@ -58,8 +64,8 @@ void DecodeJPEG(const char *fname)
 			int W = njGetWidth();
 			int H = njGetHeight();
 
-			int iW = W>=640 ? 639 : W;
-			int iH = H>=480 ? 479 : H;
+			int iW = W>=640 ? 640 : W;
+			int iH = H>=480 ? 480 : H;
 
 			uint8_t *img = njGetImage();
 			if (njIsColor())
@@ -69,10 +75,10 @@ void DecodeJPEG(const char *fname)
 				{
 					for (int x=0;x<iW;++x)
 					{
-						uint8_t R = img[(x+y*W)*3+0]>>4;
-						uint8_t G = img[(x+y*W)*3+1]>>4;
-						uint8_t B = img[(x+y*W)*3+2]>>4;
-						image[x+y*640] = MAKECOLORRGB12(R,G,B);
+						uint32_t red = ftoui4sat(float(img[(x+y*W)*3+0])/255.f);
+						uint32_t green = ftoui4sat(float(img[(x+y*W)*3+1])/255.f);
+						uint32_t blue = ftoui4sat(float(img[(x+y*W)*3+2])/255.f);
+						image[x+y*640] = MAKECOLORRGB12(red, green, blue);
 					}
 				}
 			}
@@ -82,13 +88,15 @@ void DecodeJPEG(const char *fname)
 				for (int j=0;j<iH;++j)
 					for (int i=0;i<iW;++i)
 					{
-						uint8_t V = img[i+j*W];
+						uint8_t V = img[i+j*W]>>4;
 						image[i+j*640] = MAKECOLORRGB12(V,V,V);
 					}
 			}
 			// Finish memory writes to display buffer
 			CFLUSH_D_L1;
 		}
+
+		free(rawjpeg);
 	}
 	else
 		printf("Could not open file %s\n", fname);

@@ -90,19 +90,22 @@ int main()
 	const char* NACK = "!";
 	const char* ACK = "+";
 
-	// Emulator won't have a UART therefore we can't receive a file
-	uint32_t isEmulator = read_csr(0xF12) & 0x80000000 ? 0 : 1; // CSR_MARCHID is 0x80000000 for read hardware, 0x00000000 for emulator
+	// Emulator can still receive files over net/UART proxy
+	/*uint32_t isEmulator = read_csr(0xF12) & 0x80000000 ? 0 : 1; // CSR_MARCHID is 0x80000000 for read hardware, 0x00000000 for emulator
 	if (isEmulator)
 	{
 		UARTPrintf("! Emulator detected, cannot receive files\n");
 		return 0;
-	}
-
-	struct EVideoContext* osVideoContext = VPUGetKernelGfxContext();
-	uint8_t* osFramebuffer = (uint8_t*)osVideoContext->m_cpuWriteAddressCacheAligned;
+	}*/
 
 	struct STaskContext* taskctx = TaskGetContext(0);
 	taskctx->interceptUART = 1;
+
+	// Wait for UART chatter to finish
+	E32Sleep(HUNDRED_MILLISECONDS_IN_TICKS);
+
+	struct EVideoContext* osVideoContext = VPUGetKernelGfxContext();
+	uint8_t* osFramebuffer = (uint8_t*)osVideoContext->m_cpuWriteAddressCacheAligned;
 
 	DrawProgress(osVideoContext, 0, 100, "...", osFramebuffer, 0);
 
