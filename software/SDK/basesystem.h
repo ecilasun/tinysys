@@ -3,6 +3,7 @@
 #include <inttypes.h>
 
 // tinysys runs wall clock at 10MHz
+// These are the number of clock ticks for various time intervals
 #define ONE_SECOND_IN_TICKS						10000000
 #define HALF_SECOND_IN_TICKS					5000000
 #define TWO_HUNDRED_FIFTY_MILLISECONDS_IN_TICKS	2500000
@@ -15,49 +16,34 @@
 #define QUARTER_MILLISECOND_IN_TICKS			2500
 #define ONE_MICROSECOND_IN_TICKS				10
 
+// Control and status registers for tinysy specific features
 #define CSR_CPURESET					0xFEE
 #define CSR_WATERMARK					0xFF0
 #define CSR_PROGRAMCOUNTER				0xFFC
 
 // Physical address map for no-MMU raw mode at boot time
 #define APPMEM_START					0x00000000 // Top of RAM
-// Unused buffer and state (1Kbytes)
-#define UNUSED_BUFFER_BASE3				0x00000200
-#define UNUSED_STATE3					0x00000600
-// Keyboard input map (512 bytes)
-#define KEYBOARD_KEYSTATE_BASE			0x00000800
-#define KEYBOARD_KEYSTATE_END			0x00000A00
-// Keyboard state tracking data (512 bytes)
-#define KEYBOARD_KEYTRACK_BASE			0x00000A20
-#define KEYBOARD_KEYTRACK_END			0x00000C20
-#define KEYBOARD_INPUT_GENERATION		0x00000C24
-// USB host status
-#define USB_HOST_STATE					0x00000D20
-// Mouse x/y and button data - 12 bytes
-#define MOUSE_POS_AND_BUTTONS			0x00000D24
-// Joystick x/y and buttons - 16 bytes
-#define JOYSTICK_POS_AND_BUTTONS		0x00000D30
-// Temp file upload location
-#define TEMP_FILE_UPLOAD_START			0x00100000
-// Console buffer
+// > Largest executable binary size is 32 MBytes to fit into this space <
+// Console buffers
 #define CONSOLE_FRAMEBUFFER_START		0x02000000 // Console framebuffer == 0x4B000 bytes max at 640*480 resolution, has to be 64K aligned
-#define CONSOLE_CHARACTERBUFFER_START	0x0204D000 // Character store == 80*60 bytes max at 640*480 resolution (leaving a lot of gap here for future use)
+#define CONSOLE_CHARACTERBUFFER_START	0x0204D000 // Character store == 80*60(0x12C0) bytes max at 640*480 resolution (leaving a lot of gap here for future use)
 #define CONSOLE_COLORBUFFER_START		0x0204F000 // BG/FG color indices for characters (4 bits each, 1 byte per character) (leaving 8K gap here for future use)
-// Temp memory
+// Kernel memory for temporary operations
 #define KERNEL_TEMP_MEMORY				0x02053000 // Temporary kernel memory (16384 bytes)
-// Serial buffers (first words are counters)
-#define ISR_STACK_TOP					0x02057000 // Interrupt service routine stack space (16384 bytes)
+// Buffers
+#define GENERIC_TEMP_BUFFER				0x02055000 // General purpose buffer for common use, do not assume contents persist (8192 bytes)
+#define ISR_STACK_TOP					0x02057000 // Interrupt service routine stack space (8192 bytes)
 #define UART_OUTPUT_TEMP				0x02059000 // Temporary work space for UART print command (8192 bytes)
 #define GDB_DEBUG_DATA					0x0205B000 // GDB debug state store (8192 bytes)
 #define GDB_RESPONSE_BUFFER				0x0205D000 // GDB packet response buffer (8192 bytes)
 #define GDB_PACKET_BUFFER				0x0205F000 // GDB packet buffer (8192 bytes)
 #define KERNEL_GFX_CONTEXT				0x02060000 // Kernel terminal graphics context (4096 bytes with free space for future use)
-// Executable
-#define HEAP_START_APPMEM_END			0x02080000 // Executable space above this
+// Executable memory space
+#define HEAP_START						0x02080000 // Application heap starts here (222 MBytes)
 // Heap
-#define HEAP_END_CONSOLEMEM_START		0x0FF00000 // Heap space above this
+#define HEAP_END						0x0FF00000 // Executable heap space above this, we try not to cross this boundary into task stack space
 // Task stack space
-#define TASKMEM_END_STACK_END			0x0FFD0000 // Tasks stack space above this
+#define TASKMEM_END_STACK_END			0x0FFD0000 // Tasks stack space above this (832 KBytes)
 //  Kernel stacks for all cores, 256 bytes each
 #define STACK_BASE_HART1				0x0FFDFEF0 // Kernel stack above these (65264 bytes)
 #define STACK_BASE_HART0				0x0FFDFFF0
@@ -66,6 +52,7 @@
 // ROM SHADOW
 #define ROMSHADOW_END_MEM_END			0x0FFFFFFF // ROM shadow copy above this (128 KBytes, but normally OS ROM fits in upper 64 KByte half)
 
+// There are only 2 cores in this tinysys version
 #define MAX_HARTS 2
 
 // Device address base

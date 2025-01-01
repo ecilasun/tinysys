@@ -18,9 +18,9 @@
 
 // TODO: __heap_start should be set to __bss_end and __heap_end to __heap_start+__heap_size for loaded executables
 // This also means we have to get rid of any addresses between bss and heap as they might get overwritten
-static uint8_t* __heap_start = (uint8_t*)HEAP_START_APPMEM_END;
-static uint8_t* __heap_end = (uint8_t*)HEAP_END_CONSOLEMEM_START;
-static uint8_t* __breakpos = (uint8_t*)HEAP_START_APPMEM_END;
+static uint8_t* __heap_start = (uint8_t*)HEAP_START;
+static uint8_t* __heap_end = (uint8_t*)HEAP_END;
+static uint8_t* __breakpos = (uint8_t*)HEAP_START;
 
 /**
  * @brief Sets the ELF heap to the provided address.

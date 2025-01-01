@@ -37,7 +37,7 @@
 
 #include "basesystem.h"
 #include "core.h"
-#include "keyboard.h"
+//#include "keyboard.h"
 
 void
 I_Init(void)
@@ -65,7 +65,7 @@ static void
 I_GetRemoteEvent(void)
 {
 	// Do not read same input twice
-	static uint32_t prevGen = 0xFFFFFFFF;
+	/*static uint32_t prevGen = 0xFFFFFFFF;
 	uint32_t keyGen = GetKeyStateGeneration();
 	if (keyGen == prevGen)
 		return;
@@ -101,7 +101,7 @@ I_GetRemoteEvent(void)
 			event.type = (updown&1) ? ev_keydown : ev_keyup;
 			D_PostEvent(&event);
 		}
-	}
+	}*/
 }
 
 void

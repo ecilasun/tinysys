@@ -1,5 +1,6 @@
 #include "device.h"
 
+// We drop here for boot time or after an executable exits
 void DeviceDefaultState(int _bootTime)
 {
 	// Stop any pending horizontal blanking interrupt
@@ -11,12 +12,10 @@ void DeviceDefaultState(int _bootTime)
 	// Turn off LEDs
 	LEDSetState(0x0);
 
-	// TODO: Wait for any pending raster ops to complete
-
 	// Wait for any pending DMA to complete
 	DMAWait(CPUIncoherent);
 
-	// Set up console view
+	// Set up video mode and default color tables
 	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
 	VPUSetWriteAddress(kernelgfx, CONSOLE_FRAMEBUFFER_START);
 	VPUSetScanoutAddress(kernelgfx, CONSOLE_FRAMEBUFFER_START);
@@ -24,15 +23,13 @@ void DeviceDefaultState(int _bootTime)
 	kernelgfx->m_vmode = EVM_640_Wide;
 	kernelgfx->m_cmode = ECM_8bit_Indexed;
 	VPUSetVMode(kernelgfx, EVS_Enable);
+	VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 
-	// Preserve contents of screen for non-boot time
+	// Clear console buffer on initial boot, but not for when an executable exits
 	if (_bootTime)
-	{
-		VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 		VPUConsoleClear(kernelgfx);
-	}
 
-	// Clear screen to overlay loader color
+	// For overlay loader, blank the entire screen to CONSOLEBLUE (0x09)
 	if (_bootTime == 2)
 		VPUClear(kernelgfx, 0x09090909);
 }

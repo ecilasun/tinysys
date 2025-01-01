@@ -102,7 +102,7 @@ void VPUConsoleSetColors(struct EVideoContext *_context, const uint8_t _foregrou
 void VPUConsoleClear(struct EVideoContext *_context);
 void VPUConsoleSetCursor(struct EVideoContext *_context, const uint16_t _x, const uint16_t _y);
 void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _length);
-void VPUConsoleResolve(struct EVideoContext *_context/*, const int echoToUART*/);
+void VPUConsoleResolve(struct EVideoContext *_context);
 void VPUClear(struct EVideoContext *_context, const uint32_t _colorWord);
 
 // Horizontal blanking interrupt

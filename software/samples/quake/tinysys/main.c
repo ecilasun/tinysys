@@ -23,7 +23,7 @@
 #include <unistd.h>
 
 #include "basesystem.h"
-#include "keyboard.h"
+//#include "keyboard.h"
 
 enum {
 	MOUSE_BUTTON_LEFT = 1,
@@ -156,7 +156,7 @@ void *qembd_allocmain(size_t size)
 static int poll_event()
 {
 	// Do not read same input twice
-	static uint32_t prevGen = 0xFFFFFFFF;
+	/*static uint32_t prevGen = 0xFFFFFFFF;
 	uint32_t keyGen = GetKeyStateGeneration();
 	if (keyGen == prevGen)
 		return 0;
@@ -212,7 +212,7 @@ static int poll_event()
 			event.type = KEY_EVENT;
 			return 1;
 		}
-	}
+	}*/
 
 	/*if (event_count <= 0)
 		return 0;

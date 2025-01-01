@@ -8,7 +8,7 @@
 #include "basesystem.h"
 #include "vpu.h"
 #include "core.h"
-#include "uart.h"
+//#include "uart.h"
 #include <stdlib.h>
 
 // Video mode control word
@@ -363,6 +363,8 @@ void VPUConsoleClear(struct EVideoContext *_context)
 	_context->m_consoleUpdated = 1;
 	_context->m_cursorX = 0;
 	_context->m_cursorY = 0;
+
+	//UARTPrintf("\033[2J");
 }
 
 /** @brief Set console cursor position
@@ -377,6 +379,8 @@ void VPUConsoleSetCursor(struct EVideoContext *_context, const uint16_t _x, cons
 {
 	_context->m_cursorX = _x;
 	_context->m_cursorY = _y;
+
+	//UARTPrintf("\033[%d;%dH", _y, _x); // row, col instead of col, row
 }
 
 /** @brief Print to console
@@ -451,6 +455,8 @@ void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _
 			// Fill last row with default background
 			__builtin_memset((void*)lastcolorrow, (CONSOLEDEFAULTBG<<4) | (CONSOLEDEFAULTFG), W);
 			cy = H_1;
+
+			//UARTPrintf("\033[M");
 		}
 
 		++i;
@@ -458,6 +464,8 @@ void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _
 	_context->m_cursorX = cx;
 	_context->m_cursorY = cy;
 	_context->m_consoleUpdated = 1;
+
+	//UARTPrintf("%s", _message);
 }
 
 /** @brief Resolve console to VRAM
@@ -469,7 +477,7 @@ void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _
  * @param _context Video context
  * @see VPUSetWriteAddress
  */
-void VPUConsoleResolve(struct EVideoContext *_context/*, const int echoToUART*/)
+void VPUConsoleResolve(struct EVideoContext *_context)
 {
 	uint32_t *vramBase = (uint32_t*)_context->m_cpuWriteAddressCacheAligned;
 	uint8_t *characterBase = (uint8_t*)CONSOLE_CHARACTERBUFFER_START;
@@ -517,29 +525,6 @@ void VPUConsoleResolve(struct EVideoContext *_context/*, const int echoToUART*/)
 			}
 		}
 	}
-
-	// For debug purposes
-	/*if (echoToUART)
-	{
-		uint8_t* reinterpLine = (uint8_t*)UNUSED_BUFFER_BASE0;
-		uint32_t rilCursor = 0;
-		// Move cursor to top left
-		UARTPrintf("\033[0;0H");
-		// Dump console to UART
-		for (uint16_t cy=0; cy<H; ++cy)
-		{
-			for (uint16_t cx=0; cx<W; ++cx)
-			{
-				int currentchar = characterBase[cx+cy*W];
-				if (currentchar<32)
-					currentchar = 32;
-				reinterpLine[rilCursor++] = currentchar;
-			}
-			reinterpLine[rilCursor++] = '\r';
-			reinterpLine[rilCursor++] = '\n';
-		}
-		UARTSendBlock(reinterpLine, rilCursor);
-	}*/
 
 	_context->m_consoleUpdated = 0;
 	CFLUSH_D_L1;

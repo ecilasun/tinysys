@@ -27,6 +27,7 @@ int kprintfn(const int count, const char *fmt, ...)
 	l = count < l ? count : l;
 
 	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
+	k_tmpstr[count] = 0;
 	VPUConsolePrint(kernelgfx, k_tmpstr, count);
 
 	return l;
@@ -46,6 +47,7 @@ int kprintf(const char *fmt, ...)
 	l = 1023 < l ? 1023 : l;
 
 	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
+	k_tmpstr[l] = 0;
 	VPUConsolePrint(kernelgfx, k_tmpstr, l);
 
 	return l;
@@ -600,7 +602,7 @@ uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader
 		{
 			uint8_t *memaddr = (uint8_t *)(pheader.m_PAddr + _relocOffset);
 			// Check illegal range
-			if ((uint32_t)memaddr>=HEAP_END_CONSOLEMEM_START || ((uint32_t)memaddr)+pheader.m_MemSz>=HEAP_END_CONSOLEMEM_START)
+			if ((uint32_t)memaddr>=HEAP_END || ((uint32_t)memaddr)+pheader.m_MemSz>=HEAP_END)
 			{
 				kprintf("ELF section in illegal memory region\n");
 				return 0;
