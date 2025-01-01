@@ -13136,7 +13136,7 @@
 		)
 		(uuid fb7fa0a9-ae07-455c-ad42-8a723b169102)
 	)
-	(text "5V0 -> R1=R2*4.0\nR1==40KOhm\nR2==10KOhm\nC1==15pF"
+	(text "5V0 -> Ra=Rb*4.0\nRa==40KOhm\nRb==10KOhm\nCa==15pF"
 		(exclude_from_sim no)
 		(at 288.29 243.84 0)
 		(effects
@@ -13169,7 +13169,7 @@
 		)
 		(uuid "15d5dda0-ac90-4f60-a43d-ea140d81fea0")
 	)
-	(text "3V3 -> R1=R2*2.3\nR1==23KOhm\nR2==10KOhm\nC1==15pF"
+	(text "3V3 -> R1=R12*2.3\nR1==23KOhm\nR12==10KOhm\nC1==15pF"
 		(exclude_from_sim no)
 		(at 288.29 233.172 0)
 		(effects
@@ -13312,7 +13312,7 @@
 		)
 		(uuid "96726209-f764-4d7f-a3fc-49a30c51080f")
 	)
-	(text "2V5 -> R1=R2*1.5\nR1==15KOhm\nR2==10KOhm\nC1==15pF"
+	(text "2V5 -> Ra=Rb*1.5\nRa==15KOhm\nRb==10KOhm\nCa==15pF"
 		(exclude_from_sim no)
 		(at 288.29 238.506 0)
 		(effects
@@ -13323,7 +13323,7 @@
 		)
 		(uuid "9878f1b4-e315-405a-984c-cd7d318fc842")
 	)
-	(text "1V2 -> R1=R2*0.2\nR1==2KOhm\nR2==10KOhm\nC1==75pF"
+	(text "1V2 -> R10=R11*0.2\nR10==2KOhm\nR11==10KOhm\nC6==75pF"
 		(exclude_from_sim no)
 		(at 288.29 227.838 0)
 		(effects
@@ -13366,6 +13366,17 @@
 			(justify left bottom)
 		)
 		(uuid "b0df09b0-1a6b-414e-8f9a-045e50980dfd")
+	)
+	(text "CAN'T FIND THIS!"
+		(exclude_from_sim no)
+		(at 227.584 241.808 0)
+		(effects
+			(font
+				(size 0.762 0.762)
+			)
+			(justify left)
+		)
+		(uuid "b3b1d73a-f0f9-48fb-85fb-1320782e3178")
 	)
 	(text "640x480 (480p)\nITU-R BT.601\nY = 0.299R′ + 0.587G′ + 0.114B′ \nCb = –0.172R′ – 0.339G′ + 0.511B′ + 128 \nCr = 0.511R′ – 0.428G′ – 0.083B′ + 128"
 		(exclude_from_sim no)
@@ -20438,8 +20449,8 @@
 				(justify left)
 			)
 		)
-		(property "Value" "23K0"
-			(at 237.49 241.554 0)
+		(property "Value" "2K0"
+			(at 238.506 241.554 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -20908,7 +20919,7 @@
 				)
 			)
 		)
-		(property "Value" "4K06"
+		(property "Value" "4K02"
 			(at 147.574 155.194 90)
 			(effects
 				(font
