@@ -28,6 +28,7 @@ void ksetcolor(int8_t fg, int8_t bg);
 int kprintf(const char *fmt, ...);
 void kgetcursor(int *_x, int *_y);
 void ksetcursor(const int _x, const int _y);
+void ksetcaret(const int _x, const int _y, const int _blink);
 
 // Path helpers
 #define PATH_MAX 64

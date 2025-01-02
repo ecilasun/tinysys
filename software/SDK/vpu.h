@@ -66,7 +66,10 @@ struct EVideoContext
 	uint16_t m_consoleWidth, m_consoleHeight;
 	uint16_t m_cursorX, m_cursorY;
 	uint16_t m_consoleUpdated;
+	uint16_t m_caretX;
+	uint16_t m_caretY;
 	uint8_t m_consoleColor;
+	uint8_t m_caretBlink;
 };
 
 struct EVideoSwapContext
@@ -97,12 +100,15 @@ void VPUSwapPages(struct EVideoContext* _vx, struct EVideoSwapContext *_sc);
 void VPUWaitVSync();
 void VPUPrintString(struct EVideoContext *_context, const uint8_t _foregroundIndex, const uint8_t _backgroundIndex, const uint16_t _x, const uint16_t _y, const char *_message, int _length);
 
-// Software emulated
+// Console
 void VPUConsoleSetColors(struct EVideoContext *_context, const uint8_t _foregroundIndex, const uint8_t _backgroundIndex);
 void VPUConsoleClear(struct EVideoContext *_context);
 void VPUConsoleSetCursor(struct EVideoContext *_context, const uint16_t _x, const uint16_t _y);
 void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _length);
 void VPUConsoleResolve(struct EVideoContext *_context);
+void VPUConsoleSetCaret(struct EVideoContext *_context, const uint16_t _x, const uint16_t _y, const uint16_t _blink);
+
+// Software emulated
 void VPUClear(struct EVideoContext *_context, const uint32_t _colorWord);
 
 // Horizontal blanking interrupt

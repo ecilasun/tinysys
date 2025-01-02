@@ -5,6 +5,7 @@
 #include "commandline.h"
 #include "rombase.h"
 #include "keyringbuffer.h"
+//#include "uart.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -299,12 +300,22 @@ int HandleCommandLine(struct STaskContext *taskctx)
 	// Echo all of the characters we can find back to the sender
 	uint8_t asciicode = 0;
 	int execcmd = 0;
+	int controltrap = 0;
 
 	// Keyboard input or other data
-	while (KeyRingBufferRead(&asciicode, 1))
+	while (!controltrap && KeyRingBufferRead(&asciicode, 1))
 	{
+		// DEBUG: UARTPrintf("[%d]", asciicode);
+
 		switch (asciicode)
 		{
+			case 224: // Extended key code
+			{
+				// Arrow keys and other control codes
+				controltrap = 1;
+			}
+			break;
+
 			case 10:
 			case 13:	// Return / Enter
 			{
@@ -313,7 +324,7 @@ int HandleCommandLine(struct STaskContext *taskctx)
 				execcmd++;
 			}
 			break;
-		
+
 			case 3:		// EXT (Ctrl+C) - BREAK
 			{
 				// Return with empty command string
@@ -337,6 +348,12 @@ int HandleCommandLine(struct STaskContext *taskctx)
 			}
 			break;
 
+			case 9: 	// Tab
+			{
+				// TODO: Implement tab completion
+			}
+			break;
+
 			case 8:		// Backspace
 			{
 				s_cliCtx->cmdLen--;
@@ -351,6 +368,14 @@ int HandleCommandLine(struct STaskContext *taskctx)
 				s_cliCtx->cmdLen = 0;
 				++s_cliCtx->refreshConsoleOut;
 				// TODO: Erase current line
+			}
+			break;
+
+			// CTRL + L (Clear screen i.e. form feed)
+			case 12:
+			{
+				++s_cliCtx->refreshConsoleOut;
+				VPUConsoleClear(VPUGetKernelGfxContext());
 			}
 			break;
 
@@ -369,6 +394,39 @@ int HandleCommandLine(struct STaskContext *taskctx)
 		}
 	}
 
+	if (controltrap)
+	{
+		// Arrow keys
+		uint8_t controlcode = 0;
+		// Wait for next byte
+		while (controlcode == 0)
+		{
+			KeyRingBufferRead(&controlcode, 1);
+		}
+		switch (controlcode)
+		{
+			case 72:	// Up
+			{
+				// TODO: Implement command history
+			}
+			break;
+			case 80:	// Down
+			{
+				// TODO: Implement command history
+			}
+			break;
+			case 75:	// Left
+			{
+			}
+			break;
+			case 77:	// Right
+			{
+			}
+			break;
+		}
+		controltrap = 0;
+	}
+
 	return execcmd;
 }
 
@@ -381,11 +439,25 @@ void _CLITask()
 	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
 	ShowVersion(kernelgfx);
 
+	int cursortoggle = 0;
 	struct STaskContext *taskctx = _task_get_context(0);
+	uint64_t cursorTime = E32ReadTime();
 	while(1)
 	{
 		int execcmd = 0;
 		execcmd = HandleCommandLine(taskctx);
+
+		// Toggle cursor every 500ms
+		uint64_t currentTime = E32ReadTime();
+		if (ClockToMs(currentTime-cursorTime) > 500)
+		{
+			cursorTime = currentTime;
+			++cursortoggle;
+			// Mark console for refresh
+			++s_cliCtx->refreshConsoleOut;
+		}
+		if (execcmd)
+			cursortoggle = 0;
 
 		// Report task termination and reset device to default state
 		struct STask *task = &taskctx->tasks[s_cliCtx->userTaskID];
@@ -414,11 +486,14 @@ void _CLITask()
 				s_cliCtx->refreshConsoleOut = 0;
 				// properly terminate the command string
 				s_cliCtx->cmdString[s_cliCtx->cmdLen] = 0;
+				// Make sure the ENTER key is echoed
 				// Rewind cursor and print the command string
 				int cx,cy;
 				kgetcursor(&cx, &cy);
 				ksetcursor(0, cy);
 				kprintf("%s>%s ", GetWorkDir(), s_cliCtx->cmdString);
+				kgetcursor(&cx, &cy);
+				ksetcaret(cx-1, cy, cursortoggle%2);
 			}
 		}
 

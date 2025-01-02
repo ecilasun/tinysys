@@ -383,6 +383,23 @@ void VPUConsoleSetCursor(struct EVideoContext *_context, const uint16_t _x, cons
 	//UARTPrintf("\033[%d;%dH", _y, _x); // row, col instead of col, row
 }
 
+/** @brief Set console caret position
+ * 
+ * Sets the console caret position to the given coordinates.
+ * The caret is a blinking cursor that indicates the current input position.
+ * 
+ * @param _context Video context
+ * @param _x X coordinate
+ * @param _y Y coordinate
+ * @param _blink Blinking state, 0 means caret is off, 1 means caret is on
+ */
+void VPUConsoleSetCaret(struct EVideoContext *_context, const uint16_t _x, const uint16_t _y, const uint16_t _blink)
+{
+	_context->m_caretX = _x;
+	_context->m_caretY = _y;
+	_context->m_caretBlink = _blink;
+}
+
 /** @brief Print to console
  * 
  * Prints a string to the console at the current cursor position.
@@ -524,6 +541,19 @@ void VPUConsoleResolve(struct EVideoContext *_context)
 				}
 			}
 		}
+	}
+
+	// Show caret if it's in the visible state
+	if (_context->m_caretBlink)
+	{
+		int cx = _context->m_caretX;
+		int cy = _context->m_caretY;
+		uint32_t yoffset = (cy*8+7)*stride; // Last row of the character
+		uint32_t xoffset = cx*2; // 2 words per character
+		uint32_t *caret = &vramBase[xoffset + yoffset];
+		// 8 pixels wide
+		*caret = 0xFFFFFFFF;
+		*(caret+1) = 0xFFFFFFFF;
 	}
 
 	_context->m_consoleUpdated = 0;

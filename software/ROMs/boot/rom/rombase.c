@@ -66,6 +66,12 @@ void kgetcursor(int *_x, int *_y)
 	*_y = kernelgfx->m_cursorY;
 }
 
+void ksetcaret(const int _x, const int _y, const int _blink)
+{
+	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
+	VPUConsoleSetCaret(kernelgfx, _x, _y, _blink);
+}
+
 void ksetcursor(const int _x, const int _y)
 {
 	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
