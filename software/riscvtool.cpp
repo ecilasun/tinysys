@@ -23,6 +23,7 @@
 char devicename[512] = "/dev/ttyACM0";
 #else // CAT_WINDOWS
 #include <conio.h>
+// Default COM port is \\.\COM4
 char devicename[512] = "\\\\.\\COM4";
 #endif
 
