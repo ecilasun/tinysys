@@ -1,7 +1,3 @@
-// needs:
-// libx11-dev
-// libv4l-dev
-
 #include <stdbool.h>
 #include <string.h>
 #include <stdint.h>
@@ -9,65 +5,11 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include "platform.h"
+#include "common.h"
+
+
 #if defined(CAT_LINUX)
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/keysym.h>
-#include <termios.h>
-#include <pthread.h>
-#include <linux/ioctl.h>
-#include <linux/types.h>
-#include <linux/v4l2-common.h>
-#include <linux/v4l2-controls.h>
-#include <linux/videodev2.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
-//char commdevicename[512] = "/dev/ttyUSB0";
-char commdevicename[512] = "/dev/ttyACM0";
-char capturedevicename[512] = "/dev/video0";
-#endif
-
-#if defined(CAT_WINDOWS)
-#include <windows.h>
-char commdevicename[512] = "\\\\.\\COM4";
-char capturedevicename[512] = "\\\\.\\VIDEO0"; // ???
-#endif
-
-static uint8_t masktable[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
-
-static uint8_t keycodetoscancode[256] =
-{
-//  0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
-    0,    0,    0,    0,    0,    0,    0,    0,    0, 0x29, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, // 0
-0x24, 0x25, 0x26, 0x27, 0x2d, 0x2e, 0x2a, 0x2b, 0x14, 0x1A, 0x08, 0x15, 0x17, 0x1c, 0x18, 0x0c, // 1
-0x12, 0x13, 0x2f, 0x30, 0X28, 0xe0, 0x04, 0x16, 0x07, 0x09, 0x0a, 0x0b, 0x0d, 0x0e, 0x0f, 0x33, // 2
-0x34, 0x35, 0xe1, 0x31, 0x1d, 0x1b, 0x06, 0x19, 0x05, 0x11, 0x10, 0x36, 0x37, 0x38, 0xe5,    0, // 3
-0xe2, 0x2c,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 4
-    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 5
-    0,    0,    0,    0,    0,    0,    0,    0,    0, 0xe4,    0,    0, 0xe6,    0,    0, 0x52, // 6
-    0, 0x50, 0x4f,    0, 0x51,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, 0x03, // 7 // 7F -> Ctrl+C (0x03)
-    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 8
-    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // 9
-    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // A
-    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // B
-    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // C
-    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // D
-    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // E
-    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0, // F
-};
-
-#define clamp(x) (x>255?255:(x<0?0:x))
-#define YUV2RO(C, D, E) clamp((298 * (C) + 409 * (E) + 128) >> 8)
-#define YUV2GO(C, D, E) clamp((298 * (C) - 100 * (D) - 208 * (E) + 128) >> 8)
-#define YUV2BO(C, D, E) clamp((298 * (C) + 516 * (D) + 128) >> 8)
-uint32_t YUVtoRGBX32(int y, int u, int v)
-{
-    y -= 16; u -= 128; v -= 128;
-    return (YUV2RO(y,u,v) )<<16 | (YUV2GO(y,u,v) )<<8 | (YUV2BO(y,u,v) ) | 0xFF000000;
-}
-
 int vtype = 0;
 v4l2_buffer vbufferinfo;
 char* vbuffer = nullptr;
@@ -76,66 +18,159 @@ unsigned int vbufferlen = 0;
 bool isForeground = false;
 bool appDone = false;
 Display* dpy;
+#endif
 
-int initialize_serial()
-{
-    // Serial
-    int serial_port = open(commdevicename, O_RDWR); // TODO: move to command line option
-    if (serial_port <0 )
-    {
-        printf("cannot open %s\n", commdevicename);
-        return -1;
-    }
+static bool s_alive = true;
 
-    struct termios tty;
-    if(tcgetattr(serial_port, &tty) == 0)
-    {
-        // Set tty. flags
-        tty.c_cflag &= ~PARENB; // No parity
-        tty.c_cflag &= ~CSTOPB; // One stop bit
-        tty.c_cflag &= ~CSIZE;
-        tty.c_cflag |= CS8; // 8 bits
-        tty.c_cflag &= ~CRTSCTS;
-        tty.c_cflag |= CREAD | CLOCAL; // Not model (local), write
+class CSerialPort{
+	public:
 
-        tty.c_lflag &= ~ICANON;
-        tty.c_lflag &= ~ECHO;
-        tty.c_lflag &= ~ISIG;
-        tty.c_iflag &= ~(IXON | IXOFF | IXANY);
-        tty.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL);
+	CSerialPort() { }
+	~CSerialPort() { }
 
-        tty.c_oflag &= ~OPOST;
-        tty.c_oflag &= ~ONLCR;
-        //tty.c_oflag &= ~OXTABS;
-        //tty.c_oflag &= ~ONOEOT;
+	bool Open()
+	{
+#if defined(CAT_LINUX) || defined(CAT_MACOS)
+		// Open COM port
+		serial_port = open(devicename, O_RDWR);
+		if (serial_port < 0 )
+		{
+			printf("Error %i from open('%s'): %s\nPlease try another COM port path.\n", errno, devicename, strerror(errno));
+			return false;
+		}
 
-        tty.c_cc[VTIME] = 50;
-        tty.c_cc[VMIN] = 10;
-        cfsetispeed(&tty, B115200);
-        cfsetospeed(&tty, B115200); // or only cfsetspeed(&tty, B115200);
+		struct termios tty;
+		if(tcgetattr(serial_port, &tty) != 0)
+		{
+			printf("Error %i from tcgetattr: %s\nPlease make sure your user has access to the COM device %s.\n", errno, strerror(errno), devicename);
+			return false;
+		}
 
-        if (tcsetattr(serial_port, TCSANOW, &tty) != 0)
-        {
-            printf("serial port error\n");
-            return -1;
-        }
-    }
-    else
-    {
-        printf("serial port error\n");
-        return -1;
-    }
+		// Set tty. flags
+		tty.c_cflag &= ~PARENB; // No parity
+		tty.c_cflag &= ~CSTOPB; // One stop bit
+		tty.c_cflag &= ~CSIZE;
+		tty.c_cflag |= CS8; // 8 bits
+		tty.c_cflag &= ~CRTSCTS;
+		tty.c_cflag |= CREAD | CLOCAL; // Not model (local), write
 
-    return serial_port;
-}
+		tty.c_lflag &= ~ICANON;
+		tty.c_lflag &= ~ECHO;
+		tty.c_lflag &= ~ISIG;
+		tty.c_iflag &= ~(IXON | IXOFF | IXANY);
+		tty.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL);
 
-void terminate_serial(int serial_port)
-{
-    close(serial_port);
-}
+		tty.c_oflag &= ~OPOST;
+		tty.c_oflag &= ~ONLCR;
+		//tty.c_oflag &= ~OXTABS;
+		//tty.c_oflag &= ~ONOEOT;
+
+		tty.c_cc[VTIME] = 50;
+		tty.c_cc[VMIN] = 10;
+
+		cfsetispeed(&tty, B460800);
+		cfsetospeed(&tty, B460800); // or only cfsetspeed(&tty, B460800);
+
+		if (tcsetattr(serial_port, TCSANOW, &tty) != 0)
+			printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
+
+		printf("%s open\n", commdevicename);
+		return true;
+
+#else // CAT_WINDOWS
+		hComm = CreateFileA(commdevicename, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+		if (hComm != INVALID_HANDLE_VALUE)
+		{
+			serialParams.DCBlength = sizeof(serialParams);
+			if (GetCommState(hComm, &serialParams))
+			{
+				serialParams.BaudRate = /*CBR_*/460800;		// 460800 baud
+				serialParams.fBinary = true;
+				serialParams.fDtrControl = DTR_CONTROL_DISABLE;
+				serialParams.fRtsControl = RTS_CONTROL_DISABLE;
+				serialParams.fParity = 0;
+				serialParams.ByteSize = 8;				// 8 bit bytes
+				serialParams.StopBits = ONESTOPBIT;		// 1 stop bit
+				serialParams.Parity = NOPARITY;			// no parity
+				serialParams.fOutX = 0;					// no xon/xoff
+				serialParams.fInX = 0;
+				if (SetCommState(hComm, &serialParams) != 0)
+				{
+					printf("%s open\n", commdevicename);
+					timeouts.ReadIntervalTimeout = MAXDWORD;
+					timeouts.ReadTotalTimeoutConstant = 0;
+					timeouts.ReadTotalTimeoutMultiplier = 0;
+					timeouts.WriteTotalTimeoutConstant = 0;
+					timeouts.WriteTotalTimeoutMultiplier = 0;
+					if (SetCommTimeouts(hComm, &timeouts) != 0)
+						return true;
+					else
+						printf("ERROR: can't set communication timeouts\n");
+				}
+				else
+					printf("ERROR: can't set communication parameters\n");
+			}
+			else
+				printf("ERROR: can't get communication parameters\n");
+		}
+		else
+			printf("ERROR: can't open COM port %s\n", commdevicename);
+		return false;
+#endif
+	}
+
+	uint32_t Receive(void *_target, unsigned int _rcvlength)
+	{
+#if defined(CAT_LINUX) || defined(CAT_MACOS)
+		int n = read(serial_port, _target, _rcvlength);
+		if (n < 0)
+			printf("ERROR: read() failed\n");
+		return n;
+#else
+		DWORD bytesread = 0;
+		BOOL success = ReadFile(hComm, _target, _rcvlength, &bytesread, nullptr);
+		return success ? bytesread : 0;
+#endif
+	}
+
+	uint32_t Send(void *_sendbytes, unsigned int _sendlength)
+	{
+#if defined(CAT_LINUX) || defined(CAT_MACOS)
+		int n = write(serial_port, _sendbytes, _sendlength);
+		if (n < 0)
+			printf("ERROR: write() failed\n");
+		return n;
+#else // CAT_WINDOWS
+		DWORD byteswritten = 0;
+		// Send the command
+		BOOL success = WriteFile(hComm, _sendbytes, _sendlength, &byteswritten, nullptr);
+		if (!success)
+			printf("ERROR: write() failed\n");
+		return success ? (uint32_t)byteswritten : 0;
+#endif
+	}
+
+	void Close()
+	{
+#if defined(CAT_LINUX) || defined(CAT_MACOS)
+		close(serial_port);
+#else // CAT_WINDOWS
+		CloseHandle(hComm);
+#endif
+	}
+
+#if defined(CAT_LINUX) || defined(CAT_MACOS)
+	int serial_port{-1};
+#else // CAT_WINDOWS
+	HANDLE hComm{INVALID_HANDLE_VALUE};
+	DCB serialParams{0};
+	COMMTIMEOUTS timeouts{0};
+#endif
+};
 
 int initialize_video_capture(int width, int height)
 {
+#if defined(CAT_LINUX)
     intermediate = (uint32_t*)malloc(width*height*4);
 
     // Video capture
@@ -203,10 +238,14 @@ int initialize_video_capture(int width, int height)
     }
 
     return video_capture;
+#else
+	return -1;
+#endif
 }
 
 void terminate_video_capture(int video_capture)
 {
+#if defined(CAT_LINUX)
     free(intermediate);
 
     if (video_capture<0)
@@ -221,10 +260,14 @@ void terminate_video_capture(int video_capture)
         return;
     }
     close(video_capture);
+#else
+	// TODO: Windows and MacOS
+#endif
 }
 
 void *capture_input( void *ptr )
 {
+#if defined(CAT_LINUX)
     int serial_port = *(int*)ptr;
 
     unsigned char keys_old[32];
@@ -292,34 +335,44 @@ void *capture_input( void *ptr )
     }
 
     return nullptr;
+#else
+	return nullptr;
+#endif
 }
 
-int main(int argc, char **argv)
+#if defined(CAT_LINUX) || defined(CAT_DARWIN)
+int main(int argc, char** argv)
+#else
+int SDL_main(int argc, char** argv)
+#endif
 {
+	printf("Usage: tinyremote commdevicename capturedevicename\ndefault comm device:%s default capture device:%s\nCtrl+C or PAUSE: quit current remote process\n", commdevicename, capturedevicename);
+
     if (argc > 1)
 		strcpy(commdevicename, argv[1]);
     if (argc > 2)
 		strcpy(capturedevicename, argv[2]);
 
+	int width = 640;
+	int height = 480;
+	int videowidth = 640;
+	int videoheight = 480;
+
+#if defined(CAT_LINUX)
     dpy = XOpenDisplay(NULL);
-
-    int width = 640;
-    int height = 480;
-    int videowidth = 640;
-    int videoheight = 480;
-
     if (!dpy)
     {
         printf("Cannot open display\n");
         return -1;
     }
+#else
+	// TODO: Windows and MacOS
+#endif
 
-    printf("Usage: tinyremote commdevicename capturedevicename\ndefault comm device:%s default capture device:%s\nCtrl+C or PAUSE: quit current remote process\n", commdevicename, capturedevicename);
+	CSerialPort serial;
+	serial.Open();
 
-    int serial_port = initialize_serial();
-    if (serial_port<0)
-        return -1;
-
+#if defined(CAT_LINUX)
     // Window
     int screen_num = DefaultScreen(dpy);
     Visual *visual = DefaultVisual(dpy, screen_num);
@@ -342,7 +395,7 @@ int main(int argc, char **argv)
     int video_capture = initialize_video_capture(width, height);
 
     pthread_t inputCaptureThread;
-    pthread_create( &inputCaptureThread, NULL, capture_input, (void*)&serial_port);
+    pthread_create(&inputCaptureThread, NULL, capture_input, (void*)&serial_port);
 
     XEvent ev;
     while(!appDone)
@@ -452,8 +505,37 @@ int main(int argc, char **argv)
     };
 
     pthread_join(inputCaptureThread, nullptr);
+#else
 
+	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+	{
+		fprintf(stderr, "Error initializing SDL2: %s\n", SDL_GetError());
+		return -1;
+	}
+
+	SDL_Window* window = SDL_CreateWindow("tinysys", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
+
+	SDL_Event ev;
+	do
+	{
+		if (SDL_PollEvent(&ev) != 0)
+		{
+			if (ev.type == SDL_QUIT)
+				s_alive = false;
+		}
+	} while(s_alive);
+
+	SDL_DestroyWindow(window);
+#endif
+
+    serial.Close();
     printf("remote connection terminated\n");
-    terminate_serial(serial_port);
+
+#if defined(CAT_LINUX)
     terminate_video_capture(video_capture);
+#else
+	// TODO: Windows and MacOS
+#endif
+
+	return 0;
 }
