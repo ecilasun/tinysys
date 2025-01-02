@@ -74,10 +74,9 @@ void ShowVersion(struct EVideoContext *kernelgfx)
 
 	VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
 	kprintf("\n                                                   \n");
-	kprintf(" OS version          : " VERSIONSTRING " (%s)              \n", waterMark == 0 ? "IN-ROM" : "SDCARD");
+	kprintf(" OS version          : " VERSIONSTRING " Loaded from %s    \n", waterMark == 0 ? "ROM   " : "SDCARD");
 	kprintf(" Board               : issue 2E:2024 (%s)    \n", isEmulator ? "EMULATED" : "HARDWARE");
 	kprintf(" ARCH                : rv32im_zicsr_zifencei_zfinx \n");
-	// Video circuit on 2B has no info we can read so this is hardcoded
 	kprintf("                                                   \n\n");
 	VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 }
