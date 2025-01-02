@@ -1,5 +1,5 @@
 // Changes required to run embedded quake on tinysys
-// Added by Engin Cilasun (c)2024
+// Added by Engin Cilasun
 
 #include <quakembd.h>
 #include <string.h>

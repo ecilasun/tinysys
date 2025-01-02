@@ -113,6 +113,6 @@ Further thanks goes to everyone who's build something on this machine at least o
 
 Happy hacking!
 
-Copyright 2024 Engin Cilasun
+Copyright 2025 Engin Cilasun
 
 Please see respective license.txt files for individual license terms
