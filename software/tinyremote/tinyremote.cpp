@@ -32,17 +32,17 @@ class CSerialPort{
 	{
 #if defined(CAT_LINUX) || defined(CAT_MACOS)
 		// Open COM port
-		serial_port = open(devicename, O_RDWR);
+		serial_port = open(commdevicename, O_RDWR);
 		if (serial_port < 0 )
 		{
-			printf("Error %i from open('%s'): %s\nPlease try another COM port path.\n", errno, devicename, strerror(errno));
+			printf("Error %i from open('%s'): %s\nPlease try another COM port path.\n", errno, commdevicename, strerror(errno));
 			return false;
 		}
 
 		struct termios tty;
 		if(tcgetattr(serial_port, &tty) != 0)
 		{
-			printf("Error %i from tcgetattr: %s\nPlease make sure your user has access to the COM device %s.\n", errno, strerror(errno), devicename);
+			printf("Error %i from tcgetattr: %s\nPlease make sure your user has access to the COM device %s.\n", errno, strerror(errno), commdevicename);
 			return false;
 		}
 
@@ -265,10 +265,10 @@ void terminate_video_capture(int video_capture)
 #endif
 }
 
-void *capture_input( void *ptr )
+void *capture_input( void *ptr)
 {
+    CSerialPort* serial = (CSerialPort*)ptr;
 #if defined(CAT_LINUX)
-    int serial_port = *(int*)ptr;
 
     unsigned char keys_old[32];
     unsigned char keys_new[32];
@@ -296,9 +296,9 @@ void *capture_input( void *ptr )
                 uint8_t dummy;
                 for (uint32_t code = 0; code < 256; code++)
                 {
-                    uint8_t currdown = keys_new[code>>3] & masktable[code&7];
-                    uint8_t prevdown = keys_old[code>>3] & masktable[code&7];
-                    uint8_t scancode = keycodetoscancode[code];
+                    uint8_t currdown = keys_new[code>>3] & GetMask(code);
+                    uint8_t prevdown = keys_old[code>>3] & GetMask(code);
+                    uint8_t scancode = GetScancode(code);
 
                     uint8_t modifierstate = 0;
                     if (!!( keys_new[ (lshift)>>3 ] & ( 1<<((lshift)&7) ) ) ||
@@ -325,8 +325,8 @@ void *capture_input( void *ptr )
                         outdata[1] = modifierstate;
                         outdata[2] = keystate;
                         outdata[3] = scancode;
-                        write(serial_port, outdata, 4);
-                        read(serial_port, &dummy, 1);
+						serial->Send(outdata, 4);
+						serial->Receive(&dummy, 1);
                     }
                 }
                 memcpy(keys_old, keys_new, 32);
@@ -395,7 +395,7 @@ int SDL_main(int argc, char** argv)
     int video_capture = initialize_video_capture(width, height);
 
     pthread_t inputCaptureThread;
-    pthread_create(&inputCaptureThread, NULL, capture_input, (void*)&serial_port);
+    pthread_create(&inputCaptureThread, NULL, capture_input, (void*)&serial);
 
     XEvent ev;
     while(!appDone)

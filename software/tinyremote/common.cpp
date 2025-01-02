@@ -27,6 +27,7 @@ static uint8_t keycodetoscancode[256] =
 #define YUV2RO(C, D, E) clamp((298 * (C) + 409 * (E) + 128) >> 8)
 #define YUV2GO(C, D, E) clamp((298 * (C) - 100 * (D) - 208 * (E) + 128) >> 8)
 #define YUV2BO(C, D, E) clamp((298 * (C) + 516 * (D) + 128) >> 8)
+
 uint32_t YUVtoRGBX32(int y, int u, int v)
 {
     y -= 16; u -= 128; v -= 128;
@@ -35,7 +36,7 @@ uint32_t YUVtoRGBX32(int y, int u, int v)
 
 uint8_t GetMask(int index)
 {
-	return masktable[index];
+	return masktable[index&7];
 }
 
 uint8_t GetScancode(int index)
