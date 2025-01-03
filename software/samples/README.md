@@ -35,8 +35,12 @@ then use the following command to send files across to the actual device:
 ```
 On windows:
 riscvtool -sendfile myprogram.elf
+
 On Linux and MacOS:
 ./riscvtool -sendfile myprogram.elf
+
+Alternatively, you might want to provide a COM port name:
+riscvtool -sendfile \\.\COM6 myprogram.elf
 ```
 
 followed by the name of your binary + Enter:
@@ -47,6 +51,4 @@ myprogram
 
 to execute the binary.
 
-The file transfer code will split the file into 512 byte chunks, base64 encode them, and send them across serial connection to be reconstructed into a file on the device.
-
-This process will take a little longer than sending a binary stream, an alternative packed solution is being worked on.
+The file transfer code will split the file into chunks, lz4 pack them, and send them across serial connection to be reconstructed into a file on the device.
