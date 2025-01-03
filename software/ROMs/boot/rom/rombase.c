@@ -540,11 +540,11 @@ void ListFiles(const char *path)
 			int isdir = finf.fattrib&AM_DIR;
 			char *isexe = strstr(finf.fname, ".elf");
 			if (isdir)
-				ksetcolor(CONSOLEDIMBLUE, CONSOLEDEFAULTBG);
+				ksetcolor(CONSOLECYAN, CONSOLEDEFAULTBG);
 			else if (isexe!=NULL)
-				ksetcolor(CONSOLEDIMYELLOW, CONSOLEDEFAULTBG);
+				ksetcolor(CONSOLEYELLOW, CONSOLEDEFAULTBG);
 			else
-				ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
+				ksetcolor(CONSOLEDIMWHITE, CONSOLEDEFAULTBG);
 
 			// Make sure we're always aligned to max 32 characters
 			int count = 0;

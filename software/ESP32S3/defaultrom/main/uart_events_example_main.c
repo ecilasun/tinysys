@@ -18,7 +18,7 @@
 #include "esp_task_wdt.h"
 
 #define PIN_TXD GPIO_NUM_37
-//GPIO_NUM_36
+//GPIO_NUM_36 ?
 #define PIN_RXD UART_PIN_NO_CHANGE
 #define PIN_RTS UART_PIN_NO_CHANGE
 #define PIN_CTS UART_PIN_NO_CHANGE
@@ -30,7 +30,7 @@
 static const char *TAG = "TSYS";
 
 #define EX_UART_NUM UART_NUM_0
-#define PATTERN_CHR_NUM    (3)         /*!< Set the number of consecutive and identical characters received by receiver which defines a UART pattern*/
+//#define PATTERN_CHR_NUM    (3)         /*!< Set the number of consecutive and identical characters received by receiver which defines a UART pattern*/
 
 #define BUF_SIZE (2048)
 #define RD_BUF_SIZE (BUF_SIZE)

@@ -18,64 +18,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-void DrawProgress(struct EVideoContext* osVideoContext, const uint32_t bytesWritten, const uint32_t filebytesize, const char* filename, uint8_t* framebuffer, int state)
-{
-	uint32_t progress = (256 * bytesWritten / filebytesize);
-
-	framebuffer[191 + 236*640] = 0x0F;
-	framebuffer[191 + 237*640] = 0x0F;
-	framebuffer[191 + 238*640] = 0x0F;
-	framebuffer[191 + 239*640] = 0x0F;
-	framebuffer[191 + 240*640] = 0x0F;
-	framebuffer[191 + 241*640] = 0x0F;
-	framebuffer[191 + 242*640] = 0x0F;
-	framebuffer[191 + 243*640] = 0x0F;
-
-	for (uint32_t i=192; i<192+progress; ++i)
-	{
-		framebuffer[i + 236*640] = 0x0F;
-		framebuffer[i + 237*640] = 0x0C;
-		framebuffer[i + 238*640] = 0x0C;
-		framebuffer[i + 239*640] = 0x0C;
-		framebuffer[i + 240*640] = 0x0C;
-		framebuffer[i + 241*640] = 0x0C;
-		framebuffer[i + 242*640] = 0x0C;
-		framebuffer[i + 243*640] = 0x0F;
-	}
-	for (uint32_t i=192+progress; i<448; ++i)
-	{
-		framebuffer[i + 236*640] = 0x0F;
-		framebuffer[i + 237*640] = 0x00;
-		framebuffer[i + 238*640] = 0x00;
-		framebuffer[i + 239*640] = 0x00;
-		framebuffer[i + 240*640] = 0x00;
-		framebuffer[i + 241*640] = 0x00;
-		framebuffer[i + 242*640] = 0x00;
-		framebuffer[i + 243*640] = 0x0F;
-	}
-
-	framebuffer[448 + 236*640] = 0x0F;
-	framebuffer[448 + 237*640] = 0x0F;
-	framebuffer[448 + 238*640] = 0x0F;
-	framebuffer[448 + 239*640] = 0x0F;
-	framebuffer[448 + 240*640] = 0x0F;
-	framebuffer[448 + 241*640] = 0x0F;
-	framebuffer[448 + 242*640] = 0x0F;
-	framebuffer[448 + 243*640] = 0x0F;
-
-	char msg[96];
-	if (state == 0)
-		mini_snprintf(msg, 96, "Receiving %s", filename);
-	else if (state == 1)
-		mini_snprintf(msg, 96, "Decompressing %s", filename);
-	else if (state == 2)
-		mini_snprintf(msg, 96, "Writing %s", filename);
-	VPUPrintString(osVideoContext, 0x00, 0x0F, 48, 28, msg, strlen(msg));
-
-	// Kernel isn't double buffered, flush cache so we can see the progress
-	CFLUSH_D_L1;
-}
-
 void cleanupComms()
 {
 	struct STaskContext* taskctx = TaskGetContext(0);
@@ -103,11 +45,6 @@ int main()
 
 	// Wait for UART chatter to finish
 	E32Sleep(HUNDRED_MILLISECONDS_IN_TICKS);
-
-	struct EVideoContext* osVideoContext = VPUGetKernelGfxContext();
-	uint8_t* osFramebuffer = (uint8_t*)osVideoContext->m_cpuWriteAddressCacheAligned;
-
-	DrawProgress(osVideoContext, 0, 100, "...", osFramebuffer, 0);
 
 	// At startup, acknowledge the sender so that it can start sending the file header
 	UARTSendBlock((uint8_t*)ACK, 1);
@@ -208,7 +145,6 @@ int main()
 		}
 
 		bytesReceived += packetLen;
-		DrawProgress(osVideoContext, bytesReceived, encodedLen, fileName, osFramebuffer, 0);
 	}
 	while(bytesReceived < encodedLen);
 
@@ -216,11 +152,9 @@ int main()
 	taskctx->interceptUART = 0;
 
 	uint8_t* targetBuffer = new uint8_t[decodedLen+512];
-	DrawProgress(osVideoContext, bytesReceived, encodedLen, fileName, osFramebuffer, 1);
 	int unpacked = LZ4_decompress_safe((const char*)sourceBuffer, (char*)targetBuffer, bytesReceived, decodedLen+512);
 	if (unpacked > 0)
 	{
-		DrawProgress(osVideoContext, bytesReceived, encodedLen, fileName, osFramebuffer, 2);
 		FILE *fp = fopen(fileName, "wb");
 		if (fp)
 		{

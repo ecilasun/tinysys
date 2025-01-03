@@ -17,7 +17,7 @@ extern struct SCommandLineContext* s_cliCtx;
 static const char *s_taskstates[]={ "NONE", "HALT", "EXEC", "TERM", "DEAD"};
 
 // Device version
-#define VERSIONSTRING "v1.1E"
+#define VERSIONSTRING "v1.1F"
 
 // File transfer timeout
 #define FILE_TRANSFER_TIMEOUT 1000
@@ -34,6 +34,7 @@ void CLIClearStatics()
 	s_cliCtx->execParamCount = 1;
 	s_cliCtx->userTaskID = 0;
 	s_cliCtx->cmdString[0] = 0;
+	s_cliCtx->prevCmdString[0] = 0;
 	s_cliCtx->pathtmp[0] = 0;
 	s_cliCtx->startAddress = 0;
 	s_cliCtx->execName[0] = 0;
@@ -74,11 +75,11 @@ void ShowVersion(struct EVideoContext *kernelgfx)
 	uint32_t isEmulator = read_csr(0xF12) & 0x80000000 ? 0 : 1; // CSR_MARCHID is 0x80000000 for read hardware, 0x00000000 for emulator
 
 	VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
-	kprintf("\n                                                   \n");
-	kprintf(" OS version          : " VERSIONSTRING " Loaded from %s    \n", waterMark == 0 ? "ROM   " : "SDCARD");
-	kprintf(" Board               : issue 2E:2024 (%s)    \n", isEmulator ? "EMULATED" : "HARDWARE");
-	kprintf(" ARCH                : rv32im_zicsr_zifencei_zfinx \n");
-	kprintf("                                                   \n\n");
+	kprintf("\n                                                                                ");
+	kprintf(" OS version          : " VERSIONSTRING " Loaded from %s                                 ", waterMark == 0 ? "ROM   " : "SDCARD");
+	kprintf(" Board               : issue 2E:2024 (%s)                                 ", isEmulator ? "EMULATED" : "HARDWARE");
+	kprintf(" ARCH                : rv32im_zicsr_zifencei_zfinx                              ");
+	kprintf("                                                                                \n");
 	VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 }
 
@@ -109,7 +110,7 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 
 	if (!strcmp(command, "help"))
 	{
-		kprintf("Commands:\ndir, mount, unmount, cls, reboot, mem, proc, del, ren, pwd, cd\n");
+		kprintf("Commands:\ndir, mount, unmount, cls, reboot, mem, proc, del, ren, pwd, cd,\nor name of ELF without extension\n");
 	}
 	else if (!strcmp(command, "dir"))
 	{
@@ -176,7 +177,7 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 	{
 		const char *path = strtok(NULL, " ");
 		if (!path)
-			kprintf("usage: rm fname\n");
+			kprintf("usage: del fname\n");
 		else
 		{
 			int res = remove(path);
@@ -302,6 +303,8 @@ int HandleCommandLine(struct STaskContext *taskctx)
 	int execcmd = 0;
 	int controltrap = 0;
 
+	struct EVideoContext* ctx = VPUGetKernelGfxContext();
+
 	// Keyboard input or other data
 	while (!controltrap && KeyRingBufferRead(&asciicode, 1))
 	{
@@ -321,6 +324,8 @@ int HandleCommandLine(struct STaskContext *taskctx)
 			{
 				// Properly terminate the command string
 				s_cliCtx->cmdString[s_cliCtx->cmdLen] = 0;
+				// Copy command string to previous command buffer
+				strcpy(s_cliCtx->prevCmdString, s_cliCtx->cmdString);
 				execcmd++;
 			}
 			break;
@@ -365,6 +370,8 @@ int HandleCommandLine(struct STaskContext *taskctx)
 
 			case 27:	// ESC
 			{
+				// Erase current line
+				VPUConsoleClearLine(ctx, ctx->m_cursorY);
 				s_cliCtx->cmdLen = 0;
 				++s_cliCtx->refreshConsoleOut;
 				// TODO: Erase current line
@@ -375,7 +382,7 @@ int HandleCommandLine(struct STaskContext *taskctx)
 			case 12:
 			{
 				++s_cliCtx->refreshConsoleOut;
-				VPUConsoleClear(VPUGetKernelGfxContext());
+				VPUConsoleClear(ctx);
 			}
 			break;
 
@@ -407,7 +414,13 @@ int HandleCommandLine(struct STaskContext *taskctx)
 		{
 			case 72:	// Up
 			{
-				// TODO: Implement command history
+				// Copy previous command to current command buffer if we have one
+				if (s_cliCtx->prevCmdString[0] != 0)
+				{
+					strcpy(s_cliCtx->cmdString, s_cliCtx->prevCmdString);
+					s_cliCtx->cmdLen = strlen(s_cliCtx->cmdString);
+					++s_cliCtx->refreshConsoleOut;
+				}
 			}
 			break;
 			case 80:	// Down

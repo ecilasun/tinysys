@@ -27,8 +27,8 @@
 #define CONSOLEYELLOW 0x0E
 #define CONSOLEWHITE 0x0F
 
-#define CONSOLEDEFAULTFG CONSOLEDIMGRAY
-#define CONSOLEDEFAULTBG CONSOLEDIMWHITE
+#define CONSOLEDEFAULTFG CONSOLEWHITE
+#define CONSOLEDEFAULTBG CONSOLEBLUE
 
 // Hardware format is: 12bit R:B:G
 #define MAKECOLORRGB12(_r, _g, _b) ((((_r&0xF)<<8) | (_b&0xF)<<4) | (_g&0xF))
@@ -107,6 +107,7 @@ void VPUConsoleSetCursor(struct EVideoContext *_context, const uint16_t _x, cons
 void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _length);
 void VPUConsoleResolve(struct EVideoContext *_context);
 void VPUConsoleSetCaret(struct EVideoContext *_context, const uint16_t _x, const uint16_t _y, const uint16_t _blink);
+void VPUConsoleClearLine(struct EVideoContext *_context, const uint16_t _y);
 
 // Software emulated
 void VPUClear(struct EVideoContext *_context, const uint32_t _colorWord);

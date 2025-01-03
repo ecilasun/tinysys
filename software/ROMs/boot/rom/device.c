@@ -29,7 +29,7 @@ void DeviceDefaultState(int _bootTime)
 	if (_bootTime)
 		VPUConsoleClear(kernelgfx);
 
-	// For overlay loader, blank the entire screen to CONSOLEBLUE (0x09)
+	// For overlay loader, blank the entire screen to red (CONSOLERED == 0x0C)
 	if (_bootTime == 2)
-		VPUClear(kernelgfx, 0x09090909);
+		VPUClear(kernelgfx, 0x0C0C0C0C);
 }

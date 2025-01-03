@@ -551,13 +551,35 @@ void VPUConsoleResolve(struct EVideoContext *_context)
 		uint32_t yoffset = (cy*8+7)*stride; // Last row of the character
 		uint32_t xoffset = cx*2; // 2 words per character
 		uint32_t *caret = &vramBase[xoffset + yoffset];
-		// 8 pixels wide
-		*caret = 0xFFFFFFFF;
-		*(caret+1) = 0xFFFFFFFF;
+		uint32_t FG = _context->m_consoleColor&0x0F;
+		FG = (FG<<24) | (FG<<16) | (FG<<8) | FG;
+		// Cursor is 8 pixels wide
+		*caret = FG;
+		*(caret+1) = FG;
 	}
 
 	_context->m_consoleUpdated = 0;
 	CFLUSH_D_L1;
+}
+
+/** @brief Clear console line
+ * 
+ * Clears the given line in the console.
+ * 
+ * @param _context Video context
+ * @param _y Y coordinate of the line to clear
+ */
+void VPUConsoleClearLine(struct EVideoContext *_context, const uint16_t _y)
+{
+	uint8_t *characterBase = (uint8_t*)CONSOLE_CHARACTERBUFFER_START;
+	uint8_t *colorBase = (uint8_t*)CONSOLE_COLORBUFFER_START;
+	uint32_t stride = _context->m_consoleWidth;
+	const uint16_t W = _context->m_consoleWidth;
+	uint32_t yoffset = _y*stride;
+	// Fill given line with spaces
+	__builtin_memset(&characterBase[yoffset], 0x20, W);
+	__builtin_memset(&colorBase[yoffset], _context->m_consoleColor, W);
+	_context->m_consoleUpdated = 1;
 }
 
 /** @brief Print string directly to VRAM

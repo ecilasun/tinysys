@@ -18,9 +18,9 @@ CC = $(CROSS)gcc
 SIZE = $(CROSS)size
 
 ifeq ($(UNAME), Windows)
-CFLAGS = -mcmodel=medany -std=gnu99 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -O1 -flto -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -I.. -I../../../../SDK/
+CFLAGS = -mcmodel=medany -std=gnu99 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -O1 -flto -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -Wl,--strip-all -I.. -I../../../../SDK/
 else
-CFLAGS = -mcmodel=medany -std=gnu99 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -O1 -flto -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -I.. -I../../../../SDK/
+CFLAGS = -mcmodel=medany -std=gnu99 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -O1 -flto -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -Wl,--strip-all -I.. -I../../../../SDK/
 endif
 
 CFLAGS += \

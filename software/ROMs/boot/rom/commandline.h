@@ -7,6 +7,7 @@ struct SCommandLineContext
 	int refreshConsoleOut;
 	uint32_t execParamCount;
 	uint32_t userTaskID;
+	char prevCmdString[128];
 	char cmdString[128];
 	char pathtmp[PATH_MAX];
 	uint32_t startAddress;
