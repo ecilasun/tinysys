@@ -201,9 +201,8 @@ void HandleCPUError(struct STaskContext *ctx, const uint32_t cpu)
 	if (ctx->kernelError == 1)
 		kprintf(" (0x%08X)", ctx->kernelErrorData[0]);
 
-	kprintf(" on CPU #%d\n", cpu);
-
-	ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
+	kprintf(" on CPU #%d", cpu);
+	kfillline(' ');
 
 	// Dump task registers
 	if (ctx->kernelError == 4)
@@ -211,11 +210,20 @@ void HandleCPUError(struct STaskContext *ctx, const uint32_t cpu)
 		uint32_t taskid = ctx->kernelErrorData[0];
 		struct STask *task = &ctx->tasks[taskid];
 		// Skip zero register and emit '0' since we save PC there
-		kprintf("Task: '%s'\nIR=0x%08X\n", task->name, ctx->kernelErrorData[1]);
+		kprintf("Task: %s", task->name);
+		kfillline(' ');
+		kprintf("IR=0x%08X", ctx->kernelErrorData[1]);
+		kfillline(' ');
 		for (uint32_t i=0; i<32; ++i)
-			kprintf("%s=0x%08X%c", s_regnames[i], task->regs[i], (i+1)%4==0 ? '\n':' ');
+		{
+			kprintf("%s=0x%08X ", s_regnames[i], task->regs[i]);
+			if ((i+1)%4==0)
+				kfillline(' ');
+		}
 		kprintf("\n");
 	}
+
+	ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 
 	// Reset CPU#1 here if anything faulted
 	// This way we won't risk some stale task being hung on CPU#1 if CPU#0 crashes

@@ -53,6 +53,13 @@ int kprintf(const char *fmt, ...)
 	return l;
 }
 
+int kfillline(const char c)
+{
+	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
+	int count = VPUConsoleFillLine(kernelgfx, c);
+	return count;
+}
+
 void ksetcolor(int8_t fg, int8_t bg)
 {
 	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();

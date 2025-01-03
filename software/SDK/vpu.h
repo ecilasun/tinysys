@@ -108,6 +108,8 @@ void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _
 void VPUConsoleResolve(struct EVideoContext *_context);
 void VPUConsoleSetCaret(struct EVideoContext *_context, const uint16_t _x, const uint16_t _y, const uint16_t _blink);
 void VPUConsoleClearLine(struct EVideoContext *_context, const uint16_t _y);
+int VPUConsoleFillLine(struct EVideoContext *_context, const char _character);
+void VPUConsoleScrollUp(struct EVideoContext *_context);
 
 // Software emulated
 void VPUClear(struct EVideoContext *_context, const uint32_t _colorWord);

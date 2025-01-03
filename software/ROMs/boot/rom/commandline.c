@@ -75,11 +75,16 @@ void ShowVersion(struct EVideoContext *kernelgfx)
 	uint32_t isEmulator = read_csr(0xF12) & 0x80000000 ? 0 : 1; // CSR_MARCHID is 0x80000000 for read hardware, 0x00000000 for emulator
 
 	VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
-	kprintf("\n                                                                                ");
-	kprintf(" OS version          : " VERSIONSTRING " Loaded from %s                                 ", waterMark == 0 ? "ROM   " : "SDCARD");
-	kprintf(" Board               : issue 2E:2024 (%s)                                 ", isEmulator ? "EMULATED" : "HARDWARE");
-	kprintf(" ARCH                : rv32im_zicsr_zifencei_zfinx                              ");
-	kprintf("                                                                                \n");
+	kprintf("\n");
+	kfillline(' ');
+	kprintf(" OS version          : " VERSIONSTRING " Loaded from %s", waterMark == 0 ? "ROM   " : "SDCARD");
+	kfillline(' ');
+	kprintf(" Board               : issue 2E:2024 (%s)", isEmulator ? "EMULATED" : "HARDWARE");
+	kfillline(' ');
+	kprintf(" ARCH                : rv32im_zicsr_zifencei_zfinx");
+	kfillline(' ');
+	kfillline(' ');
+	kprintf("\n");
 	VPUConsoleSetColors(kernelgfx, CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
 }
 

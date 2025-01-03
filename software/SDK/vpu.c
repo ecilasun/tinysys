@@ -400,6 +400,33 @@ void VPUConsoleSetCaret(struct EVideoContext *_context, const uint16_t _x, const
 	_context->m_caretBlink = _blink;
 }
 
+/** @brief Scroll console up
+ * 
+ * Scrolls the console up by one line. This is used when the console is full and a new line is printed.
+ * 
+ * @param _context Video context
+ */
+void VPUConsoleScrollUp(struct EVideoContext *_context)
+{
+	const uint16_t W = _context->m_consoleWidth;
+	const uint16_t H_1 = _context->m_consoleHeight - 1;
+
+	// We're trying to write past end of console; scroll up the contents of the console
+	// NOTE: This does not save the contents of the text buffer that has scrolled off
+	uint32_t targettext = CONSOLE_CHARACTERBUFFER_START;
+	uint32_t targetcolor = CONSOLE_COLORBUFFER_START;
+	uint32_t sourcetext = CONSOLE_CHARACTERBUFFER_START + W;
+	uint32_t sourcecolor = CONSOLE_COLORBUFFER_START + W;
+	uint32_t lasttextrow = CONSOLE_CHARACTERBUFFER_START + W*H_1;
+	uint32_t lastcolorrow = CONSOLE_COLORBUFFER_START + W*H_1;
+	__builtin_memcpy((void*)targettext, (void*)sourcetext, W*H_1);
+	__builtin_memcpy((void*)targetcolor, (void*)sourcecolor, W*H_1);
+	// Fill last row with spaces
+	__builtin_memset((void*)lasttextrow, 0x20, W);
+	// Fill last row with default background
+	__builtin_memset((void*)lastcolorrow, (CONSOLEDEFAULTBG<<4) | (CONSOLEDEFAULTFG), W);
+}
+
 /** @brief Print to console
  * 
  * Prints a string to the console at the current cursor position.
@@ -457,22 +484,8 @@ void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _
 
 		if (cy > H_1)
 		{
-			// We're trying to write past end of console; scroll up the contents of the console
-			// NOTE: This does not save the contents of the text buffer that has scrolled off
-			uint32_t targettext = CONSOLE_CHARACTERBUFFER_START;
-			uint32_t targetcolor = CONSOLE_COLORBUFFER_START;
-			uint32_t sourcetext = CONSOLE_CHARACTERBUFFER_START + W;
-			uint32_t sourcecolor = CONSOLE_COLORBUFFER_START + W;
-			uint32_t lasttextrow = CONSOLE_CHARACTERBUFFER_START + W*H_1;
-			uint32_t lastcolorrow = CONSOLE_COLORBUFFER_START + W*H_1;
-			__builtin_memcpy((void*)targettext, (void*)sourcetext, W*H_1);
-			__builtin_memcpy((void*)targetcolor, (void*)sourcecolor, W*H_1);
-			// Fill last row with spaces
-			__builtin_memset((void*)lasttextrow, 0x20, W);
-			// Fill last row with default background
-			__builtin_memset((void*)lastcolorrow, (CONSOLEDEFAULTBG<<4) | (CONSOLEDEFAULTFG), W);
+			VPUConsoleScrollUp(_context);
 			cy = H_1;
-
 			//UARTPrintf("\033[M");
 		}
 
@@ -483,6 +496,45 @@ void VPUConsolePrint(struct EVideoContext *_context, const char *_message, int _
 	_context->m_consoleUpdated = 1;
 
 	//UARTPrintf("%s", _message);
+}
+
+/** @brief Fill console with character
+ * 
+ * Fills the current line with the given character starting from the current cursor position to the end of the line.
+ * 
+ * @param _context Video context
+ * @param _character Character to fill with
+ * @return number of characters filled
+ */
+int VPUConsoleFillLine(struct EVideoContext *_context, const char _character)
+{
+	uint8_t *characterBase = (uint8_t*)CONSOLE_CHARACTERBUFFER_START;
+	uint8_t *colorBase = (uint8_t*)CONSOLE_COLORBUFFER_START;
+	uint32_t stride = _context->m_consoleWidth;
+	const uint16_t H_1 = _context->m_consoleHeight-1;
+	const uint16_t W = _context->m_consoleWidth;
+	uint8_t currentcolor = _context->m_consoleColor;
+
+	int cy = _context->m_cursorY;
+	int numchars = W - _context->m_cursorX;
+	for (uint16_t cx=_context->m_cursorX; cx<W; ++cx)
+	{
+		characterBase[cy*stride+cx] = _character;
+		colorBase[cy*stride+cx] = currentcolor;
+	}
+	_context->m_cursorX = 0;
+	_context->m_cursorY++;
+
+	if (_context->m_cursorY > H_1)
+	{
+		VPUConsoleScrollUp(_context);
+		_context->m_cursorY = H_1;
+		//UARTPrintf("\033[M");
+	}
+
+	_context->m_consoleUpdated = 1;
+
+	return numchars;
 }
 
 /** @brief Resolve console to VRAM

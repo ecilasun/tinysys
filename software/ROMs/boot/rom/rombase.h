@@ -29,6 +29,7 @@ int kprintf(const char *fmt, ...);
 void kgetcursor(int *_x, int *_y);
 void ksetcursor(const int _x, const int _y);
 void ksetcaret(const int _x, const int _y, const int _blink);
+int kfillline(const char c);
 
 // Path helpers
 #define PATH_MAX 64
