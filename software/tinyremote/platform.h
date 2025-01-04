@@ -22,9 +22,6 @@
 #include <sys/mman.h>
 #include "SDL.h"
 #include "SDL_ttf.h"
-//char commdevicename[512] = "/dev/ttyUSB0";
-char commdevicename[512] = "/dev/ttyACM0";
-char capturedevicename[512] = "/dev/video0";
 #endif
 
 #if defined(CAT_WINDOWS)
@@ -33,6 +30,4 @@ char capturedevicename[512] = "/dev/video0";
 #include <conio.h>
 #include "SDL.h"
 #include "SDL_ttf.h"
-char commdevicename[512] = "\\\\.\\COM6";
-char capturedevicename[512] = "\\\\.\\VIDEO0"; // ???
 #endif
