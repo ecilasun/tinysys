@@ -54,20 +54,16 @@ char scantoasciitable_uppercase[] = {
  */
 void ProcessKeyState(uint8_t *scandata)
 {
-	uint8_t key = scandata[0];
+	uint8_t scancode = scandata[0];
 	uint8_t state = scandata[1];
-	uint8_t mod = scandata[2];
+	uint8_t modifiers = scandata[2];
 
 	// TODO: Track modifier state
-	s_lowercase = (mod & 0x01) ? 0 : 1;
+	s_lowercase = (modifiers & 0x01) ? 0 : 1;
 
-	if (state == 1 && key<256) // Key down, only care about printable ASCII
+	if (state == 1 && scancode<256) // Key down, only care about printable ASCII
 	{
-		uint8_t ascii;
-		if (s_lowercase)
-			ascii = scantoasciitable_lowercase[key];
-		else
-			ascii = scantoasciitable_uppercase[key];
+		uint8_t ascii = KeyboardScanCodeToASCII(scancode, s_lowercase);
 		KeyRingBufferWrite(&ascii, 1);
 	}
 }
@@ -89,4 +85,21 @@ void ReadKeyState(uint8_t *scandata)
 			scancursor++;
 		}
 	}
+}
+
+/**
+ * Convert a key scan code to an ASCII character
+ * 
+ * @param scanCode The key scan code
+ * @param lowercase Whether the key is in lowercase or uppercase
+ * @return The ASCII character corresponding to the scan code
+ */
+uint8_t KeyboardScanCodeToASCII(uint8_t scanCode, uint8_t lowercase)
+{
+	uint8_t ascii;
+	if (s_lowercase)
+		ascii = scantoasciitable_lowercase[scanCode];
+	else
+		ascii = scantoasciitable_uppercase[scanCode];
+	return ascii;
 }

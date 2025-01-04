@@ -539,18 +539,20 @@ int SDL_main(int argc, char** argv)
 			}
 		}
 
+		// TODO: Intercept '~' or CTRL+C
+
 		// Detect key changes
 		SDL_Keymod modifiers = SDL_GetModState();
 		if (memcmp(old_keystates, keystates, SDL_NUM_SCANCODES))
 		{
-			fprintf(stderr, "modifiers: %d\n", modifiers);
+			//fprintf(stderr, "modifiers: %d\n", modifiers);
 
 			// TODO: Send the scancode and state to the remote device
 			for (int i = 0; i < SDL_NUM_SCANCODES; ++i)
 			{
 				if (keystates[i] != old_keystates[i])
 				{
-					fprintf(stderr, "key %d: %d\n", i, keystates[i]);
+					//fprintf(stderr, "key %d: %d\n", i, keystates[i]);
 					uint8_t outdata[4];
 					outdata[0] = '^';			// scancode packet marker
 					outdata[1] = i;				// scancode
