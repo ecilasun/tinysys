@@ -64,10 +64,21 @@ void ProcessKeyState(uint8_t *scandata)
 	// TODO: Track modifier state
 	s_lowercase = (modifiers & 0x01) ? 0 : 1;
 
-	if (state == 1 && scancode<256) // Key down, only care about printable ASCII
+	// Check for CTRL+C down (either of left or right control keys)
+	if (scancode == 0x06 && (modifiers & 0x00C0) && state == 1)
 	{
-		uint8_t ascii = KeyboardScanCodeToASCII(scancode, s_lowercase);
+		// Write CTRL+C to key buffer
+		uint8_t ascii = 0x03;
 		KeyRingBufferWrite(&ascii, 1);
+	}
+	else
+	{
+		// Not CTRL+C, push to key buffer as ASCII character
+		if (state == 1 && scancode<256)
+		{
+			uint8_t ascii = KeyboardScanCodeToASCII(scancode, s_lowercase);
+			KeyRingBufferWrite(&ascii, 1);
+		}
 	}
 }
 
