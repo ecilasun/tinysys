@@ -11,6 +11,41 @@
 #include "video.h"
 
 static bool s_alive = true;
+static SDL_Window* s_window;
+static SDL_Surface* s_surface;
+static uint8_t *s_videodata;
+
+uint32_t videoCallback(uint32_t interval, void* param)
+{
+	VideoCapture* video_capture = (VideoCapture*)param;
+
+	const int videowidth = 640;
+	const int videoheight = 480;
+
+	bool haveFrame = video_capture->CaptureFrame(s_videodata);
+	if (haveFrame)
+	{
+		if (SDL_MUSTLOCK(s_surface))
+			SDL_LockSurface(s_surface);
+
+		uint32_t* pixels = (uint32_t*)s_surface->pixels;
+		uint32_t* vid = (uint32_t*)s_videodata;
+		for (int y = 0; y < videoheight; ++y)
+		{
+			for (int x = 0; x < videowidth; ++x)
+			{
+				pixels[(y * s_surface->w + x)] = vid[y*videowidth+x];
+			}
+		}
+
+		if (SDL_MUSTLOCK(s_surface))
+			SDL_UnlockSurface(s_surface);
+
+		SDL_UpdateWindowSurface(s_window);
+	}
+
+	return interval;
+}
 
 #if defined(CAT_LINUX) || defined(CAT_DARWIN)
 int main(int argc, char** argv)
@@ -21,7 +56,7 @@ int SDL_main(int argc, char** argv)
 	const char* cname = GetCommDeviceName();
 	const char* vname = GetVideoDeviceName();
 
-	printf("Usage: tinyremote commdevicename capturedevicename\ndefault comm device:%s default capture device:%s\nCtrl+C or PAUSE: quit current remote process\n", cname, vname);
+	fprintf(stderr, "Usage: tinyremote commdevicename capturedevicename\ndefault comm device:%s default capture device:%s\nCtrl+C or PAUSE: quit current remote process\n", cname, vname);
 
 	if (argc > 1)
 		SetCommDeviceName(argv[1]);
@@ -30,8 +65,6 @@ int SDL_main(int argc, char** argv)
 
 	int width = 640;
 	int height = 480;
-	int videowidth = 640;
-	int videoheight = 480;
 
 	CSerialPort serial;
 	serial.Open();
@@ -42,7 +75,14 @@ int SDL_main(int argc, char** argv)
 		return -1;
 	}
 
-	SDL_Window* window = SDL_CreateWindow("tinysys", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
+	s_window = SDL_CreateWindow("tinysys", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
+	s_surface = SDL_GetWindowSurface(s_window);
+
+	s_videodata = new uint8_t[width*height*4];
+	VideoCapture video_capture;
+	video_capture.Initialize(width, height);
+
+	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, &video_capture); // 60fps
 
 	const uint8_t *keystates = SDL_GetKeyboardState(nullptr);
 	uint8_t *old_keystates = new uint8_t[SDL_NUM_SCANCODES];
@@ -57,15 +97,10 @@ int SDL_main(int argc, char** argv)
 				s_alive = false;
 		}
 
-		// TODO: Intercept '~' or CTRL+C
-
 		// Detect key changes
 		SDL_Keymod modifiers = SDL_GetModState();
 		if (memcmp(old_keystates, keystates, SDL_NUM_SCANCODES))
 		{
-			//fprintf(stderr, "modifiers: %d\n", modifiers);
-
-			// TODO: Send the scancode and state to the remote device
 			for (int i = 0; i < SDL_NUM_SCANCODES; ++i)
 			{
 				if (keystates[i] != old_keystates[i])
@@ -86,16 +121,15 @@ int SDL_main(int argc, char** argv)
 		}
 	} while(s_alive);
 
-	SDL_DestroyWindow(window);
-
 	serial.Close();
-	printf("remote connection terminated\n");
+	fprintf(stderr, "remote connection terminated\n");
 
-#if defined(CAT_LINUX)
-	terminate_video_capture(video_capture);
-#else
-	// TODO: Windows and MacOS
-#endif
+	SDL_RemoveTimer(videoTimer);
+	video_capture.Terminate();
+
+	SDL_FreeSurface(s_surface);
+	SDL_DestroyWindow(s_window);
+	SDL_Quit();
 
 	return 0;
 }

@@ -25,14 +25,14 @@ bool CSerialPort::Open()
 	serial_port = open(commdevicename, O_RDWR);
 	if (serial_port < 0 )
 	{
-		printf("Error %i from open('%s'): %s\nPlease try another COM port path.\n", errno, commdevicename, strerror(errno));
+		fprintf(stderr, "Error %i from open('%s'): %s\nPlease try another COM port path.\n", errno, commdevicename, strerror(errno));
 		return false;
 	}
 
 	struct termios tty;
 	if(tcgetattr(serial_port, &tty) != 0)
 	{
-		printf("Error %i from tcgetattr: %s\nPlease make sure your user has access to the COM device %s.\n", errno, strerror(errno), commdevicename);
+		fprintf(stderr, "Error %i from tcgetattr: %s\nPlease make sure your user has access to the COM device %s.\n", errno, strerror(errno), commdevicename);
 		return false;
 	}
 
@@ -62,9 +62,9 @@ bool CSerialPort::Open()
 	cfsetospeed(&tty, B460800); // or only cfsetspeed(&tty, B460800);
 
 	if (tcsetattr(serial_port, TCSANOW, &tty) != 0)
-		printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
+		fprintf(stderr, "Error %i from tcsetattr: %s\n", errno, strerror(errno));
 
-	printf("%s open\n", commdevicename);
+	fprintf(stderr, "%s open\n", commdevicename);
 	return true;
 
 #else // CAT_WINDOWS
@@ -86,7 +86,7 @@ bool CSerialPort::Open()
 			serialParams.fInX = 0;
 			if (SetCommState(hComm, &serialParams) != 0)
 			{
-				printf("%s open\n", commdevicename);
+				fprintf(stderr, "%s open\n", commdevicename);
 				timeouts.ReadIntervalTimeout = MAXDWORD;
 				timeouts.ReadTotalTimeoutConstant = 0;
 				timeouts.ReadTotalTimeoutMultiplier = 0;
@@ -95,16 +95,16 @@ bool CSerialPort::Open()
 				if (SetCommTimeouts(hComm, &timeouts) != 0)
 					return true;
 				else
-					printf("ERROR: can't set communication timeouts\n");
+					fprintf(stderr, "ERROR: can't set communication timeouts\n");
 			}
 			else
-				printf("ERROR: can't set communication parameters\n");
+				fprintf(stderr, "ERROR: can't set communication parameters\n");
 		}
 		else
-			printf("ERROR: can't get communication parameters\n");
+			fprintf(stderr, "ERROR: can't get communication parameters\n");
 	}
 	else
-		printf("ERROR: can't open COM port %s\n", commdevicename);
+		fprintf(stderr, "ERROR: can't open COM port %s\n", commdevicename);
 	return false;
 #endif
 }
@@ -114,7 +114,7 @@ uint32_t CSerialPort::Receive(void *_target, unsigned int _rcvlength)
 #if defined(CAT_LINUX) || defined(CAT_MACOS)
 	int n = read(serial_port, _target, _rcvlength);
 	if (n < 0)
-		printf("ERROR: read() failed\n");
+		fprintf(stderr, "ERROR: read() failed\n");
 	return n;
 #else
 	DWORD bytesread = 0;
@@ -128,14 +128,14 @@ uint32_t CSerialPort::Send(void *_sendbytes, unsigned int _sendlength)
 #if defined(CAT_LINUX) || defined(CAT_MACOS)
 	int n = write(serial_port, _sendbytes, _sendlength);
 	if (n < 0)
-		printf("ERROR: write() failed\n");
+		fprintf(stderr, "ERROR: write() failed\n");
 	return n;
 #else // CAT_WINDOWS
 	DWORD byteswritten = 0;
 	// Send the command
 	BOOL success = WriteFile(hComm, _sendbytes, _sendlength, &byteswritten, nullptr);
 	if (!success)
-		printf("ERROR: write() failed\n");
+		fprintf(stderr, "ERROR: write() failed\n");
 	return success ? (uint32_t)byteswritten : 0;
 #endif
 }

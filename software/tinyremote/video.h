@@ -2,8 +2,43 @@
 
 #include "platform.h"
 
+#if defined(CAT_LINUX)
+#include <v4l2.h>
+#elif defined(CAT_DARWIN)
+// MacOS
+#else // CAT_WINDOWS
+// Windows Media Foundation
+#include <mfapi.h>
+#include <mfidl.h>
+#include <mfobjects.h>
+#include <mferror.h>
+#include <mfreadwrite.h>
+#endif
+
 const char* GetVideoDeviceName();
 void SetVideoDeviceName(const char* name);
 
-int initialize_video_capture(int width, int height);
-void terminate_video_capture(int video_capture);
+class VideoCapture
+{
+public:
+	VideoCapture();
+	~VideoCapture();
+
+	bool Initialize(int width, int height);
+	void Terminate();
+
+	bool CaptureFrame(uint8_t *videodata);
+
+#if defined(CAT_LINUX)
+	int video_capture = -1;
+#elif defined(CAT_DARWIN)
+	// MacOS
+#elif defined(CAT_WINDOWS)
+	IMFMediaSource *mediaSource = nullptr;
+	IMFSourceReader *pReader = nullptr;
+	uint32_t devicecount = 0;
+	uint32_t selecteddevice = 0;
+	uint32_t frameWidth = 0;
+	uint32_t frameHeight = 0;
+#endif
+};
