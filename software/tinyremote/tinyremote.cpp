@@ -105,14 +105,29 @@ int SDL_main(int argc, char** argv)
 			{
 				if (keystates[i] != old_keystates[i])
 				{
-					//fprintf(stderr, "key %d: %d\n", i, keystates[i]);
+					// DEBUG: fprintf(stderr, "key %d: %d mod: %d\n", i, keystates[i], modifiers);
+
 					uint8_t outdata[4];
 					outdata[0] = '^';					// scancode packet marker
 					outdata[1] = i;						// scancode
 					outdata[2] = keystates[i];			// state
 					outdata[3] = modifiers&0xFF;		// lower byte of modifiers
 					outdata[4] = (modifiers>>8)&0xFF;	// upper byte of modifiers
-					serial.Send(outdata, 5);
+
+					// IMPORTANT: We MUST capture ~ key since it's essential for the ESP32 to reboot the device CPUs when stuck
+					// NOTE: You must hold down the ~ key for at least 250ms for the reboot to occur
+					if (i==53 && keystates[i] == 1 && (modifiers & KMOD_SHIFT))
+					{
+						fprintf(stderr, "rebooting device\n");
+						serial.Send((uint8_t*)"~", 1);
+					}
+					else if (i == 0x06 && keystates[i] == 1 && (modifiers & KMOD_CTRL))
+					{
+						fprintf(stderr, "quitting remote process\n");
+						serial.Send((uint8_t*)"\03", 1);
+					}
+					else
+						serial.Send(outdata, 5);
 				}
 			}
 
