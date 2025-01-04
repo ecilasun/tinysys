@@ -54,9 +54,12 @@ char scantoasciitable_uppercase[] = {
  */
 void ProcessKeyState(uint8_t *scandata)
 {
-	uint8_t scancode = scandata[0];
-	uint8_t state = scandata[1];
-	uint8_t modifiers = scandata[2];
+	uint8_t scancode = scandata[KEYBOARD_SCANCODE_INDEX];
+	uint8_t state = scandata[KEYBOARD_STATE_INDEX];
+	uint8_t modifiers_lower = scandata[KEYBOARD_MODIFIERS_LOWER_INDEX];
+	uint8_t modifiers_upper = scandata[KEYBOARD_MODIFIERS_UPPER_INDEX];
+
+	uint32_t modifiers = (modifiers_upper << 8) | modifiers_lower;
 
 	// TODO: Track modifier state
 	s_lowercase = (modifiers & 0x01) ? 0 : 1;
@@ -71,13 +74,13 @@ void ProcessKeyState(uint8_t *scandata)
 /**
  * Read a 3-byte key scan packet from the serial input buffer
  * 
- * @param scandata Pointer to a 3-byte buffer to store the scan packet
+ * @param scandata Pointer to a KEYBOARD_PACKET_SIZE byte buffer to store the scan packet
  */
 void ReadKeyState(uint8_t *scandata)
 {
 	uint32_t scancursor = 0;
 	uint8_t drain;
-	while (scancursor != 3)
+	while (scancursor != KEYBOARD_PACKET_SIZE)
 	{
 		if (SerialInRingBufferRead(&drain, 1))
 		{

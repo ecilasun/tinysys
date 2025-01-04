@@ -29,8 +29,8 @@ void HandleSerialInput()
 	{
 		if (drain == '^')
 		{
-			uint8_t scandata[3];
-			// Read a 3-byte key scan packet from the serial input buffer
+			uint8_t scandata[KEYBOARD_PACKET_SIZE];
+			// Read a 4-byte key scan packet from the serial input buffer
 			ReadKeyState(scandata);
 			// Process the key state and convert to ASCII for the key buffer
 			ProcessKeyState(scandata);

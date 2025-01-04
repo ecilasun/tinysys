@@ -554,11 +554,12 @@ int SDL_main(int argc, char** argv)
 				{
 					//fprintf(stderr, "key %d: %d\n", i, keystates[i]);
 					uint8_t outdata[4];
-					outdata[0] = '^';			// scancode packet marker
-					outdata[1] = i;				// scancode
-					outdata[2] = keystates[i];	// state
-					outdata[3] = modifiers;		// modifiers (shift, ctrl, alt, etc)
-					serial.Send(outdata, 4);
+					outdata[0] = '^';					// scancode packet marker
+					outdata[1] = i;						// scancode
+					outdata[2] = keystates[i];			// state
+					outdata[3] = modifiers&0xFF;		// lower byte of modifiers
+					outdata[4] = (modifiers>>8)&0xFF;	// upper byte of modifiers
+					serial.Send(outdata, 5);
 				}
 			}
 
