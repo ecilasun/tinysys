@@ -21,6 +21,9 @@ char capturedevicename[512] = "/dev/video0";
 char capturedevicename[512] = "\\\\.\\VIDEO0"; // ???
 #endif
 
+// Here's a really nice tutorial on how to do video capture across multiple devices:
+// https://www.dynamsoft.com/codepool/windows-cpp-camera-barcode-scanner.html
+
 const char* GetVideoDeviceName()
 {
 	return capturedevicename;
