@@ -8,21 +8,40 @@
 #include "task.h"
 #include "keyringbuffer.h"
 #include "gdbstub.h"
+#include "keyboard.h"
 #include <stdlib.h>
 
-static uint32_t in_gdb_mode = 0;
+//static uint32_t in_gdb_mode = 0;
 
 void SerialInitStatics()
 {
-	in_gdb_mode = 0;
+	//in_gdb_mode = 0;
 }
 
+// Note that this function is called only if the running task has not intercepted the serial input
 void HandleSerialInput()
 {
 	// Pull more incoming data
 	uint8_t drain;
+
+	// NOTE: A user task could intercept the serial input and handle its own input processing
 	while (SerialInRingBufferRead(&drain, 1))
 	{
+		if (drain == '^')
+		{
+			uint8_t scandata[3];
+			// Read a 3-byte key scan packet from the serial input buffer
+			ReadKeyState(scandata);
+			// Process the key state and convert to ASCII for the key buffer
+			ProcessKeyState(scandata);
+		}
+		else
+		{
+			// Any other ASCII value is fed directly into key buffer
+			KeyRingBufferWrite(&drain, 1);
+		}
+
+		// GDB stub attempt for future
 		/*if (in_gdb_mode)
 		{
 			if (drain == '#')
@@ -72,8 +91,8 @@ void HandleSerialInput()
 				GDBStubAddByte(drain);
 				GDBStubEndPacket();
 			}
-			else*/
+			else
 				KeyRingBufferWrite(&drain, 1); // Feed serial data to key buffer
-		//}
+		}*/
 	}
 }

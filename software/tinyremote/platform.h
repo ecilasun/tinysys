@@ -29,6 +29,7 @@ char capturedevicename[512] = "/dev/video0";
 
 #if defined(CAT_WINDOWS)
 #include <windows.h>
+#include <winuser.h>
 #include <conio.h>
 #include "SDL.h"
 #include "SDL_ttf.h"

@@ -78,6 +78,7 @@
 		"usbhidhandler.h": "c",
 		"uart.h": "c",
 		"device.h": "c",
-		"keyringbuffer.h": "c"
+		"keyringbuffer.h": "c",
+		"serialinput.h": "c"
 	}
 }
