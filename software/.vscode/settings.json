@@ -79,6 +79,7 @@
 		"uart.h": "c",
 		"device.h": "c",
 		"keyringbuffer.h": "c",
-		"serialinput.h": "c"
+		"serialinput.h": "c",
+		"core.h": "c"
 	}
 }

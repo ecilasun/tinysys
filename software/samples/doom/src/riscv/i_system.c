@@ -37,12 +37,17 @@
 
 #include "basesystem.h"
 #include "core.h"
-//#include "keyboard.h"
+#include "serialinringbuffer.h"
+#include "task.h"
+#include "keyboard.h"
 
 void
 I_Init(void)
 {
 	I_InitSound();
+
+	struct STaskContext* taskctx = TaskGetContext(0);
+	taskctx->interceptUART = 1;
 }
 
 
@@ -64,44 +69,61 @@ I_GetTime (void)
 static void
 I_GetRemoteEvent(void)
 {
-	// Do not read same input twice
-	/*static uint32_t prevGen = 0xFFFFFFFF;
-	uint32_t keyGen = GetKeyStateGeneration();
-	if (keyGen == prevGen)
-		return;
-	prevGen = keyGen;
-
-	// Post event for all pressed / released keys
-	uint16_t *keystates = GetKeyStateTable();
-
-	event_t event;
-	uint16_t updown = 0;
-
-	for(int i=0; i<255; ++i)
+	uint8_t byte;
+	if (SerialInRingBufferRead(&byte, 1))
 	{
-		updown = keystates[i]&3;
-		if (updown)
+		// Keyboard packet
+		if (byte == '^')
 		{
-			switch(i)
+			uint8_t scandata[KEYBOARD_PACKET_SIZE];
+			ReadKeyState(scandata);
+
+			uint8_t scancode = scandata[KEYBOARD_SCANCODE_INDEX];
+			uint8_t modifiers_lower = scandata[KEYBOARD_MODIFIERS_LOWER_INDEX];
+			uint8_t modifiers_upper = scandata[KEYBOARD_MODIFIERS_UPPER_INDEX];
+			uint32_t modifiers = (modifiers_upper << 8) | modifiers_lower;
+
+			// if (ascii == 27) // ESC
+			// 	done = 1;
+
+			event_t event;
+			// See keyboard scan codes for more info
+			switch(scancode)
 			{
-				case HKEY_ENTER:		{ event.data1 = KEY_ENTER; break; }
-				case HKEY_RETURN:		{ event.data1 = KEY_ENTER; break; }
-				case HKEY_RIGHTARROW:	{ event.data1 = KEY_RIGHTARROW; break; }
-				case HKEY_LEFTARROW:	{ event.data1 = KEY_LEFTARROW; break; }
-				case HKEY_DOWNARROW:	{ event.data1 = KEY_DOWNARROW; break; }
-				case HKEY_UPARROW:		{ event.data1 = KEY_UPARROW; break; }
-				case HKEY_RIGHTSHIFT:	{ event.data1 = KEY_RSHIFT; break; }
-				case HKEY_LEFTSHIFT:	{ event.data1 = KEY_RSHIFT; break; }
-				case HKEY_RIGHTALT:		{ event.data1 = KEY_RALT; break; }
-				case HKEY_LEFTALT:		{ event.data1 = KEY_RALT; break; }
-				case HKEY_RIGHTCONTROL:	{ event.data1 = KEY_RCTRL; break; }
-				case HKEY_LEFTCONTROL:	{ event.data1 = KEY_RCTRL; break; }
-				default:				{ event.data1 = KeyScanCodeToASCII(i, 0); break; }
+				case 88:	{ event.data1 = KEY_ENTER; break; }
+				case 40:	{ event.data1 = KEY_ENTER; break; }
+				case 79:	{ event.data1 = KEY_RIGHTARROW; break; }
+				case 80:	{ event.data1 = KEY_LEFTARROW; break; }
+				case 81:	{ event.data1 = KEY_DOWNARROW; break; }
+				case 82:	{ event.data1 = KEY_UPARROW; break; }
+				case 45: 	{ event.data1 = KEY_MINUS; break; }
+				case 46:	{ event.data1 = KEY_EQUALS; break; }
+				case 41:	{ event.data1 = KEY_ESCAPE; break; }
+				case 43:	{ event.data1 = KEY_TAB; break; }
+				case 42:	{ event.data1 = KEY_BACKSPACE; break; }
+				case 229:	{ event.data1 = KEY_RSHIFT; break; }
+				case 228:	{ event.data1 = KEY_RCTRL; break; }
+				case 230:	{ event.data1 = KEY_RALT; break; }
+				case 226:	{ event.data1 = KEY_LALT; break; }
+				case 72:	{ event.data1 = KEY_PAUSE; break; }
+				case 58:	{ event.data1 = KEY_F1; break; }
+				case 59:	{ event.data1 = KEY_F2; break; }
+				case 60:	{ event.data1 = KEY_F3; break; }
+				case 61:	{ event.data1 = KEY_F4; break; }
+				case 62:	{ event.data1 = KEY_F5; break; }
+				case 63:	{ event.data1 = KEY_F6; break; }
+				case 64:	{ event.data1 = KEY_F7; break; }
+				case 65:	{ event.data1 = KEY_F8; break; }
+				case 66:	{ event.data1 = KEY_F9; break; }
+				case 67:	{ event.data1 = KEY_F10; break; }
+				case 68:	{ event.data1 = KEY_F11; break; }
+				case 69:	{ event.data1 = KEY_F12; break; }
+				default:	{ event.data1 = KeyboardScanCodeToASCII(scancode, 0); break; }
 			}
-			event.type = (updown&1) ? ev_keydown : ev_keyup;
+			event.type = scandata[KEYBOARD_STATE_INDEX]&1 ? ev_keydown : ev_keyup;
 			D_PostEvent(&event);
 		}
-	}*/
+	}
 }
 
 void

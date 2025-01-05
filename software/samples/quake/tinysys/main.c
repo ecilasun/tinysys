@@ -23,7 +23,9 @@
 #include <unistd.h>
 
 #include "basesystem.h"
-//#include "keyboard.h"
+#include "serialinringbuffer.h"
+#include "task.h"
+#include "keyboard.h"
 
 enum {
 	MOUSE_BUTTON_LEFT = 1,
@@ -96,7 +98,7 @@ static event_queue_t event_queue = {
 	.base = NULL,
 	.end = 0,
 };*/
-static event_t event;
+//static event_t event;
 static mouse_movement_t mouse_movement;
 
 uint64_t qembd_get_us_time()
@@ -145,6 +147,10 @@ int main(int c, char **v)
 	register int a7 asm("a7") = 0xc0de;
 	asm volatile("scall" : "+r"(a0) : "r"(a1), "r"(a2), "r"(a7));
 	qembd_set_relative_mode(true);*/
+
+	struct STaskContext* taskctx = TaskGetContext(0);
+	taskctx->interceptUART = 1;
+
 	return qembd_main(c, v);
 }
 
@@ -155,65 +161,6 @@ void *qembd_allocmain(size_t size)
 
 static int poll_event()
 {
-	// Do not read same input twice
-	/*static uint32_t prevGen = 0xFFFFFFFF;
-	uint32_t keyGen = GetKeyStateGeneration();
-	if (keyGen == prevGen)
-		return 0;
-
-	prevGen = keyGen;
-	// Post event for all pressed / released keys
-	uint16_t *keystates = GetKeyStateTable();
-
-	uint16_t updown = 0;
-	for(int i=0; i<255; ++i)
-	{
-		updown = keystates[i]&3;
-		if (updown)
-		{
-			switch(i)
-			{
-				case HKEY_KEYPADBACKSPACE:	{ event.key_event.keycode = K_BACKSPACE; break; }
-				case HKEY_UPARROW:			{ event.key_event.keycode = K_UPARROW; break; }
-				case HKEY_DOWNARROW:		{ event.key_event.keycode = K_DOWNARROW; break; }
-				case HKEY_LEFTARROW:		{ event.key_event.keycode = K_LEFTARROW; break; }
-				case HKEY_RIGHTARROW:		{ event.key_event.keycode = K_RIGHTARROW; break; }
-				case HKEY_RIGHTALT:			{ event.key_event.keycode = K_ALT; break; }
-				case HKEY_LEFTALT:			{ event.key_event.keycode = K_ALT; break; }
-				case HKEY_RIGHTCONTROL:		{ event.key_event.keycode = K_CTRL; break; }
-				case HKEY_LEFTCONTROL:		{ event.key_event.keycode = K_CTRL; break; }
-				case HKEY_RIGHTSHIFT:		{ event.key_event.keycode = K_SHIFT; break; }
-				case HKEY_LEFTSHIFT:		{ event.key_event.keycode = K_SHIFT; break; }
-				case HKEY_F1:				{ event.key_event.keycode = K_F1; break; }
-				case HKEY_F2:				{ event.key_event.keycode = K_F2; break; }
-				case HKEY_F3:				{ event.key_event.keycode = K_F3; break; }
-				case HKEY_F4:				{ event.key_event.keycode = K_F4; break; }
-				case HKEY_F5:				{ event.key_event.keycode = K_F5; break; }
-				case HKEY_F6:				{ event.key_event.keycode = K_F6; break; }
-				case HKEY_F7:				{ event.key_event.keycode = K_F7; break; }
-				case HKEY_F8:				{ event.key_event.keycode = K_F8; break; }
-				case HKEY_F9:				{ event.key_event.keycode = K_F9; break; }
-				case HKEY_F10:				{ event.key_event.keycode = K_F10; break; }
-				case HKEY_F11:				{ event.key_event.keycode = K_F11; break; }
-				case HKEY_F12:				{ event.key_event.keycode = K_F12; break; }
-				case HKEY_INSERT:			{ event.key_event.keycode = K_INS; break; }
-				case HKEY_DELETE:			{ event.key_event.keycode = K_DEL; break; }
-				case HKEY_PAGEUP:			{ event.key_event.keycode = K_PGUP; break; }
-				case HKEY_PAGEDOWN:			{ event.key_event.keycode = K_PGDN; break; }
-				case HKEY_HOME:				{ event.key_event.keycode = K_HOME; break; }
-				case HKEY_END:				{ event.key_event.keycode = K_END; break; }
-				case HKEY_PAUSE:			{ event.key_event.keycode = K_PAUSE; break; }
-				case HKEY_ENTER:			{ event.key_event.keycode = K_ENTER; break; }
-				case HKEY_RETURN:			{ event.key_event.keycode = K_ENTER; break; }
-				case HKEY_TAB:				{ event.key_event.keycode = K_TAB; break; }
-				default:					{ event.key_event.keycode = KeyScanCodeToASCII(i, 0); break; }
-			}
-			event.key_event.keycode |= (updown&1) ? 0x40000000 : 0x00000000;
-			event.type = KEY_EVENT;
-			return 1;
-		}
-	}*/
-
 	/*if (event_count <= 0)
 		return 0;
 	event = event_queue.base[event_queue.start++];
@@ -230,115 +177,62 @@ static int poll_event()
 
 int qembd_dequeue_key_event(key_event_t *e)
 {
-	while (poll_event()) {
-		if (event.type == KEY_EVENT) {
-			*e = event.key_event;
-			/* remap keyode */
-			switch (e->keycode) {
-			case 0x08:
-				e->keycode = K_BACKSPACE;
-				break;
-			case 0x40000052:
-				e->keycode = K_UPARROW;
-				break;
-			case 0x40000051:
-				e->keycode = K_DOWNARROW;
-				break;
-			case 0x40000050:
-				e->keycode = K_LEFTARROW;
-				break;
-			case 0x4000004F:
-				e->keycode = K_RIGHTARROW;
-				break;
-			case 0x400000E2:
-			case 0x400000E6:
-				e->keycode = K_ALT;
-				break;
-			case 0x400000E0:
-			case 0x400000E4:
-				e->keycode = K_CTRL;
-				break;
-			case 0x400000E1:
-			case 0x400000E5:
-				e->keycode = K_SHIFT;
-				break;
-			case 0x4000003A:
-				e->keycode = K_F1;
-				break;
-			case 0x4000003B:
-				e->keycode = K_F2;
-				break;
-			case 0x4000003C:
-				e->keycode = K_F3;
-				break;
-			case 0x4000003D:
-				e->keycode = K_F4;
-				break;
-			case 0x4000003E:
-				e->keycode = K_F5;
-				break;
-			case 0x4000003F:
-				e->keycode = K_F6;
-				break;
-			case 0x40000040:
-				e->keycode = K_F7;
-				break;
-			case 0x40000041:
-				e->keycode = K_F8;
-				break;
-			case 0x40000042:
-				e->keycode = K_F9;
-				break;
-			case 0x40000043:
-				e->keycode = K_F10;
-				break;
-			case 0x40000044:
-				e->keycode = K_F11;
-				break;
-			case 0x40000045:
-				e->keycode = K_F12;
-				break;
-			case 0x40000049:
-				e->keycode = K_INS;
-				break;
-			case 0x7f:
-				e->keycode = K_DEL;
-				break;
-			case 0x4000004E:
-				e->keycode = K_PGDN;
-				break;
-			case 0x4000004B:
-				e->keycode = K_PGUP;
-				break;
-			case 0x4000004A:
-				e->keycode = K_HOME;
-				break;
-			case 0x4000004D:
-				e->keycode = K_END;
-				break;
-			case 0x40000048:
-				e->keycode = K_PAUSE;
-				break;
+	uint8_t byte;
+	if (SerialInRingBufferRead(&byte, 1))
+	{
+		// Keyboard packet
+		if (byte == '^')
+		{
+			uint8_t scandata[KEYBOARD_PACKET_SIZE];
+			ReadKeyState(scandata);
+
+			uint8_t scancode = scandata[KEYBOARD_SCANCODE_INDEX];
+			uint8_t modifiers_lower = scandata[KEYBOARD_MODIFIERS_LOWER_INDEX];
+			uint8_t modifiers_upper = scandata[KEYBOARD_MODIFIERS_UPPER_INDEX];
+			uint32_t modifiers = (modifiers_upper << 8) | modifiers_lower;
+
+			// if (ascii == 27) // ESC
+			// 	done = 1;
+
+			// See keyboard scan codes for more info
+			switch(scancode)
+			{
+				case 88:	{ e->keycode = K_ENTER; break; }
+				case 40:	{ e->keycode = K_ENTER; break; }
+				case 79:	{ e->keycode = K_RIGHTARROW; break; }
+				case 80:	{ e->keycode = K_LEFTARROW; break; }
+				case 81:	{ e->keycode = K_DOWNARROW; break; }
+				case 82:	{ e->keycode = K_UPARROW; break; }
+				case 41:	{ e->keycode = K_ESCAPE; break; }
+				case 43:	{ e->keycode = K_TAB; break; }
+				case 42:	{ e->keycode = K_BACKSPACE; break; }
+				case 229:	{ e->keycode = K_SHIFT; break; }
+				case 228:	{ e->keycode = K_CTRL; break; }
+				case 230:	{ e->keycode = K_ALT; break; }
+				case 226:	{ e->keycode = K_ALT; break; }
+				case 72:	{ e->keycode = K_PAUSE; break; }
+				case 58:	{ e->keycode = K_F1; break; }
+				case 59:	{ e->keycode = K_F2; break; }
+				case 60:	{ e->keycode = K_F3; break; }
+				case 61:	{ e->keycode = K_F4; break; }
+				case 62:	{ e->keycode = K_F5; break; }
+				case 63:	{ e->keycode = K_F6; break; }
+				case 64:	{ e->keycode = K_F7; break; }
+				case 65:	{ e->keycode = K_F8; break; }
+				case 66:	{ e->keycode = K_F9; break; }
+				case 67:	{ e->keycode = K_F10; break; }
+				case 68:	{ e->keycode = K_F11; break; }
+				case 69:	{ e->keycode = K_F12; break; }
+				case 74:	{ e->keycode = K_HOME; break; }
+				case 77:	{ e->keycode = K_END; break; }
+				case 75:	{ e->keycode = K_PGUP; break; }
+				case 78:	{ e->keycode = K_PGDN; break; }
+				case 73:	{ e->keycode = K_INS; break; }
+				case 76:	{ e->keycode = K_DEL; break; }
+				default:	{ e->keycode = KeyboardScanCodeToASCII(scancode, 0); break; }
 			}
+			e->state = scandata[KEYBOARD_STATE_INDEX];
 			return 0;
-		}
-		if (event.type == MOUSE_BUTTON_EVENT) {
-			e->state = event.mouse.button.state;
-			switch (event.mouse.button.button) {
-				case MOUSE_BUTTON_LEFT:
-					e->keycode = K_MOUSE1;
-					break;
-				case MOUSE_BUTTON_RIGHT:
-					e->keycode = K_MOUSE2;
-					break;
-				case MOUSE_BUTTON_MIDDLE:
-					e->keycode = K_MOUSE3;
-					break;
-			}
-			return 0;
-		}
-		if (event.type == QUIT_EVENT) {
-			exit(0);
 		}
 	}
 	return -1;
