@@ -4,11 +4,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <chrono>
+#include <thread>
+#include <filesystem>
 
 #include "platform.h"
 #include "common.h"
 #include "serial.h"
 #include "video.h"
+#include "lz4.h"
 
 static bool s_alive = true;
 static SDL_Window* s_window;
@@ -45,6 +49,227 @@ uint32_t videoCallback(uint32_t interval, void* param)
 	}
 
 	return interval;
+}
+
+bool WACK(CSerialPort *_serial, const uint8_t waitfor, uint8_t& received)
+{
+	int ack = 0;
+	uint8_t dummy;
+	uint8_t bytes = 0;
+	uint32_t timeout = 0;
+	do
+	{
+		if (_serial->Receive(&dummy, 1))
+		{
+			received = dummy;
+			++bytes;
+			if (dummy == waitfor)
+				ack = 1; // Valid ACK
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		++timeout;
+	} while (!bytes);
+
+	return (timeout>16384) ? false : (ack ? true : false);
+}
+
+unsigned int getfilelength(const fpos_t &endpos)
+{
+#if defined(CAT_LINUX)
+	return (unsigned int)endpos.__pos;
+#elif defined(CAT_MACOS)
+	return (unsigned int)endpos;
+#else // CAT_WINDOWS
+	return (unsigned int)endpos;
+#endif
+}
+
+void ConsumeInitialTraffic(CSerialPort* _serial)
+{
+	// When we first open the port, ESP32 will respond with a "ESP-ROM:esp32xxxxxx" and tinysys version message
+	// or sometimes with nothing. We need to consume this traffic before we can send any commands
+	uint8_t startup = 0;
+	while (_serial->Receive(&startup, 1))
+	{
+		// This usually reads something similar to "ESP-ROM:esp32s3-*"
+		// It is likely that some other unfinished traffic will show up here
+		printf("%c", startup);
+	}
+}
+
+void SendFile(char *_filename, CSerialPort* _serial)
+{
+	char tmpstring[129];
+
+	FILE *fp;
+	fp = fopen(_filename, "rb");
+	if (!fp)
+	{
+		fprintf(stderr, "ERROR: can't open ELF file %s\n", _filename);
+		return;
+	}
+
+	char cleanfilename[129];
+	{
+		using namespace std::filesystem;
+		path p = absolute(_filename);
+		strcpy(cleanfilename, p.filename().string().c_str());
+	}
+
+	unsigned int filebytesize = 0;
+	fpos_t pos, endpos;
+	fgetpos(fp, &pos);
+	fseek(fp, 0, SEEK_END);
+	fgetpos(fp, &endpos);
+	fsetpos(fp, &pos);
+	filebytesize = getfilelength(endpos);
+
+	uint8_t *filedata = new uint8_t[filebytesize + 64];
+	fread(filedata, 1, filebytesize, fp);
+	fclose(fp);
+
+	// Send the file bytes in chunks
+	uint32_t packetSize = 1024;
+	int worstSize = LZ4_compressBound(filebytesize);
+
+	// Pack the data before sending it across
+	char* encoded = new char[worstSize];
+	uint32_t encodedSize = LZ4_compress_default((const char*)filedata, encoded, filebytesize, worstSize);
+	fprintf(stderr, "Compression ratio = %.2f%% (%d->%d bytes)\n", 100.f*float(encodedSize)/float(filebytesize), filebytesize, encodedSize);
+
+	// Now we can work out how many packets we need to send
+	uint32_t numPackets = encodedSize / packetSize;
+	uint32_t leftoverBytes = encodedSize % packetSize;
+
+	uint8_t received;
+
+	ConsumeInitialTraffic(_serial);
+
+	// Start the receiver app on the other end
+	snprintf(tmpstring, 128, "recv");
+	_serial->Send((uint8_t*)tmpstring, 4);
+	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	snprintf(tmpstring, 128, "\n");
+	_serial->Send((uint8_t*)tmpstring, 1);
+	if (!WACK(_serial, '+', received))
+	{
+		fprintf(stderr, "Transfer initiation error: '%c'\n", received);
+		delete [] filedata;
+		return;
+	}
+
+	// Send encoded length
+	uint32_t encodedLen = encodedSize;
+	_serial->Send(&encodedLen, 4);
+	if (!WACK(_serial, '+', received))
+	{
+		fprintf(stderr, "Encoded buffer length error: '%c'\n", received);
+		delete [] filedata;
+		return;
+	}
+
+	// Send actual length
+	uint32_t decodedLen = filebytesize;
+	_serial->Send(&decodedLen, 4);
+	if (!WACK(_serial, '+', received))
+	{
+		fprintf(stderr, "Decoded buffer length error: '%c'\n", received);
+		delete [] filedata;
+		return;
+	}
+
+	// Send name length
+	uint32_t nameLen = strlen(cleanfilename);
+	_serial->Send(&nameLen, 4);
+	if (!WACK(_serial, '+', received))
+	{
+		fprintf(stderr, "File name length error: '%c'\n", received);
+		delete [] filedata;
+		return;
+	}
+
+	// Send name
+	_serial->Send(cleanfilename, nameLen);
+	if (!WACK(_serial, '+', received))
+	{
+		fprintf(stderr, "File name error: '%c'\n", received);
+		delete [] filedata;
+		return;
+	}
+
+	uint32_t i = 0;
+	uint32_t packetOffset = 0;
+	char progress[65];
+	for (i=0; i<64; ++i)
+		progress[i] = ' ';//176;
+	progress[64] = 0;
+	fprintf(stderr, "Uploading '%s' (packet size: %dx%d+%d bytes, packer buffer: %d bytes)\n", cleanfilename, numPackets, packetSize, leftoverBytes, worstSize);
+	for (i=0; i<numPackets; ++i)
+	{
+		const char* source = (const char*)(encoded + packetOffset);
+
+		int idx = (i*64)/numPackets;
+		for (int j=0; j<=idx; ++j) // Progress bar
+			progress[j] = '=';//219;
+		fprintf(stderr, "\r [%s] %.2f%%\r", progress, (i*100)/float(numPackets));
+
+		if (!WACK(_serial, '+', received)) // Wait for a 'go' signal
+		{
+			fprintf(stderr, "Packet size error at %d/%d (%d): '%c'\n", i, numPackets, received, packetSize);
+			delete [] filedata;
+			return;
+		}
+
+		_serial->Send(&packetSize, 4);
+
+		if (!WACK(_serial, '+', received)) // Wait for a 'go' signal
+		{
+			fprintf(stderr, "Packet error at %d/%d (%d): '%c'\n", i, numPackets, received, packetSize);
+			delete [] filedata;
+			return;
+		}
+
+		_serial->Send((void*)source, packetSize);
+
+		packetOffset += packetSize;
+	}
+
+	if (leftoverBytes)
+	{
+		const char* source = (const char*)(encoded + packetOffset);
+
+		for (int j=0; j<64; ++j) // Progress bar
+			progress[j] = '=';//219;
+		fprintf(stderr, "\r [%s] %.2f%%\r", progress, 100.0f);
+
+		if (!WACK(_serial, '+', received)) // Wait for a 'go' signal
+		{
+			fprintf(stderr, "Packet size error at %d/%d (%d): '%c'\n", i, numPackets, received, packetSize);
+			delete [] filedata;
+			return;
+		}
+
+		_serial->Send(&leftoverBytes, 4);
+
+		if (!WACK(_serial, '+', received)) // Wait for a 'go' signal
+		{
+			fprintf(stderr, "Packet error at %d/%d (%d): '%c'\n", i, numPackets, received, packetSize);
+			delete [] filedata;
+			return;
+		}
+
+		_serial->Send((void*)source, packetSize);
+
+		packetOffset += leftoverBytes;
+	}
+
+	fprintf(stderr, "\r\n");
+
+	delete[] encoded;
+
+	fprintf(stderr, "%d bytes uploaded\n", packetOffset);
+
+	delete [] filedata;
 }
 
 #if defined(CAT_LINUX) || defined(CAT_DARWIN)
@@ -95,6 +320,8 @@ int SDL_main(int argc, char** argv)
 		{
 			if (ev.type == SDL_QUIT)
 				s_alive = false;
+			if (ev.type == SDL_DROPFILE)
+				SendFile(ev.drop.file, &serial);
 		}
 
 		// Detect key changes

@@ -38,7 +38,7 @@ def build(bld):
     if platform.system().lower().startswith('win'):
         libs = ['ws2_32', 'dxva2', 'evr', 'mf', 'mfplat', 'mfplay', 'mfreadwrite', 'mfuuid', 'shell32', 'user32', 'Comdlg32', 'gdi32', 'ole32', 'kernel32', 'winmm', 'SDL2main', 'SDL2', 'SDL2_ttf']
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_WINDOWS', 'RELEASE']
-        includes = ['source', 'includes', '3rdparty/SDL2/include', '3rdparty/SDL2_ttf/include', '../3rdparty/fat32']
+        includes = ['source', 'includes', '3rdparty/SDL2/include', '3rdparty/SDL2_ttf/include', '../3rdparty/lz4']
         sdk_lib_path = [os.path.abspath('3rdparty/SDL2/lib/x64/'), os.path.abspath('3rdparty/SDL2_ttf/lib/x64/')]
         compile_flags =  ['/permissive-', '/arch:AVX2', '/GL', '/WX', '/Ox', '/Ot', '/Oy', '/fp:fast', '/Qfast_transcendentals', '/Zi', '/EHsc', '/FS', '/DRELEASE', '/D_SECURE_SCL 0']
         platform_flags = ['/std:c++20']
@@ -46,7 +46,7 @@ def build(bld):
     elif platform.system().lower().startswith('darwin'):
         libs = []
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_DARWIN', 'RELEASE']
-        includes = ['source', 'includes', '/opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2', '/opt/homebrew/Cellar/sdl2_ttf/2.22.0/include/SDL2']
+        includes = ['source', 'includes', '/opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2', '/opt/homebrew/Cellar/sdl2_ttf/2.22.0/include/SDL2', '../3rdparty/lz4']
         sdk_lib_path = ['/opt/homebrew/Cellar/sdl2/2.30.5/lib/', '/opt/homebrew/Cellar/sdl2_ttf/2.22.0/lib/']
         compile_flags = ['-march=native', '-O3', '-arch', 'arm64']
         platform_flags = ['-std=c++20']
@@ -54,7 +54,7 @@ def build(bld):
     elif platform.system().lower().startswith('linux'):
         libs = ['X11', 'stdc++', 'SDL2', 'SDL2_ttf']
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_LINUX', 'RELEASE']
-        includes = ['source', 'includes', '/usr/include/SDL2']
+        includes = ['source', 'includes', '/usr/include/SDL2', '../3rdparty/lz4']
         sdk_lib_path = ['/usr/lib/x86_64-linux-gnu/libv41', '/usr/lib/x86_64-linux-gnu/libSDL2']
         compile_flags = ['-march=native', '-Ofast', '-pthread', '-fomit-frame-pointer', '-Iincludes']
         platform_flags = ['-std=c++20']
@@ -62,7 +62,7 @@ def build(bld):
 
     # Build tinyremote
     bld.program(
-        source=glob.glob('*.cpp'),
+        source=glob.glob('*.cpp') + glob.glob('3rdparty/lz4/*.c'),
         cxxflags=compile_flags + platform_flags,
         ldflags=linker_flags,
         target='tinyremote',
