@@ -32,7 +32,7 @@ def build(bld):
 
     if platform.system().lower().startswith('win'):
         sdk_lib_path = []
-        compile_flags = []
+        compile_flags = ['/std:c++20']
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_WINDOWS']
     elif platform.system().lower().startswith('darwin'):
         sdk_lib_path = []

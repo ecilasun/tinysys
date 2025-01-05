@@ -14,6 +14,7 @@
 
 #include <chrono>
 #include <thread>
+#include <filesystem>
 
 #include "lz4.h"
 
@@ -472,6 +473,13 @@ void sendfile(char *_filename)
 		return;
 	}
 
+	char cleanfilename[129];
+	{
+		using namespace std::filesystem;
+		path p = absolute(_filename);
+		strcpy(cleanfilename, p.filename().string().c_str());
+	}
+
 	unsigned int filebytesize = 0;
 	fpos_t pos, endpos;
 	fgetpos(fp, &pos);
@@ -545,7 +553,7 @@ void sendfile(char *_filename)
 	}
 
 	// Send name length
-	uint32_t nameLen = strlen(_filename);
+	uint32_t nameLen = strlen(cleanfilename);
 	serial.Send(&nameLen, 4);
 	if (!WACK(serial, '+', received))
 	{
@@ -556,7 +564,7 @@ void sendfile(char *_filename)
 	}
 
 	// Send name
-	serial.Send(_filename, nameLen);
+	serial.Send(cleanfilename, nameLen);
 	if (!WACK(serial, '+', received))
 	{
 		printf("File name error: '%c'\n", received);
@@ -571,7 +579,7 @@ void sendfile(char *_filename)
 	for (i=0; i<64; ++i)
 		progress[i] = ' ';//176;
 	progress[64] = 0;
-	printf("Uploading '%s' (packet size: %dx%d+%d bytes, packer buffer: %d bytes)\n", _filename, numPackets, packetSize, leftoverBytes, worstSize);
+	printf("Uploading '%s' (packet size: %dx%d+%d bytes, packer buffer: %d bytes)\n", cleanfilename, numPackets, packetSize, leftoverBytes, worstSize);
 	for (i=0; i<numPackets; ++i)
 	{
 		const char* source = (const char*)(encoded + packetOffset);
