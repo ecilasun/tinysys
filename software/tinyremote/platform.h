@@ -20,14 +20,14 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-#include "SDL.h"
-#include "SDL_ttf.h"
 #endif
 
 #if defined(CAT_WINDOWS)
 #include <windows.h>
 #include <winuser.h>
 #include <conio.h>
+#endif
+
 #include "SDL.h"
 #include "SDL_ttf.h"
-#endif
+#include "SDL_joystick.h"

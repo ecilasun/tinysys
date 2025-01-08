@@ -9,6 +9,7 @@
 #include "keyringbuffer.h"
 #include "gdbstub.h"
 #include "keyboard.h"
+#include "joystick.h"
 #include <stdlib.h>
 
 //static uint32_t in_gdb_mode = 0;
@@ -34,6 +35,24 @@ void HandleSerialInput()
 			ReadKeyState(scandata);
 			// Process the key state and convert to ASCII for the key buffer
 			ProcessKeyState(scandata);
+		}
+		else if (drain == '%')
+		{
+			// Joystick axis packet
+			uint8_t axisdata[JOYSTICK_AXIS6_PACKET_SIZE];
+			// Read a 7-byte joystick axis packet from the serial input buffer
+			ReadAxisState(axisdata);
+			// Process the joystick axis state and convert to ASCII for the key buffer
+			ProcessAxisState(axisdata);
+		}
+		else if (drain == '@')
+		{
+			// Joystick button packet
+			uint8_t buttondata[JOYSTICK_BUTTON_PACKET_SIZE];
+			// Read a 3-byte joystick button packet from the serial input buffer
+			ReadButtonState(buttondata);
+			// Process the joystick button state and convert to ASCII for the key buffer
+			ProcessButtonState(buttondata);
 		}
 		else
 		{
