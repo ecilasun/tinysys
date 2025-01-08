@@ -49,7 +49,7 @@ void ReadAxisState(uint8_t *scandata)
  */
 void ProcessButtonState(uint8_t *scandata)
 {
-	s_buttonstate = (scandata[2] << 8) | scandata[1];
+	s_buttonstate = (scandata[1] << 8) | scandata[0];
 }
 
 /**
@@ -59,12 +59,12 @@ void ProcessButtonState(uint8_t *scandata)
  */
 void ProcessAxisState(uint8_t *scandata)
 {
-	s_axisstate[0] = ((scandata[2] << 8 | scandata[1]) - 32768) / 32767.0f;
-	s_axisstate[1] = ((scandata[4] << 8 | scandata[3]) - 32768) / 32767.0f;
-	s_axisstate[2] = ((scandata[6] << 8 | scandata[5]) - 32768) / 32767.0f;
-	s_axisstate[3] = ((scandata[8] << 8 | scandata[7]) - 32768) / 32767.0f;
-	s_axisstate[4] = scandata[9] / 255.0f;
-	s_axisstate[5] = scandata[10] / 255.0f;
+	s_axisstate[0] = ((scandata[1] << 8 | scandata[0]) - 32768) / 32767.0f;
+	s_axisstate[1] = ((scandata[3] << 8 | scandata[2]) - 32768) / 32767.0f;
+	s_axisstate[2] = ((scandata[5] << 8 | scandata[4]) - 32768) / 32767.0f;
+	s_axisstate[3] = ((scandata[7] << 8 | scandata[6]) - 32768) / 32767.0f;
+	s_axisstate[4] = scandata[8] / 255.0f;
+	s_axisstate[5] = scandata[9] / 255.0f;
 }
 
 /**
