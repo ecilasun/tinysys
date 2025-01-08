@@ -9,6 +9,7 @@
 #include "task.h"
 #include "serialinringbuffer.h"
 #include "keyboard.h"
+#include "joystick.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -36,7 +37,8 @@ int main()
 	while(!done)
 	{
 		uint8_t byte;
-		// Wait for a scan code packet
+		int have_joystick_data = 0;
+		// Check for incoming data
 		if (SerialInRingBufferRead(&byte, 1))
 		{
 			if (byte == '^')
@@ -83,6 +85,20 @@ int main()
 				if (ascii == 27) // ESC
 					done = 1;
 			}
+			else if (byte == '@')
+			{
+				uint8_t buttondata[JOYSTICK_BUTTON_PACKET_SIZE];
+				ReadButtonState(buttondata);
+				ProcessButtonState(buttondata);
+				have_joystick_data = 1;
+			}
+			else if (byte == '%')
+			{
+				uint8_t axisdata[JOYSTICK_AXIS6_PACKET_SIZE];
+				ReadAxisState(axisdata);
+				ProcessAxisState(axisdata);
+				have_joystick_data = 1;
+			}
 			else
 			{
 				// This is a non-scan code packet
@@ -90,6 +106,17 @@ int main()
 				done = 1;
 			}
 			
+			if (have_joystick_data)
+			{
+				float axisdata[6];
+				uint16_t buttondata;
+				JoystickReadState(axisdata, &buttondata);
+
+				printf("Axis: ");
+				for (int i = 0; i < 6; i++)
+					printf("%f ", axisdata[i]);
+				printf("\nButtons: %04X\n", buttondata);
+			}
 		}
 	}
 
