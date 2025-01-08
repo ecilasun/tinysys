@@ -383,7 +383,7 @@ int SDL_main(int argc, char** argv)
 				s_alive = false;
 			if (ev.type == SDL_DROPFILE)
 				SendFile(ev.drop.file, &serial);
-			if (ev.type == SDL_JOYDEVICEADDED)
+			if (ev.type == SDL_CONTROLLERDEVICEADDED)
 			{
 				for (int i = 0; i < numJoy; ++i)
 				{
@@ -421,7 +421,7 @@ int SDL_main(int argc, char** argv)
 					}
 				}
 			}
-			if (ev.type == SDL_JOYDEVICEREMOVED)
+			if (ev.type == SDL_CONTROLLERDEVICEREMOVED)
 			{
 				if (gamecontroller)
 				{
@@ -475,10 +475,10 @@ int SDL_main(int argc, char** argv)
 			{
 				prev_input = input;
 
-				int16_t lx = (int16_t)(input.leftx * 32767.0f);
-				int16_t ly = (int16_t)(input.lefty * 32767.0f);
-				int16_t rx = (int16_t)(input.rightx * 32767.0f);
-				int16_t ry = (int16_t)(input.righty * 32767.0f);
+				uint16_t lx = (uint16_t)((input.leftx * 32767.0f) + 32768);
+				uint16_t ly = (uint16_t)((input.lefty * 32767.0f) + 32768);
+				uint16_t rx = (uint16_t)((input.rightx * 32767.0f) + 32768);
+				uint16_t ry = (uint16_t)((input.righty * 32767.0f) + 32768);
 				uint8_t lt = (uint8_t)(input.lefttrigger * 255.0f);
 				uint8_t rt = (uint8_t)(input.righttrigger * 255.0f);
 

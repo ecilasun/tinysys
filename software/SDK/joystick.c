@@ -59,10 +59,10 @@ void ProcessButtonState(uint8_t *scandata)
  */
 void ProcessAxisState(uint8_t *scandata)
 {
-	s_axisstate[0] = (scandata[2] << 8 | scandata[1]) / 32767.0f;
-	s_axisstate[1] = (scandata[4] << 8 | scandata[3]) / 32767.0f;
-	s_axisstate[2] = (scandata[6] << 8 | scandata[5]) / 32767.0f;
-	s_axisstate[3] = (scandata[8] << 8 | scandata[7]) / 32767.0f;
+	s_axisstate[0] = ((scandata[2] << 8 | scandata[1]) - 32768) / 32767.0f;
+	s_axisstate[1] = ((scandata[4] << 8 | scandata[3]) - 32768) / 32767.0f;
+	s_axisstate[2] = ((scandata[6] << 8 | scandata[5]) - 32768) / 32767.0f;
+	s_axisstate[3] = ((scandata[8] << 8 | scandata[7]) - 32768) / 32767.0f;
 	s_axisstate[4] = scandata[9] / 255.0f;
 	s_axisstate[5] = scandata[10] / 255.0f;
 }
