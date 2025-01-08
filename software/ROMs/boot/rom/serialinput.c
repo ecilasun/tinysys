@@ -40,7 +40,7 @@ void HandleSerialInput()
 		{
 			// Joystick axis packet
 			uint8_t axisdata[JOYSTICK_AXIS6_PACKET_SIZE];
-			// Read a 7-byte joystick axis packet from the serial input buffer
+			// Read joystick axis packet from the serial input buffer
 			ReadAxisState(axisdata);
 			// Process the joystick axis state and convert to ASCII for the key buffer
 			ProcessAxisState(axisdata);
@@ -49,7 +49,7 @@ void HandleSerialInput()
 		{
 			// Joystick button packet
 			uint8_t buttondata[JOYSTICK_BUTTON_PACKET_SIZE];
-			// Read a 3-byte joystick button packet from the serial input buffer
+			// Read joystick button packet from the serial input buffer
 			ReadButtonState(buttondata);
 			// Process the joystick button state and convert to ASCII for the key buffer
 			ProcessButtonState(buttondata);

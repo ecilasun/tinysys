@@ -8,4 +8,4 @@ void ProcessAxisState(uint8_t *scandata);
 void ReadButtonState(uint8_t *scandata);
 void ProcessButtonState(uint8_t *scandata);
 
-void JoystickReadState(float *_axisData, uint16_t _buttonData);
+void JoystickReadState(float *_axisData, uint16_t* _buttonData);

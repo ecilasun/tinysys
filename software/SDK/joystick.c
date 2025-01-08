@@ -73,7 +73,7 @@ void ProcessAxisState(uint8_t *scandata)
  * @param _axisData - Axis data for thumbsticks and triggers
  * @param _buttonData - Button data including D-Pad and direction buttons
  */
-void JoystickReadState(float *_axisData, uint16_t _buttonData)
+void JoystickReadState(float *_axisData, uint16_t* _buttonData)
 {
 	_axisData[0] = s_axisstate[0];
 	_axisData[1] = s_axisstate[1];
@@ -81,5 +81,5 @@ void JoystickReadState(float *_axisData, uint16_t _buttonData)
 	_axisData[3] = s_axisstate[3];
 	_axisData[4] = s_axisstate[4];
 	_axisData[5] = s_axisstate[5];
-	_buttonData = s_buttonstate;
+	*_buttonData = s_buttonstate;
 }

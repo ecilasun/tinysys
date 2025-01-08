@@ -40,6 +40,7 @@
 #include "serialinringbuffer.h"
 #include "task.h"
 #include "keyboard.h"
+#include "joystick.h"
 
 void
 I_Init(void)
@@ -70,6 +71,7 @@ static void
 I_GetRemoteEvent(void)
 {
 	uint8_t byte;
+	int have_joystick = 0;
 	if (SerialInRingBufferRead(&byte, 1))
 	{
 		// Keyboard packet
@@ -123,6 +125,36 @@ I_GetRemoteEvent(void)
 			event.type = scandata[KEYBOARD_STATE_INDEX]&1 ? ev_keydown : ev_keyup;
 			D_PostEvent(&event);
 		}
+
+		if (byte == '@')
+		{
+			uint8_t buttondata[JOYSTICK_BUTTON_PACKET_SIZE];
+			ReadButtonState(buttondata);
+			ProcessButtonState(buttondata);
+			have_joystick = 1;
+		}
+
+		if (byte == '%')
+		{
+			uint8_t axisdata[JOYSTICK_AXIS6_PACKET_SIZE];
+			ReadAxisState(axisdata);
+			ProcessAxisState(axisdata);
+			have_joystick = 1;
+		}
+	}
+
+	if (have_joystick)
+	{
+		float axisdata[6];
+		uint16_t buttondata;
+		JoystickReadState(axisdata, &buttondata);
+
+		event_t event;
+		event.type = ev_joystick;
+		event.data1 = buttondata;
+		event.data2 = (int)axisdata[0];
+		event.data3 = (int)axisdata[1];
+		D_PostEvent(&event);
 	}
 }
 

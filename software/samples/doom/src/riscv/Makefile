@@ -42,6 +42,7 @@ SOURCES_doom_arch := \
 	../../../../SDK/dma.c \
 	../../../../SDK/task.c \
 	../../../../SDK/keyboard.c \
+	../../../../SDK/joystick.c \
 	../../../../SDK/serialinringbuffer.c \
 	mini-printf.c \
 	d_main.c \
