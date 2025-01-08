@@ -36,9 +36,10 @@ int main()
 	int done = 0;
 	while(!done)
 	{
-		uint8_t byte;
 		int have_joystick_data = 0;
+
 		// Check for incoming data
+		uint8_t byte;
 		if (SerialInRingBufferRead(&byte, 1))
 		{
 			if (byte == '^')
@@ -105,18 +106,18 @@ int main()
 				printf("Non-scan code packet, exiting\n");
 				done = 1;
 			}
-			
-			if (have_joystick_data)
-			{
-				float axisdata[6];
-				uint16_t buttondata;
-				JoystickReadState(axisdata, &buttondata);
+		}
 
-				printf("Axis: ");
-				for (int i = 0; i < 6; i++)
-					printf("%f ", axisdata[i]);
-				printf("\nButtons: %04X\n", buttondata);
-			}
+		if (have_joystick_data)
+		{
+			float axisdata[6];
+			uint16_t buttondata;
+			JoystickReadState(axisdata, &buttondata);
+
+			printf("Axis: ");
+			for (int i = 0; i < 6; i++)
+				printf("%f ", axisdata[i]);
+			printf("\nButtons: %04X\n", buttondata);
 		}
 	}
 
