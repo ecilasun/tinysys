@@ -157,7 +157,7 @@ bool VideoCapture::Initialize(int width, int height)
 	IMFActivate **devices = nullptr;
 
 	// Enumerate the devices,
-	selecteddevice = 0;
+	selecteddevice = 0xFFFFFFFF;
 	devicecount = 0;
 	hr = MFEnumDeviceSources(pConfig, &devices, &devicecount);
 	if( FAILED(hr) || devicecount == 0 )
@@ -166,7 +166,6 @@ bool VideoCapture::Initialize(int width, int height)
 		return false;
 	}
 
-	fprintf(stderr, "Found %d video capture devices\n", devicecount);
 	for (DWORD i = 0; i < devicecount; i++)
 	{
 		wchar_t *name = nullptr;
@@ -182,7 +181,10 @@ bool VideoCapture::Initialize(int width, int height)
 		// Skip things that look like camera devices
 		// TODO: This is a hack, need a better way to detect cameras or non-camera devices
 		if (strstr(asciiname, "cam") != nullptr || strstr(asciiname, "Cam") != nullptr || strstr(asciiname, "CAM") != nullptr)
+		{
+			fprintf(stderr, "Found video capture device(%d): %s\n", i, asciiname);
 			continue;
+		}
 
 		// Found a non-camera device, use it
 		fprintf(stderr, "Using video capture device(%d): %s\n", i, asciiname);
@@ -191,7 +193,7 @@ bool VideoCapture::Initialize(int width, int height)
 	}
 
 	// Create a media source for the first device in the list.
-	if (devicecount > 0)
+	if (devicecount > 0 && selecteddevice != 0xFFFFFFFF)
 	{
 		hr = devices[selecteddevice]->ActivateObject(IID_PPV_ARGS(&mediaSource));
 		for (DWORD i = 0; i < devicecount; i++)

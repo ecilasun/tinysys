@@ -24,7 +24,6 @@ AudioCapture::~AudioCapture()
 void AudioCapture::Initialize()
 {
 	int numCap = SDL_GetNumAudioDevices(1);
-	fprintf(stderr, "Found %d audio capture devices\n", numCap);
 	{
 		uint32_t capdev = 0xFFFFFFFF;
 		char capname[256] = {0};
@@ -38,6 +37,8 @@ void AudioCapture::Initialize()
 				capdev = i;
 				break;
 			}
+			else
+				fprintf(stderr, "Found audio capture device(%d): %s\n", i, name);
 		}
 
 		if (capdev == 0xFFFFFFFF)
@@ -65,7 +66,6 @@ void AudioCapture::Initialize()
 	}
 
 	int numPlay = SDL_GetNumAudioDevices(0);
-	fprintf(stderr, "Found %d audio playback devices\n", numPlay);
 
 	{
 		uint32_t playdev = 0xFFFFFFFF;
@@ -80,6 +80,8 @@ void AudioCapture::Initialize()
 				playdev = i;
 				break;
 			}
+			else
+				fprintf(stderr, "Found audio playback device(%d): %s\n", i, name);
 		}
 
 		if (playdev == 0xFFFFFFFF)
