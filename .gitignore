@@ -41,6 +41,7 @@ software/emulator/emulator/tinysys/x64/**
 software/tinyremote/build/**
 software/tinyremote/waf3**
 software/tinyremote/.lock**
+software/tinyremote/.waf3**
+software/tinyremote/.lock**
 software/emulator/sdcard/doom/*.wad
 software/emulator/sdcard/quake/ID1/**
-

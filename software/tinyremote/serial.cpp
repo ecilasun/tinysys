@@ -20,7 +20,7 @@ void SetCommDeviceName(const char* _commdevicename)
 
 bool CSerialPort::Open()
 {
-#if defined(CAT_LINUX) || defined(CAT_MACOS)
+#if defined(CAT_LINUX)
 	// Open COM port
 	serial_port = open(commdevicename, O_RDWR);
 	if (serial_port < 0 )
@@ -66,7 +66,9 @@ bool CSerialPort::Open()
 
 	fprintf(stderr, "%s open\n", commdevicename);
 	return true;
-
+#elif defined(CAT_DARWIN)
+	// MacOS
+	return false;
 #else // CAT_WINDOWS
 	hComm = CreateFileA(commdevicename, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 	if (hComm != INVALID_HANDLE_VALUE)
@@ -111,11 +113,14 @@ bool CSerialPort::Open()
 
 uint32_t CSerialPort::Receive(void *_target, unsigned int _rcvlength)
 {
-#if defined(CAT_LINUX) || defined(CAT_MACOS)
+#if defined(CAT_LINUX)
 	int n = read(serial_port, _target, _rcvlength);
 	if (n < 0)
 		fprintf(stderr, "ERROR: read() failed\n");
 	return n;
+#elif defined(CAT_DARWIN)
+	// MacOS
+	return 0;
 #else
 	DWORD bytesread = 0;
 	BOOL success = ReadFile(hComm, _target, _rcvlength, &bytesread, nullptr);
@@ -125,11 +130,14 @@ uint32_t CSerialPort::Receive(void *_target, unsigned int _rcvlength)
 
 uint32_t CSerialPort::Send(void *_sendbytes, unsigned int _sendlength)
 {
-#if defined(CAT_LINUX) || defined(CAT_MACOS)
+#if defined(CAT_LINUX)
 	int n = write(serial_port, _sendbytes, _sendlength);
 	if (n < 0)
 		fprintf(stderr, "ERROR: write() failed\n");
 	return n;
+#elif defined(CAT_DARWIN)
+	// MacOS
+	return 0;
 #else // CAT_WINDOWS
 	DWORD byteswritten = 0;
 	// Send the command
@@ -142,9 +150,11 @@ uint32_t CSerialPort::Send(void *_sendbytes, unsigned int _sendlength)
 
 void CSerialPort::Close()
 {
-#if defined(CAT_LINUX) || defined(CAT_MACOS)
-		close(serial_port);
+#if defined(CAT_LINUX)
+	close(serial_port);
+#elif defined(CAT_DARWIN)
+	// MacOS
 #else // CAT_WINDOWS
-		CloseHandle(hComm);
+	CloseHandle(hComm);
 #endif
 }

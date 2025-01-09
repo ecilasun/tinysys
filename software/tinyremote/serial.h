@@ -16,7 +16,7 @@ class CSerialPort{
 	uint32_t Send(void *_sendbytes, unsigned int _sendlength);
 	void Close();
 
-#if defined(CAT_LINUX) || defined(CAT_MACOS)
+#if defined(CAT_LINUX) || defined(CAT_DARWIN)
 	int serial_port{-1};
 #else // CAT_WINDOWS
 	HANDLE hComm{INVALID_HANDLE_VALUE};

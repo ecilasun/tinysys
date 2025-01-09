@@ -363,6 +363,11 @@ void ConvertYUY2ToRGB(const unsigned char *yuy2Data, unsigned char *rgbData, int
 
 bool VideoCapture::CaptureFrame(uint8_t *videodata)
 {
+#if defined(CAT_LINUX)
+	// Linux
+#elif defined(CAT_DARWIN)
+	// MacOS
+#else // CAT_WINDOWS
 	HRESULT hr;
 	DWORD streamIndex, flags;
 	LONGLONG timestamp;
@@ -414,6 +419,6 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata)
 			return false;
 		}
 	}
-
+#endif
 	return true;
 }

@@ -38,7 +38,7 @@ public:
 	IMFSourceReader *pReader = nullptr;
 	uint32_t devicecount = 0;
 	uint32_t selecteddevice = 0;
+#endif
 	uint32_t frameWidth = 0;
 	uint32_t frameHeight = 0;
-#endif
 };
