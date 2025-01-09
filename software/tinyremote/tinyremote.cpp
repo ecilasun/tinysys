@@ -8,11 +8,7 @@
 #include <thread>
 #include <filesystem>
 
-#include "platform.h"
-#include "common.h"
-#include "serial.h"
-#include "video.h"
-#include "lz4.h"
+#include "tinyremote.h"
 
 static bool s_alive = true;
 static SDL_Window* s_window;
@@ -316,6 +312,61 @@ void ClampAnalogInput(Axis6& input, float innerDeadzone, float outerDeadzone)
 	input.righttrigger = Clamp(input.righttrigger, 0, 1);
 }
 
+void ControllerAdd(AppCtx& ctx)
+{
+	int numJoy = SDL_NumJoysticks();
+	if (numJoy <= 0)
+		fprintf(stderr, "No joysticks: %d\n", numJoy);
+	else
+		fprintf(stderr, "Found %d joysticks\n", numJoy);
+
+	for (int i = 0; i < numJoy; ++i)
+	{
+		if (SDL_IsGameController(i))
+		{
+			ctx.gamecontroller = SDL_GameControllerOpen(i);
+			if (ctx.gamecontroller)
+			{
+				if (SDL_GameControllerGetAttached(ctx.gamecontroller))
+				{
+					fprintf(stderr, "Using game controller #%d: '%s'\n", i, SDL_GameControllerName(ctx.gamecontroller));
+					// Read button mappings
+					for (int j = 0; j < SDL_CONTROLLER_BUTTON_MAX; ++j)
+					{
+						if (SDL_GameControllerHasButton(ctx.gamecontroller, (SDL_GameControllerButton)j))
+						{
+							SDL_GameControllerButtonBind bind = SDL_GameControllerGetBindForButton(ctx.gamecontroller, (SDL_GameControllerButton)j);
+							switch (bind.bindType)
+							{
+								case SDL_CONTROLLER_BINDTYPE_BUTTON:
+									fprintf(stderr, "Button %d: %s\n", j, SDL_GameControllerGetStringForButton((SDL_GameControllerButton)j));
+								break;
+								case SDL_CONTROLLER_BINDTYPE_AXIS:
+									fprintf(stderr, "Axis %d: %s\n", j, SDL_GameControllerGetStringForButton((SDL_GameControllerButton)j));
+								break;
+								case SDL_CONTROLLER_BINDTYPE_HAT:
+									fprintf(stderr, "Hat %d: %s\n", j, SDL_GameControllerGetStringForButton((SDL_GameControllerButton)j));
+								break;
+							}
+						}
+					}
+					break;
+				}
+			}
+		}
+	}
+}
+
+void ControllerRemove(AppCtx& ctx)
+{
+	if (ctx.gamecontroller)
+	{
+		SDL_GameControllerClose(ctx.gamecontroller);
+		ctx.gamecontroller = nullptr;
+	}
+
+}
+
 #if defined(CAT_LINUX) || defined(CAT_DARWIN)
 int main(int argc, char** argv)
 #else
@@ -335,9 +386,6 @@ int SDL_main(int argc, char** argv)
 	int width = 640;
 	int height = 480;
 
-	CSerialPort serial;
-	serial.Open();
-
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
 	{
 		fprintf(stderr, "Error initializing SDL2: %s\n", SDL_GetError());
@@ -348,22 +396,21 @@ int SDL_main(int argc, char** argv)
 	s_surface = SDL_GetWindowSurface(s_window);
 
 	s_videodata = new uint8_t[width*height*4];
-	VideoCapture video_capture;
-	video_capture.Initialize(width, height);
 
-	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, &video_capture); // 60fps
+	AppCtx ctx;
+	ctx.gamecontroller = nullptr;
+	ctx.serial = new CSerialPort();
+	ctx.serial->Open();
+	ctx.video = new VideoCapture();
+	ctx.video->Initialize(width, height);
+	ctx.audio = new AudioCapture();
+	ctx.audio->Initialize();
+
+	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, ctx.video); // 60fps
 
 	const uint8_t *keystates = SDL_GetKeyboardState(nullptr);
 	uint8_t *old_keystates = new uint8_t[SDL_NUM_SCANCODES];
 	memset(old_keystates, 0, SDL_NUM_SCANCODES);
-
-	int numJoy = SDL_NumJoysticks();
-	if (numJoy <= 0)
-		fprintf(stderr, "No joysticks: %d\n", numJoy);
-	else
-		fprintf(stderr, "Found %d joysticks\n", numJoy);
-
-	SDL_GameController* gamecontroller = nullptr;
 
 	Axis6 prev_input;
 	prev_input.leftx = -11111.f;
@@ -382,75 +429,37 @@ int SDL_main(int argc, char** argv)
 			if (ev.type == SDL_QUIT)
 				s_alive = false;
 			if (ev.type == SDL_DROPFILE)
-				SendFile(ev.drop.file, &serial);
+				SendFile(ev.drop.file, ctx.serial);
 			if (ev.type == SDL_CONTROLLERDEVICEADDED)
 			{
-				for (int i = 0; i < numJoy; ++i)
-				{
-					if (SDL_IsGameController(i))
-					{
-						gamecontroller = SDL_GameControllerOpen(i);
-						if (gamecontroller)
-						{
-							if (SDL_GameControllerGetAttached(gamecontroller))
-							{
-								fprintf(stderr, "Using game controller #%d: '%s'\n", i, SDL_GameControllerName(gamecontroller));
-								// Read button mappings
-								for (int j = 0; j < SDL_CONTROLLER_BUTTON_MAX; ++j)
-								{
-									if (SDL_GameControllerHasButton(gamecontroller, (SDL_GameControllerButton)j))
-									{
-										SDL_GameControllerButtonBind bind = SDL_GameControllerGetBindForButton(gamecontroller, (SDL_GameControllerButton)j);
-										switch (bind.bindType)
-										{
-											case SDL_CONTROLLER_BINDTYPE_BUTTON:
-												fprintf(stderr, "Button %d: %s\n", j, SDL_GameControllerGetStringForButton((SDL_GameControllerButton)j));
-											break;
-											case SDL_CONTROLLER_BINDTYPE_AXIS:
-												fprintf(stderr, "Axis %d: %s\n", j, SDL_GameControllerGetStringForButton((SDL_GameControllerButton)j));
-											break;
-											case SDL_CONTROLLER_BINDTYPE_HAT:
-												fprintf(stderr, "Hat %d: %s\n", j, SDL_GameControllerGetStringForButton((SDL_GameControllerButton)j));
-											break;
-										}
-									}
-								}
-								break;
-							}
-						}
-					}
-				}
+				ControllerAdd(ctx);
 			}
 			if (ev.type == SDL_CONTROLLERDEVICEREMOVED)
 			{
-				if (gamecontroller)
-				{
-					SDL_GameControllerClose(gamecontroller);
-					gamecontroller = nullptr;
-				}
+				ControllerRemove(ctx);
 			}
 		}
 
 		// Read joystick events
-		if (gamecontroller)
+		if (ctx.gamecontroller)
 		{
 			// Buttons
 			uint32_t buttons = 0x00000000;
-			buttons |= SDL_GameControllerGetButton(gamecontroller, SDL_CONTROLLER_BUTTON_A) ? 0x00000001 : 0;
-			buttons |= SDL_GameControllerGetButton(gamecontroller, SDL_CONTROLLER_BUTTON_B) ? 0x00000002 : 0;
-			buttons |= SDL_GameControllerGetButton(gamecontroller, SDL_CONTROLLER_BUTTON_X) ? 0x00000004 : 0;
-			buttons |= SDL_GameControllerGetButton(gamecontroller, SDL_CONTROLLER_BUTTON_Y) ? 0x00000008 : 0;
-			buttons |= SDL_GameControllerGetButton(gamecontroller, SDL_CONTROLLER_BUTTON_BACK) ? 0x00000010 : 0;
-			buttons |= SDL_GameControllerGetButton(gamecontroller, SDL_CONTROLLER_BUTTON_GUIDE) ? 0x00000020 : 0;
-			buttons |= SDL_GameControllerGetButton(gamecontroller, SDL_CONTROLLER_BUTTON_START) ? 0x00000040 : 0;
-			buttons |= SDL_GameControllerGetButton(gamecontroller, SDL_CONTROLLER_BUTTON_LEFTSTICK) ? 0x00000080 : 0;
-			buttons |= SDL_GameControllerGetButton(gamecontroller, SDL_CONTROLLER_BUTTON_RIGHTSTICK) ? 0x00000100 : 0;
-			buttons |= SDL_GameControllerGetButton(gamecontroller, SDL_CONTROLLER_BUTTON_LEFTSHOULDER) ? 0x00000200 : 0;
-			buttons |= SDL_GameControllerGetButton(gamecontroller, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) ? 0x00000400 : 0;
-			buttons |= SDL_GameControllerGetButton(gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_UP) ? 0x00000800 : 0;
-			buttons |= SDL_GameControllerGetButton(gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_DOWN) ? 0x00001000 : 0;
-			buttons |= SDL_GameControllerGetButton(gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_LEFT) ? 0x00002000 : 0;
-			buttons |= SDL_GameControllerGetButton(gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT) ? 0x00004000 : 0;
+			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_A) ? 0x00000001 : 0;
+			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_B) ? 0x00000002 : 0;
+			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_X) ? 0x00000004 : 0;
+			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_Y) ? 0x00000008 : 0;
+			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_BACK) ? 0x00000010 : 0;
+			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_GUIDE) ? 0x00000020 : 0;
+			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_START) ? 0x00000040 : 0;
+			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_LEFTSTICK) ? 0x00000080 : 0;
+			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_RIGHTSTICK) ? 0x00000100 : 0;
+			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_LEFTSHOULDER) ? 0x00000200 : 0;
+			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) ? 0x00000400 : 0;
+			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_UP) ? 0x00000800 : 0;
+			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_DOWN) ? 0x00001000 : 0;
+			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_LEFT) ? 0x00002000 : 0;
+			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT) ? 0x00004000 : 0;
 			if (buttons != prev_buttons)
 			{
 				prev_buttons = buttons;
@@ -459,17 +468,17 @@ int SDL_main(int argc, char** argv)
 				outdata[0] = '@';				// joystick button packet marker
 				outdata[1] = buttons&0xFF;		// lower byte of modifiers
 				outdata[2] = (buttons>>8)&0xFF;	// upper byte of modifiers
-				serial.Send(outdata, 3);
+				ctx.serial->Send(outdata, 3);
 			}
 
 			// Axes
 			Axis6 input;
-			input.leftx = SDL_GameControllerGetAxis(gamecontroller, SDL_CONTROLLER_AXIS_LEFTX) / 32767.0f;
-			input.lefty = SDL_GameControllerGetAxis(gamecontroller, SDL_CONTROLLER_AXIS_LEFTY) / 32767.0f;
-			input.rightx = SDL_GameControllerGetAxis(gamecontroller, SDL_CONTROLLER_AXIS_RIGHTX) / 32767.0f;
-			input.righty = SDL_GameControllerGetAxis(gamecontroller, SDL_CONTROLLER_AXIS_RIGHTY) / 32767.0f;
-			input.lefttrigger = SDL_GameControllerGetAxis(gamecontroller, SDL_CONTROLLER_AXIS_TRIGGERLEFT) / 32767.0f;
-			input.righttrigger = SDL_GameControllerGetAxis(gamecontroller, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) / 32767.0f;
+			input.leftx = SDL_GameControllerGetAxis(ctx.gamecontroller, SDL_CONTROLLER_AXIS_LEFTX) / 32767.0f;
+			input.lefty = SDL_GameControllerGetAxis(ctx.gamecontroller, SDL_CONTROLLER_AXIS_LEFTY) / 32767.0f;
+			input.rightx = SDL_GameControllerGetAxis(ctx.gamecontroller, SDL_CONTROLLER_AXIS_RIGHTX) / 32767.0f;
+			input.righty = SDL_GameControllerGetAxis(ctx.gamecontroller, SDL_CONTROLLER_AXIS_RIGHTY) / 32767.0f;
+			input.lefttrigger = SDL_GameControllerGetAxis(ctx.gamecontroller, SDL_CONTROLLER_AXIS_TRIGGERLEFT) / 32767.0f;
+			input.righttrigger = SDL_GameControllerGetAxis(ctx.gamecontroller, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) / 32767.0f;
 			ClampAnalogInput(input, 0.1f, 0.9f);
 			if (prev_input.leftx != input.leftx || prev_input.lefty != input.lefty || prev_input.rightx != input.rightx || prev_input.righty != input.righty || prev_input.lefttrigger != input.lefttrigger || prev_input.righttrigger != input.righttrigger)
 			{
@@ -494,7 +503,7 @@ int SDL_main(int argc, char** argv)
 				outdata[8] = (ry>>8)&0xFF;		// upper byte of right y
 				outdata[9] = lt;				// left trigger
 				outdata[10] = rt;				// right trigger
-				serial.Send(outdata, 11);
+				ctx.serial->Send(outdata, 11);
 			}
 		}
 
@@ -520,15 +529,15 @@ int SDL_main(int argc, char** argv)
 					if (i==53 && keystates[i] == 1 && (modifiers & KMOD_SHIFT))
 					{
 						fprintf(stderr, "rebooting device\n");
-						serial.Send((uint8_t*)"~", 1);
+						ctx.serial->Send((uint8_t*)"~", 1);
 					}
 					else if (i == 0x06 && keystates[i] == 1 && (modifiers & KMOD_CTRL))
 					{
 						fprintf(stderr, "quitting remote process\n");
-						serial.Send((uint8_t*)"\03", 1);
+						ctx.serial->Send((uint8_t*)"\03", 1);
 					}
 					else
-						serial.Send(outdata, 5);
+						ctx.serial->Send(outdata, 5);
 				}
 			}
 
@@ -537,11 +546,12 @@ int SDL_main(int argc, char** argv)
 		}
 	} while(s_alive);
 
-	serial.Close();
+	ctx.serial->Close();
 	fprintf(stderr, "remote connection terminated\n");
 
 	SDL_RemoveTimer(videoTimer);
-	video_capture.Terminate();
+	ctx.video->Terminate();
+	ctx.audio->Terminate();
 
 	SDL_FreeSurface(s_surface);
 	SDL_DestroyWindow(s_window);

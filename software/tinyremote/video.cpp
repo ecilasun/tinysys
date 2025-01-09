@@ -44,8 +44,6 @@ VideoCapture::~VideoCapture()
 
 bool VideoCapture::Initialize(int width, int height)
 {
-	fprintf(stderr, "VideoCapture::Initialize\n");
-
 	frameWidth = width;
 	frameHeight = height;
 
@@ -168,7 +166,7 @@ bool VideoCapture::Initialize(int width, int height)
 		return false;
 	}
 
-	fprintf(stderr, "Found %d capture devices\n", devicecount);
+	fprintf(stderr, "Found %d video capture devices\n", devicecount);
 	for (DWORD i = 0; i < devicecount; i++)
 	{
 		wchar_t *name = nullptr;
@@ -187,7 +185,7 @@ bool VideoCapture::Initialize(int width, int height)
 			continue;
 
 		// Found a non-camera device, use it
-		fprintf(stderr, "Detected a possibly non-camera device(%d): %s\n", i, asciiname);
+		fprintf(stderr, "Using video capture device(%d): %s\n", i, asciiname);
 		selecteddevice = i;
 		break;
 	}
@@ -203,7 +201,7 @@ bool VideoCapture::Initialize(int width, int height)
 		CoTaskMemFree(devices);
 		if (SUCCEEDED(hr))
 		{
-			fprintf(stderr, "Activated device %d\n", selecteddevice);
+			fprintf(stderr, "Activated video capture device %d\n", selecteddevice);
 		}
 		else
 		{
@@ -285,8 +283,6 @@ bool VideoCapture::Initialize(int width, int height)
 
 void VideoCapture::Terminate()
 {
-	fprintf(stderr, "VideoCapture::Terminate\n");
-
 #if defined(CAT_LINUX)
 	free(intermediate);
 
