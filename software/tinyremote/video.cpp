@@ -15,10 +15,11 @@ Display* dpy;
 // Windows
 #endif
 
+// TODO: Use SDL3 so we can unify this
 #if defined(CAT_LINUX) || defined(CAT_MACOS)
 char capturedevicename[512] = "/dev/video0";
 #else // CAT_WINDOWS
-char capturedevicename[512] = "\\\\.\\VIDEO0"; // ???
+char capturedevicename[512] = "capture";
 #endif
 
 // Here's a really nice tutorial on how to do video capture across multiple devices:
@@ -180,16 +181,14 @@ bool VideoCapture::Initialize(int width, int height)
 
 		// Skip things that look like camera devices
 		// TODO: This is a hack, need a better way to detect cameras or non-camera devices
-		if (strstr(asciiname, "cam") != nullptr || strstr(asciiname, "Cam") != nullptr || strstr(asciiname, "CAM") != nullptr)
+		if (strstr(asciiname, capturedevicename) != nullptr)
 		{
-			fprintf(stderr, "Found video capture device(%d): %s\n", i, asciiname);
-			continue;
+			// Found a non-camera device, use it
+			fprintf(stderr, "Using video capture device(%d): %s\n", i, asciiname);
+			selecteddevice = i;
 		}
 
-		// Found a non-camera device, use it
-		fprintf(stderr, "Using video capture device(%d): %s\n", i, asciiname);
-		selecteddevice = i;
-		break;
+		fprintf(stderr, "Found video capture device(%d): %s\n", i, asciiname);
 	}
 
 	// Create a media source for the first device in the list.

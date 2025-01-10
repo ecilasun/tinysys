@@ -3,6 +3,34 @@
 #include <stdio.h>
 #include <string.h>
 
+#if defined(CAT_LINUX) || defined(CAT_MACOS)
+char audiocdevicename[512] = "Line In";
+char audiopdevicename[512] = "Headphones";
+#else // CAT_WINDOWS
+char audiocdevicename[512] = "Line In";
+char audiopdevicename[512] = "Headphones";
+#endif
+
+const char* GetAudioCaptureDeviceName()
+{
+	return audiocdevicename;
+}
+
+const char* GetAudioPlaybackDeviceName()
+{
+	return audiopdevicename;
+}
+
+void SetAudioCaptureDeviceName(const char* name)
+{
+	strcpy(audiocdevicename, name);
+}
+
+void SetAudioPlaybackDeviceName(const char* name)
+{
+	strcpy(audiopdevicename, name);
+}
+
 void audioCaptureCallback(void *userdata, Uint8 *stream, int len)
 {
 	AudioCapture* audio = (AudioCapture*)userdata;
@@ -32,7 +60,7 @@ void AudioCapture::Initialize()
 			const char* name = SDL_GetAudioDeviceName(i, 1);
 			if (!name)
 				continue;
-			if (strstr(name, "Line In") != NULL)
+			if (strstr(name, audiocdevicename) != nullptr)
 			{
 				fprintf(stderr, "Using audio capture device(%d): %s\n", i, name);
 				strcpy(capname, name);
@@ -79,7 +107,7 @@ void AudioCapture::Initialize()
 			const char* name = SDL_GetAudioDeviceName(i, 0);
 			if (!name)
 				continue;
-			if (strstr(name, "Head") != NULL)
+			if (strstr(name, audiopdevicename) != nullptr)
 			{
 				fprintf(stderr, "Using audio playback device(%d): %s\n", i, name);
 				strcpy(playname, name);

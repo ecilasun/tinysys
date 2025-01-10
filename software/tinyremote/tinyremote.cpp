@@ -375,13 +375,19 @@ int SDL_main(int argc, char** argv)
 {
 	const char* cname = GetCommDeviceName();
 	const char* vname = GetVideoDeviceName();
+	const char* acname = GetAudioCaptureDeviceName();
+	const char* apname = GetAudioPlaybackDeviceName();
 
-	fprintf(stderr, "Usage: tinyremote commdevicename capturedevicename\ndefault comm device:%s default capture device:%s\nCtrl+C or PAUSE: quit current remote process\n", cname, vname);
+	fprintf(stderr, "Usage: tinyremote commdevicename videodevname audiocapdevname audioplaydevname\ndefault comm device:%s default capture device:%s\nCtrl+C or PAUSE: quit current remote process\n", cname, vname);
 
 	if (argc > 1)
 		SetCommDeviceName(argv[1]);
 	if (argc > 2)
 		SetVideoDeviceName(argv[2]);
+	if (argc > 3)
+		SetAudioCaptureDeviceName(argv[3]);
+	if (argc > 4)
+		SetAudioPlaybackDeviceName(argv[4]);
 
 	int width = 640;
 	int height = 480;
