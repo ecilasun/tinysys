@@ -81,14 +81,14 @@ void AudioCapture::Initialize()
 			SDL_AudioSpec audioSpecDesired, audioSpecObtained;
 			SDL_zero(audioSpecDesired);
 			SDL_zero(audioSpecObtained);
-			audioSpecDesired.freq = 44100;
+			audioSpecDesired.freq = 48000;
 			audioSpecDesired.format = AUDIO_S16;
 			audioSpecDesired.channels = 2;
 			audioSpecDesired.samples = audioqueuecapacity;
 			audioSpecDesired.callback = audioCaptureCallback;
 			audioSpecDesired.userdata = this;
 
-			selectedrecordingdevice = SDL_OpenAudioDevice(capname, 1, &audioSpecDesired, &audioSpecObtained, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
+			selectedrecordingdevice = SDL_OpenAudioDevice(capname, 1, &audioSpecDesired, &audioSpecObtained, 0/*SDL_AUDIO_ALLOW_FORMAT_CHANGE*/);
 			if (selectedrecordingdevice)
 			{
 				audioqueuecapacity = audioSpecObtained.samples;
@@ -128,14 +128,14 @@ void AudioCapture::Initialize()
 			SDL_AudioSpec audioSpecDesired, audioSpecObtained;
 			SDL_zero(audioSpecDesired);
 			SDL_zero(audioSpecObtained);
-			audioSpecDesired.freq = 44100;
+			audioSpecDesired.freq = 48000;
 			audioSpecDesired.format = AUDIO_S16;
 			audioSpecDesired.channels = 2;
 			audioSpecDesired.samples = audioqueuecapacity;
 			audioSpecDesired.callback = nullptr;
 			audioSpecDesired.userdata = this;
 
-			selectedplaybackdevice = SDL_OpenAudioDevice(playname, 0, &audioSpecDesired, &audioSpecObtained, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
+			selectedplaybackdevice = SDL_OpenAudioDevice(playname, 0, &audioSpecDesired, &audioSpecObtained, 0/*SDL_AUDIO_ALLOW_FORMAT_CHANGE*/);
 			if (selectedplaybackdevice)
 			{
 				fprintf(stderr, "Audio playback device opened: %d, capacity: %d\n", playdev, audioqueuecapacity);
