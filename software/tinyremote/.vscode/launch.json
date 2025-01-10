@@ -8,7 +8,7 @@
             "name": "C++ Launch (Win)",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}\\build\\tinyremote.exe",
+            "program": "${workspaceFolder}\\bin\\tinyremote.exe",
             "args": [],
             "cwd": "${workspaceFolder}\\",
             "stopAtEntry": false,
@@ -19,7 +19,7 @@
             "name": "C++ Launch (Linux / Darwin)",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/build/tinyremote",
+            "program": "${workspaceFolder}/bin/tinyremote",
             "args": [],
             "cwd": "${workspaceFolder}/"
         }
