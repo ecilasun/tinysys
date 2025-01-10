@@ -12,8 +12,14 @@
 
 static bool s_alive = true;
 static SDL_Window* s_window;
+static SDL_Surface* s_outputSurface;
 static SDL_Surface* s_surface;
 static uint8_t *s_videodata;
+static int s_videoWidth;
+static int s_videoHeight;
+static int s_windowWidth;
+static int s_windowHeight;
+static int s_canBlit;
 
 uint32_t videoCallback(uint32_t interval, void* param)
 {
@@ -25,22 +31,28 @@ uint32_t videoCallback(uint32_t interval, void* param)
 	bool haveFrame = video_capture ? video_capture->CaptureFrame(s_videodata) : false;
 	if (haveFrame)
 	{
-		if (SDL_MUSTLOCK(s_surface))
-			SDL_LockSurface(s_surface);
+		if (SDL_MUSTLOCK(s_outputSurface))
+			SDL_LockSurface(s_outputSurface);
 
-		uint32_t* pixels = (uint32_t*)s_surface->pixels;
+		uint32_t* pixels = (uint32_t*)s_outputSurface->pixels;
 		uint32_t* vid = (uint32_t*)s_videodata;
 		for (int y = 0; y < videoheight; ++y)
 		{
 			for (int x = 0; x < videowidth; ++x)
 			{
-				pixels[(y * s_surface->w + x)] = vid[y*videowidth+x];
+				pixels[(y * s_outputSurface->w + x)] = vid[y*videowidth+x];
 			}
 		}
 
-		if (SDL_MUSTLOCK(s_surface))
-			SDL_UnlockSurface(s_surface);
+		if (SDL_MUSTLOCK(s_outputSurface))
+			SDL_UnlockSurface(s_outputSurface);
 
+		if (s_canBlit)
+		{
+			SDL_Rect srcRect = { 0, 0, s_videoWidth, s_videoHeight };
+			SDL_Rect dstRect = { 0, 0, s_windowWidth, s_windowHeight };
+			SDL_BlitScaled(s_outputSurface, &srcRect, s_surface, &dstRect);
+		}
 		SDL_UpdateWindowSurface(s_window);
 	}
 
@@ -389,8 +401,11 @@ int SDL_main(int argc, char** argv)
 	if (argc > 4)
 		SetAudioPlaybackDeviceName(argv[4]);
 
-	int width = 640;
-	int height = 480;
+	s_videoWidth = 640;
+	s_videoHeight = 480;
+	s_windowWidth = 640;
+	s_windowHeight = 480;
+	s_canBlit = 0;
 
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
 	{
@@ -398,18 +413,23 @@ int SDL_main(int argc, char** argv)
 		return -1;
 	}
 
-	s_window = SDL_CreateWindow("tinysys", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
+	s_window = SDL_CreateWindow("tinysys", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, s_windowWidth, s_windowHeight, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+	SDL_SetWindowMinimumSize(s_window, s_videoWidth, s_videoHeight);
+
 	s_surface = SDL_GetWindowSurface(s_window);
+	s_outputSurface = SDL_CreateRGBSurfaceWithFormat(0, s_videoWidth, s_videoHeight, 32, SDL_PIXELFORMAT_ARGB8888);
+	s_canBlit = 1;
+
 	SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1"); // Enable background events for joysticks
 
-	s_videodata = new uint8_t[width*height*4];
+	s_videodata = new uint8_t[s_videoWidth*s_videoHeight*4];
 
 	AppCtx ctx;
 	ctx.gamecontroller = nullptr;
 	ctx.serial = new CSerialPort();
 	ctx.serial->Open();
 	ctx.video = new VideoCapture();
-	ctx.video->Initialize(width, height);
+	ctx.video->Initialize(s_videoWidth, s_videoHeight);
 	ctx.audio = new AudioCapture();
 	ctx.audio->Initialize();
 
@@ -444,6 +464,18 @@ int SDL_main(int argc, char** argv)
 			if (ev.type == SDL_CONTROLLERDEVICEREMOVED)
 			{
 				ControllerRemove(ctx);
+			}
+			if (ev.type == SDL_WINDOWEVENT)
+			{
+				if (ev.window.event == SDL_WINDOWEVENT_RESIZED)
+				{
+					s_canBlit = 0;
+					SDL_FreeSurface(s_surface);
+					s_surface = SDL_GetWindowSurface(s_window);
+					s_windowWidth = ev.window.data1;
+					s_windowHeight = ev.window.data2;
+					s_canBlit = 1;
+				}
 			}
 		}
 

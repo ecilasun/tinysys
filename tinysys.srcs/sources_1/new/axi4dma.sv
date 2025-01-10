@@ -211,7 +211,7 @@ logic [127:0] burstdoutPrev;
 always @(posedge aclk) begin
 	if (burstre) begin
 		burstdout <= burstcache[rburstcursor];
-		burstdoutPrev <= burstcache[rburstcursorPrev];
+		burstdoutPrev <= burstdout;//burstcache[rburstcursorPrev];
 	end
 end
 
