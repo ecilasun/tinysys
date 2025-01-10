@@ -22,7 +22,7 @@ uint32_t videoCallback(uint32_t interval, void* param)
 	const int videowidth = 640;
 	const int videoheight = 480;
 
-	bool haveFrame = video_capture->CaptureFrame(s_videodata);
+	bool haveFrame = video_capture ? video_capture->CaptureFrame(s_videodata) : false;
 	if (haveFrame)
 	{
 		if (SDL_MUSTLOCK(s_surface))
@@ -394,6 +394,7 @@ int SDL_main(int argc, char** argv)
 
 	s_window = SDL_CreateWindow("tinysys", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
 	s_surface = SDL_GetWindowSurface(s_window);
+	SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1"); // Enable background events for joysticks
 
 	s_videodata = new uint8_t[width*height*4];
 

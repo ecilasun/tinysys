@@ -30,6 +30,8 @@ void AudioCapture::Initialize()
 		for (int i = 0; i < numCap; i++)
 		{
 			const char* name = SDL_GetAudioDeviceName(i, 1);
+			if (!name)
+				continue;
 			if (strstr(name, "Line In") != NULL)
 			{
 				fprintf(stderr, "Using audio capture device(%d): %s\n", i, name);
@@ -46,22 +48,24 @@ void AudioCapture::Initialize()
 			fprintf(stderr, "No line in device found\n");
 			return;
 		}
-
-		SDL_AudioSpec audioSpecDesired, audioSpecObtained;
-		SDL_zero(audioSpecDesired);
-		SDL_zero(audioSpecObtained);
-		audioSpecDesired.freq = 44100;
-		audioSpecDesired.format = AUDIO_S16;
-		audioSpecDesired.channels = 2;
-		audioSpecDesired.samples = audioqueuecapacity;
-		audioSpecDesired.callback = audioCaptureCallback;
-		audioSpecDesired.userdata = this;
-
-		selectedrecordingdevice = SDL_OpenAudioDevice(capname, 1, &audioSpecDesired, &audioSpecObtained, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
-		if (selectedrecordingdevice)
+		else
 		{
-			audioqueuecapacity = audioSpecObtained.samples;
-			fprintf(stderr, "Audio capture device opened: %d, capacity: %d\n", capdev, audioqueuecapacity);
+			SDL_AudioSpec audioSpecDesired, audioSpecObtained;
+			SDL_zero(audioSpecDesired);
+			SDL_zero(audioSpecObtained);
+			audioSpecDesired.freq = 44100;
+			audioSpecDesired.format = AUDIO_S16;
+			audioSpecDesired.channels = 2;
+			audioSpecDesired.samples = audioqueuecapacity;
+			audioSpecDesired.callback = audioCaptureCallback;
+			audioSpecDesired.userdata = this;
+
+			selectedrecordingdevice = SDL_OpenAudioDevice(capname, 1, &audioSpecDesired, &audioSpecObtained, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
+			if (selectedrecordingdevice)
+			{
+				audioqueuecapacity = audioSpecObtained.samples;
+				fprintf(stderr, "Audio capture device opened: %d, capacity: %d\n", capdev, audioqueuecapacity);
+			}
 		}
 	}
 
@@ -73,6 +77,8 @@ void AudioCapture::Initialize()
 		for (int i = 0; i < numCap; i++)
 		{
 			const char* name = SDL_GetAudioDeviceName(i, 0);
+			if (!name)
+				continue;
 			if (strstr(name, "Head") != NULL)
 			{
 				fprintf(stderr, "Using audio playback device(%d): %s\n", i, name);
@@ -89,21 +95,23 @@ void AudioCapture::Initialize()
 			fprintf(stderr, "No audio playback device found\n");
 			return;
 		}
-
-		SDL_AudioSpec audioSpecDesired, audioSpecObtained;
-		SDL_zero(audioSpecDesired);
-		SDL_zero(audioSpecObtained);
-		audioSpecDesired.freq = 44100;
-		audioSpecDesired.format = AUDIO_S16;
-		audioSpecDesired.channels = 2;
-		audioSpecDesired.samples = audioqueuecapacity;
-		audioSpecDesired.callback = nullptr;
-		audioSpecDesired.userdata = this;
-
-		selectedplaybackdevice = SDL_OpenAudioDevice(playname, 0, &audioSpecDesired, &audioSpecObtained, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
-		if (selectedplaybackdevice)
+		else
 		{
-			fprintf(stderr, "Audio playback device opened: %d, capacity: %d\n", playdev, audioqueuecapacity);
+			SDL_AudioSpec audioSpecDesired, audioSpecObtained;
+			SDL_zero(audioSpecDesired);
+			SDL_zero(audioSpecObtained);
+			audioSpecDesired.freq = 44100;
+			audioSpecDesired.format = AUDIO_S16;
+			audioSpecDesired.channels = 2;
+			audioSpecDesired.samples = audioqueuecapacity;
+			audioSpecDesired.callback = nullptr;
+			audioSpecDesired.userdata = this;
+
+			selectedplaybackdevice = SDL_OpenAudioDevice(playname, 0, &audioSpecDesired, &audioSpecObtained, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
+			if (selectedplaybackdevice)
+			{
+				fprintf(stderr, "Audio playback device opened: %d, capacity: %d\n", playdev, audioqueuecapacity);
+			}
 		}
 	}
 
@@ -112,6 +120,7 @@ void AudioCapture::Initialize()
 		SDL_PauseAudioDevice(selectedplaybackdevice, 0);
 		fprintf(stderr, "Audio playback device started\n");
 	}
+
 	if (selectedrecordingdevice != 0xFFFFFFFF)
 	{
 		SDL_PauseAudioDevice(selectedrecordingdevice, 0);
