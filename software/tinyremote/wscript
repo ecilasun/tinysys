@@ -73,9 +73,10 @@ def build(bld):
         use=[])
 
     if platform.system().lower().startswith('win'):
-        bld(features='subst', source=glob.glob('3rdparty/SDL2/lib/x64/SDL2.dll'), target=os.path.abspath('build/SDL2.dll'), is_copy=True)
-        bld(features='subst', source=glob.glob('3rdparty/SDL2_ttf/lib/x64/SDL2_ttf.dll'), target=os.path.abspath('build/SDL2_ttf.dll'), is_copy=True)
+        bld(features='subst', source=glob.glob('3rdparty/SDL2/lib/x64/SDL2.dll'), target=os.path.abspath('bin/SDL2.dll'), is_copy=True)
+        bld(features='subst', source=glob.glob('3rdparty/SDL2_ttf/lib/x64/SDL2_ttf.dll'), target=os.path.abspath('bin/SDL2_ttf.dll'), is_copy=True)
+        bld(features='subst', source='tinyremote.exe', target=os.path.abspath('bin/tinyremote.exe'), is_copy=True)
     else:
-        pass
         # bld(features='subst', source=glob.glob('/opt/homebrew/Cellar/sdl2/2.30.5/lib/libSDL2.dylib'), target=os.path.abspath('build/libSDL2.dylib'), is_copy=True)
         # bld(features='subst', source=glob.glob('/opt/homebrew/Cellar/sdl2_ttf/2.22.0/lib/libSDL2_ttf.dylib'), target=os.path.abspath('build/libSDL2_ttf.dylib'), is_copy=True)
+        bld(features='subst', source='tinyremote', target=os.path.abspath('bin/tinyremote'), is_copy=True)
