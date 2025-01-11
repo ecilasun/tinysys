@@ -226,7 +226,8 @@ bool VideoCapture::Initialize(int width, int height)
 			return false;
 		}
 
-		hr = pReader->SetStreamSelection((DWORD)MF_SOURCE_READER_ALL_STREAMS, TRUE);
+		hr = pReader->SetStreamSelection(MF_SOURCE_READER_FIRST_VIDEO_STREAM, TRUE);
+		//hr = pReader->SetStreamSelection(MF_SOURCE_READER_FIRST_AUDIO_STREAM, FALSE); 
 		if (FAILED(hr))
 		{
 			fprintf(stderr, "SetStreamSelection failed\n");
@@ -372,11 +373,6 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata)
 	LONGLONG timestamp;
 	IMFSample *sample = nullptr;
 
-	//FrameData frame;
-	//frame.width = frameWidth;
-	//frame.height = frameHeight;
-	//frame.rgbData = nullptr;
-
 	if (!pReader)
 		return false;
 
@@ -417,6 +413,8 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata)
 			fprintf(stderr, "Failed to lock buffer.\n");
 			return false;
 		}
+		buffer->Release();
+		sample->Release();
 	}
 #endif
 	return true;
