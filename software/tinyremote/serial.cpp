@@ -1,8 +1,11 @@
 #include "serial.h"
 #include <stdio.h>
 
-#if defined(CAT_LINUX) || defined(CAT_MACOS)
-//char commdevicename[512] = "/dev/ttyUSB0";
+#if defined(CAT_LINUX)
+#include <errno.h>
+char commdevicename[512] = "/dev/ttyUSB0";
+#elif defined(CAT_MACOS)
+// MacOS
 char commdevicename[512] = "/dev/ttyACM0";
 #else // CAT_WINDOWS
 char commdevicename[512] = "\\\\.\\COM6";

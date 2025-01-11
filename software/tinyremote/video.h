@@ -3,7 +3,7 @@
 #include "platform.h"
 
 #if defined(CAT_LINUX)
-#include <v4l2.h>
+#include <libv4l2.h>
 #elif defined(CAT_DARWIN)
 // MacOS
 #else // CAT_WINDOWS

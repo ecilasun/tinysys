@@ -54,7 +54,7 @@ def build(bld):
     elif platform.system().lower().startswith('linux'):
         libs = ['X11', 'stdc++', 'SDL2', 'SDL2_ttf']
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_LINUX', 'RELEASE']
-        includes = ['source', 'includes', '/usr/include/SDL2', '../3rdparty/lz4']
+        includes = ['source', 'includes', '/usr/include', '/usr/include/SDL2', '../3rdparty/lz4']
         sdk_lib_path = ['/usr/lib/x86_64-linux-gnu/libv41', '/usr/lib/x86_64-linux-gnu/libSDL2']
         compile_flags = ['-march=native', '-Ofast', '-pthread', '-fomit-frame-pointer', '-Iincludes']
         platform_flags = ['-std=c++20']
