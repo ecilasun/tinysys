@@ -17,16 +17,14 @@ static SDL_Surface* s_surface;
 static uint8_t *s_videodata;
 static int s_videoWidth;
 static int s_videoHeight;
-static int s_windowWidth;
-static int s_windowHeight;
-static int s_canBlit;
+static int s_windowWidth, s_prevWidth;
+static int s_windowHeight, s_prevHeight;
+static bool s_maximized;
+static bool s_restored;
 
 uint32_t videoCallback(uint32_t interval, void* param)
 {
 	VideoCapture* video_capture = (VideoCapture*)param;
-
-	const int videowidth = 640;
-	const int videoheight = 480;
 
 	bool haveFrame = video_capture ? video_capture->CaptureFrame(s_videodata) : false;
 	if (haveFrame)
@@ -36,23 +34,46 @@ uint32_t videoCallback(uint32_t interval, void* param)
 
 		uint32_t* pixels = (uint32_t*)s_outputSurface->pixels;
 		uint32_t* vid = (uint32_t*)s_videodata;
-		for (int y = 0; y < videoheight; ++y)
+		for (int y = 0; y < s_videoHeight; ++y)
 		{
-			for (int x = 0; x < videowidth; ++x)
+			for (int x = 0; x < s_videoWidth; ++x)
 			{
-				pixels[(y * s_outputSurface->w + x)] = vid[y*videowidth+x];
+				pixels[(y * s_outputSurface->w + x)] = vid[y*s_videoWidth+x];
 			}
 		}
 
 		if (SDL_MUSTLOCK(s_outputSurface))
 			SDL_UnlockSurface(s_outputSurface);
 
-		if (s_canBlit)
+		if (s_windowWidth != s_prevWidth || s_windowHeight != s_prevHeight)
 		{
-			SDL_Rect srcRect = { 0, 0, s_videoWidth, s_videoHeight };
-			SDL_Rect dstRect = { 0, 0, s_windowWidth, s_windowHeight };
-			SDL_BlitScaled(s_outputSurface, &srcRect, s_surface, &dstRect);
+			s_prevWidth = s_windowWidth;
+			s_prevHeight = s_windowHeight;
+
+			SDL_FreeSurface(s_surface);
+
+			s_surface = SDL_GetWindowSurface(s_window);
+
+			fprintf(stderr, "Window resized to %dx%d", s_windowWidth, s_windowHeight);
+			if (s_maximized)
+			{
+				s_maximized = false;
+				//SDL_SetWindowBordered(s_window, SDL_FALSE);
+				fprintf(stderr, " and maximized\n");
+			}
+			else if (s_restored)
+			{
+				s_restored = false;
+				//SDL_SetWindowBordered(s_window, SDL_TRUE);
+				fprintf(stderr, " and restored\n");
+			}
+			else
+				fprintf(stderr, "\n");
 		}
+
+		SDL_Rect srcRect = { 0, 0, s_videoWidth, s_videoHeight };
+		SDL_Rect dstRect = { 0, 0, s_windowWidth, s_windowHeight };
+		SDL_BlitScaled(s_outputSurface, &srcRect, s_surface, &dstRect);
 		SDL_UpdateWindowSurface(s_window);
 	}
 
@@ -403,9 +424,10 @@ int SDL_main(int argc, char** argv)
 
 	s_videoWidth = 640;
 	s_videoHeight = 480;
-	s_windowWidth = 640;
-	s_windowHeight = 480;
-	s_canBlit = 0;
+	s_windowWidth = s_prevWidth = 640;
+	s_windowHeight = s_prevHeight = 480;
+	s_maximized = false;
+	s_restored = false;
 
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
 	{
@@ -418,7 +440,6 @@ int SDL_main(int argc, char** argv)
 
 	s_surface = SDL_GetWindowSurface(s_window);
 	s_outputSurface = SDL_CreateRGBSurfaceWithFormat(0, s_videoWidth, s_videoHeight, 32, SDL_PIXELFORMAT_ARGB8888);
-	s_canBlit = 1;
 
 	SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1"); // Enable background events for joysticks
 
@@ -467,14 +488,24 @@ int SDL_main(int argc, char** argv)
 			}
 			if (ev.type == SDL_WINDOWEVENT)
 			{
-				if (ev.window.event == SDL_WINDOWEVENT_RESIZED)
+				/*if (ev.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
 				{
-					s_canBlit = 0;
-					SDL_FreeSurface(s_surface);
-					s_surface = SDL_GetWindowSurface(s_window);
+					// Can we clamp size to certain multiples here?
+				}*/
+				if (ev.window.event == SDL_WINDOWEVENT_MAXIMIZED)
+				{
+					fprintf(stderr, "Window maximized\n");
+					s_maximized = true;
+				}
+				else if (ev.window.event == SDL_WINDOWEVENT_RESTORED)
+				{
+					fprintf(stderr, "Window restored\n");
+					s_restored = true;
+				}
+				else if (ev.window.event == SDL_WINDOWEVENT_RESIZED)
+				{
 					s_windowWidth = ev.window.data1;
 					s_windowHeight = ev.window.data2;
-					s_canBlit = 1;
 				}
 			}
 		}
