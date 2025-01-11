@@ -435,7 +435,7 @@ int SDL_main(int argc, char** argv)
 		return -1;
 	}
 
-	s_window = SDL_CreateWindow("tinysys", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, s_windowWidth, s_windowHeight, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+	s_window = SDL_CreateWindow("tinyremote", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, s_windowWidth, s_windowHeight, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 	SDL_SetWindowMinimumSize(s_window, s_videoWidth, s_videoHeight);
 
 	s_surface = SDL_GetWindowSurface(s_window);
