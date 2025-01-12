@@ -2775,7 +2775,7 @@
 			)
 		)
 		(property "Value" "3.3uf"
-			(at 3.8625 0 90)
+			(at 6.4625 -0.061222 90)
 			(layer "B.Fab")
 			(uuid "e1bf0d9f-8b7f-4098-ab6b-2376051d4107")
 			(effects
@@ -3072,7 +3072,7 @@
 			)
 		)
 		(property "Value" "33KOhm"
-			(at 0 -1.43 0)
+			(at -1.6195 1.223 0)
 			(layer "B.Fab")
 			(uuid "b62bf661-6c35-448f-98c2-e7529b95a146")
 			(effects
@@ -3364,7 +3364,7 @@
 			)
 		)
 		(property "Value" "3.3uf"
-			(at 4.0125 -0.111111 90)
+			(at 6.4175 -0.013 90)
 			(layer "B.Fab")
 			(uuid "2015000f-150d-4861-9021-f144ff13d78a")
 			(effects
@@ -3756,7 +3756,7 @@
 			)
 		)
 		(property "Value" "330Ohm"
-			(at 4.135001 -0.135001 0)
+			(at 0.0875 1.618 0)
 			(layer "B.Fab")
 			(uuid "2cf3cde3-731a-4da7-b613-054d8d29868b")
 			(effects
@@ -6107,7 +6107,7 @@
 			)
 		)
 		(property "Value" "10uf"
-			(at 3.6322 -0.0508 0)
+			(at 3.5445 1.242 0)
 			(layer "B.Fab")
 			(uuid "6ac9ad1b-8a6e-446a-a8f2-079ecbf4e874")
 			(effects
@@ -6395,7 +6395,7 @@
 			)
 		)
 		(property "Value" "1uf"
-			(at -3.0125 -0.172223 90)
+			(at -4.3855 -0.172223 90)
 			(layer "B.Fab")
 			(uuid "1d0d5fbb-c11c-4f72-8835-8e992fc36bf5")
 			(effects
@@ -6703,7 +6703,7 @@
 			)
 		)
 		(property "Value" "10KOhm"
-			(at -5.1125 -0.1 0)
+			(at -7.9605 -0.172 0)
 			(layer "B.Fab")
 			(uuid "155a229e-838e-4325-88cd-48ed73a5c019")
 			(effects
@@ -7475,7 +7475,7 @@
 			)
 		)
 		(property "Value" "10KOhm"
-			(at -5.2125 -0.075 0)
+			(at -7.8335 -0.075 0)
 			(layer "B.Fab")
 			(uuid "cac960f4-d040-4ae9-8e06-2d2c1aacfbe7")
 			(effects
@@ -11239,7 +11239,7 @@
 			)
 		)
 		(property "Value" "0.1uf"
-			(at 0 -1.43 0)
+			(at -5.8425 -0.029 0)
 			(layer "B.Fab")
 			(uuid "279810f5-7775-4792-bcd0-0414e8268609")
 			(effects
@@ -12439,7 +12439,7 @@
 			)
 		)
 		(property "Value" "33Ohm"
-			(at -4.5625 0.1524 0)
+			(at -6.5325 0.1524 0)
 			(layer "B.Fab")
 			(uuid "9a6f9dc2-2b7e-4066-8fda-1e9c94759d6f")
 			(effects
@@ -12677,7 +12677,7 @@
 			)
 		)
 		(property "Value" "0.1uf"
-			(at 0 -1.43 0)
+			(at -5.8425 0.277 0)
 			(layer "B.Fab")
 			(uuid "d3096a16-0729-4f81-95d2-f5d2a36aba85")
 			(effects
@@ -13480,7 +13480,7 @@
 			)
 		)
 		(property "Value" "10KOhm"
-			(at -5.0125 -0.125 0)
+			(at -7.9605 0.025 0)
 			(layer "B.Fab")
 			(uuid "b3d93621-ad71-43c1-978b-4e47559cb84d")
 			(effects
@@ -14776,7 +14776,7 @@
 			)
 		)
 		(property "Value" "10KOhm"
-			(at -4.1125 0 0)
+			(at -7.6945 -0.155 0)
 			(layer "B.Fab")
 			(uuid "1dec59c8-a83c-4beb-b4ce-4ac801be26c4")
 			(effects
@@ -15002,7 +15002,7 @@
 		(descr "Capacitor SMD 0805 (2012 Metric), square (rectangular) end terminal, IPC_7351 nominal with elongated pad for handsoldering. (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf, https://docs.google.com/spreadsheets/d/1BsfQQcO9C6DZCsRaXUlFlo91Tg2WpOkGARC1WS5S8t0/edit?usp=sharing), generated with kicad-footprint-generator")
 		(tags "capacitor handsolder")
 		(property "Reference" "C6"
-			(at 3.0422 -0.023 180)
+			(at 3.0422 -0.023 360)
 			(layer "B.SilkS")
 			(uuid "603eacdb-a3fa-4b87-8698-8f3484789e5a")
 			(effects
@@ -15064,9 +15064,8 @@
 			)
 		)
 		(property "Value" "10uf"
-			(at 3.174999 -0.025399 90)
+			(at 5.5812 0.09 90)
 			(layer "B.Fab")
-			(hide yes)
 			(uuid "eb8bb837-6260-408b-9e04-572311910ae5")
 			(effects
 				(font
@@ -15356,7 +15355,7 @@
 			)
 		)
 		(property "Value" "470Ohm"
-			(at -5.0625 0.161111 90)
+			(at -6.0815 0.013333 90)
 			(layer "B.Fab")
 			(uuid "14938c71-ebda-4028-b92a-0f6f5bfe736a")
 			(effects
@@ -15631,7 +15630,7 @@
 			)
 		)
 		(property "Value" "33Ohm"
-			(at -4.5625 0.1524 0)
+			(at -6.4055 0.1524 0)
 			(layer "B.Fab")
 			(uuid "e59e67fc-1391-466b-9887-09b604312304")
 			(effects
@@ -16445,7 +16444,7 @@
 			)
 		)
 		(property "Value" "33Ohm"
-			(at -4.5625 0.1524 0)
+			(at -6.4055 0.177 0)
 			(layer "B.Fab")
 			(uuid "ebd6bcd4-ad80-4430-afc9-1c75e17d9ec0")
 			(effects
@@ -16727,7 +16726,7 @@
 			)
 		)
 		(property "Value" "10KOhm"
-			(at -4.9125 0.0508 90)
+			(at -4.3855 -1.558889 90)
 			(layer "B.Fab")
 			(uuid "128a27aa-6f83-4974-a58a-f26a51a7c6d9")
 			(effects
@@ -17083,7 +17082,7 @@
 			)
 		)
 		(property "Value" "10KOhm"
-			(at 0 -1.43 0)
+			(at -6.8085 0.1 0)
 			(layer "B.Fab")
 			(uuid "acf8f4bc-6229-4c2f-a857-d80207933562")
 			(effects
@@ -17339,7 +17338,7 @@
 			)
 		)
 		(property "Value" "33Ohm"
-			(at -4.5625 0.1524 0)
+			(at -6.4055 0.177 0)
 			(layer "B.Fab")
 			(uuid "e9e0cd49-7c16-4378-9acd-cdd621d046dd")
 			(effects
@@ -17622,7 +17621,7 @@
 			)
 		)
 		(property "Value" "3.3uf"
-			(at 3.9125 0.0625 0)
+			(at 6.6045 0.1145 0)
 			(layer "B.Fab")
 			(uuid "8471be35-4f5a-4c5b-8dbf-382e617371ba")
 			(effects
@@ -18224,7 +18223,7 @@
 			)
 		)
 		(property "Value" "10KOhm"
-			(at 4.8125 -0.15 0)
+			(at 7.8335 0.032 0)
 			(layer "B.Fab")
 			(uuid "53d4cec0-0a92-4c9c-974d-2bf6b5009c8a")
 			(effects
@@ -18842,7 +18841,7 @@
 			)
 		)
 		(property "Value" "1uf"
-			(at 3.2625 -0.033333 90)
+			(at 4.5575 0.082445 90)
 			(layer "B.Fab")
 			(uuid "fca02d52-acaf-4b58-9409-d55d4d5af1e8")
 			(effects
@@ -20168,7 +20167,7 @@
 			)
 		)
 		(property "Value" "33Ohm"
-			(at 4.7125 -0.122222 90)
+			(at 6.9705 -0.092444 90)
 			(layer "B.Fab")
 			(uuid "9ac628a7-e84f-4e3b-be96-ed80379a8b6f")
 			(effects
@@ -20593,7 +20592,7 @@
 			)
 		)
 		(property "Value" "0.1uf"
-			(at 3.6375 0.0625 0)
+			(at 6.6295 -0.1535 0)
 			(layer "B.Fab")
 			(uuid "5a0b8b9c-2e64-44d3-b913-7be865c28f17")
 			(effects
@@ -21142,7 +21141,7 @@
 		(descr "Capacitor SMD 0805 (2012 Metric), square (rectangular) end terminal, IPC_7351 nominal with elongated pad for handsoldering. (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf, https://docs.google.com/spreadsheets/d/1BsfQQcO9C6DZCsRaXUlFlo91Tg2WpOkGARC1WS5S8t0/edit?usp=sharing), generated with kicad-footprint-generator")
 		(tags "capacitor handsolder")
 		(property "Reference" "C7"
-			(at 3.0422 0.129 180)
+			(at 3.0422 0.129 360)
 			(layer "B.SilkS")
 			(uuid "be9bd06c-8207-4ca8-8558-590cb107a337")
 			(effects
@@ -21185,9 +21184,8 @@
 			)
 		)
 		(property "Value" "10uf"
-			(at 3.149599 0.025401 90)
+			(at 5.5812 -0.037 90)
 			(layer "B.Fab")
-			(hide yes)
 			(uuid "bcc80869-baf4-4bcb-9eae-a3502821310f")
 			(effects
 				(font
@@ -21474,7 +21472,7 @@
 			)
 		)
 		(property "Value" "470Ohm"
-			(at -4.9125 0.122222 90)
+			(at -6.0365 -0.066111 90)
 			(layer "B.Fab")
 			(uuid "439d3c50-147f-4894-83b9-29dbbd9ae94c")
 			(effects
@@ -22182,7 +22180,7 @@
 			)
 		)
 		(property "Value" "10KOhm"
-			(at -4.8125 0.038888 90)
+			(at -1.7635 1.76011 90)
 			(layer "B.Fab")
 			(uuid "ed8f6080-dd47-4763-a414-6280e19c561f")
 			(effects
@@ -22475,7 +22473,7 @@
 			)
 		)
 		(property "Value" "510Ohm"
-			(at 5.1125 -0.05 0)
+			(at 7.7065 0.031 0)
 			(layer "B.Fab")
 			(uuid "733c3855-f5f7-4726-a301-e8c975bac8bd")
 			(effects
@@ -22887,7 +22885,7 @@
 			)
 		)
 		(property "Value" "10KOhm"
-			(at -5.025 -0.075 0)
+			(at -7.846 -0.075 0)
 			(layer "B.Fab")
 			(uuid "726414ae-695a-4274-acfc-06b1e4eb9ba9")
 			(effects
@@ -23361,7 +23359,7 @@
 			)
 		)
 		(property "Value" "33Ohm"
-			(at 4.5125 0.016667 90)
+			(at 7.0525 0.018222 90)
 			(layer "B.Fab")
 			(uuid "e41d1426-616f-4656-8ba2-e6b4f09726da")
 			(effects
