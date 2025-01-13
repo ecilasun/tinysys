@@ -13418,6 +13418,17 @@
 		)
 		(uuid "1aaadbb0-02c1-4fd7-a081-4cbc58ef38f4")
 	)
+	(text "OR 1K"
+		(exclude_from_sim no)
+		(at 243.078 234.95 0)
+		(effects
+			(font
+				(size 0.762 0.762)
+			)
+			(justify left)
+		)
+		(uuid "25e7f3f4-f831-484e-904a-07f8050f7258")
+	)
 	(text "Configuration I2C"
 		(exclude_from_sim no)
 		(at 147.32 258.572 0)
@@ -13473,6 +13484,17 @@
 		)
 		(uuid "471a644a-008e-4c9d-8740-833452ad4073")
 	)
+	(text "OR 5K"
+		(exclude_from_sim no)
+		(at 247.904 251.46 0)
+		(effects
+			(font
+				(size 0.762 0.762)
+			)
+			(justify left)
+		)
+		(uuid "5b32250f-0739-4d2c-b083-20c8f08722b1")
+	)
 	(text "Micro SD Card"
 		(exclude_from_sim no)
 		(at 24.13 21.59 0)
@@ -13505,6 +13527,17 @@
 			(justify left)
 		)
 		(uuid "703c72d3-28ca-45c8-9c4a-7944e68e2510")
+	)
+	(text "OR 5K"
+		(exclude_from_sim no)
+		(at 275.59 255.524 0)
+		(effects
+			(font
+				(size 0.762 0.762)
+			)
+			(justify left)
+		)
+		(uuid "725ad50b-6943-4662-aeef-85e4e5761ea2")
 	)
 	(text "A/V HDMI output"
 		(exclude_from_sim no)
@@ -13626,6 +13659,17 @@
 			(justify left bottom)
 		)
 		(uuid "c7d8d21e-5dd0-4fd8-91b8-ee80ec3d4d2a")
+	)
+	(text "OR 11.5K"
+		(exclude_from_sim no)
+		(at 264.414 236.982 0)
+		(effects
+			(font
+				(size 0.762 0.762)
+			)
+			(justify left)
+		)
+		(uuid "cc0c972d-6386-4e70-a3c4-6fc5538c8118")
 	)
 	(text "Use FPGA internal pullup\nor 4.7KOhm resistors tied to IOVCC"
 		(exclude_from_sim no)

@@ -22,4 +22,7 @@
   (lib (name "ESP32S3")(type "KiCad")(uri "${KIPRJMOD}/ESP32_S3/2024-11-30_22-27-31.kicad_sym")(options "")(descr ""))
   (lib (name "MAX20022")(type "KiCad")(uri "${KIPRJMOD}/MAX20022ATIA/2024-12-23_10-42-40.kicad_sym")(options "")(descr ""))
   (lib (name "SII1136CTU")(type "KiCad")(uri "${KIPRJMOD}/SII1136CTU/SII1136CTU.kicad_sym")(options "")(descr ""))
+  (lib (name "2086581051")(type "KiCad")(uri "${KIPRJMOD}/2086581051/2086581051.kicad_sym")(options "")(descr ""))
+  (lib (name "12402012E212A")(type "KiCad")(uri "${KIPRJMOD}/12402012E212A/12402012E212A.kicad_sym")(options "")(descr ""))
+  (lib (name "LTST-C195KGJRKT")(type "KiCad")(uri "${KIPRJMOD}/LTST_C195KGJRKT/LTST-C195KGJRKT.kicad_sym")(options "")(descr ""))
 )
