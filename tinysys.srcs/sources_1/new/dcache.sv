@@ -117,7 +117,6 @@ uncachedmemorycontroller uncachedmemorycontrollerinst(
 	.m_axi(a4busuncached) );
 
 typedef enum logic [4:0] {
-	CRESET,
 	IDLE,
 	CWRITE, CREAD,
 	UCWRITE, UCWRITEDELAY, UCREAD, UCREADDELAY,
@@ -125,7 +124,7 @@ typedef enum logic [4:0] {
 	CPOPULATE, CPOPULATEWAIT, CUPDATE, CUPDATEDELAY,
 	CDISCARDBEGIN, CDISCARDSTEP,
 	CFLUSHBEGIN, CFLUSHWAITCREAD, CFLUSH, CFLUSHSKIP, CFLUSHWAIT } cachestatetype;
-cachestatetype cachestate = CRESET;
+cachestatetype cachestate;
 
 wire countdone = dccount == 9'h1FF;
 
@@ -140,7 +139,7 @@ always_ff @(posedge aclk) begin
 		ucre <= 1'b0;
 		flushtag <= 14'd0;
 		dccount <= 9'd0;
-		cachestate <= CRESET;
+		cachestate <= IDLE;
 		ptag <= 14'd0;
 		ctag <= 14'd0;
 		cline <= 9'd0;
@@ -157,12 +156,6 @@ always_ff @(posedge aclk) begin
 		cachewe <= 64'd0;
 
 		unique case(cachestate)
-			CRESET: begin
-				rwmode <= 2'b00;
-				dccount <= 9'd0;
-				cachestate <= IDLE;
-			end
-
 			IDLE : begin
 				rwmode <= {ren, |wstrb};		// Record r/w mode
 				bsel <= wstrb;					// Write byte select

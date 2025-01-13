@@ -45,7 +45,6 @@ assign m_axi.awburst = BURST_INCR;	// auto address increment for burst
 // ------------------------------------------------------------------------------------
 
 typedef enum logic [3:0] {
-	INIT,
 	WCMD, DISPATCH,
 	DMASOURCE, DMATARGET, DMABURST, DMASTART, DMATAG,
 	FINALIZE } dmacmdmodetype;
@@ -84,17 +83,12 @@ always_ff @(posedge aclk) begin
 		dmasingleburstcount <= 8'd0;
 		dwre <= 1'b0;
 		ddin <= 70'd0;
-		cmdmode <= INIT;
+		cmdmode <= WCMD;
 	end else begin
 		cmdre <= 1'b0;
 		dwre <= 1'b0;
 	
 		case (cmdmode)
-			INIT: begin
-				dmacmd <= 32'd0;
-				cmdmode <= WCMD;
-			end
-
 			WCMD: begin
 				if (dmafifovalid && ~dmafifoempty) begin
 					dmacmd <= dmafifodout;
@@ -189,7 +183,6 @@ logic [7:0] wsingleburstcount;
 // ------------------------------------------------------------------------------------
 
 logic [7:0] rburstcursor;
-logic [7:0] rburstcursorPrev;
 logic [7:0] wburstcursor;
 logic [127:0] burstcache[0:255];
 
@@ -209,9 +202,14 @@ logic burstre;
 logic [127:0] burstdout;
 logic [127:0] burstdoutPrev;
 always @(posedge aclk) begin
-	if (burstre) begin
-		burstdout <= burstcache[rburstcursor];
-		burstdoutPrev <= burstdout;//burstcache[rburstcursorPrev];
+	if (~delayedresetn) begin
+		burstdout <= 128'd0;
+		burstdoutPrev <= 128'd0;
+	end else begin
+		if (burstre) begin
+			burstdout <= burstcache[rburstcursor];
+			burstdoutPrev <= burstdout;
+		end
 	end
 end
 
@@ -233,7 +231,6 @@ wire [15:0] automask = {
 	|targetAlignedBytes[31:24], |targetAlignedBytes[23:16], |targetAlignedBytes[15:8], |targetAlignedBytes[7:0] };
 
 typedef enum logic [3:0] {
-	WINIT,
 	DMACMD, DMABEGIN,
 	WAITREADADDR, READLOOP, SETUPWRITE, WAITWRITEADDR, WRITEBEGIN, WRITELOOP, WRITETRAIL,
 	WFINALIZE } workercmdtype;
@@ -251,7 +248,6 @@ always @(posedge aclk) begin
 		burstwe <= 1'b0;
 		burstre <= 1'b0;
 		rburstcursor <= 8'd0;
-		rburstcursorPrev <= 8'd0;
 		wburstcursor <= 8'd0;
 		wmasked <= 1'b0;
 		wmisaligned <= 1'b0;
@@ -261,18 +257,13 @@ always @(posedge aclk) begin
 		leadingMask <= 16'h0000;
 		trailingMask <= 16'h0000;
 		dre <= 1'b0;
-		workmode <= WINIT;
+		workmode <= DMACMD;
 	end else begin
 		burstwe <= 1'b0;
 		burstre <= 1'b0;
 		dre <= 1'b0;
 
 		case (workmode)
-			WINIT: begin
-				// TODO:
-				workmode <= DMACMD;
-			end
-
 			DMACMD: begin
 				if (dvalid && ~dempty) begin
 					{wmisaligned, wmasked, wsingleburstcount, wsourceaddr, wtargetaddr} <= ddout;
@@ -327,11 +318,7 @@ always @(posedge aclk) begin
 				m_axi.awvalid <= 1;
 				m_axi.awaddr <= wtargetaddr;
 
-				// First read from the cache
-				rburstcursor <= 8'h00;
-				rburstcursorPrev <= 8'hFF;
 				burstre <= 1'b1;
-
 				workmode <= WAITWRITEADDR;
 			end
 
@@ -350,8 +337,7 @@ always @(posedge aclk) begin
 					{wmasked, midburst}:	m_axi.wstrb <= automask;
 					{!wmasked, firstburst}:	m_axi.wstrb <= leadingMask;
 					{!wmasked, lastburst}:	m_axi.wstrb <= trailingMask;
-					{!wmasked, midburst}:	m_axi.wstrb <= 16'hFFFF;
-					default:				m_axi.wstrb <= 16'hFFFF;
+					default:				m_axi.wstrb <= 16'hFFFF; // {!wmasked, midburst}
 				endcase
 
 				m_axi.wdata <= targetAlignedBytes;
@@ -360,7 +346,6 @@ always @(posedge aclk) begin
 
 				// Set up for next read
 				rburstcursor <= rburstcursor + 8'h01;
-				rburstcursorPrev <= rburstcursorPrev + 8'h01;
 				burstre <= 1'b1;
 
 				workmode <= WRITELOOP;
