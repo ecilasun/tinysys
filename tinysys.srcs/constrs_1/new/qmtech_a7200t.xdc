@@ -79,27 +79,46 @@ set_property PULLTYPE PULLUP [get_ports sdcard_swtch]
 ## set_property -dict {PACKAGE_PIN Y18 IOSTANDARD LVCMOS33} [get_ports spi_swtch]
 
 ## ------------------------------------------------------------------------------------------------------
+## 24bpp (8:8:8) Video output - on-chip HDMI
+## ------------------------------------------------------------------------------------------------------
+
+set_property -dict {PACKAGE_PIN Y4 IOSTANDARD TMDS_33} [get_ports HDMI_CLK_p]
+set_property -dict {PACKAGE_PIN AA4 IOSTANDARD TMDS_33} [get_ports HDMI_CLK_n]
+set_property -dict {PACKAGE_PIN Y3 IOSTANDARD TMDS_33} [get_ports HDMI_TMDS_p[0]]
+set_property -dict {PACKAGE_PIN AA3 IOSTANDARD TMDS_33} [get_ports HDMI_TMDS_n[0]]
+set_property -dict {PACKAGE_PIN V4 IOSTANDARD TMDS_33} [get_ports HDMI_TMDS_p[1]]
+set_property -dict {PACKAGE_PIN W4 IOSTANDARD TMDS_33} [get_ports HDMI_TMDS_n[1]]
+set_property -dict {PACKAGE_PIN AB3 IOSTANDARD TMDS_33} [get_ports HDMI_TMDS_p[2]]
+set_property -dict {PACKAGE_PIN AB2 IOSTANDARD TMDS_33} [get_ports HDMI_TMDS_n[2]]
+
+# CEC, SDA, SCL, DPD_DET
+#set_property -dict { PACKAGE_PIN ??? IOSTANDARD LVCMOS33 } [get_ports HDMI_CEC]
+#set_property -dict { PACKAGE_PIN ??? IOSTANDARD LVCMOS33 } [get_ports HDMI_SDA]
+#set_property -dict { PACKAGE_PIN ??? IOSTANDARD LVCMOS33 } [get_ports HDMI_SCL]
+#set_property -dict { PACKAGE_PIN ??? IOSTANDARD LVCMOS33 } [get_ports HDMI_HPD]
+
+## ------------------------------------------------------------------------------------------------------
 ## 12bpp (4:4:4) Video output - SII164CTG64
 ## ------------------------------------------------------------------------------------------------------
 
 ## 2D/2E/2F
 ## 12bpp output
-set_property -dict {PACKAGE_PIN AA3 IOSTANDARD LVCMOS33} [get_ports vvsync]
-set_property -dict {PACKAGE_PIN Y3 IOSTANDARD LVCMOS33} [get_ports vhsync]
-set_property -dict {PACKAGE_PIN W4 IOSTANDARD LVCMOS33} [get_ports vde]
-set_property -dict {PACKAGE_PIN V4 IOSTANDARD LVCMOS33} [get_ports vclk]
-set_property -dict {PACKAGE_PIN AB2 IOSTANDARD LVCMOS33} [get_ports {vdat[0]}]
-set_property -dict {PACKAGE_PIN AB3 IOSTANDARD LVCMOS33} [get_ports {vdat[1]}]
-set_property -dict {PACKAGE_PIN AB1 IOSTANDARD LVCMOS33} [get_ports {vdat[2]}]
-set_property -dict {PACKAGE_PIN AA1 IOSTANDARD LVCMOS33} [get_ports {vdat[3]}]
-set_property -dict {PACKAGE_PIN Y1 IOSTANDARD LVCMOS33} [get_ports {vdat[4]}]
-set_property -dict {PACKAGE_PIN W1 IOSTANDARD LVCMOS33} [get_ports {vdat[5]}]
-set_property -dict {PACKAGE_PIN U1 IOSTANDARD LVCMOS33} [get_ports {vdat[6]}]
-set_property -dict {PACKAGE_PIN T1 IOSTANDARD LVCMOS33} [get_ports {vdat[7]}]
-set_property -dict {PACKAGE_PIN U5 IOSTANDARD LVCMOS33} [get_ports {vdat[8]}]
-set_property -dict {PACKAGE_PIN T5 IOSTANDARD LVCMOS33} [get_ports {vdat[9]}]
-set_property -dict {PACKAGE_PIN T4 IOSTANDARD LVCMOS33} [get_ports {vdat[10]}]
-set_property -dict {PACKAGE_PIN R4 IOSTANDARD LVCMOS33} [get_ports {vdat[11]}]
+## set_property -dict {PACKAGE_PIN AA3 IOSTANDARD LVCMOS33} [get_ports vvsync]
+## set_property -dict {PACKAGE_PIN Y3 IOSTANDARD LVCMOS33} [get_ports vhsync]
+## set_property -dict {PACKAGE_PIN W4 IOSTANDARD LVCMOS33} [get_ports vde]
+## set_property -dict {PACKAGE_PIN V4 IOSTANDARD LVCMOS33} [get_ports vclk]
+## set_property -dict {PACKAGE_PIN AB2 IOSTANDARD LVCMOS33} [get_ports {vdat[0]}]
+## set_property -dict {PACKAGE_PIN AB3 IOSTANDARD LVCMOS33} [get_ports {vdat[1]}]
+## set_property -dict {PACKAGE_PIN AB1 IOSTANDARD LVCMOS33} [get_ports {vdat[2]}]
+## set_property -dict {PACKAGE_PIN AA1 IOSTANDARD LVCMOS33} [get_ports {vdat[3]}]
+## set_property -dict {PACKAGE_PIN Y1 IOSTANDARD LVCMOS33} [get_ports {vdat[4]}]
+## set_property -dict {PACKAGE_PIN W1 IOSTANDARD LVCMOS33} [get_ports {vdat[5]}]
+## set_property -dict {PACKAGE_PIN U1 IOSTANDARD LVCMOS33} [get_ports {vdat[6]}]
+## set_property -dict {PACKAGE_PIN T1 IOSTANDARD LVCMOS33} [get_ports {vdat[7]}]
+## set_property -dict {PACKAGE_PIN U5 IOSTANDARD LVCMOS33} [get_ports {vdat[8]}]
+## set_property -dict {PACKAGE_PIN T5 IOSTANDARD LVCMOS33} [get_ports {vdat[9]}]
+## set_property -dict {PACKAGE_PIN T4 IOSTANDARD LVCMOS33} [get_ports {vdat[10]}]
+## set_property -dict {PACKAGE_PIN R4 IOSTANDARD LVCMOS33} [get_ports {vdat[11]}]
 
 ## Add the following if using 24bpp (NOTE: Boards 2D/2E/2F do not have these connected!)
 ## set_property -dict {PACKAGE_PIN ?? IOSTANDARD LVCMOS33} [get_ports {vdat[12]}]

@@ -6,14 +6,18 @@ import axi4pkg::*;
 module videocore(
 	input wire aclk,
 	input wire clk25,
+	input wire clk125,
 	input wire aresetn,
 	input wire rst25n,
 	axi4if.master m_axi,
-	output wire vvsync,
-	output wire vhsync,
-	output wire vclk,
-	output wire vde,
-	output wire [11:0] vdat,
+	output wire HDMI_CLK_p,
+	output wire HDMI_CLK_n,
+	output wire [2:0] HDMI_TMDS_p,
+	output wire [2:0] HDMI_TMDS_n,
+	//input wire HDMI_CEC,
+	//inout wire HDMI_SDA,
+	//inout wire HDMI_SCL,
+	//input wire HDMI_HPD,
 	input wire vpufifoempty,
 	input wire [31:0] vpufifodout,
 	output wire vpufifore,
@@ -21,11 +25,56 @@ module videocore(
 	output wire [31:0] vpustate,
 	output wire hirq);
 
-// A simple video unit with the following features:
-// - Four video output modes (320x240 or 640x480, indexed or 16bpp)
-// - Framebuffer scan-out from any cache aligned memory location in mapped device memory
-// - Frame counter support for vsync implementations
-// - Memory mapped command buffer interface
+// --------------------------------------------------
+// HDMI video output 640x480 @ 60Hz
+// --------------------------------------------------
+
+wire [11:0] video_x;
+wire [11:0] video_y;
+wire notblank = (video_x < 12'd640) && (video_y < 12'd480);
+
+wire [23:0] rgbdat;
+wire [2:0] tmds;
+wire tmds_clock;
+
+wire clk_audio;
+logic [10:0] vcounter;
+always_ff @(posedge clk25) begin
+	if (~rst25n) begin
+		vcounter <= 11'd0;
+	end else begin
+    	vcounter <= vcounter == 11'd1546 ? 11'd0 : vcounter + 11'd1;
+    end
+end
+assign clk_audio = clk25 && vcounter == 11'd1546;
+
+hdmi #(.VIDEO_ID_CODE(1), .IT_CONTENT(1'b1), .VIDEO_REFRESH_RATE(60.0), .VENDOR_NAME({"tinysys", 8'd0})) HDMIInst(
+    .clk_pixel_x5(clk125),	// video clock x5
+    .clk_pixel(clk25),		// 25 MHz video clock
+    .clk_audio(clk_audio),
+    .reset(~rst25n),
+    .rgb(rgbdat),
+    .audio_sample_word({16'd0,16'd0}), // TODO: feed 44KHz stereo audio samples here
+	// HDMI data out
+    .tmds(tmds),
+    .tmds_clock(tmds_clock),
+	// Current pixel position
+	.cx(video_x),
+    .cy(video_y),
+	// Unused
+    .frame_width(),
+    .frame_height(),
+    .screen_width(),
+    .screen_height());
+
+genvar i;
+generate
+    for (i = 0; i < 3; i++)
+    begin: obufds_gen
+        OBUFDS #(.IOSTANDARD("TMDS_33")) obufds (.I(tmds[i]), .O(HDMI_TMDS_p[i]), .OB(HDMI_TMDS_n[i]));
+    end
+    OBUFDS #(.IOSTANDARD("TMDS_33")) obufds_clock(.I(tmds_clock), .O(HDMI_CLK_p), .OB(HDMI_CLK_n));
+endgenerate
 
 // --------------------------------------------------
 // Reset delay line
@@ -50,9 +99,6 @@ logic scanenable;
 // --------------------------------------------------
 // Common
 // --------------------------------------------------
-
-wire [11:0] video_x;
-wire [11:0] video_y;
 
 logic cmdre;
 assign vpufifore = cmdre;
@@ -187,44 +233,7 @@ always @(posedge clk25) begin
 		endcase
 	end
 end
-
-// --------------------------------------------------
-// Video signal
-// --------------------------------------------------
-
-wire hsync, vsync;
-vgatimer VideoScanout(
-	.rst_i(~delayedresetn),
-	.clk_i(clk25),
-	.hsync_o(hsync),
-	.vsync_o(vsync),
-	.counter_x(video_x),
-	.counter_y(video_y),
-	.vsynctrigger_o(),
-	.vsynccounter() );
-
-logic [11:0] paletteout_d;
-logic hsync_d, vsync_d, vde_d;
-wire notblank = (video_x < 12'd640) && (video_y < 12'd480);
-always @(posedge clk25) begin
-	if (~rst25n) begin
-		hsync_d <= 1'b0;
-		vsync_d <= 1'b0;
-		vde_d <= 1'b0;
-		paletteout_d <= 12'd0;
-	end else begin
-		hsync_d <= hsync;
-		vsync_d <= vsync;
-		vde_d <= notblank;
-		paletteout_d <= notblank ? paletteout : 12'd0;
-	end
-end
-
-assign vhsync = hsync_d;
-assign vvsync = vsync_d;
-assign vde = vde_d;
-assign vdat = paletteout_d;
-assign vclk = clk25;
+assign rgbdat = notblank ? {1'd0, paletteout[11:8], 4'd0, paletteout[7:4], 4'd0, paletteout[3:0], 3'd0} : 24'd0;
 
 // --------------------------------------------------
 // AXI4 defaults

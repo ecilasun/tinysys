@@ -21,7 +21,7 @@
   (lib (name "ESP32_S3")(type "KiCad")(uri "${KIPRJMOD}/ESP32_S3")(options "")(descr ""))
   (lib (name "SII1136CTU")(type "KiCad")(uri "${KIPRJMOD}/SII1136CTU")(options "")(descr ""))
   (lib (name "MAX20022")(type "KiCad")(uri "${KIPRJMOD}/MAX20022ATIA/footprints.pretty")(options "")(descr ""))
-  (lib (name "2086HDMI")(type "KiCad")(uri "${KIPRJMOD}/2086581051")(options "")(descr ""))
+  (lib (name "HDMI_2086")(type "KiCad")(uri "${KIPRJMOD}/2086581051")(options "")(descr ""))
   (lib (name "12402012E212A")(type "KiCad")(uri "${KIPRJMOD}/12402012E212A")(options "")(descr ""))
   (lib (name "LTST_C195KGJRKT")(type "KiCad")(uri "${KIPRJMOD}/LTST_C195KGJRKT")(options "")(descr ""))
 )

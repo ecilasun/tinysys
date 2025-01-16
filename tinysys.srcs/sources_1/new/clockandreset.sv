@@ -8,6 +8,7 @@ module clockandreset(
 	output wire clkaudio,
 	output wire clk25,
 	output wire clk100,
+	output wire clk125,
 	output wire clkbus,
 	output wire clk166,
 	output wire clk200,
@@ -37,6 +38,7 @@ peripheralclocks peripheralclkinst(
 	.clk_in1(sys_clock_i),
 	.clkaudio(clkaudio),
 	.clkbus(clkbus),
+	.clkvidx5(clk125),
 	.locked(peripheralclocklocked) );
 
 
