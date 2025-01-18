@@ -81,7 +81,7 @@ void AudioCapture::Initialize()
 			SDL_AudioSpec audioSpecDesired, audioSpecObtained;
 			SDL_zero(audioSpecDesired);
 			SDL_zero(audioSpecObtained);
-			audioSpecDesired.freq = 44100;
+			audioSpecDesired.freq = 48000;
 			audioSpecDesired.format = AUDIO_S16;
 			audioSpecDesired.channels = 2;
 			audioSpecDesired.samples = audioqueuecapacity;
@@ -128,7 +128,7 @@ void AudioCapture::Initialize()
 			SDL_AudioSpec audioSpecDesired, audioSpecObtained;
 			SDL_zero(audioSpecDesired);
 			SDL_zero(audioSpecObtained);
-			audioSpecDesired.freq = 44100;
+			audioSpecDesired.freq = 48000;
 			audioSpecDesired.format = AUDIO_S16;
 			audioSpecDesired.channels = 2;
 			audioSpecDesired.samples = audioqueuecapacity;
