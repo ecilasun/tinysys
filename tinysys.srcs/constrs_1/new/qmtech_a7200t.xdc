@@ -84,12 +84,12 @@ set_property PULLTYPE PULLUP [get_ports sdcard_swtch]
 
 set_property -dict {PACKAGE_PIN Y4 IOSTANDARD TMDS_33} [get_ports HDMI_CLK_p]
 set_property -dict {PACKAGE_PIN AA4 IOSTANDARD TMDS_33} [get_ports HDMI_CLK_n]
-set_property -dict {PACKAGE_PIN Y3 IOSTANDARD TMDS_33} [get_ports HDMI_TMDS_p[0]]
-set_property -dict {PACKAGE_PIN AA3 IOSTANDARD TMDS_33} [get_ports HDMI_TMDS_n[0]]
-set_property -dict {PACKAGE_PIN V4 IOSTANDARD TMDS_33} [get_ports HDMI_TMDS_p[1]]
-set_property -dict {PACKAGE_PIN W4 IOSTANDARD TMDS_33} [get_ports HDMI_TMDS_n[1]]
-set_property -dict {PACKAGE_PIN AB3 IOSTANDARD TMDS_33} [get_ports HDMI_TMDS_p[2]]
-set_property -dict {PACKAGE_PIN AB2 IOSTANDARD TMDS_33} [get_ports HDMI_TMDS_n[2]]
+set_property -dict {PACKAGE_PIN Y3 IOSTANDARD TMDS_33} [get_ports {HDMI_TMDS_p[0]}]
+set_property -dict {PACKAGE_PIN AA3 IOSTANDARD TMDS_33} [get_ports {HDMI_TMDS_n[0]}]
+set_property -dict {PACKAGE_PIN V4 IOSTANDARD TMDS_33} [get_ports {HDMI_TMDS_p[1]}]
+set_property -dict {PACKAGE_PIN W4 IOSTANDARD TMDS_33} [get_ports {HDMI_TMDS_n[1]}]
+set_property -dict {PACKAGE_PIN AB3 IOSTANDARD TMDS_33} [get_ports {HDMI_TMDS_p[2]}]
+set_property -dict {PACKAGE_PIN AB2 IOSTANDARD TMDS_33} [get_ports {HDMI_TMDS_n[2]}]
 
 # CEC, SDA, SCL, DPD_DET
 #set_property -dict { PACKAGE_PIN ??? IOSTANDARD LVCMOS33 } [get_ports HDMI_CEC]
@@ -280,6 +280,7 @@ set_clock_groups -name grpL -asynchronous -group [get_clocks -of_objects [get_pi
 set_clock_groups -name grpM -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT0]] -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT0]]
 set_clock_groups -name grpO -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1]] -group [get_clocks -of_objects [get_pins socinstance/axi4ddr3sdraminst/ddr3instance/u_mig_7series_0_mig/u_ddr3_infrastructure/gen_mmcm.mmcm_i/CLKFBOUT]]
 set_clock_groups -name grpP -asynchronous -group [get_clocks -of_objects [get_pins socinstance/axi4ddr3sdraminst/ddr3instance/u_mig_7series_0_mig/u_ddr3_infrastructure/gen_mmcm.mmcm_i/CLKFBOUT]] -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1]]
+set_clock_groups -name grpQ -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT0]] -group [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT4]]
 
 ## ------------------------------------------------------------------------------------------------------
 ## PBLOCKs
@@ -342,4 +343,3 @@ set_clock_groups -name grpP -asynchronous -group [get_clocks -of_objects [get_pi
 ## resize_pblock [get_pblocks pblock_usbhostport] -add {DSP48_X8Y12:DSP48_X8Y17}
 ## resize_pblock [get_pblocks pblock_usbhostport] -add {RAMB18_X8Y12:RAMB18_X8Y17}
 ## resize_pblock [get_pblocks pblock_usbhostport] -add {RAMB36_X8Y6:RAMB36_X8Y8}
-

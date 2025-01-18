@@ -18,6 +18,8 @@ module videocore(
 	//inout wire HDMI_SDA,
 	//inout wire HDMI_SCL,
 	//input wire HDMI_HPD,
+	input wire audioclock,
+	input wire [31:0] audiosampleLR,
 	input wire vpufifoempty,
 	input wire [31:0] vpufifodout,
 	output wire vpufifore,
@@ -37,8 +39,7 @@ wire [23:0] rgbdat;
 wire [2:0] tmds;
 wire tmds_clock;
 
-wire clk_audio;
-logic [10:0] vcounter;
+/*logic [10:0] vcounter;
 always_ff @(posedge clk25) begin
 	if (~rst25n) begin
 		vcounter <= 11'd0;
@@ -46,15 +47,29 @@ always_ff @(posedge clk25) begin
     	vcounter <= vcounter == 11'd1546 ? 11'd0 : vcounter + 11'd1;
     end
 end
-assign clk_audio = clk25 && vcounter == 11'd1546;
+wire audio_clk;
+assign audio_clk = clk25 && vcounter == 11'd1546;
+
+(* async_reg = "true" *) logic auclkA;
+(* async_reg = "true" *) logic auclkB;
+(* async_reg = "true" *) logic [31:0] sampleA;
+(* async_reg = "true" *) logic [31:0] sampleB;
+always_ff @(posedge aclk) begin
+	auclkA <= audio_clk;
+	auclkB <= auclkA;
+	sampleA <= audiosampleLR;
+	sampleB <= sampleA;
+end
+
+assign audioclock = auclkB;*/
 
 hdmi #(.VIDEO_ID_CODE(1), .IT_CONTENT(1'b1), .VIDEO_REFRESH_RATE(60.0), .VENDOR_NAME({"tinysys", 8'd0})) HDMIInst(
-    .clk_pixel_x5(clk125),	// video clock x5
-    .clk_pixel(clk25),		// 25 MHz video clock
-    .clk_audio(clk_audio),
+    .clk_pixel_x5(clk125),
+    .clk_pixel(clk25),
+    .clk_audio(audioclock),
     .reset(~rst25n),
     .rgb(rgbdat),
-    .audio_sample_word({16'd0,16'd0}), // TODO: feed 44KHz stereo audio samples here
+    .audio_sample_word( {audiosampleLR[31:16], audiosampleLR[15:0]} ),
 	// HDMI data out
     .tmds(tmds),
     .tmds_clock(tmds_clock),
@@ -233,7 +248,9 @@ always @(posedge clk25) begin
 		endcase
 	end
 end
-assign rgbdat = notblank ? {1'd0, paletteout[11:8], 4'd0, paletteout[7:4], 4'd0, paletteout[3:0], 3'd0} : 24'd0;
+
+// 12 bit RGB output expanded to 24 bit (using top 4 bits per component only)
+assign rgbdat = notblank ? {paletteout[11:8], 4'd0, paletteout[7:4], 4'd0, paletteout[3:0], 4'd0} : 24'd0;
 
 // --------------------------------------------------
 // AXI4 defaults

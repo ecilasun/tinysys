@@ -40,12 +40,7 @@ module tophat(
 	,output wire esp_txd1_out
 	,input wire esp_rxd1_in
 	,input wire cpu_reboot
-	,output wire esp_ena
-	// Audio out
-	,output wire au_sdin
-	,output wire au_sclk
-	,output wire au_lrclk
-	,output wire au_mclk );
+	,output wire esp_ena );
 
 // --------------------------------------------------
 // Clock and reset generator
@@ -107,16 +102,6 @@ sdcardwires sdconn(
 	.swtch(sdcard_swtch) );
 
 // --------------------------------------------------
-// Audio wires
-// --------------------------------------------------
-
-audiowires i2sconn(
-	.sdin(au_sdin),
-	.sclk(au_sclk),
-	.lrclk(au_lrclk),
-	.mclk(au_mclk));
-
-// --------------------------------------------------
 // SoC device
 // --------------------------------------------------
 
@@ -146,7 +131,6 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.HDMI_TMDS_p(HDMI_TMDS_p),
 	.HDMI_TMDS_n(HDMI_TMDS_n),
 	.ddr3conn(ddr3conn),
-	.i2sconn(i2sconn),
 	.sdconn(sdconn) );
 
 endmodule

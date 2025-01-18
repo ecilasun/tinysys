@@ -8,7 +8,7 @@ char commdevicename[512] = "/dev/ttyUSB0";
 // MacOS
 char commdevicename[512] = "/dev/ttyACM0";
 #else // CAT_WINDOWS
-char commdevicename[512] = "\\\\.\\COM6";
+char commdevicename[512] = "\\\\.\\COM9";
 #endif
 
 const char* GetCommDeviceName()

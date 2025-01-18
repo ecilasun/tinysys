@@ -5,48 +5,14 @@ module axi4i2saudio(
 	input wire aclk,
 	input wire aresetn,
 	input wire rstaudion,
-    input wire audioclock,				// 22.591MHz master clock
+    input wire audioclock,				// From HDMI
 	axi4if.master m_axi,				// Direct memory access for burst reads
 	input wire abempty,					// Command fifo empty
 	input wire abvalid,					// Command available
 	output wire audiore,				// Command read control
     input wire [31:0] audiodin,			// APU command input
 	output wire [31:0] swapcount,		// Buffer swap counter for sync
-    output wire tx_mclk,				// Audio bus output
-    output wire tx_lrck,				// L/R select
-    output wire tx_sclk,				// Stream clock
-    output bit tx_sdout );			// Stream out
-
-// ------------------------------------------------------------------------------------
-// Clock divider
-// ------------------------------------------------------------------------------------
-
-// Counter for generating other divided clocks
-bit [8:0] count;
-bit counterenabled;
-
-COUNTER_LOAD_MACRO #(
-	.COUNT_BY(48'd1),		// Count by 1
-	.DEVICE("7SERIES"), 
-	.WIDTH_DATA(9) ) counterinst (
-	.Q(count),
-	.CLK(audioclock),
-	.CE(counterenabled),
-	.DIRECTION(1'b1),
-	.LOAD(~rstaudion),
-	.LOAD_DATA(9'd0),
-	.RST(1'b0) );
-
-wire lrck = count[8];
-wire sclk = count[2];
-assign tx_lrck = lrck;			// Channel select 44.1KHz (/512)
-assign tx_sclk = sclk;			// Sample clock 2.823MHz (/8)
-assign tx_mclk = audioclock;	// Master clock 22.519MHz
-
-// Internal L/R copies to stream out
-bit [31:0] tx_data_lr;
-bit re;
-assign audiore = re;
+    output wire [31:0] tx_sdout );		// Stream out
 
 // --------------------------------------------------
 // Reset delay line
@@ -95,6 +61,13 @@ wire [31:0] sampleOut;
 wire [8:0] inaddr = {writeBufferSelect, writeCursor};
 wire [10:0] outaddr = {~writeBufferSelect, readCursor};
 
+// Internal L/R copies to stream out
+bit [31:0] tx_data_lr;
+bit re;
+assign audiore = re;
+assign tx_sdout = tx_data_lr;
+
+// Internal sample memory
 samplemem samplememinst (
   .clka(aclk),
   .wea(samplewe),
@@ -139,7 +112,6 @@ always_ff @(posedge aclk) begin
 	if (~delayedresetn) begin
 		re <= 1'b0;
 		samplewe <= 1'b0;
-		counterenabled <= 1'b0;
 		writeCursor <= 8'd0;
 		sampleoutputrateselector <= 4'b0000;
 		apuwordcount <= 10'd1023;
@@ -151,7 +123,6 @@ always_ff @(posedge aclk) begin
 	
 		case (cmdmode)
 			INIT: begin
-				counterenabled <= 1'b1;
 				m_axi.awvalid <= 0;
 				m_axi.wvalid <= 0;
 				m_axi.wstrb <= 16'h0000;
@@ -267,14 +238,12 @@ always@(posedge audioclock) begin
 
 		samplere <= 1'b0;
 
-		if (count==9'h0ff) begin
-			// Step cursor based on playback rate
-			{readCursor, readLowbits} <= {readCursor, readLowbits} + {8'd0, sampleoutputrateselector};
+		// Step cursor based on playback rate
+		{readCursor, readLowbits} <= {readCursor, readLowbits} + {8'd0, sampleoutputrateselector};
 
-			// New sample and read enable control
-			tx_data_lr <= sampleoutputrateselector == 4'd0 ? 32'd0 : sampleOut;
-			samplere <= sampleoutputrateselector == 4'd0 ? 1'b0 : 1'b1;
-		end
+		// Read next pair of stereo samples
+		tx_data_lr <= sampleoutputrateselector == 4'd0 ? 32'd0 : sampleOut;
+		samplere <= sampleoutputrateselector == 4'd0 ? 1'b0 : 1'b1;
 
 		// Increment swap count at end of buffer
 		if (readCursor == apuwordcount) begin
@@ -284,40 +253,6 @@ always@(posedge audioclock) begin
 			readCursor <= 10'd0;
 			readLowbits <= 2'd0;
 		end
-	end
-end
-
-bit [23:0] tx_data_l_shift;
-bit [23:0] tx_data_r_shift;
-
-always@(posedge audioclock) begin
-	if (~rstaudion) begin
-		tx_data_r_shift <= 24'd0;
-		tx_data_l_shift <= 24'd0;
-	end else begin
-		if (count == 3'b00000111) begin
-			tx_data_l_shift <= {tx_data_lr[31:16], 8'd0};
-			tx_data_r_shift <= {tx_data_lr[15:0], 8'd0};
-		end else if (count[2:0] == 3'b111 && count[7:3] >= 5'd1 && count[7:3] <= 5'd24) begin
-			if (count[8] == 1'b1)
-				tx_data_r_shift <= {tx_data_r_shift[22:0], 1'b0};
-			else
-				tx_data_l_shift <= {tx_data_l_shift[22:0], 1'b0};
-		end
-	end
-end
-
-always@(count, tx_data_l_shift, tx_data_r_shift, rstaudion) begin
-	if (~rstaudion) begin
-		tx_sdout = 1'b0;
-	end else begin
-		if (count[7:3] <= 5'd24 && count[7:3] >= 4'd1)
-			if (count[8] == 1'b1)
-				tx_sdout = tx_data_r_shift[23];
-			else
-				tx_sdout = tx_data_l_shift[23];
-		else
-			tx_sdout = 1'b0;
 	end
 end
 

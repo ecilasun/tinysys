@@ -38,8 +38,6 @@ module tinysoc #(
 	//input wire HDMI_HPD,
 	// DDR3
 	ddr3sdramwires.def ddr3conn,
-	// I2S
-	audiowires.def i2sconn,
 	// SDCard
 	sdcardwires.def sdconn );
 
@@ -185,6 +183,7 @@ wire [31:0] vpufifodout;
 wire vpufifore;
 wire vpufifovalid;
 wire [31:0] vpustate;
+wire [31:0] tx_sdout;
 videocore VPU(
 	.aclk(aclk),
 	.clk25(clk25),
@@ -200,6 +199,8 @@ videocore VPU(
 	//.HDMI_SDA(HDMI_SDA),
 	//.HDMI_SCL(HDMI_SCL),
 	//.HDMI_HPD(HDMI_HPD),
+	.audioclock(clkaudio),
+	.audiosampleLR(tx_sdout),
 	.vpufifoempty(vpufifoempty),
 	.vpufifodout(vpufifodout),
 	.vpufifore(vpufifore),
@@ -251,7 +252,7 @@ axi4i2saudio APU(
 	.aclk(aclk),				// Bus clock
 	.aresetn(aresetn),
 	.rstaudion(rstaudion),
-    .audioclock(clkaudio),		// 22.591MHz master clock
+    .audioclock(clkaudio),
 
 	.m_axi(audiobus),			// Memory access
 
@@ -261,10 +262,8 @@ axi4i2saudio APU(
     .audiodin(audiofifodout),
     .swapcount(audiobufferswapcount),
 
-    .tx_mclk(i2sconn.mclk),
-    .tx_lrck(i2sconn.lrclk),
-    .tx_sclk(i2sconn.sclk),
-    .tx_sdout(i2sconn.sdin) );
+	// TODO: Need to change this to feed samples directly to HDMI
+    .tx_sdout(tx_sdout));
 
 // --------------------------------------------------
 // Traffic between master units / memory / devices
