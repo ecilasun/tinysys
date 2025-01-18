@@ -7,7 +7,7 @@
 char audiocdevicename[512] = "Line In";
 char audiopdevicename[512] = "Headphones";
 #else // CAT_WINDOWS
-char audiocdevicename[512] = "capture";
+char audiocdevicename[512] = "USB";
 char audiopdevicename[512] = "Headphones";
 #endif
 
@@ -81,7 +81,7 @@ void AudioCapture::Initialize()
 			SDL_AudioSpec audioSpecDesired, audioSpecObtained;
 			SDL_zero(audioSpecDesired);
 			SDL_zero(audioSpecObtained);
-			audioSpecDesired.freq = 48000;
+			audioSpecDesired.freq = 44100;
 			audioSpecDesired.format = AUDIO_S16;
 			audioSpecDesired.channels = 2;
 			audioSpecDesired.samples = audioqueuecapacity;
@@ -128,7 +128,7 @@ void AudioCapture::Initialize()
 			SDL_AudioSpec audioSpecDesired, audioSpecObtained;
 			SDL_zero(audioSpecDesired);
 			SDL_zero(audioSpecObtained);
-			audioSpecDesired.freq = 48000;
+			audioSpecDesired.freq = 44100;
 			audioSpecDesired.format = AUDIO_S16;
 			audioSpecDesired.channels = 2;
 			audioSpecDesired.samples = audioqueuecapacity;

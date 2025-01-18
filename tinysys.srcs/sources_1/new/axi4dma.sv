@@ -206,10 +206,9 @@ always @(posedge aclk) begin
 		burstdout <= 128'd0;
 		burstdoutPrev <= 128'd0;
 	end else begin
-		if (burstre) begin
+		if (burstre)
 			burstdout <= burstcache[rburstcursor];
-			burstdoutPrev <= burstdout;
-		end
+		burstdoutPrev <= burstdout;
 	end
 end
 
