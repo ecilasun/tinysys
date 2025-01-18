@@ -63,7 +63,8 @@ end
 
 assign audioclock = auclkB;*/
 
-hdmi #(.VIDEO_ID_CODE(1), .IT_CONTENT(1'b1), .VIDEO_REFRESH_RATE(60.0), .VENDOR_NAME({"tinysys", 8'd0})) HDMIInst(
+// "TinySys" "FPGA" "Game" 60Hz 640x480 44.1KHz 16bit
+hdmi #(.VIDEO_ID_CODE(1), .IT_CONTENT(1'b1), .VIDEO_REFRESH_RATE(60.0), .VENDOR_NAME({"TinySys", 8'd0}), .PRODUCT_DESCRIPTION({"FPGA", 96'd0}), .SOURCE_DEVICE_INFORMATION(8), .AUDIO_RATE(44100), .AUDIO_BIT_WIDTH(16)) HDMIInst(
     .clk_pixel_x5(clk125),
     .clk_pixel(clk25),
     .clk_audio(audioclock),

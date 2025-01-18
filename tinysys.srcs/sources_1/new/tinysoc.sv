@@ -184,6 +184,7 @@ wire vpufifore;
 wire vpufifovalid;
 wire [31:0] vpustate;
 wire [31:0] tx_sdout;
+wire audiosampleclk;
 videocore VPU(
 	.aclk(aclk),
 	.clk25(clk25),
@@ -199,7 +200,7 @@ videocore VPU(
 	//.HDMI_SDA(HDMI_SDA),
 	//.HDMI_SCL(HDMI_SCL),
 	//.HDMI_HPD(HDMI_HPD),
-	.audioclock(clkaudio),
+	.audioclock(audiosampleclk),
 	.audiosampleLR(tx_sdout),
 	.vpufifoempty(vpufifoempty),
 	.vpufifodout(vpufifodout),
@@ -262,7 +263,7 @@ axi4i2saudio APU(
     .audiodin(audiofifodout),
     .swapcount(audiobufferswapcount),
 
-	// TODO: Need to change this to feed samples directly to HDMI
+	.audiosampleclk(audiosampleclk),
     .tx_sdout(tx_sdout));
 
 // --------------------------------------------------

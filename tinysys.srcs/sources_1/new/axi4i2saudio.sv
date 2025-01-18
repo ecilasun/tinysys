@@ -5,14 +5,45 @@ module axi4i2saudio(
 	input wire aclk,
 	input wire aresetn,
 	input wire rstaudion,
-    input wire audioclock,				// From HDMI
+    input wire audioclock,				// 22.591MHz master clock
 	axi4if.master m_axi,				// Direct memory access for burst reads
 	input wire abempty,					// Command fifo empty
 	input wire abvalid,					// Command available
 	output wire audiore,				// Command read control
     input wire [31:0] audiodin,			// APU command input
 	output wire [31:0] swapcount,		// Buffer swap counter for sync
+	// Output
+	output wire audiosampleclk,			// Audio clock
     output wire [31:0] tx_sdout );		// Stream out
+
+// ------------------------------------------------------------------------------------
+// Clock divider
+// ------------------------------------------------------------------------------------
+
+// Counter for generating other divided clocks
+bit [8:0] count;
+bit counterenabled;
+
+COUNTER_LOAD_MACRO #(
+	.COUNT_BY(48'd1),		// Count by 1
+	.DEVICE("7SERIES"), 
+	.WIDTH_DATA(9) ) counterinst (
+	.Q(count),
+	.CLK(audioclock),
+	.CE(counterenabled),
+	.DIRECTION(1'b1),
+	.LOAD(~rstaudion),
+	.LOAD_DATA(9'd0),
+	.RST(1'b0) );
+
+// 44.1KHz output clock for audio
+assign audiosampleclk = count[8];
+
+//wire lrck = count[8];
+//wire sclk = count[2];
+//assign tx_lrck = lrck;		// Channel select 44.1KHz (/512)
+//assign tx_sclk = sclk;		// Sample clock 2.823MHz (/8)
+//assign tx_mclk = audioclock;	// Master clock 22.519MHz
 
 // --------------------------------------------------
 // Reset delay line
@@ -112,6 +143,7 @@ always_ff @(posedge aclk) begin
 	if (~delayedresetn) begin
 		re <= 1'b0;
 		samplewe <= 1'b0;
+		counterenabled <= 1'b0;
 		writeCursor <= 8'd0;
 		sampleoutputrateselector <= 4'b0000;
 		apuwordcount <= 10'd1023;
@@ -123,6 +155,7 @@ always_ff @(posedge aclk) begin
 	
 		case (cmdmode)
 			INIT: begin
+				counterenabled <= 1'b1;
 				m_axi.awvalid <= 0;
 				m_axi.wvalid <= 0;
 				m_axi.wstrb <= 16'h0000;
@@ -238,8 +271,14 @@ always@(posedge audioclock) begin
 
 		samplere <= 1'b0;
 
-		// Step cursor based on playback rate
-		{readCursor, readLowbits} <= {readCursor, readLowbits} + {8'd0, sampleoutputrateselector};
+		if (count==9'h0ff) begin
+			// Step cursor based on playback rate
+			{readCursor, readLowbits} <= {readCursor, readLowbits} + {8'd0, sampleoutputrateselector};
+
+			// New sample and read enable control
+			tx_data_lr <= sampleoutputrateselector == 4'd0 ? 32'd0 : sampleOut;
+			samplere <= sampleoutputrateselector == 4'd0 ? 1'b0 : 1'b1;
+		end
 
 		// Read next pair of stereo samples
 		tx_data_lr <= sampleoutputrateselector == 4'd0 ? 32'd0 : sampleOut;
