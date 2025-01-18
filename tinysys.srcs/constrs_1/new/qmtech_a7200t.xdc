@@ -139,10 +139,10 @@ set_property -dict {PACKAGE_PIN AB2 IOSTANDARD TMDS_33} [get_ports HDMI_TMDS_n[2
 ## ------------------------------------------------------------------------------------------------------
 
 ## 2D/2E/2F
-set_property -dict {PACKAGE_PIN H2 IOSTANDARD LVCMOS33} [get_ports au_sdin]
-set_property -dict {PACKAGE_PIN K1 IOSTANDARD LVCMOS33} [get_ports au_sclk]
-set_property -dict {PACKAGE_PIN K2 IOSTANDARD LVCMOS33} [get_ports au_lrclk]
-set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports au_mclk]
+## set_property -dict {PACKAGE_PIN H2 IOSTANDARD LVCMOS33} [get_ports au_sdin]
+## set_property -dict {PACKAGE_PIN K1 IOSTANDARD LVCMOS33} [get_ports au_sclk]
+## set_property -dict {PACKAGE_PIN K2 IOSTANDARD LVCMOS33} [get_ports au_lrclk]
+## set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports au_mclk]
 
 ## ------------------------------------------------------------------------------------------------------
 ## ESP32-C6-WROOM1-N8

@@ -72,8 +72,9 @@ module hdmi
     input logic [AUDIO_BIT_WIDTH-1:0] audio_sample_word [1:0],
 
     // These outputs go to your HDMI port
-    output logic [2:0] tmds,
-    output logic tmds_clock,
+	// ENCI: These have to be wires
+    output wire [2:0] tmds,
+    output wire tmds_clock,
     
     // All outputs below this line stay inside the FPGA
     // They are used (by you) to pick the color each pixel should have

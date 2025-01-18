@@ -984,7 +984,7 @@
 			)
 		)
 		(property "Value" "USB_C_Receptacle"
-			(at 0.4 -6.3 0)
+			(at -0.25747 -6.550464 0)
 			(layer "F.Fab")
 			(uuid "a01c850f-b371-414b-af13-23554127c2b7")
 			(effects
@@ -1211,7 +1211,7 @@
 			(uuid "d740ea05-2969-4ef6-a62e-e56bfccfc8a8")
 		)
 		(fp_text user "PCB EDGE"
-			(at 5.315 1.57 0)
+			(at 9.14053 2.339536 0)
 			(layer "F.Fab")
 			(uuid "8abe7c61-e336-486c-bc89-dab4f7586157")
 			(effects
@@ -1602,7 +1602,7 @@
 			)
 		)
 		(property "Value" "LTST-C195KGJRKT"
-			(at -0.806 -3.974 -90)
+			(at -1.695 -2.958 180)
 			(layer "B.Fab")
 			(uuid "d415bba1-5d28-4cce-b69c-c406391c42da")
 			(effects
@@ -1926,7 +1926,7 @@
 			)
 		)
 		(property "Value" "330Ohm"
-			(at 0.0875 1.618 0)
+			(at -0.2305 -1.143 0)
 			(layer "B.Fab")
 			(uuid "2cf3cde3-731a-4da7-b613-054d8d29868b")
 			(effects
@@ -2206,7 +2206,7 @@
 			)
 		)
 		(property "Value" "LM1117MPX-3.3/NOPB"
-			(at -0.2 0.15 90)
+			(at 1.545 -4.459 0)
 			(layer "B.Fab")
 			(uuid "d20f86ae-7a68-47f6-bd2b-87fafc5daf7b")
 			(effects
@@ -3158,7 +3158,7 @@
 			)
 		)
 		(property "Value" "GPIO_U2"
-			(at -1.2046 -0.4318 180)
+			(at 5.247 -0.635 180)
 			(layer "B.Fab")
 			(uuid "d03ab014-472e-48f3-b5a6-5594207398cf")
 			(effects
@@ -4873,7 +4873,7 @@
 			)
 		)
 		(property "Value" "GPIO_U4"
-			(at -1.22 0.08 0)
+			(at -7.239 0.381 0)
 			(layer "B.Fab")
 			(uuid "11841ac9-be12-40e6-9960-0ebb982c94ee")
 			(effects
@@ -5845,7 +5845,7 @@
 			)
 		)
 		(property "Value" "0.1uf"
-			(at -5.8425 -0.029 90)
+			(at 3.302 0.127 90)
 			(layer "B.Fab")
 			(uuid "279810f5-7775-4792-bcd0-0414e8268609")
 			(effects
@@ -6065,15 +6065,16 @@
 			)
 		)
 		(property "Value" "ESP32-S3-WROOM-1"
-			(at 2.053094 -14.6 0)
+			(at 0.201 -10.679 0)
 			(unlocked yes)
-			(layer "F.Fab")
+			(layer "B.Fab")
 			(uuid "9b7ab02f-6523-45de-b10e-89fb450dc1e2")
 			(effects
 				(font
 					(size 1 1)
 					(thickness 0.15)
 				)
+				(justify mirror)
 			)
 		)
 		(property "Footprint" "RF_Module:ESP32-S3-WROOM-1"
@@ -6940,7 +6941,7 @@
 		(zone
 			(net 0)
 			(net_name "")
-			(layers "F.Cu" "In1.Cu" "B.Cu")
+			(layers "F&B.Cu")
 			(uuid "8b9b175d-a092-4f03-a994-af5b8c1116d6")
 			(hatch full 0.508)
 			(connect_pads
@@ -7045,7 +7046,7 @@
 			)
 		)
 		(property "Value" "33Ohm"
-			(at -6.5325 0.1524 0)
+			(at -4.5005 0.1524 0)
 			(layer "B.Fab")
 			(uuid "9a6f9dc2-2b7e-4066-8fda-1e9c94759d6f")
 			(effects
@@ -7283,7 +7284,7 @@
 			)
 		)
 		(property "Value" "0.1uf"
-			(at -5.4615 0.023 0)
+			(at -3.6835 0.023 0)
 			(layer "B.Fab")
 			(uuid "d3096a16-0729-4f81-95d2-f5d2a36aba85")
 			(effects
@@ -7869,7 +7870,7 @@
 			)
 		)
 		(property "Value" "DM3AT-SF-PEJM5"
-			(at 0.2278 -9.2326 90)
+			(at 5.892 -7.4292 0)
 			(layer "B.Fab")
 			(uuid "25f90f92-1fed-4aff-a8d0-aac88ebc0a34")
 			(effects
@@ -8859,7 +8860,7 @@
 			)
 		)
 		(property "Value" "10uf"
-			(at 5.5812 0.09 90)
+			(at 3.6335 0.09 90)
 			(layer "B.Fab")
 			(uuid "eb8bb837-6260-408b-9e04-572311910ae5")
 			(effects
@@ -9095,7 +9096,7 @@
 			)
 		)
 		(property "Value" "2086581051"
-			(at 2.66 14.635 90)
+			(at -4.964 5.241 0)
 			(layer "B.Fab")
 			(uuid "83300e77-e750-4b82-8347-8622775d3a8d")
 			(effects
@@ -9988,7 +9989,7 @@
 			)
 		)
 		(property "Value" "33Ohm"
-			(at -6.4055 0.1524 0)
+			(at -4.3735 0.1524 0)
 			(layer "B.Fab")
 			(uuid "e59e67fc-1391-466b-9887-09b604312304")
 			(effects
@@ -10526,7 +10527,7 @@
 			)
 		)
 		(property "Value" "TestPoint"
-			(at 0 -1.55 0)
+			(at 0 -0.127 0)
 			(layer "B.Fab")
 			(uuid "44b239b0-d24a-4d7f-9d47-2809b05bed72")
 			(effects
@@ -10676,7 +10677,7 @@
 			)
 		)
 		(property "Value" "33Ohm"
-			(at -6.4055 0.177 0)
+			(at -4.3735 0.177 0)
 			(layer "B.Fab")
 			(uuid "ebd6bcd4-ad80-4430-afc9-1c75e17d9ec0")
 			(effects
@@ -10951,7 +10952,7 @@
 			)
 		)
 		(property "Value" "33Ohm"
-			(at -6.4055 0.177 0)
+			(at -4.3735 0.177 0)
 			(layer "B.Fab")
 			(uuid "e9e0cd49-7c16-4378-9acd-cdd621d046dd")
 			(effects
@@ -11847,7 +11848,7 @@
 			)
 		)
 		(property "Value" "33Ohm"
-			(at -6.3735 0.254 0)
+			(at -4.4685 0.254 0)
 			(layer "B.Fab")
 			(uuid "417f4f20-806e-4f66-bcf6-02defc065f90")
 			(effects
@@ -13521,7 +13522,7 @@
 			)
 		)
 		(property "Value" "10uf"
-			(at 5.5812 -0.037 90)
+			(at 3.6335 -0.037 90)
 			(layer "B.Fab")
 			(uuid "bcc80869-baf4-4bcb-9eae-a3502821310f")
 			(effects
@@ -13789,7 +13790,7 @@
 			)
 		)
 		(property "Value" "33Ohm"
-			(at -6.5005 0 0)
+			(at -4.5955 0 0)
 			(layer "B.Fab")
 			(uuid "c9593cb6-e40e-4fc9-ac53-dc0140bfe5b7")
 			(effects
