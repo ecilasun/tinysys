@@ -1,7 +1,7 @@
 module serializer
 #(
     parameter int NUM_CHANNELS = 3,
-    parameter real VIDEO_RATE
+    parameter real VIDEO_RATE = 25.2E6
 )
 (
     input logic clk_pixel,

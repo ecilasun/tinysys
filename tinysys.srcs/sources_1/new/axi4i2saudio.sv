@@ -37,7 +37,7 @@ COUNTER_LOAD_MACRO #(
 	.RST(1'b0) );
 
 // 44.1KHz output clock for audio
-assign audiosampleclk = count[8];
+BUFG BUFG_inst ( .O(audiosampleclk), .I(count[8]));
 
 //wire lrck = count[8];
 //wire sclk = count[2];

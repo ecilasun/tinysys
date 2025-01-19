@@ -8860,7 +8860,7 @@
 			)
 		)
 		(property "Value" "10uf"
-			(at 3.6335 0.09 90)
+			(at 2.7445 -0.254 0)
 			(layer "B.Fab")
 			(uuid "eb8bb837-6260-408b-9e04-572311910ae5")
 			(effects
@@ -13522,7 +13522,7 @@
 			)
 		)
 		(property "Value" "10uf"
-			(at 3.6335 -0.037 90)
+			(at 2.8715 0.254 0)
 			(layer "B.Fab")
 			(uuid "bcc80869-baf4-4bcb-9eae-a3502821310f")
 			(effects

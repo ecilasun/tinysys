@@ -28,6 +28,22 @@ module videocore(
 	output wire hirq);
 
 // --------------------------------------------------
+// Reset delay line
+// --------------------------------------------------
+
+wire delayedresetn;
+delayreset delayresetinst(
+	.aclk(aclk),
+	.inputresetn(aresetn),
+	.delayedresetn(delayedresetn) );
+
+wire delayedreset25n;
+delayreset delayreset25inst(
+	.aclk(clk25),
+	.inputresetn(rst25n),
+	.delayedresetn(delayedreset25n) );
+
+// --------------------------------------------------
 // HDMI video output 640x480 @ 60Hz
 // --------------------------------------------------
 
@@ -39,36 +55,12 @@ wire [23:0] rgbdat;
 wire [2:0] tmds;
 wire tmds_clock;
 
-/*logic [10:0] vcounter;
-always_ff @(posedge clk25) begin
-	if (~rst25n) begin
-		vcounter <= 11'd0;
-	end else begin
-    	vcounter <= vcounter == 11'd1546 ? 11'd0 : vcounter + 11'd1;
-    end
-end
-wire audio_clk;
-assign audio_clk = clk25 && vcounter == 11'd1546;
-
-(* async_reg = "true" *) logic auclkA;
-(* async_reg = "true" *) logic auclkB;
-(* async_reg = "true" *) logic [31:0] sampleA;
-(* async_reg = "true" *) logic [31:0] sampleB;
-always_ff @(posedge aclk) begin
-	auclkA <= audio_clk;
-	auclkB <= auclkA;
-	sampleA <= audiosampleLR;
-	sampleB <= sampleA;
-end
-
-assign audioclock = auclkB;*/
-
 // "TinySys" "FPGA" "Game" 60Hz 640x480 44.1KHz 16bit
 hdmi #(.VIDEO_ID_CODE(1), .IT_CONTENT(1'b1), .VIDEO_REFRESH_RATE(60.0), .VENDOR_NAME({"TinySys", 8'd0}), .PRODUCT_DESCRIPTION({"FPGA", 96'd0}), .SOURCE_DEVICE_INFORMATION(8), .AUDIO_RATE(44100), .AUDIO_BIT_WIDTH(16)) HDMIInst(
     .clk_pixel_x5(clk125),
     .clk_pixel(clk25),
     .clk_audio(audioclock),
-    .reset(~rst25n),
+    .reset(~delayedreset25n),
     .rgb(rgbdat),
     .audio_sample_word( {audiosampleLR[31:16], audiosampleLR[15:0]} ),
 	// HDMI data out
@@ -76,12 +68,7 @@ hdmi #(.VIDEO_ID_CODE(1), .IT_CONTENT(1'b1), .VIDEO_REFRESH_RATE(60.0), .VENDOR_
     .tmds_clock(tmds_clock),
 	// Current pixel position
 	.cx(video_x),
-    .cy(video_y),
-	// Unused
-    .frame_width(),
-    .frame_height(),
-    .screen_width(),
-    .screen_height());
+    .cy(video_y));
 
 genvar i;
 generate
@@ -91,16 +78,6 @@ generate
     end
     OBUFDS #(.IOSTANDARD("TMDS_33")) obufds_clock(.I(tmds_clock), .O(HDMI_CLK_p), .OB(HDMI_CLK_n));
 endgenerate
-
-// --------------------------------------------------
-// Reset delay line
-// --------------------------------------------------
-
-wire delayedresetn;
-delayreset delayresetinst(
-	.aclk(aclk),
-	.inputresetn(aresetn),
-	.delayedresetn(delayedresetn) );
 
 // --------------------------------------------------
 // Scan setup

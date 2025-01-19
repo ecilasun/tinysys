@@ -73,7 +73,7 @@ In addition to the peripheral interrupts, there is a timer interrupt that will p
 
 Last one is the software interrupt facility, which currently tracks illegal instruction execution.
 
-All of these interrupts are in use by the OS for specific work, however there is nothing in the hardware design that enforces OS level control over these. Implementing a custom rom.bin and placing it into the boot/ folder at the SDCard root will allow for overriding everything, including the interrupt mechanisms, that tinysys offers.
+All of these interrupts are in use by the OS for specific work, however there is nothing in the hardware design that enforces OS level control over these. Implementing a custom rom.bin and placing it into the /sys/bin/ folder at the SDCard root will allow for overriding everything, including the interrupt mechanisms, that tinysys offers.
 
 ### ESP32 communications helper
 There is an ESP32 chip on board (which also uses a RISC V core) that is hard wired to act as the USB(or Bluetooth)-serial converter. The serial input received feeds into the serial input buffer by the OS via interrupts, which in turn feeds the keyboard entry buffer. This means one can send text commands over USB or Bluetooth of a cell phone to the device while the OS terminal is alive.

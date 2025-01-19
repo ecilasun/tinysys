@@ -18,7 +18,7 @@ logic busy2 = 1'b0;
 logic [32:0] a = 33'd0;
 logic [32:0] b = 33'd0;
 logic [3:0] count = 4'd0;
-wire [64:0] dspproduct;
+wire [65:0] dspproduct;
 logic done = 1'b0;
 assign ready = done;
 

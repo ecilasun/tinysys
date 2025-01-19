@@ -76,7 +76,7 @@ Therefore the default SDCard layout is:
 
 ```
 sd:/sys/bin/... <- utility binaries, accessible from anywhere
-sd:/boot/rom.bin <- ROM overlay is always located here
+sd:/sys/bin/rom.bin <- ROM overlay is always located here
 ```
 
 # Creating your own project
