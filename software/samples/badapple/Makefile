@@ -8,7 +8,7 @@ else
 	UNAME := $(shell uname)
 endif
 
-TARGET = oxygene.elf
+TARGET = badapple.elf
 
 default: $(TARGET)
 
