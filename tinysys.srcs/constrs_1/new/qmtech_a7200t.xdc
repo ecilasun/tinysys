@@ -290,34 +290,10 @@ set_clock_groups -name grpP -asynchronous -group [get_clocks -of_objects [get_pi
 ## PBLOCKs
 ## ------------------------------------------------------------------------------------------------------
 
-create_pblock pblock_hart0
-add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list socinstance/hart0]]
-resize_pblock [get_pblocks pblock_hart0] -add {CLOCKREGION_X1Y3:CLOCKREGION_X1Y3}
 
-create_pblock pblock_hart1
-add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list socinstance/hart1]]
-resize_pblock [get_pblocks pblock_hart1] -add {CLOCKREGION_X1Y2:CLOCKREGION_X1Y2}
 
-create_pblock pblock_DMA
-add_cells_to_pblock [get_pblocks pblock_DMA] [get_cells -quiet [list socinstance/DMA]]
-resize_pblock [get_pblocks pblock_DMA] -add {SLICE_X20Y101:SLICE_X37Y124}
-resize_pblock [get_pblocks pblock_DMA] -add {DSP48_X1Y42:DSP48_X1Y49}
-resize_pblock [get_pblocks pblock_DMA] -add {RAMB18_X1Y42:RAMB18_X1Y49}
-resize_pblock [get_pblocks pblock_DMA] -add {RAMB36_X1Y21:RAMB36_X1Y24}
 
-create_pblock pblock_arbiter2x1instdev
-add_cells_to_pblock [get_pblocks pblock_arbiter2x1instdev] [get_cells -quiet [list socinstance/arbiter2x1instdev]]
-resize_pblock [get_pblocks pblock_arbiter2x1instdev] -add {SLICE_X82Y143:SLICE_X163Y156}
-resize_pblock [get_pblocks pblock_arbiter2x1instdev] -add {DSP48_X5Y58:DSP48_X8Y61}
-resize_pblock [get_pblocks pblock_arbiter2x1instdev] -add {RAMB18_X5Y58:RAMB18_X8Y61}
-resize_pblock [get_pblocks pblock_arbiter2x1instdev] -add {RAMB36_X5Y29:RAMB36_X8Y30}
 
-create_pblock pblock_arbiter8x1instSDRAM
-add_cells_to_pblock [get_pblocks pblock_arbiter8x1instSDRAM] [get_cells -quiet [list socinstance/arbiter8x1instSDRAM]]
-resize_pblock [get_pblocks pblock_arbiter8x1instSDRAM] -add {SLICE_X66Y142:SLICE_X83Y157}
-resize_pblock [get_pblocks pblock_arbiter8x1instSDRAM] -add {DSP48_X3Y58:DSP48_X4Y61}
-resize_pblock [get_pblocks pblock_arbiter8x1instSDRAM] -add {RAMB18_X4Y58:RAMB18_X4Y61}
-resize_pblock [get_pblocks pblock_arbiter8x1instSDRAM] -add {RAMB36_X4Y29:RAMB36_X4Y30}
 
 ## create_pblock pblock_hart1
 ## add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list socinstance/hart1/controlunitinst socinstance/hart1/dataunitinst socinstance/hart1/fetchdecodeinst socinstance/hart1/instructioncacheinst]]
@@ -377,3 +353,6 @@ resize_pblock [get_pblocks pblock_arbiter8x1instSDRAM] -add {RAMB36_X4Y29:RAMB36
 ## resize_pblock [get_pblocks pblock_usbhostport] -add {RAMB18_X8Y12:RAMB18_X8Y17}
 ## resize_pblock [get_pblocks pblock_usbhostport] -add {RAMB36_X8Y6:RAMB36_X8Y8}
 
+
+
+set_false_path -from [get_clocks {socinstance/APU/counterinst/genblk3_0.DSP48E_BL/P[8]}] -to [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT4]]

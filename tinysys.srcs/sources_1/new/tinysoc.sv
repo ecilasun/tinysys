@@ -279,7 +279,7 @@ arbitersmall arbiter2x1instdev(
 arbiterlarge arbiter8x1instSDRAM(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.axi_s({romcopybus, audiobus, dmabus, videobus, databusHart1, databusHart0, instructionbusHart1, instructionbusHart0}),
+	.axi_s({romcopybus, audiobus, videobus, databusHart1, databusHart0, dmabus, instructionbusHart1, instructionbusHart0}),
 	.axi_m(memorybus) );
 
 // --------------------------------------------------

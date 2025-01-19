@@ -47,9 +47,9 @@ delayreset delayreset25inst(
 // HDMI video output 640x480 @ 60Hz
 // --------------------------------------------------
 
-wire [11:0] video_x;
-wire [11:0] video_y;
-wire notblank = (video_x < 12'd640) && (video_y < 12'd480);
+wire [9:0] video_x;
+wire [9:0] video_y;
+wire notblank = (video_x < 10'd640) && (video_y < 10'd480);
 
 wire [23:0] rgbdat;
 wire [2:0] tmds;
@@ -219,16 +219,16 @@ always @(posedge clk25) begin
 	if (~rst25n) begin
 		paletteout <= 12'd0;
 	end else begin
-		case ({scanenable, colormode})
-			2'b10: paletteout <= paletteentries[paletteindex];
-			2'b11: paletteout <= rgbcolor;
-			default: paletteout <= 0;
+		case ({notblank, scanenable, colormode})
+			3'b110: paletteout <= paletteentries[paletteindex];
+			3'b111: paletteout <= rgbcolor;
+			default: paletteout <= 12'd0;
 		endcase
 	end
 end
 
 // 12 bit RGB output expanded to 24 bit (using top 4 bits per component only)
-assign rgbdat = notblank ? {paletteout[11:8], 4'd0, paletteout[7:4], 4'd0, paletteout[3:0], 4'd0} : 24'd0;
+assign rgbdat = {paletteout[11:8], 4'd0, paletteout[7:4], 4'd0, paletteout[3:0], 4'd0};
 
 // --------------------------------------------------
 // AXI4 defaults
@@ -409,8 +409,8 @@ end
 // Scan-out logic
 // --------------------------------------------------
 
-wire startofrowp = video_x == 12'd0;
-wire endofcolumnp = video_y == 12'd490;
+wire startofrowp = video_x == 10'd0;
+wire endofcolumnp = video_y == 10'd490;
 wire vsyncnow = startofrowp && endofcolumnp;
 
 logic blankt;
