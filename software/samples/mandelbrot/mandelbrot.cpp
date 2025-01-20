@@ -98,7 +98,7 @@ int main()
 	while(1)
 	{
 		// Generate one line of mandelbrot into offscreen buffer
-		// NOTE: It is unlikely that CPU write speeds can catch up with VPU DMA transfer speed, should not see a flicker
+		// NOTE: It is unlikely that CPU write speeds can catch up with VPU transfer speed, should not see any flicker
 		mandelbrotFloat(X,Y,R);
 
 		tilex++;

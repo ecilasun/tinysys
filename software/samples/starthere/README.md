@@ -10,9 +10,9 @@ Once that is out of the way, we can begin!
 
 Tinysys is a simple computer with two 32 bit RISC-V cores. It has no branch prediction, no pipelining and will run at approximately 27MIPS, and has a coremark score of 0.54 to 0.6 depending on the configuration
 
-However slow it might seem, it makes up for what it lacks with a few hardware devices. There is a DMA unit that can move 16 byte aligned memory blocks with optional zero-masking, USB serial interface to talk to a host PC, and has access to 256Mbytes of DDR3 memory. To see the speed at which memory can be moved around, compile and run the `dmatest 1` (dma test to video memory with no vsync) command on the device CLI, or the `memtest` sample for CPU side memory access speed.
+However slow it might seem, it makes up for what it lacks with a few hardware devices implemented in the FPGA fabric. To see the speed at which memory can be moved around, run the `memtest` sample for CPU side memory clear speed.
 
-There's a mini OS (~56Kbytes) provided in ROM which contains the necessary routines to help with file access, memory allocation and other facilities.
+There's a mini OS (~52Kbytes) provided in ROM which contains the necessary routines to help with file access, memory allocation and other facilities.
 
 The SDK directory contains quite a few modules and combined with the samples you should have a good idea of what the device can achieve.
 

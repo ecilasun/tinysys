@@ -301,7 +301,7 @@ void VPUSetScanoutAddress(struct EVideoContext *_context, const uint32_t _scanOu
  * @brief Set video write address
  * 
  * The address, which has to be aligned to 64 bytes, is the current back buffer that
- * the CPU, DMA or rasterizer writes will go to. The address is cached in the video
+ * the CPU rasterizer writes will go to. The address is cached in the video
  * context for repeated use.
  * 
  * @param _context Video context
@@ -757,7 +757,7 @@ uint32_t VPUGetScanline()
  * It is used to implement double buffering and page flipping.
  * 
  * Ideally while the frame buffer is displayed the backbuffer is populated with new data
- * by the CPU, DMA or rasterizer. Once the back buffer is ready, the buffers are swapped
+ * by the CPU or rasterizer. Once the back buffer is ready, the buffers are swapped
  * and the new frame is displayed.
  * 
  * @param _vx Video context

@@ -81,7 +81,7 @@ I_FinishUpdate (void)
 {
 	// Copy screen to framebuffer
 	memcpy(framebuffer, screens[0], SCREENWIDTH*SCREENHEIGHT);
-	// Write pending data to memory to ensure all writes are visible to scan-out or DMA
+	// Write pending data to memory to ensure all writes are visible to scan-out
 	CFLUSH_D_L1;
 }
 

@@ -43,7 +43,7 @@ Here is a list of all devices, their starting addresses, and their purpose. Plea
 	DEVICE_LEDS 0x80010000 - 0x8001FFFF Debug LEDs: 4 LEDs that are on board the device, suitable for simple debugging purposes
 	DEVICE_VPUC 0x80020000 - 0x8002FFFF VPU fifo: Command fifo for the video processing unit (VPU)
 	DEVICE_SPIC 0x80030000 - 0x8003FFFF SPI fifo: Command fifo for the SPI device tied to the SDCard controller
-	DEVICE_DMAC 0x80040000 - 0x8004FFFF DMA fifo: Command fifo for the DMA controller, used to set up memory transfers
+	DEVICE_DEV0 0x80040000 - 0x8004FFFF Unused - reserved for future use / do not access
 	DEVICE_USBA 0x80050000 - 0x8005FFFF USB fifo: Command fifo for the SPI device tied to the USB host chip
 	DEVICE_APUC 0x80060000 - 0x8006FFFF APU fifo: Command fifo for the audio unit, used to control audio playback
 	DEVICE_MAIL 0x80070000 - 0x8007FFFF Mailbox: A 4Kbyte word addressible uncached memory region used to store task state for the scheduler
@@ -62,7 +62,7 @@ There is a memory arbiter implemented in the FPGA fabric, which is the backbone 
 
 This unit can deal memory access using round-robin arbitration where each device gets a fair share of the memory bus.
 
-The DMA unit, CPUs, and the VPU are the main clients of this bus. All of the internal hardware also live on the bus as uncached memory mapped devices, such as the command FIFOs for most devices.
+The CPUs, audio DMA and the VPU scanline buffer are the main clients of this bus. All of the internal hardware also live on the bus as uncached memory mapped devices, such as the command FIFOs for most devices.
 
 When video scan-out is enabled, the CPUs will share memory access with the VPU, and the VPU will take up most of the read bandwidth while it's populating its scan-out cache. This means, for memory I/O intensive algorithms, one might benefit from turning off video scan-out slightly, for example when startup up a game that needs to generate some procedural data.
 

@@ -124,7 +124,7 @@ This turns off the interrupt generation on the VPU for horizontal blanking.
 ### Video backbuffer
 `void VPUSetWriteAddress(struct EVideoContext *_context, const uint32_t _cpuWriteAddress64ByteAligned)`
 
-This function will set the CPU writeable address (i.e. the backbuffer) so that the CPU can draw graphics, or use DMA to blit some images to be later shown by calling the `VPUSwapPages()` function.
+This function will set the CPU writeable address (i.e. the backbuffer) so that the CPU can draw graphics or blit some images to be later shown by calling the `VPUSwapPages()` function.
 
 ### Text functions
 `void VPUPrintString(struct EVideoContext *_context, const uint8_t _foregroundIndex, const uint8_t _backgroundIndex, const uint16_t _x, const uint16_t _y, const char *_message, int _length)`

@@ -37,7 +37,7 @@ int main()
 			apubuffer[i*NUM_CHANNELS+1] = short(16384.f*cosf(offset+2.f*3.1415927f*float(i*2)/38.f));
 		}
 
-		// Make sure the writes are visible by the DMA
+		// Make sure the writes are visible by the audio DMA
 		CFLUSH_D_L1;
 
 		// Fill current write buffer with new mix data
