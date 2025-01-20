@@ -45,7 +45,6 @@ Here's a list of features implemented so far
 - MAIL device works
 - LED device exists but no graphical representation present
 - APU works and plays sound via SDL
-- DMA works including masked mode
 - XADC is a placeholder and will return some huge temperature
 - SPI sdcard emulator fully works
 - APU supports varying playback rates

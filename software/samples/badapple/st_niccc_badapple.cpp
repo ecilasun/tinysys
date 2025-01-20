@@ -15,7 +15,6 @@
 #include "basesystem.h"
 #include "core.h"
 #include "vpu.h"
-#include "dma.h"
 #include "io.h"
 
 #include <stdio.h>

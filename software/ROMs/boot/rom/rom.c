@@ -3,7 +3,6 @@
 #include "rombase.h"
 #include "apu.h"
 #include "vpu.h"
-#include "dma.h"
 #include "uart.h"
 #include "serialinringbuffer.h"
 #include "keyringbuffer.h"

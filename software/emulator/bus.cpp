@@ -9,7 +9,6 @@ CBus::CBus(uint32_t resetvector)
 	m_spad = new CScratchpadMem();
 	m_vpuc = new CVPU();
 	m_apu = new CAPU();
-	m_dmac = new CDMA();
 	m_leds = new CLEDs();
 	m_mail = new CMailMem();
 	m_csr[0] = new CCSRMem(0);
@@ -23,8 +22,8 @@ CBus::CBus(uint32_t resetvector)
 	m_devices[1] = m_leds;
 	m_devices[2] = m_vpuc;
 	m_devices[3] = m_sdcc;
-	m_devices[4] = m_dmac;
-	m_devices[5] = m_null; // USBA
+	m_devices[4] = m_null;
+	m_devices[5] = m_null;
 	m_devices[6] = m_apu;
 	m_devices[7] = m_mail;
 	m_devices[8] = m_uart;
@@ -42,7 +41,6 @@ CBus::~CBus()
 	if (m_mail) delete m_mail;
 	if (m_uart) delete m_uart;
 	if (m_leds) delete m_leds;
-	if (m_dmac) delete m_dmac;
 	if (m_vpuc) delete m_vpuc;
 	if (m_apu) delete m_apu;
 	if (m_mem) delete m_mem;
@@ -55,7 +53,6 @@ void CBus::Reset(uint8_t* rombin, uint32_t romsize)
 
 	m_sdcc->Reset();
 	m_vpuc->Reset();
-	m_dmac->Reset();
 	m_uart->Reset();
 	m_leds->Reset();
 	m_mail->Reset();
@@ -79,7 +76,6 @@ void CBus::QueueByte(uint8_t byte)
 
 bool CBus::Tick()
 {
-	m_dmac->Tick(m_mem);
 	m_sdcc->Tick(this);
 	m_uart->Tick(this);
 	m_vpuc->Tick(this);
