@@ -1,6 +1,8 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
+import axi4pkg::*;
+
 module tinysoc #(
 	parameter int RESETVECTOR = 32'd0
 ) (
@@ -53,7 +55,6 @@ axi4if devicebusHart0();		// Direct access to devices from data unit of HART#0
 axi4if devicebusHart1();		// Direct access to devices from data unit of HART#1
 
 axi4if videobus();				// Video output unit bus
-axi4if dmabus();				// Direct memory access bus
 axi4if romcopybus();			// Bus for boot ROM copy
 axi4if audiobus();				// Bus for audio device output
 
@@ -66,7 +67,6 @@ axi4if vpucmdif();				// Sub bus: VPU command fifo (video scan out logic)
 axi4if spiif();					// Sub bus: SPI control device (sdcard)
 axi4if csrif0();				// Sub bus: CSR#0 file device (control registers)
 axi4if csrif1();				// Sub bus: CSR#1 file device (control registers)
-axi4if dmaif();					// Sub bus: DMA controller (memcopy)
 axi4if audioif();				// Sub bus: APU i2s audio output unit (raw audio)
 axi4if uartif();				// Sub bus: UART serial I/O for ESP32 communication
 axi4if mailif();				// Sub bus: MAIL mailbox for HART communication
@@ -210,26 +210,6 @@ videocore VPU(
 	.hirq(hirq));
 
 // --------------------------------------------------
-// DMA unit
-// --------------------------------------------------
-
-wire dmafifoempty;
-wire dmafifore;
-wire dmafifovalid;
-wire dmabusy;
-wire [31:0] dmafifodout;
-
-axi4dma DMA(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.m_axi(dmabus),
-	.dmafifoempty(dmafifoempty),
-	.dmafifodout(dmafifodout),
-	.dmafifore(dmafifore),
-	.dmafifovalid(dmafifovalid),
-	.dmabusy(dmabusy) );
-
-// --------------------------------------------------
 // Boot ROM copy unit
 // --------------------------------------------------
 
@@ -270,16 +250,16 @@ axi4i2saudio APU(
 // Traffic between master units / memory / devices
 // --------------------------------------------------
 
-arbitersmall arbiter2x1instdev(
+arbitersmall arbitersmallinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.axi_s({devicebusHart1, devicebusHart0}),
 	.axi_m(devicebus) );
 
-arbiterlarge arbiter8x1instSDRAM(
+arbiterlarge arbiterlargeinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.axi_s({romcopybus, audiobus, videobus, databusHart1, databusHart0, dmabus, instructionbusHart1, instructionbusHart0}),
+	.axi_s({romcopybus, audiobus, videobus, databusHart1, databusHart0, instructionbusHart1, instructionbusHart0}),
 	.axi_m(memorybus) );
 
 // --------------------------------------------------
@@ -312,7 +292,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // LEDS: 8xx10000  8xx1FFFF  4'b0001  64KB	 Debug LEDs
 // VPUC: 8xx20000  8xx2FFFF  4'b0010  64KB	 Video Processing Unit
 // SDCC: 8xx30000  8xx3FFFF  4'b0011  64KB	 SDCard SPI Unit
-// DMAC: 8xx40000  8xx4FFFF  4'b0100  64KB	 Direct Memory Access / Memcopy
+// ----: 8xx40000  8xx4FFFF  4'b0100  64KB	 Unused
 // ----: 8xx50000  8xx5FFFF  4'b0101  64KB	 Reserved for future use
 // APUC: 8xx60000  8xx6FFFF  4'b0110  64KB	 Audio Processing Unit / Mixer
 // MAIL: 8xx70000  8xx7FFFF  4'b0111  64KB	 MAIL inter-HART comm (16Kbytes)
@@ -332,13 +312,12 @@ devicerouter devicerouterinst(
 		4'b1000,		// UART ESP32 to RISC-V UART channel
 		4'b0111,		// MAIL Mailbox for HART-to-HART commmunication
 		4'b0110,		// APUC	Audio Processing Unit Command Fifo
-		4'b0100,		// DMAC DMA Command Fifo
 		4'b0011,		// SDCC SDCard access via SPI
 		4'b0010,		// VPUC Graphics Processing Unit Command Fifo
 		4'b0001,		// LEDS Debug / Status LED interface
 		4'b0000}),		// SPAD Scratchpad for inter-core data transfer
 	.axi_s(devicebus),
-    .axi_m({csrif1, csrif0, uartif, mailif, audioif, dmaif, spiif, vpucmdif, ledif, scratchif}));
+    .axi_m({csrif1, csrif0, uartif, mailif, audioif, spiif, vpucmdif, ledif, scratchif}));
 
 // --------------------------------------------------
 // Interrupt wires
@@ -376,17 +355,6 @@ axi4sdcard sdcardinst(
 	.sdconn(sdconn),
 	.keyirq(keyirq),
 	.s_axi(spiif));
-
-commandqueue dmacmdinst(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.s_axi(dmaif),
-	// Internal comms channel for DMA
-	.fifoempty(dmafifoempty),
-	.fifodout(dmafifodout),
-	.fifore(dmafifore),
-	.fifovalid(dmafifovalid),
-    .devicestate({31'd0,dmabusy}));
 
 commandqueue audiocmdinst(
 	.aclk(aclk),

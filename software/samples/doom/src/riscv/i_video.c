@@ -32,7 +32,6 @@
 #include "vpu.h"
 
 uint8_t *framebuffer;
-#include "dma.h"
 struct EVideoContext g_vctx;
 
 void
@@ -80,38 +79,10 @@ I_UpdateNoBlit(void)
 void
 I_FinishUpdate (void)
 {
-	// Option 1: CPU handles the copy operation
-	// memcpy(framebuffer, screens[0], SCREENWIDTH*SCREENHEIGHT);
-
-	// Option 2: DMA unit handles the copy operation
-
-	// Wait for prior DMA to avoid lock-up
-	//while (DMAPending()) { }
-
-	// DMA controller handles the DMA operation in 128bit (16 byte) blocks.
-	// Writes go directly to memory without polluting the data cache
-	// but RAM contents have to be recent, hence the flush above.
-	uint32_t blockCount = SCREENWIDTH * SCREENHEIGHT / DMA_BLOCK_SIZE;
-	const uint32_t leftoverDMA = blockCount%256;
-	const uint32_t fullDMAs = blockCount/256;
-
-	// In either case, write pending data to memory to ensure all writes are visible to scan-out or DMA
+	// Copy screen to framebuffer
+	memcpy(framebuffer, screens[0], SCREENWIDTH*SCREENHEIGHT);
+	// Write pending data to memory to ensure all writes are visible to scan-out or DMA
 	CFLUSH_D_L1;
-
-	// Do the full DMAs first
-	uint32_t fulloffset = 0;
-	for (uint32_t full=0;full<fullDMAs;++full)
-	{
-		DMACopy4K((uint32_t)screens[0]+fulloffset, (uint32_t)framebuffer+fulloffset);
-		fulloffset += 256*16; // 16 bytes for each 256-block, total of 4K
-	}
-
-	// Partial DMA next
-	if (leftoverDMA!=0)
-		DMACopy((uint32_t)screens[0]+fulloffset, (uint32_t)framebuffer+fulloffset, leftoverDMA);
-
-	// Tag for sync (essentially an item in FIFO after last DMA so we can check if DMA is complete when this drains)
-	DMATag(0x0);
 }
 
 

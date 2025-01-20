@@ -210,7 +210,7 @@ fetchstate fetchmode = INIT;
 fetchstate postInject = FETCH;	// Where to go after injection ends
 
 always @(posedge aclk) begin
-	if (~aresetn || cpuresetreq) begin
+	if (~delayedresetn || cpuresetreq) begin
 		PC <= 32'd0;
 		prevPC <= 32'd0;
 		emitPC <= 32'd0;
