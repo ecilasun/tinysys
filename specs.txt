@@ -1,5 +1,5 @@
 CPU:
-32 bit CPU running at 150MHz, approximately 5 clocks per instruction
+32 bit CPU running at 166.66667, approximately 5 clocks per instruction
 Based on RISC-V architecture
 Implements the rv32im_zicsr_zifencei_zfinx feature set (32bit base instruction set, intereger div/mul, combined float+integer register file, 4096 control/status registers, I$/D$ fence and flush instructions, software/hardware/timer interrupts)
 16Kbytes instruction cache
