@@ -27,8 +27,7 @@ Of course, before you ask, it does run DOOM, and with sound and keyboard input! 
 - 128 bit AXI4 bus with 32 bit address line
 - Memory arbiter for on-board device system memory access (round-robin)
 - Memory mapped external hardware (audio / video etc)
-- 16 bit stereo audio output chip (24 bit native in reality, might extend later)
-- DVI 1.0 compatible video output via external chip (12 bits per pixel, RGB or paletted modes - note: this chip is deprecated, will be replaced later)
+- HDMI 1.4b compatible video and audio output via external chip (12 bits per pixel, 16bps stereo 44/22/11KHz for audio, RGB or paletted modes)
 - SDCard for file I/O
 - 4 debug LEDs (also shared by OS as indicators)
 - Custom preemptive multitasking OS, with file I/O and basic memory allocator via syscalls
