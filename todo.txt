@@ -2,3 +2,4 @@
 [+] Work on file upload support via ESP32 GPIO
 [+] Add remote reboot trigger via ESP32 GPIO
 [ ] Add memory access exception (physical memory access)
+[ ] Utilize the new JTAG connector to support debuger over OCD
