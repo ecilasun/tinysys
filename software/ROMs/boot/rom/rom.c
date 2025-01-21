@@ -3,7 +3,6 @@
 #include "rombase.h"
 #include "apu.h"
 #include "vpu.h"
-#include "dma.h"
 #include "uart.h"
 #include "serialinringbuffer.h"
 #include "keyringbuffer.h"
@@ -257,7 +256,7 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	uint32_t waterMark = read_csr(0xFF0);
 	if (mountSuccess && (waterMark == 0))
 	{
-		if (LoadOverlay("sd:/boot/rom.bin"))
+		if (LoadOverlay("sd:/sys/bin/rom.bin"))
 		{
 			// Copy and branch into CopyOverlayToROM which will then chain back into the new ROM
 			CopyPayloadAndChainOverlay(CopyOverlayToROM);

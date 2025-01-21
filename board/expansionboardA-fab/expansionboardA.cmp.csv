@@ -1,0 +1,307 @@
+Cmp-Mod V01 Created by PcbNew   date = 2025-01-16T18:08:18-0800
+
+BeginCmp
+TimeStamp = 0885194c-9ce0-4919-9953-321503a09222
+Path = 
+Reference = REF**;
+ValeurCmp = MountingHole_2.2mm_M2_Pad;
+IdModule  = MountingHole:MountingHole_2.2mm_M2_Pad;
+EndCmp
+
+BeginCmp
+TimeStamp = 0fee2da9-68a3-45fb-a0f3-84425b1829da
+Path = /60a71ae6-2e49-4e06-aaca-a24b8f42afa4
+Reference = JTAG1;
+ValeurCmp = Conn_01x06_Pin;
+IdModule  = Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical;
+EndCmp
+
+BeginCmp
+TimeStamp = 2e95ec4b-6637-4d7e-94a4-1f0341d7d197
+Path = 
+Reference = REF**;
+ValeurCmp = MountingHole_2.2mm_M2_Pad;
+IdModule  = MountingHole:MountingHole_2.2mm_M2_Pad;
+EndCmp
+
+BeginCmp
+TimeStamp = 418a52f7-0de6-466e-baa0-cc98f46f90b3
+Path = 
+Reference = REF**;
+ValeurCmp = MountingHole_2.2mm_M2_Pad;
+IdModule  = MountingHole:MountingHole_2.2mm_M2_Pad;
+EndCmp
+
+BeginCmp
+TimeStamp = 4f212ab5-9118-4dad-b14e-e8c37ef49e51
+Path = /5c765395-eca6-46e2-b076-4099ed835669
+Reference = J1;
+ValeurCmp = USB_C_Receptacle;
+IdModule  = USB4085-GF-A_REVA4:GCT_USB4085-GF-A_REVA4;
+EndCmp
+
+BeginCmp
+TimeStamp = 5939576b-8280-448b-a4c9-24b3e1e1dcba
+Path = 
+Reference = REF**;
+ValeurCmp = MountingHole_2.2mm_M2_Pad;
+IdModule  = MountingHole:MountingHole_2.2mm_M2_Pad;
+EndCmp
+
+BeginCmp
+TimeStamp = 0516210a-b309-4d3a-8f6e-f4b061d9aed5
+Path = /ce2fe250-f1c2-4f06-a924-67681aebbbdf
+Reference = U3;
+ValeurCmp = LTST-C195KGJRKT;
+IdModule  = LED_LTST_C195KGJRKT:LTST-BILED-15X16;
+EndCmp
+
+BeginCmp
+TimeStamp = 0f199b4f-1b0e-4fbe-a062-d1fb157b7303
+Path = /066442ad-2a90-4456-86cc-6b4df98257fb
+Reference = tEN1;
+ValeurCmp = TestPoint;
+IdModule  = TestPoint:TestPoint_Pad_D1.0mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 1a4856a1-00cf-4715-bbae-d2b51492c11c
+Path = /2478cb83-551e-4a67-aaaa-cabac075cfb3
+Reference = R1;
+ValeurCmp = 330Ohm;
+IdModule  = Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder;
+EndCmp
+
+BeginCmp
+TimeStamp = 2a920783-ba75-4501-989b-99bc1053b155
+Path = /5d01a9a9-e55f-4819-9e8c-872e48815763
+Reference = VR1;
+ValeurCmp = LM1117MPX-3.3/NOPB;
+IdModule  = LM1117MPX33NOPB:VREG_LM1117MPX-3.3_NOPB;
+EndCmp
+
+BeginCmp
+TimeStamp = 43bfb953-151b-4deb-9ce9-d90c20ad364a
+Path = 
+Reference = REF**;
+ValeurCmp = OSHW-Logo2_7.3x6mm_SilkScreen;
+IdModule  = Symbol:OSHW-Logo2_7.3x6mm_SilkScreen;
+EndCmp
+
+BeginCmp
+TimeStamp = 4a606d73-ba3e-476a-955c-b59d4d7a6b6f
+Path = /5aa3d8b2-1f91-4a9a-a668-5934f03bbe2c
+Reference = U2;
+ValeurCmp = GPIO_U2;
+IdModule  = Connector_PinSocket_2.54mm:PinSocket_2x32_P2.54mm_Vertical;
+EndCmp
+
+BeginCmp
+TimeStamp = 4b78114e-0490-4187-a9bd-da72193a838c
+Path = /5f9e33fc-f724-41fd-9ed8-b8ebb0f4e9c2
+Reference = U4;
+ValeurCmp = GPIO_U4;
+IdModule  = Connector_PinSocket_2.54mm:PinSocket_2x32_P2.54mm_Vertical;
+EndCmp
+
+BeginCmp
+TimeStamp = 5070e5b7-491b-41b0-8edb-166ea300b35d
+Path = /ac57e575-3aa9-445e-9e19-42f3c69ad1c5
+Reference = C4;
+ValeurCmp = 0.1uf;
+IdModule  = Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder;
+EndCmp
+
+BeginCmp
+TimeStamp = 50d2bc6a-4017-4d5b-b99b-ffb5b39323eb
+Path = /70a32c21-94e1-4ac5-b37b-bb978844a25e
+Reference = U1;
+ValeurCmp = ESP32-S3-WROOM-1;
+IdModule  = RF_Module:ESP32-S3-WROOM-1;
+EndCmp
+
+BeginCmp
+TimeStamp = 589c8821-d8b4-40d8-a91c-090ce8ee228f
+Path = /3e09d761-7068-4f5d-a96a-2e740b37236f
+Reference = R6;
+ValeurCmp = 33Ohm;
+IdModule  = Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder;
+EndCmp
+
+BeginCmp
+TimeStamp = 5d1cf069-a58e-4a59-9a55-94138ca28780
+Path = /7bda583f-a9c9-4834-ab7c-a0620c9d163f
+Reference = C5;
+ValeurCmp = 0.1uf;
+IdModule  = Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder;
+EndCmp
+
+BeginCmp
+TimeStamp = 5d772b8d-30d6-40e1-b8ec-8268611be331
+Path = /533f7c23-4355-4ec2-a375-69226a5fb19e
+Reference = D4;
+ValeurCmp = LED;
+IdModule  = LED_SMD:LED_1206_3216Metric_Pad1.42x1.75mm_HandSolder;
+EndCmp
+
+BeginCmp
+TimeStamp = 67f3c931-a709-4c81-84e6-33b094591f85
+Path = /29d2d69d-9c68-4c96-85f2-6119b3e9de85
+Reference = CRD1;
+ValeurCmp = DM3AT-SF-PEJM5;
+IdModule  = DM3AT-SF-PEJM5:HRS_DM3AT-SF-PEJM5;
+EndCmp
+
+BeginCmp
+TimeStamp = 71c5b9e3-2857-4cef-bac0-f85971b222ee
+Path = /bb0ddcaf-fb33-4f5d-ba59-0f7a270cafd6
+Reference = C6;
+ValeurCmp = 10uf;
+IdModule  = Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder;
+EndCmp
+
+BeginCmp
+TimeStamp = 741ec4bb-d92d-46b4-9ca4-cd1e2b682f26
+Path = /50bb3dc2-79b6-4bc1-b0e4-f49ffb0da00b
+Reference = J2;
+ValeurCmp = 2086581051;
+IdModule  = HDMI_2086:MOLEX_2086581051;
+EndCmp
+
+BeginCmp
+TimeStamp = 7bb9ca5d-8d69-4356-9f9b-5b52cc4846c7
+Path = /07b7b3e1-862c-462c-887d-2fb4d6a30bd3
+Reference = R4;
+ValeurCmp = 33Ohm;
+IdModule  = Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder;
+EndCmp
+
+BeginCmp
+TimeStamp = 865959ac-997f-42e6-9559-8637e6855613
+Path = /3b64994e-a04a-4b71-990a-48f9bdd37ff8
+Reference = D5;
+ValeurCmp = LED;
+IdModule  = LED_SMD:LED_1206_3216Metric_Pad1.42x1.75mm_HandSolder;
+EndCmp
+
+BeginCmp
+TimeStamp = 91acc125-df11-430a-8a8f-11a7078b5d91
+Path = /343ab3d9-2eb8-4907-8c79-e26e73a85bde
+Reference = t3V3;
+ValeurCmp = TestPoint;
+IdModule  = TestPoint:TestPoint_Pad_D1.0mm;
+EndCmp
+
+BeginCmp
+TimeStamp = 9254a47a-fdaf-4c84-978b-e01811dcb11a
+Path = /3aa2fee9-9c26-4356-8b48-1d5b86f6f50f
+Reference = R3;
+ValeurCmp = 33Ohm;
+IdModule  = Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder;
+EndCmp
+
+BeginCmp
+TimeStamp = a2c8a78f-970e-4958-984e-fc93475c909d
+Path = /87c95f85-f410-4a2f-964b-85440a02f8ca
+Reference = R5;
+ValeurCmp = 33Ohm;
+IdModule  = Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder;
+EndCmp
+
+BeginCmp
+TimeStamp = a3a86f7b-7bec-49df-89b0-c4991db3d79e
+Path = /8d3f79fb-99d5-4c42-a6b5-231f003569d2
+Reference = D2;
+ValeurCmp = LED;
+IdModule  = LED_SMD:LED_1206_3216Metric_Pad1.42x1.75mm_HandSolder;
+EndCmp
+
+BeginCmp
+TimeStamp = ac3357f7-e831-46b5-b200-79a2f0f239bd
+Path = 
+Reference = REF**;
+ValeurCmp = WEEE-Logo_4.2x6mm_SilkScreen;
+IdModule  = Symbol:WEEE-Logo_4.2x6mm_SilkScreen;
+EndCmp
+
+BeginCmp
+TimeStamp = bc4dfe92-f18f-4a8f-b4a0-274f03dff884
+Path = /2f313fd4-940f-4008-bae2-6f51ce410da4
+Reference = t5V0;
+ValeurCmp = TestPoint;
+IdModule  = TestPoint:TestPoint_Pad_D1.0mm;
+EndCmp
+
+BeginCmp
+TimeStamp = bf89935d-a059-4519-a429-dbbcfb2a7dd7
+Path = /576c9a82-2879-4b4d-ac74-d98c4a974f0e
+Reference = R2;
+ValeurCmp = 33Ohm;
+IdModule  = Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder;
+EndCmp
+
+BeginCmp
+TimeStamp = c4bcdc26-84d3-4339-b7bc-1eb54f41c534
+Path = 
+Reference = REF**;
+ValeurCmp = KiCad-Logo2_5mm_SilkScreen;
+IdModule  = Symbol:KiCad-Logo2_5mm_SilkScreen;
+EndCmp
+
+BeginCmp
+TimeStamp = c4d996b5-b8f4-4c4c-b063-bba38d7ea0f8
+Path = /8f7c9c0e-79ae-4023-820a-2891777c15b3
+Reference = tPWR1;
+ValeurCmp = TestPoint;
+IdModule  = TestPoint:TestPoint_Pad_D1.0mm;
+EndCmp
+
+BeginCmp
+TimeStamp = c6f85c2a-cf8f-401e-b215-ed58cfd0f9db
+Path = /29db620f-c8a2-4283-9a8d-002d04c81855
+Reference = D1;
+ValeurCmp = LED;
+IdModule  = LED_SMD:LED_1206_3216Metric_Pad1.42x1.75mm_HandSolder;
+EndCmp
+
+BeginCmp
+TimeStamp = c87adb7e-f266-4afc-a2b9-c89e6bc01393
+Path = /54dc9c94-34d9-47c0-b7c1-2395f407540f
+Reference = SW4;
+ValeurCmp = ESPPROG;
+IdModule  = Button_Switch_SMD:SW_Tactile_SPST_NO_Straight_CK_PTS636Sx25SMTRLFS;
+EndCmp
+
+BeginCmp
+TimeStamp = cb38f65b-5c7f-406d-afb9-2768bb6f05f0
+Path = /1e6ac406-ec08-49ca-aefb-a174f52d5d94
+Reference = C7;
+ValeurCmp = 10uf;
+IdModule  = Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder;
+EndCmp
+
+BeginCmp
+TimeStamp = d4506d38-c945-46c2-938a-f02f405a5e0e
+Path = /a822efd6-20f9-4f40-a9a7-26319c3896a4
+Reference = R7;
+ValeurCmp = 33Ohm;
+IdModule  = Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder;
+EndCmp
+
+BeginCmp
+TimeStamp = e1a1a718-3b9f-4061-8d64-94cd90facff6
+Path = /9664d552-315f-46f9-9f76-1227f58c3018
+Reference = D3;
+ValeurCmp = LED;
+IdModule  = LED_SMD:LED_1206_3216Metric_Pad1.42x1.75mm_HandSolder;
+EndCmp
+
+BeginCmp
+TimeStamp = ef46f879-b6ce-4cb1-90e3-1079bc998d7c
+Path = 
+Reference = REF**;
+ValeurCmp = ESD-Logo_6.6x6mm_SilkScreen;
+IdModule  = Symbol:ESD-Logo_6.6x6mm_SilkScreen;
+EndCmp
+
+EndListe

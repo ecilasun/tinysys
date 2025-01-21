@@ -1,6 +1,8 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
+import axi4pkg::*;
+
 module arbitersmall(
 	input wire aclk,
 	input wire aresetn,

@@ -47,7 +47,7 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, int scanline, CBus* bus)
 							uint32_t G = SelectBitRange(color, 3, 0);
 							uint32_t B = SelectBitRange(color, 7, 4);
 							uint32_t R = SelectBitRange(color, 11, 8);
-							uint32_t expandedcolor = 0xFF000000 | (R << 20) | (G << 12) | (B << 4);
+							uint32_t expandedcolor = 0xFF000000 | (R << 20) | (B << 12) | (G << 4);
 							pixels[linetop0 + x*2+0] = expandedcolor;
 							pixels[linetop1 + x*2+0] = expandedcolor;
 							pixels[linetop0 + x*2+1] = expandedcolor;
@@ -75,7 +75,7 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, int scanline, CBus* bus)
 							uint32_t G = SelectBitRange(color, 3, 0);
 							uint32_t B = SelectBitRange(color, 7, 4);
 							uint32_t R = SelectBitRange(color, 11, 8);
-							uint32_t expandedcolor = 0xFF000000 | (R << 20) | (G << 12) | (B << 4);
+							uint32_t expandedcolor = 0xFF000000 | (R << 20) | (B << 12) | (G << 4);
 							pixels[linetop + x] = expandedcolor;
 						}
 						if (scanline >= m_regB)
@@ -272,7 +272,7 @@ void CVPU::Tick(CBus* bus)
 			uint32_t G = SelectBitRange(color, 3, 0) << 4;
 			uint32_t B = SelectBitRange(color, 7, 4) << 4;
 			uint32_t R = SelectBitRange(color, 11, 8) << 4;
-			m_vgapalette[addrs] = 0xFF000000 | (R << 16) | (G << 8) | (B);
+			m_vgapalette[addrs] = 0xFF000000 | (R << 16) | (B << 8) | (G);
 			m_state = 0;
 		}
 		break;

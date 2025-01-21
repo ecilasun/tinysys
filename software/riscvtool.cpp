@@ -755,7 +755,7 @@ int main(int argc, char **argv)
 {
 	if (argc==1)
 	{
-		printf("RISCVTool 1.1F\n");
+		printf("RISCVTool 1.1H\n");
 		showusage();
 		return 0;
 	}
@@ -821,7 +821,7 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	printf("RISCVTool 1.1F\n");
+	printf("RISCVTool 1.1H\n");
 	printf("Error: Unknown arguments.\n");
 	showusage();
 

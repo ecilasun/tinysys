@@ -6,26 +6,26 @@ import axi4pkg::*;
 module videocore(
 	input wire aclk,
 	input wire clk25,
+	input wire clk125,
 	input wire aresetn,
 	input wire rst25n,
 	axi4if.master m_axi,
-	output wire vvsync,
-	output wire vhsync,
-	output wire vclk,
-	output wire vde,
-	output wire [11:0] vdat,
+	output wire HDMI_CLK_p,
+	output wire HDMI_CLK_n,
+	output wire [2:0] HDMI_TMDS_p,
+	output wire [2:0] HDMI_TMDS_n,
+	//input wire HDMI_CEC,
+	//inout wire HDMI_SDA,
+	//inout wire HDMI_SCL,
+	//input wire HDMI_HPD,
+	input wire audioclock,
+	input wire [31:0] audiosampleLR,
 	input wire vpufifoempty,
 	input wire [31:0] vpufifodout,
 	output wire vpufifore,
 	input wire vpufifovalid,
 	output wire [31:0] vpustate,
 	output wire hirq);
-
-// A simple video unit with the following features:
-// - Four video output modes (320x240 or 640x480, indexed or 16bpp)
-// - Framebuffer scan-out from any cache aligned memory location in mapped device memory
-// - Frame counter support for vsync implementations
-// - Memory mapped command buffer interface
 
 // --------------------------------------------------
 // Reset delay line
@@ -36,6 +36,48 @@ delayreset delayresetinst(
 	.aclk(aclk),
 	.inputresetn(aresetn),
 	.delayedresetn(delayedresetn) );
+
+wire delayedreset25n;
+delayreset delayreset25inst(
+	.aclk(clk25),
+	.inputresetn(rst25n),
+	.delayedresetn(delayedreset25n) );
+
+// --------------------------------------------------
+// HDMI video output 640x480 @ 60Hz
+// --------------------------------------------------
+
+wire [9:0] video_x;
+wire [9:0] video_y;
+wire notblank = (video_x < 10'd640) && (video_y < 10'd480);
+
+wire [23:0] rgbdat;
+wire [2:0] tmds;
+wire tmds_clock;
+
+// "TinySys" "FPGA" "Game" 60Hz 640x480 44.1KHz 16bit
+hdmi #(.VIDEO_ID_CODE(1), .IT_CONTENT(1'b1), .VIDEO_REFRESH_RATE(60.0), .VENDOR_NAME({"TinySys", 8'd0}), .PRODUCT_DESCRIPTION({"FPGA", 96'd0}), .SOURCE_DEVICE_INFORMATION(8), .AUDIO_RATE(44100), .AUDIO_BIT_WIDTH(16)) HDMIInst(
+    .clk_pixel_x5(clk125),
+    .clk_pixel(clk25),
+    .clk_audio(audioclock),
+    .reset(~delayedreset25n),
+    .rgb(rgbdat),
+    .audio_sample_word( {audiosampleLR[31:16], audiosampleLR[15:0]} ),
+	// HDMI data out
+    .tmds(tmds),
+    .tmds_clock(tmds_clock),
+	// Current pixel position
+	.cx(video_x),
+    .cy(video_y));
+
+genvar i;
+generate
+    for (i = 0; i < 3; i++)
+    begin: obufds_gen
+        OBUFDS #(.IOSTANDARD("TMDS_33")) obufds (.I(tmds[i]), .O(HDMI_TMDS_p[i]), .OB(HDMI_TMDS_n[i]));
+    end
+    OBUFDS #(.IOSTANDARD("TMDS_33")) obufds_clock(.I(tmds_clock), .O(HDMI_CLK_p), .OB(HDMI_CLK_n));
+endgenerate
 
 // --------------------------------------------------
 // Scan setup
@@ -50,9 +92,6 @@ logic scanenable;
 // --------------------------------------------------
 // Common
 // --------------------------------------------------
-
-wire [11:0] video_x;
-wire [11:0] video_y;
 
 logic cmdre;
 assign vpufifore = cmdre;
@@ -180,51 +219,16 @@ always @(posedge clk25) begin
 	if (~rst25n) begin
 		paletteout <= 12'd0;
 	end else begin
-		case ({scanenable, colormode})
-			2'b10: paletteout <= paletteentries[paletteindex];
-			2'b11: paletteout <= rgbcolor;
-			default: paletteout <= 0;
+		case ({notblank, scanenable, colormode})
+			3'b110: paletteout <= paletteentries[paletteindex];
+			3'b111: paletteout <= rgbcolor;
+			default: paletteout <= 12'd0;
 		endcase
 	end
 end
 
-// --------------------------------------------------
-// Video signal
-// --------------------------------------------------
-
-wire hsync, vsync;
-vgatimer VideoScanout(
-	.rst_i(~delayedresetn),
-	.clk_i(clk25),
-	.hsync_o(hsync),
-	.vsync_o(vsync),
-	.counter_x(video_x),
-	.counter_y(video_y),
-	.vsynctrigger_o(),
-	.vsynccounter() );
-
-logic [11:0] paletteout_d;
-logic hsync_d, vsync_d, vde_d;
-wire notblank = (video_x < 12'd640) && (video_y < 12'd480);
-always @(posedge clk25) begin
-	if (~rst25n) begin
-		hsync_d <= 1'b0;
-		vsync_d <= 1'b0;
-		vde_d <= 1'b0;
-		paletteout_d <= 12'd0;
-	end else begin
-		hsync_d <= hsync;
-		vsync_d <= vsync;
-		vde_d <= notblank;
-		paletteout_d <= notblank ? paletteout : 12'd0;
-	end
-end
-
-assign vhsync = hsync_d;
-assign vvsync = vsync_d;
-assign vde = vde_d;
-assign vdat = paletteout_d;
-assign vclk = clk25;
+// 12 bit RGB output expanded to 24 bit (using top 4 bits per component only)
+assign rgbdat = {paletteout[11:8], 4'd0, paletteout[7:4], 4'd0, paletteout[3:0], 4'd0};
 
 // --------------------------------------------------
 // AXI4 defaults
@@ -405,8 +409,8 @@ end
 // Scan-out logic
 // --------------------------------------------------
 
-wire startofrowp = video_x == 12'd0;
-wire endofcolumnp = video_y == 12'd490;
+wire startofrowp = video_x == 10'd0;
+wire endofcolumnp = video_y == 10'd490;
 wire vsyncnow = startofrowp && endofcolumnp;
 
 logic blankt;

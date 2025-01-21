@@ -21,8 +21,8 @@ assign m_axi.awlen = 0;
 assign m_axi.awsize = SIZE_4_BYTE;
 assign m_axi.awburst = BURST_FIXED;
 
-typedef enum logic [2:0] {WINIT, WIDLE, WADDR, WDATA, WRESP} writestate_type;
-writestate_type wstate = WINIT;
+typedef enum logic [2:0] {WIDLE, WADDR, WDATA, WRESP} writestate_type;
+writestate_type wstate = WIDLE;
 
 logic [3:0] wbsel;
 always_ff @(posedge aclk) begin
@@ -33,16 +33,13 @@ always_ff @(posedge aclk) begin
 		m_axi.wstrb <= 16'h0000;
 		m_axi.wlast <= 0;
 		m_axi.bready <= 0;
+		m_axi.awaddr <= 32'd0;
 		wbsel <= 4'h0;
-		wstate <= WINIT;
+		wstate <= WIDLE;
 	end else begin
 		wdone <= 1'b0;
 	
 		unique case(wstate)
-			WINIT: begin
-				wstate <= WIDLE;
-			end
-	
 			WIDLE: begin
 				if (|wstrb) begin
 					wbsel <= wstrb;
@@ -95,27 +92,24 @@ assign m_axi.arlen = 0;
 assign m_axi.arsize = SIZE_4_BYTE;
 assign m_axi.arburst = BURST_FIXED;
 
-typedef enum logic [2:0] {RINIT, RIDLE, RADDR, RDATA} readstate_type;
-readstate_type rstate = RINIT;
+typedef enum logic [2:0] {RIDLE, RADDR, RDATA} readstate_type;
+readstate_type rstate = RIDLE;
 
 always_ff @(posedge aclk) begin
 
 	if (~aresetn) begin
 		m_axi.arvalid <= 0;
 		m_axi.rready <= 0;
-		rstate <= RINIT;
+		m_axi.araddr <= 32'd0;
+		rstate <= RIDLE;
 	end else begin
 
 		rdone <= 1'b0;
 	
 		unique case(rstate)
-			RINIT: begin
-				rstate <= RIDLE;
-			end
-	
 			RIDLE: begin
 				if (re) begin
-					m_axi.araddr  <= addr;
+					m_axi.araddr <= addr;
 					m_axi.arvalid <= 1;
 				end
 				rstate <= re ? RADDR : RIDLE;

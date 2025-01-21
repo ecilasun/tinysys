@@ -12,9 +12,6 @@ void DeviceDefaultState(int _bootTime)
 	// Turn off LEDs
 	LEDSetState(0x0);
 
-	// Wait for any pending DMA to complete
-	DMAWait(CPUIncoherent);
-
 	// Set up video mode and default color tables
 	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
 	VPUSetWriteAddress(kernelgfx, CONSOLE_FRAMEBUFFER_START);

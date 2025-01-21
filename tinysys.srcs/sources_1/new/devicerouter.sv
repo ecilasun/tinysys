@@ -4,35 +4,34 @@
 // 1x5 Device Address Router
 
 module devicerouter(
-    input wire [3:0] addressmask[9:0], // Bits [19:16] of the physical address
+    input wire [3:0] addressmask[8:0], // Bits [19:16] of the physical address
     axi4if.slave axi_s,
-    axi4if.master axi_m[9:0]);
+    axi4if.master axi_m[8:0]);
 
 // ------------------------------------------------------------------------------------
 // Write router
 // ------------------------------------------------------------------------------------
 
-logic [9:0] validwaddr = 10'd0;
+logic [8:0] validwaddr = 9'd0;
 
 always_comb begin
 	unique case(axi_s.awaddr[19:16])
-		addressmask[0]:  validwaddr = 10'b0000000001;
-		addressmask[1]:  validwaddr = 10'b0000000010;
-		addressmask[2]:  validwaddr = 10'b0000000100;
-		addressmask[3]:  validwaddr = 10'b0000001000;
-		addressmask[4]:  validwaddr = 10'b0000010000;
-		addressmask[5]:  validwaddr = 10'b0000100000;
-		addressmask[6]:  validwaddr = 10'b0001000000;
-		addressmask[7]:  validwaddr = 10'b0010000000;
-		addressmask[8]:  validwaddr = 10'b0100000000;
-		addressmask[9]:  validwaddr = 10'b1000000000;
-		default:		 validwaddr = 10'b0000000000;
+		addressmask[0]:  validwaddr = 9'b000000001;
+		addressmask[1]:  validwaddr = 9'b000000010;
+		addressmask[2]:  validwaddr = 9'b000000100;
+		addressmask[3]:  validwaddr = 9'b000001000;
+		addressmask[4]:  validwaddr = 9'b000010000;
+		addressmask[5]:  validwaddr = 9'b000100000;
+		addressmask[6]:  validwaddr = 9'b001000000;
+		addressmask[7]:  validwaddr = 9'b010000000;
+		addressmask[8]:  validwaddr = 9'b100000000;
+		default:		 validwaddr = 9'b000000000;
 	endcase
 end
 
 genvar rgen;
 generate
-for (rgen=0; rgen<10; rgen++) begin
+for (rgen=0; rgen<9; rgen++) begin
 	always_comb begin
 		axi_m[rgen].awaddr  = validwaddr[rgen] ? axi_s.awaddr	: 32'd0;
 		axi_m[rgen].awvalid = validwaddr[rgen] ? axi_s.awvalid	: 1'b0;
@@ -50,12 +49,6 @@ endgenerate
 
 always_comb begin
 	unique case(1'b1)
-		validwaddr[9]: begin
-			axi_s.awready = axi_m[9].awready;
-			axi_s.bresp   = axi_m[9].bresp;
-			axi_s.bvalid  = axi_m[9].bvalid;
-			axi_s.wready  = axi_m[9].wready;
-		end
 		validwaddr[8]: begin
 			axi_s.awready = axi_m[8].awready;
 			axi_s.bresp   = axi_m[8].bresp;
@@ -124,27 +117,26 @@ end
 // Read router
 // ------------------------------------------------------------------------------------
 
-logic [9:0] validraddr = 10'd0;
+logic [8:0] validraddr = 9'd0;
 
 always_comb begin
 	unique case(axi_s.araddr[19:16])
-		addressmask[0]:  validraddr = 10'b0000000001;
-		addressmask[1]:  validraddr = 10'b0000000010;
-		addressmask[2]:  validraddr = 10'b0000000100;
-		addressmask[3]:  validraddr = 10'b0000001000;
-		addressmask[4]:  validraddr = 10'b0000010000;
-		addressmask[5]:  validraddr = 10'b0000100000;
-		addressmask[6]:  validraddr = 10'b0001000000;
-		addressmask[7]:  validraddr = 10'b0010000000;
-		addressmask[8]:  validraddr = 10'b0100000000;
-		addressmask[9]:  validraddr = 10'b1000000000;
-		default:		 validraddr = 10'b0000000000;
+		addressmask[0]:  validraddr = 9'b000000001;
+		addressmask[1]:  validraddr = 9'b000000010;
+		addressmask[2]:  validraddr = 9'b000000100;
+		addressmask[3]:  validraddr = 9'b000001000;
+		addressmask[4]:  validraddr = 9'b000010000;
+		addressmask[5]:  validraddr = 9'b000100000;
+		addressmask[6]:  validraddr = 9'b001000000;
+		addressmask[7]:  validraddr = 9'b010000000;
+		addressmask[8]:  validraddr = 9'b100000000;
+		default:		 validraddr = 9'b000000000;
 	endcase
 end
 
 genvar wgen;
 generate
-for (wgen=0; wgen<10; wgen++) begin
+for (wgen=0; wgen<9; wgen++) begin
 	always_comb begin
 		axi_m[wgen].araddr   = validraddr[wgen] ? axi_s.araddr	: 32'd0;
 		axi_m[wgen].arlen    = validraddr[wgen] ? axi_s.arlen	: 0;
@@ -158,13 +150,6 @@ endgenerate
 
 always_comb begin
 	unique case(1'b1)
-		validraddr[9]: begin
-			axi_s.arready = axi_m[9].arready;
-			axi_s.rdata   = axi_m[9].rdata;
-			axi_s.rresp   = axi_m[9].rresp;
-			axi_s.rvalid  = axi_m[9].rvalid;
-			axi_s.rlast   = axi_m[9].rlast;
-		end
 		validraddr[8]: begin
 			axi_s.arready = axi_m[8].arready;
 			axi_s.rdata   = axi_m[8].rdata;

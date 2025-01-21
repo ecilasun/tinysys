@@ -7,7 +7,7 @@
 char audiocdevicename[512] = "Line In";
 char audiopdevicename[512] = "Headphones";
 #else // CAT_WINDOWS
-char audiocdevicename[512] = "Line In";
+char audiocdevicename[512] = "USB";
 char audiopdevicename[512] = "Headphones";
 #endif
 

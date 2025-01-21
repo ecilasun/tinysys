@@ -8,7 +8,7 @@ char commdevicename[512] = "/dev/ttyUSB0";
 // MacOS
 char commdevicename[512] = "/dev/ttyACM0";
 #else // CAT_WINDOWS
-char commdevicename[512] = "\\\\.\\COM6";
+char commdevicename[512] = "\\\\.\\COM10";
 #endif
 
 const char* GetCommDeviceName()
@@ -136,7 +136,18 @@ uint32_t CSerialPort::Send(void *_sendbytes, unsigned int _sendlength)
 #if defined(CAT_LINUX)
 	int n = write(serial_port, _sendbytes, _sendlength);
 	if (n < 0)
-		fprintf(stderr, "ERROR: write() failed\n");
+	{
+		fprintf(stderr, "ERROR: write() failed, re-opening port\n");
+		bool opene = Open();
+		if (opene)
+		{
+			success = WriteFile(hComm, _sendbytes, _sendlength, &byteswritten, nullptr);
+			if (!success)
+				fprintf(stderr, "ERROR: subsequent write() failed\n");
+		}
+		else
+			fprintf(stderr, "ERROR: can't re-open port\n");
+	}
 	return n;
 #elif defined(CAT_DARWIN)
 	// MacOS
@@ -146,7 +157,18 @@ uint32_t CSerialPort::Send(void *_sendbytes, unsigned int _sendlength)
 	// Send the command
 	BOOL success = WriteFile(hComm, _sendbytes, _sendlength, &byteswritten, nullptr);
 	if (!success)
-		fprintf(stderr, "ERROR: write() failed\n");
+	{
+		fprintf(stderr, "ERROR: write() failed, re-opening port\n");
+		bool opene = Open();
+		if (opene)
+		{
+			success = WriteFile(hComm, _sendbytes, _sendlength, &byteswritten, nullptr);
+			if (!success)
+				fprintf(stderr, "ERROR: subsequent write() failed\n");
+		}
+		else
+			fprintf(stderr, "ERROR: can't re-open port\n");
+	}
 	return success ? (uint32_t)byteswritten : 0;
 #endif
 }

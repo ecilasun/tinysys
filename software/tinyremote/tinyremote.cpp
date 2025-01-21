@@ -510,6 +510,11 @@ int SDL_main(int argc, char** argv)
 			}
 		}
 
+		// Echo serial data
+		char inchar;
+		if(ctx.serial->Receive(&inchar, 1))
+			fprintf(stderr, "%c", inchar);
+
 		// Read joystick events
 		if (ctx.gamecontroller)
 		{
@@ -598,12 +603,12 @@ int SDL_main(int argc, char** argv)
 					// NOTE: You must hold down the ~ key for at least 250ms for the reboot to occur
 					if (i==53 && keystates[i] == 1 && (modifiers & KMOD_SHIFT))
 					{
-						fprintf(stderr, "rebooting device\n");
+						fprintf(stderr, "Keep holding down ~ to reboot...\n");
 						ctx.serial->Send((uint8_t*)"~", 1);
 					}
 					else if (i == 0x06 && keystates[i] == 1 && (modifiers & KMOD_CTRL))
 					{
-						fprintf(stderr, "quitting remote process\n");
+						fprintf(stderr, "Attempting to quit remote process\nIf this doesn't work, hold down ~ key to reboot CPUs\n");
 						ctx.serial->Send((uint8_t*)"\03", 1);
 					}
 					else

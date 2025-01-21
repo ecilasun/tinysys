@@ -419,6 +419,11 @@ always @(posedge aclk) begin
 		if (mulready) pendingmul <= 1'b0;
 		if (divready || divuready) pendingdiv <= 1'b0;
 
+		unique case (immsel)
+			1'b1 : F <= immed;
+			1'b0 : F <= rval2;
+		endcase
+
 		unique case(ctlmode)
 			INIT: begin
 				ctlmode <= READINSTR;
@@ -451,7 +456,6 @@ always @(posedge aclk) begin
 					B <= rval2;
 					D <= immed;
 					E <= rval3;
-					F <= immsel ? immed : rval2;
 					wbdest <= rd;
 					rwaddress <= rval1 + immed;
 					offsetPC <= PC + immed;

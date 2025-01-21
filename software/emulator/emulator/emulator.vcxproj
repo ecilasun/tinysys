@@ -179,7 +179,6 @@ copy .\x64\Release\SDL2_ttf.dll ..\bin\SDL2_ttf.dll</Command>
     <ClCompile Include="..\apu.cpp" />
     <ClCompile Include="..\bus.cpp" />
     <ClCompile Include="..\csrmem.cpp" />
-    <ClCompile Include="..\dma.cpp" />
     <ClCompile Include="..\emulator.cpp" />
     <ClCompile Include="..\gdbstub.cpp" />
     <ClCompile Include="..\leds.cpp" />
@@ -201,7 +200,6 @@ copy .\x64\Release\SDL2_ttf.dll ..\bin\SDL2_ttf.dll</Command>
     <ClInclude Include="..\bitutil.h" />
     <ClInclude Include="..\bus.h" />
     <ClInclude Include="..\csrmem.h" />
-    <ClInclude Include="..\dma.h" />
     <ClInclude Include="..\dummydevice.h" />
     <ClInclude Include="..\emulator.h" />
     <ClInclude Include="..\gdbstub.h" />

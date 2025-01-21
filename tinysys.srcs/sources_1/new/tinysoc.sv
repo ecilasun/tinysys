@@ -1,6 +1,8 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
+import axi4pkg::*;
+
 module tinysoc #(
 	parameter int RESETVECTOR = 32'd0
 ) (
@@ -9,6 +11,7 @@ module tinysoc #(
 	input wire clkaudio,
 	input wire clk25,
 	input wire clk100,
+	input wire clk125,
 	input wire clk166,
 	input wire clk200,
 	input wire aresetn,
@@ -27,15 +30,16 @@ module tinysoc #(
 	input wire cpu_reboot,
 	output wire esp_ena,
 	// Video output
-	output wire vvsync,
-	output wire vhsync,
-	output wire vclk,
-	output wire vde,
-	output wire [11:0] vdat,
+	output wire HDMI_CLK_p,
+	output wire HDMI_CLK_n,
+	output wire [2:0] HDMI_TMDS_p,
+	output wire [2:0] HDMI_TMDS_n,
+	//input wire HDMI_CEC,
+	//inout wire HDMI_SDA,
+	//inout wire HDMI_SCL,
+	//input wire HDMI_HPD,
 	// DDR3
 	ddr3sdramwires.def ddr3conn,
-	// I2S
-	audiowires.def i2sconn,
 	// SDCard
 	sdcardwires.def sdconn );
 
@@ -51,7 +55,6 @@ axi4if devicebusHart0();		// Direct access to devices from data unit of HART#0
 axi4if devicebusHart1();		// Direct access to devices from data unit of HART#1
 
 axi4if videobus();				// Video output unit bus
-axi4if dmabus();				// Direct memory access bus
 axi4if romcopybus();			// Bus for boot ROM copy
 axi4if audiobus();				// Bus for audio device output
 
@@ -64,7 +67,6 @@ axi4if vpucmdif();				// Sub bus: VPU command fifo (video scan out logic)
 axi4if spiif();					// Sub bus: SPI control device (sdcard)
 axi4if csrif0();				// Sub bus: CSR#0 file device (control registers)
 axi4if csrif1();				// Sub bus: CSR#1 file device (control registers)
-axi4if dmaif();					// Sub bus: DMA controller (memcopy)
 axi4if audioif();				// Sub bus: APU i2s audio output unit (raw audio)
 axi4if uartif();				// Sub bus: UART serial I/O for ESP32 communication
 axi4if mailif();				// Sub bus: MAIL mailbox for HART communication
@@ -181,43 +183,31 @@ wire [31:0] vpufifodout;
 wire vpufifore;
 wire vpufifovalid;
 wire [31:0] vpustate;
+wire [31:0] tx_sdout;
+wire audiosampleclk;
 videocore VPU(
 	.aclk(aclk),
 	.clk25(clk25),
+	.clk125(clk125),
 	.aresetn(aresetn),
 	.rst25n(rst25n),
 	.m_axi(videobus),
-	.vvsync(vvsync),
-	.vhsync(vhsync),
-	.vclk(vclk),
-	.vde(vde),
-	.vdat(vdat),
+	.HDMI_CLK_p(HDMI_CLK_p),
+	.HDMI_CLK_n(HDMI_CLK_n),
+	.HDMI_TMDS_p(HDMI_TMDS_p),
+	.HDMI_TMDS_n(HDMI_TMDS_n),
+	//.HDMI_CEC(HDMI_CEC),
+	//.HDMI_SDA(HDMI_SDA),
+	//.HDMI_SCL(HDMI_SCL),
+	//.HDMI_HPD(HDMI_HPD),
+	.audioclock(audiosampleclk),
+	.audiosampleLR(tx_sdout),
 	.vpufifoempty(vpufifoempty),
 	.vpufifodout(vpufifodout),
 	.vpufifore(vpufifore),
 	.vpufifovalid(vpufifovalid),
 	.vpustate(vpustate),
 	.hirq(hirq));
-
-// --------------------------------------------------
-// DMA unit
-// --------------------------------------------------
-
-wire dmafifoempty;
-wire dmafifore;
-wire dmafifovalid;
-wire dmabusy;
-wire [31:0] dmafifodout;
-
-axi4dma DMA(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.m_axi(dmabus),
-	.dmafifoempty(dmafifoempty),
-	.dmafifodout(dmafifodout),
-	.dmafifore(dmafifore),
-	.dmafifovalid(dmafifovalid),
-	.dmabusy(dmabusy) );
 
 // --------------------------------------------------
 // Boot ROM copy unit
@@ -243,7 +233,7 @@ axi4i2saudio APU(
 	.aclk(aclk),				// Bus clock
 	.aresetn(aresetn),
 	.rstaudion(rstaudion),
-    .audioclock(clkaudio),		// 22.591MHz master clock
+    .audioclock(clkaudio),
 
 	.m_axi(audiobus),			// Memory access
 
@@ -253,25 +243,23 @@ axi4i2saudio APU(
     .audiodin(audiofifodout),
     .swapcount(audiobufferswapcount),
 
-    .tx_mclk(i2sconn.mclk),
-    .tx_lrck(i2sconn.lrclk),
-    .tx_sclk(i2sconn.sclk),
-    .tx_sdout(i2sconn.sdin) );
+	.audiosampleclk(audiosampleclk),
+    .tx_sdout(tx_sdout));
 
 // --------------------------------------------------
 // Traffic between master units / memory / devices
 // --------------------------------------------------
 
-arbitersmall arbiter2x1instdev(
+arbitersmall arbitersmallinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
 	.axi_s({devicebusHart1, devicebusHart0}),
 	.axi_m(devicebus) );
 
-arbiterlarge arbiter8x1instSDRAM(
+arbiterlarge arbiterlargeinst(
 	.aclk(aclk),
 	.aresetn(aresetn),
-	.axi_s({romcopybus, audiobus, dmabus, videobus, databusHart1, databusHart0, instructionbusHart1, instructionbusHart0}),
+	.axi_s({romcopybus, audiobus, videobus, databusHart1, databusHart0, instructionbusHart1, instructionbusHart0}),
 	.axi_m(memorybus) );
 
 // --------------------------------------------------
@@ -304,7 +292,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 // LEDS: 8xx10000  8xx1FFFF  4'b0001  64KB	 Debug LEDs
 // VPUC: 8xx20000  8xx2FFFF  4'b0010  64KB	 Video Processing Unit
 // SDCC: 8xx30000  8xx3FFFF  4'b0011  64KB	 SDCard SPI Unit
-// DMAC: 8xx40000  8xx4FFFF  4'b0100  64KB	 Direct Memory Access / Memcopy
+// ----: 8xx40000  8xx4FFFF  4'b0100  64KB	 Unused
 // ----: 8xx50000  8xx5FFFF  4'b0101  64KB	 Reserved for future use
 // APUC: 8xx60000  8xx6FFFF  4'b0110  64KB	 Audio Processing Unit / Mixer
 // MAIL: 8xx70000  8xx7FFFF  4'b0111  64KB	 MAIL inter-HART comm (16Kbytes)
@@ -324,13 +312,12 @@ devicerouter devicerouterinst(
 		4'b1000,		// UART ESP32 to RISC-V UART channel
 		4'b0111,		// MAIL Mailbox for HART-to-HART commmunication
 		4'b0110,		// APUC	Audio Processing Unit Command Fifo
-		4'b0100,		// DMAC DMA Command Fifo
 		4'b0011,		// SDCC SDCard access via SPI
 		4'b0010,		// VPUC Graphics Processing Unit Command Fifo
 		4'b0001,		// LEDS Debug / Status LED interface
 		4'b0000}),		// SPAD Scratchpad for inter-core data transfer
 	.axi_s(devicebus),
-    .axi_m({csrif1, csrif0, uartif, mailif, audioif, dmaif, spiif, vpucmdif, ledif, scratchif}));
+    .axi_m({csrif1, csrif0, uartif, mailif, audioif, spiif, vpucmdif, ledif, scratchif}));
 
 // --------------------------------------------------
 // Interrupt wires
@@ -368,17 +355,6 @@ axi4sdcard sdcardinst(
 	.sdconn(sdconn),
 	.keyirq(keyirq),
 	.s_axi(spiif));
-
-commandqueue dmacmdinst(
-	.aclk(aclk),
-	.aresetn(aresetn),
-	.s_axi(dmaif),
-	// Internal comms channel for DMA
-	.fifoempty(dmafifoempty),
-	.fifodout(dmafifodout),
-	.fifore(dmafifore),
-	.fifovalid(dmafifovalid),
-    .devicestate({31'd0,dmabusy}));
 
 commandqueue audiocmdinst(
 	.aclk(aclk),

@@ -5,7 +5,6 @@
 		"limits": "cpp",
 		"algorithm": "cpp",
 		"mini-printf.h": "c",
-		"dma.h": "c",
 		"filesystem": "cpp",
 		"charconv": "cpp",
 		"fstream": "cpp",

@@ -1,4 +1,4 @@
-24369371679428618
+24372845332313449
 1_1825027_1
 SW_1-1825027-1
 
@@ -57868,6 +57868,13 @@ CUI_HD02-19-M-MSMT-TR
 0
 23
 23
+HDMI_2086
+MOLEX_2086581051
+
+
+0
+23
+23
 Heatsink
 Heatsink_35x26mm_1xFixation3mm_Fischer-SK486-35
 Heatsink, 35mm x 26mm, 1x Fixation 3mm, Fischer SK486-35
@@ -64224,6 +64231,13 @@ Integrated Circuit
 0
 44
 44
+LED_LTST_C195KGJRKT
+LTST-BILED-15X16
+
+
+0
+4
+4
 LED_SMD
 LED-APA102-2020
 http://www.led-color.com/upload/201604/APA102-2020%20SMD%20LED.pdf

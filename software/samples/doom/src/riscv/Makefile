@@ -39,7 +39,6 @@ SOURCES_doom_arch := \
 	../../../../SDK/basesystem.c \
 	../../../../SDK/apu.c \
 	../../../../SDK/vpu.c \
-	../../../../SDK/dma.c \
 	../../../../SDK/task.c \
 	../../../../SDK/keyboard.c \
 	../../../../SDK/joystick.c \

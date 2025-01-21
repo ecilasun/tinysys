@@ -55,7 +55,7 @@ static void jtag_task(void *arg)
 {
 	uint8_t* dtmp = (uint8_t*) malloc(RD_BUF_SIZE*2);
 
-	usb_serial_jtag_write_bytes((uint8_t*) "TinySys v1.1F\n", 14, portMAX_DELAY);
+	usb_serial_jtag_write_bytes((uint8_t*) "TinySys v1.1H\n", 14, portMAX_DELAY);
 
 	// Create a timer to reboot the system
 	const esp_timer_create_args_t reboot_timer_args = {

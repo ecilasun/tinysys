@@ -20,4 +20,6 @@
   (lib (name "ESP32_C6_WROOM")(type "KiCad")(uri "${KIPRJMOD}/ESP32-C6-WROOM/footprints.pretty")(options "")(descr ""))
   (lib (name "ESP32_S3")(type "KiCad")(uri "${KIPRJMOD}/ESP32_S3")(options "")(descr ""))
   (lib (name "MAX20022")(type "KiCad")(uri "${KIPRJMOD}/MAX20022ATIA/footprints.pretty")(options "")(descr ""))
+  (lib (name "HDMI_2086")(type "KiCad")(uri "${KIPRJMOD}/2086581051")(options "")(descr ""))
+  (lib (name "LED_LTST_C195KGJRKT")(type "KiCad")(uri "${KIPRJMOD}/LTST_C195KGJRKT")(options "")(descr ""))
 )

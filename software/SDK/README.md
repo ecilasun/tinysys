@@ -10,11 +10,6 @@ The audio processing unit is responsible for generating stereo signals at variou
 
 Please see [APU](apu.md) for documentation about audio.
 
-## Direct Memory Access Unit
-The direct memory access unit is used to move blocks of memory faster than the CPU can deliver.
-
-Please see [DMA](dma.md) for documentation about memory block moves.
-
 ## Multitasking
 The task library helps start and stop tasks that can run on any hardware thread in the system.
 

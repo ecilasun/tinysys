@@ -221,6 +221,8 @@ always_ff @(posedge aclk) begin
 			end
 
 			CFLUSHSKIP: begin
+				// Nothing to write back for next time around
+				cachelinewb[dccount] <= 1'b0;
 				// Go to next line (wraps around to 0 at 511)
 				dccount <= dccount + 9'd1;
 				// Stop 'flushing' mode if we're done
@@ -233,8 +235,6 @@ always_ff @(posedge aclk) begin
 
 			CFLUSHWAIT: begin
 				if (wdone) begin
-					// Nothing to write back for next time around
-					cachelinewb[dccount] <= 1'b0;
 					// Go to next line (wraps around to 0 at 511)
 					dccount <= dccount + 9'd1;
 					// Stop 'flushing' mode if we're done

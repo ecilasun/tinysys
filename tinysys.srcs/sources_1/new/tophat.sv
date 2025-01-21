@@ -21,13 +21,16 @@ module tophat(
 	,inout wire [1:0] ddr3_dqs_p
 	,inout wire [1:0] ddr3_dqs_n
 	,inout wire [15:0] ddr3_dq
-	// To video scanout chip
-	,output wire vvsync
-	,output wire vhsync
-	,output wire vclk
-	,output wire vde
-	,output wire [11:0] vdat
-	// Micro SD Card
+	// To HDMI connector
+	,output wire HDMI_CLK_p
+	,output wire HDMI_CLK_n
+	,output wire [2:0] HDMI_TMDS_p
+	,output wire [2:0] HDMI_TMDS_n
+	//,input wire HDMI_CEC
+	//,inout wire HDMI_SDA
+	//,inout wire HDMI_SCL
+	//,input wire HDMI_HPD
+  	// Micro SD Card
 	,input wire sdcard_miso
 	,output wire sdcard_cs_n
 	,output wire sdcard_clk
@@ -37,12 +40,7 @@ module tophat(
 	,output wire esp_txd1_out
 	,input wire esp_rxd1_in
 	,input wire cpu_reboot
-	,output wire esp_ena
-	// Audio out
-	,output wire au_sdin
-	,output wire au_sclk
-	,output wire au_lrclk
-	,output wire au_mclk );
+	,output wire esp_ena );
 
 // --------------------------------------------------
 // Clock and reset generator
@@ -50,7 +48,7 @@ module tophat(
 
 wire aresetn, rst10n, rst25n, rst100n, rstaudion, preresetn;
 wire init_calib_complete;
-wire clk10, clkaudio, clk25, clk100, clkbus, clk166, clk200;
+wire clk10, clkaudio, clk25, clk100, clk125, clkbus, clk166, clk200;
 
 // Clock and reset generator
 clockandreset clockandresetinst(
@@ -60,6 +58,7 @@ clockandreset clockandresetinst(
 	.clkaudio(clkaudio),
 	.clk25(clk25),
 	.clk100(clk100),
+	.clk125(clk125),
 	.clkbus(clkbus),
 	.clk166(clk166),
 	.clk200(clk200),
@@ -103,16 +102,6 @@ sdcardwires sdconn(
 	.swtch(sdcard_swtch) );
 
 // --------------------------------------------------
-// Audio wires
-// --------------------------------------------------
-
-audiowires i2sconn(
-	.sdin(au_sdin),
-	.sclk(au_sclk),
-	.lrclk(au_lrclk),
-	.mclk(au_mclk));
-
-// --------------------------------------------------
 // SoC device
 // --------------------------------------------------
 
@@ -122,6 +111,7 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.clkaudio(clkaudio),
 	.clk25(clk25),
 	.clk100(clk100),
+	.clk125(clk125),
 	.clk166(clk166),
 	.clk200(clk200),
 	.aresetn(aresetn),
@@ -132,19 +122,15 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.preresetn(preresetn),
 	// Device wires
 	.leds(leds),
-	//.esp_rxd0_in(esp_rxd0_in),
-	//.esp_txd0_out(esp_txd0_out),
 	.esp_rxd1_in(esp_rxd1_in),
 	.esp_txd1_out(esp_txd1_out),
 	.cpu_reboot(cpu_reboot),
 	.esp_ena(esp_ena),
+	.HDMI_CLK_p(HDMI_CLK_p),
+	.HDMI_CLK_n(HDMI_CLK_n),
+	.HDMI_TMDS_p(HDMI_TMDS_p),
+	.HDMI_TMDS_n(HDMI_TMDS_n),
 	.ddr3conn(ddr3conn),
-	.i2sconn(i2sconn),
-	.vvsync(vvsync),
-	.vhsync(vhsync),
-	.vclk(vclk),
-	.vde(vde),
-	.vdat(vdat),
 	.sdconn(sdconn) );
 
 endmodule

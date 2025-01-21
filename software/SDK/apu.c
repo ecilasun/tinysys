@@ -4,7 +4,7 @@
  * @brief Audio Processing Unit (APU) interface.
  *
  * This file provides functions for interacting with the Audio Processing Unit (APU).
- * It includes functions for allocating buffers, setting buffer size, starting DMA, and setting the sample rate.
+ * It includes functions for allocating buffers, setting buffer size, starting audio DMA, and setting the sample rate.
  */
 
 #include "basesystem.h"
@@ -43,7 +43,7 @@ void APUSetBufferSize(uint32_t audioBufferSize)
 }
 
 /**
- * @brief Starts a DMA transfer to the APU.
+ * @brief Starts an audio DMA transfer to the APU.
  * 
  * The audio data in source buffer is written to the current write page of the APU buffer.
  * APU will be playing the audio data from the read page while this DMA transfer is in progress.
