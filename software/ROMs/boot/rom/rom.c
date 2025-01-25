@@ -36,9 +36,9 @@ void UnrecoverableError()
 	// We have experienced a situation which requires a hard-boot
 	while (1)
 	{
-		LEDSetState(0xF);
+		LEDSetState(0x3F);
 		E32Sleep(ONE_SECOND_IN_TICKS);
-		LEDSetState(0x0);
+		LEDSetState(0x02);
 		E32Sleep(ONE_SECOND_IN_TICKS);
 	}
 }
@@ -245,14 +245,16 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 		"mv s0, sp;"			// Set frame pointer to current stack pointer
 	);
 
+	// NOTE: If there is a boot error, ROM will stop with a 4-LED pattern (EMBER LEDs) with the status LED showing RED
+
 	// Mount FAT32 file system on SDcard, if one exists
-	LEDSetState(0x1);															// xxxO
+	LEDSetState((0x1<<2)|0x1);														// xxxO--
 	SetWorkDir("sd:/");
 	uint32_t mountSuccess = MountDrive();
 
 	// Attempt to load ROM overlay, if it exists
 	// Watermark register is zero on hard boot
-	LEDSetState(0x2);															// xxOx
+	LEDSetState((0x2<<2)|0x1);														// xxOx--
 	uint32_t waterMark = read_csr(0xFF0);
 	if (mountSuccess && (waterMark == 0))
 	{
@@ -266,26 +268,26 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	}
 
 	// Reset buffers
-	LEDSetState(0x4);															// xOxx
+	LEDSetState((0x4<<2)|0x1);														// xOxx--
 	KeyRingBufferReset();
 	// Initialize serial comm and GDB stub
 	SerialInRingBufferReset();
 
 	// Reset peripherals to default states
-	LEDSetState(0x8);															// Oxxx
+	LEDSetState((0x8<<2)|0x1);														// Oxxx--
 	DeviceDefaultState(1);
 
 	// Worker cores do not handle hardware interrupts by default,
 	// only task switching (timer) and software (illegal instruction)
-	LEDSetState(0xC);															// OOxx
+	LEDSetState((0xC<<2)|0x1);														// OOxx--
 	uint32_t self = read_csr(mhartid);
 	_task_init_context(self);
 
 	// Initialize GDB stub - debugger won't run properly without this init!
-	LEDSetState(0x6);															// xOOx
+	LEDSetState((0x6<<2)|0x1);														// xOOx--
 	//GDBStubInit();
 
-	LEDSetState(0x3);															// xxOO
+	LEDSetState((0x3<<2)|0x1);														// xxOO--
 	struct STaskContext *taskctx[3];
 	taskctx[0] = _task_get_context(self);
 	taskctx[1] = _task_get_context(1);
@@ -293,13 +295,13 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	_task_add(taskctx[0], "CPUIdle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS, self, TASK_STACK_POINTER(self, 0, TASK_STACK_SIZE));
 	_task_add(taskctx[0], "CLI", _CLITask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS, self, TASK_STACK_POINTER(self, 1, TASK_STACK_SIZE));
 
-	LEDSetState(0x7);															// xOOO
+	LEDSetState((0x7<<2)|0x1);														// xOOO--
 	InstallISR(self, true, true);
 
-	LEDSetState(0xE);															// OOOx
+	LEDSetState((0xE<<2)|0x1);														// OOOx--
 
-	// Reset secondary CPUs
-	LEDSetState(0x0);															// xxxx
+	// Done
+	LEDSetState(0x0);																// xxxx--
 
 	//kprintf("CPU1 entry:%x mtvec:%x rst:%x\n", (uint32_t)UserMain, E32ReadMemMappedCSR(1, CSR_MSCRATCH), E32ReadMemMappedCSR(1, CSR_CPURESET));
 
@@ -349,6 +351,8 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 
 int main()
 {
+	LEDSetState(0x1); // RED
+
 	// Reset static variable pool just in case we're rebooted
 	ClearStatics();
 

@@ -311,7 +311,7 @@ uint8_t __attribute__ ((noinline)) SDSetBlockSize512()
 uint8_t __attribute__ ((noinline)) SDReadSingleBlock(uint32_t sector, uint8_t *datablock, uint8_t checksum[2])
 {
    uint32_t oldstate = LEDGetState();
-   LEDSetState(oldstate|0x1);
+   LEDSetState(oldstate|0x2); // GREEN
 
    // Read single block
    // NOTE: sector<<9 for non SDHC cards
@@ -389,7 +389,7 @@ int __attribute__ ((noinline)) SDReadMultipleBlocks(uint8_t *datablock, uint32_t
 uint8_t __attribute__ ((noinline)) SDWriteSingleBlock(uint32_t sector, uint8_t *datablock)
 {
 	uint32_t oldstate = LEDGetState();
-	LEDSetState(oldstate|0x2);
+	LEDSetState(oldstate|0x1); // RED
 
 	uint16_t crc = CRC16(datablock, 512);
 

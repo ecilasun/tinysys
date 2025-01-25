@@ -21,7 +21,7 @@ module tinysoc #(
 	input wire rstaudion,
 	input wire preresetn,
 	// LEDs
-	output wire [3:0] leds,
+	output wire [5:0] leds,
 	// ESP32
 	//output wire esp_txd0_out,
 	//input wire esp_rxd0_in,

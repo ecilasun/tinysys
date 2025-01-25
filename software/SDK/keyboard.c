@@ -2,7 +2,9 @@
 #include "serialinringbuffer.h"
 #include "keyringbuffer.h"
 
-static int s_lowercase = 1;
+static int s_control = 0;
+static int s_alt = 0;
+static int s_capslock = 0;
 
 // Scan code to lower case ASCII conversion table
 char scantoasciitable_lowercase[] = {
@@ -56,18 +58,70 @@ void ProcessKeyState(uint8_t *scandata)
 {
 	uint8_t scancode = scandata[KEYBOARD_SCANCODE_INDEX];
 	uint8_t state = scandata[KEYBOARD_STATE_INDEX];
+
 	uint8_t modifiers_lower = scandata[KEYBOARD_MODIFIERS_LOWER_INDEX];
 	uint8_t modifiers_upper = scandata[KEYBOARD_MODIFIERS_UPPER_INDEX];
-
 	uint32_t modifiers = (modifiers_upper << 8) | modifiers_lower;
 
-	// TODO: Track modifier state
-	s_lowercase = (modifiers & 0x01) ? 0 : 1;
+	// Ignore some unused keys
+	if (scancode == 0xE3 || scancode == 0x65 || scancode == 0x39 || scancode == 0xE1 || scancode == 0xE5) // Windows, Menu key, Caps Lock, Shift keys
+	{
+		// Ignore
+		return;
+	}
+
+	int isUppercase = (modifiers & 0x2003) ? 1 : 0; // Check if Caps Lock or either shift is down
+
+	// Left or Rigth Control key
+	if (scancode == 0xE0 || scancode == 0xE4)
+	{
+		// Toggle control state
+		s_control = state ? 1 : 0;
+		return;
+	}
+
+	// Left or Right Alt key
+	if (scancode == 0xE2 || scancode == 0xE6)
+	{
+		// Toggle alt state
+		s_alt = state ? 1 : 0;
+		return;
+	}
 
 	// NOTE: Remote side handles trapping CTRL+C and ~ keys so we don't neeed to be concerned with them here
 	if (state == 1 && scancode<256)
 	{
-		uint8_t ascii = KeyboardScanCodeToASCII(scancode, s_lowercase);
+		if (scancode == 0x52) // Up arrow
+		{
+			uint8_t sequence[2] = { 224, 72 };
+			KeyRingBufferWrite(&sequence, 2);
+			return;
+		}
+		if (scancode == 0x51) // Down arrow
+		{
+			uint8_t sequence[2] = { 224, 80 };
+			KeyRingBufferWrite(&sequence, 2);
+			return;
+		}
+		if (scancode == 0x50) // Left arrow
+		{
+			uint8_t sequence[2] = { 224, 75 };
+			KeyRingBufferWrite(&sequence, 2);
+			return;
+		}
+		if (scancode == 0x4F) // Right arrow
+		{
+			uint8_t sequence[2] = { 224, 77 };
+			KeyRingBufferWrite(&sequence, 2);
+			return;
+		}
+		if (scancode == 0x48) // Pause, consider same as CTRL+C
+		{
+			uint8_t sequence[2] = { 3 };
+			KeyRingBufferWrite(&sequence, 1);
+			return;
+		}
+		uint8_t ascii = KeyboardScanCodeToASCII(scancode, isUppercase);
 		KeyRingBufferWrite(&ascii, 1);
 	}
 }
@@ -95,15 +149,15 @@ void ReadKeyState(uint8_t *scandata)
  * Convert a key scan code to an ASCII character
  * 
  * @param scanCode The key scan code
- * @param lowercase Whether the key is in lowercase or uppercase
+ * @param uppercase Whether the key is in lowercase or uppercase
  * @return The ASCII character corresponding to the scan code
  */
-uint8_t KeyboardScanCodeToASCII(uint8_t scanCode, uint8_t lowercase)
+uint8_t KeyboardScanCodeToASCII(uint8_t scanCode, uint8_t uppercase)
 {
 	uint8_t ascii;
-	if (s_lowercase)
-		ascii = scantoasciitable_lowercase[scanCode];
-	else
+	if (uppercase)
 		ascii = scantoasciitable_uppercase[scanCode];
+	else
+		ascii = scantoasciitable_lowercase[scanCode];
 	return ascii;
 }

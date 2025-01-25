@@ -35,10 +35,12 @@ create_generated_clock -name {socinstance/APU/counterinst/genblk3_0.DSP48E_BL/P[
 ## set_property -dict {PACKAGE_PIN N20 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
 
 ## 2E/2F
-set_property -dict {PACKAGE_PIN N17 IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
-set_property -dict {PACKAGE_PIN R18 IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
-set_property -dict {PACKAGE_PIN Y21 IOSTANDARD LVCMOS33} [get_ports {leds[2]}]
-set_property -dict {PACKAGE_PIN T21 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
+set_property -dict {PACKAGE_PIN N17 IOSTANDARD LVCMOS33} [get_ports {leds[5]}]
+set_property -dict {PACKAGE_PIN R18 IOSTANDARD LVCMOS33} [get_ports {leds[4]}]
+set_property -dict {PACKAGE_PIN Y21 IOSTANDARD LVCMOS33} [get_ports {leds[3]}]
+set_property -dict {PACKAGE_PIN T21 IOSTANDARD LVCMOS33} [get_ports {leds[2]}]
+set_property -dict {PACKAGE_PIN N18 IOSTANDARD LVCMOS33} [get_ports {leds[1]}]
+set_property -dict {PACKAGE_PIN L14 IOSTANDARD LVCMOS33} [get_ports {leds[0]}]
 
 ## ------------------------------------------------------------------------------------------------------
 ## UART Tx/Rx debug port (tie to an external USB-UART cable or other device)
@@ -146,6 +148,17 @@ set_property -dict {PACKAGE_PIN AB2 IOSTANDARD TMDS_33} [get_ports {HDMI_TMDS_n[
 ## set_property -dict {PACKAGE_PIN K1 IOSTANDARD LVCMOS33} [get_ports au_sclk]
 ## set_property -dict {PACKAGE_PIN K2 IOSTANDARD LVCMOS33} [get_ports au_lrclk]
 ## set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVCMOS33} [get_ports au_mclk]
+
+## ------------------------------------------------------------------------------------------------------
+## JTAG
+## ------------------------------------------------------------------------------------------------------
+
+## 2H
+## set_property -dict {PACKAGE_PIN E2 IOSTANDARD LVCMOS33} [get_ports JTAGTCK]
+## set_property -dict {PACKAGE_PIN E1 IOSTANDARD LVCMOS33} [get_ports JTAGTDO]
+## set_property -dict {PACKAGE_PIN C2 IOSTANDARD LVCMOS33} [get_ports JTAGTDI]
+## set_property -dict {PACKAGE_PIN B1 IOSTANDARD LVCMOS33} [get_ports JTAGTMS]
+
 
 ## ------------------------------------------------------------------------------------------------------
 ## ESP32-C6-WROOM1-N8
@@ -359,15 +372,8 @@ set_false_path -from [get_clocks {socinstance/APU/counterinst/genblk3_0.DSP48E_B
 
 create_pblock pblock_hart0
 add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list \
-          socinstance/hart0/CacheMemory512Lines_i_1 \
           {socinstance/hart0/controlunitinst/A_reg[0]} \
           {socinstance/hart0/controlunitinst/A_reg[0]_replica} \
-          {socinstance/hart0/controlunitinst/A_reg[0]_replica_1} \
-          {socinstance/hart0/controlunitinst/A_reg[0]_replica_2} \
-          {socinstance/hart0/controlunitinst/A_reg[0]_replica_3} \
-          {socinstance/hart0/controlunitinst/A_reg[0]_replica_4} \
-          {socinstance/hart0/controlunitinst/A_reg[0]_replica_5} \
-          {socinstance/hart0/controlunitinst/A_reg[0]_replica_6} \
           {socinstance/hart0/controlunitinst/A_reg[10]} \
           {socinstance/hart0/controlunitinst/A_reg[10]_replica} \
           {socinstance/hart0/controlunitinst/A_reg[10]_replica_1} \
@@ -376,8 +382,6 @@ add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list \
           {socinstance/hart0/controlunitinst/A_reg[10]_replica_4} \
           {socinstance/hart0/controlunitinst/A_reg[10]_replica_5} \
           {socinstance/hart0/controlunitinst/A_reg[10]_replica_6} \
-          {socinstance/hart0/controlunitinst/A_reg[10]_replica_7} \
-          {socinstance/hart0/controlunitinst/A_reg[10]_replica_8} \
           {socinstance/hart0/controlunitinst/A_reg[11]} \
           {socinstance/hart0/controlunitinst/A_reg[11]_replica} \
           {socinstance/hart0/controlunitinst/A_reg[11]_replica_1} \
@@ -387,6 +391,7 @@ add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list \
           {socinstance/hart0/controlunitinst/A_reg[11]_replica_5} \
           {socinstance/hart0/controlunitinst/A_reg[11]_replica_6} \
           {socinstance/hart0/controlunitinst/A_reg[11]_replica_7} \
+          {socinstance/hart0/controlunitinst/A_reg[11]_replica_8} \
           {socinstance/hart0/controlunitinst/A_reg[12]} \
           {socinstance/hart0/controlunitinst/A_reg[12]_replica} \
           {socinstance/hart0/controlunitinst/A_reg[12]_replica_1} \
@@ -395,6 +400,7 @@ add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list \
           {socinstance/hart0/controlunitinst/A_reg[12]_replica_4} \
           {socinstance/hart0/controlunitinst/A_reg[12]_replica_5} \
           {socinstance/hart0/controlunitinst/A_reg[12]_replica_6} \
+          {socinstance/hart0/controlunitinst/A_reg[12]_replica_7} \
           {socinstance/hart0/controlunitinst/A_reg[13]} \
           {socinstance/hart0/controlunitinst/A_reg[13]_replica} \
           {socinstance/hart0/controlunitinst/A_reg[13]_replica_1} \
@@ -428,6 +434,7 @@ add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list \
           {socinstance/hart0/controlunitinst/A_reg[16]_replica_4} \
           {socinstance/hart0/controlunitinst/A_reg[16]_replica_5} \
           {socinstance/hart0/controlunitinst/A_reg[16]_replica_6} \
+          {socinstance/hart0/controlunitinst/A_reg[16]_replica_7} \
           {socinstance/hart0/controlunitinst/A_reg[17]} \
           {socinstance/hart0/controlunitinst/A_reg[17]_replica} \
           {socinstance/hart0/controlunitinst/A_reg[17]_replica_1} \
@@ -436,6 +443,7 @@ add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list \
           {socinstance/hart0/controlunitinst/A_reg[17]_replica_4} \
           {socinstance/hart0/controlunitinst/A_reg[17]_replica_5} \
           {socinstance/hart0/controlunitinst/A_reg[17]_replica_6} \
+          {socinstance/hart0/controlunitinst/A_reg[17]_replica_7} \
           {socinstance/hart0/controlunitinst/A_reg[18]} \
           {socinstance/hart0/controlunitinst/A_reg[18]_replica} \
           {socinstance/hart0/controlunitinst/A_reg[18]_replica_1} \
@@ -444,7 +452,16 @@ add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list \
           {socinstance/hart0/controlunitinst/A_reg[18]_replica_4} \
           {socinstance/hart0/controlunitinst/A_reg[18]_replica_5} \
           {socinstance/hart0/controlunitinst/A_reg[18]_replica_6} \
+          {socinstance/hart0/controlunitinst/A_reg[18]_replica_7} \
+          {socinstance/hart0/controlunitinst/A_reg[18]_replica_8} \
           {socinstance/hart0/controlunitinst/A_reg[19]} \
+          {socinstance/hart0/controlunitinst/A_reg[19]_replica} \
+          {socinstance/hart0/controlunitinst/A_reg[19]_replica_1} \
+          {socinstance/hart0/controlunitinst/A_reg[19]_replica_2} \
+          {socinstance/hart0/controlunitinst/A_reg[19]_replica_3} \
+          {socinstance/hart0/controlunitinst/A_reg[19]_replica_4} \
+          {socinstance/hart0/controlunitinst/A_reg[19]_replica_5} \
+          {socinstance/hart0/controlunitinst/A_reg[19]_replica_6} \
           {socinstance/hart0/controlunitinst/A_reg[1]} \
           {socinstance/hart0/controlunitinst/A_reg[1]_replica} \
           {socinstance/hart0/controlunitinst/A_reg[1]_replica_1} \
@@ -468,6 +485,8 @@ add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list \
           {socinstance/hart0/controlunitinst/A_reg[21]_replica_3} \
           {socinstance/hart0/controlunitinst/A_reg[21]_replica_4} \
           {socinstance/hart0/controlunitinst/A_reg[21]_replica_5} \
+          {socinstance/hart0/controlunitinst/A_reg[21]_replica_6} \
+          {socinstance/hart0/controlunitinst/A_reg[21]_replica_7} \
           {socinstance/hart0/controlunitinst/A_reg[22]} \
           {socinstance/hart0/controlunitinst/A_reg[22]_replica} \
           {socinstance/hart0/controlunitinst/A_reg[22]_replica_1} \
@@ -490,6 +509,7 @@ add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list \
           {socinstance/hart0/controlunitinst/A_reg[2]_replica_3} \
           {socinstance/hart0/controlunitinst/A_reg[2]_replica_4} \
           {socinstance/hart0/controlunitinst/A_reg[2]_replica_5} \
+          {socinstance/hart0/controlunitinst/A_reg[2]_replica_6} \
           {socinstance/hart0/controlunitinst/A_reg[30]} \
           {socinstance/hart0/controlunitinst/A_reg[31]} \
           {socinstance/hart0/controlunitinst/A_reg[3]} \
@@ -499,6 +519,9 @@ add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list \
           {socinstance/hart0/controlunitinst/A_reg[3]_replica_3} \
           {socinstance/hart0/controlunitinst/A_reg[3]_replica_4} \
           {socinstance/hart0/controlunitinst/A_reg[3]_replica_5} \
+          {socinstance/hart0/controlunitinst/A_reg[3]_replica_6} \
+          {socinstance/hart0/controlunitinst/A_reg[3]_replica_7} \
+          {socinstance/hart0/controlunitinst/A_reg[3]_replica_8} \
           {socinstance/hart0/controlunitinst/A_reg[4]} \
           {socinstance/hart0/controlunitinst/A_reg[4]_replica} \
           {socinstance/hart0/controlunitinst/A_reg[4]_replica_1} \
@@ -507,7 +530,6 @@ add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list \
           {socinstance/hart0/controlunitinst/A_reg[4]_replica_4} \
           {socinstance/hart0/controlunitinst/A_reg[4]_replica_5} \
           {socinstance/hart0/controlunitinst/A_reg[4]_replica_6} \
-          {socinstance/hart0/controlunitinst/A_reg[4]_replica_7} \
           {socinstance/hart0/controlunitinst/A_reg[5]} \
           {socinstance/hart0/controlunitinst/A_reg[5]_replica} \
           {socinstance/hart0/controlunitinst/A_reg[5]_replica_1} \
@@ -516,6 +538,7 @@ add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list \
           {socinstance/hart0/controlunitinst/A_reg[5]_replica_4} \
           {socinstance/hart0/controlunitinst/A_reg[5]_replica_5} \
           {socinstance/hart0/controlunitinst/A_reg[5]_replica_6} \
+          {socinstance/hart0/controlunitinst/A_reg[5]_replica_7} \
           {socinstance/hart0/controlunitinst/A_reg[6]} \
           {socinstance/hart0/controlunitinst/A_reg[6]_replica} \
           {socinstance/hart0/controlunitinst/A_reg[6]_replica_1} \
@@ -524,7 +547,6 @@ add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list \
           {socinstance/hart0/controlunitinst/A_reg[6]_replica_4} \
           {socinstance/hart0/controlunitinst/A_reg[6]_replica_5} \
           {socinstance/hart0/controlunitinst/A_reg[6]_replica_6} \
-          {socinstance/hart0/controlunitinst/A_reg[6]_replica_7} \
           {socinstance/hart0/controlunitinst/A_reg[7]} \
           {socinstance/hart0/controlunitinst/A_reg[7]_replica} \
           {socinstance/hart0/controlunitinst/A_reg[7]_replica_1} \
@@ -533,6 +555,8 @@ add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list \
           {socinstance/hart0/controlunitinst/A_reg[7]_replica_4} \
           {socinstance/hart0/controlunitinst/A_reg[7]_replica_5} \
           {socinstance/hart0/controlunitinst/A_reg[7]_replica_6} \
+          {socinstance/hart0/controlunitinst/A_reg[7]_replica_7} \
+          {socinstance/hart0/controlunitinst/A_reg[7]_replica_8} \
           {socinstance/hart0/controlunitinst/A_reg[8]} \
           {socinstance/hart0/controlunitinst/A_reg[8]_replica} \
           {socinstance/hart0/controlunitinst/A_reg[8]_replica_1} \
@@ -541,7 +565,6 @@ add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list \
           {socinstance/hart0/controlunitinst/A_reg[8]_replica_4} \
           {socinstance/hart0/controlunitinst/A_reg[8]_replica_5} \
           {socinstance/hart0/controlunitinst/A_reg[8]_replica_6} \
-          {socinstance/hart0/controlunitinst/A_reg[8]_replica_7} \
           {socinstance/hart0/controlunitinst/A_reg[9]} \
           {socinstance/hart0/controlunitinst/A_reg[9]_replica} \
           {socinstance/hart0/controlunitinst/A_reg[9]_replica_1} \
@@ -550,18 +573,49 @@ add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list \
           {socinstance/hart0/controlunitinst/A_reg[9]_replica_4} \
           {socinstance/hart0/controlunitinst/A_reg[9]_replica_5} \
           {socinstance/hart0/controlunitinst/A_reg[9]_replica_6} \
+          {socinstance/hart0/controlunitinst/A_reg[9]_replica_7} \
           {socinstance/hart0/controlunitinst/B_reg[0]} \
+          {socinstance/hart0/controlunitinst/B_reg[0]_replica} \
+          {socinstance/hart0/controlunitinst/B_reg[0]_replica_1} \
+          {socinstance/hart0/controlunitinst/B_reg[0]_replica_2} \
+          {socinstance/hart0/controlunitinst/B_reg[0]_replica_3} \
+          {socinstance/hart0/controlunitinst/B_reg[0]_replica_4} \
           {socinstance/hart0/controlunitinst/B_reg[10]} \
+          {socinstance/hart0/controlunitinst/B_reg[10]_replica} \
+          {socinstance/hart0/controlunitinst/B_reg[10]_replica_1} \
+          {socinstance/hart0/controlunitinst/B_reg[10]_replica_2} \
+          {socinstance/hart0/controlunitinst/B_reg[10]_replica_3} \
+          {socinstance/hart0/controlunitinst/B_reg[10]_replica_4} \
           {socinstance/hart0/controlunitinst/B_reg[11]} \
           {socinstance/hart0/controlunitinst/B_reg[12]} \
           {socinstance/hart0/controlunitinst/B_reg[13]} \
+          {socinstance/hart0/controlunitinst/B_reg[13]_replica} \
+          {socinstance/hart0/controlunitinst/B_reg[13]_replica_1} \
+          {socinstance/hart0/controlunitinst/B_reg[13]_replica_2} \
+          {socinstance/hart0/controlunitinst/B_reg[13]_replica_3} \
+          {socinstance/hart0/controlunitinst/B_reg[13]_replica_4} \
           {socinstance/hart0/controlunitinst/B_reg[14]} \
+          {socinstance/hart0/controlunitinst/B_reg[14]_replica} \
+          {socinstance/hart0/controlunitinst/B_reg[14]_replica_1} \
+          {socinstance/hart0/controlunitinst/B_reg[14]_replica_2} \
+          {socinstance/hart0/controlunitinst/B_reg[14]_replica_3} \
+          {socinstance/hart0/controlunitinst/B_reg[14]_replica_4} \
           {socinstance/hart0/controlunitinst/B_reg[15]} \
           {socinstance/hart0/controlunitinst/B_reg[16]} \
+          {socinstance/hart0/controlunitinst/B_reg[16]_replica} \
+          {socinstance/hart0/controlunitinst/B_reg[16]_replica_1} \
+          {socinstance/hart0/controlunitinst/B_reg[16]_replica_2} \
+          {socinstance/hart0/controlunitinst/B_reg[16]_replica_3} \
+          {socinstance/hart0/controlunitinst/B_reg[16]_replica_4} \
           {socinstance/hart0/controlunitinst/B_reg[17]} \
           {socinstance/hart0/controlunitinst/B_reg[18]} \
           {socinstance/hart0/controlunitinst/B_reg[19]} \
           {socinstance/hart0/controlunitinst/B_reg[1]} \
+          {socinstance/hart0/controlunitinst/B_reg[1]_replica} \
+          {socinstance/hart0/controlunitinst/B_reg[1]_replica_1} \
+          {socinstance/hart0/controlunitinst/B_reg[1]_replica_2} \
+          {socinstance/hart0/controlunitinst/B_reg[1]_replica_3} \
+          {socinstance/hart0/controlunitinst/B_reg[1]_replica_4} \
           {socinstance/hart0/controlunitinst/B_reg[20]} \
           {socinstance/hart0/controlunitinst/B_reg[21]} \
           {socinstance/hart0/controlunitinst/B_reg[22]} \
@@ -576,10 +630,26 @@ add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list \
           {socinstance/hart0/controlunitinst/B_reg[30]} \
           {socinstance/hart0/controlunitinst/B_reg[31]} \
           {socinstance/hart0/controlunitinst/B_reg[3]} \
+          {socinstance/hart0/controlunitinst/B_reg[3]_replica} \
+          {socinstance/hart0/controlunitinst/B_reg[3]_replica_1} \
+          {socinstance/hart0/controlunitinst/B_reg[3]_replica_2} \
+          {socinstance/hart0/controlunitinst/B_reg[3]_replica_3} \
+          {socinstance/hart0/controlunitinst/B_reg[3]_replica_4} \
+          {socinstance/hart0/controlunitinst/B_reg[3]_replica_5} \
           {socinstance/hart0/controlunitinst/B_reg[4]} \
+          {socinstance/hart0/controlunitinst/B_reg[4]_replica} \
+          {socinstance/hart0/controlunitinst/B_reg[4]_replica_1} \
+          {socinstance/hart0/controlunitinst/B_reg[4]_replica_2} \
+          {socinstance/hart0/controlunitinst/B_reg[4]_replica_3} \
+          {socinstance/hart0/controlunitinst/B_reg[4]_replica_4} \
           {socinstance/hart0/controlunitinst/B_reg[5]} \
           {socinstance/hart0/controlunitinst/B_reg[6]} \
           {socinstance/hart0/controlunitinst/B_reg[7]} \
+          {socinstance/hart0/controlunitinst/B_reg[7]_replica} \
+          {socinstance/hart0/controlunitinst/B_reg[7]_replica_1} \
+          {socinstance/hart0/controlunitinst/B_reg[7]_replica_2} \
+          {socinstance/hart0/controlunitinst/B_reg[7]_replica_3} \
+          {socinstance/hart0/controlunitinst/B_reg[7]_replica_4} \
           {socinstance/hart0/controlunitinst/B_reg[8]} \
           {socinstance/hart0/controlunitinst/B_reg[9]} \
           {socinstance/hart0/controlunitinst/D[31]_i_4__0} \
@@ -676,12 +746,7 @@ add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list \
           {socinstance/hart0/controlunitinst/F_reg[30]} \
           {socinstance/hart0/controlunitinst/F_reg[31]} \
           {socinstance/hart0/controlunitinst/F_reg[3]} \
-          {socinstance/hart0/controlunitinst/F_reg[3]_replica} \
-          {socinstance/hart0/controlunitinst/F_reg[3]_replica_1} \
-          {socinstance/hart0/controlunitinst/F_reg[3]_replica_2} \
           {socinstance/hart0/controlunitinst/F_reg[4]} \
-          {socinstance/hart0/controlunitinst/F_reg[4]_replica} \
-          {socinstance/hart0/controlunitinst/F_reg[4]_replica_1} \
           {socinstance/hart0/controlunitinst/F_reg[5]} \
           {socinstance/hart0/controlunitinst/F_reg[6]} \
           {socinstance/hart0/controlunitinst/F_reg[7]} \
@@ -2309,17 +2374,7 @@ add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list \
           {socinstance/hart0/controlunitinst/wbdin_reg[9]} \
           socinstance/hart0/dataunitinst \
           socinstance/hart0/delayresetinst \
-          socinstance/hart0/fetchdecodeinst \
-          socinstance/hart0/fetchena_i_1 \
-          socinstance/hart0/icacheflush_i_1 \
-          socinstance/hart0/ififowr_en_i_1 \
-          {socinstance/hart0/m_axi\\.arvalid_i_1} \
-          {socinstance/hart0/m_axi\\.rready_i_1} \
-          socinstance/hart0/pendingdiv_i_1 \
-          socinstance/hart0/pendingload_i_1 \
-          socinstance/hart0/pendingmul_i_1 \
-          socinstance/hart0/pendingwrite_i_1 \
-          socinstance/hart0/wback_i_1]]
+          socinstance/hart0/fetchdecodeinst]]
 resize_pblock [get_pblocks pblock_hart0] -add {CLOCKREGION_X1Y3:CLOCKREGION_X1Y3}
 create_pblock pblock_VPU
 add_cells_to_pblock [get_pblocks pblock_VPU] [get_cells -quiet [list socinstance/VPU]]
@@ -2369,6 +2424,7 @@ add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list \
           {socinstance/hart1/controlunitinst/A_reg[0]_replica_4} \
           {socinstance/hart1/controlunitinst/A_reg[0]_replica_5} \
           {socinstance/hart1/controlunitinst/A_reg[0]_replica_6} \
+          {socinstance/hart1/controlunitinst/A_reg[0]_replica_7} \
           {socinstance/hart1/controlunitinst/A_reg[10]} \
           {socinstance/hart1/controlunitinst/A_reg[10]_replica} \
           {socinstance/hart1/controlunitinst/A_reg[10]_replica_1} \
@@ -2384,6 +2440,8 @@ add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list \
           {socinstance/hart1/controlunitinst/A_reg[11]_replica_3} \
           {socinstance/hart1/controlunitinst/A_reg[11]_replica_4} \
           {socinstance/hart1/controlunitinst/A_reg[11]_replica_5} \
+          {socinstance/hart1/controlunitinst/A_reg[11]_replica_6} \
+          {socinstance/hart1/controlunitinst/A_reg[11]_replica_7} \
           {socinstance/hart1/controlunitinst/A_reg[12]} \
           {socinstance/hart1/controlunitinst/A_reg[12]_replica} \
           {socinstance/hart1/controlunitinst/A_reg[12]_replica_1} \
@@ -2393,6 +2451,14 @@ add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list \
           {socinstance/hart1/controlunitinst/A_reg[12]_replica_5} \
           {socinstance/hart1/controlunitinst/A_reg[12]_replica_6} \
           {socinstance/hart1/controlunitinst/A_reg[13]} \
+          {socinstance/hart1/controlunitinst/A_reg[13]_replica} \
+          {socinstance/hart1/controlunitinst/A_reg[13]_replica_1} \
+          {socinstance/hart1/controlunitinst/A_reg[13]_replica_2} \
+          {socinstance/hart1/controlunitinst/A_reg[13]_replica_3} \
+          {socinstance/hart1/controlunitinst/A_reg[13]_replica_4} \
+          {socinstance/hart1/controlunitinst/A_reg[13]_replica_5} \
+          {socinstance/hart1/controlunitinst/A_reg[13]_replica_6} \
+          {socinstance/hart1/controlunitinst/A_reg[13]_replica_7} \
           {socinstance/hart1/controlunitinst/A_reg[14]} \
           {socinstance/hart1/controlunitinst/A_reg[14]_replica} \
           {socinstance/hart1/controlunitinst/A_reg[14]_replica_1} \
@@ -2400,6 +2466,8 @@ add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list \
           {socinstance/hart1/controlunitinst/A_reg[14]_replica_3} \
           {socinstance/hart1/controlunitinst/A_reg[14]_replica_4} \
           {socinstance/hart1/controlunitinst/A_reg[14]_replica_5} \
+          {socinstance/hart1/controlunitinst/A_reg[14]_replica_6} \
+          {socinstance/hart1/controlunitinst/A_reg[14]_replica_7} \
           {socinstance/hart1/controlunitinst/A_reg[15]} \
           {socinstance/hart1/controlunitinst/A_reg[15]_replica} \
           {socinstance/hart1/controlunitinst/A_reg[15]_replica_1} \
@@ -2407,7 +2475,16 @@ add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list \
           {socinstance/hart1/controlunitinst/A_reg[15]_replica_3} \
           {socinstance/hart1/controlunitinst/A_reg[15]_replica_4} \
           {socinstance/hart1/controlunitinst/A_reg[15]_replica_5} \
+          {socinstance/hart1/controlunitinst/A_reg[15]_replica_6} \
           {socinstance/hart1/controlunitinst/A_reg[16]} \
+          {socinstance/hart1/controlunitinst/A_reg[16]_replica} \
+          {socinstance/hart1/controlunitinst/A_reg[16]_replica_1} \
+          {socinstance/hart1/controlunitinst/A_reg[16]_replica_2} \
+          {socinstance/hart1/controlunitinst/A_reg[16]_replica_3} \
+          {socinstance/hart1/controlunitinst/A_reg[16]_replica_4} \
+          {socinstance/hart1/controlunitinst/A_reg[16]_replica_5} \
+          {socinstance/hart1/controlunitinst/A_reg[16]_replica_6} \
+          {socinstance/hart1/controlunitinst/A_reg[16]_replica_7} \
           {socinstance/hart1/controlunitinst/A_reg[17]} \
           {socinstance/hart1/controlunitinst/A_reg[17]_replica} \
           {socinstance/hart1/controlunitinst/A_reg[17]_replica_1} \
@@ -2415,6 +2492,7 @@ add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list \
           {socinstance/hart1/controlunitinst/A_reg[17]_replica_3} \
           {socinstance/hart1/controlunitinst/A_reg[17]_replica_4} \
           {socinstance/hart1/controlunitinst/A_reg[17]_replica_5} \
+          {socinstance/hart1/controlunitinst/A_reg[17]_replica_6} \
           {socinstance/hart1/controlunitinst/A_reg[18]} \
           {socinstance/hart1/controlunitinst/A_reg[18]_replica} \
           {socinstance/hart1/controlunitinst/A_reg[18]_replica_1} \
@@ -2439,11 +2517,17 @@ add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list \
           {socinstance/hart1/controlunitinst/A_reg[1]_replica_3} \
           {socinstance/hart1/controlunitinst/A_reg[1]_replica_4} \
           {socinstance/hart1/controlunitinst/A_reg[1]_replica_5} \
+          {socinstance/hart1/controlunitinst/A_reg[1]_replica_6} \
+          {socinstance/hart1/controlunitinst/A_reg[1]_replica_7} \
           {socinstance/hart1/controlunitinst/A_reg[20]} \
           {socinstance/hart1/controlunitinst/A_reg[20]_replica} \
           {socinstance/hart1/controlunitinst/A_reg[20]_replica_1} \
           {socinstance/hart1/controlunitinst/A_reg[20]_replica_2} \
           {socinstance/hart1/controlunitinst/A_reg[20]_replica_3} \
+          {socinstance/hart1/controlunitinst/A_reg[20]_replica_4} \
+          {socinstance/hart1/controlunitinst/A_reg[20]_replica_5} \
+          {socinstance/hart1/controlunitinst/A_reg[20]_replica_6} \
+          {socinstance/hart1/controlunitinst/A_reg[20]_replica_7} \
           {socinstance/hart1/controlunitinst/A_reg[21]} \
           {socinstance/hart1/controlunitinst/A_reg[21]_replica} \
           {socinstance/hart1/controlunitinst/A_reg[21]_replica_1} \
@@ -2474,7 +2558,6 @@ add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list \
           {socinstance/hart1/controlunitinst/A_reg[2]_replica_4} \
           {socinstance/hart1/controlunitinst/A_reg[2]_replica_5} \
           {socinstance/hart1/controlunitinst/A_reg[2]_replica_6} \
-          {socinstance/hart1/controlunitinst/A_reg[2]_replica_7} \
           {socinstance/hart1/controlunitinst/A_reg[30]} \
           {socinstance/hart1/controlunitinst/A_reg[31]} \
           {socinstance/hart1/controlunitinst/A_reg[3]} \
@@ -2484,6 +2567,7 @@ add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list \
           {socinstance/hart1/controlunitinst/A_reg[3]_replica_3} \
           {socinstance/hart1/controlunitinst/A_reg[3]_replica_4} \
           {socinstance/hart1/controlunitinst/A_reg[3]_replica_5} \
+          {socinstance/hart1/controlunitinst/A_reg[3]_replica_6} \
           {socinstance/hart1/controlunitinst/A_reg[4]} \
           {socinstance/hart1/controlunitinst/A_reg[4]_replica} \
           {socinstance/hart1/controlunitinst/A_reg[4]_replica_1} \
@@ -2491,25 +2575,21 @@ add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list \
           {socinstance/hart1/controlunitinst/A_reg[4]_replica_3} \
           {socinstance/hart1/controlunitinst/A_reg[4]_replica_4} \
           {socinstance/hart1/controlunitinst/A_reg[4]_replica_5} \
+          {socinstance/hart1/controlunitinst/A_reg[4]_replica_6} \
+          {socinstance/hart1/controlunitinst/A_reg[4]_replica_7} \
+          {socinstance/hart1/controlunitinst/A_reg[4]_replica_8} \
           {socinstance/hart1/controlunitinst/A_reg[5]} \
-          {socinstance/hart1/controlunitinst/A_reg[5]_replica} \
-          {socinstance/hart1/controlunitinst/A_reg[5]_replica_1} \
-          {socinstance/hart1/controlunitinst/A_reg[5]_replica_2} \
-          {socinstance/hart1/controlunitinst/A_reg[5]_replica_3} \
-          {socinstance/hart1/controlunitinst/A_reg[5]_replica_4} \
-          {socinstance/hart1/controlunitinst/A_reg[5]_replica_5} \
           {socinstance/hart1/controlunitinst/A_reg[6]} \
           {socinstance/hart1/controlunitinst/A_reg[6]_replica} \
           {socinstance/hart1/controlunitinst/A_reg[6]_replica_1} \
           {socinstance/hart1/controlunitinst/A_reg[6]_replica_2} \
           {socinstance/hart1/controlunitinst/A_reg[6]_replica_3} \
           {socinstance/hart1/controlunitinst/A_reg[6]_replica_4} \
+          {socinstance/hart1/controlunitinst/A_reg[6]_replica_5} \
+          {socinstance/hart1/controlunitinst/A_reg[6]_replica_6} \
+          {socinstance/hart1/controlunitinst/A_reg[6]_replica_7} \
+          {socinstance/hart1/controlunitinst/A_reg[6]_replica_8} \
           {socinstance/hart1/controlunitinst/A_reg[7]} \
-          {socinstance/hart1/controlunitinst/A_reg[7]_replica} \
-          {socinstance/hart1/controlunitinst/A_reg[7]_replica_1} \
-          {socinstance/hart1/controlunitinst/A_reg[7]_replica_2} \
-          {socinstance/hart1/controlunitinst/A_reg[7]_replica_3} \
-          {socinstance/hart1/controlunitinst/A_reg[7]_replica_4} \
           {socinstance/hart1/controlunitinst/A_reg[8]} \
           {socinstance/hart1/controlunitinst/A_reg[8]_replica} \
           {socinstance/hart1/controlunitinst/A_reg[8]_replica_1} \
@@ -2517,6 +2597,7 @@ add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list \
           {socinstance/hart1/controlunitinst/A_reg[8]_replica_3} \
           {socinstance/hart1/controlunitinst/A_reg[8]_replica_4} \
           {socinstance/hart1/controlunitinst/A_reg[8]_replica_5} \
+          {socinstance/hart1/controlunitinst/A_reg[8]_replica_6} \
           {socinstance/hart1/controlunitinst/A_reg[9]} \
           {socinstance/hart1/controlunitinst/A_reg[9]_replica} \
           {socinstance/hart1/controlunitinst/A_reg[9]_replica_1} \
@@ -4527,3 +4608,18 @@ resize_pblock [get_pblocks pblock_FPU] -add {CLOCKREGION_X1Y4:CLOCKREGION_X1Y4}
 create_pblock pblock_FPU_1
 add_cells_to_pblock [get_pblocks pblock_FPU_1] [get_cells -quiet [list socinstance/hart1/controlunitinst/FPU]]
 resize_pblock [get_pblocks pblock_FPU_1] -add {CLOCKREGION_X1Y0:CLOCKREGION_X1Y0}
+
+## set_output_delay -clock [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1]] 5.000 [get_ports {{leds[0]} {leds[1]} {leds[2]} {leds[3]} {leds[4]} {leds[5]}}]
+
+create_pblock pblock_leddevice
+add_cells_to_pblock [get_pblocks pblock_leddevice] [get_cells -quiet [list socinstance/leddevice]]
+resize_pblock [get_pblocks pblock_leddevice] -add {SLICE_X2Y120:SLICE_X7Y128}
+resize_pblock [get_pblocks pblock_leddevice] -add {RAMB18_X0Y48:RAMB18_X0Y49}
+resize_pblock [get_pblocks pblock_leddevice] -add {RAMB36_X0Y24:RAMB36_X0Y24}
+
+create_pblock pblock_uartinst
+add_cells_to_pblock [get_pblocks pblock_uartinst] [get_cells -quiet [list socinstance/uartinst]]
+resize_pblock [get_pblocks pblock_uartinst] -add {SLICE_X20Y112:SLICE_X23Y120}
+resize_pblock [get_pblocks pblock_uartinst] -add {DSP48_X1Y46:DSP48_X1Y47}
+resize_pblock [get_pblocks pblock_uartinst] -add {RAMB18_X1Y46:RAMB18_X1Y47}
+resize_pblock [get_pblocks pblock_uartinst] -add {RAMB36_X1Y23:RAMB36_X1Y23}

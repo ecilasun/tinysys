@@ -5,7 +5,7 @@ module tophat(
 	// Board clock and reset
     input wire sys_clk
     // Debug LEDs
-    ,output wire [3:0] leds
+    ,output wire [5:0] leds
 	// DDR3 SDRAM
 	,output wire ddr3_reset_n
 	,output wire [0:0] ddr3_cke

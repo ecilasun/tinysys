@@ -9,9 +9,6 @@ void DeviceDefaultState(int _bootTime)
 	// Stop output
 	APUSetSampleRate(ASR_Halt);
 
-	// Turn off LEDs
-	LEDSetState(0x0);
-
 	// Set up video mode and default color tables
 	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
 	VPUSetWriteAddress(kernelgfx, CONSOLE_FRAMEBUFFER_START);
@@ -25,6 +22,8 @@ void DeviceDefaultState(int _bootTime)
 	// Clear console buffer on initial boot, but not for when an executable exits
 	if (_bootTime)
 		VPUConsoleClear(kernelgfx);
+	else
+		LEDSetState(0x0); // Turn off all LEDs
 
 	// For overlay loader, blank the entire screen to red (CONSOLERED == 0x0C)
 	if (_bootTime == 2)
