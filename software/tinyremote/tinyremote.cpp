@@ -411,10 +411,10 @@ int SDL_main(int argc, char** argv)
 	const char* acname = GetAudioCaptureDeviceName();
 	const char* apname = GetAudioPlaybackDeviceName();
 
-	fprintf(stderr, "Usage: tinyremote commdevicename videodevname audiocapdevname audioplaydevname\ndefault comm device:%s default capture device:%s\nCtrl+C or PAUSE: quit current remote process\n", cname, vname);
+	fprintf(stderr, "Usage: tinyremote commdevicenumber videodevname audiocapdevname audioplaydevname\ndefault comm device:%s default capture device:%s\nCtrl+C or PAUSE: quit current remote process\n", cname, vname);
 
 	if (argc > 1)
-		SetCommDeviceName(argv[1]);
+		SetCommDeviceName(atoi(argv[1]));
 	if (argc > 2)
 		SetVideoDeviceName(argv[2]);
 	if (argc > 3)
@@ -448,7 +448,7 @@ int SDL_main(int argc, char** argv)
 	AppCtx ctx;
 	ctx.gamecontroller = nullptr;
 	ctx.serial = new CSerialPort();
-	ctx.serial->Open();
+	ctx.serial->AttemptOpen();
 	ctx.video = new VideoCapture();
 	ctx.video->Initialize(s_videoWidth, s_videoHeight);
 	ctx.audio = new AudioCapture();

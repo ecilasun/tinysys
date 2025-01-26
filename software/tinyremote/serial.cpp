@@ -3,12 +3,12 @@
 
 #if defined(CAT_LINUX)
 #include <errno.h>
-char commdevicename[512] = "/dev/ttyUSB0";
+char commdevicename[512] = "/dev/ttyUSB1";
 #elif defined(CAT_MACOS)
 // MacOS
-char commdevicename[512] = "/dev/ttyACM0";
+char commdevicename[512] = "/dev/ttyACM1";
 #else // CAT_WINDOWS
-char commdevicename[512] = "\\\\.\\COM10";
+char commdevicename[512] = "\\\\.\\COM1";
 #endif
 
 const char* GetCommDeviceName()
@@ -16,9 +16,39 @@ const char* GetCommDeviceName()
 	return commdevicename;
 }
 
-void SetCommDeviceName(const char* _commdevicename)
+void SetCommDeviceName(const uint32_t _commdeviceindex)
 {
-	strcpy(commdevicename, _commdevicename);
+#ifdef CAT_WINDOWS
+	sprintf(commdevicename, "\\\\.\\COM%d", _commdeviceindex);
+#elif defined(CAT_LINUX)
+	sprintf(commdevicename, "/dev/ttyUSB%d", _commdeviceindex);
+#elif defined(CAT_MACOS)
+	sprintf(commdevicename, "/dev/ttyACM%d", _commdeviceindex);
+#endif
+}
+
+bool CSerialPort::AttemptOpen()
+{
+	// First, try to open the user-specified COM port
+	// If we fail, try to scan for a valid COM port
+	// Generate a list of COM ports between COM0 and COM32 and try to open them
+	// If we succeed, we can use that COM port
+
+	uint32_t portNumber = 0;
+	if (!Open())
+	{
+		for (int i = 0; i < 33; i++)
+		{
+			SetCommDeviceName(i);
+			if (Open())
+			{
+				portIndex = i;
+				return true;
+			}
+		}
+	}
+
+	return false;
 }
 
 bool CSerialPort::Open()
@@ -108,8 +138,8 @@ bool CSerialPort::Open()
 		else
 			fprintf(stderr, "ERROR: can't get communication parameters\n");
 	}
-	else
-		fprintf(stderr, "ERROR: can't open COM port %s\n", commdevicename);
+	/*else
+		fprintf(stderr, "ERROR: can't open COM port %s\n", commdevicename);*/
 	return false;
 #endif
 }
@@ -159,7 +189,7 @@ uint32_t CSerialPort::Send(void *_sendbytes, unsigned int _sendlength)
 	if (!success)
 	{
 		fprintf(stderr, "ERROR: write() failed, re-opening port\n");
-		bool opene = Open();
+		bool opene = AttemptOpen();
 		if (opene)
 		{
 			success = WriteFile(hComm, _sendbytes, _sendlength, &byteswritten, nullptr);
