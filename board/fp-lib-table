@@ -22,4 +22,5 @@
   (lib (name "MAX20022")(type "KiCad")(uri "${KIPRJMOD}/MAX20022ATIA/footprints.pretty")(options "")(descr ""))
   (lib (name "HDMI_2086")(type "KiCad")(uri "${KIPRJMOD}/2086581051")(options "")(descr ""))
   (lib (name "LED_LTST_C195KGJRKT")(type "KiCad")(uri "${KIPRJMOD}/LTST_C195KGJRKT")(options "")(descr ""))
+  (lib (name "USB_124020")(type "KiCad")(uri "${KIPRJMOD}/124020")(options "")(descr ""))
 )

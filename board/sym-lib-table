@@ -23,4 +23,5 @@
   (lib (name "MAX20022")(type "KiCad")(uri "${KIPRJMOD}/MAX20022ATIA/2024-12-23_10-42-40.kicad_sym")(options "")(descr ""))
   (lib (name "HDMI_2086")(type "KiCad")(uri "${KIPRJMOD}/2086581051/2086581051.kicad_sym")(options "")(descr ""))
   (lib (name "LED_LTST_C195KGJRKT")(type "KiCad")(uri "${KIPRJMOD}/LTST_C195KGJRKT/LTST-C195KGJRKT.kicad_sym")(options "")(descr ""))
+  (lib (name "USB_124020")(type "KiCad")(uri "${KIPRJMOD}/124020/12402012E212A.kicad_sym")(options "")(descr ""))
 )

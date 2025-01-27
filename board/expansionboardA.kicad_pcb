@@ -1602,7 +1602,7 @@
 			)
 		)
 		(property "Value" "LTST-C195KGJRKT"
-			(at -1.695 -2.958 180)
+			(at -0.933 -1.18 -90)
 			(layer "B.Fab")
 			(uuid "d415bba1-5d28-4cce-b69c-c406391c42da")
 			(effects
@@ -4873,7 +4873,7 @@
 			)
 		)
 		(property "Value" "GPIO_U4"
-			(at -7.239 0.381 0)
+			(at -7.62 -0.635 0)
 			(layer "B.Fab")
 			(uuid "11841ac9-be12-40e6-9960-0ebb982c94ee")
 			(effects
@@ -5099,7 +5099,7 @@
 			(uuid "9f2b6818-0a80-45bf-8d7a-1799d3d0139f")
 		)
 		(fp_text user "${REFERENCE}"
-			(at 2.78 1.08 0)
+			(at -5.334 0.88 0)
 			(layer "B.Fab")
 			(uuid "e7bc85d2-f848-4385-8235-ae014b9a2148")
 			(effects
