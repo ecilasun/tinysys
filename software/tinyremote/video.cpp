@@ -187,8 +187,8 @@ bool VideoCapture::Initialize(int width, int height)
 			fprintf(stderr, "Using video capture device(%d): %s\n", i, asciiname);
 			selecteddevice = i;
 		}
-
-		fprintf(stderr, "Found video capture device(%d): %s\n", i, asciiname);
+		else
+			fprintf(stderr, "Found video capture device(%d): %s\n", i, asciiname);
 	}
 
 	// Create a media source for the first device in the list.
