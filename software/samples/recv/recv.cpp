@@ -155,11 +155,18 @@ int main()
 	int unpacked = LZ4_decompress_safe((const char*)sourceBuffer, (char*)targetBuffer, bytesReceived, decodedLen+512);
 	if (unpacked > 0)
 	{
-		FILE *fp = fopen(fileName, "wb");
+		// Dump the new data to a temp file
+		FILE *fp = fopen("downloaded.bin", "wb");
 		if (fp)
 		{
 			/*uint32_t written =*/ (uint32_t)fwrite(targetBuffer, 1, decodedLen, fp);
 			fclose(fp);
+
+			// Remove the file if it already exits
+			remove(fileName);
+
+			// Rename the temp file to the original file name
+			rename("downloaded.bin", fileName);
 		}
 		else
 			printf("! ERROR: can't create file %s\n", fileName);

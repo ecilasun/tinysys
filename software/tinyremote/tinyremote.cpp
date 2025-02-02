@@ -21,6 +21,8 @@ static int s_windowWidth, s_prevWidth;
 static int s_windowHeight, s_prevHeight;
 static bool s_maximized;
 static bool s_restored;
+static int s_uploadProgress = 0;
+static int s_showProgress = 0;
 
 uint32_t videoCallback(uint32_t interval, void* param)
 {
@@ -74,6 +76,20 @@ uint32_t videoCallback(uint32_t interval, void* param)
 		SDL_Rect srcRect = { 0, 0, s_videoWidth, s_videoHeight };
 		SDL_Rect dstRect = { 0, 0, s_windowWidth, s_windowHeight };
 		SDL_BlitScaled(s_outputSurface, &srcRect, s_surface, &dstRect);
+
+		if (s_showProgress)
+		{
+			// Show a 512 pixel wide 20 pixel high progress bar centered inside the current window
+			int progressWidth = 512;
+			int progressHeight = 20;
+			int progressX = (s_windowWidth - progressWidth) / 2;
+			int progressY = (s_windowHeight - progressHeight) / 2;
+			SDL_Rect progressRect = { progressX, progressY, progressWidth, progressHeight };
+			SDL_FillRect(s_surface, &progressRect, SDL_MapRGB(s_surface->format, 0, 0, 0));
+			progressRect.w = (progressWidth * s_uploadProgress) / 100;
+			SDL_FillRect(s_surface, &progressRect, SDL_MapRGB(s_surface->format, 255, 255, 255));
+		}
+
 		SDL_UpdateWindowSurface(s_window);
 	}
 
@@ -157,6 +173,9 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	fread(filedata, 1, filebytesize, fp);
 	fclose(fp);
 
+	s_uploadProgress = 0;
+	s_showProgress = 1;
+
 	// Send the file bytes in chunks
 	uint32_t packetSize = 1024;
 	int worstSize = LZ4_compressBound(filebytesize);
@@ -184,6 +203,7 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	{
 		fprintf(stderr, "Transfer initiation error: '%c'\n", received);
 		delete [] filedata;
+		s_showProgress = 0;
 		return;
 	}
 
@@ -194,6 +214,7 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	{
 		fprintf(stderr, "Encoded buffer length error: '%c'\n", received);
 		delete [] filedata;
+		s_showProgress = 0;
 		return;
 	}
 
@@ -204,6 +225,7 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	{
 		fprintf(stderr, "Decoded buffer length error: '%c'\n", received);
 		delete [] filedata;
+		s_showProgress = 0;
 		return;
 	}
 
@@ -214,6 +236,7 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	{
 		fprintf(stderr, "File name length error: '%c'\n", received);
 		delete [] filedata;
+		s_showProgress = 0;
 		return;
 	}
 
@@ -223,6 +246,7 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	{
 		fprintf(stderr, "File name error: '%c'\n", received);
 		delete [] filedata;
+		s_showProgress = 0;
 		return;
 	}
 
@@ -246,6 +270,7 @@ void SendFile(char *_filename, CSerialPort* _serial)
 		{
 			fprintf(stderr, "Packet size error at %d/%d (%d): '%c'\n", i, numPackets, received, packetSize);
 			delete [] filedata;
+			s_showProgress = 0;
 			return;
 		}
 
@@ -255,6 +280,7 @@ void SendFile(char *_filename, CSerialPort* _serial)
 		{
 			fprintf(stderr, "Packet error at %d/%d (%d): '%c'\n", i, numPackets, received, packetSize);
 			delete [] filedata;
+			s_showProgress = 0;
 			return;
 		}
 
@@ -275,6 +301,7 @@ void SendFile(char *_filename, CSerialPort* _serial)
 		{
 			fprintf(stderr, "Packet size error at %d/%d (%d): '%c'\n", i, numPackets, received, packetSize);
 			delete [] filedata;
+			s_showProgress = 0;
 			return;
 		}
 
@@ -284,6 +311,7 @@ void SendFile(char *_filename, CSerialPort* _serial)
 		{
 			fprintf(stderr, "Packet error at %d/%d (%d): '%c'\n", i, numPackets, received, packetSize);
 			delete [] filedata;
+			s_showProgress = 0;
 			return;
 		}
 
@@ -295,6 +323,7 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	fprintf(stderr, "\r\n");
 
 	delete[] encoded;
+	s_showProgress = 0;
 
 	fprintf(stderr, "%d bytes uploaded\n", packetOffset);
 

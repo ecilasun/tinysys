@@ -13,7 +13,8 @@ public:
 
 	uint32_t selectedrecordingdevice = 0xFFFFFFFF;
 	uint32_t selectedplaybackdevice = 0xFFFFFFFF;
-	int audioqueuecapacity = 1024;
+	int audiocaptureframes = 128;
+	int audioplaybackframes = 128;
 	int alive = 1;
 };
 

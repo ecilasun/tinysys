@@ -3,7 +3,9 @@
 
 module axi4register(
 	input wire aclk,
+	input wire clk10,
 	input wire aresetn,
+	input wire rst10n,
 	axi4if.slave s_axi,
 	output wire [5:0] regio );
 
@@ -24,18 +26,31 @@ delayreset delayresetinst(
 logic regwe;
 logic [5:0] regin;
 
-logic [5:0] regbits;
+logic [5:0] regstate;
 
 initial begin
-	regbits = 6'd0;
+	regstate = 6'd0;
 end
 
 always @(posedge aclk) begin
 	if (regwe)
-		regbits <= regin;
+		regstate <= regin;
 end
 
-assign regio = regbits;
+(* async_reg = "true" *) logic [5:0] regstateA;
+(* async_reg = "true" *) logic [5:0] regstateB;
+
+always @(posedge clk10) begin
+	if (~rst10n) begin
+		regstateA <= 6'd0;
+		regstateB <= 6'd0;
+	end else begin
+		regstateA <= regstate;
+		regstateB <= regstateA;
+	end
+end
+
+assign regio = regstateB;
 
 always @(posedge aclk) begin
 	if (~delayedresetn) begin
@@ -56,7 +71,7 @@ always @(posedge aclk) begin
 		regwe <= 1'b0;
 
 		if (s_axi.rready) begin
-			s_axi.rdata[31:0] <= {26'd0, regbits};
+			s_axi.rdata[31:0] <= {26'd0, regstate};
 			s_axi.rlast <= 1'b1;
 		end
 

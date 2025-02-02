@@ -332,7 +332,9 @@ wire uartirq;
 
 axi4register leddevice(
 	.aclk(aclk),
+	.clk10(clk10),
 	.aresetn(aresetn),
+	.rst10n(rst10n),
 	.s_axi(ledif),
 	.regio(leds) );
 

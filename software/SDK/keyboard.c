@@ -4,7 +4,6 @@
 
 static int s_control = 0;
 static int s_alt = 0;
-static int s_capslock = 0;
 
 // Scan code to lower case ASCII conversion table
 char scantoasciitable_lowercase[] = {

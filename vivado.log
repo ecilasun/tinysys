@@ -1,48 +1,54 @@
 #-----------------------------------------------------------
-# Vivado v2023.1 (64-bit)
-# SW Build 3865809 on Sun May  7 15:05:29 MDT 2023
-# IP Build 3864474 on Sun May  7 20:36:21 MDT 2023
-# SharedData Build 3865790 on Sun May 07 13:33:03 MDT 2023
-# Start of session at: Fri Nov  3 00:07:06 2023
-# Process ID: 12500
-# Current directory: C:/repos/tinysys
+# Vivado v2024.1 (64-bit)
+# SW Build 5076996 on Wed May 22 18:37:14 MDT 2024
+# IP Build 5075265 on Wed May 22 21:45:21 MDT 2024
+# SharedData Build 5076995 on Wed May 22 18:29:18 MDT 2024
+# Start of session at: Sun Feb  2 00:26:29 2025
+# Process ID: 33236
+# Current directory: D:/repos/tinysys
 # Command line: vivado.exe -mode batch -source program.tcl
-# Log file: C:/repos/tinysys/vivado.log
-# Journal file: C:/repos/tinysys\vivado.jou
-# Running On: fastturtle, OS: Windows, CPU Frequency: 3400 MHz, CPU Physical cores: 16, Host memory: 34279 MB
+# Log file: D:/repos/tinysys/vivado.log
+# Journal file: D:/repos/tinysys\vivado.jou
+# Running On        :fastturtle
+# Platform          :Windows Server 2016 or Windows 10
+# Operating System  :26100
+# Processor Detail  :Intel(R) Core(TM) i9-14900K
+# CPU Frequency     :3187 MHz
+# CPU Physical cores:24
+# CPU Logical cores :32
+# Host memory       :68466 MB
+# Swap memory       :4294 MB
+# Total Virtual     :72761 MB
+# Available Virtual :53169 MB
 #-----------------------------------------------------------
 source program.tcl
 # open_hw_manager
-open_hw_manager: Time (s): cpu = 00:00:06 ; elapsed = 00:00:07 . Memory (MB): peak = 456.594 ; gain = 161.199
 # connect_hw_server -allow_non_jtag
 INFO: [Labtools 27-2285] Connecting to hw_server url TCP:localhost:3121
 INFO: [Labtools 27-2222] Launching hw_server...
 INFO: [Labtools 27-2221] Launch Output:
-ECHO is off.
-ECHO is off.
 
-****** Xilinx hw_server v2023.1
-  **** Build date : May  7 2023 at 15:26:57
+****** Xilinx hw_server v2024.1.0
+  **** Build date : Mar  6 2024 at 20:50:54
     ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 
 
 INFO: [Labtools 27-3415] Connecting to cs_server url TCP:localhost:0
 INFO: [Labtools 27-3417] Launching cs_server...
 INFO: [Labtools 27-2221] Launch Output:
-ECHO is off.
-ECHO is off.
 
 
-******** Xilinx cs_server v2023.1.0
-  ****** Build date   : Apr 10 2023-08:59:24
-    **** Build number : 2023.1.1681142364
+******** Xilinx cs_server v2024.1.0
+  ****** Build date   : Mar 08 2024-16:00:37
+    **** Build number : 2024.1.1709942437
       ** Copyright 2017-2022 Xilinx, Inc. All Rights Reserved.
-      ** Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
+      ** Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 
 
+connect_hw_server: Time (s): cpu = 00:00:00 ; elapsed = 00:00:05 . Memory (MB): peak = 548.914 ; gain = 3.984
 # open_hw_target
-INFO: [Labtoolstcl 44-466] Opening hw_target localhost:3121/xilinx_tcf/Digilent/210251A08870
+INFO: [Labtoolstcl 44-466] Opening hw_target localhost:3121/xilinx_tcf/Digilent/210249BAA80C
 # set_property PROGRAM.FILE {./tinysys.runs/impl_1/tophat.bit} [get_hw_devices xc7a200t_0]
 # current_hw_device [get_hw_devices xc7a200t_0]
 # refresh_hw_device -update_hw_probes false [lindex [get_hw_devices xc7a200t_0] 0]
@@ -53,4 +59,4 @@ INFO: [Labtools 27-1434] Device xc7a200t (JTAG device index = 0) is programmed w
 # set_property PROGRAM.FILE {./tinysys.runs/impl_1/tophat.bit} [get_hw_devices xc7a200t_0]
 # program_hw_devices [get_hw_devices xc7a200t_0]
 INFO: [Labtools 27-3164] End of startup status: HIGH
-INFO: [Common 17-206] Exiting Vivado at Fri Nov  3 00:07:22 2023...
+INFO: [Common 17-206] Exiting Vivado at Sun Feb  2 00:26:45 2025...
