@@ -10,11 +10,11 @@ module datacache(
 	input wire [1:0] dcacheop,
 	input wire [31:0] addr,
 	input wire [31:0] din,
-	output logic [31:0] dout,
+	output wire [31:0] dout,
 	input wire [3:0] wstrb,
 	input wire ren,
-	output logic rready,
-	output logic wready,
+	output wire rready,
+	output wire wready,
 	axi4if.master a4buscached,
 	axi4if.master a4busuncached );
 
@@ -128,6 +128,33 @@ cachestatetype cachestate;
 
 wire countdone = dccount == 9'h1FF;
 
+// ----------------------------------------------------------------------------
+// Read completion
+// ----------------------------------------------------------------------------
+
+logic [31:0] dout_r;
+logic rready_r, wready_r;
+
+always_ff @(posedge aclk) begin
+	if (~aresetn) begin
+		dout_r <= 32'd0;
+		rready_r <= 1'b0;
+	end else begin
+		unique case(cachestate)
+			CREAD:			begin dout_r <= cdout[coffset*32 +: 32]; rready_r <= ctag == ptag; end
+			UCREADDELAY:	begin dout_r <= ucdin; rready_r <= ucreaddone; end
+		endcase
+	end
+end
+
+assign dout = dout_r;
+assign rready = rready_r;
+assign wready = wready_r;
+
+// ----------------------------------------------------------------------------
+// Main state machine
+// ----------------------------------------------------------------------------
+
 always_ff @(posedge aclk) begin
 	if (~aresetn) begin
 		memwritestrobe <= 1'b0;
@@ -146,11 +173,12 @@ always_ff @(posedge aclk) begin
 		coffset <= 4'd0;
 		inputdata <= 32'd0;
 		cacheaddress <= 32'd0;
+		cachewe <= 64'd0;
+		wready_r <= 1'b0;
 	end else begin
 		memwritestrobe <= 1'b0;
 		memreadstrobe <= 1'b0;
-		wready <= 1'b0;
-		rready <= 1'b0;
+		wready_r <= 1'b0;
 		ucwstrb <= 4'h0;
 		ucre <= 1'b0;
 		cachewe <= 64'd0;
@@ -187,7 +215,7 @@ always_ff @(posedge aclk) begin
 				// Go to next line (wraps around to 0 at 511)
 				dccount <= dccount + 9'd1;
 				// Finish our mock 'write' operation
-				wready <= countdone;
+				wready_r <= countdone;
 				// Repeat until we process line 0xFF and go back to idle state
 				cachestate <= countdone ? IDLE : CDISCARDBEGIN;
 			end
@@ -228,7 +256,7 @@ always_ff @(posedge aclk) begin
 				// Stop 'flushing' mode if we're done
 				flushing <= ~countdone;
 				// Finish our mock 'write' operation if we're done
-				wready <= countdone;
+				wready_r <= countdone;
 				// Repeat until we process line 0x1FF and go back to idle state
 				cachestate <= countdone ? IDLE : CFLUSHWAITCREAD;
 			end
@@ -240,7 +268,7 @@ always_ff @(posedge aclk) begin
 					// Stop 'flushing' mode if we're done
 					flushing <= ~countdone;
 					// Finish our mock 'write' operation if we're done
-					wready <= countdone;
+					wready_r <= countdone;
 					// Repeat until we process line 0x1FF and go back to idle state
 					cachestate <= countdone ? IDLE : CFLUSHWAITCREAD;
 				end else begin
@@ -258,7 +286,7 @@ always_ff @(posedge aclk) begin
 
 			UCWRITEDELAY: begin
 				if (ucwritedone) begin
-					wready <= 1'b1;
+					wready_r <= 1'b1;
 					cachestate <= IDLE;
 				end else begin
 					cachestate <= UCWRITEDELAY;
@@ -273,8 +301,6 @@ always_ff @(posedge aclk) begin
 
 			UCREADDELAY: begin
 				if (ucreaddone) begin
-					dout <= ucdin;
-					rready <= 1'b1;
 					cachestate <= IDLE;
 				end else begin
 					cachestate <= UCREADDELAY;
@@ -307,7 +333,7 @@ always_ff @(posedge aclk) begin
 					endcase
 					// This cache line needs to be written back to memory on next miss
 					cachelinewb[cline] <= 1'b1;
-					wready <= 1'b1;
+					wready_r <= 1'b1;
 					cachestate <= IDLE;
 				end else begin
 					cachestate <= cachelinewb[cline] ? CWBACK : CPOPULATE;
@@ -316,8 +342,6 @@ always_ff @(posedge aclk) begin
 
 			CREAD: begin
 				if (ctag == ptag) begin
-					dout <= cdout[coffset*32 +: 32];
-					rready <= 1'b1;
 					cachestate <= IDLE;
 				end else begin // Cache miss when ctag != ptag
 					cachestate <= cachelinewb[cline] ? CWBACK : CPOPULATE;
