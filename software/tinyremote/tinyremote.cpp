@@ -409,6 +409,10 @@ void ControllerAdd(AppCtx& ctx)
 								case SDL_CONTROLLER_BINDTYPE_HAT:
 									fprintf(stderr, "Hat %d: %s\n", j, SDL_GameControllerGetStringForButton((SDL_GameControllerButton)j));
 								break;
+								default:
+								{
+									fprintf(stderr, "Unknown %d: %s\n", j, SDL_GameControllerGetStringForButton((SDL_GameControllerButton)j));
+								}
 							}
 						}
 					}
@@ -621,7 +625,7 @@ int SDL_main(int argc, char** argv)
 				{
 					// DEBUG: fprintf(stderr, "key %d: %d mod: %d\n", i, keystates[i], modifiers);
 
-					uint8_t outdata[4];
+					uint8_t outdata[8];
 					outdata[0] = '^';					// scancode packet marker
 					outdata[1] = i;						// scancode
 					outdata[2] = keystates[i];			// state
