@@ -44,6 +44,30 @@ uint32_t videoCallback(uint32_t interval, void* param)
 			}
 		}
 
+		// Somehow we need to be able to read LED states to show them here
+		/*{
+			uint32_t L1 = S&0x1 ?  0xFFFF0000 : 0xFF200000; // status RED
+			uint32_t L2 = S&0x2 ?  0xFF00FF00 : 0xFF002000; // status GREEN
+			uint32_t L1_2 = L1 | L2;
+
+			uint32_t L3 = S&0x4 ?  0xFFFF7F00 : 0xFF201000; // Debug EMBER
+			uint32_t L4 = S&0x8 ?  0xFFFF7F00 : 0xFF201000;
+			uint32_t L5 = S&0x10 ?  0xFFFF7F00 : 0xFF201000;
+			uint32_t L6 = S&0x20 ?  0xFFFF7F00 : 0xFF201000;
+			
+			for (uint32_t j = H; j < H+8; j++)
+			{
+				for (uint32_t i = 8; i < 16; i++)
+				{
+					pixels[W*j+i] = L1_2;
+					pixels[W*j+i+9] = L3;
+					pixels[W*j+i+18] = L4;
+					pixels[W*j+i+27] = L5;
+					pixels[W*j+i+36] = L6;
+				}
+			}
+		}*/
+
 		if (SDL_MUSTLOCK(s_outputSurface))
 			SDL_UnlockSurface(s_outputSurface);
 

@@ -1,18 +1,13 @@
 /** \file
  * HBlank interrupt example
  * \ingroup examples
- * This example demonstrates how to use the HBlank interrupt to divide
- * the screen into two regions with different resolutions.
- * The top region runs at 320x240 resolution for 240 scanlines,
- * and the bottom region runs at 640x480 resolution for another 240 scanlines.
- * Please note that the actual screen scan-out is always done at 640x480 resolution,
- * therefore the 320x240 resolution is actually pixel doubled by hardware
- * which allows this trick to work.
+ * This example demonstrates how to use the HBlank interrupt to draw a colored bar.
  * 
  * /////////////// DANGER! ///////////////
  * NOTE: HBlank interrupts are not recommended for general use. They have no access to any local
  * variables or global variables in their parent executable, as they use the OS stack and environment.
  * They can permanently cause damage to files or lock up the system if not implemented correctly.
+ * Recommended way to store variables or context pointer is to use the scratchpad memory via TaskGetSharedMemory()
  * * /////////////// DANGER! ///////////////
  */
 
@@ -31,42 +26,18 @@ static struct EVideoSwapContext s_sc;
 // This is the HBlank interrupt handler
 // It will be called directly within OS context, therefore it has no access to any
 // local variables or global variables.
+// Make sure to use TaskGetSharedMemory() to pull your variables and not from statics / globals of this code.
 void HBlankInterruptHandler()
 {
 	volatile int *sharedmem = (volatile int*)TaskGetSharedMemory();
 
-	uint32_t scanline = VPUGetScanline();
-
 	// Let the main code know it can advance to the next frame
 	sharedmem[0] += 1;
-	EVideoContext* vx = (EVideoContext*)&sharedmem[1];
 
-	// We've hit the hblank before 240th scanline
-	if (scanline < 240)
-	{
-		// Next time we'll trigger at 240
-		VPUSetHBlankScanline(240);
+	//EVideoContext* vx = (EVideoContext*)&sharedmem[1]; // In case we need to access video context
+	//uint32_t scanline = VPUGetScanline(); // In case we need an approximate scanline
 
-		// We're in top section of screen
-		// This section of the screen runs at 320x240 resolution
-		vx->m_vmode = EVM_320_Wide;
-		VPUSetVMode(vx, EVS_Enable);
-
-		// Red
-		VPUSetPal(0xBA, 255, 0, 0);
-	}
-	else // We've hit the hblank on or after 240th scanline
-	{
-		// Next time we'll trigger at 0 (start of screen)
-		VPUSetHBlankScanline(0);
-
-		// This section of the screen runs at 640x480 resolution
-		vx->m_vmode = EVM_640_Wide;
-		VPUSetVMode(vx, EVS_Enable);
-
-		// Color based on scanline
-		VPUSetPal(0xBA, 0, 0, VPUGetScanline()%255);
-	}
+	VPUSetPal(0xBA, sharedmem[0]%255, 0, 0);
 }
 
 int main(int argc, char *argv[])
@@ -89,6 +60,7 @@ int main(int argc, char *argv[])
 	// Initialize contents of shared memory before we install the hblank handler
 	volatile int *sharedmem = (volatile int*)TaskGetSharedMemory();
 	sharedmem[0] = 0;
+	sharedmem[2] = 0; // even/odd
 
 	// Set up video context in shared memory
 	EVideoContext* vx = (EVideoContext*)&sharedmem[1];
@@ -114,7 +86,7 @@ int main(int argc, char *argv[])
 	// Also note that the handler will not throw any exceptions, and can't be stopped via normal means
 	// until it's uninstalled.
 	VPUSetHBlankHandler((uint32_t)HBlankInterruptHandler);
-	VPUSetHBlankScanline(240); // Bottom section of screen
+	VPUSetHBlankScanline(450); // Bottom section of screen
 
 	// Enable HBlank interrupt (this has to happen after all setup)
 	VPUEnableHBlankInterrupt();

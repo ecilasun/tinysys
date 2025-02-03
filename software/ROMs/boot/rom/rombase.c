@@ -773,18 +773,6 @@ void HandleUART()
 	LEDSetState(currLED);
 }
 
-void HandleHBlank(struct STaskContext *_taskctx)
-{
-	// Chain into user installed horizontal blank handler
-	// NOTE: We're not in any application context here (we're inside the OS ISR),
-	// so we can't expect acess to application side data, including those from SP or GP.
-	// Instead this routine should be using the mailbox memory for temp data.
-	void(*handler)(void) = (void (*)())read_csr(0xFE0);
-	// NOTE: This is quite dangerous as we can't quit if the handler throws an exception, neither can we break / stop it (we're already in an ISR)
-	// Use with caution
-	if (handler) handler();
-}
-
 //void __attribute__((aligned(16))) __attribute__((interrupt("machine"))) interrupt_service_routine() // Auto-saves registers
 void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routine() // Manual register save
 {
@@ -897,7 +885,14 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				}
 				else if (hwid&8)
 				{
-					HandleHBlank(taskctx);
+					// Chain into user installed horizontal blank handler
+					// NOTE: We're not in any application context here (we're inside the OS ISR),
+					// so we can't expect acess to application side data, including those from SP or GP.
+					// Instead this routine should be using the mailbox memory for temp data.
+					void(*handler)(void) = (void (*)())read_csr(0xFE0);
+					// NOTE: This is quite dangerous as we can't quit if the handler throws an exception, neither can we break / stop it (we're already in an ISR)
+					// !!! USE WITH CAUTION !!!
+					if (handler) handler();
 				}
 				else
 				{
