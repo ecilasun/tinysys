@@ -1,4 +1,4 @@
-# Latest Gateware Build is: r1.1H
+# Latest Gateware Build is: r1.3H
 # Latest ESP32 ROM is: r1.1H
 # Latest Board version is: 2H
 
@@ -24,6 +24,7 @@ r1.1D: Improvements to reboot / task system and more ROM code cleanup, also upda
 r1.1E: Updated UART to run at 460800<br>
 r1.1F: Completely switched to ESP32S3 and new board(2G), added reset lines to UART, some helper tool and CLI improvements<br>
 r1.1H: Removed DMA hardware due to complications, added experimental HDMI output for video/audio<br>
+r1.3H: Some timing fixes and ROM code cleanup<br>
 
 # Device gateware
 
