@@ -42,7 +42,7 @@ Of course, before you ask, it does run DOOM, and with sound and keyboard input! 
 
 ## CPU
 Based on 32 bit RISC-V ISA. Implements base integer instruction set, required cache operations (I$ and D$) and a large CSR file.
-The core currently has an average instruction retirement rate of ~6 CPI (clocks per instruction) and runs at 150.000MHZ, which
+The core currently has an average instruction retirement rate of ~6 CPI (clocks per instruction) and runs at 166.667MHZ, which
 is also the speed of the AXI4 bus, where all peripherals and memory reside.
 
 ### Fetch/Decode/IRQ
@@ -60,7 +60,7 @@ Audio processing unit. Handles RAW audio outputs, and also manages 44/22/11KHz s
 # Overview of the bus
 
 ## AXI4 bus
-The AXI4 bus, running at 150.000MHz, connects all of the processing units to memory or devices. In the case of memory, access is cached per perhipheral as needed. Memory mapped device access is always uncached.
+The AXI4 bus, running at 166.667MHz, connects all of the processing units to memory or devices. In the case of memory, access is cached per perhipheral as needed. Memory mapped device access is always uncached.
 
 # Custom instructions
 
