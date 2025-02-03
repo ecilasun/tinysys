@@ -24,6 +24,8 @@ def options(opt):
 def configure(conf):
     # Prefers msvc, but could also use conf.load('clang++') instead
     if platform.system().lower().startswith('win'):
+        conf.env.MSVC_TARGETS = ['x64']
+        conf.env.PLATFORM = ['windows']
         conf.load('msvc')
     elif platform.system().lower().startswith('darwin'):
         conf.load('clang++')

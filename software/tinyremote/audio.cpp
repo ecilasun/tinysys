@@ -31,15 +31,13 @@ void SetAudioPlaybackDeviceName(const char* name)
 	strcpy(audiopdevicename, name);
 }
 
-void audioCaptureCallback(void *userdata, Uint8 *stream, int len)
+/*void audioCaptureCallback(void *userdata, Uint8 *stream, int len)
 {
 	AudioCapture* audio = (AudioCapture*)userdata;
 
-	//int bytesRead = SDL_DequeueAudio(audio->selectedrecordingdevice, stream, len); 
-	//if (bytesRead)
 	if (len)
 		SDL_QueueAudio(audio->selectedplaybackdevice, stream, len);
-}
+}*/
 
 AudioCapture::AudioCapture()
 {
@@ -85,7 +83,7 @@ void AudioCapture::Initialize()
 			audioSpecDesired.format = AUDIO_S16;
 			audioSpecDesired.channels = 2;
 			audioSpecDesired.samples = audiocaptureframes;
-			audioSpecDesired.callback = audioCaptureCallback;
+			audioSpecDesired.callback = nullptr;//audioCaptureCallback;
 			audioSpecDesired.userdata = this;
 
 			selectedrecordingdevice = SDL_OpenAudioDevice(capname, 1, &audioSpecDesired, &audioSpecObtained, 0/*SDL_AUDIO_ALLOW_FORMAT_CHANGE*/);
@@ -172,4 +170,14 @@ void AudioCapture::Terminate()
 		SDL_CloseAudioDevice(selectedplaybackdevice);
 		selectedplaybackdevice = 0xFFFFFFFF;
 	}
+}
+
+void AudioCapture::Update()
+{
+	if (buffer == nullptr)
+		buffer = new short[32768];
+
+	int len = SDL_DequeueAudio(selectedrecordingdevice, buffer, 65536);
+	if (len)
+		SDL_QueueAudio(selectedplaybackdevice, buffer, len);
 }

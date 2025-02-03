@@ -263,7 +263,7 @@ bool VideoCapture::Initialize(int width, int height)
 			return false;
 		}
 
-		hr = MFSetAttributeRatio(mediaType, MF_MT_FRAME_RATE, 60, 1);
+		hr = MFSetAttributeRatio(mediaType, MF_MT_FRAME_RATE, 5994, 100);
 		if (FAILED(hr))
 		{
 			fprintf(stderr, "MFSetAttributeRatio failed\n");

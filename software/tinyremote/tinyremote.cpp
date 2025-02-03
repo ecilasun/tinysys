@@ -21,7 +21,7 @@ static int s_windowWidth, s_prevWidth;
 static int s_windowHeight, s_prevHeight;
 static bool s_maximized;
 static bool s_restored;
-static int s_uploadProgress = 0;
+static float s_uploadProgress = 0.f;
 static int s_showProgress = 0;
 
 uint32_t videoCallback(uint32_t interval, void* param)
@@ -84,14 +84,24 @@ uint32_t videoCallback(uint32_t interval, void* param)
 			int progressHeight = 20;
 			int progressX = (s_windowWidth - progressWidth) / 2;
 			int progressY = (s_windowHeight - progressHeight) / 2;
-			SDL_Rect progressRect = { progressX, progressY, progressWidth, progressHeight };
+			SDL_Rect progressRect = { progressX-1, progressY-1, progressWidth+2, progressHeight+2 };
 			SDL_FillRect(s_surface, &progressRect, SDL_MapRGB(s_surface->format, 0, 0, 0));
-			progressRect.w = (progressWidth * s_uploadProgress) / 100;
-			SDL_FillRect(s_surface, &progressRect, SDL_MapRGB(s_surface->format, 255, 255, 255));
+			SDL_Rect progressRectInner = { progressX, progressY, progressWidth, progressHeight };
+			progressRectInner.w = int((progressWidth * s_uploadProgress) / 100.f);
+			SDL_FillRect(s_surface, &progressRectInner, SDL_MapRGB(s_surface->format, 255, 255, 255));
 		}
 
 		SDL_UpdateWindowSurface(s_window);
 	}
+
+	return interval;
+}
+
+uint32_t audioCallback(uint32_t interval, void* param)
+{
+	AudioCapture* audio_capture = (AudioCapture*)param;
+
+	audio_capture->Update();
 
 	return interval;
 }
@@ -173,9 +183,6 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	fread(filedata, 1, filebytesize, fp);
 	fclose(fp);
 
-	s_uploadProgress = 0;
-	s_showProgress = 1;
-
 	// Send the file bytes in chunks
 	uint32_t packetSize = 1024;
 	int worstSize = LZ4_compressBound(filebytesize);
@@ -192,6 +199,9 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	uint8_t received;
 
 	ConsumeInitialTraffic(_serial);
+
+	s_uploadProgress = 0.f;
+	s_showProgress = 1;
 
 	// Start the receiver app on the other end
 	snprintf(tmpstring, 128, "recv");
@@ -261,10 +271,11 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	{
 		const char* source = (const char*)(encoded + packetOffset);
 
+		s_uploadProgress = (i*100)/float(numPackets);
 		int idx = (i*64)/numPackets;
 		for (int j=0; j<=idx; ++j) // Progress bar
 			progress[j] = '=';//219;
-		fprintf(stderr, "\r [%s] %.2f%%\r", progress, (i*100)/float(numPackets));
+		fprintf(stderr, "\r [%s] %.2f%%\r", progress, s_uploadProgress);
 
 		if (!WACK(_serial, '+', received)) // Wait for a 'go' signal
 		{
@@ -293,9 +304,10 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	{
 		const char* source = (const char*)(encoded + packetOffset);
 
+		s_uploadProgress = 100.f;
 		for (int j=0; j<64; ++j) // Progress bar
 			progress[j] = '=';//219;
-		fprintf(stderr, "\r [%s] %.2f%%\r", progress, 100.0f);
+		fprintf(stderr, "\r [%s] %.2f%%\r", progress, s_uploadProgress);
 
 		if (!WACK(_serial, '+', received)) // Wait for a 'go' signal
 		{
@@ -488,6 +500,7 @@ int SDL_main(int argc, char** argv)
 	ctx.audio->Initialize();
 
 	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, ctx.video); // 60fps
+	SDL_TimerID audioTimer = SDL_AddTimer(16, audioCallback, ctx.audio); // 60fps
 
 	const uint8_t *keystates = SDL_GetKeyboardState(nullptr);
 	uint8_t *old_keystates = new uint8_t[SDL_NUM_SCANCODES];
@@ -657,6 +670,7 @@ int SDL_main(int argc, char** argv)
 	ctx.serial->Close();
 	fprintf(stderr, "remote connection terminated\n");
 
+	SDL_RemoveTimer(audioTimer);
 	SDL_RemoveTimer(videoTimer);
 	ctx.video->Terminate();
 	ctx.audio->Terminate();

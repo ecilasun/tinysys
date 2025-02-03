@@ -10,11 +10,13 @@ public:
 
 	void Initialize();
 	void Terminate();
+	void Update();
 
+	short *buffer = nullptr;
 	uint32_t selectedrecordingdevice = 0xFFFFFFFF;
 	uint32_t selectedplaybackdevice = 0xFFFFFFFF;
-	int audiocaptureframes = 128;
-	int audioplaybackframes = 128;
+	int audiocaptureframes = 8192;
+	int audioplaybackframes = 8192;
 	int alive = 1;
 };
 

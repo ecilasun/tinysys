@@ -17,7 +17,7 @@ extern struct SCommandLineContext* s_cliCtx;
 static const char *s_taskstates[]={ "NONE", "HALT", "EXEC", "TERM", "DEAD"};
 
 // Device version
-#define VERSIONSTRING "v1.2H"
+#define VERSIONSTRING "00140"
 
 // File transfer timeout
 #define FILE_TRANSFER_TIMEOUT 1000
@@ -79,7 +79,7 @@ void ShowVersion(struct EVideoContext *kernelgfx)
 	kfillline(' ');
 	kprintf(" OS version          : " VERSIONSTRING " Loaded from %s", waterMark == 0 ? "ROM   " : "SDCARD");
 	kfillline(' ');
-	kprintf(" Board               : issue 2E:2024 (%s)", isEmulator ? "EMULATED" : "HARDWARE");
+	kprintf(" Board               : issue 2H:DEC24(%s)", isEmulator ? "EMULATED" : "HARDWARE");
 	kfillline(' ');
 	kprintf(" ARCH                : rv32im_zicsr_zifencei_zfinx");
 	kfillline(' ');

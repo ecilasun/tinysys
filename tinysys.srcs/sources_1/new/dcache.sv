@@ -65,6 +65,12 @@ always_comb begin
 		cacheaccess = line;
 end
 
+wire delayedresetn;
+delayreset delayresetinst(
+	.aclk(aclk),
+	.inputresetn(aresetn),
+	.delayedresetn(delayedresetn) );
+
 wire rsta_busy;
 cachemem CacheMemory512Lines(
 	.addra(cacheaccess),		// current cache line
@@ -89,7 +95,7 @@ end
 wire rdone, wdone;
 cachedmemorycontroller datacachectlinst(
 	.aclk(aclk),
-	.aresetn(aresetn),
+	.aresetn(delayedresetn),
 	// From cache
 	.addr(cacheaddress),
 	.din(cachedout),
@@ -104,7 +110,7 @@ cachedmemorycontroller datacachectlinst(
 // For now we have only one device, so we directly wire it here
 uncachedmemorycontroller uncachedmemorycontrollerinst(
 	.aclk(aclk),
-	.aresetn(aresetn),
+	.aresetn(delayedresetn),
 	// From cache
 	.addr(ucaddrs),
 	.din(ucdout),
@@ -129,23 +135,11 @@ cachestatetype cachestate;
 wire countdone = dccount == 9'h1FF;
 
 // ----------------------------------------------------------------------------
-// Read completion
+// Read/Write completion
 // ----------------------------------------------------------------------------
 
 logic [31:0] dout_r;
 logic rready_r, wready_r;
-
-always_ff @(posedge aclk) begin
-	if (~aresetn) begin
-		dout_r <= 32'd0;
-		rready_r <= 1'b0;
-	end else begin
-		unique case(cachestate)
-			CREAD:			begin dout_r <= cdout[coffset*32 +: 32]; rready_r <= ctag == ptag; end
-			UCREADDELAY:	begin dout_r <= ucdin; rready_r <= ucreaddone; end
-		endcase
-	end
-end
 
 assign dout = dout_r;
 assign rready = rready_r;
@@ -175,10 +169,13 @@ always_ff @(posedge aclk) begin
 		cacheaddress <= 32'd0;
 		cachewe <= 64'd0;
 		wready_r <= 1'b0;
+		rready_r <= 1'b0;
+		dout_r <= 32'd0;
 	end else begin
 		memwritestrobe <= 1'b0;
 		memreadstrobe <= 1'b0;
 		wready_r <= 1'b0;
+		rready_r <= 1'b0;
 		ucwstrb <= 4'h0;
 		ucre <= 1'b0;
 		cachewe <= 64'd0;
@@ -301,6 +298,8 @@ always_ff @(posedge aclk) begin
 
 			UCREADDELAY: begin
 				if (ucreaddone) begin
+					dout_r <= ucdin;
+					rready_r <= 1'b1;
 					cachestate <= IDLE;
 				end else begin
 					cachestate <= UCREADDELAY;
@@ -342,6 +341,8 @@ always_ff @(posedge aclk) begin
 
 			CREAD: begin
 				if (ctag == ptag) begin
+					dout_r <= cdout[coffset*32 +: 32];
+					rready_r <= 1'b1;
 					cachestate <= IDLE;
 				end else begin // Cache miss when ctag != ptag
 					cachestate <= cachelinewb[cline] ? CWBACK : CPOPULATE;
