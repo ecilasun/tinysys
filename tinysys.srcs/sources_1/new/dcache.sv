@@ -49,9 +49,9 @@ logic [3:0] coffset;	// current word offset 0..15
 logic cachelinewb[0:511];										// cache line needs write back when high
 (* extract_reset = "yes" *) logic [13:0] cachelinetags[0:511];	// cache line tags (13 bits) + 1 valid bit
 
-logic [63:0] cachewe = 64'd0;								// byte select for 64 byte cache line
-(* extract_reset = "yes" *) logic [511:0] cdin = 512'd0;	// input data to write to cache
-wire [511:0] cdout;											// output data read from cache
+logic [63:0] cachewe = 64'd0;	// byte select for 64 byte cache line
+logic [511:0] cdin;				// input data to write to cache
+wire [511:0] cdout;				// output data read from cache
 
 logic flushing;			// high during cache flush operation
 logic [13:0] flushtag;	// contents of line being flushed
@@ -148,6 +148,18 @@ assign wready = wready_r;
 // ----------------------------------------------------------------------------
 // Main state machine
 // ----------------------------------------------------------------------------
+
+always_ff @(posedge aclk) begin
+	if (~aresetn) begin
+		cdin <= 512'd0;
+	end else begin
+		unique case(cachestate)
+			CWRITE:		cdin <= {inputdata, inputdata, inputdata, inputdata, inputdata, inputdata, inputdata, inputdata, inputdata, inputdata, inputdata, inputdata, inputdata, inputdata, inputdata, inputdata};
+			CUPDATE:	cdin <= {cachedin[3], cachedin[2], cachedin[1], cachedin[0]}; // Data from memory
+			default:	cdin <= 512'd0;
+		endcase
+	end
+end
 
 always_ff @(posedge aclk) begin
 	if (~aresetn) begin
@@ -308,10 +320,6 @@ always_ff @(posedge aclk) begin
 
 			CWRITE: begin
 				if (ctag == ptag) begin
-					cdin <= {	inputdata, inputdata, inputdata, inputdata,
-								inputdata, inputdata, inputdata, inputdata,
-								inputdata, inputdata, inputdata, inputdata,
-								inputdata, inputdata, inputdata, inputdata};	// Incoming data replicated to 512bits, to be masked by cachewe
 					unique case(coffset)
 						4'b0000: cachewe <= { 60'd0, bsel        };
 						4'b0001: cachewe <= { 56'd0, bsel, 4'd0  };
@@ -373,8 +381,7 @@ always_ff @(posedge aclk) begin
 			end
 
 			CUPDATE: begin
-				cachewe <= 64'hFFFFFFFFFFFFFFFF; // All entries
-				cdin <= {cachedin[3], cachedin[2], cachedin[1], cachedin[0]}; // Data from memory
+				cachewe <= 64'hFFFFFFFFFFFFFFFF; // Write all entries
 				cachestate <= CUPDATEDELAY;
 			end
 
