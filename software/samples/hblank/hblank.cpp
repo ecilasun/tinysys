@@ -29,15 +29,22 @@ static struct EVideoSwapContext s_sc;
 // Make sure to use TaskGetSharedMemory() to pull your variables and not from statics / globals of this code.
 void HBlankInterruptHandler()
 {
+	// This is the only way to clear the interrupt latch
+	VPUDisableHBlankInterrupt();
+
 	volatile int *sharedmem = (volatile int*)TaskGetSharedMemory();
 
 	// Let the main code know it can advance to the next frame
 	sharedmem[0] += 1;
 
 	//EVideoContext* vx = (EVideoContext*)&sharedmem[1]; // In case we need to access video context
-	//uint32_t scanline = VPUGetScanline(); // In case we need an approximate scanline
+	uint32_t scanline = VPUGetScanline(); // In case we need an approximate scanline
 
 	VPUSetPal(0xBA, sharedmem[0]%255, 0, 0);
+
+	// Re-enable HBlank interrupt at a different scanline
+	VPUSetHBlankScanline(0);
+	VPUEnableHBlankInterrupt();
 }
 
 int main(int argc, char *argv[])
