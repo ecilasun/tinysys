@@ -177,13 +177,13 @@ always_ff @(posedge aclk) begin
 			end
 	
 			DISPATCH: begin
-				case (apucmd)
-					32'h00000000:	cmdmode <= APUBUFFERSIZE;	// Set up size of DMA copies and playback range, in words
-					32'h00000001:	cmdmode <= APUSTART;		// Start DMA into write page
-					//32'h00000002:	cmdmode <= UNUSED;			// Spare command, unused
-					//32'h00000003:	cmdmode <= UNUSED;			// Spare command, unused
-					32'h00000004:	cmdmode <= APUSETRATE;		// TODO: Set sample duplication count to x1 (44.1KHz), x2(22.05KHz) or x4(11.025KHz)
-					default:		cmdmode <= FINALIZE;		// Invalid command, wait one clock and try next
+				case (apucmd[3:0])
+					4'h0:		cmdmode <= APUBUFFERSIZE;	// Set up size of DMA copies and playback range, in words
+					4'h1:		cmdmode <= APUSTART;		// Start DMA into write page
+					//4'h2:		cmdmode <= APUSETVOL;		// Spare command, unused
+					//4'h3:		cmdmode <= APUSWAPCHANNELS;	// Spare command, unused
+					4'h4:		cmdmode <= APUSETRATE;		// TODO: Set sample duplication count to x1 (44.1KHz), x2(22.05KHz) or x4(11.025KHz)
+					default:	cmdmode <= FINALIZE;		// Invalid command, wait one clock and try next
 				endcase
 			end
 	

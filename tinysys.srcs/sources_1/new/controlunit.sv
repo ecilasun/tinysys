@@ -111,7 +111,6 @@ integerregisterfile GPR(
 
 wire branchout;
 branchlogic BLU(
-	.aresetn(delayedresetn),
 	.branchout(branchout),
 	.val1(A),
 	.val2(B),
@@ -124,7 +123,6 @@ branchlogic BLU(
 wire [31:0] aluout;
 arithmeticlogic ALU(
 	.aclk(aclk),
-	.aresetn(delayedresetn),
 	.aluout(aluout),
 	.val1(A),
 	.val2(F),

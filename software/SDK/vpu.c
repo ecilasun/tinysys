@@ -823,6 +823,31 @@ void VPUSetHBlankScanline(uintptr_t _scanline)
 	*VPUIO = _scanline; // set hblank scanline
 }
 
+/** @brief Clear HBlank latch
+ * 
+ * This function sets the horizontal blanking latch. It is used to reset the latch
+ * after the ISR has been triggered.
+ */
+void VPUHBlankIRQLatchSet()
+{
+	*VPUIO = VPUCMD_CTLREGSEL;
+	*VPUIO = 0x00000002; // control register C
+	*VPUIO = VPUCMD_CTLREGSET;
+	*VPUIO = 0x00000001; // set hblank latch
+}
+
+/** @brief Reset HBlank latch
+ * 
+ * This function resets the horizontal blanking latch.
+ */
+void VPUHBlankIRQLatchReset()
+{
+	*VPUIO = VPUCMD_CTLREGSEL;
+	*VPUIO = 0x00000002; // control register C
+	*VPUIO = VPUCMD_CTLREGCLR;
+	*VPUIO = 0x00000001; // clear hblank latch
+}
+
 /** @brief Enable HBlank interrupt
  * 
  * This function enables the VPU horizontal blank interrupt generation.

@@ -29,22 +29,47 @@ static struct EVideoSwapContext s_sc;
 // Make sure to use TaskGetSharedMemory() to pull your variables and not from statics / globals of this code.
 void HBlankInterruptHandler()
 {
-	// This is the only way to clear the interrupt latch
-	VPUDisableHBlankInterrupt();
+	// We are now on the desired scanline
 
+	// First order of business is to set the irq clear latch
+	// This will reset the pending interrupt state so that we don't re-trigger the interrupt
+	// as soon as we return from this function
+	// It also acts as a temporary interrupt disable so the interrupt state won't revert to pending
+	VPUHBlankIRQLatchSet();
+
+	// We don't have access to our own stack, so we need to use shared memory to communicate with the main code
+	// or track our variables
 	volatile int *sharedmem = (volatile int*)TaskGetSharedMemory();
 
-	// Let the main code know it can advance to the next frame
-	sharedmem[0] += 1;
+	// Let the main code know it can do something (in this case advance the LED state)
+	sharedmem[0] = sharedmem[0] + 1;
+	uint32_t frame = sharedmem[0];
 
-	//EVideoContext* vx = (EVideoContext*)&sharedmem[1]; // In case we need to access video context
-	uint32_t scanline = VPUGetScanline(); // In case we need an approximate scanline
+	// Here's our video buffer
+	uint32_t *videobuffer = (uint32_t *)sharedmem[2];
 
-	VPUSetPal(0xBA, sharedmem[0]%255, 0, 0);
+	// In case we need to access video context to switch video modes on a scanline, we can do that here
+	//EVideoContext* vx = (EVideoContext*)&sharedmem[1];
 
-	// Re-enable HBlank interrupt at a different scanline
-	VPUSetHBlankScanline(0);
-	VPUEnableHBlankInterrupt();
+	// NOTE: This is the scanline 'now' not where we triggered the IRQ
+	uint32_t scanline = VPUGetScanline();
+
+	uint32_t framedupe = (frame&0xFF) | (frame&0xFF)<<8 | (frame&0xFF)<<16 | (frame&0xFF)<<24;
+	if (scanline < 480)
+	{
+		for (int i=0; i<80; ++i)
+			videobuffer[i+scanline*80] = framedupe;
+	}
+
+	// Make writes visible to scan-out hardware
+	CFLUSH_D_L1;
+
+	// Set new interrupt scanline based on the current frame counter
+	VPUSetHBlankScanline(frame%2 ? 100 : 450);
+
+	// Reset the irq clear latch so it doesn't end up clearing our next interrupt
+	// This will also re-enables the interrupt state to signal pending
+	VPUHBlankIRQLatchReset();
 }
 
 int main(int argc, char *argv[])
@@ -67,7 +92,7 @@ int main(int argc, char *argv[])
 	// Initialize contents of shared memory before we install the hblank handler
 	volatile int *sharedmem = (volatile int*)TaskGetSharedMemory();
 	sharedmem[0] = 0;
-	sharedmem[2] = 0; // even/odd
+	sharedmem[2] = (uint32_t)videoPageA; // video buffer pointer
 
 	// Set up video context in shared memory
 	EVideoContext* vx = (EVideoContext*)&sharedmem[1];

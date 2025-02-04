@@ -189,7 +189,7 @@ void HandleCPUError(struct STaskContext *ctx, const uint32_t cpu)
 
 	switch (ctx->kernelError)
 	{
-		case 1: kprintf("Unknown hardware device"); break;
+		case 1: ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG); return; // kprintf("Unknown hardware device"); break; // This can happen during hblank, no need to report
 		case 2: kprintf("Unknown interrupt type"); break;
 		case 3: kprintf("Guru meditation"); break;
 		case 4: kprintf("Illegal instruction"); break;

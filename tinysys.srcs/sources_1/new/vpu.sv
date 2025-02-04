@@ -268,7 +268,8 @@ vpucmdmodetype cmdmode = WCMD;
 logic [31:0] vpucmd;
 logic controlregA;			// register 0: HBlank interrupt enable/disable control
 logic [9:0] controlregB;	// register 1: HBlank trigger point. Set it beyong scan range to avoid triggering
-logic regIndex;				// Currently selected VPU register
+logic controlregC;			// register 2: HBlank latch clear (i.e. IRQ ACK) 
+logic [1:0] regIndex;		// Currently selected VPU register
 
 always_ff @(posedge aclk) begin
 	if (~delayedresetn) begin
@@ -282,9 +283,10 @@ always_ff @(posedge aclk) begin
 		scanwidth <= 1'b0;
 		colormode <= 1'b0;
 		palettewe <= 1'b0;
-		regIndex <= 1'b0;
+		regIndex <= 2'b00;
 		controlregA <= 1'd0;
 		controlregB <= 10'd0;
+		controlregC <= 1'd0;
 		cmdmode <= WCMD;
 	end else begin
 		cmdre <= 1'b0;
@@ -344,7 +346,7 @@ always_ff @(posedge aclk) begin
 					// ? <= vpufifodout[31:3] unused for now
 
 					// Set up burst count to 20 / 40 / 80 depending on video mode
-					unique case ({vpufifodout[2], vpufifodout[1]})
+					unique case (vpufifodout[2:1])
 						2'b00: burstlen <= 'd19;	// 320*240 8bpp
 						2'b01: burstlen <= 'd39;	// 640*480 8bpp
 						2'b10: burstlen <= 'd39;	// 320*240 16bpp
@@ -359,7 +361,7 @@ always_ff @(posedge aclk) begin
 			
 			CTLREGSEL: begin
 				if (vpufifovalid && ~vpufifoempty) begin
-					regIndex <= vpufifodout[0];
+					regIndex <= vpufifodout[1:0];
 					cmdre <= 1'b1;
 					cmdmode <= FINALIZE;
 				end
@@ -368,8 +370,9 @@ always_ff @(posedge aclk) begin
 			CTLREGSET: begin
 				if (vpufifovalid && ~vpufifoempty) begin
 					case (regIndex)
-						1'b0: controlregA <= controlregA | vpufifodout[0];	// {hirq_ena_cpu0}}
-						1'b1: controlregB <= vpufifodout[9:0];				// hirq scanline does not allow setting individual bits
+						2'b00: controlregA <= controlregA | vpufifodout[0];	// {hirq_ena_cpu0}}
+						2'b01: controlregB <= vpufifodout[9:0];				// hirq scanline does not allow setting individual bits
+						2'b10: controlregC <= controlregC | vpufifodout[0];	// clear latch
 					endcase
 					cmdre <= 1'b1;
 					cmdmode <= FINALIZE;
@@ -379,8 +382,9 @@ always_ff @(posedge aclk) begin
 			CTLREGCLR: begin
 				if (vpufifovalid && ~vpufifoempty) begin
 					case (regIndex)
-						1'b0: controlregA <= controlregA & (~vpufifodout[0]);	// {hirq_ena_cpu0}}
-						1'b1: controlregB <= 10'd0;								// hirq scanline does not allow per-bit clears
+						2'b00: controlregA <= controlregA & (~vpufifodout[0]);	// {hirq_ena_cpu0}}
+						2'b01: controlregB <= 10'd0;							// hirq scanline does not allow per-bit clears
+						2'b10: controlregC <= controlregC & (~vpufifodout[0]);	// release latch
 					endcase
 					cmdre <= 1'b1;
 					cmdmode <= FINALIZE;
@@ -388,7 +392,7 @@ always_ff @(posedge aclk) begin
 			end
 
 			VSCANSIZE: begin
-				unique case ({vpufifodout[2], vpufifodout[1]})
+				unique case (vpufifodout[2:1])
 					2'b00: scaninc <= 11'd320;	// 320*240 8bpp
 					2'b01: scaninc <= 11'd640;	// 640*480 8bpp
 					2'b10: scaninc <= 11'd640;	// 320*240 16bpp
@@ -532,18 +536,26 @@ end
 // Horizontal and Vertical blank interrupt logic
 
 logic horizontalinterrupt;
-logic beyondScanline;
+logic [1:0] triggertrack;
 
-assign hirq = horizontalinterrupt;
+wire interrupttrigger = controlregA && (scanline == controlregB);
 
 always @(posedge aclk) begin
 	if (~delayedresetn) begin
-		beyondScanline <= 1'b0;
+		triggertrack <= 2'b00;
 		horizontalinterrupt <= 1'b0;
 	end else begin
-		beyondScanline <= scanline >= controlregB; // Stays enabled as long as the scan beam is on or below the hblank point
-		horizontalinterrupt <= controlregA && beyondScanline ? 1'b1 : 1'b0;
+
+		// Shift state
+		triggertrack <= {triggertrack[0], interrupttrigger & ~controlregC};		
+		
+		case (1'b1)
+			(triggertrack == 2'b01):	horizontalinterrupt <= 1'b1;	// Latch hblank interrupt on rising edge of crossing scanline
+			controlregC:				horizontalinterrupt <= 1'b0;	// Clear interrupt state if we received an ACK
+		endcase
 	end
 end
+
+assign hirq = horizontalinterrupt;
 
 endmodule
