@@ -480,6 +480,10 @@ int SDL_main(int argc, char** argv)
 	const char* acname = GetAudioCaptureDeviceName();
 	const char* apname = GetAudioPlaybackDeviceName();
 
+	// Default capture resolution, see tinyremote.ini for details
+	s_videoWidth = 1280;
+	s_videoHeight = 960;
+
 	fprintf(stderr, "Usage: tinyremote commdevicenumber videodevname audiocapdevname audioplaydevname\ndefault comm device:%s default capture device:%s\nCtrl+C or PAUSE: quit current remote process\n", cname, vname);
 
 	if (argc > 1)
@@ -524,6 +528,16 @@ int SDL_main(int argc, char** argv)
 					SetAudioPlaybackDeviceName(strchr(line, '=')+1);
 					fprintf(stderr, "new audioplaydevname: %s\n", GetAudioPlaybackDeviceName());
 				}
+				else if (strstr(line, "capturewidth"))
+				{
+					s_videoWidth = atoi(strchr(line, '=')+1);
+					fprintf(stderr, "new capturewidth: %d\n", s_videoWidth);
+				}
+				else if (strstr(line, "captureheight"))
+				{
+					s_videoHeight = atoi(strchr(line, '=')+1);
+					fprintf(stderr, "new captureheight: %d\n", s_videoHeight);
+				}
 			}
 			fclose(fp);
 		}
@@ -534,8 +548,6 @@ int SDL_main(int argc, char** argv)
 	// If that's too slow on your system, try 640x480 (only supported by older capture modules)
 	// If all else fails, try 800x600 but it will be very aliased and jaggy
 	// In short, try to keep things a multiple of 640x480
-	s_videoWidth = 1280;
-	s_videoHeight = 960;
 	s_windowWidth = s_prevWidth = s_videoWidth;
 	s_windowHeight = s_prevHeight = s_videoHeight;
 	s_maximized = false;
