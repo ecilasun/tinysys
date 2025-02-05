@@ -3,6 +3,7 @@
 #include "platform.h"
 
 const char* GetCommDeviceName();
+void SetCommDeviceName(const char* _commdevicename);
 void SetCommDeviceName(const uint32_t _commdeviceindex);
 
 class CSerialPort{

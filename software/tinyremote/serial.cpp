@@ -16,6 +16,11 @@ const char* GetCommDeviceName()
 	return commdevicename;
 }
 
+void SetCommDeviceName(const char* _commdevicename)
+{
+	sprintf(commdevicename, "%s", _commdevicename);
+}
+
 void SetCommDeviceName(const uint32_t _commdeviceindex)
 {
 #ifdef CAT_WINDOWS

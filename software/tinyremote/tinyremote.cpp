@@ -491,8 +491,51 @@ int SDL_main(int argc, char** argv)
 	if (argc > 4)
 		SetAudioPlaybackDeviceName(argv[4]);
 
-	s_videoWidth = 800;
-	s_videoHeight = 600;
+	// If no command line arguments are provided, check to see if we have an INI file to read from
+	if (argc == 1)
+	{
+		FILE* fp = fopen("tinyremote.ini", "r");
+		if (fp)
+		{
+			fprintf(stderr, "Reading settings from tinyremote.ini\n");
+			char line[256];
+			while (fgets(line, 256, fp))
+			{
+				// Remove newline characters
+				line[strcspn(line, "\r\n")] = 0;
+
+				if (strstr(line, "commdevicenumber"))
+				{
+					SetCommDeviceName(strchr(line, '=')+1);
+					fprintf(stderr, "new commdevicenumber: %s\n", GetCommDeviceName());
+				}
+				else if (strstr(line, "videodevname"))
+				{
+					SetVideoDeviceName(strchr(line, '=')+1);
+					fprintf(stderr, "new videodevname: %s\n", GetVideoDeviceName());
+				}
+				else if (strstr(line, "audiocapdevname"))
+				{
+					SetAudioCaptureDeviceName(strchr(line, '=')+1);
+					fprintf(stderr, "new audiocapdevname: %s\n", GetAudioCaptureDeviceName());
+				}
+				else if (strstr(line, "audioplaydevname"))
+				{
+					SetAudioPlaybackDeviceName(strchr(line, '=')+1);
+					fprintf(stderr, "new audioplaydevname: %s\n", GetAudioPlaybackDeviceName());
+				}
+			}
+			fclose(fp);
+		}
+		fprintf(stderr, "tinyremote.ini not found, using built-in defaults\n");
+	}
+
+	// Please use 1280x960 for the video capture resolution
+	// If that's too slow on your system, try 640x480 (only supported by older capture modules)
+	// If all else fails, try 800x600 but it will be very aliased and jaggy
+	// In short, try to keep things a multiple of 640x480
+	s_videoWidth = 1280;
+	s_videoHeight = 960;
 	s_windowWidth = s_prevWidth = s_videoWidth;
 	s_windowHeight = s_prevHeight = s_videoHeight;
 	s_maximized = false;

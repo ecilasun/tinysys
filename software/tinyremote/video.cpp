@@ -19,7 +19,7 @@ Display* dpy;
 #if defined(CAT_LINUX) || defined(CAT_MACOS)
 char capturedevicename[512] = "/dev/video0";
 #else // CAT_WINDOWS
-char capturedevicename[512] = "UGREEN";
+char capturedevicename[512] = "capture";
 #endif
 
 // Here's a really nice tutorial on how to do video capture across multiple devices:
@@ -332,9 +332,12 @@ void ConvertYUY2ToRGB(const unsigned char *yuy2Data, unsigned char *rgbData, int
 	int rgbIndex = 0;
 	for (int i = 0; i < width * height * 2; i += 4)
 	{
-		unsigned char y1 = yuy2Data[i];
+		/*int col = (i/2) % width;
+		int row = (i/2) / width;
+		int dim = row % 2;*/
+		unsigned char y1 = yuy2Data[i];// >> dim;
 		unsigned char u = yuy2Data[i + 1];
-		unsigned char y2 = yuy2Data[i + 2];
+		unsigned char y2 = yuy2Data[i + 2];// >> dim;
 		unsigned char v = yuy2Data[i + 3];
 	
 #if defined(CAT_WINDOWS)
