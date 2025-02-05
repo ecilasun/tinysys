@@ -35,6 +35,7 @@ logic [14:0] cachelinetags[0:255];	// cache line tags (14 bits) + 1 bit for vali
 
 logic cachewe;						// write control
 logic [511:0] cdin;					// input data to write to cache
+logic [511:0] prevcdout;
 wire [511:0] cdout;					// output data read from cache
 
 logic [7:0] dccount;				// line counter for cache flush/invalidate ops
@@ -66,6 +67,9 @@ always @(posedge aclk) begin
 end
 wire [14:0] ctagdout = cachelinetags[clineaddr];
 wire cachehit = ({1'b1, ctag} == ctagdout) ? 1'b1 : 1'b0;
+logic [14:0] prevtag;
+logic [7:0] prevline;
+wire sameline = (prevtag == {1'b1, tag}) && (prevline == line) ? 1'b1 : 1'b0; 
 
 // ----------------------------------------------------------------------------
 // cached/uncached memory controllers
@@ -99,7 +103,10 @@ always_ff @(posedge aclk) begin
 	if (~aresetn) begin
 		dataout <= 32'd0;
 	end else begin
-		dataout <= cdout[offset*32 +: 32];
+		if (sameline)
+			dataout <= prevcdout[offset*32 +: 32];
+		else
+			dataout <= cdout[offset*32 +: 32];
 	end
 end
 
@@ -113,27 +120,35 @@ always_ff @(posedge aclk) begin
 		ctag <= 14'd0;
 		clineaddr <= 8'd0;
 		cacheaddress <= 32'd0;
+		prevtag = 15'd0;
+		prevline <= 8'd0;
 	end else begin
 		memreadstrobe <= 1'b0;
 		readdone <= 1'b0;
 		cachewe <= 1'b0;
 		ctagwe <= 1'b0;
-
+		
 		unique case(cachestate)
 			IDLE : begin
 				clineaddr <= line;	// Cache line
 				ctag <= tag;		// Cache tag 0000..3fff
 				dccount <= 8'h00;
-	
-				casex ({icacheflush, ren})
-					2'b1x: cachestate <= INVALIDATEBEGIN;
-					2'bx1: cachestate <= CREAD;
-					default: cachestate <= IDLE;
-				endcase
+
+				if (ren && sameline) begin
+					readdone <= 1'b1;
+				end else begin
+					casex ({icacheflush, ren})
+						2'b1x: cachestate <= INVALIDATEBEGIN;
+						2'bx1: cachestate <= CREAD;
+						default: cachestate <= IDLE;
+					endcase
+				end
 			end
 			
 			INVALIDATEBEGIN: begin
 				// Invalidate
+				prevtag <= 15'd0;
+				prevline <= 8'd0;
 				clineaddr <= dccount;
 				clinedin <= 15'd0; // invalid + zero tag
 				ctagwe <= 1'b1;
@@ -149,6 +164,9 @@ always_ff @(posedge aclk) begin
 			CREAD: begin
 				if (cachehit) begin
 					// Cache hit
+					prevtag <= {1'b1, ctag};
+					prevline <= clineaddr;
+					prevcdout <= cdout;
 					readdone <= 1'b1;
 					cachestate <= IDLE;
 				end else begin
