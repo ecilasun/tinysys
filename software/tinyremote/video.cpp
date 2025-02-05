@@ -19,7 +19,7 @@ Display* dpy;
 #if defined(CAT_LINUX) || defined(CAT_MACOS)
 char capturedevicename[512] = "/dev/video0";
 #else // CAT_WINDOWS
-char capturedevicename[512] = "capture";
+char capturedevicename[512] = "UGREEN";
 #endif
 
 // Here's a really nice tutorial on how to do video capture across multiple devices:
@@ -263,7 +263,7 @@ bool VideoCapture::Initialize(int width, int height)
 			return false;
 		}
 
-		hr = MFSetAttributeRatio(mediaType, MF_MT_FRAME_RATE, 5994, 100);
+		hr = MFSetAttributeRatio(mediaType, MF_MT_FRAME_RATE, 60, 1);
 		if (FAILED(hr))
 		{
 			fprintf(stderr, "MFSetAttributeRatio failed\n");

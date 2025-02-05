@@ -121,14 +121,14 @@ uint32_t videoCallback(uint32_t interval, void* param)
 	return interval;
 }
 
-uint32_t audioCallback(uint32_t interval, void* param)
+/*uint32_t audioCallback(uint32_t interval, void* param)
 {
 	AudioCapture* audio_capture = (AudioCapture*)param;
 
 	audio_capture->Update();
 
 	return interval;
-}
+}*/
 
 bool WACK(CSerialPort *_serial, const uint8_t waitfor, uint8_t& received)
 {
@@ -491,10 +491,10 @@ int SDL_main(int argc, char** argv)
 	if (argc > 4)
 		SetAudioPlaybackDeviceName(argv[4]);
 
-	s_videoWidth = 640;
-	s_videoHeight = 480;
-	s_windowWidth = s_prevWidth = 640;
-	s_windowHeight = s_prevHeight = 480;
+	s_videoWidth = 800;
+	s_videoHeight = 600;
+	s_windowWidth = s_prevWidth = s_videoWidth;
+	s_windowHeight = s_prevHeight = s_videoHeight;
 	s_maximized = false;
 	s_restored = false;
 
@@ -524,7 +524,7 @@ int SDL_main(int argc, char** argv)
 	ctx.audio->Initialize();
 
 	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, ctx.video); // 60fps
-	SDL_TimerID audioTimer = SDL_AddTimer(16, audioCallback, ctx.audio); // 60fps
+	//SDL_TimerID audioTimer = SDL_AddTimer(16, audioCallback, ctx.audio); // 60fps
 
 	const uint8_t *keystates = SDL_GetKeyboardState(nullptr);
 	uint8_t *old_keystates = new uint8_t[SDL_NUM_SCANCODES];
@@ -694,7 +694,7 @@ int SDL_main(int argc, char** argv)
 	ctx.serial->Close();
 	fprintf(stderr, "remote connection terminated\n");
 
-	SDL_RemoveTimer(audioTimer);
+	//SDL_RemoveTimer(audioTimer);
 	SDL_RemoveTimer(videoTimer);
 	ctx.video->Terminate();
 	ctx.audio->Terminate();

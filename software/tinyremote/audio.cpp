@@ -7,7 +7,7 @@
 char audiocdevicename[512] = "Line In";
 char audiopdevicename[512] = "Headphones";
 #else // CAT_WINDOWS
-char audiocdevicename[512] = "USB";
+char audiocdevicename[512] = "UGREEN";
 char audiopdevicename[512] = "Headphones";
 #endif
 
@@ -31,13 +31,13 @@ void SetAudioPlaybackDeviceName(const char* name)
 	strcpy(audiopdevicename, name);
 }
 
-/*void audioCaptureCallback(void *userdata, Uint8 *stream, int len)
+void audioCaptureCallback(void *userdata, Uint8 *stream, int len)
 {
 	AudioCapture* audio = (AudioCapture*)userdata;
 
 	if (len)
 		SDL_QueueAudio(audio->selectedplaybackdevice, stream, len);
-}*/
+}
 
 AudioCapture::AudioCapture()
 {
@@ -79,11 +79,11 @@ void AudioCapture::Initialize()
 			SDL_AudioSpec audioSpecDesired, audioSpecObtained;
 			SDL_zero(audioSpecDesired);
 			SDL_zero(audioSpecObtained);
-			audioSpecDesired.freq = 44100;
+			audioSpecDesired.freq = 48000;
 			audioSpecDesired.format = AUDIO_S16;
 			audioSpecDesired.channels = 2;
 			audioSpecDesired.samples = audiocaptureframes;
-			audioSpecDesired.callback = nullptr;//audioCaptureCallback;
+			audioSpecDesired.callback = audioCaptureCallback;
 			audioSpecDesired.userdata = this;
 
 			selectedrecordingdevice = SDL_OpenAudioDevice(capname, 1, &audioSpecDesired, &audioSpecObtained, 0/*SDL_AUDIO_ALLOW_FORMAT_CHANGE*/);
@@ -126,7 +126,7 @@ void AudioCapture::Initialize()
 			SDL_AudioSpec audioSpecDesired, audioSpecObtained;
 			SDL_zero(audioSpecDesired);
 			SDL_zero(audioSpecObtained);
-			audioSpecDesired.freq = 44100;
+			audioSpecDesired.freq = 48000;
 			audioSpecDesired.format = AUDIO_S16;
 			audioSpecDesired.channels = 2;
 			audioSpecDesired.samples = audioplaybackframes;
