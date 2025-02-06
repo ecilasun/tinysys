@@ -541,7 +541,8 @@ int SDL_main(int argc, char** argv)
 			}
 			fclose(fp);
 		}
-		fprintf(stderr, "tinyremote.ini not found, using built-in defaults\n");
+		else
+			fprintf(stderr, "tinyremote.ini not found, using built-in defaults\n");
 	}
 
 	// Please use 1280x960 for the video capture resolution
