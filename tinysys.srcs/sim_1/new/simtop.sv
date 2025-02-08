@@ -3,10 +3,10 @@
 module simtop();
 
 logic boardclock;
-logic old_esp_resetn;
+logic old_esp_ena;
 
 initial begin
-	old_esp_resetn = 1'bz;
+	old_esp_ena = 1'bz;
 	boardclock = 1'bz;
 	#80;
 	boardclock = 1'b0;
@@ -53,7 +53,7 @@ ddr3_model ddr3simmod(
     .tdqs_n(), // out
     .odt(ddr3_odt) );
 
-wire esp_resetn;
+wire esp_ena;
 tophat main(
     .sys_clk(boardclock),
     // LEDs
@@ -73,12 +73,6 @@ tophat main(
 	.ddr3_dqs_p(ddr3_dqs_p),
 	.ddr3_dqs_n(ddr3_dqs_n),
 	.ddr3_dq(ddr3_dq),
-	// DVI
-	.vvsync(),
-	.vhsync(),
-	.vclk(),
-	.vde(),
-	.vdat(),
 	// Micro SD Card
 	.sdcard_miso(sdcard_miso),
 	.sdcard_cs_n(),
@@ -89,19 +83,19 @@ tophat main(
 	.esp_txd1_out(),
 	.esp_rxd1_in(),
 	.cpu_reboot(1'b0),
-	.esp_resetn(esp_resetn),
-	// Audio out
-	.au_sdin(),
-	.au_sclk(),
-	.au_lrclk(),
-	.au_mclk());
+	.esp_ena(esp_ena),
+	// HDMI
+	.HDMI_CLK_p(),
+	.HDMI_CLK_n(),
+	.HDMI_TMDS_p(),
+	.HDMI_TMDS_n()	);
 
 always begin
 	#10
 	boardclock = ~boardclock;
-	if (esp_resetn != old_esp_resetn) begin
-		old_esp_resetn = esp_resetn;
-		$display("ESP32 new state: %h", esp_resetn);
+	if (esp_ena != old_esp_ena) begin
+		old_esp_ena = esp_ena;
+		$display("ESP32 new state: %h", esp_ena);
 	end
 end
 
