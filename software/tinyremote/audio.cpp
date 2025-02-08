@@ -100,7 +100,7 @@ void AudioCapture::Initialize()
 	{
 		uint32_t playdev = 0xFFFFFFFF;
 		char playname[256] = {0};
-		for (int i = 0; i < numCap; i++)
+		for (int i = 0; i < numPlay; i++)
 		{
 			const char* name = SDL_GetAudioDeviceName(i, 0);
 			if (!name)
