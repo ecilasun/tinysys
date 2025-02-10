@@ -94,7 +94,7 @@ typedef uint64_t CORE_TICKS;
 #endif
 #ifndef MEM_LOCATION
 #define MEM_LOCATION                                                         \
-    "Code and data in SDRAM"
+    "Code and data in RAM"
 #define MEM_LOCATION_UNSPEC 1
 #endif
 

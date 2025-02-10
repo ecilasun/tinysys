@@ -38,7 +38,7 @@ $(foreach folder,$(folders),$(eval $(call compile_template,$(folder))))
 # Build
 
 coremark.elf: $(wildcard $(src_dir)/*)
-	$(RISCV_GCC) $(incs) -DPERFORMANCE_RUN=1 -DITERATIONS=1000 -o $@ $(wildcard $(src_dir)/*.c) $(libs) $(RISCV_GCC_OPTS)
+	$(RISCV_GCC) $(incs) -DPERFORMANCE_RUN=1 -DITERATIONS=2000 -o $@ $(wildcard $(src_dir)/*.c) $(libs) $(RISCV_GCC_OPTS)
 
 junk += $(folders_riscv_bin)
 
