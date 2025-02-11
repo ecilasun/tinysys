@@ -10,7 +10,7 @@ If you wish to actually run things on a real piece of hardware:
 If you wish to work on software:
 - To be able to compile your own executables, or ROM images, you'll need a prebuilt gcc risc-v toolchain from the following link.
 <br>(NOTE: The default compiler setup for samples and ROM images uses gcc, so please make sure to get that package)
-<br>https://www.embecosm.com/resources/tool-chain-downloads/
+<br>https://embecosm.com/downloads/tool-chain-downloads/#risc-v-embedded-stable-release-compilers
 - In case you need it, you can find 'make' binaries here:
 <br>https://gnuwin32.sourceforge.net/packages/make.htm
 <br>(Make sure to also install libintl3 from same source and make sure it's on the path as well as the make.exe from the bin package)
