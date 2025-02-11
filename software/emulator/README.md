@@ -40,19 +40,16 @@ Here's a list of features implemented so far
 - Interrupts work
 - UART is tied to console (I/O)
 - Video output works
-- There's a system RAM debug view (1 pixel per Kbyte)
+- There's a CPU stats overlay: update wscript to include the CPU_STATS define and rebuild if you wish to use it
 - CSRs and their special purpose registers work
 - MAIL device works
-- LED device exists but no graphical representation present
-- APU works and plays sound via SDL
-- XADC is a placeholder and will return some huge temperature
+- LED device work with graphical representation present
+- APU works and plays sound via SDL (including all playback frequencies supported by the real hardware)
 - SPI sdcard emulator fully works
-- APU supports varying playback rates
 
 And here's the list of what's missing
 
-- ESP32-C6 module emulation is missing and won't be supported
-- USB-A port emulation isn't supported
+- ESP32-S3 module emulation is missing and won't be supported (don't want to deal with Xtensa emulation at this point)
 
 Please note that this is not a clock precise emulation and instructions will almost always retire in 1 CPU clock. Also all devices clock at the same speed so there's going to be some mismatch there as well. Since the aim of this emulator is to provide a testbed for ROM or user software in the absence of real hardware, it should be close enough to get development rolling.
 
