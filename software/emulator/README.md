@@ -26,7 +26,7 @@ depending on your OS.
 
 The emulator will then scan the *sdcard* directory for executable files and generate a fake SDCard layout in memory which the emulator can access as if it's a real device.
 
-To test your app, make sure the emulator is not running, drop your binary into the sdcard folder, and start the editor.
+To test your app, make sure the emulator is not running, drop your binary into the sdcard folder, and then start the emulator.
 
 Following that, you can then run it by typing the name of your executable, excluding the .elf extension.
 
