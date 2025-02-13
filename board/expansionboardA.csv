@@ -1,0 +1,17 @@
+"Id";"Designator";"Footprint";"Quantity";"Designation";"Supplier and ref";
+1;"JTAG1";"PinHeader_1x06_P2.54mm_Vertical";1;"Conn_01x06_Pin";;;
+2;"J1";"GCT_USB4085-GF-A_REVA4";1;"USB_C_Receptacle";;;
+3;"U3";"LTST-BILED-15X16";1;"LTST-C195KGJRKT";;;
+4;"tEN1,t3V3,t5V0,tPWR1";"TestPoint_Pad_D1.0mm";4;"TestPoint";;;
+5;"R1";"R_0603_1608Metric_Pad0.98x0.95mm_HandSolder";1;"330Ohm";;;
+6;"VR1";"VREG_LM1117MPX-3.3_NOPB";1;"LM1117MPX-3.3/NOPB";;;
+7;"U2";"PinSocket_2x32_P2.54mm_Vertical";1;"GPIO_U2";;;
+8;"U4";"PinSocket_2x32_P2.54mm_Vertical";1;"GPIO_U4";;;
+9;"C4,C5";"C_0603_1608Metric_Pad1.08x0.95mm_HandSolder";2;"0.1uf";;;
+10;"U1";"ESP32-S3-WROOM-1";1;"ESP32-S3-WROOM-1";;;
+11;"R6,R4,R3,R5,R2,R7";"R_0603_1608Metric_Pad0.98x0.95mm_HandSolder";6;"33Ohm";;;
+12;"D4,D5,D2,D1,D3";"LED_1206_3216Metric_Pad1.42x1.75mm_HandSolder";5;"LED";;;
+13;"CRD1";"HRS_DM3AT-SF-PEJM5";1;"DM3AT-SF-PEJM5";;;
+14;"C6,C7";"C_0805_2012Metric_Pad1.18x1.45mm_HandSolder";2;"10uf";;;
+15;"J2";"MOLEX_2086581051";1;"2086581051";;;
+16;"SW4";"SW_Tactile_SPST_NO_Straight_CK_PTS636Sx25SMTRLFS";1;"ESPPROG";;;
