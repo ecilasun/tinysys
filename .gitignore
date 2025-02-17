@@ -50,3 +50,4 @@ software/tinyremote/.lock**
 !software/tinyremote/bin/_ensurefolderexists.txt
 software/emulator/sdcard/doom/*.wad
 software/emulator/sdcard/quake/ID1/**
+software/samples/bendemo/**
