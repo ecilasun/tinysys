@@ -983,7 +983,6 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				// 1025			rename			int rename(const char *oldpath, const char *newpath);
 				// 1026			remove			remove(const char *fname);
 				// 1038 		_stat			int stat(const char *path, struct stat *buf);
-				// 16384		task_add		int task_add(void* _func, int runLength, int initialState);
 
 				if (value==0) // io_setup()
 				{

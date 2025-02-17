@@ -10,6 +10,8 @@ volatile uint32_t *UARTTRANSMIT = (volatile uint32_t* ) (DEVICE_UART+0x04);
 volatile uint32_t *UARTSTATUS = (volatile uint32_t* ) (DEVICE_UART+0x08);
 volatile uint32_t *UARTCONTROL = (volatile uint32_t* ) (DEVICE_UART+0x0C);
 
+#define UARTSTA_RXFIFO_VALID 0x00000001
+
 int main()
 {
 	*UARTTRANSMIT = 'H';
@@ -26,8 +28,12 @@ int main()
 	*UARTTRANSMIT = '!';
 	*UARTTRANSMIT = '\n';
 
-	// Keep echoing
-	while(1) {
-		*UARTTRANSMIT = *UARTRECEIVE;
+	while (1)
+	{
+		if ((*UARTSTATUS) & UARTSTA_RXFIFO_VALID)
+		{
+			uint8_t rcvData = (uint8_t)((*UARTRECEIVE) & 0x000000FF);
+			*UARTTRANSMIT = rcvData;
+		}
 	}
 }
