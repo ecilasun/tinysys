@@ -676,7 +676,7 @@ void CRV32::InjectISRHeader(std::vector<SDecodedInstruction> *code)
 		default:
 		{
 			// Nothing to inject
-			printf("unknown header encountered\n");
+			fprintf(stderr, "unknown header encountered\n");
 		}
 		break;
 	}
@@ -745,7 +745,7 @@ void CRV32::InjectISRFooter(std::vector<SDecodedInstruction>* code)
 		default:
 		{
 			// Nothing to inject
-			printf("unknown footer encountered\n");
+			fprintf(stderr, "unknown footer encountered\n");
 		}
 		break;
 	}
@@ -775,6 +775,7 @@ void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 			blk->m_PC = mtvec;
 			m_decodedBlocks[m_exceptionmode] = blk;
 			InjectISRHeader(&blk->m_code);
+			fprintf(stderr, "new ISR header block (HWI/TMI) %08X\n", mtvec);
 		}
 		else
 			blk = found->second;
@@ -843,6 +844,7 @@ void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 				blk->m_PC = mtvec;
 				m_decodedBlocks[m_exceptionmode] = blk;
 				InjectISRHeader(&blk->m_code);
+				fprintf(stderr, "new ISR header block (ECALL/EBREAK/SWI) %08X\n", mtvec);
 			}
 			else
 				blk = found->second;
@@ -937,6 +939,7 @@ bool CRV32::FetchDecode(CBus* bus)
 					blk->m_PC = mtvec;
 					m_decodedBlocks[m_exceptionmode] = blk;
 					InjectISRFooter(&blk->m_code);
+					fprintf(stderr, "new ISR footer block %08X\n", mtvec);
 				}
 				else
 					blk = found->second;
@@ -944,7 +947,7 @@ bool CRV32::FetchDecode(CBus* bus)
 				// Grab pre-decoded code block
 				for (auto instr : blk->m_code)
 				{
-					instr.m_pc = m_PC; // NOTE: ISR depends on this to be varying based on current PC
+					instr.m_pc = m_PC; // NOTE: ISR depends on this to be based on current PC
 					m_instructions.push_back(instr);
 				}
 
@@ -961,7 +964,7 @@ bool CRV32::FetchDecode(CBus* bus)
 	}
 	else
 	{
-		printf("unknown fetch state %d\n", m_fetchstate);
+		fprintf(stderr, "unknown fetch state %d\n", m_fetchstate);
 		return false;
 	}
 }
@@ -1055,7 +1058,7 @@ bool CRV32::Execute(CBus* bus)
 				{
 					// cacheop=0b01
 					// NOOP for now, D$ not implemented yet
-					//printf("- cdiscard\n");
+					//fprintf(stderr, "- cdiscard\n");
 					m_cycles += 50; // CACHE OP
 					m_dcache.Discard();
 				}

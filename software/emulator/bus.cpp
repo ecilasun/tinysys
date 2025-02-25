@@ -97,6 +97,12 @@ uint32_t* CBus::GetHostAddress(uint32_t address)
 void CBus::Read(uint32_t address, uint32_t& data)
 {
 	uint32_t dev = (address & 0x80000000) ? ((address & 0xF0000) >> 16) : 11;
+	if (dev>11)
+	{
+		//fprintf(stderr, "CBus::Read - invalid device %d\n", dev);
+		data = 0;
+		return;
+	}
 	m_devices[dev]->Read(address, data);
 }
  
