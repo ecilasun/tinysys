@@ -22,7 +22,7 @@ load samples/led/led.elf
 
 Alternatively you can place the set/target/load commands into a file (for example gdbcmd) and instead use:
 ```
-C:\riscv32-gcc\bin\riscv32-unknown-elf-gdb.exe -x gbdcmd
+C:\riscv32-gcc\bin\riscv32-unknown-elf-gdb.exe -x gdbcmd
 ```
 to make it easier to start debugging. See this folder for a sample gdbcmd file you can use to add your own setup.
 
