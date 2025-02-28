@@ -3,6 +3,56 @@
 
 #include "gdbstub.h"
 
+// These are from task.h in the SDK folder
+
+#define TASK_MAX 4
+
+enum ETaskState
+{
+	TS_UNKNOWN,
+	TS_PAUSED,
+	TS_RUNNING,
+	TS_TERMINATING,
+	TS_TERMINATED
+};
+
+struct STask {
+	uint32_t HART;			// HART affinity mask (for migration)
+	uint32_t runLength;		// Time slice dedicated to this task
+	enum ETaskState state;	// State of this task
+	uint32_t exitCode;		// Task termination exit code
+	uint32_t regs[32];		// Integer registers - NOTE: register zero here is actually the PC, 128 bytes
+
+	// Debug support - this will probably move somewhere else
+	char name[16];			// Name of this task
+};
+
+// 672 bytes total for one core (1344 for two cores)
+struct STaskContext {
+	// 160 x 4 bytes (640)
+	struct STask tasks[TASK_MAX];	// List of all the tasks
+	// 32 bytes total below
+	int32_t currentTask;			// Current task index
+	int32_t numTasks;				// Number of tasks
+	int32_t interceptUART;			// Lets an application intecept UART input
+	int32_t kernelError;			// Current kernel error
+	int32_t kernelErrorData[3];		// Data relevant to the crash
+	int32_t hartID;					// Id of the HART where this task context runs
+};
+
+// ------------------------------------------------------------
+
+void StopEmulator(CEmulator* emulator)
+{
+	emulator->m_debugStop = 1;
+	do {} while (!emulator->m_debugAck);
+}
+
+void ResumeEmulator(CEmulator* emulator)
+{
+	emulator->m_debugStop = 0;
+}
+
 uint8_t gdbchecksum(const char *data)
 {
 	uint8_t sum = 0;
@@ -52,19 +102,26 @@ void gdbreadthreads(socket_t gdbsocket, CEmulator* emulator, const char* buffer)
 	snprintf(response, 1024, "l<?xml version=\"1.0\"?>\n<threads>\n");
 	snprintf(response, 1024, "%s\t<thread id=\"1\" core=\"0\" name=\"emu\">emulated task</thread>\n", response);
 
-	/*for (int cpu = 0; cpu < 2; ++cpu)
+	StopEmulator(emulator);
+
+	for (int cpu = 0; cpu < 2; ++cpu)
 	{
 		CRV32 *core = emulator->m_cpu[cpu];
-		struct STaskContext* ctx = _task_get_context(cpu);
+
+		// Access the task context of the CPU
+		struct STaskContext* contextpool = (struct STaskContext *)emulator->m_bus->GetHostAddress(DEVICE_MAIL);
+		struct STaskContext& ctx = contextpool[cpu];
 
 		// Skip the OS threads
-		for (int j = cpu == 0 ? 2 : 1; j < ctx->numTasks; ++j)
+		for (int j = cpu == 0 ? 2 : 1; j < ctx.numTasks; ++j)
 		{
-			struct STask* task = &ctx->tasks[j];
+			struct STask* task = &ctx.tasks[j];
 			// Apparently GDB expects thread IDs across CPUs to be unique
 			snprintf(response, 1024, "%s\t<thread id=\"%d\" core=\"%d\" name=\"%s\" handle=\"%x\">%s [CPU%d]</thread>\n", response, j + 1, cpu, task->name, cpu * TASK_MAX + j, task->name, cpu);
 		}
-	}*/
+	}
+
+	ResumeEmulator(emulator);
 
 	strcat(response, "</threads>\n");
 	gdbresponsepacket(gdbsocket, response);
@@ -159,6 +216,8 @@ void gdbreadregisters(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	// x0
 	snprintf(response, 1024, "00000000");
 
+	StopEmulator(emulator);
+
 	// x1-x31
 	CRV32* core = emulator->m_cpu[0];
 	for (int i = 1; i < 32; ++i)
@@ -182,6 +241,8 @@ void gdbreadregisters(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			(reg >> 16) & 0xFF,
 			(reg >> 24) & 0xFF);
 	}
+
+	ResumeEmulator(emulator);
 
 	printf("R:%s\n", response);
 	gdbresponsepacket(gdbsocket, response);
@@ -208,6 +269,8 @@ void gdbbinarypacket(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 		// Skip the address and length
 		buffer = strchr(buffer, ':');
 		buffer++;
+
+		StopEmulator(emulator);
 
 		// Decode the encoded binary data, paying attention to escape sequences and repeat counts
 		uint8_t* data = new uint8_t[len];
@@ -249,6 +312,8 @@ void gdbbinarypacket(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			emulator->m_bus->Write(addrs + i, word, 0xF);
 		}
 
+		ResumeEmulator(emulator);
+
 		delete[] data;
 
 		// Respond with an ACK on successful memory write
@@ -270,28 +335,14 @@ void gdbsetreg(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	// TODO: when setting PC, our entire task system breaks down
 	// Therefore we need to add a dummy task to the task list and set its PC to the supplied value
 
+	StopEmulator(emulator);
+
 	if (reg == 32) // PC is a special case and is always at lastgpr+1
-	{
-		// Stop emulator
-		emulator->m_debugStop = 1;
-		do {} while (!emulator->m_debugAck);
-
 		emulator->m_cpu[0]->m_PC = val;
-
-		emulator->m_debugStop = 0;
-		printf("PC = 0x%08X\n", val);
-	}
 	else
-	{
-		// Stop emulator
-		emulator->m_debugStop = 1;
-		do {} while (!emulator->m_debugAck);
-
 		emulator->m_cpu[0]->m_GPR[reg] = val;
 
-		emulator->m_debugStop = 0;
-		printf("X%d = 0x%08X\n", reg, val);
-	}
+	ResumeEmulator(emulator);
 
 	gdbresponsepacket(gdbsocket, "OK");
 }
@@ -305,6 +356,8 @@ void gdbreadmemory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	uint32_t addrs;
 	uint32_t len;
 	uint32_t readoffset = sscanf(buffer, "%x,%x", &addrs, &len);
+
+	StopEmulator(emulator);
 
 	// Read the memory
 	char* response = new char[len * 2 + 1];
@@ -329,6 +382,8 @@ void gdbreadmemory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 		addrs++;
 	}
 
+	ResumeEmulator(emulator);
+
 	gdbresponsepacket(gdbsocket, response);
 	delete[] response;
 }
@@ -346,6 +401,8 @@ void gdbwritememory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	// Skip the address and length
 	buffer = strchr(buffer, ':');
 	buffer++;
+
+	StopEmulator(emulator);
 
 	// Decode the encoded binary data, paying attention to escape sequences and repeat counts
 	uint8_t* data = new uint8_t[len];
@@ -387,6 +444,8 @@ void gdbwritememory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 		addrs++;
 	}
 
+	ResumeEmulator(emulator);
+
 	delete[] data;
 
 	// Respond with an ACK on successful memory write
@@ -401,9 +460,13 @@ void gdbaddbreakpoint(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	// Parse the type, address and length
 	uint32_t type, addrs, len;
 	uint32_t readoffset = sscanf(buffer, "%d,%x,%x", &type, &addrs, &len);
+	
+	StopEmulator(emulator);
 
 	// Add the breakpoint
 //	emulator->m_cpu[0]->AddBreakpoint(addrs);
+
+	ResumeEmulator(emulator);
 
 	printf("Breakpoint added at 0x%08X\n", addrs);
 
@@ -420,8 +483,12 @@ void gdbremovebreakpoint(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	uint32_t type, addrs, len;
 	uint32_t readoffset = sscanf(buffer, "%d,%x,%x", &type, &addrs, &len);
 
+	StopEmulator(emulator);
+
 	// Remove the breakpoint
 //	emulator->m_cpu[0]->RemoveBreakpoint(addrs);
+
+	ResumeEmulator(emulator);
 
 	printf("Breakpoint removed at 0x%08X\n", addrs);
 

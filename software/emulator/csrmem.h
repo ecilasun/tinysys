@@ -45,6 +45,7 @@ public:
 	void Read(uint32_t address, uint32_t& data) override final;
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
 	void Tick(CBus* bus);
+	uint32_t* GetCSRMem() { return m_csrmem; }
 
 	void UpdateTime(uint64_t wallclock, uint32_t executeCount);
 	void SetRetiredInstructions(uint64_t retired) { m_retired = retired; }

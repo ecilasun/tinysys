@@ -89,7 +89,46 @@ uint32_t* CBus::GetHostAddress(uint32_t address)
 {
 	// Convert to emulator host address from emulated device memory address
 	if (address & 0x80000000)
-		return nullptr;
+	{
+		uint32_t dev = (address & 0x80000000) ? ((address & 0xF0000) >> 16) : 11;
+
+		switch(dev)
+		{
+			case 0: // SPAD
+				return m_spad->m_scratchmem;
+			break;
+			case 1: // LEDS
+				return nullptr;
+			break;
+			case 2: // VPUC
+				return nullptr;
+			break;
+			case 3: // SDCC
+				return nullptr;
+			break;
+			case 4: // NULL
+			case 5: // NULL
+				return nullptr;
+			break;
+			case 6: // APU
+				return nullptr;
+			break;
+			case 7: // MAIL
+				return m_mail->m_mailmem;
+			break;
+			case 8: // UART
+				return nullptr;
+			break;
+			case 9: // CSR0
+				return m_csr[0]->GetCSRMem();
+			break;
+			case 10: // CSR1
+				return m_csr[1]->GetCSRMem();
+			break;
+			default:
+				return nullptr;
+		}
+	}
 	else
 		return m_mem->GetHostAddress(address);
 }
