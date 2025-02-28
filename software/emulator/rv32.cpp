@@ -1415,6 +1415,22 @@ bool CRV32::Execute(CBus* bus)
 	return true;
 }
 
+void CRV32::AddBreakpoint(uint32_t address, CBus* bus)
+{
+	SBreakpoint brkpt;
+	brkpt.address = address;
+	bus->Read(address, brkpt.originalInstruction);
+	m_breakpoints.push_back(brkpt);
+
+	fprintf(stderr, "Added breakpoint at 0x%08X (instr:0x%08X)", address, brkpt.originalInstruction);
+}
+
+void CRV32::RemoveBreakpoint(uint32_t address, CBus* bus)
+{
+	// TODO:
+	fprintf(stderr, "TODO: Remove breakpoint at %08X", address);
+}
+
 bool CRV32::Tick(uint64_t wallclock, CBus* bus)
 {
 	CCSRMem* csr = bus->GetCSR(m_hartid);

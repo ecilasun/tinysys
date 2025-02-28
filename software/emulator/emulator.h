@@ -15,6 +15,9 @@ public:
 	void QueueBytes(uint8_t *bytes, uint32_t count);
 	void QueueByte(uint8_t byte);
 
+	void AddBreakpoint(uint32_t cpu, uint32_t address);
+	void RemoveBreakpoint(uint32_t cpu, uint32_t address);
+
 	int m_audioDevice {0};
 
 	int m_debugStop{ 0 };

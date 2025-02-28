@@ -100,7 +100,7 @@ void gdbreadthreads(socket_t gdbsocket, CEmulator* emulator, const char* buffer)
 {
 	char response[1024];
 	snprintf(response, 1024, "l<?xml version=\"1.0\"?>\n<threads>\n");
-	snprintf(response, 1024, "%s\t<thread id=\"1\" core=\"0\" name=\"emu\">emulated task</thread>\n", response);
+	//snprintf(response, 1024, "%s\t<thread id=\"1\" core=\"0\" name=\"emu\">emulated task</thread>\n", response);
 
 	StopEmulator(emulator);
 
@@ -135,7 +135,7 @@ void gdbprocessquery(socket_t gdbsocket, CEmulator* emulator, const char* buffer
 		// Attached query
 		gdbresponsepacket(gdbsocket, "1");
 	}
-	if (strstr(buffer, "qOffsets") == buffer)
+	else if (strstr(buffer, "qOffsets") == buffer)
 	{
 		gdbresponsepacket(gdbsocket, "Text=0;Data=0;Bss=0");
 	}
@@ -162,7 +162,7 @@ void gdbprocessquery(socket_t gdbsocket, CEmulator* emulator, const char* buffer
 	else if (strstr(buffer, "qfThreadInfo") == buffer)
 	{
 		// Thread info query
-		printf("Thread info\n");
+		fprintf(stderr, "Thread info\n");
 	}
 	else if (strstr(buffer, "qC") == buffer)
 	{
@@ -172,7 +172,7 @@ void gdbprocessquery(socket_t gdbsocket, CEmulator* emulator, const char* buffer
 	else
 	{
 		// Unknown query
-		printf("Unknown query: %s\n", buffer);
+		fprintf(stderr, "Unknown query: %s\n", buffer);
 	}
 }
 
@@ -193,17 +193,19 @@ void gdbvcont(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 		else if (strstr(command, "c") == command)
 		{
 			// Continue
+			//emulator->ResumeFromPC();
 			gdbresponsepacket(gdbsocket, "S05");
 		}
 		else if (strstr(command, "s") == command)
 		{
 			// Step
+			//emulator->StepFromPC();
 			gdbresponsepacket(gdbsocket, "S05");
 		}
 		else
 		{
 			// Unknown command
-			printf("Unknown vCont: %s\n", command);
+			fprintf(stderr, "Unknown vCont: %s\n", command);
 		}
 		command = strtok(NULL, ";");
 	}
@@ -244,7 +246,7 @@ void gdbreadregisters(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 
 	ResumeEmulator(emulator);
 
-	printf("R:%s\n", response);
+	fprintf(stderr, "R:%s\n", response);
 	gdbresponsepacket(gdbsocket, response);
 }
 
@@ -464,11 +466,9 @@ void gdbaddbreakpoint(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	StopEmulator(emulator);
 
 	// Add the breakpoint
-//	emulator->m_cpu[0]->AddBreakpoint(addrs);
+	emulator->AddBreakpoint(0, addrs);
 
 	ResumeEmulator(emulator);
-
-	printf("Breakpoint added at 0x%08X\n", addrs);
 
 	// Respond with an ACK on successful breakpoint addition
 	gdbresponsepacket(gdbsocket, "OK");
@@ -486,11 +486,9 @@ void gdbremovebreakpoint(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	StopEmulator(emulator);
 
 	// Remove the breakpoint
-//	emulator->m_cpu[0]->RemoveBreakpoint(addrs);
+	emulator->RemoveBreakpoint(0, addrs);
 
 	ResumeEmulator(emulator);
-
-	printf("Breakpoint removed at 0x%08X\n", addrs);
 
 	// Respond with an ACK on successful breakpoint removal
 	gdbresponsepacket(gdbsocket, "OK");
@@ -565,7 +563,7 @@ void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 		else if (strstr(buffer, "vMustReplyEmpty") == buffer)
 			gdbresponsepacket(gdbsocket, "");
 		else
-			printf("Unknown v command: %s\n", buffer);
+			fprintf(stderr, "Unknown v command: %s\n", buffer);
 		break;
 	case 'q':
 		// Query
@@ -573,7 +571,7 @@ void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 		break;
 	default:
 		// Unknown command
-		printf("Unknown sequence start: %s\n", buffer);
+		fprintf(stderr, "Unknown sequence start: %s\n", buffer);
 		break;
 	}
 }

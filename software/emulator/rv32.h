@@ -156,6 +156,12 @@ struct SDecodedBlock
 	std::vector<SDecodedInstruction> m_code;
 };
 
+struct SBreakpoint
+{
+	uint32_t address;
+	uint32_t originalInstruction;
+};
+
 class CRV32
 {
 public:
@@ -192,6 +198,11 @@ public:
 	bool Tick(uint64_t wallclock, CBus* bus);
 	bool FetchDecode(CBus* bus);
 	bool Execute(CBus* bus);
+
+	void AddBreakpoint(uint32_t address, CBus* bus);
+	void RemoveBreakpoint(uint32_t address, CBus* bus);
+
+	std::vector<SBreakpoint> m_breakpoints;
 
 	InstructionCache m_icache;
 	DataCache m_dcache;
