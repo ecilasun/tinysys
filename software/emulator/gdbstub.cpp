@@ -3,6 +3,9 @@
 
 #include "gdbstub.h"
 
+static int s_currentCPU = 0;
+static int s_currentTask = 0;
+
 // These are from task.h in the SDK folder
 
 #define TASK_MAX 4
@@ -123,12 +126,11 @@ void gdbreadthreads(socket_t gdbsocket, CEmulator* emulator, const char* buffer)
 		struct STaskContext* contextpool = (struct STaskContext *)emulator->m_bus->GetHostAddress(DEVICE_MAIL);
 		struct STaskContext& ctx = contextpool[cpu];
 
-		// Skip the OS threads
-		for (int j = cpu == 0 ? 2 : 1; j < ctx.numTasks; ++j)
+		for (int j = 0; j < ctx.numTasks; ++j)
 		{
 			struct STask* task = &ctx.tasks[j];
 			// Apparently GDB expects thread IDs across CPUs to be unique
-			snprintf(response, 1024, "%s\t<thread id=\"%d\" core=\"%d\" name=\"%s\" handle=\"%x\">%s [CPU%d]</thread>\n", response, j + 1, cpu, task->name, cpu * TASK_MAX + j, task->name, cpu);
+			snprintf(response, 1024, "%s\t<thread id=\"%d\" core=\"%d\" name=\"%s:%d\" handle=\"%x\"> </thread>\n", response, (cpu*TASK_MAX+j)+1, cpu, task->name, cpu, cpu*TASK_MAX+j);
 		}
 	}
 
@@ -393,13 +395,20 @@ void gdbsetreg(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	gdbresponsepacket(gdbsocket, "OK");
 }
 
-void bytetohex(uint8_t byte, char *buffer)
+void gdbsetcurrentthread(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 {
-	// Convert a byte to a hex string using lookup table
-	static const char hex[] = "0123456789ABCDEF";
-	buffer[0] = hex[(byte >> 4) & 0xF];
-	buffer[1] = hex[byte & 0xF];
-	buffer[2] = 0;
+	// Parse the thread id
+	uint32_t threadid;
+	sscanf(buffer, "%d", &threadid);
+
+	threadid = threadid-1;
+
+	s_currentCPU = threadid/TASK_MAX;
+	s_currentTask = threadid%TASK_MAX;
+
+	fprintf(stderr, "Set current: CPU=%d Task=%d\n", s_currentCPU, s_currentTask);
+
+	gdbresponsepacket(gdbsocket, "OK");
 }
 
 void gdbreadmemory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
@@ -604,6 +613,11 @@ void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			gdbresponsepacket(gdbsocket, "OK");
 			fprintf(stderr, "Detached from debugger\n");
 			break;
+		case 'T':
+			// Skip 'T'
+			buffer++;
+			gdbsetcurrentthread(gdbsocket, emulator, buffer);
+			break;
 		case 'H':
 			// Set thread - Hc or Hg
 			if (buffer[1] == 'c')
@@ -613,9 +627,9 @@ void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			}
 			else if (buffer[1] == 'g')
 			{
-				//emulator->m_cpu[???]->SetCurrent('g');
-				// Switch to thread
-				gdbresponsepacket(gdbsocket, "OK");
+				// Skip 'Hg'
+				buffer+=2;
+				gdbsetcurrentthread(gdbsocket, emulator, buffer);
 			}
 			break;
 		case 'g':
