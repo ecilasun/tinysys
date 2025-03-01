@@ -114,7 +114,6 @@ void gdbreadthreads(socket_t gdbsocket, CEmulator* emulator, const char* buffer)
 {
 	char response[1024];
 	snprintf(response, 1024, "l<?xml version=\"1.0\"?>\n<threads>\n");
-	//snprintf(response, 1024, "%s\t<thread id=\"1\" core=\"0\" name=\"emu\">emulated task</thread>\n", response);
 
 	StopEmulator(emulator);
 
@@ -207,14 +206,14 @@ void gdbvcont(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 		{
 			// Continue
 			StopEmulator(emulator);
-			emulator->Continue(0);
+			emulator->Continue(s_currentCPU);
 			ResumeEmulator(emulator);
 			gdbresponseack(gdbsocket);
 		}
 		else if (strstr(command, "s") == command)
 		{
 			// Step
-			//emulator->StepFromPC();
+			//emulator->StepFromPC(s_currentCPU);
 			//gdbresponsepacket(gdbsocket, "S05");
 			gdbresponseack(gdbsocket);
 		}
@@ -227,7 +226,7 @@ void gdbvcont(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	}
 }
 
-void gdbkillprocess(socket_t gdbsocket, uint32_t hartid, uint32_t proc, CEmulator* emulator, char* buffer)
+void gdbkillprocess(socket_t gdbsocket, uint32_t hartid, int proc, CEmulator* emulator, char* buffer)
 {
 	StopEmulator(emulator);
 
@@ -236,20 +235,26 @@ void gdbkillprocess(socket_t gdbsocket, uint32_t hartid, uint32_t proc, CEmulato
 	// Kill processes by removing them from the thread pool
 	for (int cpu = 0; cpu < 2; ++cpu)
 	{
-		CRV32 *core = emulator->m_cpu[cpu];
-
-		// Access the task context of the CPU
-		struct STaskContext* contextpool = (struct STaskContext *)emulator->m_bus->GetHostAddress(DEVICE_MAIL);
-		struct STaskContext& ctx = contextpool[cpu];
-
-		// Set task state to terminating
-		if (cpu == hartid && (proc < ctx.numTasks))
+		if (cpu == hartid || hartid == -1)
 		{
-			// Same as _task_exit_task_with_id()
-			struct STask* task = &ctx.tasks[proc];
-			task->state = TS_TERMINATING;
-			task->exitCode = 0;
-			//ctx->kernelError = ?; // TODO: set kernel error to 'process terminated by debugger', need to handle it in ROM code
+			CRV32 *core = emulator->m_cpu[cpu];
+
+			// Access the task context of the CPU
+			struct STaskContext* contextpool = (struct STaskContext *)emulator->m_bus->GetHostAddress(DEVICE_MAIL);
+			struct STaskContext& ctx = contextpool[cpu];
+
+			// Set task state to terminating
+			for (int t = 0; t < ctx.numTasks; ++t)
+			{
+				struct STask* task = &ctx.tasks[t];
+
+				if (t == proc || proc == -1)
+				{
+					task->state = TS_TERMINATING;
+					task->exitCode = 0;
+					//ctx->kernelError = ?; // TODO: set kernel error to 'process terminated by debugger', need to handle it in ROM code
+				}
+			}
 		}
 	}
 
@@ -292,7 +297,7 @@ void gdbreadregisters(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 
 	ResumeEmulator(emulator);
 
-	fprintf(stderr, "R:%s\n", response);
+	//fprintf(stderr, "R:%s\n", response);
 	gdbresponsepacket(gdbsocket, response);
 }
 
@@ -398,7 +403,7 @@ void gdbsetreg(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 void gdbsetcurrentthread(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 {
 	// Parse the thread id
-	uint32_t threadid;
+	int threadid;
 	sscanf(buffer, "%d", &threadid);
 
 	threadid = threadid-1;
@@ -542,7 +547,11 @@ void gdbaddbreakpoint(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	StopEmulator(emulator);
 
 	// Add the breakpoint
-	emulator->AddBreakpoint(0, addrs);
+	for (int i = 0; i < 2; ++i)
+	{
+		if (i == s_currentCPU || s_currentCPU == -1)
+			emulator->AddBreakpoint(s_currentCPU, addrs);
+	}
 
 	ResumeEmulator(emulator);
 
@@ -561,8 +570,11 @@ void gdbremovebreakpoint(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 
 	StopEmulator(emulator);
 
-	// Remove the breakpoint
-	emulator->RemoveBreakpoint(0, addrs);
+	for (int i = 0; i < 2; ++i)
+	{
+		if (i == s_currentCPU || s_currentCPU == -1)
+			emulator->RemoveBreakpoint(s_currentCPU, addrs);
+	}
 
 	ResumeEmulator(emulator);
 
@@ -574,15 +586,24 @@ void gdbstopemulator(CEmulator* emulator)
 {
 	StopEmulator(emulator);
 
-	// Add a breakpoint at the current PC
-	emulator->AddBreakpoint(0, emulator->m_cpu[0]->m_PC);
+	for (int i = 0; i < 2; ++i)
+	{
+		if (i == s_currentCPU || s_currentCPU == -1)
+			emulator->AddBreakpoint(s_currentCPU, emulator->m_cpu[i]->m_PC);
+	}
 
 	ResumeEmulator(emulator);
 }
 
-void gdbsendstopreason(socket_t gdbsocket, uint32_t cpu, CEmulator* emulator)
+void gdbsendstopreason(socket_t gdbsocket, int cpu, uint32_t stopaddres, CEmulator* emulator)
 {
-	gdbplainpacket(gdbsocket, "T05;thread:1;stopped;reason:breakpoint;pc:0x00000000;");
+	CRV32 *core = emulator->m_cpu[cpu];
+	struct STaskContext* contextpool = (struct STaskContext *)emulator->m_bus->GetHostAddress(DEVICE_MAIL);
+	struct STaskContext& ctx = contextpool[cpu];
+
+	char response[128];
+	snprintf(response, 128, "T05;thread:%d;stopped;reason:breakpoint;pc:0x%08X;", cpu*TASK_MAX+ctx.currentTask+1, stopaddres);
+	gdbplainpacket(gdbsocket, response);
 }
 
 void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
@@ -608,7 +629,11 @@ void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 		case 'D':
 			// Disconnect request
 			StopEmulator(emulator);
-			emulator->RemoveAllBreakpoints(0);
+			for (int i = 0; i < 2; ++i)
+			{
+				if (i == s_currentCPU || s_currentCPU == -1)
+					emulator->RemoveAllBreakpoints(i);
+			}
 			ResumeEmulator(emulator);
 			gdbresponsepacket(gdbsocket, "OK");
 			fprintf(stderr, "Detached from debugger\n");
@@ -668,7 +693,7 @@ void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			else if (strstr(buffer, "vMustReplyEmpty") == buffer)
 				gdbresponsepacket(gdbsocket, "");
 			else if (strstr(buffer, "vKill") == buffer)
-				gdbkillprocess(gdbsocket, 0, 2, emulator, buffer);
+				gdbkillprocess(gdbsocket, s_currentCPU, s_currentTask, emulator, buffer);
 			else
 				fprintf(stderr, "Unknown v command: %s\n", buffer);
 			break;

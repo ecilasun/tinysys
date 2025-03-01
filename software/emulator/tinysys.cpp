@@ -513,19 +513,19 @@ int gdbstubthread(void* data)
 		if (ctx->emulator->m_cpu[0]->m_breakpointHit && !ctx->emulator->m_cpu[0]->m_breakpointCommunicated)
 		{
 			ctx->emulator->m_cpu[0]->m_breakpointCommunicated = 1;
-			gdbsendstopreason(newsockfd, 0, ctx->emulator);
+			gdbsendstopreason(newsockfd, 0, ctx->emulator->m_cpu[0]->m_currentBreakAddress, ctx->emulator);
 		}
 		if (ctx->emulator->m_cpu[1]->m_breakpointHit && !ctx->emulator->m_cpu[1]->m_breakpointCommunicated)
 		{
 			ctx->emulator->m_cpu[1]->m_breakpointCommunicated = 1;
-			gdbsendstopreason(newsockfd, 1, ctx->emulator);
+			gdbsendstopreason(newsockfd, 1, ctx->emulator->m_cpu[1]->m_currentBreakAddress, ctx->emulator);
 		}
 
 		n = recv(newsockfd, buffer, 4096, 0);
 		if (n > 0)
 		{
 			buffer[n] = 0;
-			fprintf(stderr, "> %s\n", buffer);
+			//fprintf(stderr, "> %s\n", buffer);
 			// Respond to gdb command packets here
 			gdbstubprocess(newsockfd, ctx->emulator, buffer, n);
 		}

@@ -12,5 +12,5 @@
 #include "emulator.h"
 
 void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer);
-void gdbsendstopreason(socket_t gdbsocket, uint32_t cpu, CEmulator* emulator);
+void gdbsendstopreason(socket_t gdbsocket, int cpu, uint32_t stopaddres, CEmulator* emulator);
 void gdbresponseack(socket_t gdbsocket);

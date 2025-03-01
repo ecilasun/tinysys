@@ -24,7 +24,7 @@ RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump
 ifeq ($(UNAME), Windows)
 RISCV_PREFIX ?= riscv32-unknown-elf-
 RISCV_GCC ?= $(RISCV_PREFIX)g++
-RISCV_GCC_OPTS ?= -mcmodel=medany -std=c++20 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Ofast -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -Wl,--strip-all -lgcc -lm
+RISCV_GCC_OPTS ?= -mcmodel=medany -g -std=c++20 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -O0 -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -lgcc -lm
 else
 RISCV_PREFIX ?= riscv64-unknown-elf-
 RISCV_GCC ?= $(RISCV_PREFIX)g++

@@ -978,6 +978,12 @@ bool CRV32::Execute(CBus* bus)
 		auto found = std::find_if(m_breakpoints.begin(), m_breakpoints.end(), [&](const SBreakpoint& b) { return b.address == instr.m_pc; });
 		if (found != m_breakpoints.end())
 		{
+			m_breakpointHit = 1;
+			m_currentBreakAddress = instr.m_pc;
+			m_breakpointCommunicated = 0;
+
+			fprintf(stderr, "Breakpoint hit at 0x%08X\n", instr.m_pc);
+
 			// Remove instructions we have already executed except the one at the breakpoint
 			m_instructions.erase(m_instructions.begin(), m_instructions.begin() + (found - m_breakpoints.begin()));
 			return true;
@@ -1458,6 +1464,7 @@ void CRV32::RemoveAllBreakpoints(CBus* bus)
 
 	m_breakpointHit = 0;
 	m_breakpointCommunicated = 0;
+	m_currentBreakAddress = 0;
 
 	fprintf(stderr, "Removed all breakpoints\n");
 }
@@ -1465,7 +1472,7 @@ void CRV32::RemoveAllBreakpoints(CBus* bus)
 void CRV32::Continue(CBus* bus)
 {
 	// Remove the breakpoint at this PC
-	auto found = std::find_if(m_breakpoints.begin(), m_breakpoints.end(), [&](const SBreakpoint& b) { return b.address == m_PC; });
+	auto found = std::find_if(m_breakpoints.begin(), m_breakpoints.end(), [&](const SBreakpoint& b) { return b.address == m_currentBreakAddress; });
 	if (found != m_breakpoints.end())
 	{
 		bus->Write(m_PC, found->originalInstruction, 0b1111);
@@ -1474,29 +1481,20 @@ void CRV32::Continue(CBus* bus)
 
 	m_breakpointHit = 0;
 	m_breakpointCommunicated = 0;
+	m_currentBreakAddress = 0;
 }
 
 bool CRV32::Tick(uint64_t wallclock, CBus* bus)
 {
 	CCSRMem* csr = bus->GetCSR(m_hartid);
 
-	// Gather a block of code (or grab precompiled version)
-	bool fetchok = FetchDecode(bus);
-	csr->UpdateTime(wallclock, m_cycles);
-
-	// Execute the whole block
-	bool newBreakpoint = false;
 	if (!m_breakpointHit)
 	{
-		newBreakpoint = Execute(bus);
-	}
-
-	// If we hit a breakpoint, we need to stop
-	if (newBreakpoint)
-	{
-		fprintf(stderr, "Breakpoint hit at 0x%08X (instr:0x%08X)\n", m_PC, csr->m_pc);
-		m_breakpointHit = 1;
-		m_breakpointCommunicated = 0;
+		// Gather a block of code (or grab precompiled version)
+		bool fetchok = FetchDecode(bus);
+		csr->UpdateTime(wallclock, m_cycles);
+		// Execute the whole block
+		Execute(bus);
 	}
 
 	if (csr->m_pendingCPUReset)
