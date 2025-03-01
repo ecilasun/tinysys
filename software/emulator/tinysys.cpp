@@ -1,5 +1,7 @@
 #include "tinysys.h"
 
+static socket_t newsockfd;
+
 static const char* emulatorVersionString = "tinysys emulator v0.7";
 
 static int AudioQueueCapacity = 1024;	// Size of the audio queue in samples
@@ -371,13 +373,14 @@ void gdbstubprocess(socket_t gdbsocket, CEmulator* emulator, char* buffer, int n
 		case '-':
 			// NACK packet
 			break;
+		case 0x03:
+			// Interrupt packet, do not shift buffer
+			gdbprocesscommand(gdbsocket, emulator, buffer);
+			break;
 		case '$':
 			// Command packet
 			buffer++;
 			gdbprocesscommand(gdbsocket, emulator, buffer);
-			break;
-		case 3:
-			// Ctrl-C packet
 			break;
 		default:
 			// Unknown packet
@@ -421,11 +424,11 @@ int gdbstubthread(void* data)
 
 	// Accept a connection
 #ifdef CAT_WINDOWS
-	socket_t newsockfd = accept(sockfd, nullptr, nullptr);
+	newsockfd = accept(sockfd, nullptr, nullptr);
 #else
 	struct sockaddr_in cli_addr;
 	socklen_t clilen = sizeof(cli_addr);
-	socket_t newsockfd = accept(sockfd, (struct sockaddr*)&cli_addr, &clilen);
+	newsockfd = accept(sockfd, (struct sockaddr*)&cli_addr, &clilen);
 #endif
 	if (newsockfd < 0)
 	{
@@ -440,6 +443,12 @@ int gdbstubthread(void* data)
 	int n;
 	do
 	{
+		// TODO: We need nonblocking mode for this
+		/*if (ctx->emulator->m_cpu[0]->m_breakpointHit)
+			gdbsendstopreason(newsockfd, 0, ctx->emulator);
+		if (ctx->emulator->m_cpu[1]->m_breakpointHit)
+			gdbsendstopreason(newsockfd, 1, ctx->emulator);*/
+
 #ifdef CAT_WINDOWS
 		n = recv(newsockfd, buffer, 4096, 0);
 #else

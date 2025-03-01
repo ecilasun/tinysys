@@ -89,3 +89,8 @@ void CEmulator::RemoveBreakpoint(uint32_t cpu, uint32_t address)
 {
 	m_cpu[cpu]->RemoveBreakpoint(address, m_bus);
 }
+
+void CEmulator::Continue(uint32_t cpu)
+{
+	m_cpu[cpu]->Continue(m_bus);
+}

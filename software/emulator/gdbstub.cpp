@@ -193,8 +193,11 @@ void gdbvcont(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 		else if (strstr(command, "c") == command)
 		{
 			// Continue
-			//emulator->ResumeFromPC();
-			gdbresponsepacket(gdbsocket, "S05");
+			StopEmulator(emulator);
+			emulator->Continue(0);
+			ResumeEmulator(emulator);
+			gdbresponseack(gdbsocket);
+			//gdbresponsepacket(gdbsocket, "S05");
 		}
 		else if (strstr(command, "s") == command)
 		{
@@ -494,84 +497,103 @@ void gdbremovebreakpoint(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	gdbresponsepacket(gdbsocket, "OK");
 }
 
+void gdbstopemulator(CEmulator* emulator)
+{
+	StopEmulator(emulator);
+
+	// Add a breakpoint at the current PC
+	emulator->AddBreakpoint(0, emulator->m_cpu[0]->m_PC);
+
+	ResumeEmulator(emulator);
+}
+
+void gdbsendstopreason(socket_t gdbsocket, uint32_t cpu, CEmulator* emulator)
+{
+	gdbresponsepacket(gdbsocket, "T05;thread:1;stopped;reason:breakpoint;pc:0x00000000;");
+}
+
 void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 {
 	// Check the command type
 	switch (buffer[0])
 	{
-	case '?':
-		gdbresponsepacket(gdbsocket, "S00");
-		break;
-	case 'X':
-		// Read binary data
-		gdbbinarypacket(gdbsocket, emulator, buffer);
-		break;
-	case 'P':
-		// Write single register
-		gdbsetreg(gdbsocket, emulator, buffer);
-		break;
-	case 'D':
-		// Disconnect request
-		gdbresponsepacket(gdbsocket, "OK");
-		// TODO: remove all breakpoints and resume task
-		break;
-	case 'H':
-		// Set thread - Hc or Hg
-		if (buffer[1] == 'c')
-		{
-			//emulator->m_cpu[???]->SetCurrent('c');
+		case 0x03:
+			// Ctrl-C packet
+			gdbstopemulator(emulator);
+			break;
+		case '?':
+			gdbresponsepacket(gdbsocket, "S00");
+			break;
+		case 'X':
+			// Read binary data
+			gdbbinarypacket(gdbsocket, emulator, buffer);
+			break;
+		case 'P':
+			// Write single register
+			gdbsetreg(gdbsocket, emulator, buffer);
+			break;
+		case 'D':
+			// Disconnect request
 			gdbresponsepacket(gdbsocket, "OK");
-		}
-		else if (buffer[1] == 'g')
-		{
-			//emulator->m_cpu[???]->SetCurrent('g');
-			gdbresponsepacket(gdbsocket, "OK");
-		}
-		break;
-	case 'g':
-		gdbreadregisters(gdbsocket, emulator, buffer);
-		break;
-	case 'G':
-		// Read registers
-		break;
-	case 'm':
-		// Read memory
-		gdbreadmemory(gdbsocket, emulator, buffer);
-		break;
-	case 'M':
-		// Write memory
-		gdbwritememory(gdbsocket, emulator, buffer);
-		break;
-	case 'c':
-		// Continue
-		break;
-	case 's':
-		// Step
-		break;
-	case 'Z':
-		// Insert breakpoint
-		gdbaddbreakpoint(gdbsocket, emulator, buffer);
-		break;
-	case 'z':
-		// Remove breakpoint
-		gdbremovebreakpoint(gdbsocket, emulator, buffer);
-		break;
-	case 'v':
-		// vCont
-		if (strstr(buffer, "vCont") == buffer)
-			gdbvcont(gdbsocket, emulator, buffer);
-		else if (strstr(buffer, "vMustReplyEmpty") == buffer)
-			gdbresponsepacket(gdbsocket, "");
-		else
-			fprintf(stderr, "Unknown v command: %s\n", buffer);
-		break;
-	case 'q':
-		// Query
-		gdbprocessquery(gdbsocket, emulator, buffer);
-		break;
-	default:
-		// Unknown command
-		fprintf(stderr, "Unknown sequence start: %s\n", buffer);
-		break;
+			// TODO: remove all breakpoints and resume task
+			break;
+		case 'H':
+			// Set thread - Hc or Hg
+			if (buffer[1] == 'c')
+			{
+				//emulator->m_cpu[???]->SetCurrent('c');
+				gdbresponsepacket(gdbsocket, "OK");
+			}
+			else if (buffer[1] == 'g')
+			{
+				//emulator->m_cpu[???]->SetCurrent('g');
+				gdbresponsepacket(gdbsocket, "OK");
+			}
+			break;
+		case 'g':
+			gdbreadregisters(gdbsocket, emulator, buffer);
+			break;
+		case 'G':
+			// Read registers
+			break;
+		case 'm':
+			// Read memory
+			gdbreadmemory(gdbsocket, emulator, buffer);
+			break;
+		case 'M':
+			// Write memory
+			gdbwritememory(gdbsocket, emulator, buffer);
+			break;
+		case 'c':
+			// Continue
+			break;
+		case 's':
+			// Step
+			break;
+		case 'Z':
+			// Insert breakpoint
+			gdbaddbreakpoint(gdbsocket, emulator, buffer);
+			break;
+		case 'z':
+			// Remove breakpoint
+			gdbremovebreakpoint(gdbsocket, emulator, buffer);
+			break;
+		case 'v':
+			// vCont
+			if (strstr(buffer, "vCont") == buffer)
+				gdbvcont(gdbsocket, emulator, buffer);
+			else if (strstr(buffer, "vMustReplyEmpty") == buffer)
+				gdbresponsepacket(gdbsocket, "");
+			else
+				fprintf(stderr, "Unknown v command: %s\n", buffer);
+			break;
+		case 'q':
+			// Query
+			gdbprocessquery(gdbsocket, emulator, buffer);
+			break;
+		default:
+			// Unknown command
+			fprintf(stderr, "Unknown sequence start: %s\n", buffer);
+			break;
 	}
 }

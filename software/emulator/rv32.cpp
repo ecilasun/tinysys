@@ -974,6 +974,15 @@ bool CRV32::Execute(CBus* bus)
 	CCSRMem* csr = bus->GetCSR(m_hartid);
 	for (auto &instr : m_instructions)
 	{
+		// Is this PC in the m_breakpoints?
+		auto found = std::find_if(m_breakpoints.begin(), m_breakpoints.end(), [&](const SBreakpoint& b) { return b.address == instr.m_pc; });
+		if (found != m_breakpoints.end())
+		{
+			// Remove instructions we have already executed except the one at the breakpoint
+			m_instructions.erase(m_instructions.begin(), m_instructions.begin() + (found - m_breakpoints.begin()));
+			return true;
+		}
+
 		csr->SetPC(instr.m_pc);
 
 		// Get register contents
@@ -1412,7 +1421,7 @@ bool CRV32::Execute(CBus* bus)
 	m_instructions.clear();
 
 	csr->SetRetiredInstructions(m_retired);
-	return true;
+	return false;
 }
 
 void CRV32::AddBreakpoint(uint32_t address, CBus* bus)
@@ -1422,13 +1431,25 @@ void CRV32::AddBreakpoint(uint32_t address, CBus* bus)
 	bus->Read(address, brkpt.originalInstruction);
 	m_breakpoints.push_back(brkpt);
 
-	fprintf(stderr, "Added breakpoint at 0x%08X (instr:0x%08X)", address, brkpt.originalInstruction);
+	fprintf(stderr, "Added breakpoint at 0x%08X (instr:0x%08X)\n", address, brkpt.originalInstruction);
 }
 
 void CRV32::RemoveBreakpoint(uint32_t address, CBus* bus)
 {
-	// TODO:
-	fprintf(stderr, "TODO: Remove breakpoint at %08X", address);
+	// Erase the breakpoint
+	auto found = std::find_if(m_breakpoints.begin(), m_breakpoints.end(), [&](const SBreakpoint& b) { return b.address == address; });
+	if (found != m_breakpoints.end())
+	{
+		bus->Write(address, found->originalInstruction, 0b1111);
+		m_breakpoints.erase(found);
+	}
+
+	fprintf(stderr, "Removed breakpoint at %08X\n", address);
+}
+
+void CRV32::Continue(CBus* bus)
+{
+	m_breakpointHit = 0;
 }
 
 bool CRV32::Tick(uint64_t wallclock, CBus* bus)
@@ -1438,11 +1459,24 @@ bool CRV32::Tick(uint64_t wallclock, CBus* bus)
 	// Gather a block of code (or grab precompiled version)
 	bool fetchok = FetchDecode(bus);
 	csr->UpdateTime(wallclock, m_cycles);
+
 	// Execute the whole block
-	Execute(bus);
+	bool newBreakpoint = false;
+	if (!m_breakpointHit)
+	{
+		newBreakpoint = Execute(bus);
+	}
+
+	// If we hit a breakpoint, we need to stop
+	if (newBreakpoint)
+	{
+		fprintf(stderr, "Breakpoint hit at 0x%08X (instr:0x%08X)\n", m_PC, csr->m_pc);
+		// Do not execute the instruction for next cycle
+		m_breakpointHit = 1;
+	}
 
 	if (csr->m_pendingCPUReset)
 		m_fetchstate = EFetchInit;
 
-	return fetchok;
+	return m_breakpointHit ? true : false;
 }

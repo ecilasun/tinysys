@@ -183,6 +183,8 @@ public:
 	// HART0 by default
 	uint32_t m_hartid{ 0 };
 
+	uint32_t m_breakpointHit{ 0 };
+
 	ERV32ExceptionMode m_exceptionmode{ EXC_NONE };
 	ERV32ExceptionMode m_lasttrap{ EXC_NONE };
 
@@ -201,6 +203,7 @@ public:
 
 	void AddBreakpoint(uint32_t address, CBus* bus);
 	void RemoveBreakpoint(uint32_t address, CBus* bus);
+	void Continue(CBus* bus);
 
 	std::vector<SBreakpoint> m_breakpoints;
 
