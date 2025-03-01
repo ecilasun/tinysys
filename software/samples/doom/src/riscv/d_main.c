@@ -557,14 +557,14 @@ void IdentifyVersion (void)
 #elif 0
     gamemode = retail;
     D_AddFile ("sd:doomu.wad");
-#elif 1
+#elif 0
     gamemode = registered;
     D_AddFile ("sd:doom.wad");
 #elif 0
     gamemode = shareware;
     // https://github.com/fragglet/miniwad
     D_AddFile ("sd:miniwad.wad");
-#elif 0
+#elif 1
     gamemode = shareware;
     D_AddFile ("sd:doom1.wad");
 #else

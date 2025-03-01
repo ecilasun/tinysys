@@ -48,6 +48,5 @@ software/tinyremote/.lock**
 !software/tinyremote/bin/tinyremote**
 !software/tinyremote/bin/**.dll
 !software/tinyremote/bin/_ensurefolderexists.txt
-software/emulator/sdcard/doom/*.wad
 software/samples/bendemo/**
 software/emulator/sdcard/samples/bendemo**
