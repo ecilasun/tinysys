@@ -1,0 +1,29 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+		  "name": "C/C++(RISCV) - Windows",
+		  "type": "cppdbg",
+		  "request": "launch",
+		  "program": "${workspaceFolder}/mandelbrot/mandelbrot.elf",
+		  "args": [],
+		  "stopAtEntry": false,
+		  "cwd": "${fileDirname}",
+		  "environment": [],
+		  "externalConsole": false,
+		  "MIMode": "gdb",
+		  "miDebuggerPath": "C:/riscv32-gcc/bin/riscv32-unknown-elf-gdb.exe",
+		  "miDebuggerServerAddress": "localhost:1234",
+		  "setupCommands": [
+			{
+			  "description": "Enable pretty-printing for gdb",
+			  "text": "-enable-pretty-printing",
+			  "ignoreFailures": true
+			}
+		  ]
+		}
+	]
+}

@@ -225,7 +225,7 @@ void gdbvcont(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	}
 }
 
-void gdbkillprocess(socket_t gdbsocket, CEmulator* emulator, char* buffer)
+void gdbkillprocess(socket_t gdbsocket, uint32_t hartid, uint32_t proc, CEmulator* emulator, char* buffer)
 {
 	StopEmulator(emulator);
 
@@ -241,12 +241,13 @@ void gdbkillprocess(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 		struct STaskContext& ctx = contextpool[cpu];
 
 		// Set task state to terminating
-		if (cpu == 0 && ctx.numTasks > 2)
+		if (cpu == hartid && (proc < ctx.numTasks))
 		{
 			// Same as _task_exit_task_with_id()
-			struct STask* task = &ctx.tasks[2];
+			struct STask* task = &ctx.tasks[proc];
 			task->state = TS_TERMINATING;
 			task->exitCode = 0;
+			//ctx->kernelError = ?; // TODO: set kernel error to 'process terminated by debugger', need to handle it in ROM code
 		}
 	}
 
@@ -653,7 +654,7 @@ void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			else if (strstr(buffer, "vMustReplyEmpty") == buffer)
 				gdbresponsepacket(gdbsocket, "");
 			else if (strstr(buffer, "vKill") == buffer)
-				gdbkillprocess(gdbsocket, emulator, buffer);
+				gdbkillprocess(gdbsocket, 0, 2, emulator, buffer);
 			else
 				fprintf(stderr, "Unknown v command: %s\n", buffer);
 			break;
