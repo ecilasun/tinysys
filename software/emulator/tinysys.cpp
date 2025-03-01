@@ -24,6 +24,7 @@ struct EmulatorContext
 	SDL_Window* window;
 	SDL_Surface* surface;
 	SDL_Surface* compositesurface;
+	SDL_GameController* gamecontroller;
 };
 
 static bool s_alive = true;
@@ -138,6 +139,108 @@ int audiothread(void* data)
 	delete [] tmpbuf;
 
 	return 0;
+}
+
+float Clamp(float value, float min, float max)
+{
+	if (value < min)
+		return min;
+	if (value > max)
+		return max;
+	return value;
+}
+
+void ClampAnalogInput(Axis6& input, float innerDeadzone, float outerDeadzone)
+{
+    float magleft = input.leftx*input.leftx + input.lefty*input.lefty;
+	float magright = input.rightx*input.rightx + input.righty*input.righty;
+
+	if (magleft == 0.f)
+	{
+		input.leftx = 0;
+		input.lefty = 0;
+	}
+	else
+	{
+		magleft = sqrtf(magleft);
+		float scale = (magleft - innerDeadzone) / (outerDeadzone - innerDeadzone);
+		input.leftx = input.leftx * Clamp(scale, 0, 1) / magleft;
+		input.lefty = input.lefty * Clamp(scale, 0, 1) / magleft;
+	}
+
+	if (magright == 0.f)
+	{
+		input.rightx = 0;
+		input.righty = 0;
+	}
+	else
+	{
+		magright = sqrtf(magright);
+		float scale = (magright - innerDeadzone) / (outerDeadzone - innerDeadzone);
+		input.rightx = input.rightx * Clamp(scale, 0, 1) / magright;
+		input.righty = input.righty * Clamp(scale, 0, 1) / magright;
+	}
+
+	input.lefttrigger = Clamp(input.lefttrigger, 0, 1);
+	input.righttrigger = Clamp(input.righttrigger, 0, 1);
+}
+
+void ControllerAdd(EmulatorContext& ctx)
+{
+	int numJoy = SDL_NumJoysticks();
+	if (numJoy <= 0)
+		fprintf(stderr, "No joysticks: %d\n", numJoy);
+	else
+		fprintf(stderr, "Found %d joysticks\n", numJoy);
+
+	for (int i = 0; i < numJoy; ++i)
+	{
+		if (SDL_IsGameController(i))
+		{
+			ctx.gamecontroller = SDL_GameControllerOpen(i);
+			if (ctx.gamecontroller)
+			{
+				if (SDL_GameControllerGetAttached(ctx.gamecontroller))
+				{
+					fprintf(stderr, "Using game controller #%d: '%s'\n", i, SDL_GameControllerName(ctx.gamecontroller));
+					// Read button mappings
+					for (int j = 0; j < SDL_CONTROLLER_BUTTON_MAX; ++j)
+					{
+						if (SDL_GameControllerHasButton(ctx.gamecontroller, (SDL_GameControllerButton)j))
+						{
+							SDL_GameControllerButtonBind bind = SDL_GameControllerGetBindForButton(ctx.gamecontroller, (SDL_GameControllerButton)j);
+							switch (bind.bindType)
+							{
+								case SDL_CONTROLLER_BINDTYPE_BUTTON:
+									fprintf(stderr, "Button %d: %s\n", j, SDL_GameControllerGetStringForButton((SDL_GameControllerButton)j));
+								break;
+								case SDL_CONTROLLER_BINDTYPE_AXIS:
+									fprintf(stderr, "Axis %d: %s\n", j, SDL_GameControllerGetStringForButton((SDL_GameControllerButton)j));
+								break;
+								case SDL_CONTROLLER_BINDTYPE_HAT:
+									fprintf(stderr, "Hat %d: %s\n", j, SDL_GameControllerGetStringForButton((SDL_GameControllerButton)j));
+								break;
+								default:
+								{
+									fprintf(stderr, "Unknown %d: %s\n", j, SDL_GameControllerGetStringForButton((SDL_GameControllerButton)j));
+								}
+							}
+						}
+					}
+					break;
+				}
+			}
+		}
+	}
+}
+
+void ControllerRemove(EmulatorContext& ctx)
+{
+	if (ctx.gamecontroller)
+	{
+		SDL_GameControllerClose(ctx.gamecontroller);
+		ctx.gamecontroller = nullptr;
+	}
 }
 
 uint32_t videoCallback(Uint32 interval, void* param)
@@ -454,6 +557,15 @@ int SDL_main(int argc, char** argv)
 	uint8_t *old_keystates = new uint8_t[SDL_NUM_SCANCODES];
 	memset(old_keystates, 0, SDL_NUM_SCANCODES);
 
+	Axis6 prev_input;
+	prev_input.leftx = -11111.f;
+	prev_input.lefty = -11111.f;
+	prev_input.rightx = -11111.f;
+	prev_input.righty = -11111.f;
+	prev_input.lefttrigger = -11111.f;
+	prev_input.righttrigger = -11111.f;
+	uint32_t prev_buttons = 0xFFFFFFFF;
+
 	SDL_Event ev;
 	do
 	{
@@ -482,7 +594,93 @@ int SDL_main(int argc, char** argv)
 						ectx.emulator->QueueByte(ev.key.keysym.sym);
 				}*/
 			}
+			else if (ev.type == SDL_CONTROLLERDEVICEADDED)
+			{
+				ControllerAdd(ectx);
+			}
+			else if (ev.type == SDL_CONTROLLERDEVICEREMOVED)
+			{
+				ControllerRemove(ectx);
+			}
 
+			// Read joystick events
+			if (ectx.gamecontroller)
+			{
+				// Buttons
+				uint32_t buttons = 0x00000000;
+				buttons |= SDL_GameControllerGetButton(ectx.gamecontroller, SDL_CONTROLLER_BUTTON_A) ? 0x00000001 : 0;
+				buttons |= SDL_GameControllerGetButton(ectx.gamecontroller, SDL_CONTROLLER_BUTTON_B) ? 0x00000002 : 0;
+				buttons |= SDL_GameControllerGetButton(ectx.gamecontroller, SDL_CONTROLLER_BUTTON_X) ? 0x00000004 : 0;
+				buttons |= SDL_GameControllerGetButton(ectx.gamecontroller, SDL_CONTROLLER_BUTTON_Y) ? 0x00000008 : 0;
+				buttons |= SDL_GameControllerGetButton(ectx.gamecontroller, SDL_CONTROLLER_BUTTON_BACK) ? 0x00000010 : 0;
+				buttons |= SDL_GameControllerGetButton(ectx.gamecontroller, SDL_CONTROLLER_BUTTON_GUIDE) ? 0x00000020 : 0;
+				buttons |= SDL_GameControllerGetButton(ectx.gamecontroller, SDL_CONTROLLER_BUTTON_START) ? 0x00000040 : 0;
+				buttons |= SDL_GameControllerGetButton(ectx.gamecontroller, SDL_CONTROLLER_BUTTON_LEFTSTICK) ? 0x00000080 : 0;
+				buttons |= SDL_GameControllerGetButton(ectx.gamecontroller, SDL_CONTROLLER_BUTTON_RIGHTSTICK) ? 0x00000100 : 0;
+				buttons |= SDL_GameControllerGetButton(ectx.gamecontroller, SDL_CONTROLLER_BUTTON_LEFTSHOULDER) ? 0x00000200 : 0;
+				buttons |= SDL_GameControllerGetButton(ectx.gamecontroller, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) ? 0x00000400 : 0;
+				buttons |= SDL_GameControllerGetButton(ectx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_UP) ? 0x00000800 : 0;
+				buttons |= SDL_GameControllerGetButton(ectx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_DOWN) ? 0x00001000 : 0;
+				buttons |= SDL_GameControllerGetButton(ectx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_LEFT) ? 0x00002000 : 0;
+				buttons |= SDL_GameControllerGetButton(ectx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT) ? 0x00004000 : 0;
+				if (buttons != prev_buttons)
+				{
+					prev_buttons = buttons;
+
+					uint8_t outdata[4];
+					outdata[0] = '@';				// joystick button packet marker
+					outdata[1] = buttons&0xFF;		// lower byte of modifiers
+					outdata[2] = (buttons>>8)&0xFF;	// upper byte of modifiers
+					ectx.emulator->QueueByte(outdata[0]);
+					ectx.emulator->QueueByte(outdata[1]);
+					ectx.emulator->QueueByte(outdata[2]);
+				}
+
+				// Axes
+				Axis6 input;
+				input.leftx = SDL_GameControllerGetAxis(ectx.gamecontroller, SDL_CONTROLLER_AXIS_LEFTX) / 32767.0f;
+				input.lefty = SDL_GameControllerGetAxis(ectx.gamecontroller, SDL_CONTROLLER_AXIS_LEFTY) / 32767.0f;
+				input.rightx = SDL_GameControllerGetAxis(ectx.gamecontroller, SDL_CONTROLLER_AXIS_RIGHTX) / 32767.0f;
+				input.righty = SDL_GameControllerGetAxis(ectx.gamecontroller, SDL_CONTROLLER_AXIS_RIGHTY) / 32767.0f;
+				input.lefttrigger = SDL_GameControllerGetAxis(ectx.gamecontroller, SDL_CONTROLLER_AXIS_TRIGGERLEFT) / 32767.0f;
+				input.righttrigger = SDL_GameControllerGetAxis(ectx.gamecontroller, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) / 32767.0f;
+				ClampAnalogInput(input, 0.1f, 0.9f);
+				if (prev_input.leftx != input.leftx || prev_input.lefty != input.lefty || prev_input.rightx != input.rightx || prev_input.righty != input.righty || prev_input.lefttrigger != input.lefttrigger || prev_input.righttrigger != input.righttrigger)
+				{
+					prev_input = input;
+
+					uint16_t lx = (uint16_t)((input.leftx * 32767.0f) + 32768);
+					uint16_t ly = (uint16_t)((input.lefty * 32767.0f) + 32768);
+					uint16_t rx = (uint16_t)((input.rightx * 32767.0f) + 32768);
+					uint16_t ry = (uint16_t)((input.righty * 32767.0f) + 32768);
+					uint8_t lt = (uint8_t)(input.lefttrigger * 255.0f);
+					uint8_t rt = (uint8_t)(input.righttrigger * 255.0f);
+
+					uint8_t outdata[16];
+					outdata[0] = '%';				// joystick axis packet marker
+					outdata[1] = lx&0xFF;			// lower byte of left x
+					outdata[2] = (lx>>8)&0xFF;		// upper byte of left x
+					outdata[3] = ly&0xFF;			// lower byte of left y
+					outdata[4] = (ly>>8)&0xFF;		// upper byte of left y
+					outdata[5] = rx&0xFF;			// lower byte of right x
+					outdata[6] = (rx>>8)&0xFF;		// upper byte of right x
+					outdata[7] = ry&0xFF;			// lower byte of right y	
+					outdata[8] = (ry>>8)&0xFF;		// upper byte of right y
+					outdata[9] = lt;				// left trigger
+					outdata[10] = rt;				// right trigger
+					ectx.emulator->QueueByte(outdata[0]);
+					ectx.emulator->QueueByte(outdata[1]);
+					ectx.emulator->QueueByte(outdata[2]);
+					ectx.emulator->QueueByte(outdata[3]);
+					ectx.emulator->QueueByte(outdata[4]);
+					ectx.emulator->QueueByte(outdata[5]);
+					ectx.emulator->QueueByte(outdata[6]);
+					ectx.emulator->QueueByte(outdata[7]);
+					ectx.emulator->QueueByte(outdata[8]);
+					ectx.emulator->QueueByte(outdata[9]);
+					ectx.emulator->QueueByte(outdata[10]);
+				}
+			}
 			// Read key states
 			SDL_Keymod modifiers = SDL_GetModState();
 			if (memcmp(old_keystates, keystates, SDL_NUM_SCANCODES))
