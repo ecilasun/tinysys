@@ -450,6 +450,10 @@ int SDL_main(int argc, char** argv)
 
 	fprintf(stderr, "Use the ~ key to reset the emulated CPUs in case of hangs during development\n");
 
+	const uint8_t *keystates = SDL_GetKeyboardState(nullptr);
+	uint8_t *old_keystates = new uint8_t[SDL_NUM_SCANCODES];
+	memset(old_keystates, 0, SDL_NUM_SCANCODES);
+
 	SDL_Event ev;
 	do
 	{
@@ -470,14 +474,39 @@ int SDL_main(int argc, char** argv)
 				}
 				else if ((ev.key.keysym.mod & KMOD_CTRL) && ev.key.keysym.sym == 'c')
 					ectx.emulator->QueueByte(3);
-				else if (ev.key.keysym.sym != SDLK_LCTRL && ev.key.keysym.sym != SDLK_LSHIFT && ev.key.keysym.sym != SDLK_RSHIFT)
+				/*else if (ev.key.keysym.sym != SDLK_LCTRL && ev.key.keysym.sym != SDLK_LSHIFT && ev.key.keysym.sym != SDLK_RSHIFT)
 				{
 					if (ev.key.keysym.mod & KMOD_SHIFT)
 						ectx.emulator->QueueByte(0x5F & ev.key.keysym.sym);
 					else
 						ectx.emulator->QueueByte(ev.key.keysym.sym);
+				}*/
+			}
+
+			// Read key states
+			SDL_Keymod modifiers = SDL_GetModState();
+			if (memcmp(old_keystates, keystates, SDL_NUM_SCANCODES))
+			{
+				for (int i = 0; i < SDL_NUM_SCANCODES; ++i)
+				{
+					if (keystates[i] != old_keystates[i])
+					{
+						uint8_t outdata[8];
+						outdata[0] = '^';					// scancode packet marker
+						outdata[1] = i;						// scancode
+						outdata[2] = keystates[i];			// state
+						outdata[3] = modifiers&0xFF;		// lower byte of modifiers
+						outdata[4] = (modifiers>>8)&0xFF;	// upper byte of modifiers
+						ectx.emulator->QueueByte(outdata[0]);
+						ectx.emulator->QueueByte(outdata[1]);
+						ectx.emulator->QueueByte(outdata[2]);
+						ectx.emulator->QueueByte(outdata[3]);
+						ectx.emulator->QueueByte(outdata[4]);
+					}
 				}
 			}
+			// Copy the new keystates to the old keystates
+			memcpy(old_keystates, keystates, SDL_NUM_SCANCODES);
 		}
 
 		s_wallclock = SDL_GetTicks64() * ONE_MS_IN_TICKS - startTick;
