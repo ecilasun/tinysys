@@ -1323,9 +1323,9 @@ bool CRV32::Execute(CBus* bus)
 					{
 						m_cycles += 6;
 						if (instr.m_rs2 == 0b00000) // signed
-							*D = (float)((double)((int64_t)instr.m_rval1));
+							*D = (float)(int32_t)instr.m_rval1;
 						else // unsigned - NOTE: doing the abs() trick the hardware does here
-							*D = (float)((double)((uint64_t)(instr.m_rval1&0x7FFFFFFF)));
+							*D = (float)(instr.m_rval1&0x7FFFFFFF);
 					}
 					break;
 					case 0b0000000: // fadd.s
