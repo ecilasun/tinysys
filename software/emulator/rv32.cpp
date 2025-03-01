@@ -1447,6 +1447,21 @@ void CRV32::RemoveBreakpoint(uint32_t address, CBus* bus)
 	fprintf(stderr, "Removed breakpoint at %08X\n", address);
 }
 
+void CRV32::RemoveAllBreakpoints(CBus* bus)
+{
+	for (auto& brkpt : m_breakpoints)
+	{
+		bus->Write(brkpt.address, brkpt.originalInstruction, 0b1111);
+	}
+
+	m_breakpoints.clear();
+
+	m_breakpointHit = 0;
+	m_breakpointCommunicated = 0;
+
+	fprintf(stderr, "Removed all breakpoints\n");
+}
+
 void CRV32::Continue(CBus* bus)
 {
 	// Remove the breakpoint at this PC

@@ -208,13 +208,13 @@ void gdbvcont(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			emulator->Continue(0);
 			ResumeEmulator(emulator);
 			gdbresponseack(gdbsocket);
-			//gdbresponsepacket(gdbsocket, "S05");
 		}
 		else if (strstr(command, "s") == command)
 		{
 			// Step
 			//emulator->StepFromPC();
-			gdbresponsepacket(gdbsocket, "S05");
+			//gdbresponsepacket(gdbsocket, "S05");
+			gdbresponseack(gdbsocket);
 		}
 		else
 		{
@@ -223,6 +223,35 @@ void gdbvcont(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 		}
 		command = strtok(NULL, ";");
 	}
+}
+
+void gdbkillprocess(socket_t gdbsocket, CEmulator* emulator, char* buffer)
+{
+	StopEmulator(emulator);
+
+	emulator->RemoveAllBreakpoints(0);
+
+	// Kill processes by removing them from the thread pool
+	for (int cpu = 0; cpu < 2; ++cpu)
+	{
+		CRV32 *core = emulator->m_cpu[cpu];
+
+		// Access the task context of the CPU
+		struct STaskContext* contextpool = (struct STaskContext *)emulator->m_bus->GetHostAddress(DEVICE_MAIL);
+		struct STaskContext& ctx = contextpool[cpu];
+
+		// Set task state to terminating
+		if (cpu == 0 && ctx.numTasks > 2)
+		{
+			// Same as _task_exit_task_with_id()
+			struct STask* task = &ctx.tasks[2];
+			task->state = TS_TERMINATING;
+			task->exitCode = 0;
+		}
+	}
+
+	ResumeEmulator(emulator);
+	gdbresponsepacket(gdbsocket, "OK");
 }
 
 void gdbreadregisters(socket_t gdbsocket, CEmulator* emulator, char* buffer)
@@ -478,6 +507,19 @@ void gdbwritememory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	gdbresponsepacket(gdbsocket, "OK");
 }
 
+void gdbstep(socket_t gdbsocket, CEmulator* emulator, char* buffer)
+{
+	StopEmulator(emulator);
+
+	// Step to next instruction
+	//emulator->m_cpu[0]->SingleStep();
+
+	ResumeEmulator(emulator);
+
+	// Respond with an ACK on successful step
+	gdbresponsepacket(gdbsocket, "OK");
+}
+
 void gdbaddbreakpoint(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 {
 	// Skip 'Z'
@@ -555,8 +597,11 @@ void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			break;
 		case 'D':
 			// Disconnect request
+			StopEmulator(emulator);
+			emulator->RemoveAllBreakpoints(0);
+			ResumeEmulator(emulator);
 			gdbresponsepacket(gdbsocket, "OK");
-			// TODO: remove all breakpoints and resume task
+			fprintf(stderr, "Detached from debugger\n");
 			break;
 		case 'H':
 			// Set thread - Hc or Hg
@@ -591,6 +636,7 @@ void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			break;
 		case 's':
 			// Step
+			gdbstep(gdbsocket, emulator, buffer);
 			break;
 		case 'Z':
 			// Insert breakpoint
@@ -606,6 +652,8 @@ void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 				gdbvcont(gdbsocket, emulator, buffer);
 			else if (strstr(buffer, "vMustReplyEmpty") == buffer)
 				gdbresponsepacket(gdbsocket, "");
+			else if (strstr(buffer, "vKill") == buffer)
+				gdbkillprocess(gdbsocket, emulator, buffer);
 			else
 				fprintf(stderr, "Unknown v command: %s\n", buffer);
 			break;

@@ -204,6 +204,7 @@ public:
 
 	void AddBreakpoint(uint32_t address, CBus* bus);
 	void RemoveBreakpoint(uint32_t address, CBus* bus);
+	void RemoveAllBreakpoints(CBus* bus);
 	void Continue(CBus* bus);
 
 	std::vector<SBreakpoint> m_breakpoints;
