@@ -63,6 +63,17 @@ uint8_t gdbchecksum(const char *data)
 	return sum;
 }
 
+void gdbplainpacket(socket_t gdbsocket, const char* buffer)
+{
+	char response[1024];
+	snprintf(response, 1024, "$%s#%02x", buffer, gdbchecksum(buffer));
+#ifdef CAT_WINDOWS
+	send(gdbsocket, response, (int)strlen(response), 0);
+#else
+	write(gdbsocket, response, strlen(response));
+#endif
+}
+
 void gdbresponsepacket(socket_t gdbsocket, const char* buffer)
 {
 	char response[1024];
@@ -509,7 +520,7 @@ void gdbstopemulator(CEmulator* emulator)
 
 void gdbsendstopreason(socket_t gdbsocket, uint32_t cpu, CEmulator* emulator)
 {
-	gdbresponsepacket(gdbsocket, "T05;thread:1;stopped;reason:breakpoint;pc:0x00000000;");
+	gdbplainpacket(gdbsocket, "T05;thread:1;stopped;reason:breakpoint;pc:0x00000000;");
 }
 
 void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)

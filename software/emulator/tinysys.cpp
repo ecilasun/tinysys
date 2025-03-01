@@ -407,6 +407,15 @@ int gdbstubthread(void* data)
 		return -1;
 	}
 
+#ifdef CAT_WINDOWS
+	//int timeout = 1000; // ms
+	//retval = setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout));
+
+	u_long nonBlocking = 1;
+	if (ioctlsocket(sockfd, FIONBIO, &nonBlocking) == SOCKET_ERROR)
+		fprintf(stderr, "ERROR: Socket can't be set to nonblocking mode\n");
+#endif
+
 	// Bind the socket to the port
 	struct sockaddr_in serv_addr;
 	memset(&serv_addr, '0', sizeof(serv_addr));
@@ -422,21 +431,17 @@ int gdbstubthread(void* data)
 	// Listen for incoming connections
 	listen(sockfd, 5);
 
-	// Accept a connection
-#ifdef CAT_WINDOWS
-	newsockfd = accept(sockfd, nullptr, nullptr);
-#else
+	fprintf(stderr, "GDB stub on //localhost:1234\n");
+
+#ifdef CAT_LINUX
 	struct sockaddr_in cli_addr;
 	socklen_t clilen = sizeof(cli_addr);
 	newsockfd = accept(sockfd, (struct sockaddr*)&cli_addr, &clilen);
-#endif
 	if (newsockfd < 0)
 	{
 		fprintf(stderr, "Error accepting connection\n");
 		return -1;
 	}
-
-	fprintf(stderr, "GDB stub on //localhost:1234\n");
 
 	// Read from the socket
 	char buffer[4096];
@@ -449,11 +454,7 @@ int gdbstubthread(void* data)
 		if (ctx->emulator->m_cpu[1]->m_breakpointHit)
 			gdbsendstopreason(newsockfd, 1, ctx->emulator);*/
 
-#ifdef CAT_WINDOWS
-		n = recv(newsockfd, buffer, 4096, 0);
-#else
 		n = read(newsockfd, buffer, 4096);
-#endif
 		if (n < 0)
 			fprintf(stderr, "Error reading from socket\n");
 		else
@@ -464,6 +465,74 @@ int gdbstubthread(void* data)
 			gdbstubprocess(newsockfd, ctx->emulator, buffer, n);
 		}
 	} while (n > 0);
+#else
+	fd_set readfds;
+	bool accepted = false;
+	while(!accepted)
+	{
+		FD_ZERO(&readfds);
+		FD_SET(sockfd, &readfds);
+
+		int result = select(0, &readfds, NULL, NULL, NULL);
+		if (result > 0)
+		{
+			if (FD_ISSET(sockfd, &readfds))
+			{
+				struct sockaddr_in clientAddr;
+                int addrlen = sizeof(clientAddr);
+                newsockfd = accept(sockfd, (struct sockaddr*)&clientAddr, &addrlen);
+                if (newsockfd != INVALID_SOCKET)
+				{
+                    // Handle client connection (may need error checking for WSAEWOULDBLOCK)
+                    fprintf(stderr, "Accepted connection from %s:%d\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
+					ioctlsocket(newsockfd, FIONBIO, &nonBlocking);
+					accepted = true;
+                }
+				else
+				{
+                    // Check for WSAEWOULDBLOCK error (non-blocking)
+                    if (WSAGetLastError() == WSAEWOULDBLOCK)
+					{
+                        // No connection available, try again later
+                    }
+					else
+					{
+                        // Other error handling
+                    }
+                }
+			}
+		}
+	}
+
+	char buffer[4096];
+	int n;
+	bool done = false;
+	do
+	{
+		if (ctx->emulator->m_cpu[0]->m_breakpointHit)
+			gdbsendstopreason(newsockfd, 0, ctx->emulator);
+		if (ctx->emulator->m_cpu[1]->m_breakpointHit)
+			gdbsendstopreason(newsockfd, 1, ctx->emulator);
+
+		n = recv(newsockfd, buffer, 4096, 0);
+		if (n > 0)
+		{
+			buffer[n] = 0;
+			fprintf(stderr, "> %s\n", buffer);
+			// Respond to gdb command packets here
+			gdbstubprocess(newsockfd, ctx->emulator, buffer, n);
+		}
+		else
+			buffer[0] = 0;
+
+		/*if (n < 0 && WSAGetLastError() == WSAEWOULDBLOCK)
+		{
+			fprintf(stderr, "Error reading from socket\n");
+			done = true;
+		}*/
+	} while (!done);
+
+#endif
 
 #ifdef CAT_WINDOWS
 #else

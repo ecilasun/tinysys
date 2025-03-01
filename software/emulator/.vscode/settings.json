@@ -9,6 +9,7 @@
 		"random": "cpp",
 		"__tree": "cpp",
 		"xstring": "cpp",
-		"xutility": "cpp"
+		"xutility": "cpp",
+		"xlocmes": "cpp"
 	}
 }
