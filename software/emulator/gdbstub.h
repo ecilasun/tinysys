@@ -13,3 +13,4 @@
 
 void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer);
 void gdbsendstopreason(socket_t gdbsocket, uint32_t cpu, CEmulator* emulator);
+void gdbresponseack(socket_t gdbsocket);

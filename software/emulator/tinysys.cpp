@@ -369,6 +369,7 @@ void gdbstubprocess(socket_t gdbsocket, CEmulator* emulator, char* buffer, int n
 	{
 		case '+':
 			// ACK packet
+			//gdbresponseack(gdbsocket);
 			break;
 		case '-':
 			// NACK packet
@@ -509,10 +510,16 @@ int gdbstubthread(void* data)
 	bool done = false;
 	do
 	{
-		if (ctx->emulator->m_cpu[0]->m_breakpointHit)
+		if (ctx->emulator->m_cpu[0]->m_breakpointHit && !ctx->emulator->m_cpu[0]->m_breakpointCommunicated)
+		{
+			ctx->emulator->m_cpu[0]->m_breakpointCommunicated = 1;
 			gdbsendstopreason(newsockfd, 0, ctx->emulator);
-		if (ctx->emulator->m_cpu[1]->m_breakpointHit)
+		}
+		if (ctx->emulator->m_cpu[1]->m_breakpointHit && !ctx->emulator->m_cpu[1]->m_breakpointCommunicated)
+		{
+			ctx->emulator->m_cpu[1]->m_breakpointCommunicated = 1;
 			gdbsendstopreason(newsockfd, 1, ctx->emulator);
+		}
 
 		n = recv(newsockfd, buffer, 4096, 0);
 		if (n > 0)

@@ -184,6 +184,7 @@ public:
 	uint32_t m_hartid{ 0 };
 
 	uint32_t m_breakpointHit{ 0 };
+	uint32_t m_breakpointCommunicated{ 0 };
 
 	ERV32ExceptionMode m_exceptionmode{ EXC_NONE };
 	ERV32ExceptionMode m_lasttrap{ EXC_NONE };

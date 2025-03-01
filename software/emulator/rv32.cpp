@@ -1449,7 +1449,16 @@ void CRV32::RemoveBreakpoint(uint32_t address, CBus* bus)
 
 void CRV32::Continue(CBus* bus)
 {
+	// Remove the breakpoint at this PC
+	auto found = std::find_if(m_breakpoints.begin(), m_breakpoints.end(), [&](const SBreakpoint& b) { return b.address == m_PC; });
+	if (found != m_breakpoints.end())
+	{
+		bus->Write(m_PC, found->originalInstruction, 0b1111);
+		m_breakpoints.erase(found);
+	}
+
 	m_breakpointHit = 0;
+	m_breakpointCommunicated = 0;
 }
 
 bool CRV32::Tick(uint64_t wallclock, CBus* bus)
@@ -1471,8 +1480,8 @@ bool CRV32::Tick(uint64_t wallclock, CBus* bus)
 	if (newBreakpoint)
 	{
 		fprintf(stderr, "Breakpoint hit at 0x%08X (instr:0x%08X)\n", m_PC, csr->m_pc);
-		// Do not execute the instruction for next cycle
 		m_breakpointHit = 1;
+		m_breakpointCommunicated = 0;
 	}
 
 	if (csr->m_pendingCPUReset)
