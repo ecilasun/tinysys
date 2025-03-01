@@ -525,7 +525,9 @@ int gdbstubthread(void* data)
 		if (n > 0)
 		{
 			buffer[n] = 0;
-			//fprintf(stderr, "> %s\n", buffer);
+#ifdef GDB_COMM_DEBUG
+			fprintf(stderr, "> %s\n", buffer);
+#endif
 			// Respond to gdb command packets here
 			gdbstubprocess(newsockfd, ctx->emulator, buffer, n);
 		}

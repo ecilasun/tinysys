@@ -68,23 +68,30 @@ uint8_t gdbchecksum(const char *data)
 
 void gdbplainpacket(socket_t gdbsocket, const char* buffer)
 {
-	char response[1024];
-	snprintf(response, 1024, "$%s#%02x", buffer, gdbchecksum(buffer));
+	char response[16384];
+	snprintf(response, 16384, "$%s#%02x", buffer, gdbchecksum(buffer));
 #ifdef CAT_WINDOWS
 	send(gdbsocket, response, (int)strlen(response), 0);
 #else
 	write(gdbsocket, response, strlen(response));
 #endif
+
+#ifdef GDB_COMM_DEBUG
+	fprintf(stderr, "< %s\n", response);
+#endif
 }
 
 void gdbresponsepacket(socket_t gdbsocket, const char* buffer)
 {
-	char response[1024];
-	snprintf(response, 1024, "+$%s#%02x", buffer, gdbchecksum(buffer));
+	char response[16384];
+	snprintf(response, 16384, "+$%s#%02x", buffer, gdbchecksum(buffer));
 #ifdef CAT_WINDOWS
 	send(gdbsocket, response, (int)strlen(response), 0);
 #else
 	write(gdbsocket, response, strlen(response));
+#endif
+#ifdef GDB_COMM_DEBUG
+	fprintf(stderr, "< %s\n", response);
 #endif
 }
 
@@ -97,6 +104,9 @@ void gdbresponseack(socket_t gdbsocket)
 #else
 	write(gdbsocket, response, strlen(response));
 #endif
+#ifdef GDB_COMM_DEBUG
+	fprintf(stderr, "< %s\n", response);
+#endif
 }
 
 void gdbresponsenack(socket_t gdbsocket)
@@ -108,12 +118,15 @@ void gdbresponsenack(socket_t gdbsocket)
 #else
 	write(gdbsocket, response, strlen(response));
 #endif
+#ifdef GDB_COMM_DEBUG
+	fprintf(stderr, "< %s\n", response);
+#endif
 }
 
 void gdbreadthreads(socket_t gdbsocket, CEmulator* emulator, const char* buffer)
 {
-	char response[1024];
-	snprintf(response, 1024, "l<?xml version=\"1.0\"?>\n<threads>\n");
+	char response[16384];
+	snprintf(response, 16384, "l<?xml version=\"1.0\"?>\n<threads>\n");
 
 	StopEmulator(emulator);
 

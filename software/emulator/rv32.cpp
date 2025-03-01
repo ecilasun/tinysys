@@ -1471,13 +1471,7 @@ void CRV32::RemoveAllBreakpoints(CBus* bus)
 
 void CRV32::Continue(CBus* bus)
 {
-	// Remove the breakpoint at this PC
-	auto found = std::find_if(m_breakpoints.begin(), m_breakpoints.end(), [&](const SBreakpoint& b) { return b.address == m_currentBreakAddress; });
-	if (found != m_breakpoints.end())
-	{
-		bus->Write(m_PC, found->originalInstruction, 0b1111);
-		m_breakpoints.erase(found);
-	}
+	fprintf(stderr, "Continue from 0x%08X\n", m_currentBreakAddress);
 
 	m_breakpointHit = 0;
 	m_breakpointCommunicated = 0;

@@ -12,13 +12,21 @@
 #include <math.h>
 
 #include "core.h"
+#include "basesystem.h"
+#include "leds.h"
 
 // Looks pretty ordinary, doesn't it? :)
 int main(int argc, char *argv[])
 {
 	printf("Welcome to tinysys!\n");
 
-	// This program simply prints a welcome message and exits.
-	// Alternatively, one could sit in an infinite loop here, waiting for the user to hit CTRL+C to exit.
+	int counter = 0;
+	while (1)
+	{
+		LEDSetState(counter);
+		E32Sleep(1000);
+		++counter;
+	}
+
 	return 0;
 }

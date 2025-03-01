@@ -10,6 +10,7 @@
 		"__tree": "cpp",
 		"xstring": "cpp",
 		"xutility": "cpp",
-		"xlocmes": "cpp"
+		"xlocmes": "cpp",
+		"xmemory": "cpp"
 	}
 }

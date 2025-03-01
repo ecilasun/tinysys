@@ -8,7 +8,7 @@
 		  "name": "C/C++(RISCV) - Windows",
 		  "type": "cppdbg",
 		  "request": "launch",
-		  "program": "${workspaceFolder}/mandelbrot/mandelbrot.elf",
+		  "program": "${workspaceFolder}/starthere/starthere.elf",
 		  "args": [],
 		  "stopAtEntry": false,
 		  "cwd": "${fileDirname}",
