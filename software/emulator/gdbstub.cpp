@@ -363,6 +363,15 @@ void gdbsetreg(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	gdbresponsepacket(gdbsocket, "OK");
 }
 
+void bytetohex(uint8_t byte, char *buffer)
+{
+	// Convert a byte to a hex string using lookup table
+	static const char hex[] = "0123456789ABCDEF";
+	buffer[0] = hex[(byte >> 4) & 0xF];
+	buffer[1] = hex[byte & 0xF];
+	buffer[2] = 0;
+}
+
 void gdbreadmemory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 {
 	// Skip 'm'
@@ -376,8 +385,9 @@ void gdbreadmemory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	StopEmulator(emulator);
 
 	// Read the memory
-	char* response = new char[len * 2 + 1];
-	response[0] = '\0';
+	uint32_t maxlen = (len+1) * 2;
+	char* response = new char[maxlen];
+	response[0] = 0;
 	for (uint32_t i = 0; i < len; i++)
 	{
 		uint32_t dataword;
@@ -394,7 +404,7 @@ void gdbreadmemory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 
 		uint8_t byte = b[range2];
 
-		snprintf(response, len * 2, "%s%02X", response, byte);
+		snprintf(response, maxlen, "%s%02X", response, byte);
 		addrs++;
 	}
 
@@ -558,6 +568,7 @@ void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			else if (buffer[1] == 'g')
 			{
 				//emulator->m_cpu[???]->SetCurrent('g');
+				// Switch to thread
 				gdbresponsepacket(gdbsocket, "OK");
 			}
 			break;
