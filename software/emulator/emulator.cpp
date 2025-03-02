@@ -80,9 +80,9 @@ void CEmulator::QueueByte(uint8_t byte)
 	m_bus->QueueByte(byte);
 }
 
-void CEmulator::AddBreakpoint(uint32_t cpu, uint32_t address)
+void CEmulator::AddBreakpoint(uint32_t isVolatile, uint32_t cpu, uint32_t address)
 {
-	m_cpu[cpu]->AddBreakpoint(address, m_bus);
+	m_cpu[cpu]->AddBreakpoint(isVolatile, address, m_bus);
 }
 
 void CEmulator::RemoveBreakpoint(uint32_t cpu, uint32_t address)

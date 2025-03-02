@@ -15,7 +15,7 @@ public:
 	void QueueBytes(uint8_t *bytes, uint32_t count);
 	void QueueByte(uint8_t byte);
 
-	void AddBreakpoint(uint32_t cpu, uint32_t address);
+	void AddBreakpoint(uint32_t isVolatile, uint32_t cpu, uint32_t address);
 	void RemoveBreakpoint(uint32_t cpu, uint32_t address);
 	void RemoveAllBreakpoints(uint32_t cpu);
 	void Continue(uint32_t cpu);

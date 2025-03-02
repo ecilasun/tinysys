@@ -982,10 +982,17 @@ bool CRV32::Execute(CBus* bus)
 			m_currentBreakAddress = instr.m_pc;
 			m_breakpointCommunicated = 0;
 
-			fprintf(stderr, "Breakpoint hit at 0x%08X\n", instr.m_pc);
+			fprintf(stderr, "Break at 0x%08X\n", instr.m_pc);
 
-			// Remove instructions we have already executed except the one at the breakpoint
-			m_instructions.erase(m_instructions.begin(), m_instructions.begin() + (found - m_breakpoints.begin()));
+			// If the breakpoint is volatile, remove it
+			if (found->isVolatile)
+				RemoveBreakpoint(instr.m_pc, bus);
+		
+			// Remove instructions we have already executed up to and excluding this one
+
+			while(m_instructions.size() > 1 && m_instructions[1].m_pc != instr.m_pc)
+				m_instructions.erase(m_instructions.begin() + 1);
+
 			return true;
 		}
 
@@ -1430,14 +1437,15 @@ bool CRV32::Execute(CBus* bus)
 	return false;
 }
 
-void CRV32::AddBreakpoint(uint32_t address, CBus* bus)
+void CRV32::AddBreakpoint(uint32_t isVolatile, uint32_t address, CBus* bus)
 {
 	SBreakpoint brkpt;
 	brkpt.address = address;
+	brkpt.isVolatile = isVolatile;
 	bus->Read(address, brkpt.originalInstruction);
 	m_breakpoints.push_back(brkpt);
 
-	fprintf(stderr, "Added breakpoint at 0x%08X (instr:0x%08X)\n", address, brkpt.originalInstruction);
+	fprintf(stderr, "Added %sbreakpoint at 0x%08X (insn:0x%08X)\n", isVolatile ? "volatile " : "", address, brkpt.originalInstruction);
 }
 
 void CRV32::RemoveBreakpoint(uint32_t address, CBus* bus)
@@ -1446,11 +1454,12 @@ void CRV32::RemoveBreakpoint(uint32_t address, CBus* bus)
 	auto found = std::find_if(m_breakpoints.begin(), m_breakpoints.end(), [&](const SBreakpoint& b) { return b.address == address; });
 	if (found != m_breakpoints.end())
 	{
+		fprintf(stderr, "Removing %sbreakpoint at %08X\n", found->isVolatile ? "volatile " : "", address);
 		bus->Write(address, found->originalInstruction, 0b1111);
 		m_breakpoints.erase(found);
 	}
-
-	fprintf(stderr, "Removed breakpoint at %08X\n", address);
+	else
+		fprintf(stderr, "No breakpoint found at %08X\n", address);
 }
 
 void CRV32::RemoveAllBreakpoints(CBus* bus)
@@ -1471,6 +1480,17 @@ void CRV32::RemoveAllBreakpoints(CBus* bus)
 
 void CRV32::Continue(CBus* bus)
 {
+	// Erase the breakpoint
+	/*auto found = std::find_if(m_breakpoints.begin(), m_breakpoints.end(), [&](const SBreakpoint& b) { return b.address == m_currentBreakAddress; });
+	if (found != m_breakpoints.end())
+	{
+		bus->Write(m_currentBreakAddress, found->originalInstruction, 0b1111);
+		m_breakpoints.erase(found);
+		fprintf(stderr, "Removed breakpoint at %08X\n", m_currentBreakAddress);
+	}
+	else
+		fprintf(stderr, "No breakpoint found at %08X\n", m_currentBreakAddress);*/
+
 	fprintf(stderr, "Continue from 0x%08X\n", m_currentBreakAddress);
 
 	m_breakpointHit = 0;

@@ -157,7 +157,12 @@ void gdbprocessquery(socket_t gdbsocket, CEmulator* emulator, const char* buffer
 	// Check the query type
 	if (strstr(buffer, "qAttached") == buffer)
 	{
-		// Attached query
+		// Attached query : 0-new process, 1-attached
+		int pid = 0;
+		const char* pidstr = strchr(buffer, ':');
+		if (pidstr)
+			sscanf(buffer, ":%x", &pid);
+		fprintf(stderr, "Attached pid: %d\n", pid);
 		gdbresponsepacket(gdbsocket, "1");
 	}
 	else if (strstr(buffer, "qOffsets") == buffer)
@@ -177,11 +182,11 @@ void gdbprocessquery(socket_t gdbsocket, CEmulator* emulator, const char* buffer
 	else if (strstr(buffer, "qSupported") == buffer)
 	{
 		// Supported query (packetsize is hex therefore 0x1000==4096 bytes)
-		gdbresponsepacket(gdbsocket, "PacketSize=1000;qXfer:threads:read+;swbreak+;");
+		gdbresponsepacket(gdbsocket, "PacketSize=1000;qXfer:threads:read+;swbreak+;"); // QNonStop+
 	}
 	else if (strstr(buffer, "qSymbol") == buffer)
 	{
-		// No symbol query
+		// No symbol query support
 		gdbresponsepacket(gdbsocket, "");
 	}
 	else if (strstr(buffer, "qfThreadInfo") == buffer)
@@ -191,9 +196,14 @@ void gdbprocessquery(socket_t gdbsocket, CEmulator* emulator, const char* buffer
 	}
 	else if (strstr(buffer, "qC") == buffer)
 	{
-		// Current thread query
-		gdbresponsepacket(gdbsocket, "QC 1");
+		// we don't support this
+		gdbresponsepacket(gdbsocket, "");
 	}
+	/*else if (strstr(buffer, "QNonStop") == buffer)
+	{
+		// Enter/Exit non-stop mode
+		gdbresponsepacket(gdbsocket, "OK");
+	}*/
 	else
 	{
 		// Unknown query
@@ -227,7 +237,6 @@ void gdbvcont(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 		{
 			// Step
 			//emulator->StepFromPC(s_currentCPU);
-			//gdbresponsepacket(gdbsocket, "S05");
 			gdbresponseack(gdbsocket);
 		}
 		else
@@ -563,7 +572,7 @@ void gdbaddbreakpoint(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	for (int i = 0; i < 2; ++i)
 	{
 		if (i == s_currentCPU || s_currentCPU == -1)
-			emulator->AddBreakpoint(s_currentCPU, addrs);
+			emulator->AddBreakpoint(0, s_currentCPU, addrs); // non-volatile breakpoint
 	}
 
 	ResumeEmulator(emulator);
@@ -602,7 +611,7 @@ void gdbstopemulator(CEmulator* emulator)
 	for (int i = 0; i < 2; ++i)
 	{
 		if (i == s_currentCPU || s_currentCPU == -1)
-			emulator->AddBreakpoint(s_currentCPU, emulator->m_cpu[i]->m_PC);
+			emulator->AddBreakpoint(1, s_currentCPU, emulator->m_cpu[i]->m_PC); // volatile breakpoint
 	}
 
 	ResumeEmulator(emulator);
@@ -629,7 +638,8 @@ void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			gdbstopemulator(emulator);
 			break;
 		case '?':
-			gdbresponsepacket(gdbsocket, "S00");
+			gdbresponsepacket(gdbsocket, "T00");
+			//gdbresponseack(gdbsocket); // No stop reason at this time
 			break;
 		case 'X':
 			// Read binary data
@@ -643,10 +653,7 @@ void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			// Disconnect request
 			StopEmulator(emulator);
 			for (int i = 0; i < 2; ++i)
-			{
-				if (i == s_currentCPU || s_currentCPU == -1)
-					emulator->RemoveAllBreakpoints(i);
-			}
+				emulator->RemoveAllBreakpoints(i);
 			ResumeEmulator(emulator);
 			gdbresponsepacket(gdbsocket, "OK");
 			fprintf(stderr, "Detached from debugger\n");
@@ -710,6 +717,7 @@ void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			else
 				fprintf(stderr, "Unknown v command: %s\n", buffer);
 			break;
+		case 'Q':
 		case 'q':
 			// Query
 			gdbprocessquery(gdbsocket, emulator, buffer);

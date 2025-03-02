@@ -159,6 +159,7 @@ struct SDecodedBlock
 struct SBreakpoint
 {
 	uint32_t address;
+	uint32_t isVolatile;
 	uint32_t originalInstruction;
 };
 
@@ -203,7 +204,7 @@ public:
 	bool FetchDecode(CBus* bus);
 	bool Execute(CBus* bus);
 
-	void AddBreakpoint(uint32_t address, CBus* bus);
+	void AddBreakpoint(uint32_t isVolatile, uint32_t address, CBus* bus);
 	void RemoveBreakpoint(uint32_t address, CBus* bus);
 	void RemoveAllBreakpoints(CBus* bus);
 	void Continue(CBus* bus);
