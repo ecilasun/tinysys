@@ -42,3 +42,15 @@ If you wish to stop execution, use CTRL+C to break out of the application.
 If your system appears to be unresponsive, use the tilde key (~) to break the execution from a connected terminal (this will not work with a keyboard, in that case assuming you're close to the device, please use the reset button on the board instead)
 
 NOTE: The gdb stub has been temporarily removed due space requirements, but it will be added in the future for gdb support. Until then, printf and LEDs are your friend!
+
+# Debugging this sample
+
+'starthere' sample is deliberately unoptimized to act as our debugging sample. To start debugging, first start the executable from the samples directory on the emulator. Then, from the tinysys\software directory, run the following to load the debug symbols and start a GDB session:
+
+```
+riscv32-unknown-elf-gdb.exe -x gdbcmd samples/starthere/starthere.elf
+```
+
+This will start GDB but assume the remote executable has stopped when it's connected. At this point you can add a new breakpoint using the 'b' command and then use 'c' to continue exectuion. This will update the breakpoints on the device and stop execution on the closest line possible (depending on optimizations and line number information available to GDB)
+
+Alternatively, start the sample on the device and open the software folder in VSCode, then hit 'Run' which by default loads the 'starthere' sample debug data. You can now debug on the device as usual. Please modify the launch.json file and change the "program" entry to your own executable as needed.
