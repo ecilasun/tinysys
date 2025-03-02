@@ -1517,10 +1517,8 @@ void CRV32::Continue(CBus* bus)
 	m_breakLatch = 0;
 }
 
-bool CRV32::Tick(uint64_t wallclock, CBus* bus)
+void CRV32::Tick(uint64_t wallclock, CBus* bus)
 {
-	CCSRMem* csr = bus->GetCSR(m_hartid);
-
 	int hitBreakpointCount = 0;
 	for (auto& breakpoint : m_breakpoints)
 		hitBreakpointCount += breakpoint.isHit;
@@ -1529,15 +1527,16 @@ bool CRV32::Tick(uint64_t wallclock, CBus* bus)
 
 	if (!m_breakLatch)
 	{
+		CCSRMem* csr = bus->GetCSR(m_hartid);
+
 		// Gather a block of code (or grab precompiled version)
 		bool fetchok = FetchDecode(bus);
 		csr->UpdateTime(wallclock, m_cycles);
-		// Execute the whole block
+
+		// Execute the whole block up to a possible breakpoint
 		Execute(bus);
+
+		if (csr->m_pendingCPUReset)
+			m_fetchstate = EFetchInit;
 	}
-
-	if (csr->m_pendingCPUReset)
-		m_fetchstate = EFetchInit;
-
-	return hitBreakpointCount ? true : false;
 }

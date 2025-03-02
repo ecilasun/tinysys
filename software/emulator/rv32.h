@@ -199,7 +199,7 @@ public:
 
 	void Reset();
 	void SecondaryReset();
-	bool Tick(uint64_t wallclock, CBus* bus);
+	void Tick(uint64_t wallclock, CBus* bus);
 	bool FetchDecode(CBus* bus);
 	bool Execute(CBus* bus);
 
