@@ -83,6 +83,7 @@ struct SDecodedInstruction
 	uint32_t m_rval2;
 	uint32_t m_rval3;
 	uint32_t m_opindex;
+	uint32_t m_cantBreak;
 };
 
 class CBus;
@@ -160,6 +161,8 @@ struct SBreakpoint
 {
 	uint32_t address;
 	uint32_t isVolatile;
+	uint32_t isHit;
+	uint32_t isCommunicated;
 	uint32_t originalInstruction;
 };
 
@@ -184,10 +187,6 @@ public:
 	// HART0 by default
 	uint32_t m_hartid{ 0 };
 
-	uint32_t m_breakpointHit{ 0 };
-	uint32_t m_breakpointCommunicated{ 0 };
-	uint32_t m_currentBreakAddress{ 0 };
-
 	ERV32ExceptionMode m_exceptionmode{ EXC_NONE };
 	ERV32ExceptionMode m_lasttrap{ EXC_NONE };
 
@@ -210,6 +209,7 @@ public:
 	void Continue(CBus* bus);
 
 	std::vector<SBreakpoint> m_breakpoints;
+	uint32_t m_breakLatch{ 0 };
 
 	InstructionCache m_icache;
 	DataCache m_dcache;

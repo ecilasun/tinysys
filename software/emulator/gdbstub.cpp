@@ -448,19 +448,25 @@ void gdbreadmemory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	uint32_t len;
 	uint32_t readoffset = sscanf(buffer, "%x,%x", &addrs, &len);
 
+#if defined(GDB_COMM_DEBUG)
+	fprintf(stderr, "READ @0x%08X %d\n", addrs, len);
+#endif
+
 	StopEmulator(emulator);
 
 	// Read the memory
 	uint32_t maxlen = (len+1) * 2;
 	char* response = new char[maxlen];
 	response[0] = 0;
-	for (uint32_t i = 0; i < len; i++)
+
+	int wordcount = len>>2;
+	int leftover = len%4;
+
+	// Whole words
+	for (int i = 0; i < wordcount; i++)
 	{
 		uint32_t dataword;
-		emulator->m_bus->Read(addrs & 0xFFFFFFF0, dataword);
-
-		uint32_t range1 = SelectBitRange(addrs, 1, 1);
-		uint32_t range2 = SelectBitRange(addrs, 1, 0);
+		emulator->m_bus->Read(addrs, dataword);
 
 		uint32_t b[4];
 		b[3] = SelectBitRange(dataword, 31, 24);
@@ -468,10 +474,28 @@ void gdbreadmemory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 		b[1] = SelectBitRange(dataword, 15, 8);
 		b[0] = SelectBitRange(dataword, 7, 0);
 
-		uint8_t byte = b[range2];
+		snprintf(response, maxlen, "%s%02X", response, b[0]);
+		snprintf(response, maxlen, "%s%02X", response, b[1]);
+		snprintf(response, maxlen, "%s%02X", response, b[2]);
+		snprintf(response, maxlen, "%s%02X", response, b[3]);
 
-		snprintf(response, maxlen, "%s%02X", response, byte);
-		addrs++;
+		addrs += 4;
+	}
+
+	// Leftover bytes
+	if (leftover > 0)
+	{
+		uint32_t dataword;
+		emulator->m_bus->Read(addrs, dataword);
+
+		uint32_t b[4];
+		b[3] = SelectBitRange(dataword, 31, 24);
+		b[2] = SelectBitRange(dataword, 23, 16);
+		b[1] = SelectBitRange(dataword, 15, 8);
+		b[0] = SelectBitRange(dataword, 7, 0);
+
+		for (int i = 0; i < leftover; i++)
+			snprintf(response, maxlen, "%s%02X", response, b[i]);
 	}
 
 	ResumeEmulator(emulator);
@@ -493,6 +517,10 @@ void gdbwritememory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	// Skip the address and length
 	buffer = strchr(buffer, ':');
 	buffer++;
+
+#if defined(GDB_COMM_DEBUG)
+	fprintf(stderr, "WRITE @0x%08X %d\n", addrs, len);
+#endif
 
 	StopEmulator(emulator);
 
@@ -521,19 +549,25 @@ void gdbwritememory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 		buffer++;
 	}
 
-	for (uint32_t i = 0; i < len; i++)
+	int wordcount = len>>2;
+	int leftover = len%4;
+
+	// Whole words
+	uint32_t* worddata = (uint32_t*)data;
+	for (int i = 0; i < wordcount; i++)
 	{
-		uint32_t byte = data[i];
-		uint32_t ah = SelectBitRange(addrs, 1, 1);
-		uint32_t ab = SelectBitRange(addrs, 0, 0);
-		uint32_t himask = (ah << 3) | (ah << 2) | ((1 - ah) << 1) | (1 - ah);
-		uint32_t lomask = ((ab << 3) | ((1 - ab) << 2) | (ab << 1) | (1 - ab));
-		uint32_t wstrobe = himask & lomask;
-		uint32_t word = byte | (byte << 8) | (byte << 16) | (byte << 24);
+		uint32_t word = worddata[i];
+		emulator->m_bus->Write(addrs & 0xFFFFFFF0, word, 0xF);
+		addrs+=4;
+	}
 
-		emulator->m_bus->Write(addrs & 0xFFFFFFF0, word, wstrobe);
-
-		addrs++;
+	// Leftover bytes
+	if (leftover > 0)
+	{
+		uint32_t word = 0;
+		for (int i = 0; i < leftover; i++)
+			word |= (data[wordcount*4+i] << (i*8));
+		emulator->m_bus->Write(addrs & 0xFFFFFFF0, word, 0xF);
 	}
 
 	ResumeEmulator(emulator);
@@ -619,6 +653,8 @@ void gdbstopemulator(CEmulator* emulator)
 
 void gdbsendstopreason(socket_t gdbsocket, int cpu, uint32_t stopaddres, CEmulator* emulator)
 {
+	StopEmulator(emulator);
+
 	CRV32 *core = emulator->m_cpu[cpu];
 	struct STaskContext* contextpool = (struct STaskContext *)emulator->m_bus->GetHostAddress(DEVICE_MAIL);
 	struct STaskContext& ctx = contextpool[cpu];
@@ -626,6 +662,8 @@ void gdbsendstopreason(socket_t gdbsocket, int cpu, uint32_t stopaddres, CEmulat
 	char response[128];
 	snprintf(response, 128, "T05;thread:%d;stopped;reason:breakpoint;pc:0x%08X;", cpu*TASK_MAX+ctx.currentTask+1, stopaddres);
 	gdbplainpacket(gdbsocket, response);
+
+	ResumeEmulator(emulator);
 }
 
 void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)

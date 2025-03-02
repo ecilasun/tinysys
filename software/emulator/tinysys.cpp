@@ -22,11 +22,11 @@ const int HEIGHT = 480;
 
 struct EmulatorContext
 {
-	CEmulator* emulator;
-	SDL_Window* window;
-	SDL_Surface* surface;
-	SDL_Surface* compositesurface;
-	SDL_GameController* gamecontroller;
+	CEmulator* emulator{ nullptr };
+	SDL_Window* window{ nullptr };
+	SDL_Surface* surface{ nullptr };
+	SDL_Surface* compositesurface{ nullptr };
+	SDL_GameController* gamecontroller{ nullptr };
 };
 
 static bool s_alive = true;
@@ -154,7 +154,7 @@ float Clamp(float value, float min, float max)
 
 void ClampAnalogInput(Axis6& input, float innerDeadzone, float outerDeadzone)
 {
-    float magleft = input.leftx*input.leftx + input.lefty*input.lefty;
+	float magleft = input.leftx*input.leftx + input.lefty*input.lefty;
 	float magright = input.rightx*input.rightx + input.righty*input.righty;
 
 	if (magleft == 0.f)
@@ -480,45 +480,50 @@ int gdbstubthread(void* data)
 			if (FD_ISSET(sockfd, &readfds))
 			{
 				struct sockaddr_in clientAddr;
-                int addrlen = sizeof(clientAddr);
-                newsockfd = accept(sockfd, (struct sockaddr*)&clientAddr, &addrlen);
-                if (newsockfd != INVALID_SOCKET)
+				int addrlen = sizeof(clientAddr);
+				newsockfd = accept(sockfd, (struct sockaddr*)&clientAddr, &addrlen);
+				if (newsockfd != INVALID_SOCKET)
 				{
-                    // Handle client connection (may need error checking for WSAEWOULDBLOCK)
-                    fprintf(stderr, "Accepted connection from %s:%d\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
+					// Handle client connection (may need error checking for WSAEWOULDBLOCK)
+					//fprintf(stderr, "Accepted connection from %s:%d\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
 					ioctlsocket(newsockfd, FIONBIO, &nonBlocking);
 					accepted = true;
-                }
+				}
 				else
 				{
-                    // Check for WSAEWOULDBLOCK error (non-blocking)
-                    if (WSAGetLastError() == WSAEWOULDBLOCK)
+					// Check for WSAEWOULDBLOCK error (non-blocking)
+					if (WSAGetLastError() == WSAEWOULDBLOCK)
 					{
-                        // No connection available, try again later
-                    }
+						// No connection available, try again later
+					}
 					else
 					{
-                        // Other error handling
-                    }
-                }
+						// Other error handling
+					}
+				}
 			}
 		}
 	}
 
 	char buffer[4096];
 	int n;
-	bool done = false;
+	//bool done = false;
 	do
 	{
-		if (ctx->emulator->m_cpu[0]->m_breakpointHit && !ctx->emulator->m_cpu[0]->m_breakpointCommunicated)
+		for (uint32_t cpu = 0; cpu < 2; ++cpu)
 		{
-			ctx->emulator->m_cpu[0]->m_breakpointCommunicated = 1;
-			gdbsendstopreason(newsockfd, 0, ctx->emulator->m_cpu[0]->m_currentBreakAddress, ctx->emulator);
-		}
-		if (ctx->emulator->m_cpu[1]->m_breakpointHit && !ctx->emulator->m_cpu[1]->m_breakpointCommunicated)
-		{
-			ctx->emulator->m_cpu[1]->m_breakpointCommunicated = 1;
-			gdbsendstopreason(newsockfd, 1, ctx->emulator->m_cpu[1]->m_currentBreakAddress, ctx->emulator);
+			for (auto& breakpoint : ctx->emulator->m_cpu[cpu]->m_breakpoints)
+			{
+				if (breakpoint.isHit && !breakpoint.isCommunicated)
+				{
+					breakpoint.isCommunicated = 1;
+					gdbsendstopreason(newsockfd, cpu, breakpoint.address, ctx->emulator);
+
+					// If the breakpoint is volatile, remove it
+					if (breakpoint.isVolatile)
+						ctx->emulator->RemoveBreakpoint(cpu, breakpoint.address);
+				}
+			}
 		}
 
 		n = recv(newsockfd, buffer, 4096, 0);
@@ -539,7 +544,7 @@ int gdbstubthread(void* data)
 			fprintf(stderr, "Error reading from socket\n");
 			done = true;
 		}*/
-	} while (!done);
+	} while (s_alive);
 
 #endif
 
@@ -805,6 +810,7 @@ int SDL_main(int argc, char** argv)
 	TTF_CloseFont(s_debugfont);
 	TTF_Quit();
 	SDL_RemoveTimer(videoTimer);
+	SDL_WaitThread(gdbStubThread, nullptr);
 	SDL_WaitThread(emulatorthreadID, nullptr);
 	SDL_WaitThread(audiothreadID, nullptr);
 	SDL_ClearQueuedAudio(ectx.emulator->m_audioDevice);

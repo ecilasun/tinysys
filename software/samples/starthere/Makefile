@@ -22,11 +22,11 @@ corelib_dir = ../../SDK
 ifeq ($(UNAME), Windows)
 RISCV_PREFIX ?= riscv32-unknown-elf-
 RISCV_GCC ?= $(RISCV_PREFIX)g++
-RISCV_GCC_OPTS ?= -mcmodel=medany -g -std=c++20 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -O0 -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -lgcc -lm
+RISCV_GCC_OPTS ?= -mcmodel=medany -g -O0 -std=c++20 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -lgcc -lm
 else
 RISCV_PREFIX ?= riscv64-unknown-elf-
 RISCV_GCC ?= $(RISCV_PREFIX)g++
-RISCV_GCC_OPTS ?= -mcmodel=medany -g -std=c++20 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -O0 -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -lgcc -lm
+RISCV_GCC_OPTS ?= -mcmodel=medany -g -O0 -std=c++20 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -lgcc -lm
 endif
 
 RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump

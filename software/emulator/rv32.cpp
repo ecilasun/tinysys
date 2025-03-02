@@ -623,6 +623,7 @@ void CRV32::InjectISRHeader(std::vector<SDecodedInstruction> *code)
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				isrinstr.m_cantBreak = 1;
 				code->push_back(isrinstr);
 			}
 		}
@@ -634,6 +635,7 @@ void CRV32::InjectISRHeader(std::vector<SDecodedInstruction> *code)
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				isrinstr.m_cantBreak = 1;
 				code->push_back(isrinstr);
 			}
 		}
@@ -645,6 +647,7 @@ void CRV32::InjectISRHeader(std::vector<SDecodedInstruction> *code)
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				isrinstr.m_cantBreak = 1;
 				code->push_back(isrinstr);
 			}
 		}
@@ -656,6 +659,7 @@ void CRV32::InjectISRHeader(std::vector<SDecodedInstruction> *code)
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				isrinstr.m_cantBreak = 1;
 				code->push_back(isrinstr);
 			}
 		}
@@ -667,6 +671,7 @@ void CRV32::InjectISRHeader(std::vector<SDecodedInstruction> *code)
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				isrinstr.m_cantBreak = 1;
 				code->push_back(isrinstr);
 			}
 		}
@@ -692,6 +697,7 @@ void CRV32::InjectISRFooter(std::vector<SDecodedInstruction>* code)
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				isrinstr.m_cantBreak = 1;
 				code->push_back(isrinstr);
 			}
 		}
@@ -703,6 +709,7 @@ void CRV32::InjectISRFooter(std::vector<SDecodedInstruction>* code)
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				isrinstr.m_cantBreak = 1;
 				code->push_back(isrinstr);
 			}
 		}
@@ -714,6 +721,7 @@ void CRV32::InjectISRFooter(std::vector<SDecodedInstruction>* code)
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				isrinstr.m_cantBreak = 1;
 				code->push_back(isrinstr);
 			}
 		}
@@ -725,6 +733,7 @@ void CRV32::InjectISRFooter(std::vector<SDecodedInstruction>* code)
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				isrinstr.m_cantBreak = 1;
 				code->push_back(isrinstr);
 			}
 		}
@@ -736,6 +745,7 @@ void CRV32::InjectISRFooter(std::vector<SDecodedInstruction>* code)
 			{
 				SDecodedInstruction isrinstr;
 				DecodeInstruction(m_PC, ISR_ROM[i], isrinstr);
+				isrinstr.m_cantBreak = 1;
 				code->push_back(isrinstr);
 			}
 		}
@@ -804,6 +814,7 @@ void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 		// Decode is part of fetch unit in hardware
 		SDecodedInstruction decoded;
 		DecodeInstruction(m_PC, instruction, decoded);
+		decoded.m_cantBreak = 0; // non-ISR
 
 		bool ismret = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_MRET;
 		bool iswfi = decoded.m_opcode == OP_SYSTEM && decoded.m_f12 == F12_WFI;
@@ -975,24 +986,20 @@ bool CRV32::Execute(CBus* bus)
 	for (auto &instr : m_instructions)
 	{
 		// Is this PC in the m_breakpoints?
-		auto found = std::find_if(m_breakpoints.begin(), m_breakpoints.end(), [&](const SBreakpoint& b) { return b.address == instr.m_pc; });
+		auto found = std::find_if(m_breakpoints.begin(), m_breakpoints.end(), [&](const SBreakpoint& b) { return b.address == instr.m_pc && !instr.m_cantBreak; });
 		if (found != m_breakpoints.end())
 		{
-			m_breakpointHit = 1;
-			m_currentBreakAddress = instr.m_pc;
-			m_breakpointCommunicated = 0;
-
+#if defined(GDB_COMM_DEBUG)
 			fprintf(stderr, "Break at 0x%08X\n", instr.m_pc);
-
-			// If the breakpoint is volatile, remove it
-			if (found->isVolatile)
-				RemoveBreakpoint(instr.m_pc, bus);
+#endif
 		
 			// Remove instructions we have already executed up to and excluding this one
 
 			while(m_instructions.size() > 1 && m_instructions[1].m_pc != instr.m_pc)
 				m_instructions.erase(m_instructions.begin() + 1);
 
+			found->isHit = 1;
+			found->isCommunicated = 0;
 			return true;
 		}
 
@@ -1442,10 +1449,14 @@ void CRV32::AddBreakpoint(uint32_t isVolatile, uint32_t address, CBus* bus)
 	SBreakpoint brkpt;
 	brkpt.address = address;
 	brkpt.isVolatile = isVolatile;
+	brkpt.isHit = 0;
+	brkpt.isCommunicated = 0;
 	bus->Read(address, brkpt.originalInstruction);
 	m_breakpoints.push_back(brkpt);
 
+#if defined(GDB_COMM_DEBUG)
 	fprintf(stderr, "Added %sbreakpoint at 0x%08X (insn:0x%08X)\n", isVolatile ? "volatile " : "", address, brkpt.originalInstruction);
+#endif
 }
 
 void CRV32::RemoveBreakpoint(uint32_t address, CBus* bus)
@@ -1454,12 +1465,16 @@ void CRV32::RemoveBreakpoint(uint32_t address, CBus* bus)
 	auto found = std::find_if(m_breakpoints.begin(), m_breakpoints.end(), [&](const SBreakpoint& b) { return b.address == address; });
 	if (found != m_breakpoints.end())
 	{
+#if defined(GDB_COMM_DEBUG)
 		fprintf(stderr, "Removing %sbreakpoint at %08X\n", found->isVolatile ? "volatile " : "", address);
+#endif
 		bus->Write(address, found->originalInstruction, 0b1111);
 		m_breakpoints.erase(found);
 	}
+#if defined(GDB_COMM_DEBUG)
 	else
 		fprintf(stderr, "No breakpoint found at %08X\n", address);
+#endif
 }
 
 void CRV32::RemoveAllBreakpoints(CBus* bus)
@@ -1471,11 +1486,9 @@ void CRV32::RemoveAllBreakpoints(CBus* bus)
 
 	m_breakpoints.clear();
 
-	m_breakpointHit = 0;
-	m_breakpointCommunicated = 0;
-	m_currentBreakAddress = 0;
-
+#if defined(GDB_COMM_DEBUG)
 	fprintf(stderr, "Removed all breakpoints\n");
+#endif
 }
 
 void CRV32::Continue(CBus* bus)
@@ -1491,18 +1504,30 @@ void CRV32::Continue(CBus* bus)
 	else
 		fprintf(stderr, "No breakpoint found at %08X\n", m_currentBreakAddress);*/
 
-	fprintf(stderr, "Continue from 0x%08X\n", m_currentBreakAddress);
+	// Reset hit breakpoint states
+	for (auto& breakpoint : m_breakpoints)
+	{
+		if (breakpoint.isHit && breakpoint.isCommunicated)
+		{
+			breakpoint.isHit = 0;
+			breakpoint.isCommunicated = 0;
+		}
+	}
 
-	m_breakpointHit = 0;
-	m_breakpointCommunicated = 0;
-	m_currentBreakAddress = 0;
+	m_breakLatch = 0;
 }
 
 bool CRV32::Tick(uint64_t wallclock, CBus* bus)
 {
 	CCSRMem* csr = bus->GetCSR(m_hartid);
 
-	if (!m_breakpointHit)
+	int hitBreakpointCount = 0;
+	for (auto& breakpoint : m_breakpoints)
+		hitBreakpointCount += breakpoint.isHit;
+	if (hitBreakpointCount)
+		m_breakLatch = 1;
+
+	if (!m_breakLatch)
 	{
 		// Gather a block of code (or grab precompiled version)
 		bool fetchok = FetchDecode(bus);
@@ -1514,5 +1539,5 @@ bool CRV32::Tick(uint64_t wallclock, CBus* bus)
 	if (csr->m_pendingCPUReset)
 		m_fetchstate = EFetchInit;
 
-	return m_breakpointHit ? true : false;
+	return hitBreakpointCount ? true : false;
 }
