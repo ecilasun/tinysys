@@ -1,4 +1,3 @@
-set debug remote 1
 set pagination off
 set architecture riscv:rv32
 target remote localhost:1234
