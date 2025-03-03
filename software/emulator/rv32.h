@@ -209,6 +209,7 @@ public:
 	void RemoveBreakpoint(uint32_t address, CBus* bus);
 	void RemoveAllBreakpoints(CBus* bus);
 	void Continue(CBus* bus);
+	void StepToNext(CBus* bus);	
 
 	std::vector<SBreakpoint> m_breakpoints;
 	uint32_t m_breakLatch{ 0 };

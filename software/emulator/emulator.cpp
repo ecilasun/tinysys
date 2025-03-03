@@ -99,3 +99,8 @@ void CEmulator::Continue(uint32_t cpu)
 {
 	m_cpu[cpu]->Continue(m_bus);
 }
+
+void CEmulator::StepToNext(uint32_t cpu)
+{
+	m_cpu[cpu]->StepToNext(m_bus);
+}

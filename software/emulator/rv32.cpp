@@ -1495,21 +1495,10 @@ void CRV32::RemoveAllBreakpoints(CBus* bus)
 
 void CRV32::Continue(CBus* bus)
 {
-	// Erase the breakpoint
-	/*auto found = std::find_if(m_breakpoints.begin(), m_breakpoints.end(), [&](const SBreakpoint& b) { return b.address == m_currentBreakAddress; });
-	if (found != m_breakpoints.end())
-	{
-		bus->Write(m_currentBreakAddress, found->originalInstruction, 0b1111);
-		m_breakpoints.erase(found);
-		fprintf(stderr, "Removed breakpoint at %08X\n", m_currentBreakAddress);
-	}
-	else
-		fprintf(stderr, "No breakpoint found at %08X\n", m_currentBreakAddress);*/
-
-	// Reset hit breakpoint states
+	// Reset hit breakpoints and all pending volatile breakpoints
 	for (auto& breakpoint : m_breakpoints)
 	{
-		if (breakpoint.isHit && breakpoint.isCommunicated)
+		if (breakpoint.isHit && breakpoint.isCommunicated || breakpoint.isVolatile)
 		{
 			breakpoint.isHit = 0;
 			breakpoint.isCommunicated = 0;
@@ -1517,6 +1506,17 @@ void CRV32::Continue(CBus* bus)
 	}
 
 	m_breakLatch = 0;
+}
+
+void CRV32::StepToNext(CBus* bus)
+{
+	// TODO: We're supposed to step to the first instruction of the next line
+	// Since we don't parse debug info, we'll need another way to do this
+
+	// Clear all breakpoints to not-hit, not-communicated and add a volatile one at the next PC
+	Continue(bus);
+	uint32_t nextpc = m_execPC + 4;
+	AddBreakpoint(1, nextpc, bus);
 }
 
 void CRV32::Tick(uint64_t wallclock, CBus* bus)

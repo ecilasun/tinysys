@@ -45,13 +45,13 @@ struct STaskContext {
 
 // ------------------------------------------------------------
 
-void StopEmulator(CEmulator* emulator)
+void StopEmulatorThread(CEmulator* emulator)
 {
 	emulator->m_debugStop = 1;
 	do {} while (!emulator->m_debugAck);
 }
 
-void ResumeEmulator(CEmulator* emulator)
+void ResumeEmulatorThread(CEmulator* emulator)
 {
 	emulator->m_debugStop = 0;
 }
@@ -128,7 +128,7 @@ void gdbreadthreads(socket_t gdbsocket, CEmulator* emulator, const char* buffer)
 	char response[16384];
 	snprintf(response, 16384, "l<?xml version=\"1.0\"?>\n<threads>\n");
 
-	StopEmulator(emulator);
+	StopEmulatorThread(emulator);
 
 	for (int cpu = 0; cpu < 2; ++cpu)
 	{
@@ -146,7 +146,7 @@ void gdbreadthreads(socket_t gdbsocket, CEmulator* emulator, const char* buffer)
 		}
 	}
 
-	ResumeEmulator(emulator);
+	ResumeEmulatorThread(emulator);
 
 	strcat(response, "</threads>\n");
 	gdbresponsepacket(gdbsocket, response);
@@ -216,41 +216,63 @@ void gdbvcont(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	// Skip 'vCont'
 	buffer += 5;
 
+	//> $vCont;s:1;c#c1
+
 	// Parse commands
 	char* command = strtok(buffer, ";");
+	int respond = 0;
 	while (command != NULL)
 	{
 		if (strstr(command, "?") == command)
 		{
 			// vCont query
-			gdbresponsepacket(gdbsocket, "vCont;c;C;s;S;");
+			gdbresponsepacket(gdbsocket, "vCont;s;S;c;C;");
 		}
 		else if (strstr(command, "c") == command)
 		{
-			// Continue
-			StopEmulator(emulator);
-			emulator->Continue(s_currentCPU);
-			ResumeEmulator(emulator);
-			gdbresponseack(gdbsocket);
+			StopEmulatorThread(emulator);
+
+			// Continue on current or all CPUs
+			for (int i = 0; i < 2; ++i)
+			{
+				if (i == s_currentCPU || s_currentCPU == -1)
+					emulator->Continue(s_currentCPU);
+			}
+
+			ResumeEmulatorThread(emulator);
+			respond = 1;
 		}
 		else if (strstr(command, "s") == command)
 		{
-			// Step
-			//emulator->StepFromPC(s_currentCPU);
-			gdbresponseack(gdbsocket);
+			StopEmulatorThread(emulator);
+
+			// Step on current or all CPUs
+			for (int i = 0; i < 2; ++i)
+			{
+				if (i == s_currentCPU || s_currentCPU == -1)
+					emulator->StepToNext(s_currentCPU);
+			}
+
+			ResumeEmulatorThread(emulator);
+			respond = 1;
 		}
 		else
 		{
 			// Unknown command
+#if defined(GDB_COMM_DEBUG)
 			fprintf(stderr, "Unknown vCont: %s\n", command);
+#endif
 		}
 		command = strtok(NULL, ";");
 	}
+
+	if (respond)
+		gdbresponseack(gdbsocket);
 }
 
 void gdbkillprocess(socket_t gdbsocket, uint32_t hartid, int proc, CEmulator* emulator, char* buffer)
 {
-	StopEmulator(emulator);
+	StopEmulatorThread(emulator);
 
 	emulator->RemoveAllBreakpoints(0);
 
@@ -280,7 +302,7 @@ void gdbkillprocess(socket_t gdbsocket, uint32_t hartid, int proc, CEmulator* em
 		}
 	}
 
-	ResumeEmulator(emulator);
+	ResumeEmulatorThread(emulator);
 	gdbresponsepacket(gdbsocket, "OK");
 }
 
@@ -291,7 +313,7 @@ void gdbreadregisters(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	// x0
 	snprintf(response, 1024, "00000000");
 
-	StopEmulator(emulator);
+	StopEmulatorThread(emulator);
 
 	// x1-x31
 	CRV32* core = emulator->m_cpu[0];
@@ -317,7 +339,7 @@ void gdbreadregisters(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			(reg >> 24) & 0xFF);
 	}
 
-	ResumeEmulator(emulator);
+	ResumeEmulatorThread(emulator);
 
 	//fprintf(stderr, "R:%s\n", response);
 	gdbresponsepacket(gdbsocket, response);
@@ -345,7 +367,7 @@ void gdbbinarypacket(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 		buffer = strchr(buffer, ':');
 		buffer++;
 
-		StopEmulator(emulator);
+		StopEmulatorThread(emulator);
 
 		// Decode the encoded binary data, paying attention to escape sequences and repeat counts
 		uint8_t* data = new uint8_t[len];
@@ -387,7 +409,7 @@ void gdbbinarypacket(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			emulator->m_bus->Write(addrs + i, word, 0xF);
 		}
 
-		ResumeEmulator(emulator);
+		ResumeEmulatorThread(emulator);
 
 		delete[] data;
 
@@ -410,14 +432,14 @@ void gdbsetreg(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	// TODO: when setting PC, our entire task system breaks down
 	// Therefore we need to add a dummy task to the task list and set its PC to the supplied value
 
-	StopEmulator(emulator);
+	StopEmulatorThread(emulator);
 
 	if (reg == 32) // PC is a special case and is always at lastgpr+1
 		emulator->m_cpu[0]->m_PC = val; /// Hmmm...
 	else
 		emulator->m_cpu[0]->m_GPR[reg] = val;
 
-	ResumeEmulator(emulator);
+	ResumeEmulatorThread(emulator);
 
 #if defined(GDB_COMM_DEBUG)
 	fprintf(stderr, "Setting reg %d to %08X\n", reg, val);
@@ -456,7 +478,7 @@ void gdbreadmemory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	fprintf(stderr, "READ @0x%08X %d\n", addrs, len);
 #endif
 
-	StopEmulator(emulator);
+	StopEmulatorThread(emulator);
 
 	// Read the memory
 	uint32_t maxlen = (len+1) * 2;
@@ -502,7 +524,7 @@ void gdbreadmemory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			snprintf(response, maxlen, "%s%02X", response, b[i]);
 	}
 
-	ResumeEmulator(emulator);
+	ResumeEmulatorThread(emulator);
 
 	gdbresponsepacket(gdbsocket, response);
 	delete[] response;
@@ -526,7 +548,7 @@ void gdbwritememory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	fprintf(stderr, "WRITE @0x%08X %d\n", addrs, len);
 #endif
 
-	StopEmulator(emulator);
+	StopEmulatorThread(emulator);
 
 	// Decode the encoded binary data, paying attention to escape sequences and repeat counts
 	uint8_t* data = new uint8_t[len];
@@ -574,7 +596,7 @@ void gdbwritememory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 		emulator->m_bus->Write(addrs & 0xFFFFFFF0, word, 0xF);
 	}
 
-	ResumeEmulator(emulator);
+	ResumeEmulatorThread(emulator);
 
 	delete[] data;
 
@@ -584,12 +606,12 @@ void gdbwritememory(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 
 void gdbstep(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 {
-	StopEmulator(emulator);
+	StopEmulatorThread(emulator);
 
 	// Step to next instruction
 	//emulator->m_cpu[0]->SingleStep();
 
-	ResumeEmulator(emulator);
+	ResumeEmulatorThread(emulator);
 
 	// Respond with an ACK on successful step
 	gdbresponsepacket(gdbsocket, "OK");
@@ -618,7 +640,7 @@ void gdbaddbreakpoint(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 
 	// NOTE: We're ignoring the length for now since every instruction is 4 bytes long
 	
-	StopEmulator(emulator);
+	StopEmulatorThread(emulator);
 
 	// Add the breakpoint
 	for (int i = 0; i < 2; ++i)
@@ -627,7 +649,7 @@ void gdbaddbreakpoint(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			emulator->AddBreakpoint(0, s_currentCPU, addrs); // non-volatile breakpoint
 	}
 
-	ResumeEmulator(emulator);
+	ResumeEmulatorThread(emulator);
 
 	// Respond with an ACK on successful breakpoint addition
 	gdbresponsepacket(gdbsocket, "OK");
@@ -642,7 +664,7 @@ void gdbremovebreakpoint(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	uint32_t type, addrs, len;
 	uint32_t readoffset = sscanf(buffer, "%d,%x,%x", &type, &addrs, &len);
 
-	StopEmulator(emulator);
+	StopEmulatorThread(emulator);
 
 	for (int i = 0; i < 2; ++i)
 	{
@@ -650,7 +672,7 @@ void gdbremovebreakpoint(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			emulator->RemoveBreakpoint(s_currentCPU, addrs);
 	}
 
-	ResumeEmulator(emulator);
+	ResumeEmulatorThread(emulator);
 
 	// Respond with an ACK on successful breakpoint removal
 	gdbresponsepacket(gdbsocket, "OK");
@@ -658,7 +680,7 @@ void gdbremovebreakpoint(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 
 void gdbstopemulator(CEmulator* emulator)
 {
-	StopEmulator(emulator);
+	StopEmulatorThread(emulator);
 
 	for (int i = 0; i < 2; ++i)
 	{
@@ -666,12 +688,12 @@ void gdbstopemulator(CEmulator* emulator)
 			emulator->AddBreakpoint(1, s_currentCPU, emulator->m_cpu[i]->m_execPC); // volatile breakpoint
 	}
 
-	ResumeEmulator(emulator);
+	ResumeEmulatorThread(emulator);
 }
 
 void gdbsendstopreason(socket_t gdbsocket, int cpu, uint32_t stopaddres, CEmulator* emulator)
 {
-	StopEmulator(emulator);
+	StopEmulatorThread(emulator);
 
 	CRV32 *core = emulator->m_cpu[cpu];
 	struct STaskContext* contextpool = (struct STaskContext *)emulator->m_bus->GetHostAddress(DEVICE_MAIL);
@@ -681,7 +703,7 @@ void gdbsendstopreason(socket_t gdbsocket, int cpu, uint32_t stopaddres, CEmulat
 	snprintf(response, 128, "T05;thread:%d;stopped;reason:breakpoint;pc:0x%08X;", cpu*TASK_MAX+ctx.currentTask+1, stopaddres);
 	gdbplainpacket(gdbsocket, response);
 
-	ResumeEmulator(emulator);
+	ResumeEmulatorThread(emulator);
 }
 
 void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
@@ -707,10 +729,10 @@ void gdbprocesscommand(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 			break;
 		case 'D':
 			// Disconnect request
-			StopEmulator(emulator);
+			StopEmulatorThread(emulator);
 			for (int i = 0; i < 2; ++i)
 				emulator->RemoveAllBreakpoints(i);
-			ResumeEmulator(emulator);
+			ResumeEmulatorThread(emulator);
 			gdbresponsepacket(gdbsocket, "OK");
 			fprintf(stderr, "Detached from debugger\n");
 			break;

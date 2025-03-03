@@ -19,6 +19,7 @@ public:
 	void RemoveBreakpoint(uint32_t cpu, uint32_t address);
 	void RemoveAllBreakpoints(uint32_t cpu);
 	void Continue(uint32_t cpu);
+	void StepToNext(uint32_t cpu);
 
 	int m_audioDevice {0};
 
