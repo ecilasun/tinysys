@@ -469,7 +469,7 @@ int gdbstubthread(void* data)
 #else
 	fd_set readfds;
 	bool accepted = false;
-	while(!accepted)
+	while(!accepted && s_alive)
 	{
 		FD_ZERO(&readfds);
 		FD_SET(sockfd, &readfds);
