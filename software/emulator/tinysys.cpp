@@ -810,7 +810,7 @@ int SDL_main(int argc, char** argv)
 	TTF_CloseFont(s_debugfont);
 	TTF_Quit();
 	SDL_RemoveTimer(videoTimer);
-	SDL_WaitThread(gdbStubThread, nullptr);
+	//SDL_KillThread(gdbStubThread); // We'll hang in accept otherwise
 	SDL_WaitThread(emulatorthreadID, nullptr);
 	SDL_WaitThread(audiothreadID, nullptr);
 	SDL_ClearQueuedAudio(ectx.emulator->m_audioDevice);
