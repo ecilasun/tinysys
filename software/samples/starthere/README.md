@@ -41,8 +41,6 @@ If you wish to stop execution, use CTRL+C to break out of the application.
 
 If your system appears to be unresponsive, use the tilde key (~) to break the execution from a connected terminal (this will not work with a keyboard, in that case assuming you're close to the device, please use the reset button on the board instead)
 
-NOTE: The gdb stub has been temporarily removed due space requirements, but it will be added in the future for gdb support. Until then, printf and LEDs are your friend!
-
 # Debugging this sample
 
 'starthere' sample is deliberately unoptimized to act as our debugging sample. To start debugging, first start the executable from the samples directory on the emulator. Then, from the tinysys\software directory, run the following to load the debug symbols and start a GDB session:
