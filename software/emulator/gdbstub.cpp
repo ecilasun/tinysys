@@ -419,6 +419,10 @@ void gdbsetreg(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 
 	ResumeEmulator(emulator);
 
+#if defined(GDB_COMM_DEBUG)
+	fprintf(stderr, "Setting reg %d to %08X\n", reg, val);
+#endif
+
 	gdbresponsepacket(gdbsocket, "OK");
 }
 
@@ -597,8 +601,22 @@ void gdbaddbreakpoint(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	buffer++;
 
 	// Parse the type, address and length
+	// 0; software breakpoint
+	// 1; hardware breakpoint
+	// 2; write watchpoint
+	// 3; read watchpoint
+	// 4; access watchpoint
 	uint32_t type, addrs, len;
 	uint32_t readoffset = sscanf(buffer, "%d,%x,%x", &type, &addrs, &len);
+
+	// We can't do other breakpoint types than software
+	if (type != 0)
+	{
+		gdbresponsenack(gdbsocket);
+		return;
+	}
+
+	// NOTE: We're ignoring the length for now since every instruction is 4 bytes long
 	
 	StopEmulator(emulator);
 

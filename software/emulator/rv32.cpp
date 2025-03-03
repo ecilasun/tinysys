@@ -391,10 +391,10 @@ uint32_t CRV32::ALU(SDecodedInstruction& instr)
 					aluout = instr.m_rval2 == 0 ? 0xFFFFFFFF : instr.m_rval1 / instr.m_rval2;
 				} break; // divu
 				case 0b110: {
-					aluout = uint32_t(sign1ext % sign2ext);
+					aluout = instr.m_rval2 == 0 ? instr.m_rval1 : uint32_t(sign1ext % sign2ext);
 				} break; // rem
 				case 0b111: {
-					aluout = instr.m_rval1 % instr.m_rval2;
+					aluout = instr.m_rval2 == 0 ? instr.m_rval1 : instr.m_rval1 % instr.m_rval2;
 				} break; // remu
 				default: {
 					aluout = 0;
@@ -442,6 +442,7 @@ uint32_t CRV32::BLU(SDecodedInstruction& instr)
 void CRV32::DecodeInstruction(uint32_t pc, uint32_t instr, SDecodedInstruction& dec)
 {
 	dec.m_pc = pc;
+	dec.m_rawInstruction = instr;
 	dec.m_opcode = SelectBitRange(instr, 6, 0);
 	dec.m_f3 = SelectBitRange(instr, 14, 12);
 	dec.m_f7 = SelectBitRange(instr, 31, 25);
@@ -990,7 +991,7 @@ bool CRV32::Execute(CBus* bus)
 		if (found != m_breakpoints.end())
 		{
 #if defined(GDB_COMM_DEBUG)
-			fprintf(stderr, "Break at 0x%08X\n", instr.m_pc);
+			fprintf(stderr, "Break at 0x%08X (0x%08X)\n", instr.m_pc, instr.m_rawInstruction);
 #endif
 		
 			// Remove instructions we have already executed up to and excluding this one

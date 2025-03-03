@@ -66,6 +66,7 @@ enum FetchState{
 struct SDecodedInstruction
 {
 	uint32_t m_pc;
+	uint32_t m_rawInstruction;
 	uint32_t m_opcode;
 	uint32_t m_aluop;
 	uint32_t m_bluop;
