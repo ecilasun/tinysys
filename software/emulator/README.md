@@ -46,6 +46,7 @@ Here's a list of features implemented so far
 - LED device work with graphical representation present
 - APU works and plays sound via SDL (including all playback frequencies supported by the real hardware)
 - SPI sdcard emulator fully works
+- GDB stub is working to a certain point, needs better breakpoint handling and single step support
 
 And here's the list of what's missing
 
@@ -55,7 +56,7 @@ Please note that this is not a clock precise emulation and instructions will alm
 
 Wish list
 
-- A GDB proxy in the emulator to debug running risc-v code
+- TODO
 
 
 ### Back to [SDK Documentation](../SDK/README.md)
