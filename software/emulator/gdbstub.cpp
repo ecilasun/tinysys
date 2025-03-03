@@ -308,7 +308,7 @@ void gdbreadregisters(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 
 	// PC
 	{
-		uint32_t reg = core->m_PC;
+		uint32_t reg = core->m_execPC;
 		snprintf(response, 1024, "%s%02X%02X%02X%02X",
 			response,
 			(reg >> 0) & 0xFF,
@@ -413,7 +413,7 @@ void gdbsetreg(socket_t gdbsocket, CEmulator* emulator, char* buffer)
 	StopEmulator(emulator);
 
 	if (reg == 32) // PC is a special case and is always at lastgpr+1
-		emulator->m_cpu[0]->m_PC = val;
+		emulator->m_cpu[0]->m_PC = val; /// Hmmm...
 	else
 		emulator->m_cpu[0]->m_GPR[reg] = val;
 
@@ -663,7 +663,7 @@ void gdbstopemulator(CEmulator* emulator)
 	for (int i = 0; i < 2; ++i)
 	{
 		if (i == s_currentCPU || s_currentCPU == -1)
-			emulator->AddBreakpoint(1, s_currentCPU, emulator->m_cpu[i]->m_PC); // volatile breakpoint
+			emulator->AddBreakpoint(1, s_currentCPU, emulator->m_cpu[i]->m_execPC); // volatile breakpoint
 	}
 
 	ResumeEmulator(emulator);

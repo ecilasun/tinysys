@@ -175,6 +175,7 @@ public:
 
 	// Right hand side
 	uint32_t m_PC{ 0 };
+	uint32_t m_execPC{ 0 };
 	uint32_t m_branchtarget{ 0 };
 	uint32_t m_fetchstate{ 0 };
 	uint32_t m_branchresolved{ 0 };

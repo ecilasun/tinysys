@@ -986,6 +986,9 @@ bool CRV32::Execute(CBus* bus)
 	CCSRMem* csr = bus->GetCSR(m_hartid);
 	for (auto &instr : m_instructions)
 	{
+		m_execPC = instr.m_pc;
+		csr->SetPC(instr.m_pc);
+
 		// Is this PC in the m_breakpoints?
 		auto found = std::find_if(m_breakpoints.begin(), m_breakpoints.end(), [&](const SBreakpoint& b) { return b.address == instr.m_pc && !instr.m_cantBreak; });
 		if (found != m_breakpoints.end())
@@ -1003,8 +1006,6 @@ bool CRV32::Execute(CBus* bus)
 			found->isCommunicated = 0;
 			return true;
 		}
-
-		csr->SetPC(instr.m_pc);
 
 		// Get register contents
 		instr.m_rval1 = m_GPR[instr.m_rs1 & 0x1F];
