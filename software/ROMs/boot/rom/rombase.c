@@ -85,7 +85,7 @@ void ksetcursor(const int _x, const int _y)
 	VPUConsoleSetCursor(kernelgfx, _x, _y);
 }
 
-int _task_add(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength, const uint32_t _hartid, const uint32_t _parentStackPointer)
+int _task_add(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength, const uint32_t _hartid, const uint32_t _gp, const uint32_t _parentStackPointer)
 {
 	int32_t prevcount = _ctx->numTasks;
 	if (prevcount >= TASK_MAX)
@@ -95,6 +95,7 @@ int _task_add(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum
 	struct STask *task = &(_ctx->tasks[prevcount]);
 	task->regs[0] = (uint32_t)_task;		// Initial PC
 	task->regs[2] = _parentStackPointer;	// Stack pointer
+	task->regs[3] = _gp;					// Global pointer
 	task->regs[8] = _parentStackPointer;	// Frame pointer
 	task->runLength = _runLength;			// Time slice dedicated to this task
 
@@ -1387,9 +1388,11 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					taskfunc task = (taskfunc)read_csr(0x8AC); // A2
 					enum ETaskState initialState = read_csr(0x8AD); // A3
 					const uint32_t runLength = read_csr(0x8AE); // A4
-					uint32_t parentSP = read_csr(0x8A2); // SP
+					const uint32_t stackPointer = read_csr(0x8AF); // A5
+					const uint32_t gp = read_csr(0x8A3); // GP
+					uint32_t parentSP = (stackPointer != 0x0) ? stackPointer : read_csr(0x8A2); // SP
 					// Using parent's stack pointer as the new task's stack pointer
-					int retVal = _task_add(context, name, task,  initialState, runLength, hartid, parentSP);
+					int retVal = _task_add(context, name, task, initialState, runLength, hartid, gp, parentSP);
 					write_csr(0x8AA, retVal);
 				}
 				else if (value==16385) // task_switch_to_next

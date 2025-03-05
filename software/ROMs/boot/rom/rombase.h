@@ -38,7 +38,7 @@ char *krealpath(const char *path, char resolved[PATH_MAX]);
 // Task - internals
 struct STaskContext *_task_get_context(uint32_t _hartid);
 void _task_init_context(uint32_t _hartid);
-int _task_add(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength, const uint32_t _hartid, const uint32_t _parentStackPointer);
+int _task_add(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength, const uint32_t _hartid, const uint32_t _gp, const uint32_t _parentStackPointer);
 uint32_t _task_switch_to_next(struct STaskContext *_ctx);
 void _task_exit_task_with_id(struct STaskContext *_ctx, uint32_t _taskid, uint32_t _signal);
 void _task_exit_current_task(struct STaskContext *_ctx);

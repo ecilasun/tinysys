@@ -13,6 +13,7 @@
 #include "task.h"
 #include "leds.h"
 #include "vpu.h"
+#include "uart.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -25,7 +26,7 @@ static struct EVideoSwapContext s_sc;
 static uint8_t *s_framebufferA;
 static uint8_t *s_framebufferB;
 
-void __attribute__((noreturn, naked)) MyTaskOne()
+void MyTaskOne()
 {
 	// Set up shared memory for this HART
 	volatile int *sharedmem = (volatile int*)E32GetScratchpad();
@@ -39,6 +40,9 @@ void __attribute__((noreturn, naked)) MyTaskOne()
 		E32Sleep(150*ONE_MILLISECOND_IN_TICKS);
 
 		*s_frame1 = *s_frame1 + 1;
+
+		// Print something onto the UART port (or the terminal on the emulator)
+		UARTPrintf("HART#1: %d\n", *s_frame1);
 	}
 }
 
