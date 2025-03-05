@@ -17,6 +17,7 @@
 		  "MIMode": "gdb",
 		  "miDebuggerPath": "C:/riscv32-gcc/bin/riscv32-unknown-elf-gdb.exe",
 		  "miDebuggerServerAddress": "localhost:1234",
+		  "miDebuggerArgs": "-x ${workspaceFolder}/.gdbinit",
 		  "setupCommands": [
 			{
 			  "description": "Enable pretty-printing for gdb",
