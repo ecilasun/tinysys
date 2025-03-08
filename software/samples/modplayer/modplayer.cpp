@@ -111,6 +111,7 @@ void PlayXMP(const char *fname)
 int main(int argc, char *argv[])
 {
 	apubuffer = (short*)APUAllocateBuffer(BUFFER_SIZE_IN_BYTES);
+	memset(apubuffer, 0, BUFFER_SIZE_IN_BYTES);
 	printf("\nAPU mix buffer: 0x%.8x\n", (unsigned int)apubuffer);
 
 	char currpath[48] = "sd:/";
@@ -141,10 +142,11 @@ int main(int argc, char *argv[])
 	VPUSwapPages(&vx, &sc);
 	VPUClear(&vx, 0x00000000);
 
+	// Always do this from main thread
 	struct STaskContext *taskctx1 = TaskGetContext(1);
 	uint32_t* stackAddress = new uint32_t[1024];
 	int taskID1 = TaskAdd(taskctx1, "draw_wave", draw_wave, TS_RUNNING, QUARTER_MILLISECOND_IN_TICKS, (uint32_t)stackAddress);
-
+	
 	PlayXMP(fullpath);
 
 	printf("Playback complete\n");
