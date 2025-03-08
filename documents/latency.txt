@@ -1,0 +1,91 @@
+Instruction latency table
+
+Please note that these latencies do not include any instruction
+fetch, decode or stalls. They are the latencies of the execution unit
+after all dependencies have been resolved and the instruction is ready
+to execute.
+
+It is provided for relative performance comparison only.
+
+Instruction		CPU cycles
+---------------------------------
+ADD				2
+SUB				2
+SLL				2
+SLT				2
+SLTU			2
+XOR				2
+SRL				2
+SRA				2
+OR				2
+AND				2
+
+ADDI			2
+SLTI			2
+SLTIU			2
+XORI			2
+ORI				2
+ANDI			2
+SLLI			2
+SRLI			2
+SRAI			2
+
+AUIPC			2
+JAL				0 (handled by fetch unit)
+JALR			2
+
+BEQ				2
+BNE				2
+BLT				2
+BGE				2
+BLTU			2
+BGEU			2
+
+FENCE			2 up to 257, includes DISCARD/FLUSH/IFLUSH
+
+WFI				1 + 15 clocks max then equals noop
+ECALL			0 (handled by fetch unit)
+EBREAK			0 (handled by fetch unit)
+MRET			6 up to 12 (irq dependant, from code blocks in fetch ROM)
+
+CSROP			5 + memory read wait
+
+MUL				7
+MULH			7
+MULHSU			7
+MULHU			7
+DIV				32
+DIVU			32
+REM				32
+REMU			32
+
+LOAD			1 + wait for write done
+STORE			1 + wait for write done
+
+FSGNJ			1
+FSGNJN			1
+FSGNJX			1
+FCLASS			1
+FMVWX			1
+
+FEQ				5
+FLT				5
+FLE				5
+FMAX			5
+FEQ				5
+FLT				5
+FLE				5
+FCVTSW			9
+FCVTSWU			9
+FCVTWS			9
+FCVTWSU			5
+FADD			15
+FSUB			15
+FMUL			11
+FDIV			31
+FSQRT			31
+
+FMADD			22
+FMSUB			22
+
+FCVTSWU4SAT		5
