@@ -15,7 +15,9 @@
 #include <string.h>
 #include <math.h>
 
+#include "basesystem.h"
 #include "core.h"
+#include "task.h"
 #include "apu.h"
 #include "vpu.h"
 
@@ -31,21 +33,24 @@ static EVideoSwapContext sc;
 
 void draw_wave()
 {
-	VPUClear(&vx, 0x00000000);
-
-	for (uint32_t i=0; i<256; ++i)
+	while (1)
 	{
-		int16_t L = 120 + (apubuffer[i*2+0]>>8);
-		int16_t R = 120 + (apubuffer[i*2+1]>>8);
-		L = L<0 ? 0 : (L>239 ? 239 : L);
-		R = R<0 ? 0 : (R>239 ? 239 : R);
-		sc.writepage[i+32 + L*320] = 0x37;
-		sc.writepage[i+32 + R*320] = 0x27;
-	}
+		VPUClear(&vx, 0x00000000);
 
-	//VPUWaitVSync();
-	CFLUSH_D_L1;
-	VPUSwapPages(&vx, &sc);
+		for (uint32_t i=0; i<256; ++i)
+		{
+			int16_t L = 120 + (apubuffer[i*2+0]>>8);
+			int16_t R = 120 + (apubuffer[i*2+1]>>8);
+			L = L<0 ? 0 : (L>239 ? 239 : L);
+			R = R<0 ? 0 : (R>239 ? 239 : R);
+			sc.writepage[i+32 + L*320] = 0x37;
+			sc.writepage[i+32 + R*320] = 0x27;
+		}
+
+		//VPUWaitVSync();
+		CFLUSH_D_L1;
+		VPUSwapPages(&vx, &sc);
+	}
 }
 
 void PlayXMP(const char *fname)
@@ -53,7 +58,7 @@ void PlayXMP(const char *fname)
 	xmp_context ctx;
 	struct xmp_module_info mi;
 	struct xmp_frame_info fi;
-	int row, i;
+	int i;
 
 	ctx = xmp_create_context();
 
@@ -72,7 +77,6 @@ void PlayXMP(const char *fname)
 		xmp_get_module_info(ctx, &mi);
 		printf("%s (%s)\n", mi.mod->name, mi.mod->type);
 
-		row = -1;
 		int playing = 1;
 		while (playing) // size == 2*BUFFER_WORD_COUNT, in bytes
 		{
@@ -83,9 +87,6 @@ void PlayXMP(const char *fname)
 
 			// Fill current write buffer with new mix data
 			APUStartDMA((uint32_t)apubuffer);
-
-			// Draw the waveform in the mix buffer so we don't clash with apu buffer
-			draw_wave();
 
 			// Wait for the APU to be done with current read buffer which is still playing
 			uint32_t currframe;
@@ -139,6 +140,10 @@ int main(int argc, char *argv[])
 	VPUClear(&vx, 0x00000000);
 	VPUSwapPages(&vx, &sc);
 	VPUClear(&vx, 0x00000000);
+
+	struct STaskContext *taskctx1 = TaskGetContext(1);
+	uint32_t* stackAddress = new uint32_t[1024];
+	int taskID1 = TaskAdd(taskctx1, "draw_wave", draw_wave, TS_RUNNING, QUARTER_MILLISECOND_IN_TICKS, (uint32_t)stackAddress);
 
 	PlayXMP(fullpath);
 
