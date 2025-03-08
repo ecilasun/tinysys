@@ -40,5 +40,6 @@ private:
 	uint32_t m_ctlreg{ 0 };
 	int32_t m_regA{ 0 };
 	int32_t m_regB{ 65536 };
+	int32_t m_regC{ 0 };
 	std::queue<uint32_t> m_fifo;
 };
