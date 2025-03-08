@@ -3,5 +3,5 @@
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
- 
-int tbm_snprintf(char* str, size_t size, const char* format, ...);
+
+int tbm_vsnprintf(char* str, size_t size, const char* format, va_list ap);

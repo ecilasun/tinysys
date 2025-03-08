@@ -147,7 +147,7 @@
 	 return (int)pos;
  }
  
- inline int tbm_vsnprintf(char* str, size_t size, const char* format, va_list ap) {
+ int tbm_vsnprintf(char* str, size_t size, const char* format, va_list ap) {
 	 size_t pos = 0;
 	 const char* p = format;
 	 while (*p != '\0') {

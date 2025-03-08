@@ -67,7 +67,7 @@ The AXI4 bus, running at 166.667MHz, connects all of the processing units to mem
 ```
 Martin Hedlund
 
-  tbm_printf() function
+  tbm_vsnprintf() and tbm_printf() functions
 
 Wade Brainerd
 
