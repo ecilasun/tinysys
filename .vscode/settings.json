@@ -49,7 +49,8 @@
 		"encoding.h": "c",
 		"iosfwd": "c",
 		"stdint.h": "c",
-		"rvcrt0.h": "c"
+		"rvcrt0.h": "c",
+		"stdio.h": "c"
 	},
 	"terminal.integrated.profiles.windows": {
 		"MSYS2": {

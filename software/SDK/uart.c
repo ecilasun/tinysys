@@ -6,7 +6,11 @@
  */
 
 #include "basesystem.h"
+#if BUILDING_ROM
 #include "mini-printf.h"
+#else
+#include "tbm_printf.h"
+#endif
 #include "uart.h"
 
 volatile uint32_t *UARTRECEIVE = (volatile uint32_t* ) (DEVICE_UART+0x00);
@@ -81,7 +85,11 @@ int UARTPrintf(const char *fmt, ...)
 	va_list va;
 	va_start(va, fmt);
 	char *buffer = (char *)UART_OUTPUT_TEMP;
-	int len = mini_vsnprintf(buffer, 8192, fmt, va);
+#if defined(BUILDING_ROM)
+int len = mini_snprintf(buffer, 8192, fmt, va);
+#else
+	int len = tbm_snprintf(buffer, 8192, fmt, va);
+#endif
 	va_end(va);
 	if (len)
 		UARTSendBlock((uint8_t*)buffer, len);

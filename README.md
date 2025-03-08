@@ -62,6 +62,18 @@ Audio processing unit. Handles RAW audio outputs, and also manages 44/22/11KHz s
 ## AXI4 bus
 The AXI4 bus, running at 166.667MHz, connects all of the processing units to memory or devices. In the case of memory, access is cached per perhipheral as needed. Memory mapped device access is always uncached.
 
+# Contributors
+
+```
+Martin Hedlund
+
+  tbm_printf() function
+
+Wade Brainerd
+
+  fcvtswu4sat instruction
+```
+
 # Custom instructions
 
 ## Convert from float to 4 bit integer, saturated (FCVTSWU5SAT)
