@@ -86,7 +86,7 @@ int UARTPrintf(const char *fmt, ...)
 	va_start(va, fmt);
 	char *buffer = (char *)UART_OUTPUT_TEMP;
 #if defined(BUILDING_ROM)
-int len = mini_snprintf(buffer, 8192, fmt, va);
+	int len = mini_snprintf(buffer, 8192, fmt, va);
 #else
 	int len = tbm_snprintf(buffer, 8192, fmt, va);
 #endif
