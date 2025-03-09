@@ -10,6 +10,9 @@
  * play back smoothly.
  */
 
+#include <complex>
+#include <cmath>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,24 +34,79 @@ static short *apubuffer;
 static EVideoContext vx;
 static EVideoSwapContext sc;
 
+std::complex<float> outputL[BUFFER_WORD_COUNT*2];
+std::complex<float> outputR[BUFFER_WORD_COUNT*2];
+int16_t barsL[256];
+int16_t barsR[256];
+
+void fft(std::complex<float>* data)
+{
+    const size_t N = BUFFER_WORD_COUNT;
+    const float PI = 3.14159265358979323846f;
+
+    // Bit-reversal permutation
+    size_t n = N;
+    size_t j = 0;
+    for (size_t i = 0; i < n; ++i) {
+        if (i < j) {
+            std::swap(data[i], data[j]);
+        }
+        size_t m = n >> 1;
+        while (j >= m && m >= 2) {
+            j -= m;
+            m >>= 1;
+        }
+        j += m;
+    }
+
+    // Cooley-Tukey FFT
+    for (size_t len = 2; len <= n; len <<= 1) {
+        float angle = -2.0f * PI / len;
+        std::complex<float> wlen(cos(angle), sin(angle));
+        for (size_t i = 0; i < n; i += len) {
+            std::complex<float> w(1);
+            for (size_t j = 0; j < len / 2; ++j) {
+                std::complex<float> u = data[i + j];
+                std::complex<float> v = data[i + j + len / 2] * w;
+                data[i + j] = u + v;
+                data[i + j + len / 2] = u - v;
+                w *= wlen;
+            }
+        }
+    }
+}
+
 void draw_wave()
 {
 	while (1)
 	{
 		VPUClear(&vx, 0x00000000);
 
-		for (uint32_t i=0; i<256; ++i)
+		for (size_t i = 0; i < BUFFER_WORD_COUNT; ++i)
 		{
-			int16_t L = 120 + (apubuffer[i*2+0]>>8);
-			int16_t R = 120 + (apubuffer[i*2+1]>>8);
-			L = L<0 ? 0 : (L>239 ? 239 : L);
-			R = R<0 ? 0 : (R>239 ? 239 : R);
-			sc.writepage[i+32 + L*320] = 0x37;
-			sc.writepage[i+32 + R*320] = 0x27;
+			outputL[i] = std::complex<float>(apubuffer[i*2+0]>>15, 0.0f);
+			outputR[i] = std::complex<float>(apubuffer[i*2+1]>>15, 0.0f);
+		}
+		fft(outputL);
+		fft(outputR);
+
+		for (uint32_t i=0; i<BUFFER_WORD_COUNT; i+=4)
+		{
+			int16_t L = 120 - (int16_t)std::abs(outputL[i]);
+			int16_t R = 120 + (int16_t)std::abs(outputR[i]);
+			barsL[i>>2] = std::min(239, std::max(0, (barsL[i>>2] + L)/2));
+			barsR[i>>2] = std::min(239, std::max(0, (barsR[i>>2] + R)/2));
 		}
 
-		//VPUWaitVSync();
+		for (uint32_t i=0; i<256; ++i)
+		{
+			sc.writepage[32 + i + barsL[i]*320] = 0x37;
+			sc.writepage[32 + i + barsR[i]*320] = 0x27;
+		}
+
 		CFLUSH_D_L1;
+
+		VPUWaitVSync();
 		VPUSwapPages(&vx, &sc);
 	}
 }
@@ -141,6 +199,9 @@ int main(int argc, char *argv[])
 	VPUClear(&vx, 0x00000000);
 	VPUSwapPages(&vx, &sc);
 	VPUClear(&vx, 0x00000000);
+
+	memset(barsL, 0, 256*sizeof(int16_t));
+	memset(barsR, 0, 256*sizeof(int16_t));
 
 	// Always do this from main thread
 	struct STaskContext *taskctx1 = TaskGetContext(1);

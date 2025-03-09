@@ -79,6 +79,10 @@
 		"device.h": "c",
 		"keyringbuffer.h": "c",
 		"serialinput.h": "c",
-		"core.h": "c"
+		"core.h": "c",
+		"complex": "cpp",
+		"deque": "cpp",
+		"map": "cpp",
+		"queue": "cpp"
 	}
 }
