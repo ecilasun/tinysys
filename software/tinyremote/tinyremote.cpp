@@ -10,6 +10,7 @@
 
 #include "tinyremote.h"
 
+static AppCtx s_app_ctx;
 static bool s_alive = true;
 static SDL_Window* s_window;
 static SDL_Surface* s_outputSurface;
@@ -26,9 +27,9 @@ static int s_showProgress = 0;
 
 uint32_t videoCallback(uint32_t interval, void* param)
 {
-	VideoCapture* video_capture = (VideoCapture*)param;
+	AppCtx* ctx = (AppCtx*)param;
 
-	bool haveFrame = video_capture ? video_capture->CaptureFrame(s_videodata) : false;
+	bool haveFrame = ctx->video ? ctx->video->CaptureFrame(s_videodata, ctx->audio) : false;
 	if (haveFrame)
 	{
 		if (SDL_MUSTLOCK(s_outputSurface))
@@ -120,15 +121,6 @@ uint32_t videoCallback(uint32_t interval, void* param)
 
 	return interval;
 }
-
-/*uint32_t audioCallback(uint32_t interval, void* param)
-{
-	AudioCapture* audio_capture = (AudioCapture*)param;
-
-	audio_capture->Update();
-
-	return interval;
-}*/
 
 bool WACK(CSerialPort *_serial, const uint8_t waitfor, uint8_t& received)
 {
@@ -477,22 +469,19 @@ int SDL_main(int argc, char** argv)
 {
 	const char* cname = GetCommDeviceName();
 	const char* vname = GetVideoDeviceName();
-	const char* acname = GetAudioCaptureDeviceName();
 	const char* apname = GetAudioPlaybackDeviceName();
 
 	// Default capture resolution, see tinyremote.ini for details
 	s_videoWidth = 1280;
 	s_videoHeight = 960;
 
-	fprintf(stderr, "Usage: tinyremote commdevicenumber videodevname audiocapdevname audioplaydevname\ndefault comm device:%s default capture device:%s\nCtrl+C or PAUSE: quit current remote process\n", cname, vname);
+	fprintf(stderr, "Usage: tinyremote commdevicenumber videodevname audioplaydevname\ndefault comm device:%s default capture device:%s\nCtrl+C or PAUSE: quit current remote process\n", cname, vname);
 
 	if (argc > 1)
 		SetCommDeviceName(atoi(argv[1]));
 	if (argc > 2)
 		SetVideoDeviceName(argv[2]);
 	if (argc > 3)
-		SetAudioCaptureDeviceName(argv[3]);
-	if (argc > 4)
 		SetAudioPlaybackDeviceName(argv[4]);
 
 	// If no command line arguments are provided, check to see if we have an INI file to read from
@@ -517,11 +506,6 @@ int SDL_main(int argc, char** argv)
 				{
 					SetVideoDeviceName(strchr(line, '=')+1);
 					fprintf(stderr, "new videodevname: %s\n", GetVideoDeviceName());
-				}
-				else if (strstr(line, "audiocapdevname"))
-				{
-					SetAudioCaptureDeviceName(strchr(line, '=')+1);
-					fprintf(stderr, "new audiocapdevname: %s\n", GetAudioCaptureDeviceName());
 				}
 				else if (strstr(line, "audioplaydevname"))
 				{
@@ -570,16 +554,15 @@ int SDL_main(int argc, char** argv)
 
 	s_videodata = new uint8_t[s_videoWidth*s_videoHeight*4];
 
-	AppCtx ctx;
-	ctx.gamecontroller = nullptr;
-	ctx.serial = new CSerialPort();
-	ctx.serial->AttemptOpen();
-	ctx.video = new VideoCapture();
-	ctx.video->Initialize(s_videoWidth, s_videoHeight);
-	ctx.audio = new AudioCapture();
-	ctx.audio->Initialize();
+	s_app_ctx.gamecontroller = nullptr;
+	s_app_ctx.serial = new CSerialPort();
+	s_app_ctx.serial->AttemptOpen();
+	s_app_ctx.video = new VideoCapture();
+	s_app_ctx.video->Initialize(s_videoWidth, s_videoHeight);
+	s_app_ctx.audio = new AudioPlayback();
+	s_app_ctx.audio->Initialize();
 
-	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, ctx.video); // 60fps
+	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, &s_app_ctx); // 60fps
 	//SDL_TimerID audioTimer = SDL_AddTimer(16, audioCallback, ctx.audio); // 60fps
 
 	const uint8_t *keystates = SDL_GetKeyboardState(nullptr);
@@ -603,14 +586,14 @@ int SDL_main(int argc, char** argv)
 			if (ev.type == SDL_QUIT)
 				s_alive = false;
 			if (ev.type == SDL_DROPFILE)
-				SendFile(ev.drop.file, ctx.serial);
+				SendFile(ev.drop.file, s_app_ctx.serial);
 			if (ev.type == SDL_CONTROLLERDEVICEADDED)
 			{
-				ControllerAdd(ctx);
+				ControllerAdd(s_app_ctx);
 			}
 			if (ev.type == SDL_CONTROLLERDEVICEREMOVED)
 			{
-				ControllerRemove(ctx);
+				ControllerRemove(s_app_ctx);
 			}
 			if (ev.type == SDL_WINDOWEVENT)
 			{
@@ -638,29 +621,29 @@ int SDL_main(int argc, char** argv)
 
 		// Echo serial data
 		char inchar;
-		if(ctx.serial->Receive(&inchar, 1))
+		if(s_app_ctx.serial->Receive(&inchar, 1))
 			fprintf(stderr, "%c", inchar);
 
 		// Read joystick events
-		if (ctx.gamecontroller)
+		if (s_app_ctx.gamecontroller)
 		{
 			// Buttons
 			uint32_t buttons = 0x00000000;
-			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_A) ? 0x00000001 : 0;
-			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_B) ? 0x00000002 : 0;
-			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_X) ? 0x00000004 : 0;
-			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_Y) ? 0x00000008 : 0;
-			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_BACK) ? 0x00000010 : 0;
-			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_GUIDE) ? 0x00000020 : 0;
-			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_START) ? 0x00000040 : 0;
-			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_LEFTSTICK) ? 0x00000080 : 0;
-			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_RIGHTSTICK) ? 0x00000100 : 0;
-			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_LEFTSHOULDER) ? 0x00000200 : 0;
-			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) ? 0x00000400 : 0;
-			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_UP) ? 0x00000800 : 0;
-			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_DOWN) ? 0x00001000 : 0;
-			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_LEFT) ? 0x00002000 : 0;
-			buttons |= SDL_GameControllerGetButton(ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT) ? 0x00004000 : 0;
+			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_A) ? 0x00000001 : 0;
+			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_B) ? 0x00000002 : 0;
+			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_X) ? 0x00000004 : 0;
+			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_Y) ? 0x00000008 : 0;
+			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_BACK) ? 0x00000010 : 0;
+			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_GUIDE) ? 0x00000020 : 0;
+			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_START) ? 0x00000040 : 0;
+			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_LEFTSTICK) ? 0x00000080 : 0;
+			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_RIGHTSTICK) ? 0x00000100 : 0;
+			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_LEFTSHOULDER) ? 0x00000200 : 0;
+			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) ? 0x00000400 : 0;
+			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_UP) ? 0x00000800 : 0;
+			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_DOWN) ? 0x00001000 : 0;
+			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_LEFT) ? 0x00002000 : 0;
+			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT) ? 0x00004000 : 0;
 			if (buttons != prev_buttons)
 			{
 				prev_buttons = buttons;
@@ -669,17 +652,17 @@ int SDL_main(int argc, char** argv)
 				outdata[0] = '@';				// joystick button packet marker
 				outdata[1] = buttons&0xFF;		// lower byte of modifiers
 				outdata[2] = (buttons>>8)&0xFF;	// upper byte of modifiers
-				ctx.serial->Send(outdata, 3);
+				s_app_ctx.serial->Send(outdata, 3);
 			}
 
 			// Axes
 			Axis6 input;
-			input.leftx = SDL_GameControllerGetAxis(ctx.gamecontroller, SDL_CONTROLLER_AXIS_LEFTX) / 32767.0f;
-			input.lefty = SDL_GameControllerGetAxis(ctx.gamecontroller, SDL_CONTROLLER_AXIS_LEFTY) / 32767.0f;
-			input.rightx = SDL_GameControllerGetAxis(ctx.gamecontroller, SDL_CONTROLLER_AXIS_RIGHTX) / 32767.0f;
-			input.righty = SDL_GameControllerGetAxis(ctx.gamecontroller, SDL_CONTROLLER_AXIS_RIGHTY) / 32767.0f;
-			input.lefttrigger = SDL_GameControllerGetAxis(ctx.gamecontroller, SDL_CONTROLLER_AXIS_TRIGGERLEFT) / 32767.0f;
-			input.righttrigger = SDL_GameControllerGetAxis(ctx.gamecontroller, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) / 32767.0f;
+			input.leftx = SDL_GameControllerGetAxis(s_app_ctx.gamecontroller, SDL_CONTROLLER_AXIS_LEFTX) / 32767.0f;
+			input.lefty = SDL_GameControllerGetAxis(s_app_ctx.gamecontroller, SDL_CONTROLLER_AXIS_LEFTY) / 32767.0f;
+			input.rightx = SDL_GameControllerGetAxis(s_app_ctx.gamecontroller, SDL_CONTROLLER_AXIS_RIGHTX) / 32767.0f;
+			input.righty = SDL_GameControllerGetAxis(s_app_ctx.gamecontroller, SDL_CONTROLLER_AXIS_RIGHTY) / 32767.0f;
+			input.lefttrigger = SDL_GameControllerGetAxis(s_app_ctx.gamecontroller, SDL_CONTROLLER_AXIS_TRIGGERLEFT) / 32767.0f;
+			input.righttrigger = SDL_GameControllerGetAxis(s_app_ctx.gamecontroller, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) / 32767.0f;
 			ClampAnalogInput(input, 0.1f, 0.9f);
 			if (prev_input.leftx != input.leftx || prev_input.lefty != input.lefty || prev_input.rightx != input.rightx || prev_input.righty != input.righty || prev_input.lefttrigger != input.lefttrigger || prev_input.righttrigger != input.righttrigger)
 			{
@@ -704,7 +687,7 @@ int SDL_main(int argc, char** argv)
 				outdata[8] = (ry>>8)&0xFF;		// upper byte of right y
 				outdata[9] = lt;				// left trigger
 				outdata[10] = rt;				// right trigger
-				ctx.serial->Send(outdata, 11);
+				s_app_ctx.serial->Send(outdata, 11);
 			}
 		}
 
@@ -730,15 +713,15 @@ int SDL_main(int argc, char** argv)
 					if (i==53 && keystates[i] == 1 && (modifiers & KMOD_SHIFT))
 					{
 						fprintf(stderr, "Keep holding down ~ to reboot...\n");
-						ctx.serial->Send((uint8_t*)"~", 1);
+						s_app_ctx.serial->Send((uint8_t*)"~", 1);
 					}
 					else if (i == 0x06 && keystates[i] == 1 && (modifiers & KMOD_CTRL))
 					{
 						fprintf(stderr, "Attempting to quit remote process\nIf this doesn't work, hold down ~ key to reboot CPUs\n");
-						ctx.serial->Send((uint8_t*)"\03", 1);
+						s_app_ctx.serial->Send((uint8_t*)"\03", 1);
 					}
 					else
-						ctx.serial->Send(outdata, 5);
+						s_app_ctx.serial->Send(outdata, 5);
 				}
 			}
 
@@ -747,13 +730,13 @@ int SDL_main(int argc, char** argv)
 		}
 	} while(s_alive);
 
-	ctx.serial->Close();
+	s_app_ctx.serial->Close();
 	fprintf(stderr, "remote connection terminated\n");
 
 	//SDL_RemoveTimer(audioTimer);
 	SDL_RemoveTimer(videoTimer);
-	ctx.video->Terminate();
-	ctx.audio->Terminate();
+	s_app_ctx.video->Terminate();
+	s_app_ctx.audio->Terminate();
 
 	SDL_FreeSurface(s_surface);
 	SDL_DestroyWindow(s_window);

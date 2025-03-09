@@ -43,6 +43,306 @@ VideoCapture::~VideoCapture()
 {
 }
 
+#if defined(CAT_LINUS) || defined(CAT_MACOS)
+// TODO: MacOS and Linux
+#else
+HRESULT VideoCapture::CreateVideoSource(IMFMediaSource **ppSource)
+{
+	*ppSource = NULL;
+
+	devicecount = 0;
+
+	IMFAttributes *pConfig = NULL;
+	IMFActivate **ppDevices = NULL;
+
+	HRESULT hr = MFCreateAttributes(&pConfig, 1);
+
+	if (SUCCEEDED(hr))
+		hr = pConfig->SetGUID(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE, MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID);
+	else
+	{
+		fprintf(stderr, "MFCreateAttributes failed\n");
+		return E_FAIL;
+	}
+
+	if (SUCCEEDED(hr))
+		hr = MFEnumDeviceSources(pConfig, &ppDevices, &devicecount);
+	else
+	{
+		fprintf(stderr, "SetGUID failed\n");
+		return E_FAIL;
+	}
+	
+	if (SUCCEEDED(hr))
+	{
+		selectedVideodevice = 0xFFFFFFFF;
+
+		for (DWORD i = 0; i < devicecount; i++)
+		{
+			wchar_t *name = nullptr;
+			UINT32 namelen = 0;
+			hr = ppDevices[i]->GetAllocatedString(MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME, &name, &namelen);
+			char asciiname[512];
+			if (SUCCEEDED(hr))
+			{
+				wcstombs_s(nullptr, asciiname, name, namelen);
+				CoTaskMemFree(name);
+			}
+	
+			// Skip things that look like camera devices
+			// TODO: This is a hack, need a better way to detect cameras or non-camera devices
+			if (strstr(asciiname, capturedevicename) != nullptr)
+			{
+				// Found a non-camera device, use it
+				fprintf(stderr, "Using video capture device(%d): %s\n", i, asciiname);
+				selectedVideodevice = i;
+			}
+			else
+				fprintf(stderr, "Found video capture device(%d): %s\n", i, asciiname);
+		}
+
+		if (selectedVideodevice != 0xFFFFFFFF)
+		{
+			hr = ppDevices[selectedVideodevice]->ActivateObject(IID_PPV_ARGS(ppSource));
+			if (FAILED(hr))
+			{
+				fprintf(stderr, "ActivateObject failed\n");
+				return E_FAIL;
+			}
+		}
+		else
+		{
+			fprintf(stderr, "No video capture device found\n");
+			hr = MF_E_NOT_FOUND;
+		}
+	}
+	else
+	{
+		fprintf(stderr, "MFEnumDeviceSources failed\n");
+		return E_FAIL;
+	}
+
+	for (DWORD i = 0; i < devicecount; i++)
+		ppDevices[i]->Release();
+	CoTaskMemFree(ppDevices);
+
+	return hr;
+}
+
+HRESULT VideoCapture::CreateAudioSource(IMFMediaSource **ppSource)
+{
+	*ppSource = NULL;
+
+	devicecount = 0;
+
+	IMFAttributes *pConfig = NULL;
+	IMFActivate **ppDevices = NULL;
+
+	HRESULT hr = MFCreateAttributes(&pConfig, 1);
+
+	if (SUCCEEDED(hr))
+		hr = pConfig->SetGUID(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE, MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_AUDCAP_GUID);
+
+	if (SUCCEEDED(hr))
+		hr = MFEnumDeviceSources(pConfig, &ppDevices, &devicecount);
+
+	if (SUCCEEDED(hr))
+	{
+		selectedAudiodevice = 0xFFFFFFFF;
+
+		for (DWORD i = 0; i < devicecount; i++)
+		{
+			wchar_t *name = nullptr;
+			UINT32 namelen = 0;
+			hr = ppDevices[i]->GetAllocatedString(MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME, &name, &namelen);
+			char asciiname[512];
+			if (SUCCEEDED(hr))
+			{
+				wcstombs_s(nullptr, asciiname, name, namelen);
+				CoTaskMemFree(name);
+			}
+	
+			// Skip things that look like camera devices
+			// TODO: This is a hack, need a better way to detect cameras or non-camera devices
+			if (strstr(asciiname, capturedevicename) != nullptr)
+			{
+				// Found a non-camera device, use it
+				fprintf(stderr, "Using audio capture device(%d): %s\n", i, asciiname);
+				selectedAudiodevice = i;
+			}
+			else
+				fprintf(stderr, "Found audio capture device(%d): %s\n", i, asciiname);
+		}
+
+		if (selectedAudiodevice != 0xFFFFFFFF)
+			hr = ppDevices[selectedAudiodevice]->ActivateObject(IID_PPV_ARGS(ppSource));
+		else
+			hr = MF_E_NOT_FOUND;
+	}
+
+	for (DWORD i = 0; i < devicecount; i++)
+		ppDevices[i]->Release();
+	CoTaskMemFree(ppDevices);
+
+	return hr;
+}
+
+HRESULT VideoCapture::CreateAggregateSource(IMFMediaSource *pVideoSource, IMFMediaSource *pAudioSource, IMFMediaSource **ppAggregateSource)
+{
+	HRESULT hr = S_OK;
+
+	// Create aggregate source.
+	hr = MFCreateCollection(&pCollection);
+	if (FAILED(hr))
+	{
+		fprintf(stderr, "MFCreateCollection failed\n");
+		return hr;
+	}
+
+	hr = pCollection->AddElement(videosource);
+	if (FAILED(hr))
+	{
+		fprintf(stderr, "Add(video) failed\n");
+		return hr;
+	}
+
+	hr = pCollection->AddElement(audiosource);
+	if (FAILED(hr))
+	{
+		fprintf(stderr, "Add(audio) failed\n");
+		return hr;
+	}
+
+	hr = MFCreateAggregateSource(pCollection, &aggregatesource);
+	if (FAILED(hr))
+	{
+		fprintf(stderr, "MFCreateAggregateSource failed\n");
+		return hr;
+	}
+
+	pCollection->Release();
+	pCollection = nullptr;
+
+	return hr;
+}
+
+HRESULT VideoCapture::CreateSourceReader(IMFMediaSource *pAggregateSource, const uint32_t width, const uint32_t height)
+{
+	// Create the source reader.
+	HRESULT hr = MFCreateSourceReaderFromMediaSource(pAggregateSource, nullptr, &pAggregateReader);
+	if (FAILED(hr))
+	{
+		fprintf(stderr, "MFCreateSourceReaderFromMediaSource(aggregate) failed\n");
+		return hr;
+	}
+
+	hr = pAggregateReader->SetStreamSelection(MF_SOURCE_READER_ALL_STREAMS, TRUE);
+	if (FAILED(hr))
+	{
+		fprintf(stderr, "SetStreamSelection failed\n");
+		return hr;
+	}
+
+	IMFMediaType* mediaType = nullptr;
+	hr = MFCreateMediaType(&mediaType);
+	if (FAILED(hr))
+	{
+		fprintf(stderr, "MFCreateMediaType(video) failed\n");
+		return hr;
+	}
+
+	hr = mediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
+	if (FAILED(hr))
+	{
+		fprintf(stderr, "SetGUID failed\n");
+		return hr;
+	}
+
+	hr = mediaType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_YUY2);
+	if (FAILED(hr))
+	{
+		fprintf(stderr, "SetGUID failed\n");
+		return hr;
+	}
+
+	hr = MFSetAttributeSize(mediaType, MF_MT_FRAME_SIZE, width, height);
+	if (FAILED(hr))
+	{
+		fprintf(stderr, "MFSetAttributeSize failed\n");
+		return hr;
+	}
+
+	hr = MFSetAttributeRatio(mediaType, MF_MT_FRAME_RATE, 60, 1);
+	if (FAILED(hr))
+	{
+		fprintf(stderr, "MFSetAttributeRatio failed\n");
+		return hr;
+	}
+
+	// Set the video format.
+	hr = pAggregateReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, nullptr, mediaType);
+	if (FAILED(hr))
+	{
+		fprintf(stderr, "SetCurrentMediaType(video) failed\n");
+		return hr;
+	}
+
+	IMFMediaType* audioType = nullptr;
+	hr = MFCreateMediaType(&audioType);
+	if (FAILED(hr))
+	{
+		fprintf(stderr, "MFCreateMediaType(audio) failed\n");
+		return hr;
+	}
+
+	hr = audioType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio);
+	if (FAILED(hr))
+	{
+		fprintf(stderr, "SetGUID failed\n");
+		return hr;
+	}
+
+	hr = mediaType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM);
+	if (FAILED(hr))
+	{
+		fprintf(stderr, "SetGUID failed\n");
+		return hr;
+	}
+
+	hr = mediaType->SetUINT32(MF_MT_AUDIO_NUM_CHANNELS, 2);
+	if (FAILED(hr))
+	{
+		fprintf(stderr, "MF_MT_AUDIO_NUM_CHANNELS failed\n");
+		return hr;
+	}
+
+	hr = mediaType->SetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, 16);
+	if (FAILED(hr))
+	{
+		fprintf(stderr, "MF_MT_AUDIO_BITS_PER_SAMPLE failed\n");
+		return hr;
+	}
+
+	hr = mediaType->SetUINT32(MF_MT_AUDIO_SAMPLES_PER_SECOND, 44100);
+	if (FAILED(hr))
+	{
+		fprintf(stderr, "MF_MT_AUDIO_SAMPLES_PER_SECOND failed\n");
+		return hr;
+	}
+
+	// Set the audio format.
+	hr = pAggregateReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM, nullptr, audioType);
+	if (FAILED(hr))
+	{
+		fprintf(stderr, "SetCurrentMediaType(audio) failed\n");
+		return hr;
+	}
+
+	return hr;
+}
+
+#endif
+
 bool VideoCapture::Initialize(int width, int height)
 {
 	frameWidth = width;
@@ -135,148 +435,32 @@ bool VideoCapture::Initialize(int width, int height)
 		return false;
 	}
 
-	devicecount = 0;
-
-	IMFAttributes *pConfig = nullptr;
-
-	// Create an attribute store to hold the search criteria.
-	hr = MFCreateAttributes(&pConfig, 1);
+	hr = CreateVideoSource(&videosource);
 	if (FAILED(hr))
 	{
-		fprintf(stderr, "MFCreateAttributes failed\n");
+		fprintf(stderr, "CreateVideoSource failed\n");
 		return false;
 	}
 
-	// Request video capture devices.
-	hr = pConfig->SetGUID(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE, MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID);
+	hr = CreateAudioSource(&audiosource);
 	if (FAILED(hr))
 	{
-		fprintf(stderr, "SetGUID failed\n");
+		fprintf(stderr, "CreateAudioSource failed\n");
 		return false;
 	}
 
-	IMFActivate **devices = nullptr;
-
-	// Enumerate the devices,
-	selecteddevice = 0xFFFFFFFF;
-	devicecount = 0;
-	hr = MFEnumDeviceSources(pConfig, &devices, &devicecount);
-	if( FAILED(hr) || devicecount == 0 )
+	hr = CreateAggregateSource(videosource, audiosource, &aggregatesource);
+	if (FAILED(hr))
 	{
-		fprintf(stderr, "MFEnumDeviceSources failed or there were no capture devices\n");
+		fprintf(stderr, "CreateAggregateSource failed\n");
 		return false;
 	}
 
-	for (DWORD i = 0; i < devicecount; i++)
+	hr = CreateSourceReader(aggregatesource, width, height);
+	if (FAILED(hr))
 	{
-		wchar_t *name = nullptr;
-		UINT32 namelen = 0;
-		hr = devices[i]->GetAllocatedString(MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME, &name, &namelen);
-		char asciiname[512];
-		if (SUCCEEDED(hr))
-		{
-			wcstombs_s(nullptr, asciiname, name, namelen);
-			CoTaskMemFree(name);
-		}
-
-		// Skip things that look like camera devices
-		// TODO: This is a hack, need a better way to detect cameras or non-camera devices
-		if (strstr(asciiname, capturedevicename) != nullptr)
-		{
-			// Found a non-camera device, use it
-			fprintf(stderr, "Using video capture device(%d): %s\n", i, asciiname);
-			selecteddevice = i;
-		}
-		else
-			fprintf(stderr, "Found video capture device(%d): %s\n", i, asciiname);
-	}
-
-	// Create a media source for the first device in the list.
-	if (devicecount > 0 && selecteddevice != 0xFFFFFFFF)
-	{
-		hr = devices[selecteddevice]->ActivateObject(IID_PPV_ARGS(&mediaSource));
-		for (DWORD i = 0; i < devicecount; i++)
-		{
-			devices[i]->Release();
-		}
-		CoTaskMemFree(devices);
-		if (SUCCEEDED(hr))
-		{
-			fprintf(stderr, "Activated video capture device %d\n", selecteddevice);
-		}
-		else
-		{
-			fprintf(stderr, "ActivateObject failed\n");
-			return false;
-		}
-	}
-	else
-	{
-		hr = MF_E_NOT_FOUND;
-	}
-
-	// Create the source reader.
-	if (SUCCEEDED(hr))
-	{
-		// Create the source reader.
-		hr = MFCreateSourceReaderFromMediaSource(mediaSource, nullptr, &pReader);
-		if (FAILED(hr))
-		{
-			fprintf(stderr, "MFCreateSourceReaderFromMediaSource failed\n");
-			return false;
-		}
-
-		hr = pReader->SetStreamSelection(MF_SOURCE_READER_FIRST_VIDEO_STREAM, TRUE);
-		//hr = pReader->SetStreamSelection(MF_SOURCE_READER_FIRST_AUDIO_STREAM, FALSE); 
-		if (FAILED(hr))
-		{
-			fprintf(stderr, "SetStreamSelection failed\n");
-			return false;
-		}
-
-		IMFMediaType* mediaType = nullptr;
-		hr = MFCreateMediaType(&mediaType);
-		if (FAILED(hr))
-		{
-			fprintf(stderr, "MFCreateMediaType failed\n");
-			return false;
-		}
-
-		hr = mediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
-		if (FAILED(hr))
-		{
-			fprintf(stderr, "SetGUID failed\n");
-			return false;
-		}
-
-		hr = mediaType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_YUY2);
-		if (FAILED(hr))
-		{
-			fprintf(stderr, "SetGUID failed\n");
-			return false;
-		}
-
-		hr = MFSetAttributeSize(mediaType, MF_MT_FRAME_SIZE, width, height);
-		if (FAILED(hr))
-		{
-			fprintf(stderr, "MFSetAttributeSize failed\n");
-			return false;
-		}
-
-		hr = MFSetAttributeRatio(mediaType, MF_MT_FRAME_RATE, 60, 1);
-		if (FAILED(hr))
-		{
-			fprintf(stderr, "MFSetAttributeRatio failed\n");
-			return false;
-		}
-
-		// Set the video format.
-		hr = pReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, nullptr, mediaType);
-		if (FAILED(hr))
-		{
-			fprintf(stderr, "SetCurrentMediaType failed\n");
-			return false;
-		}
+		fprintf(stderr, "CreateSourceReader failed\n");
+		return false;
 	}
 
 	return true;
@@ -304,16 +488,24 @@ void VideoCapture::Terminate()
 	// MacOS
 #else // CAT_WINDOWS
 
-	if (pReader)
+	if (audiosource)
 	{
-		pReader->Release();
-		pReader = nullptr;
+		audiosource->Shutdown();
+		audiosource->Release();
 	}
-	if (mediaSource)
+
+	if (videosource)
 	{
-		mediaSource->Shutdown();
-		mediaSource->Release();
+		videosource->Shutdown();
+		videosource->Release();
 	}
+
+	if (pAggregateReader)
+	{
+		pAggregateReader->Release();
+		pAggregateReader = nullptr;
+	}
+
 	MFShutdown();
 #endif
 }
@@ -364,7 +556,7 @@ void ConvertYUY2ToRGB(const unsigned char *yuy2Data, unsigned char *rgbData, int
 	}
 }
 
-bool VideoCapture::CaptureFrame(uint8_t *videodata)
+bool VideoCapture::CaptureFrame(uint8_t *videodata, AudioPlayback* audio)
 {
 #if defined(CAT_LINUX)
 	// Linux
@@ -376,11 +568,11 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata)
 	LONGLONG timestamp;
 	IMFSample *sample = nullptr;
 
-	if (!pReader)
+	if (!pAggregateReader)
 		return false;
 
-	hr = pReader->ReadSample(
-		MF_SOURCE_READER_FIRST_VIDEO_STREAM,
+	hr = pAggregateReader->ReadSample(
+		MF_SOURCE_READER_ALL_STREAMS,
 		0,
 		&streamIndex,
 		&flags,
@@ -395,28 +587,66 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata)
 
 	if (sample)
 	{
-		IMFMediaBuffer *buffer = nullptr;
-		hr = sample->ConvertToContiguousBuffer(&buffer);
-		if (FAILED(hr))
+		//fprintf(stderr, "Stream index: %d\n", streamIndex);
+		if (streamIndex == 0)
 		{
-			fprintf(stderr, "Failed to convert sample to contiguous buffer.\n");
-			return false; 
-		}
+			IMFMediaBuffer *buffer = nullptr;
+			hr = sample->ConvertToContiguousBuffer(&buffer);
+			if (FAILED(hr))
+			{
+				fprintf(stderr, "Failed to convert sample to contiguous buffer.\n");
+				return false; 
+			}
 
-		BYTE *rawData = nullptr;
-		DWORD maxLength = 0, currentLength = 0;
-		hr = buffer->Lock(&rawData, &maxLength, &currentLength);
-		if (SUCCEEDED(hr))
-		{
-			ConvertYUY2ToRGB(rawData, videodata, frameWidth, frameHeight);
-			buffer->Unlock();
+			BYTE *rawData = nullptr;
+			DWORD maxLength = 0, currentLength = 0;
+			hr = buffer->Lock(&rawData, &maxLength, &currentLength);
+			if (SUCCEEDED(hr))
+			{
+				ConvertYUY2ToRGB(rawData, videodata, frameWidth, frameHeight);
+				buffer->Unlock();
+			}
+			else
+			{
+				fprintf(stderr, "Failed to lock buffer.\n");
+				return false;
+			}
+			buffer->Release();
 		}
 		else
 		{
-			fprintf(stderr, "Failed to lock buffer.\n");
-			return false;
+			IMFMediaBuffer *buffer = nullptr;
+			hr = sample->ConvertToContiguousBuffer(&buffer);
+			if (FAILED(hr))
+			{
+				fprintf(stderr, "Failed to convert sample to contiguous buffer.\n");
+				return false; 
+			}
+
+			BYTE *rawData = nullptr;
+			DWORD maxLength = 0, currentLength = 0;
+			hr = buffer->Lock(&rawData, &maxLength, &currentLength);
+			if (SUCCEEDED(hr))
+			{
+				if (audioBuffer == nullptr)
+					audioBuffer = new int16_t[32768*2];
+
+				float* audiosamples = (float*)rawData;
+				for(int i = 0; i < currentLength / sizeof(float); ++i)
+					audioBuffer[i] = (int16_t)(audiosamples[i] * 32768.f);
+
+				buffer->Unlock();
+
+				SDL_QueueAudio(audio->selectedplaybackdevice, audioBuffer, currentLength/2);
+			}
+			else
+			{
+				fprintf(stderr, "Failed to lock buffer.\n");
+				return false;
+			}
+			buffer->Release();
 		}
-		buffer->Release();
+
 		sample->Release();
 	}
 #endif

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "platform.h"
+#include "audio.h"
 
 #if defined(CAT_LINUX)
 #include <libv4l2.h>
@@ -27,17 +28,26 @@ public:
 	bool Initialize(int width, int height);
 	void Terminate();
 
-	bool CaptureFrame(uint8_t *videodata);
+	bool CaptureFrame(uint8_t *videodata, AudioPlayback* audio);
 
 #if defined(CAT_LINUX)
 	int video_capture = -1;
 #elif defined(CAT_DARWIN)
 	// MacOS
-#elif defined(CAT_WINDOWS)
-	IMFMediaSource *mediaSource = nullptr;
-	IMFSourceReader *pReader = nullptr;
+#else // CAT_WINDOWS
+	HRESULT CreateVideoSource(IMFMediaSource **ppSource);
+	HRESULT CreateAudioSource(IMFMediaSource **ppSource);
+	HRESULT CreateAggregateSource(IMFMediaSource *pVideoSource, IMFMediaSource *pAudioSource, IMFMediaSource **ppAggregateSource);
+	HRESULT CreateSourceReader(IMFMediaSource *pAggregateSource, const uint32_t width, const uint32_t height);
+	IMFMediaSource *videosource = nullptr;
+	IMFMediaSource *audiosource = nullptr;
+	IMFMediaSource *aggregatesource = nullptr;
+	IMFCollection *pCollection = nullptr;
+	IMFSourceReader *pAggregateReader = nullptr;
 	uint32_t devicecount = 0;
-	uint32_t selecteddevice = 0;
+	uint32_t selectedVideodevice = 0;
+	uint32_t selectedAudiodevice = 0;
+	int16_t *audioBuffer = nullptr;
 #endif
 	uint32_t frameWidth = 0;
 	uint32_t frameHeight = 0;

@@ -10,7 +10,7 @@
 struct AppCtx
 {
 	VideoCapture* video;
-	AudioCapture* audio;
+	AudioPlayback* audio;
 	CSerialPort* serial;
 	SDL_GameController* gamecontroller;
 };
