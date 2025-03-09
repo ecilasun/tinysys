@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}\\bin\\tinyremote.exe",
             "args": [],
-            "cwd": "${workspaceFolder}\\",
+            "cwd": "${workspaceFolder}\\bin\\",
             "stopAtEntry": false,
             "environment": [],
             "externalConsole": false
@@ -21,7 +21,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/bin/tinyremote",
             "args": [],
-            "cwd": "${workspaceFolder}/"
+            "cwd": "${workspaceFolder}/bin/"
         }
     ]
 }
