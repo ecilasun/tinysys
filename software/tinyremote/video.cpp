@@ -302,28 +302,28 @@ HRESULT VideoCapture::CreateSourceReader(IMFMediaSource *pAggregateSource, const
 		return hr;
 	}
 
-	hr = mediaType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM);
+	hr = audioType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_Float);
 	if (FAILED(hr))
 	{
 		fprintf(stderr, "SetGUID failed\n");
 		return hr;
 	}
 
-	hr = mediaType->SetUINT32(MF_MT_AUDIO_NUM_CHANNELS, 2);
+	hr = audioType->SetUINT32(MF_MT_AUDIO_NUM_CHANNELS, 2);
 	if (FAILED(hr))
 	{
 		fprintf(stderr, "MF_MT_AUDIO_NUM_CHANNELS failed\n");
 		return hr;
 	}
 
-	hr = mediaType->SetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, 16);
+	hr = audioType->SetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, 32);
 	if (FAILED(hr))
 	{
 		fprintf(stderr, "MF_MT_AUDIO_BITS_PER_SAMPLE failed\n");
 		return hr;
 	}
 
-	hr = mediaType->SetUINT32(MF_MT_AUDIO_SAMPLES_PER_SECOND, 44100);
+	hr = audioType->SetUINT32(MF_MT_AUDIO_SAMPLES_PER_SECOND, 48000);
 	if (FAILED(hr))
 	{
 		fprintf(stderr, "MF_MT_AUDIO_SAMPLES_PER_SECOND failed\n");

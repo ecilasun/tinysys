@@ -222,7 +222,7 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	// Start the receiver app on the other end
 	snprintf(tmpstring, 128, "recv");
 	_serial->Send((uint8_t*)tmpstring, 4);
-	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	std::this_thread::sleep_for(std::chrono::milliseconds(200));
 	snprintf(tmpstring, 128, "\n");
 	_serial->Send((uint8_t*)tmpstring, 1);
 	if (!WACK(_serial, '+', received))
@@ -347,6 +347,10 @@ void SendFile(char *_filename, CSerialPort* _serial)
 
 		packetOffset += leftoverBytes;
 	}
+
+	std::this_thread::sleep_for(std::chrono::milliseconds(200));
+	snprintf(tmpstring, 128, "\n");
+	_serial->Send((uint8_t*)tmpstring, 1);
 
 	fprintf(stderr, "\r\n");
 
