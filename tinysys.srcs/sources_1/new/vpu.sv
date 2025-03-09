@@ -24,8 +24,7 @@ module videocore(
 	input wire [31:0] vpufifodout,
 	output wire vpufifore,
 	input wire vpufifovalid,
-	output wire [31:0] vpustate,
-	output wire hirq);
+	output wire [31:0] vpustate);
 
 // --------------------------------------------------
 // Reset delay line
@@ -260,16 +259,11 @@ typedef enum logic [3:0] {
 	SETVPAGE,
 	SETPAL,
 	VMODE,
-	CTLREGSEL, CTLREGSET, CTLREGCLR,
 	VSCANSIZE,
 	FINALIZE } vpucmdmodetype;
 vpucmdmodetype cmdmode = WCMD;
 
 logic [31:0] vpucmd;
-logic controlregA;			// register 0: HBlank interrupt enable/disable control
-logic [9:0] controlregB;	// register 1: HBlank trigger point. Set it beyong scan range to avoid triggering
-logic controlregC;			// register 2: HBlank latch clear (i.e. IRQ ACK) 
-logic [1:0] regIndex;		// Currently selected VPU register
 
 always_ff @(posedge aclk) begin
 	if (~delayedresetn) begin
@@ -277,17 +271,15 @@ always_ff @(posedge aclk) begin
 		scanaddr <= 32'd0;
 		burstlen <= 'd19;
 		lastscanline <= 10'd0;
-		palettedin <= 24'd0;
+		palettedin <= 12'd0;
 		scanenable <= 1'b0;
 		cmdre <= 1'b0;
 		scanwidth <= 1'b0;
 		colormode <= 1'b0;
 		palettewe <= 1'b0;
-		regIndex <= 2'b00;
-		controlregA <= 1'd0;
-		controlregB <= 10'd0;
-		controlregC <= 1'd0;
 		cmdmode <= WCMD;
+		palettewa <= 8'd0;
+		scaninc <= 11'd0;
 	end else begin
 		cmdre <= 1'b0;
 		palettewe <= 1'b0;
@@ -308,9 +300,6 @@ always_ff @(posedge aclk) begin
 					8'h00:		cmdmode <= SETVPAGE;	// Set the scanout start address (followed by 32bit cached memory address, 64 byte cache aligned)
 					8'h01:		cmdmode <= SETPAL;		// Set 24 bit color palette entry (followed by 8bit address+24bit color in next word)
 					8'h02:		cmdmode <= VMODE;		// Set up video mode or turn off scan logic (default is 320x240*8bit paletted)
-					8'h03:		cmdmode <= CTLREGSEL;	// Select control register
-					8'h04:		cmdmode <= CTLREGSET;	// Set given bits of control register
-					8'h05:		cmdmode <= CTLREGCLR;	// Clear given bits of control register
 					default:	cmdmode <= FINALIZE;	// Invalid command, wait one clock and try next
 				endcase
 			end
@@ -356,38 +345,6 @@ always_ff @(posedge aclk) begin
 					// Advance FIFO
 					cmdre <= 1'b1;
 					cmdmode <= VSCANSIZE;
-				end
-			end
-			
-			CTLREGSEL: begin
-				if (vpufifovalid && ~vpufifoempty) begin
-					regIndex <= vpufifodout[1:0];
-					cmdre <= 1'b1;
-					cmdmode <= FINALIZE;
-				end
-			end
-
-			CTLREGSET: begin
-				if (vpufifovalid && ~vpufifoempty) begin
-					case (regIndex)
-						2'b00: controlregA <= controlregA | vpufifodout[0];	// {hirq_ena_cpu0}}
-						2'b01: controlregB <= vpufifodout[9:0];				// hirq scanline does not allow setting individual bits
-						2'b10: controlregC <= controlregC | vpufifodout[0];	// clear latch
-					endcase
-					cmdre <= 1'b1;
-					cmdmode <= FINALIZE;
-				end
-			end
-
-			CTLREGCLR: begin
-				if (vpufifovalid && ~vpufifoempty) begin
-					case (regIndex)
-						2'b00: controlregA <= controlregA & (~vpufifodout[0]);	// {hirq_ena_cpu0}}
-						2'b01: controlregB <= 10'd0;							// hirq scanline does not allow per-bit clears
-						2'b10: controlregC <= controlregC & (~vpufifodout[0]);	// release latch
-					endcase
-					cmdre <= 1'b1;
-					cmdmode <= FINALIZE;
 				end
 			end
 
@@ -456,7 +413,7 @@ end
 assign vpustate = {21'd0, scanline, blanktoggle};
 
 typedef enum logic [2:0] {DETECTFRAMESTART, STARTLOAD, TRIGGERBURST, DATABURST, ADVANCESCANLINEADDRESS} scanstatetype;
-scanstatetype scanstate = DETECTFRAMESTART;
+scanstatetype scanstate;
 
 logic [6:0] rdata_cnt;
 
@@ -466,6 +423,8 @@ always_ff @(posedge aclk) begin
 		m_axi.arvalid <= 0;
 		m_axi.rready <= 0;
 		rdata_cnt <= 7'd0;
+		scanoffset <= 32'd0;
+		scanlinewa <= 7'd0;
 		scanstate <= DETECTFRAMESTART;
 	end else begin
 		scanlinewe <= 1'b0;
@@ -532,30 +491,5 @@ always_ff @(posedge aclk) begin
 		endcase
 	end
 end
-
-// Horizontal and Vertical blank interrupt logic
-
-logic horizontalinterrupt;
-logic [1:0] triggertrack;
-
-wire interrupttrigger = controlregA && (scanline == controlregB);
-
-always @(posedge aclk) begin
-	if (~delayedresetn) begin
-		triggertrack <= 2'b00;
-		horizontalinterrupt <= 1'b0;
-	end else begin
-
-		// Shift state
-		triggertrack <= {triggertrack[0], interrupttrigger & ~controlregC};		
-		
-		case (1'b1)
-			(triggertrack == 2'b01):	horizontalinterrupt <= 1'b1;	// Latch hblank interrupt on rising edge of crossing scanline
-			controlregC:				horizontalinterrupt <= 1'b0;	// Clear interrupt state if we received an ACK
-		endcase
-	end
-end
-
-assign hirq = horizontalinterrupt;
 
 endmodule

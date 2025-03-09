@@ -21,8 +21,6 @@ public:
 
 	void UpdateVideoLink(uint32_t* pixels, int pitch, int scanline, CBus* bus);
 
-	uint32_t m_hirq{ 0 };
-
 private:
 	uint32_t m_cmd{ 0 };
 	uint32_t m_data{ 0 };

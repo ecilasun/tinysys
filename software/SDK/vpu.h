@@ -114,13 +114,5 @@ void VPUConsoleScrollUp(struct EVideoContext *_context);
 // Software emulated
 void VPUClear(struct EVideoContext *_context, const uint32_t _colorWord);
 
-// Horizontal blanking interrupt
-void VPUSetHBlankHandler(uintptr_t _handler);
-void VPUSetHBlankScanline(uintptr_t _scanline);
-void VPUHBlankIRQLatchSet();
-void VPUHBlankIRQLatchReset();
-void VPUEnableHBlankInterrupt();
-void VPUDisableHBlankInterrupt();
-
 // OS graphics context
 struct EVideoContext *VPUGetKernelGfxContext();

@@ -52,7 +52,6 @@ void CCSRMem::Tick(CBus* bus)
 	uint32_t uartirq = uart ? uart->m_uartirq : 0;
 	uint32_t keyirq = 0; // Ignoring sdcard insert/remove signal for now
 	uint32_t usbirq = 0; // Ignoring USB for now
-	uint32_t hblankirq = vpu ? vpu->m_hirq : 0;
 
 	// Software interrupt
 	m_sie = ((m_mieshadow & 0x1) ? 1 : 0) && m_mstatusieshadow;
@@ -61,7 +60,7 @@ void CCSRMem::Tick(CBus* bus)
 	uint32_t timerInterrupt = ((m_mieshadow & 0x2 ? 1 : 0) && m_mstatusieshadow && (m_wallclocktime >= m_timecmpshadow)) ? 1 : 0;
 
 	// IRQ state shadow
-	m_irqstate = (hblankirq << 3) | (uartirq << 2) | (keyirq << 1) | (usbirq);
+	m_irqstate = (uartirq << 2) | (keyirq << 1) | (usbirq);
 
 	// Machine external interrupts
 	uint32_t hwInterrupt = ((m_mieshadow & 0x4 ? 1 : 0) && m_mstatusieshadow && m_irqstate) ? 1 : 0;

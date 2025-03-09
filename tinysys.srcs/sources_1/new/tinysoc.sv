@@ -177,7 +177,6 @@ riscv #( .CSRBASE(16'h800A), .RESETVECTOR(RESETVECTOR)) hart1(
 // Video output unit
 // --------------------------------------------------
 
-wire hirq;
 wire vpufifoempty;
 wire [31:0] vpufifodout;
 wire vpufifore;
@@ -206,8 +205,7 @@ videocore VPU(
 	.vpufifodout(vpufifodout),
 	.vpufifore(vpufifore),
 	.vpufifovalid(vpufifovalid),
-	.vpustate(vpustate),
-	.hirq(hirq));
+	.vpustate(vpustate));
 
 // --------------------------------------------------
 // Boot ROM copy unit
@@ -381,7 +379,6 @@ axi4CSRFile #( .HARTID(4'd0)) csrfile0 (
 	// External hardware interrupt wires
 	.keyirq(keyirq),
 	.uartirq(uartirq),
-	.hirq(hirq),
 	.rebootreq(cpu_reboot),
 	// CPU reset
 	.cpuresetreq(cpuresetreq0),
@@ -404,7 +401,6 @@ axi4CSRFile #( .HARTID(4'd1)) csrfile1 (
 	// External hardware interrupt wires
 	.keyirq(keyirq),
 	.uartirq(uartirq),
-	.hirq(hirq),
 	.rebootreq(cpu_reboot),
 	// CPU reset
 	.cpuresetreq(cpuresetreq1),
