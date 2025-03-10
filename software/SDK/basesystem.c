@@ -202,6 +202,18 @@ void E32ResetCPU(uint32_t hartid)
 }
 
 /**
+ * @brief Clears the reset state of a CPU.
+ *
+ * @param hartid The ID of the hart to clear the reset state for.
+ */
+void E32ClearReset(uint32_t hartid)
+{
+	if (hartid >= MAX_HARTS) return;
+	// This clears the reset state of the CPU
+	E32WriteMemMappedCSR(hartid, CSR_CPURESET, 0x0);
+}
+
+/**
  * @brief Begins a critical section.
  * 
  * This function begins a critical section by disabling the machine timer interrupt.

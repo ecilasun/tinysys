@@ -164,7 +164,7 @@ wire ififofull;
 
 instructinfifo instructionfifoinst (
   .clk(aclk),
-  .rst(~delayedresetn),
+  .rst(~delayedresetn || cpuresetreq),
   .din(ififodin),
   .wr_en(ififowr_en),
   .rd_en(ififord_en),

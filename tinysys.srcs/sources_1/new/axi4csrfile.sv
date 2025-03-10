@@ -163,6 +163,9 @@ always @(posedge aclk) begin
 	end
 end
 
+// Reset clear counter (shift)
+logic [10:0] cpuresetclearcounter;
+
 always @(posedge aclk) begin
 	if (~delayedresetn) begin
 		csrdin <= 32'd0;
@@ -175,12 +178,16 @@ always @(posedge aclk) begin
 		cpuresetreq_r <= 1'b0;
 		mieshadow <= 3'b000;
 		csrwe <= 1'b0;
+		cpuresetclearcounter <= 11'd0;
 	end else begin
-		// Clear reset request
-		cpuresetreq_r <= 1'b0;
 		s_axi.wready <= 1'b0;
 		s_axi.bvalid <= 1'b0;
 		csrwe <= 1'b0;
+
+		// Clear reset request when the timer is up
+		if (~cpuresetclearcounter[10])
+			cpuresetreq_r <= 1'b0;
+		cpuresetclearcounter <= {cpuresetclearcounter[9:0], 1'b1};
 
 		unique case(writestate)
 			2'b00: begin
@@ -212,7 +219,10 @@ always @(posedge aclk) begin
 					`CSR_MIE:			mieshadow <= {csrdin[11], csrdin[7], csrdin[3]};	// Only store MEIE, MTIE and MSIE bits
 					`CSR_MSTATUS:		mstatusIEshadow <= csrdin[3];						// Global interrupt enable (MIE) bit
 					`CSR_MTVEC:			mtvecshadow <= csrdin;								// Interrupt vector
-					`CSR_CPURESET:		cpuresetreq_r <= csrdin[0];							// CPU reset request needs to be high for one clock only (reset vector is in mtvec)
+					`CSR_CPURESET:		begin
+						cpuresetreq_r <= csrdin[0];
+						cpuresetclearcounter <= 11'h00;
+					end
 					default:			dummyshadow <= csrdin[0];							// Unused - sink
 				endcase
 				writestate <= 2'b01;

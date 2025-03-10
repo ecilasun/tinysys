@@ -87,21 +87,55 @@ void draw_wave()
 			outputL[i] = std::complex<float>(apubuffer[i*2+0]>>15, 0.0f);
 			outputR[i] = std::complex<float>(apubuffer[i*2+1]>>15, 0.0f);
 		}
-		fft(outputL);
-		fft(outputR);
 
-		for (uint32_t i=0; i<BUFFER_WORD_COUNT; i+=4)
+		fft(outputL);
+		fft(outputR);		
+
+		for (uint32_t i=0; i<BUFFER_WORD_COUNT/2; i+=4)
 		{
-			int16_t L = 120 - (int16_t)std::abs(outputL[i]);
-			int16_t R = 120 + (int16_t)std::abs(outputR[i]);
-			barsL[i>>2] = std::min(239, std::max(0, (barsL[i>>2] + L)/2));
-			barsR[i>>2] = std::min(239, std::max(0, (barsR[i>>2] + R)/2));
+			int16_t L0 = 200 - (int16_t)std::abs(outputL[i+0]);
+			int16_t L1 = 200 - (int16_t)std::abs(outputL[i+1]);
+			int16_t L2 = 200 - (int16_t)std::abs(outputL[i+2]);
+			int16_t L3 = 200 - (int16_t)std::abs(outputL[i+3]);
+			int16_t R0 = 200 - (int16_t)std::abs(outputR[i+0]);
+			int16_t R1 = 200 - (int16_t)std::abs(outputR[i+1]);
+			int16_t R2 = 200 - (int16_t)std::abs(outputR[i+2]);
+			int16_t R3 = 200 - (int16_t)std::abs(outputR[i+3]);
+			barsL[i>>2] = (barsL[i>>2] + L0 + L1 + L2 + L3)/5;
+			barsR[i>>2] = (barsR[i>>2] + R0 + R1 + R2 + R3)/5;
 		}
 
-		for (uint32_t i=0; i<256; ++i)
+		// Draw first 128 samples
+		for (uint32_t i=0; i<128; ++i)
 		{
-			sc.writepage[32 + i + barsL[i]*320] = 0x37;
-			sc.writepage[32 + i + barsR[i]*320] = 0x27;
+			// Convert i to a logarithmic coordinate
+			int16_t logi = (int16_t)(128.0f * log10f((float)i+1.0f) / 2.0f);
+			// Next bar's logarithmic coordinate
+			int16_t nextlogi = (int16_t)(128.0f * log10f((float)(i+1)+1.0f) / 2.0f);
+			// Distance between the two
+			int16_t delta = nextlogi - logi;
+
+			// Draw bars for left channel
+			for (int16_t j=0; j<delta; ++j)
+			{
+				if (logi+j >= 0 && logi+j < 320)
+				{
+					int16_t L = std::min<int16_t>(239, std::max<int16_t>(0, barsL[i]));
+					for (int16_t k=L; k<200; ++k)
+						sc.writepage[16 + logi+j + k*320] = 0x37;
+				}
+			}
+
+			// Do the same for right channel
+			for (int16_t j=0; j<delta; ++j)
+			{
+				if (logi+j >= 0 && logi+j < 320)
+				{
+					int16_t R = std::min<int16_t>(239, std::max<int16_t>(0, barsR[i]));
+					for (int16_t k=R; k<200; ++k)
+						sc.writepage[304 - logi-j + k*320] = 0x27;
+				}
+			}
 		}
 
 		CFLUSH_D_L1;

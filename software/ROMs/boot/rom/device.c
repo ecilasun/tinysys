@@ -1,8 +1,14 @@
 #include "device.h"
 
+extern void UserMain();
+
 // We drop here for boot time or after an executable exits
 void DeviceDefaultState(int _bootTime)
 {
+	// Always reset CPU#1
+	E32SetupCPU(1, UserMain);
+	E32ResetCPU(1);
+
 	// Stop output
 	APUSetSampleRate(ASR_Halt);
 
