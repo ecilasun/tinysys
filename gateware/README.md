@@ -1,4 +1,4 @@
-# Latest Gateware Build is: r1.5H
+# Latest Gateware Build is: r1.8F
 # Latest ESP32 ROM is: r1.1H
 # Latest Board version is: 2H
 
@@ -27,6 +27,7 @@ r1.1H: Removed DMA hardware due to complications, added experimental HDMI output
 r1.3H: Some timing fixes and ROM code cleanup<br>
 r1.4H: Slightly better timing, some hblank SDK and hardware work done (still not stable enough due to IRQ handling mechanism)<br>
 r1.5H: Reduced I$ turnaround by one clock on cache hit<br>
+r1.8F: Removed hblank device, updated ROM with fixes to task logic<br>
 
 # Device gateware
 
