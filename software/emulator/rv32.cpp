@@ -999,8 +999,13 @@ bool CRV32::Execute(CBus* bus)
 		
 			// Remove instructions we have already executed up to and excluding this one
 
-			while(m_instructions.size() > 1 && m_instructions[1].m_pc != instr.m_pc)
-				m_instructions.erase(m_instructions.begin() + 1);
+			while(m_instructions.size() > 1)
+			{
+				if (m_instructions[0].m_pc != instr.m_pc)
+					m_instructions.erase(m_instructions.begin());
+				else
+					break; // We're at the current instruction
+			}
 
 			found->isHit = 1;
 			found->isCommunicated = 0;
@@ -1379,7 +1384,7 @@ bool CRV32::Execute(CBus* bus)
 					break;
 					case 0b0001100: // fdiv.s
 					{
-						m_cycles += 28;
+						m_cycles += 31;
 						if (instr.m_rval2 == 0)
 							rdin = 0x7fc00000;
 						else
@@ -1388,13 +1393,13 @@ bool CRV32::Execute(CBus* bus)
 					break;
 					case 0b0101100: // fsqrt.s
 					{
-						m_cycles += 28;
+						m_cycles += 31;
 						*D = sqrtf(abs(A)); // NOTE: hardware drops sign bit i.e. abs()
 					}
 					break;
 					case 0b1100001: // fcvtswu4sat.s
 					{
-						m_cycles += 2;
+						m_cycles += 5;
 						int sat = (int)(16.0f * A);
 						sat = sat > 15 ? 15 : sat;
 						sat = sat < 0 ? 0 : sat;
@@ -1403,7 +1408,6 @@ bool CRV32::Execute(CBus* bus)
 					break;
 					default:
 					{
-						m_cycles += 1;
 						rwen = 0;
 						fprintf(stderr, "- unknown floatop2\n");
 					}
