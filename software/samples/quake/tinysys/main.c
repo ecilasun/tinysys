@@ -219,7 +219,7 @@ int qembd_dequeue_key_event(key_event_t *e)
 			case 78:	{ e->keycode = K_PGDN; break; }
 			case 73:	{ e->keycode = K_INS; break; }
 			case 76:	{ e->keycode = K_DEL; break; }
-			default:	{ e->keycode = KeyboardScanCodeToASCII(scancode, 0); break; }
+			default:	{ e->keycode = keyState->ascii; break; }
 		}
 		e->state = keyState->state;
 		return 0;
