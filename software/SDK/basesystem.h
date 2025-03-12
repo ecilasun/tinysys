@@ -41,7 +41,9 @@
 #define GDB_RESPONSE_BUFFER				0x0F15D000 // GDB packet response buffer (8192 bytes)
 #define GDB_PACKET_BUFFER				0x0F15F000 // GDB packet buffer (8192 bytes)
 #define KERNEL_GFX_CONTEXT				0x0F160000 // Kernel terminal graphics context (4096 bytes with free space for future use)
-#define KERNEL_NOMANSLAND				0x0F161000 // Kernel reserved space (~16 MBytes)
+#define KERNEL_INPUTBUFFER				0x0F161000 // Input data buffer for keyboard and joystick (4096 bytes)
+#define KERNEL_DEVICECONTROL			0x0F162000 // Device control blocks (4096 bytes)
+#define KERNEL_NOMANSLAND				0x0F163000 // Kernel reserved space (~16 MBytes)
 // Task stack space
 #define TASKMEM_END_STACK_END			0x0FFD0000 // Tasks stack space above this (832 KBytes)
 //  Kernel stacks for all cores, 256 bytes each

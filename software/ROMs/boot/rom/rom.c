@@ -21,6 +21,14 @@ static const char *s_regnames[]={"pc", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
 
 void ClearStatics()
 {
+	// Clear device control blocks
+	uint32_t *devicecontrol = (uint32_t* )KERNEL_DEVICECONTROL;
+	__builtin_memset(devicecontrol, 0, 64);
+
+	// Clear keyboard and joystick input buffers
+	uint32_t *userinput = (uint32_t* )KERNEL_INPUTBUFFER;
+	__builtin_memset(userinput, 0, 64);
+
 	// Clear static variables for all systems that use them
 	SerialInitStatics();
 	CLIClearStatics();
@@ -185,7 +193,6 @@ void HandleCPUError(struct STaskContext *ctx, const uint32_t cpu)
 	if (ctx->kernelError & 0x80000000)
 	{
 		ksetcolor(CONSOLEGREEN, CONSOLEDEFAULTBG);
-		ctx->interceptUART = 0;
 		DeviceDefaultState(0);
 		kprintf("Task %d:%d completed (ret=%d)\n", cpu, ctx->kernelErrorData[0], ctx->kernelErrorData[1]);
 	}
@@ -334,7 +341,7 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 		// Refresh console output
 		// DEBUG: Optionally echo to UART if no task is intercepting it
 		if (kernelgfx->m_consoleUpdated)
-			VPUConsoleResolve(kernelgfx/*, !taskctx[0]->interceptUART*/);
+			VPUConsoleResolve(kernelgfx);
 
 		// Yield time as soon as we're done here (disables/enables interrupts)
 		clear_csr(mie, MIP_MTIP);
@@ -354,7 +361,9 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 		// user tasks that intercept UART input (only OS apps should)
 		// ----------------------------------------------------------------
 
-		if(!taskctx[0]->interceptUART)
+		volatile uint32_t *devicecontrol = (volatile uint32_t* )KERNEL_DEVICECONTROL;
+		// Allow serial input to be processed if it's not turned off
+		if(devicecontrol[0] == 0)
 			HandleSerialInput();
 	}
 }

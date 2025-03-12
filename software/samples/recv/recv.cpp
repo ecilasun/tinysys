@@ -18,15 +18,10 @@
 #include <string.h>
 #include <stdlib.h>
 
-void cleanupComms()
-{
-	struct STaskContext* taskctx = TaskGetContext(0);
-	taskctx->interceptUART = 0;
-}
-
 int main()
 {
-	atexit(cleanupComms);
+	// Disable OS UART interrupt handling
+	UARTInterceptSetState(1);
 
 	// NOTE: We have to be absolutely still with the UART chatter as the other side will not tolerate any noise other than ACK/NACK
 	const char* NACK = "!";
@@ -39,9 +34,6 @@ int main()
 		UARTPrintf("! Emulator detected, cannot receive files\n");
 		return 0;
 	}*/
-
-	struct STaskContext* taskctx = TaskGetContext(0);
-	taskctx->interceptUART = 1;
 
 	// Wait for UART chatter to finish
 	E32Sleep(HUNDRED_MILLISECONDS_IN_TICKS);
@@ -91,7 +83,6 @@ int main()
 	{
 		// Respond to the sender with an error code as the file name is too long
 		UARTSendBlock((uint8_t*)NACK, 1);
-		taskctx->interceptUART = 0;
 		return 0;
 	}
 	else
@@ -147,9 +138,6 @@ int main()
 		bytesReceived += packetLen;
 	}
 	while(bytesReceived < encodedLen);
-
-	// We're done with the UART
-	taskctx->interceptUART = 0;
 
 	uint8_t* targetBuffer = new uint8_t[decodedLen+512];
 	int unpacked = LZ4_decompress_safe((const char*)sourceBuffer, (char*)targetBuffer, bytesReceived, decodedLen+512);

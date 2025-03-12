@@ -39,7 +39,6 @@ struct STaskContext {
 	// 32 bytes total below
 	int32_t currentTask;			// Current task index
 	int32_t numTasks;				// Number of tasks
-	int32_t interceptUART;			// Lets an application intecept UART input
 	int32_t kernelError;			// Current kernel error
 	int32_t kernelErrorData[3];		// Data relevant to the crash
 	int32_t hartID;					// Id of the HART where this task context runs

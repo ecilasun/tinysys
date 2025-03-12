@@ -48,7 +48,6 @@ I_Init(void)
 	I_InitSound();
 
 	struct STaskContext* taskctx = TaskGetContext(0);
-	taskctx->interceptUART = 1;
 }
 
 
@@ -70,90 +69,63 @@ I_GetTime (void)
 static void
 I_GetRemoteEvent(void)
 {
-	uint8_t byte;
-	int have_joystick = 0;
-	if (SerialInRingBufferRead(&byte, 1))
+	static uint32_t oldcountKey = 0xAAAABBBB;
+	static uint32_t oldcountJoystick = 0xAAAABBBB;
+
+	volatile struct SKeyboardState* keyState = KeyboardGetState();
+	volatile struct SJoystickState* joystickState = JoystickGetState();
+
+	if (oldcountKey != keyState->count && keyState->scancode != 0x0)
 	{
-		// Keyboard packet
-		if (byte == '^')
-		{
-			uint8_t scandata[KEYBOARD_PACKET_SIZE];
-			ReadKeyState(scandata);
+		oldcountKey = keyState->count;
 
-			uint8_t scancode = scandata[KEYBOARD_SCANCODE_INDEX];
-			uint8_t modifiers_lower = scandata[KEYBOARD_MODIFIERS_LOWER_INDEX];
-			uint8_t modifiers_upper = scandata[KEYBOARD_MODIFIERS_UPPER_INDEX];
-			uint32_t modifiers = (modifiers_upper << 8) | modifiers_lower;
-
-			// if (ascii == 27) // ESC
-			// 	done = 1;
-
-			event_t event;
-			// See keyboard scan codes for more info
-			switch(scancode)
-			{
-				case 88:	{ event.data1 = KEY_ENTER; break; }
-				case 40:	{ event.data1 = KEY_ENTER; break; }
-				case 79:	{ event.data1 = KEY_RIGHTARROW; break; }
-				case 80:	{ event.data1 = KEY_LEFTARROW; break; }
-				case 81:	{ event.data1 = KEY_DOWNARROW; break; }
-				case 82:	{ event.data1 = KEY_UPARROW; break; }
-				case 45: 	{ event.data1 = KEY_MINUS; break; }
-				case 46:	{ event.data1 = KEY_EQUALS; break; }
-				case 41:	{ event.data1 = KEY_ESCAPE; break; }
-				case 43:	{ event.data1 = KEY_TAB; break; }
-				case 42:	{ event.data1 = KEY_BACKSPACE; break; }
-				case 229:	{ event.data1 = KEY_RSHIFT; break; }
-				case 228:	{ event.data1 = KEY_RCTRL; break; }
-				case 230:	{ event.data1 = KEY_RALT; break; }
-				case 226:	{ event.data1 = KEY_LALT; break; }
-				case 72:	{ event.data1 = KEY_PAUSE; break; }
-				case 58:	{ event.data1 = KEY_F1; break; }
-				case 59:	{ event.data1 = KEY_F2; break; }
-				case 60:	{ event.data1 = KEY_F3; break; }
-				case 61:	{ event.data1 = KEY_F4; break; }
-				case 62:	{ event.data1 = KEY_F5; break; }
-				case 63:	{ event.data1 = KEY_F6; break; }
-				case 64:	{ event.data1 = KEY_F7; break; }
-				case 65:	{ event.data1 = KEY_F8; break; }
-				case 66:	{ event.data1 = KEY_F9; break; }
-				case 67:	{ event.data1 = KEY_F10; break; }
-				case 68:	{ event.data1 = KEY_F11; break; }
-				case 69:	{ event.data1 = KEY_F12; break; }
-				default:	{ event.data1 = KeyboardScanCodeToASCII(scancode, 0); break; }
-			}
-			event.type = scandata[KEYBOARD_STATE_INDEX]&1 ? ev_keydown : ev_keyup;
-			D_PostEvent(&event);
-		}
-
-		if (byte == '@')
-		{
-			uint8_t buttondata[JOYSTICK_BUTTON_PACKET_SIZE];
-			ReadButtonState(buttondata);
-			ProcessButtonState(buttondata);
-			have_joystick = 1;
-		}
-
-		if (byte == '%')
-		{
-			uint8_t axisdata[JOYSTICK_AXIS6_PACKET_SIZE];
-			ReadAxisState(axisdata);
-			ProcessAxisState(axisdata);
-			have_joystick = 1;
-		}
-	}
-
-	if (have_joystick)
-	{
-		float axisdata[6];
-		uint16_t buttondata;
-		JoystickReadState(axisdata, &buttondata);
+		uint8_t scancode = keyState->scancode;
 
 		event_t event;
+		// See keyboard scan codes for more info
+		switch(scancode)
+		{
+			case 88:	{ event.data1 = KEY_ENTER; break; }
+			case 40:	{ event.data1 = KEY_ENTER; break; }
+			case 79:	{ event.data1 = KEY_RIGHTARROW; break; }
+			case 80:	{ event.data1 = KEY_LEFTARROW; break; }
+			case 81:	{ event.data1 = KEY_DOWNARROW; break; }
+			case 82:	{ event.data1 = KEY_UPARROW; break; }
+			case 45: 	{ event.data1 = KEY_MINUS; break; }
+			case 46:	{ event.data1 = KEY_EQUALS; break; }
+			case 41:	{ event.data1 = KEY_ESCAPE; break; }
+			case 43:	{ event.data1 = KEY_TAB; break; }
+			case 42:	{ event.data1 = KEY_BACKSPACE; break; }
+			case 229:	{ event.data1 = KEY_RSHIFT; break; }
+			case 228:	{ event.data1 = KEY_RCTRL; break; }
+			case 230:	{ event.data1 = KEY_RALT; break; }
+			case 226:	{ event.data1 = KEY_LALT; break; }
+			case 72:	{ event.data1 = KEY_PAUSE; break; }
+			case 58:	{ event.data1 = KEY_F1; break; }
+			case 59:	{ event.data1 = KEY_F2; break; }
+			case 60:	{ event.data1 = KEY_F3; break; }
+			case 61:	{ event.data1 = KEY_F4; break; }
+			case 62:	{ event.data1 = KEY_F5; break; }
+			case 63:	{ event.data1 = KEY_F6; break; }
+			case 64:	{ event.data1 = KEY_F7; break; }
+			case 65:	{ event.data1 = KEY_F8; break; }
+			case 66:	{ event.data1 = KEY_F9; break; }
+			case 67:	{ event.data1 = KEY_F10; break; }
+			case 68:	{ event.data1 = KEY_F11; break; }
+			case 69:	{ event.data1 = KEY_F12; break; }
+			default:	{ event.data1 = KeyboardScanCodeToASCII(scancode, 0); break; }
+		}
+		event.type = keyState->state&1 ? ev_keydown : ev_keyup;
+		D_PostEvent(&event);
+	}
+
+	if (oldcountJoystick != joystickState->count)
+	{
+		event_t event;
 		event.type = ev_joystick;
-		event.data1 = buttondata;
-		event.data2 = (int)axisdata[0];
-		event.data3 = (int)axisdata[1];
+		event.data1 = joystickState->buttons;
+		event.data2 = (int)joystickState->axis[0];
+		event.data3 = (int)joystickState->axis[1];
 		D_PostEvent(&event);
 	}
 }

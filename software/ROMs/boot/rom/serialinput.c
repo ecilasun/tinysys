@@ -19,7 +19,8 @@ void SerialInitStatics()
 	//in_gdb_mode = 0;
 }
 
-// Note that this function is called only if the running task has not intercepted the serial input
+// This function will trap any and all serial input, and route to the user app
+// if it has requested UART interception
 void HandleSerialInput()
 {
 	// Pull more incoming data
@@ -28,13 +29,17 @@ void HandleSerialInput()
 	// NOTE: A user task could intercept the serial input and handle its own input processing
 	while (SerialInRingBufferRead(&drain, 1))
 	{
+		int joystickUpdated = 0;
+
 		if (drain == '^')
 		{
 			uint8_t scandata[KEYBOARD_PACKET_SIZE];
 			// Read a 4-byte key scan packet from the serial input buffer
 			ReadKeyState(scandata);
-			// Process the key state and convert to ASCII for the key buffer
+			// Process the key state and convert to ASCII for the key buffer for CLI
 			ProcessKeyState(scandata);
+			// Post this to a ring buffer for the user task
+			UpdateKeyboardState(scandata);
 		}
 		else if (drain == '%')
 		{
@@ -44,6 +49,7 @@ void HandleSerialInput()
 			ReadAxisState(axisdata);
 			// Process the joystick axis state and convert to ASCII for the key buffer
 			ProcessAxisState(axisdata);
+			joystickUpdated++;
 		}
 		else if (drain == '@')
 		{
@@ -53,11 +59,19 @@ void HandleSerialInput()
 			ReadButtonState(buttondata);
 			// Process the joystick button state and convert to ASCII for the key buffer
 			ProcessButtonState(buttondata);
+			joystickUpdated++;
 		}
 		else
 		{
 			// Any other ASCII value is fed directly into key buffer
 			KeyRingBufferWrite(&drain, 1);
+		}
+
+		if (joystickUpdated)
+		{
+			// Post this to a ring buffer for the user task
+			UpdateJoystickState();
+			joystickUpdated = 0;
 		}
 
 		// GDB stub attempt for future

@@ -6,17 +6,32 @@
  */
 
 #include "basesystem.h"
-#if BUILDING_ROM
+//#if BUILDING_ROM
 #include "mini-printf.h"
-#else
-#include "tbm_printf.h"
-#endif
+//#else
+//#include "tbm_printf.h"
+//#endif
 #include "uart.h"
+#include "basesystem.h"
 
 volatile uint32_t *UARTRECEIVE = (volatile uint32_t* ) (DEVICE_UART+0x00);
 volatile uint32_t *UARTTRANSMIT = (volatile uint32_t* ) (DEVICE_UART+0x04);
 volatile uint32_t *UARTSTATUS = (volatile uint32_t* ) (DEVICE_UART+0x08);
 volatile uint32_t *UARTCONTROL = (volatile uint32_t* ) (DEVICE_UART+0x0C);
+
+/**
+ * @brief Disable OS intercept
+ * 
+ * This function will tell the OS to either enable or disable its interception of UART packets
+ * @param disable 1 to disable uart handling in OS, 0 to enable it
+ */
+void UARTInterceptSetState(int disable)
+{
+	volatile uint32_t *devicecontrol = (volatile uint32_t* )KERNEL_DEVICECONTROL;
+
+	// UART intercept state (0 for enable)
+	devicecontrol[0] = disable;
+}
 
 /**
  * @brief Receive a byte from the UART
@@ -85,11 +100,11 @@ int UARTPrintf(const char *fmt, ...)
 	va_list va;
 	va_start(va, fmt);
 	char *buffer = (char *)UART_OUTPUT_TEMP;
-#if defined(BUILDING_ROM)
+//#if defined(BUILDING_ROM)
 	int len = mini_vsnprintf(buffer, 8192, fmt, va);
-#else
-	int len = tbm_vsnprintf(buffer, 8192, fmt, va);
-#endif
+//#else
+//	int len = tbm_vsnprintf(buffer, 8192, fmt, va);
+//#endif
 	va_end(va);
 	if (len)
 		UARTSendBlock((uint8_t*)buffer, len);

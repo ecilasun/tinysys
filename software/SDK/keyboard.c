@@ -126,6 +126,36 @@ void ProcessKeyState(uint8_t *scandata)
 }
 
 /**
+ * Save the keyboard state to a buffer
+ * 
+ * @param scandata Pointer to a KEYBOARD_PACKET_SIZE byte buffer from which the input comes
+ */
+void UpdateKeyboardState(uint8_t *scandata)
+{
+	volatile struct SKeyboardState* keys = (volatile struct SKeyboardState*)KERNEL_INPUTBUFFER;
+
+	keys->scancode = scandata[KEYBOARD_SCANCODE_INDEX];
+	keys->state = scandata[KEYBOARD_STATE_INDEX];
+	uint8_t modifiers_lower = scandata[KEYBOARD_MODIFIERS_LOWER_INDEX];
+	uint8_t modifiers_upper = scandata[KEYBOARD_MODIFIERS_UPPER_INDEX];
+	keys->modifiers = (modifiers_upper << 8) | modifiers_lower;
+	int isUppercase = (keys->modifiers & 0x2003) ? 1 : 0;
+	keys->ascii = KeyboardScanCodeToASCII(keys->scancode, isUppercase);
+
+	keys->count = keys->count + 1;
+}
+
+/**
+ * Get the current keyboard state
+ * 
+ * @return Pointer to the current keyboard state
+ */
+volatile struct SKeyboardState* KeyboardGetState()
+{
+	return (struct SKeyboardState*)KERNEL_INPUTBUFFER;
+}
+
+/**
  * Read a 3-byte key scan packet from the serial input buffer
  * 
  * @param scandata Pointer to a KEYBOARD_PACKET_SIZE byte buffer to store the scan packet

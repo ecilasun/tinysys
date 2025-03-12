@@ -24,7 +24,7 @@ CFLAGS = -mcmodel=medany --param "min-pagesize=0" --param "l1-cache-line-size=64
 endif
 
 CFLAGS += \
-	-DNORMALUNIX \
+	-DNORMALUNIX -DBUILDING_ROM\
 	$(NULL)
 
 CLIBS = -lgcc -lm

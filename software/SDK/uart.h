@@ -20,6 +20,8 @@
 //#define UARTSTA_ERR_FRAME			0x00000040
 //#define UARTSTA_ERR_PARITY			0x00000080
 
+void UARTInterceptSetState(int state);
+
 uint32_t UARTGetStatus();
 void UARTSetControl(uint32_t ctl);
 
