@@ -23,11 +23,11 @@ void ClearStatics()
 {
 	// Clear device control blocks
 	uint32_t *devicecontrol = (uint32_t* )KERNEL_DEVICECONTROL;
-	__builtin_memset(devicecontrol, 0, 64);
+	__builtin_memset(devicecontrol, 0, 512); // Clear device control block to zeros, currently there's only UART here
 
 	// Clear keyboard and joystick input buffers
 	uint32_t *userinput = (uint32_t* )KERNEL_INPUTBUFFER;
-	__builtin_memset(userinput, 0, 64);
+	__builtin_memset(userinput, 0, 1024); // 2x512 bytes for keyboard and joystick input buffers
 
 	// Clear static variables for all systems that use them
 	SerialInitStatics();
