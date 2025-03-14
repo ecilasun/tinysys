@@ -434,7 +434,7 @@ int gdbstubthread(void* data)
 
 	fprintf(stderr, "GDB stub on //localhost:1234\n");
 
-#ifdef CAT_LINUX
+#if defined(CAT_LINUX) || defined(CAT_DARWIN)
 	struct sockaddr_in cli_addr;
 	socklen_t clilen = sizeof(cli_addr);
 	newsockfd = accept(sockfd, (struct sockaddr*)&cli_addr, &clilen);
