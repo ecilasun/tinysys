@@ -17,7 +17,7 @@ extern struct SCommandLineContext* s_cliCtx;
 static const char *s_taskstates[]={ "NONE", "HALT", "EXEC", "TERM", "DEAD"};
 
 // Device version
-#define VERSIONSTRING "0014C"
+#define VERSIONSTRING "0014D"
 
 // File transfer timeout
 #define FILE_TRANSFER_TIMEOUT 1000
@@ -274,7 +274,7 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 			// This will cause corruption of the runtime environment.
 			if (s_cliCtx->startAddress != 0x0)
 			{
-				strncpy(s_cliCtx->execName, filename, 32);
+				strncpy(s_cliCtx->execName, command, 32);
 
 				const char *param = strtok(NULL, " ");
 				// Change working directory

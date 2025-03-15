@@ -51,9 +51,9 @@ ROMWORDSIZE ?= 16
 # 512 bit cache lines makes 64 bytes per line
 # 256 cache lines makes total cache size 16 Kbytes
 ifeq ($(UNAME), WINDOWS)
-RISCV_GCC_OPTS ?= -mcmodel=medany -std=gnu99 -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Warray-bounds=0 -Wstringop-overflow=0 -Wno-format -Os -static -ffreestanding -nostartfiles -flto -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,-gc-sections,--strip-debug -Wl,--strip-all 
+RISCV_GCC_OPTS ?= -mcmodel=medany -std=gnu99 -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Warray-bounds=0 -Wstringop-overflow=0 -Wno-format -Os -static -ffreestanding -nostartfiles -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,-gc-sections,--strip-debug -Wl,--strip-all 
 else
-RISCV_GCC_OPTS ?= -mcmodel=medany -std=gnu99 -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Wno-format -Os -static -ffreestanding -nostartfiles -flto -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,-gc-sections,--strip-debug -Wl,--strip-all 
+RISCV_GCC_OPTS ?= -mcmodel=medany -std=gnu99 -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 --param "min-pagesize=0" --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wall -Wno-format -Os -static -ffreestanding -nostartfiles -fomit-frame-pointer -ffunction-sections -fdata-sections -Wl,-gc-sections,--strip-debug -Wl,--strip-all 
 endif
 
 incs  += -I$(src_dir) -I$(corelib_dir) -I$(filesystemlib_dir)/ $(addprefix -I$(src_dir)/, $(folders))

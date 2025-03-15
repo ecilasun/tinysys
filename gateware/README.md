@@ -1,5 +1,5 @@
-# Latest Gateware Build is: r1.9A
-# Latest OS ROM version is: 0014C
+# Latest Gateware Build is: r1.9B
+# Latest OS ROM version is: 0014D
 # Latest ESP32 ROM is: r1.1H
 # Latest Board version is: 2H
 
@@ -30,6 +30,7 @@ r1.4H: Slightly better timing, some hblank SDK and hardware work done (still not
 r1.5H: Reduced I$ turnaround by one clock on cache hit<br>
 r1.8F: Removed hblank device, updated ROM with fixes to task logic<br>
 r1.9A: ROM updates with OS side input handling, software updates to match<br>
+r1.9B: Minor changes to ROM and SDK routines, updates samples<br>
 
 # Device gateware
 
