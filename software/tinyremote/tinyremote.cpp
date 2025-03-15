@@ -343,7 +343,7 @@ void SendFile(char *_filename, CSerialPort* _serial)
 			return;
 		}
 
-		_serial->Send((void*)source, packetSize);
+		_serial->Send((void*)source, leftoverBytes);
 
 		packetOffset += leftoverBytes;
 	}

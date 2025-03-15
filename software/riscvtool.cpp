@@ -638,7 +638,7 @@ void sendfile(char *_filename)
 			return;
 		}
 
-		serial.Send((void*)source, packetSize);
+		serial.Send((void*)source, leftoverBytes);
 
 		packetOffset += leftoverBytes;
 	}
