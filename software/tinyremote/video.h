@@ -17,7 +17,9 @@
 #endif
 
 const char* GetVideoDeviceName();
+const char* GetAudioCapDeviceName();
 void SetVideoDeviceName(const char* name);
+void SetAudioCapDeviceName(const char* name);
 
 class VideoCapture
 {

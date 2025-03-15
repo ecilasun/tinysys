@@ -18,8 +18,10 @@ Display* dpy;
 // TODO: Use SDL3 so we can unify this
 #if defined(CAT_LINUX) || defined(CAT_MACOS)
 char capturedevicename[512] = "/dev/video0";
+char audiocapdevicename[512] = "/dev/video0";
 #else // CAT_WINDOWS
 char capturedevicename[512] = "capture";
+char audiocapdevicename[512] = "capture";
 #endif
 
 // Here's a really nice tutorial on how to do video capture across multiple devices:
@@ -30,9 +32,19 @@ const char* GetVideoDeviceName()
 	return capturedevicename;
 }
 
+const char* GetAudioCapDeviceName()
+{
+	return audiocapdevicename;
+}
+
 void SetVideoDeviceName(const char* name)
 {
 	strcpy(capturedevicename, name);
+}
+
+void SetAudioCapDeviceName(const char* name)
+{
+	strcpy(audiocapdevicename, name);
 }
 
 VideoCapture::VideoCapture()
@@ -171,7 +183,7 @@ HRESULT VideoCapture::CreateAudioSource(IMFMediaSource **ppSource)
 	
 			// Skip things that look like camera devices
 			// TODO: This is a hack, need a better way to detect cameras or non-camera devices
-			if (strstr(asciiname, capturedevicename) != nullptr)
+			if (strstr(asciiname, audiocapdevicename) != nullptr)
 			{
 				// Found a non-camera device, use it
 				fprintf(stderr, "Using audio capture device(%d): %s\n", i, asciiname);

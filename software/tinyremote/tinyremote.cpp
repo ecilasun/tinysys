@@ -473,19 +473,22 @@ int SDL_main(int argc, char** argv)
 {
 	const char* cname = GetCommDeviceName();
 	const char* vname = GetVideoDeviceName();
+	const char* aname = GetAudioCapDeviceName();
 	const char* apname = GetAudioPlaybackDeviceName();
 
 	// Default capture resolution, see tinyremote.ini for details
 	s_videoWidth = 1280;
 	s_videoHeight = 960;
 
-	fprintf(stderr, "Usage: tinyremote commdevicenumber videodevname audioplaydevname\ndefault comm device:%s default capture device:%s\nCtrl+C or PAUSE: quit current remote process\n", cname, vname);
+	fprintf(stderr, "Usage: tinyremote commdevicenumber videodevname audiocapdevname audioplaydevname\ndefault comm device:%s default capture devices:%s:%s\nCtrl+C or PAUSE: quit current remote process\n", cname, vname, aname);
 
 	if (argc > 1)
 		SetCommDeviceName(atoi(argv[1]));
 	if (argc > 2)
 		SetVideoDeviceName(argv[2]);
 	if (argc > 3)
+		SetAudioCapDeviceName(argv[3]);
+	if (argc > 4)
 		SetAudioPlaybackDeviceName(argv[4]);
 
 	// If no command line arguments are provided, check to see if we have an INI file to read from
@@ -509,6 +512,11 @@ int SDL_main(int argc, char** argv)
 				else if (strstr(line, "videodevname"))
 				{
 					SetVideoDeviceName(strchr(line, '=')+1);
+					fprintf(stderr, "new videodevname: %s\n", GetVideoDeviceName());
+				}
+				else if (strstr(line, "audiocapdevname"))
+				{
+					SetAudioCapDeviceName(strchr(line, '=')+1);
 					fprintf(stderr, "new videodevname: %s\n", GetVideoDeviceName());
 				}
 				else if (strstr(line, "audioplaydevname"))
