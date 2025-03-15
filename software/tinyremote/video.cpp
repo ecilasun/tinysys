@@ -66,7 +66,14 @@ HRESULT VideoCapture::CreateVideoSource(IMFMediaSource **ppSource)
 	}
 
 	if (SUCCEEDED(hr))
+	{
 		hr = MFEnumDeviceSources(pConfig, &ppDevices, &devicecount);
+		if (FAILED(hr) && hr != MF_E_NOT_FOUND)
+		{
+			fprintf(stderr, "MFEnumDeviceSources failed\n");
+			return E_FAIL;
+		}
+	}
 	else
 	{
 		fprintf(stderr, "SetGUID failed\n");
@@ -569,7 +576,10 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata, AudioPlayback* audio)
 	IMFSample *sample = nullptr;
 
 	if (!pAggregateReader)
+	{
+		fprintf(stderr, "No valid aggregate reader\n");
 		return false;
+	}
 
 	hr = pAggregateReader->ReadSample(
 		MF_SOURCE_READER_ALL_STREAMS,
@@ -590,6 +600,7 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata, AudioPlayback* audio)
 		//fprintf(stderr, "Stream index: %d\n", streamIndex);
 		if (streamIndex == 0)
 		{
+			//fprintf(stderr, "Video stream\n");
 			IMFMediaBuffer *buffer = nullptr;
 			hr = sample->ConvertToContiguousBuffer(&buffer);
 			if (FAILED(hr))
@@ -615,6 +626,7 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata, AudioPlayback* audio)
 		}
 		else
 		{
+			//fprintf(stderr, "Audio stream\n");
 			IMFMediaBuffer *buffer = nullptr;
 			hr = sample->ConvertToContiguousBuffer(&buffer);
 			if (FAILED(hr))
@@ -646,8 +658,11 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata, AudioPlayback* audio)
 			}
 			buffer->Release();
 		}
-
 		sample->Release();
+	}
+	else
+	{
+		//fprintf(stderr, "No sample\n");
 	}
 #endif
 	return true;
