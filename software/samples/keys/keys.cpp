@@ -63,7 +63,7 @@ int main()
 				strcat(modstring, "mode ");
 			if (modifiers & 0x8000)
 				strcat(modstring, "scroll lock ");
-			printf("#%d:ScanCode:%02X ASCII:%02X\nState:%s\nModstate:%X\nModifiers:%s\n", keyState->count, keyState->scancode, ascii, keyState->state ? "down" : "up", (unsigned int)modifiers, modstring);
+			printf("#%d:ScanCode:%02X ASCII:%02X\nState:%s\nModstate:%X\nModifiers:%s\n", (int)keyState->count, (unsigned int)keyState->scancode, ascii, keyState->state ? "down" : "up", (unsigned int)modifiers, modstring);
 		}
 
 		if (ascii == 27) // ESC

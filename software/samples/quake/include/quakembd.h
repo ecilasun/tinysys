@@ -20,12 +20,11 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include "uart.h"
 
 /* Use stdio printf by default */
 #ifndef QEMBD_PRINTF
 #include <stdio.h>
-#define QEMBD_PRINTF UARTPrintf
+#define QEMBD_PRINTF printf
 #endif
 
 #ifndef QEMBD_LOGGING_TAG

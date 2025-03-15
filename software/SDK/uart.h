@@ -2,6 +2,12 @@
 
 #include <inttypes.h>
 
+#include "basesystem.h"
+#if defined(BUILDING_ROM)
+#include "mini-printf.h"
+#else
+#include "tbm_printf.h"
+#endif
 
 // Control register bits
 #define UARTCTL_RESET_TX_FIFO	0x00000001
