@@ -23,6 +23,8 @@ libxmp = ../../3rdparty/libxmp
 
 # Rules
 
+RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump
+
 ifeq ($(UNAME), Windows)
 RISCV_PREFIX ?= riscv32-unknown-elf-
 RISCV_GCC ?= $(RISCV_PREFIX)g++
@@ -50,11 +52,14 @@ junk += $(folders_riscv_bin)
 
 all: play.elf
 
-# Clean
+dump: $(objs)
+	$(RISCV_OBJDUMP) $(objs) -x -D -S >> $(objs).txt
 
+# Clean
+.PHONY: clean
 clean:
 ifeq ($(UNAME), Windows)
-	del $(objs) $(junk)
+	del $(objs) $(objs).txt $(junk)
 else
-	rm -rf $(objs) $(junk)
+	rm -rf $(objs) $(objs).txt $(junk)
 endif

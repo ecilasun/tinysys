@@ -42,9 +42,14 @@ objs  :=
 $(TARGET):
 	$(RISCV_GCC) $(incs) -o $(TARGET) $(wildcard $(src_dir)/*.cpp) $(libs) $(RISCV_GCC_OPTS)
 
+dump: $(TARGET)
+	$(RISCV_OBJDUMP) $(TARGET) -x -D -S >> $(TARGET).txt
+
+.PHONY: clean
 clean:
 ifeq ($(UNAME), Windows)
-	del $(TARGET)
+	del $(TARGET) $(TARGET).txt
 else
-	rm -rf $(TARGET)
+	rm -rf $(TARGET) $(TARGET).txt
 endif
+

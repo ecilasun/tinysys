@@ -2,7 +2,7 @@
 
 TOPTARGETS := all clean
 
-IGNORELIST := Makefile/. $(wildcard *.bat/.) $(wildcard *.sh/.) $(wildcard *.md/.)
+IGNORELIST := Makefile/. $(wildcard *.bat/.) $(wildcard *.sh/.) $(wildcard *.md/.) $(wildcard *.txt/.)
 
 SUBDIRS := $(filter-out $(IGNORELIST), $(wildcard */.))
 
