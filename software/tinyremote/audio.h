@@ -14,7 +14,7 @@ public:
 
 	short *buffer = nullptr;
 	uint32_t selectedplaybackdevice = 0xFFFFFFFF;
-	int audioplaybackframes = 8192;
+	int audioplaybackframes = 4096;
 	int alive = 1;
 };
 

@@ -41,13 +41,13 @@ void AudioPlayback::Initialize()
 				continue;
 			if (strstr(name, audiopdevicename) != nullptr)
 			{
-				fprintf(stderr, "Using audio playback device(%d): %s\n", i, name);
+				fprintf(stderr, ">Using audio playback device(%d): %s\n", i, name);
 				strcpy(playname, name);
 				playdev = i;
 				break;
 			}
 			else
-				fprintf(stderr, "Found audio playback device(%d): %s\n", i, name);
+				fprintf(stderr, " Found audio playback device(%d): %s\n", i, name);
 		}
 
 		if (playdev == 0xFFFFFFFF)

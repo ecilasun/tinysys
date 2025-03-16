@@ -113,11 +113,11 @@ HRESULT VideoCapture::CreateVideoSource(IMFMediaSource **ppSource)
 			if (strstr(asciiname, capturedevicename) != nullptr)
 			{
 				// Found a non-camera device, use it
-				fprintf(stderr, "Using video capture device(%d): %s\n", i, asciiname);
+				fprintf(stderr, ">Using video capture device(%d): %s\n", i, asciiname);
 				selectedVideodevice = i;
 			}
 			else
-				fprintf(stderr, "Found video capture device(%d): %s\n", i, asciiname);
+				fprintf(stderr, " Found video capture device(%d): %s\n", i, asciiname);
 		}
 
 		if (selectedVideodevice != 0xFFFFFFFF)
@@ -186,11 +186,11 @@ HRESULT VideoCapture::CreateAudioSource(IMFMediaSource **ppSource)
 			if (strstr(asciiname, audiocapdevicename) != nullptr)
 			{
 				// Found a non-camera device, use it
-				fprintf(stderr, "Using audio capture device(%d): %s\n", i, asciiname);
+				fprintf(stderr, ">Using audio capture device(%d): %s\n", i, asciiname);
 				selectedAudiodevice = i;
 			}
 			else
-				fprintf(stderr, "Found audio capture device(%d): %s\n", i, asciiname);
+				fprintf(stderr, " Found audio capture device(%d): %s\n", i, asciiname);
 		}
 
 		if (selectedAudiodevice != 0xFFFFFFFF)
@@ -582,6 +582,9 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata, AudioPlayback* audio)
 #elif defined(CAT_DARWIN)
 	// MacOS
 #else // CAT_WINDOWS
+
+	bool retval = true;
+
 	HRESULT hr;
 	DWORD streamIndex, flags;
 	LONGLONG timestamp;
@@ -617,22 +620,24 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata, AudioPlayback* audio)
 			hr = sample->ConvertToContiguousBuffer(&buffer);
 			if (FAILED(hr))
 			{
+				retval = false;
 				fprintf(stderr, "Failed to convert sample to contiguous buffer.\n");
-				return false; 
-			}
-
-			BYTE *rawData = nullptr;
-			DWORD maxLength = 0, currentLength = 0;
-			hr = buffer->Lock(&rawData, &maxLength, &currentLength);
-			if (SUCCEEDED(hr))
-			{
-				ConvertYUY2ToRGB(rawData, videodata, frameWidth, frameHeight);
-				buffer->Unlock();
 			}
 			else
 			{
-				fprintf(stderr, "Failed to lock buffer.\n");
-				return false;
+				BYTE *rawData = nullptr;
+				DWORD maxLength = 0, currentLength = 0;
+				hr = buffer->Lock(&rawData, &maxLength, &currentLength);
+				if (SUCCEEDED(hr))
+				{
+					ConvertYUY2ToRGB(rawData, videodata, frameWidth, frameHeight);
+					buffer->Unlock();
+				}
+				else
+				{
+					retval = false;
+					fprintf(stderr, "Failed to lock buffer.\n");
+				}
 			}
 			buffer->Release();
 		}
@@ -643,30 +648,32 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata, AudioPlayback* audio)
 			hr = sample->ConvertToContiguousBuffer(&buffer);
 			if (FAILED(hr))
 			{
+				retval = false;
 				fprintf(stderr, "Failed to convert sample to contiguous buffer.\n");
-				return false; 
-			}
-
-			BYTE *rawData = nullptr;
-			DWORD maxLength = 0, currentLength = 0;
-			hr = buffer->Lock(&rawData, &maxLength, &currentLength);
-			if (SUCCEEDED(hr))
-			{
-				if (audioBuffer == nullptr)
-					audioBuffer = new int16_t[32768*2];
-
-				float* audiosamples = (float*)rawData;
-				for(int i = 0; i < currentLength / sizeof(float); ++i)
-					audioBuffer[i] = (int16_t)(audiosamples[i] * 32768.f);
-
-				buffer->Unlock();
-
-				SDL_QueueAudio(audio->selectedplaybackdevice, audioBuffer, currentLength/2);
 			}
 			else
 			{
-				fprintf(stderr, "Failed to lock buffer.\n");
-				return false;
+				BYTE *rawData = nullptr;
+				DWORD maxLength = 0, currentLength = 0;
+				hr = buffer->Lock(&rawData, &maxLength, &currentLength);
+				if (SUCCEEDED(hr))
+				{
+					if (audioBuffer == nullptr)
+						audioBuffer = new int16_t[32768*2];
+
+					float* audiosamples = (float*)rawData;
+					for(int i = 0; i < currentLength / sizeof(float); ++i)
+						audioBuffer[i] = (int16_t)(audiosamples[i] * 32768.f);
+
+					buffer->Unlock();
+
+					SDL_QueueAudio(audio->selectedplaybackdevice, audioBuffer, currentLength/2);
+				}
+				else
+				{
+					fprintf(stderr, "Failed to lock buffer.\n");
+					retval = false;
+				}
 			}
 			buffer->Release();
 		}
@@ -674,8 +681,10 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata, AudioPlayback* audio)
 	}
 	else
 	{
-		//fprintf(stderr, "No sample\n");
+		retval = false;
+		fprintf(stderr, "No sample\n");
 	}
 #endif
-	return true;
+
+	return retval;
 }
