@@ -34,8 +34,9 @@ static uint64_t s_wallclock = 0;
 
 int emulatorthread(void* data)
 {
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_NORMAL);
+
 	EmulatorContext* ctx = (EmulatorContext*)data;
-	thread_local int scanline = 0;
 	do
 	{
 		CEmulator *emulator = ctx->emulator;
@@ -63,7 +64,7 @@ int audiothread(void* data)
 	uint32_t pastSelector = 0xFF;
 	CAPU *apu = emulator->m_bus->GetAPU();
 	int queueReadCursor = 0;
-	uint16_t *tmpbuf = new uint16_t[QueueSampleCount*8];
+	uint32_t *tmpbuf = new uint32_t[QueueSampleCount*8];
 	int spaceLeft = AudioQueueCapacityInBytes;
 	do
 	{
@@ -91,10 +92,8 @@ int audiothread(void* data)
 				{
 					uint16_t L = p[i * 2 + 0];
 					uint16_t R = p[i * 2 + 1];
-					tmpbuf[i * 4 + 0] = L;
-					tmpbuf[i * 4 + 1] = R;
-					tmpbuf[i * 4 + 2] = L;
-					tmpbuf[i * 4 + 3] = R;
+					tmpbuf[i * 2 + 0] = R<<16 | L;
+					tmpbuf[i * 2 + 1] = R<<16 | L;
 				}
 				SDL_QueueAudio(emulator->m_audioDevice, tmpbuf, QueueSampleByteSize);
 				queueReadCursor += QueueSampleByteSize/2;
@@ -106,14 +105,10 @@ int audiothread(void* data)
 				{
 					uint16_t L = p[i * 2 + 0];
 					uint16_t R = p[i * 2 + 1];
-					tmpbuf[i * 8 + 0] = L;
-					tmpbuf[i * 8 + 1] = R;
-					tmpbuf[i * 8 + 2] = L;
-					tmpbuf[i * 8 + 3] = R;
-					tmpbuf[i * 8 + 4] = L;
-					tmpbuf[i * 8 + 5] = R;
-					tmpbuf[i * 8 + 6] = L;
-					tmpbuf[i * 8 + 7] = R;
+					tmpbuf[i * 4 + 0] = R<<16 | L;
+					tmpbuf[i * 4 + 1] = R<<16 | L;
+					tmpbuf[i * 4 + 2] = R<<16 | L;
+					tmpbuf[i * 4 + 3] = R<<16 | L;
 				}
 				SDL_QueueAudio(emulator->m_audioDevice, tmpbuf, QueueSampleByteSize);
 				queueReadCursor += QueueSampleByteSize/4;
@@ -135,7 +130,6 @@ int audiothread(void* data)
 		}
 		else
 			spaceLeft = AudioQueueCapacityInBytes;
-
 	} while(s_alive);
 
 	delete [] tmpbuf;
@@ -254,8 +248,7 @@ uint32_t videoCallback(Uint32 interval, void* param)
 
 	uint32_t* pixels = (uint32_t*)ctx->compositesurface->pixels;
 
-	for (int scanline = 0; scanline < 525; ++scanline)
-		ctx->emulator->UpdateVideoLink(pixels, scanline, ctx->compositesurface->pitch);
+	ctx->emulator->UpdateVideoLink(pixels, ctx->compositesurface->pitch);
 
 	uint32_t W = ctx->compositesurface->w;
 	uint32_t H = ctx->compositesurface->h-8;
@@ -391,6 +384,8 @@ void gdbstubprocess(socket_t gdbsocket, CEmulator* emulator, char* buffer, int n
 
 int gdbstubthread(void* data)
 {
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_LOW);
+
 	EmulatorContext* ctx = (EmulatorContext*)data;
 
 #ifdef CAT_WINDOWS

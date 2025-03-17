@@ -64,9 +64,9 @@ void CEmulator::Step(uint64_t wallclock)
 	m_cpu[1]->Tick(wallclock, m_bus);
 }
 
-void CEmulator::UpdateVideoLink(uint32_t *pixels, int scanline, int pitch)
+void CEmulator::UpdateVideoLink(uint32_t *pixels, int pitch)
 {
-	m_bus->UpdateVideoLink(pixels, pitch, scanline);
+	m_bus->UpdateVideoLink(pixels, pitch);
 }
 
 void CEmulator::QueueBytes(uint8_t *bytes, uint32_t count)

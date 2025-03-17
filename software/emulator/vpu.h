@@ -19,7 +19,7 @@ public:
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
 	void Tick(CBus* bus);
 
-	void UpdateVideoLink(uint32_t* pixels, int pitch, int scanline, CBus* bus);
+	void UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus);
 
 private:
 	uint32_t m_cmd{ 0 };
@@ -32,7 +32,6 @@ private:
 	uint32_t m_scanheight{ 240 };
 	uint32_t m_scanlength{ 320 * 240 };
 	uint32_t m_vsyncCount{ 0 };
-	uint32_t m_scanline{ 0 };
 	uint32_t m_vgapalette[256];
 	uint32_t m_fakevsync{ 0 };
 	uint32_t m_ctlreg{ 0 };

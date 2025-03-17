@@ -50,7 +50,7 @@ public:
 	CLEDs* GetLEDs() { return m_leds; }
 	CCSRMem* GetCSR(uint32_t hartid) { return m_csr[hartid]; }
 
-	void UpdateVideoLink(uint32_t* pixels, int pitch, int scanline);
+	void UpdateVideoLink(uint32_t* pixels, int pitch);
 	void QueueByte(uint8_t byte);
 
 	CSysMem* m_mem{ nullptr };
