@@ -51,7 +51,8 @@
 		"stdint.h": "c",
 		"rvcrt0.h": "c",
 		"stdio.h": "c",
-		"mini-printf.h": "c"
+		"mini-printf.h": "c",
+		"xlocmes": "cpp"
 	},
 	"terminal.integrated.profiles.windows": {
 		"MSYS2": {

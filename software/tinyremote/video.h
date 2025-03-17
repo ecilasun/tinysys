@@ -27,7 +27,7 @@ public:
 	VideoCapture();
 	~VideoCapture();
 
-	bool Initialize(int width, int height);
+	bool Initialize(int width, int height, int fps, int format);
 	void Terminate();
 
 	bool CaptureFrame(uint8_t *videodata, AudioPlayback* audio);
@@ -40,7 +40,7 @@ public:
 	HRESULT CreateVideoSource(IMFMediaSource **ppSource);
 	HRESULT CreateAudioSource(IMFMediaSource **ppSource);
 	HRESULT CreateAggregateSource(IMFMediaSource *pVideoSource, IMFMediaSource *pAudioSource, IMFMediaSource **ppAggregateSource);
-	HRESULT CreateSourceReader(IMFMediaSource *pAggregateSource, const uint32_t width, const uint32_t height);
+	HRESULT CreateSourceReader(IMFMediaSource *pAggregateSource, const uint32_t width, const uint32_t height, const uint32_t framerate, const uint32_t format);
 	IMFMediaSource *videosource = nullptr;
 	IMFMediaSource *audiosource = nullptr;
 	IMFMediaSource *aggregatesource = nullptr;
@@ -49,6 +49,8 @@ public:
 	uint32_t devicecount = 0;
 	uint32_t selectedVideodevice = 0;
 	uint32_t selectedAudiodevice = 0;
+	uint32_t framerate = 60;
+	uint32_t videoformat = 0;
 	int16_t *audioBuffer = nullptr;
 #endif
 	uint32_t frameWidth = 0;

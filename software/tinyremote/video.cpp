@@ -477,7 +477,7 @@ HRESULT VideoCapture::CreateAggregateSource(IMFMediaSource *pVideoSource, IMFMed
 	return hr;
 }
 
-HRESULT VideoCapture::CreateSourceReader(IMFMediaSource *pAggregateSource, const uint32_t width, const uint32_t height)
+HRESULT VideoCapture::CreateSourceReader(IMFMediaSource *pAggregateSource, const uint32_t width, const uint32_t height, const uint32_t framerate, const uint32_t format)
 {
 	// Create the source reader.
 	HRESULT hr = MFCreateSourceReaderFromMediaSource(pAggregateSource, nullptr, &pAggregateReader);
@@ -509,7 +509,7 @@ HRESULT VideoCapture::CreateSourceReader(IMFMediaSource *pAggregateSource, const
 		return hr;
 	}
 
-	hr = mediaType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_YUY2);
+	hr = mediaType->SetGUID(MF_MT_SUBTYPE, videoformat == 0 ? MFVideoFormat_YUY2 : (videoformat == 1 ? MFVideoFormat_RGB24 : MFVideoFormat_MJPG));
 	if (FAILED(hr))
 	{
 		fprintf(stderr, "SetGUID failed\n");
@@ -523,7 +523,7 @@ HRESULT VideoCapture::CreateSourceReader(IMFMediaSource *pAggregateSource, const
 		return hr;
 	}
 
-	hr = MFSetAttributeRatio(mediaType, MF_MT_FRAME_RATE, 60, 1);
+	hr = MFSetAttributeRatio(mediaType, MF_MT_FRAME_RATE, framerate, 1);
 	if (FAILED(hr))
 	{
 		fprintf(stderr, "MFSetAttributeRatio failed\n");
@@ -595,10 +595,12 @@ HRESULT VideoCapture::CreateSourceReader(IMFMediaSource *pAggregateSource, const
 #endif
 
 
-bool VideoCapture::Initialize(int width, int height)
+bool VideoCapture::Initialize(int width, int height, int fps, int format)
 {
 	frameWidth = width;
 	frameHeight = height;
+	framerate = fps;
+	videoformat = format;
 
 #if defined(CAT_LINUX)
 	intermediate = (uint32_t*)malloc(width*height*4);
@@ -711,7 +713,7 @@ bool VideoCapture::Initialize(int width, int height)
 		return false;
 	}
 
-	hr = CreateSourceReader(aggregatesource, width, height);
+	hr = CreateSourceReader(aggregatesource, width, height, framerate, videoformat);
 	if (FAILED(hr))
 	{
 		fprintf(stderr, "CreateSourceReader failed\n");
@@ -866,7 +868,10 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata, AudioPlayback* audio)
 				hr = buffer->Lock(&rawData, &maxLength, &currentLength);
 				if (SUCCEEDED(hr))
 				{
-					ConvertYUY2ToRGB(rawData, videodata, frameWidth, frameHeight);
+					//if (videoformat==0)
+						ConvertYUY2ToRGB(rawData, videodata, frameWidth, frameHeight);
+					//else if (videoformat==1 || videoformat==2) // TODO: Deal with these formats or use auto-conversion
+					//	CopyVideoData(rawData, videodata, frameWidth, frameHeight);
 					buffer->Unlock();
 				}
 				else

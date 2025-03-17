@@ -18,6 +18,8 @@ static SDL_Surface* s_surface;
 static uint8_t *s_videodata;
 static int s_videoWidth;
 static int s_videoHeight;
+static int s_frameRate;
+static int s_videoFormat;
 static int s_windowWidth, s_prevWidth;
 static int s_windowHeight, s_prevHeight;
 static bool s_maximized;
@@ -479,6 +481,8 @@ int SDL_main(int argc, char** argv)
 	// Default capture resolution, see tinyremote.ini for details
 	s_videoWidth = 1280;
 	s_videoHeight = 960;
+	s_frameRate = 60;
+	s_videoFormat = 0; // YUY2, most common one
 
 	fprintf(stderr, "Usage: tinyremote commdevicenumber videodevname audiocapdevname audioplaydevname\ndefault comm device:%s default capture devices:%s:%s\nCtrl+C or PAUSE: quit current remote process\n", cname, vname, aname);
 
@@ -534,6 +538,16 @@ int SDL_main(int argc, char** argv)
 					s_videoHeight = atoi(strchr(line, '=')+1);
 					fprintf(stderr, "new captureheight: %d\n", s_videoHeight);
 				}
+				else if (strstr(line, "framerate"))
+				{
+					s_frameRate = atoi(strchr(line, '=')+1);
+					fprintf(stderr, "new framarate: %d\n", s_frameRate);
+				}
+				else if (strstr(line, "videoformat"))
+				{
+					s_videoFormat = atoi(strchr(line, '=')+1);
+					fprintf(stderr, "new video format: %d\n", s_videoFormat);
+				}
 			}
 			fclose(fp);
 		}
@@ -570,7 +584,7 @@ int SDL_main(int argc, char** argv)
 	s_app_ctx.serial = new CSerialPort();
 	s_app_ctx.serial->AttemptOpen();
 	s_app_ctx.video = new VideoCapture();
-	s_app_ctx.video->Initialize(s_videoWidth, s_videoHeight);
+	s_app_ctx.video->Initialize(s_videoWidth, s_videoHeight, s_frameRate, s_videoFormat);
 	s_app_ctx.audio = new AudioPlayback();
 	s_app_ctx.audio->Initialize();
 
