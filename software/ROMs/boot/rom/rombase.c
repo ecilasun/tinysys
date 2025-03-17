@@ -210,38 +210,29 @@ uint32_t _task_switch_to_next(struct STaskContext *_ctx)
 	regs[30] = read_csr(0x8BE);	// t5
 	regs[31] = read_csr(0x8BF);	// t6
 
-	// Terminate task and visit OS task
-	// NOTE: Task #0 cannot be terminated
-	if (_ctx->tasks[currentTask].state == TS_TERMINATING)
-	{
-		if (currentTask != 0)
+	// Spin until we find a task that is not paused or terminated
+	do {
+		// Next task in queue
+		currentTask = (_ctx->numTasks <= 1) ? 0 : ((currentTask+1) % _ctx->numTasks);
+
+		// Check if task is terminated
+		if (_ctx->tasks[currentTask].state == TS_TERMINATING)
 		{
 			_ctx->kernelError = _ctx->kernelError | 0x80000000; // Task terminated (not a real error, also take care to not overwrite any real errors)
 			_ctx->kernelErrorData[0] = currentTask;
 			_ctx->kernelErrorData[1] = _ctx->tasks[currentTask].exitCode;
-
-			// Mark as 'terminated'
-			_ctx->tasks[currentTask].state = TS_TERMINATED;
-			// Replace with task at end of list, if we're not the end of list
 			if (currentTask != _ctx->numTasks-1)
 				__builtin_memcpy(&_ctx->tasks[currentTask], &_ctx->tasks[_ctx->numTasks-1], sizeof(struct STask));
+			else
+				_ctx->tasks[currentTask].state = TS_TERMINATED;
 			// One less task to run
 			--_ctx->numTasks;
-			// Rewind back to OS Idle task (always guaranteed to be alive)
-			// We will visit it briefly once and then go to the next task in queue
+			// Wind back to OS Idle task
 			currentTask = 0;
 		}
-		/*else
-		{
-			UARTWrite("\nKernel stub can't be terminated.\n");
-		}*/
-	}
-	else
-	{
-		// Switch to next task
-		// TODO: Next task state should not be `TS_PAUSED`
-		currentTask = (_ctx->numTasks <= 1) ? 0 : ((currentTask+1) % _ctx->numTasks);
-	}
+		else if (_ctx->tasks[currentTask].state == TS_RUNNING) // Found a task to run
+			break;
+	} while (1);
 
 	_ctx->currentTask = currentTask;
 
