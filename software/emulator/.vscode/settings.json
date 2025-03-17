@@ -11,6 +11,7 @@
 		"xstring": "cpp",
 		"xutility": "cpp",
 		"xlocmes": "cpp",
-		"xmemory": "cpp"
+		"xmemory": "cpp",
+		"cstddef": "cpp"
 	}
 }
