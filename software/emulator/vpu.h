@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include "config.h"
 #include "rv32.h"
 #include <queue>
 #include "memmappeddevice.h"

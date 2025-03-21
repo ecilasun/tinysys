@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "config.h"
 #include "emulator.h"
 
 CEmulator::~CEmulator()

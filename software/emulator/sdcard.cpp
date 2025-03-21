@@ -2,6 +2,7 @@
 #include <random>
 #include <filesystem>
 #include <algorithm>
+#include "config.h"
 #include "sdcard.h"
 
 #define SD_CMD_LEN 0x6
