@@ -18,9 +18,9 @@ CC = $(CROSS)gcc
 SIZE = $(CROSS)size
 
 ifeq ($(UNAME), Windows)
-CFLAGS = -mcmodel=medany --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wno-address-of-packed-member -Wdouble-promotion -fno-delete-null-pointer-checks -fno-common -Ofast -flto -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -Wl,--strip-all -I../include/ -I../winquake/ -I../../../SDK/ -I../
+CFLAGS = -mcmodel=medany --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wno-address-of-packed-member -Wdouble-promotion -fno-delete-null-pointer-checks -fno-common -Ofast -flto -mbranch-cost=4 -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -Wl,--strip-all -I../include/ -I../winquake/ -I../../../SDK/ -I../
 else
-CFLAGS = -mcmodel=medany --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wno-address-of-packed-member -Wdouble-promotion -fno-delete-null-pointer-checks -fno-common -Ofast -flto -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -Wl,--strip-all -I../include/ -I../winquake/ -I../../../SDK/  -I../
+CFLAGS = -mcmodel=medany --param "l1-cache-line-size=64" --param "l1-cache-size=16" -Wno-address-of-packed-member -Wdouble-promotion -fno-delete-null-pointer-checks -fno-common -Ofast -flto -mbranch-cost=4 -march=rv32im_zicsr_zifencei_zfinx -mabi=ilp32 -ffunction-sections -fdata-sections -Wl,-gc-sections -Wl,--strip-all -I../include/ -I../winquake/ -I../../../SDK/  -I../
 endif
 
 CFLAGS += \
