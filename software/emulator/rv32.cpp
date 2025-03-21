@@ -402,6 +402,9 @@ uint32_t CRV32::ALU(SDecodedInstruction& instr)
 			}
 		}
 		break;
+		default:
+			__assume(0);
+			aluout = 0;
 	}
 
 	return aluout;
@@ -433,6 +436,10 @@ uint32_t CRV32::BLU(SDecodedInstruction& instr)
 		break;
 		case BLU_GEU:
 			bluout = !less;
+		break;
+		default:
+			__assume(0);
+			bluout = 0;
 		break;
 	}
 
@@ -681,6 +688,7 @@ void CRV32::InjectISRHeader(std::vector<SDecodedInstruction> *code)
 		// Unknown
 		default:
 		{
+			__assume(0);
 			// Nothing to inject
 			fprintf(stderr, "unknown header encountered\n");
 		}
@@ -755,6 +763,7 @@ void CRV32::InjectISRFooter(std::vector<SDecodedInstruction>* code)
 		// Unknown
 		default:
 		{
+			__assume(0);
 			// Nothing to inject
 			fprintf(stderr, "unknown footer encountered\n");
 		}
@@ -1273,6 +1282,7 @@ bool CRV32::Execute(CBus* bus)
 					*D = -(A * B + C);
 				else
 				{
+					__assume(0);
 					fprintf(stderr, "- unknown floatop3\n");
 				}
 			}
@@ -1408,6 +1418,7 @@ bool CRV32::Execute(CBus* bus)
 					break;
 					default:
 					{
+						__assume(0);
 						rwen = 0;
 						fprintf(stderr, "- unknown floatop2\n");
 					}
@@ -1418,6 +1429,7 @@ bool CRV32::Execute(CBus* bus)
 
 			default:
 			{
+				__assume(0);
 				// Illegal instruction exception should catch this
 			}
 			break;

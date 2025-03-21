@@ -302,6 +302,7 @@ void CVPU::Tick(CBus* bus)
 		break;
 
 		default:
+			__assume(0);
 			// Unknown state / finalize
 			m_state = 0;
 		break;

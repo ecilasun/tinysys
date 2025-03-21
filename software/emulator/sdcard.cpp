@@ -256,6 +256,10 @@ void CSDCard::Tick(CBus* bus)
 							m_spioutfifo.push(0x00);
 						}
 						break;
+
+						default:
+							__assume(0);
+						break;
 					}
 				}
 				else
@@ -267,6 +271,10 @@ void CSDCard::Tick(CBus* bus)
 							// R1 response
 							m_spioutfifo.push(0x00);
 						}
+						break;
+
+						default:
+							__assume(0);
 						break;
 					}
 					m_app_mode = false;
