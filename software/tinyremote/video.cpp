@@ -872,6 +872,21 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata, AudioPlayback* audio)
 						ConvertYUY2ToRGB(rawData, videodata, frameWidth, frameHeight);
 					//else if (videoformat==1 || videoformat==2) // TODO: Deal with these formats or use auto-conversion
 					//	CopyVideoData(rawData, videodata, frameWidth, frameHeight);
+
+					// NOTE about media transforms:
+					/*MFT_REGISTER_TYPE_INFO inputFilter = { MFMediaType_Video, MFVideoFormat_MJPG };
+					MFT_REGISTER_TYPE_INFO outputFilter = { MFMediaType_Video, MFVideoFormat_YUY2 };
+					UINT32 unFlags = MFT_ENUM_FLAG_SYNCMFT | MFT_ENUM_FLAG_LOCALMFT | MFT_ENUM_FLAG_SORTANDFILTER;
+					
+					HRESULT r = MFTEnumEx(MFT_CATEGORY_VIDEO_DECODER, unFlags, &inputFilter, &outputFilter, &ppActivate, &numDecodersMJPG);
+					if (FAILED(r)) throw gcnew Exception("");
+					if (numDecodersMJPG < 1) throw gcnew Exception("");
+					
+					// Activate transform
+					IMFTransform *pMPEG4 = NULL;
+					r = ppActivate[0]->ActivateObject(__uuidof(IMFTransform), (void**)&pMPEG4);
+					if (FAILED(r)) throw gcnew Exception("MJPG decoder not available.");*/
+
 					buffer->Unlock();
 				}
 				else
