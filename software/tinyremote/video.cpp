@@ -14,6 +14,14 @@ Display* dpy;
 // MacOS
 #else // CAT_WINDOWS
 // Windows
+void CHECK_HR(const char* prologue, HRESULT hr)
+{
+	if (SUCCEEDED(hr))
+		return;
+	LPSTR Message = nullptr;
+	FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&Message, 0, NULL);
+	fprintf(stderr, "%s: %s\n", prologue, Message);
+}
 #endif
 
 // TODO: Use SDL3 so we can unify this
@@ -494,36 +502,36 @@ HRESULT VideoCapture::CreateSourceReader(IMFMediaSource *pAggregateSource, const
 		return hr;
 	}
 
-	IMFMediaType* mediaType = nullptr;
-	hr = MFCreateMediaType(&mediaType);
+	IMFMediaType* videoType = nullptr;
+	hr = MFCreateMediaType(&videoType);
 	if (FAILED(hr))
 	{
 		fprintf(stderr, "MFCreateMediaType(video) failed\n");
 		return hr;
 	}
 
-	hr = mediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
+	hr = videoType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
 	if (FAILED(hr))
 	{
 		fprintf(stderr, "SetGUID failed\n");
 		return hr;
 	}
 
-	hr = mediaType->SetGUID(MF_MT_SUBTYPE, videoformat == 0 ? MFVideoFormat_YUY2 : (videoformat == 1 ? MFVideoFormat_RGB24 : MFVideoFormat_MJPG));
+	hr = videoType->SetGUID(MF_MT_SUBTYPE, videoformat == 0 ? MFVideoFormat_YUY2 : (videoformat == 1 ? MFVideoFormat_RGB24 : MFVideoFormat_MJPG));
 	if (FAILED(hr))
 	{
 		fprintf(stderr, "SetGUID failed\n");
 		return hr;
 	}
 
-	hr = MFSetAttributeSize(mediaType, MF_MT_FRAME_SIZE, width, height);
+	hr = MFSetAttributeSize(videoType, MF_MT_FRAME_SIZE, width, height);
 	if (FAILED(hr))
 	{
 		fprintf(stderr, "MFSetAttributeSize failed\n");
 		return hr;
 	}
 
-	hr = MFSetAttributeRatio(mediaType, MF_MT_FRAME_RATE, framerate, 1);
+	hr = MFSetAttributeRatio(videoType, MF_MT_FRAME_RATE, framerate, 1);
 	if (FAILED(hr))
 	{
 		fprintf(stderr, "MFSetAttributeRatio failed\n");
@@ -531,7 +539,7 @@ HRESULT VideoCapture::CreateSourceReader(IMFMediaSource *pAggregateSource, const
 	}
 
 	// Set the video format.
-	hr = pAggregateReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, nullptr, mediaType);
+	hr = pAggregateReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, nullptr, videoType);
 	if (FAILED(hr))
 	{
 		fprintf(stderr, "SetCurrentMediaType(video) failed\n");
@@ -587,6 +595,63 @@ HRESULT VideoCapture::CreateSourceReader(IMFMediaSource *pAggregateSource, const
 	{
 		fprintf(stderr, "SetCurrentMediaType(audio) failed\n");
 		return hr;
+	}
+
+	// Generate MJPG->YUY2 transform
+	if (videoformat == 2)
+	{
+		MFT_REGISTER_TYPE_INFO inputFilter = { MFMediaType_Video, MFVideoFormat_MJPG };
+		MFT_REGISTER_TYPE_INFO outputFilter = { MFMediaType_Video, MFVideoFormat_YUY2 };
+		UINT32 unFlags = MFT_ENUM_FLAG_SYNCMFT | MFT_ENUM_FLAG_LOCALMFT | MFT_ENUM_FLAG_SORTANDFILTER;
+		
+		IMFActivate **ppActivate = nullptr;
+		UINT32 numDecodersMJPG = 0;
+		hr = MFTEnumEx(MFT_CATEGORY_VIDEO_DECODER, unFlags, &inputFilter, &outputFilter, &ppActivate, &numDecodersMJPG);
+		if (SUCCEEDED(hr))
+		{
+			fprintf(stderr, " Found %d MJPG decoders\n", numDecodersMJPG);
+			if (numDecodersMJPG >= 1)
+			{
+				// Activate first transform we got
+				pMPEG4 = nullptr;
+				hr = ppActivate[0]->ActivateObject(__uuidof(IMFTransform), (void**)&pMPEG4);
+				if (SUCCEEDED(hr))
+				{
+					hr = pMPEG4->ProcessMessage(MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, NULL);
+					if (FAILED(hr))
+						CHECK_HR("ProcessMessage failed", hr);
+					else
+					{
+						hr = pMPEG4->ProcessMessage(MFT_MESSAGE_NOTIFY_START_OF_STREAM, NULL);
+						if (FAILED(hr))
+							CHECK_HR("ProcessMessage failed", hr);
+						else // Success
+						{
+							IMFMediaType *pDecInputMediaType = nullptr;
+							MFCreateMediaType(&pDecInputMediaType);
+							hr = videoType->CopyAllItems(pDecInputMediaType);
+							CHECK_HR("CopyAllItems failed", hr);
+							hr = pMPEG4->SetInputType(0, pDecInputMediaType, 0);
+							CHECK_HR("SetInputType failed", hr);
+
+							IMFMediaType *pDecOutputMediaType = nullptr;
+							MFCreateMediaType(&pDecOutputMediaType);
+							hr = videoType->CopyAllItems(pDecOutputMediaType);
+							pDecOutputMediaType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_YUY2);
+							CHECK_HR("SetGUID failed", hr);
+							hr = pMPEG4->SetOutputType(0, pDecOutputMediaType, 0);
+							CHECK_HR("SetOutputType failed", hr);
+
+							fprintf(stderr, " Activated MJPG->YUY2 transform\n");
+						}
+					}
+				}
+				else
+					fprintf(stderr, " Could not activate MJPG decoder.\n");
+			}
+		}
+		else
+			CHECK_HR("Codec enumeration failed", hr);
 	}
 
 	return hr;
@@ -825,7 +890,7 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata, AudioPlayback* audio)
 
 	HRESULT hr;
 	DWORD streamIndex, flags;
-	LONGLONG timestamp;
+	LONGLONG timestamp, sampleduration;
 	IMFSample *sample = nullptr;
 
 	if (!pAggregateReader)
@@ -844,22 +909,83 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata, AudioPlayback* audio)
 
 	if (FAILED(hr))
 	{
-		fprintf(stderr, "ReadSample failed\n");
+		CHECK_HR("ReadSample failed", hr);
 		return false; 
 	}
 
 	if (sample)
 	{
+		hr = sample->SetSampleTime(timestamp);
+		CHECK_HR("SetSampleTime failed", hr);
+		hr = sample->GetSampleDuration(&sampleduration);
+		CHECK_HR("GetSampleDuration failed", hr);
+		hr = sample->GetSampleFlags(&flags);
+		CHECK_HR("GetSampleFlags failed", hr);
+
+		// DEBUG
+		//fprintf(stderr, "Sample flags %d, sample duration %I64d, sample time %I64d\n", flags, sampleduration, timestamp);
+
+		IMFSample *outputSample = nullptr;
+		if (videoformat == 2 && streamIndex == 0)
+		{
+			hr = pMPEG4->ProcessInput(0, sample, 0);
+			if (SUCCEEDED(hr))
+			{
+				// Create an output sample
+				hr = MFCreateSample(&outputSample);
+
+				if (SUCCEEDED(hr))
+				{
+					IMFMediaBuffer *outputBuffer = nullptr;
+					hr = MFCreateMemoryBuffer(frameWidth * frameHeight * 4, &outputBuffer);
+					if (SUCCEEDED(hr))
+					{
+						outputSample->AddBuffer(outputBuffer);
+						outputBuffer->Release();
+					}
+
+					DWORD outStatus = 0;
+					MFT_OUTPUT_DATA_BUFFER odf;
+					odf.dwStreamID = streamIndex;
+					odf.pSample = outputSample;
+					odf.dwStatus = 0;
+					odf.pEvents = NULL;
+	
+					hr = pMPEG4->ProcessOutput(0, 1, &odf, &outStatus);
+					if (FAILED(hr))
+					{
+						CHECK_HR("ProcessOutput failed", hr);
+						retval = false;
+					}
+				}
+				else
+				{
+					CHECK_HR("MFCreateSample failed", hr);
+					retval = false;
+				}
+			}
+			else
+			{
+				CHECK_HR("ProcessInput failed", hr);
+				retval = false;
+			}
+			sample->Release();
+		}
+		else
+		{
+			outputSample = sample;
+		}
+
 		//fprintf(stderr, "Stream index: %d\n", streamIndex);
 		if (streamIndex == 0)
 		{
 			//fprintf(stderr, "Video stream\n");
 			IMFMediaBuffer *buffer = nullptr;
-			hr = sample->ConvertToContiguousBuffer(&buffer);
+			hr = outputSample->ConvertToContiguousBuffer(&buffer);
 			if (FAILED(hr))
 			{
+				CHECK_HR("ConvertToCongiguousBuffer failed", hr);
 				retval = false;
-				fprintf(stderr, "Failed to convert sample to contiguous buffer.\n");
 			}
 			else
 			{
@@ -868,31 +994,13 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata, AudioPlayback* audio)
 				hr = buffer->Lock(&rawData, &maxLength, &currentLength);
 				if (SUCCEEDED(hr))
 				{
-					//if (videoformat==0)
-						ConvertYUY2ToRGB(rawData, videodata, frameWidth, frameHeight);
-					//else if (videoformat==1 || videoformat==2) // TODO: Deal with these formats or use auto-conversion
-					//	CopyVideoData(rawData, videodata, frameWidth, frameHeight);
-
-					// NOTE about media transforms:
-					/*MFT_REGISTER_TYPE_INFO inputFilter = { MFMediaType_Video, MFVideoFormat_MJPG };
-					MFT_REGISTER_TYPE_INFO outputFilter = { MFMediaType_Video, MFVideoFormat_YUY2 };
-					UINT32 unFlags = MFT_ENUM_FLAG_SYNCMFT | MFT_ENUM_FLAG_LOCALMFT | MFT_ENUM_FLAG_SORTANDFILTER;
-					
-					HRESULT r = MFTEnumEx(MFT_CATEGORY_VIDEO_DECODER, unFlags, &inputFilter, &outputFilter, &ppActivate, &numDecodersMJPG);
-					if (FAILED(r)) throw gcnew Exception("");
-					if (numDecodersMJPG < 1) throw gcnew Exception("");
-					
-					// Activate transform
-					IMFTransform *pMPEG4 = NULL;
-					r = ppActivate[0]->ActivateObject(__uuidof(IMFTransform), (void**)&pMPEG4);
-					if (FAILED(r)) throw gcnew Exception("MJPG decoder not available.");*/
-
+					ConvertYUY2ToRGB(rawData, videodata, frameWidth, frameHeight);
 					buffer->Unlock();
 				}
 				else
 				{
+					CHECK_HR("Lock failed", hr);
 					retval = false;
-					fprintf(stderr, "Failed to lock buffer.\n");
 				}
 			}
 			buffer->Release();
@@ -901,11 +1009,11 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata, AudioPlayback* audio)
 		{
 			//fprintf(stderr, "Audio stream\n");
 			IMFMediaBuffer *buffer = nullptr;
-			hr = sample->ConvertToContiguousBuffer(&buffer);
+			hr = outputSample->ConvertToContiguousBuffer(&buffer);
 			if (FAILED(hr))
 			{
+				CHECK_HR("ConvertToCongiguousBuffer failed", hr);
 				retval = false;
-				fprintf(stderr, "Failed to convert sample to contiguous buffer.\n");
 			}
 			else
 			{
@@ -927,18 +1035,18 @@ bool VideoCapture::CaptureFrame(uint8_t *videodata, AudioPlayback* audio)
 				}
 				else
 				{
-					fprintf(stderr, "Failed to lock buffer.\n");
+					CHECK_HR("Lock failed", hr);
 					retval = false;
 				}
 			}
 			buffer->Release();
 		}
-		sample->Release();
+		outputSample->Release();
 	}
 	else
 	{
+		fprintf(stderr, "No valid sample\n");
 		retval = false;
-		fprintf(stderr, "No sample\n");
 	}
 #endif
 

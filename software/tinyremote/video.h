@@ -46,6 +46,7 @@ public:
 	IMFMediaSource *aggregatesource = nullptr;
 	IMFCollection *pCollection = nullptr;
 	IMFSourceReader *pAggregateReader = nullptr;
+	IMFTransform *pMPEG4 = nullptr;
 	uint32_t devicecount = 0;
 	uint32_t selectedVideodevice = 0;
 	uint32_t selectedAudiodevice = 0;
