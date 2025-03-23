@@ -792,7 +792,7 @@ void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 		if (found == m_decodedBlocks.end())
 		{
 			blk = new SDecodedBlock();
-			if (mtvec&0x3 == 0x0) // Direct
+			if ((mtvec&0x3) == 0x0) // Direct
 				blk->m_PC = mtvec;
 			else // Vectored
 				blk->m_PC = (mtvec&0xFFFFFFFC) + ((((m_exceptionmode&0x80000000) ? 0x10:0x00) | (m_exceptionmode&0xF))<<2);
@@ -865,7 +865,10 @@ void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 			if (found == m_decodedBlocks.end())
 			{
 				blk = new SDecodedBlock();
-				blk->m_PC = mtvec;
+				if ((mtvec&0x3) == 0x0) // Direct
+					blk->m_PC = mtvec;
+				else // Vectored
+					blk->m_PC = (mtvec&0xFFFFFFFC) + ((((m_exceptionmode&0x80000000) ? 0x10:0x00) | (m_exceptionmode&0xF))<<2);
 				m_decodedBlocks[m_exceptionmode] = blk;
 				InjectISRHeader(&blk->m_code);
 				//fprintf(stderr, "new ISR header block (ECALL/EBREAK/SWI) %08X\n", mtvec);
@@ -960,7 +963,10 @@ bool CRV32::FetchDecode(CBus* bus)
 					uint32_t mtvec;
 					csr->Read(CSR_MTVEC << 2, mtvec);
 					blk = new SDecodedBlock();
-					blk->m_PC = mtvec;
+					if ((mtvec&0x3) == 0x0) // Direct
+						blk->m_PC = mtvec;
+					else // Vectored
+						blk->m_PC = (mtvec&0xFFFFFFFC) + ((((m_exceptionmode&0x80000000) ? 0x10:0x00) | (m_exceptionmode&0xF))<<2);
 					m_decodedBlocks[m_exceptionmode] = blk;
 					InjectISRFooter(&blk->m_code);
 					//fprintf(stderr, "new ISR footer block %08X\n", mtvec);
