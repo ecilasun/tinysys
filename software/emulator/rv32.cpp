@@ -792,7 +792,10 @@ void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 		if (found == m_decodedBlocks.end())
 		{
 			blk = new SDecodedBlock();
-			blk->m_PC = mtvec;
+			if (mtvec&0x3 == 0x0) // Direct
+				blk->m_PC = mtvec;
+			else // Vectored
+				blk->m_PC = (mtvec&0xFFFFFFFC) + ((((m_exceptionmode&0x80000000) ? 0x10:0x00) | (m_exceptionmode&0xF))<<2);
 			m_decodedBlocks[m_exceptionmode] = blk;
 			InjectISRHeader(&blk->m_code);
 			//fprintf(stderr, "new ISR header block (HWI/TMI) %08X\n", mtvec);
@@ -946,7 +949,7 @@ bool CRV32::FetchDecode(CBus* bus)
 				m_wasmret = 0;
 
 				// Add footer (append _END to previous exception mode)
-				m_exceptionmode = ERV32ExceptionMode(0x80000000 | m_lasttrap);
+				m_exceptionmode = ERV32ExceptionMode(0x01000000 | m_lasttrap);
 
 				// NOTE: ISR header/footer uses exception mode for address
 				SDecodedBlock *blk;
