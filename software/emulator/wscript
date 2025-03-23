@@ -33,6 +33,8 @@ def build(bld):
 
     bld.post_mode = Build.POST_LAZY
 
+	# NOTE: Define 'GALLIFREY' to enable two HARTs
+
     # RELEASE
     if platform.system().lower().startswith('win'):
         libs = ['ws2_32', 'shell32', 'user32', 'Comdlg32', 'gdi32', 'ole32', 'kernel32', 'winmm', 'SDL2main', 'SDL2', 'SDL2_ttf']
