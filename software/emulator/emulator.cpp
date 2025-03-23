@@ -57,15 +57,11 @@ bool CEmulator::Reset(const char* romFile, uint32_t resetvector)
 	return true;
 }
 
-void CEmulator::Step(uint64_t wallclock)
+void CEmulator::Step(uint64_t wallclock, uint32_t _hartid)
 {
-	m_steps+=256;
-	for (int i=0;i<256;++i)
-	{
-		m_bus->Tick();
-		m_cpu[0]->Tick(wallclock, m_bus);
-		m_cpu[1]->Tick(wallclock, m_bus);
-	}
+	++m_steps;
+	m_bus->Tick(_hartid);	
+	m_cpu[_hartid]->Tick(wallclock, m_bus);
 }
 
 void CEmulator::UpdateVideoLink(uint32_t *pixels, int pitch)

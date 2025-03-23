@@ -32,6 +32,44 @@ struct EmulatorContext
 static bool s_alive = true;
 static uint64_t s_wallclock = 0;
 
+#if defined(GALLIFREY)
+int emulatorthreadcpu0(void* data)
+{
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_NORMAL);
+
+	EmulatorContext* ctx = (EmulatorContext*)data;
+	do
+	{
+		CEmulator *emulator = ctx->emulator;
+		if (emulator->m_debugStop)
+		{
+			// Stop for debugger
+			emulator->m_debugAck = 1;
+		}
+		else
+		{
+			emulator->m_debugAck = 0;
+			emulator->Step(s_wallclock, 0);
+		}
+	} while(s_alive);
+
+	return 0;
+}
+
+int emulatorthreadcpu1(void* data)
+{
+	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_NORMAL);
+
+	EmulatorContext* ctx = (EmulatorContext*)data;
+	do
+	{
+		CEmulator *emulator = ctx->emulator;
+		emulator->Step(s_wallclock, 1);
+	} while(s_alive);
+
+	return 0;
+}
+#else
 int emulatorthread(void* data)
 {
 	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_NORMAL);
@@ -48,12 +86,14 @@ int emulatorthread(void* data)
 		else
 		{
 			emulator->m_debugAck = 0;
-			emulator->Step(s_wallclock);
+			emulator->Step(s_wallclock, 0);
+			emulator->Step(s_wallclock, 1);
 		}
 	} while(s_alive);
 
 	return 0;
 }
+#endif
 
 int audiothread(void* data)
 {
@@ -624,7 +664,13 @@ int SDL_main(int argc, char** argv)
 	uint64_t startTick = SDL_GetTicks64() * ONE_MS_IN_TICKS;
 	s_wallclock = SDL_GetTicks64() * ONE_MS_IN_TICKS - startTick;
 
-	SDL_Thread* emulatorthreadID = SDL_CreateThread(emulatorthread, "emulator", &ectx);
+#if defined(GALLIFREY)
+	// Two HARTs
+	SDL_Thread* emulatorthreadcpu0ID = SDL_CreateThread(emulatorthreadcpu0, "cpu0", &ectx);
+	SDL_Thread* emulatorthreadcpu1ID = SDL_CreateThread(emulatorthreadcpu1, "cpu1", &ectx);
+#else
+	SDL_Thread* emulatorthreadID = SDL_CreateThread(emulatorthread, "cpu0&1", &ectx);
+#endif
 	SDL_Thread* audiothreadID = SDL_CreateThread(audiothread, "audio", ectx.emulator);
 	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, &ectx); // 60fps
 #if defined(CPU_STATS)
@@ -805,7 +851,12 @@ int SDL_main(int argc, char** argv)
 	TTF_Quit();
 	SDL_RemoveTimer(videoTimer);
 	//SDL_KillThread(gdbStubThread); // We'll hang in accept otherwise
+#if defined(GALLIFREY)
+	SDL_WaitThread(emulatorthreadcpu0ID, nullptr);
+	SDL_WaitThread(emulatorthreadcpu1ID, nullptr);
+#else
 	SDL_WaitThread(emulatorthreadID, nullptr);
+#endif
 	SDL_WaitThread(audiothreadID, nullptr);
 	SDL_ClearQueuedAudio(ectx.emulator->m_audioDevice);
 	SDL_FreeSurface(ectx.compositesurface);
