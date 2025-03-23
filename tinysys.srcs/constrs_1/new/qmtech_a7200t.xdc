@@ -16,7 +16,7 @@ set_property -dict {PACKAGE_PIN W19 IOSTANDARD LVCMOS33} [get_ports sys_clk]
 create_clock -period 20.000 -name sys_clk_pin -waveform {0.000 10.000} -add [get_ports sys_clk]
 
 ## Audio clock @44.100KHz (/512 of clkaudio at 22591KHz)
-create_generated_clock -name audiosampleclk -source [get_pins clockandresetinst/peripheralclkinst/clkaudio] -divide_by 512 -add -master_clock clkaudio_peripheralclocks [get_pins {socinstance/APU/counterinst/P[8]}]
+create_generated_clock -name audiosampleclk -source [get_pins clockandresetinst/peripheralclkinst/clkaudio] -divide_by 512 -add -master_clock clkaudio_peripheralclocks [get_pins socinstance/APU/BUFG_inst/O]
 
 ## ------------------------------------------------------------------------------------------------------
 ## Buttons on the FPGA board - unused
@@ -307,27 +307,21 @@ set_clock_groups -name grpM -asynchronous -group [get_clocks -of_objects [get_pi
 set_clock_groups -name grpN -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT4]] -group [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT1]]
 set_clock_groups -name grpO -asynchronous -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1]] -group [get_clocks -of_objects [get_pins socinstance/axi4ddr3sdraminst/ddr3instance/u_mig_7series_0_mig/u_ddr3_infrastructure/gen_mmcm.mmcm_i/CLKFBOUT]]
 set_clock_groups -name grpP -asynchronous -group [get_clocks -of_objects [get_pins socinstance/axi4ddr3sdraminst/ddr3instance/u_mig_7series_0_mig/u_ddr3_infrastructure/gen_mmcm.mmcm_i/CLKFBOUT]] -group [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1]]
+# set_clock_groups -name grpQ -asynchronous -group [get_clocks audiosampleclk] -to [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT4]]
 
 ## ------------------------------------------------------------------------------------------------------
 ## PBLOCKs
 ## ------------------------------------------------------------------------------------------------------
 
-create_pblock pblock_CPU0
-add_cells_to_pblock [get_pblocks pblock_CPU0] [get_cells -quiet [list socinstance/hart0]]
-resize_pblock [get_pblocks pblock_CPU0] -add {CLOCKREGION_X1Y3:CLOCKREGION_X1Y4}
-create_pblock pblock_CPU1
-add_cells_to_pblock [get_pblocks pblock_CPU1] [get_cells -quiet [list socinstance/hart1]]
-resize_pblock [get_pblocks pblock_CPU1] -add {CLOCKREGION_X1Y0:CLOCKREGION_X1Y1}
 
-create_pblock pblock_leddevice
-add_cells_to_pblock [get_pblocks pblock_leddevice] [get_cells -quiet [list socinstance/leddevice]]
-resize_pblock [get_pblocks pblock_leddevice] -add {SLICE_X2Y120:SLICE_X7Y128}
-resize_pblock [get_pblocks pblock_leddevice] -add {RAMB18_X0Y48:RAMB18_X0Y49}
-resize_pblock [get_pblocks pblock_leddevice] -add {RAMB36_X0Y24:RAMB36_X0Y24}
 
-create_pblock pblock_uartinst
-add_cells_to_pblock [get_pblocks pblock_uartinst] [get_cells -quiet [list socinstance/uartinst]]
-resize_pblock [get_pblocks pblock_uartinst] -add {SLICE_X20Y112:SLICE_X23Y120}
-resize_pblock [get_pblocks pblock_uartinst] -add {DSP48_X1Y46:DSP48_X1Y47}
-resize_pblock [get_pblocks pblock_uartinst] -add {RAMB18_X1Y46:RAMB18_X1Y47}
-resize_pblock [get_pblocks pblock_uartinst] -add {RAMB36_X1Y23:RAMB36_X1Y23}
+
+create_pblock pblock_VPU
+add_cells_to_pblock [get_pblocks pblock_VPU] [get_cells -quiet [list socinstance/VPU]]
+resize_pblock [get_pblocks pblock_VPU] -add {CLOCKREGION_X1Y2:CLOCKREGION_X1Y2}
+create_pblock pblock_hart0
+add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list socinstance/hart0]]
+resize_pblock [get_pblocks pblock_hart0] -add {CLOCKREGION_X0Y0:CLOCKREGION_X0Y1}
+create_pblock pblock_hart1
+add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list socinstance/hart1]]
+resize_pblock [get_pblocks pblock_hart1] -add {CLOCKREGION_X1Y3:CLOCKREGION_X1Y4}

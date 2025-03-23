@@ -26,6 +26,9 @@ static bool s_maximized;
 static bool s_restored;
 static float s_uploadProgress = 0.f;
 static int s_showProgress = 0;
+static int s_disablecomms = 0;
+static int s_stopfiletransfer = 0;
+static std::vector<std::string> s_uploadQueue;
 
 uint32_t videoCallback(uint32_t interval, void* param)
 {
@@ -170,7 +173,12 @@ void ConsumeInitialTraffic(CSerialPort* _serial)
 	}
 }
 
-void SendFile(char *_filename, CSerialPort* _serial)
+void QueueFile(std::string& _filename)
+{
+	s_uploadQueue.emplace_back(_filename);
+}
+
+bool SendFile(char *_filename, CSerialPort* _serial)
 {
 	char tmpstring[129];
 
@@ -178,8 +186,8 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	fp = fopen(_filename, "rb");
 	if (!fp)
 	{
-		fprintf(stderr, "ERROR: can't open ELF file %s\n", _filename);
-		return;
+		fprintf(stderr, "ERROR: can't open file '%s'\n", _filename);
+		return false;
 	}
 
 	char cleanfilename[129];
@@ -188,6 +196,8 @@ void SendFile(char *_filename, CSerialPort* _serial)
 		path p = absolute(_filename);
 		strcpy(cleanfilename, p.filename().string().c_str());
 	}
+
+	fprintf(stderr, "Uploading '%s'\n", cleanfilename);
 
 	unsigned int filebytesize = 0;
 	fpos_t pos, endpos;
@@ -218,9 +228,6 @@ void SendFile(char *_filename, CSerialPort* _serial)
 
 	ConsumeInitialTraffic(_serial);
 
-	s_uploadProgress = 0.f;
-	s_showProgress = 1;
-
 	// Start the receiver app on the other end
 	snprintf(tmpstring, 128, "recv");
 	_serial->Send((uint8_t*)tmpstring, 4);
@@ -231,8 +238,7 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	{
 		fprintf(stderr, "Transfer initiation error: '%c'\n", received);
 		delete [] filedata;
-		s_showProgress = 0;
-		return;
+		return false;
 	}
 
 	// Send encoded length
@@ -242,8 +248,7 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	{
 		fprintf(stderr, "Encoded buffer length error: '%c'\n", received);
 		delete [] filedata;
-		s_showProgress = 0;
-		return;
+		return false;
 	}
 
 	// Send actual length
@@ -253,8 +258,7 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	{
 		fprintf(stderr, "Decoded buffer length error: '%c'\n", received);
 		delete [] filedata;
-		s_showProgress = 0;
-		return;
+		return false;
 	}
 
 	// Send name length
@@ -264,8 +268,7 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	{
 		fprintf(stderr, "File name length error: '%c'\n", received);
 		delete [] filedata;
-		s_showProgress = 0;
-		return;
+		return false;
 	}
 
 	// Send name
@@ -274,8 +277,7 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	{
 		fprintf(stderr, "File name error: '%c'\n", received);
 		delete [] filedata;
-		s_showProgress = 0;
-		return;
+		return false;
 	}
 
 	uint32_t i = 0;
@@ -287,6 +289,16 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	fprintf(stderr, "Uploading '%s' (packet size: %dx%d+%d bytes, packer buffer: %d bytes)\n", cleanfilename, numPackets, packetSize, leftoverBytes, worstSize);
 	for (i=0; i<numPackets; ++i)
 	{
+		if (s_stopfiletransfer)
+		{
+			s_stopfiletransfer = 0;
+			fprintf(stderr, "\nAborting file transfer\n");
+			packetSize = 0;	// Send 0 packet size to abort
+			_serial->Send(&packetSize, 4);
+			delete [] filedata;
+			return false;
+		}
+
 		const char* source = (const char*)(encoded + packetOffset);
 
 		s_uploadProgress = (i*100)/float(numPackets);
@@ -299,18 +311,16 @@ void SendFile(char *_filename, CSerialPort* _serial)
 		{
 			fprintf(stderr, "Packet size error at %d/%d (%d): '%c'\n", i, numPackets, received, packetSize);
 			delete [] filedata;
-			s_showProgress = 0;
-			return;
+			return false;
 		}
-
+		
 		_serial->Send(&packetSize, 4);
 
 		if (!WACK(_serial, '+', received)) // Wait for a 'go' signal
 		{
 			fprintf(stderr, "Packet error at %d/%d (%d): '%c'\n", i, numPackets, received, packetSize);
 			delete [] filedata;
-			s_showProgress = 0;
-			return;
+			return false;
 		}
 
 		_serial->Send((void*)source, packetSize);
@@ -320,6 +330,16 @@ void SendFile(char *_filename, CSerialPort* _serial)
 
 	if (leftoverBytes)
 	{
+		if (s_stopfiletransfer)
+		{
+			s_stopfiletransfer = 0;
+			fprintf(stderr, "\nAborting file transfer\n");
+			packetSize = 0;	// Send 0 packet size to abort
+			_serial->Send(&packetSize, 4);
+			delete [] filedata;
+			return false;
+		}
+
 		const char* source = (const char*)(encoded + packetOffset);
 
 		s_uploadProgress = 100.f;
@@ -331,8 +351,7 @@ void SendFile(char *_filename, CSerialPort* _serial)
 		{
 			fprintf(stderr, "Packet size error at %d/%d (%d): '%c'\n", i, numPackets, received, packetSize);
 			delete [] filedata;
-			s_showProgress = 0;
-			return;
+			return false;
 		}
 
 		_serial->Send(&leftoverBytes, 4);
@@ -341,8 +360,7 @@ void SendFile(char *_filename, CSerialPort* _serial)
 		{
 			fprintf(stderr, "Packet error at %d/%d (%d): '%c'\n", i, numPackets, received, packetSize);
 			delete [] filedata;
-			s_showProgress = 0;
-			return;
+			return false;
 		}
 
 		_serial->Send((void*)source, leftoverBytes);
@@ -357,11 +375,12 @@ void SendFile(char *_filename, CSerialPort* _serial)
 	fprintf(stderr, "\r\n");
 
 	delete[] encoded;
-	s_showProgress = 0;
 
 	fprintf(stderr, "%d bytes uploaded\n", packetOffset);
 
 	delete [] filedata;
+
+	return true;
 }
 
 float Clamp(float value, float min, float max)
@@ -464,7 +483,34 @@ void ControllerRemove(AppCtx& ctx)
 		SDL_GameControllerClose(ctx.gamecontroller);
 		ctx.gamecontroller = nullptr;
 	}
+}
 
+int sendfilethread(void* data)
+{
+	AppCtx* ctx = (AppCtx*)data;
+
+	do
+	{
+		if (!s_uploadQueue.empty())
+		{
+			std::string filename = s_uploadQueue.back();
+			s_uploadQueue.pop_back();
+
+			s_disablecomms = 1;
+			s_uploadProgress = 0.f;
+			s_showProgress = 1;
+
+			bool success = SendFile((char*)filename.c_str(), ctx->serial);
+
+			s_disablecomms = 0;
+			s_uploadProgress = 0.f;
+			s_showProgress = 0;
+		}
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	} while (s_alive);
+
+	return 0;
 }
 
 #if defined(CAT_LINUX) || defined(CAT_DARWIN)
@@ -590,6 +636,7 @@ int SDL_main(int argc, char** argv)
 
 	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, &s_app_ctx); // 60fps
 	//SDL_TimerID audioTimer = SDL_AddTimer(16, audioCallback, ctx.audio); // 60fps
+	SDL_Thread* sendfileThread = SDL_CreateThread(sendfilethread, "sendfilethread", &s_app_ctx);
 
 	const uint8_t *keystates = SDL_GetKeyboardState(nullptr);
 	uint8_t *old_keystates = new uint8_t[SDL_NUM_SCANCODES];
@@ -612,7 +659,10 @@ int SDL_main(int argc, char** argv)
 			if (ev.type == SDL_QUIT)
 				s_alive = false;
 			if (ev.type == SDL_DROPFILE)
-				SendFile(ev.drop.file, s_app_ctx.serial);
+			{
+				std::string filename = ev.drop.file;
+				QueueFile(filename);
+			}
 			if (ev.type == SDL_CONTROLLERDEVICEADDED)
 			{
 				ControllerAdd(s_app_ctx);
@@ -646,74 +696,77 @@ int SDL_main(int argc, char** argv)
 		}
 
 		// Echo serial data
-		char inchar;
-		if(s_app_ctx.serial->Receive(&inchar, 1))
-			fprintf(stderr, "%c", inchar);
-
-		// Read joystick events
-		if (s_app_ctx.gamecontroller)
+		if (!s_disablecomms)
 		{
-			// Buttons
-			uint32_t buttons = 0x00000000;
-			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_A) ? 0x00000001 : 0;
-			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_B) ? 0x00000002 : 0;
-			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_X) ? 0x00000004 : 0;
-			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_Y) ? 0x00000008 : 0;
-			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_BACK) ? 0x00000010 : 0;
-			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_GUIDE) ? 0x00000020 : 0;
-			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_START) ? 0x00000040 : 0;
-			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_LEFTSTICK) ? 0x00000080 : 0;
-			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_RIGHTSTICK) ? 0x00000100 : 0;
-			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_LEFTSHOULDER) ? 0x00000200 : 0;
-			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) ? 0x00000400 : 0;
-			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_UP) ? 0x00000800 : 0;
-			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_DOWN) ? 0x00001000 : 0;
-			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_LEFT) ? 0x00002000 : 0;
-			buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT) ? 0x00004000 : 0;
-			if (buttons != prev_buttons)
+			char inchar;
+			if(s_app_ctx.serial->Receive(&inchar, 1))
+				fprintf(stderr, "%c", inchar);
+
+			// Read joystick events
+			if (s_app_ctx.gamecontroller)
 			{
-				prev_buttons = buttons;
+				// Buttons
+				uint32_t buttons = 0x00000000;
+				buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_A) ? 0x00000001 : 0;
+				buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_B) ? 0x00000002 : 0;
+				buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_X) ? 0x00000004 : 0;
+				buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_Y) ? 0x00000008 : 0;
+				buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_BACK) ? 0x00000010 : 0;
+				buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_GUIDE) ? 0x00000020 : 0;
+				buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_START) ? 0x00000040 : 0;
+				buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_LEFTSTICK) ? 0x00000080 : 0;
+				buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_RIGHTSTICK) ? 0x00000100 : 0;
+				buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_LEFTSHOULDER) ? 0x00000200 : 0;
+				buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) ? 0x00000400 : 0;
+				buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_UP) ? 0x00000800 : 0;
+				buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_DOWN) ? 0x00001000 : 0;
+				buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_LEFT) ? 0x00002000 : 0;
+				buttons |= SDL_GameControllerGetButton(s_app_ctx.gamecontroller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT) ? 0x00004000 : 0;
+				if (buttons != prev_buttons)
+				{
+					prev_buttons = buttons;
 
-				uint8_t outdata[4];
-				outdata[0] = '@';				// joystick button packet marker
-				outdata[1] = buttons&0xFF;		// lower byte of modifiers
-				outdata[2] = (buttons>>8)&0xFF;	// upper byte of modifiers
-				s_app_ctx.serial->Send(outdata, 3);
-			}
+					uint8_t outdata[4];
+					outdata[0] = '@';				// joystick button packet marker
+					outdata[1] = buttons&0xFF;		// lower byte of modifiers
+					outdata[2] = (buttons>>8)&0xFF;	// upper byte of modifiers
+					s_app_ctx.serial->Send(outdata, 3);
+				}
 
-			// Axes
-			Axis6 input;
-			input.leftx = SDL_GameControllerGetAxis(s_app_ctx.gamecontroller, SDL_CONTROLLER_AXIS_LEFTX) / 32767.0f;
-			input.lefty = SDL_GameControllerGetAxis(s_app_ctx.gamecontroller, SDL_CONTROLLER_AXIS_LEFTY) / 32767.0f;
-			input.rightx = SDL_GameControllerGetAxis(s_app_ctx.gamecontroller, SDL_CONTROLLER_AXIS_RIGHTX) / 32767.0f;
-			input.righty = SDL_GameControllerGetAxis(s_app_ctx.gamecontroller, SDL_CONTROLLER_AXIS_RIGHTY) / 32767.0f;
-			input.lefttrigger = SDL_GameControllerGetAxis(s_app_ctx.gamecontroller, SDL_CONTROLLER_AXIS_TRIGGERLEFT) / 32767.0f;
-			input.righttrigger = SDL_GameControllerGetAxis(s_app_ctx.gamecontroller, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) / 32767.0f;
-			ClampAnalogInput(input, 0.1f, 0.9f);
-			if (prev_input.leftx != input.leftx || prev_input.lefty != input.lefty || prev_input.rightx != input.rightx || prev_input.righty != input.righty || prev_input.lefttrigger != input.lefttrigger || prev_input.righttrigger != input.righttrigger)
-			{
-				prev_input = input;
+				// Axes
+				Axis6 input;
+				input.leftx = SDL_GameControllerGetAxis(s_app_ctx.gamecontroller, SDL_CONTROLLER_AXIS_LEFTX) / 32767.0f;
+				input.lefty = SDL_GameControllerGetAxis(s_app_ctx.gamecontroller, SDL_CONTROLLER_AXIS_LEFTY) / 32767.0f;
+				input.rightx = SDL_GameControllerGetAxis(s_app_ctx.gamecontroller, SDL_CONTROLLER_AXIS_RIGHTX) / 32767.0f;
+				input.righty = SDL_GameControllerGetAxis(s_app_ctx.gamecontroller, SDL_CONTROLLER_AXIS_RIGHTY) / 32767.0f;
+				input.lefttrigger = SDL_GameControllerGetAxis(s_app_ctx.gamecontroller, SDL_CONTROLLER_AXIS_TRIGGERLEFT) / 32767.0f;
+				input.righttrigger = SDL_GameControllerGetAxis(s_app_ctx.gamecontroller, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) / 32767.0f;
+				ClampAnalogInput(input, 0.1f, 0.9f);
+				if (prev_input.leftx != input.leftx || prev_input.lefty != input.lefty || prev_input.rightx != input.rightx || prev_input.righty != input.righty || prev_input.lefttrigger != input.lefttrigger || prev_input.righttrigger != input.righttrigger)
+				{
+					prev_input = input;
 
-				uint16_t lx = (uint16_t)((input.leftx * 32767.0f) + 32768);
-				uint16_t ly = (uint16_t)((input.lefty * 32767.0f) + 32768);
-				uint16_t rx = (uint16_t)((input.rightx * 32767.0f) + 32768);
-				uint16_t ry = (uint16_t)((input.righty * 32767.0f) + 32768);
-				uint8_t lt = (uint8_t)(input.lefttrigger * 255.0f);
-				uint8_t rt = (uint8_t)(input.righttrigger * 255.0f);
+					uint16_t lx = (uint16_t)((input.leftx * 32767.0f) + 32768);
+					uint16_t ly = (uint16_t)((input.lefty * 32767.0f) + 32768);
+					uint16_t rx = (uint16_t)((input.rightx * 32767.0f) + 32768);
+					uint16_t ry = (uint16_t)((input.righty * 32767.0f) + 32768);
+					uint8_t lt = (uint8_t)(input.lefttrigger * 255.0f);
+					uint8_t rt = (uint8_t)(input.righttrigger * 255.0f);
 
-				uint8_t outdata[16];
-				outdata[0] = '%';				// joystick axis packet marker
-				outdata[1] = lx&0xFF;			// lower byte of left x
-				outdata[2] = (lx>>8)&0xFF;		// upper byte of left x
-				outdata[3] = ly&0xFF;			// lower byte of left y
-				outdata[4] = (ly>>8)&0xFF;		// upper byte of left y
-				outdata[5] = rx&0xFF;			// lower byte of right x
-				outdata[6] = (rx>>8)&0xFF;		// upper byte of right x
-				outdata[7] = ry&0xFF;			// lower byte of right y	
-				outdata[8] = (ry>>8)&0xFF;		// upper byte of right y
-				outdata[9] = lt;				// left trigger
-				outdata[10] = rt;				// right trigger
-				s_app_ctx.serial->Send(outdata, 11);
+					uint8_t outdata[16];
+					outdata[0] = '%';				// joystick axis packet marker
+					outdata[1] = lx&0xFF;			// lower byte of left x
+					outdata[2] = (lx>>8)&0xFF;		// upper byte of left x
+					outdata[3] = ly&0xFF;			// lower byte of left y
+					outdata[4] = (ly>>8)&0xFF;		// upper byte of left y
+					outdata[5] = rx&0xFF;			// lower byte of right x
+					outdata[6] = (rx>>8)&0xFF;		// upper byte of right x
+					outdata[7] = ry&0xFF;			// lower byte of right y	
+					outdata[8] = (ry>>8)&0xFF;		// upper byte of right y
+					outdata[9] = lt;				// left trigger
+					outdata[10] = rt;				// right trigger
+					s_app_ctx.serial->Send(outdata, 11);
+				}
 			}
 		}
 
@@ -721,33 +774,44 @@ int SDL_main(int argc, char** argv)
 		SDL_Keymod modifiers = SDL_GetModState();
 		if (memcmp(old_keystates, keystates, SDL_NUM_SCANCODES))
 		{
-			for (int i = 0; i < SDL_NUM_SCANCODES; ++i)
+			if (!s_disablecomms)
 			{
-				if (keystates[i] != old_keystates[i])
+				for (int i = 0; i < SDL_NUM_SCANCODES; ++i)
 				{
-					// DEBUG: fprintf(stderr, "key %d: %d mod: %d\n", i, keystates[i], modifiers);
-
-					uint8_t outdata[8];
-					outdata[0] = '^';					// scancode packet marker
-					outdata[1] = i;						// scancode
-					outdata[2] = keystates[i];			// state
-					outdata[3] = modifiers&0xFF;		// lower byte of modifiers
-					outdata[4] = (modifiers>>8)&0xFF;	// upper byte of modifiers
-
-					// IMPORTANT: We MUST capture ~ key since it's essential for the ESP32 to reboot the device CPUs when stuck
-					// NOTE: You must hold down the ~ key for at least 250ms for the reboot to occur
-					if (i==53 && keystates[i] == 1 && (modifiers & KMOD_SHIFT))
+					if (keystates[i] != old_keystates[i])
 					{
-						fprintf(stderr, "Keep holding down ~ to reboot...\n");
-						s_app_ctx.serial->Send((uint8_t*)"~", 1);
+						// DEBUG: fprintf(stderr, "key %d: %d mod: %d\n", i, keystates[i], modifiers);
+
+						uint8_t outdata[8];
+						outdata[0] = '^';					// scancode packet marker
+						outdata[1] = i;						// scancode
+						outdata[2] = keystates[i];			// state
+						outdata[3] = modifiers&0xFF;		// lower byte of modifiers
+						outdata[4] = (modifiers>>8)&0xFF;	// upper byte of modifiers
+
+						// IMPORTANT: We MUST capture ~ key since it's essential for the ESP32 to reboot the device CPUs when stuck
+						// NOTE: You must hold down the ~ key for at least 250ms for the reboot to occur
+						if (i==53 && keystates[i] == 1 && (modifiers & KMOD_SHIFT))
+						{
+							fprintf(stderr, "Keep holding down ~ to reboot...\n");
+							s_app_ctx.serial->Send((uint8_t*)"~", 1);
+						}
+						else if (i == 0x06 && keystates[i] == 1 && (modifiers & KMOD_CTRL))
+						{
+							fprintf(stderr, "Attempting to quit remote process\nIf this doesn't work, hold down ~ key to reboot CPUs\n");
+							s_app_ctx.serial->Send((uint8_t*)"\03", 1);
+						}
+						else
+							s_app_ctx.serial->Send(outdata, 5);
 					}
-					else if (i == 0x06 && keystates[i] == 1 && (modifiers & KMOD_CTRL))
-					{
-						fprintf(stderr, "Attempting to quit remote process\nIf this doesn't work, hold down ~ key to reboot CPUs\n");
-						s_app_ctx.serial->Send((uint8_t*)"\03", 1);
-					}
-					else
-						s_app_ctx.serial->Send(outdata, 5);
+				}
+			}
+			else
+			{
+				if (keystates[SDL_SCANCODE_ESCAPE] == 1)
+				{
+					fprintf(stderr, "Aborting file transfer\n");
+					s_stopfiletransfer = 1;
 				}
 			}
 

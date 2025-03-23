@@ -121,6 +121,12 @@ int main()
 			}
 		}
 
+		if (packetLen == 0)
+		{
+			printf("File transfer aborted, file wasn't saved\n");
+			return 0;
+		}
+
 		// Let the sender know we're ready for the packet data
 		UARTSendBlock((uint8_t*)ACK, 1);
 
@@ -147,7 +153,9 @@ int main()
 		FILE *fp = fopen("downloaded.bin", "wb");
 		if (fp)
 		{
-			/*uint32_t written =*/ (uint32_t)fwrite(targetBuffer, 1, decodedLen, fp);
+			printf("Saving file...");
+
+			/*uint32_t written = (uint32_t)*/fwrite(targetBuffer, 1, decodedLen, fp);
 			fclose(fp);
 
 			// Remove the file if it already exits
@@ -155,6 +163,7 @@ int main()
 
 			// Rename the temp file to the original file name
 			rename("downloaded.bin", fileName);
+			printf("done\n");
 		}
 		else
 			printf("! ERROR: can't create file %s\n", fileName);

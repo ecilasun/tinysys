@@ -52,7 +52,6 @@ int emulatorthread(void* data)
 		}
 	} while(s_alive);
 
-	s_alive = false;
 	return 0;
 }
 

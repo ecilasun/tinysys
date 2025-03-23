@@ -140,7 +140,7 @@ void __attribute__((naked)) enterHWISR()
 	asm volatile(
 		"csrw 0xFD0, a5;"           // Save current A5
 		"auipc a5, 0;"              // Grab PC from INJECT stage of the CPU
-		"csrw mepc, a5;"            // Set MEPC to PC+4 for mret
+		"csrw mepc, a5;"            // Set MEPC to PC for mret
 		"li a5, 2048;"              // Generate mask for bit 11
 		"csrrc zero, mie, a5;"      // Clear MIE[11(MEIE)]
 		"srl a5, a5, 4;"            // Shift to 7th bit position
@@ -176,7 +176,7 @@ void __attribute__((naked)) enterSWecallISR()
 	asm volatile(
 		"csrw 0xFD0, a5;"           // Save current A5
 		"auipc a5, 0;"              // Grab PC+4 from INJECT stage of the CPU
-		"csrw mepc, a5;"            // Set MEPC to PC+4 for mret
+		"csrw mepc, a5;"            // Set MEPC to PC for mret
 		"li a5, 8;"                 // Generate mask for bit 3
 		"csrrc zero, mie, a5;"      // Clear MIE[3(MSIE)]
 		"sll a5, a5, 4;"            // Shift to 7th bit position

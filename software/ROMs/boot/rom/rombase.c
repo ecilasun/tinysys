@@ -85,51 +85,11 @@ void ksetcursor(const int _x, const int _y)
 	VPUConsoleSetCursor(kernelgfx, _x, _y);
 }
 
-uint32_t _task_switch_to_task(struct STaskContext *_ctx, const uint32_t _taskID)
+uint32_t _task_abort_to(struct STaskContext *_ctx, const uint32_t _abortTo)
 {
-	// Load current process ID from TP register
-	int32_t currentTask = _ctx->currentTask;
+	_ctx->currentTask = _abortTo;
 
-	// Get current task's register stash
-	uint32_t *regs = _ctx->tasks[currentTask].regs;
-
-	// Store register back-ups in current task's structure
-	regs[0] = read_csr(0x8A0);	// PC of halted task
-	regs[1] = read_csr(0x8A1);	// ra
-	regs[2] = read_csr(0x8A2);	// sp
-	regs[3] = read_csr(0x8A3);	// gp
-	regs[4] = read_csr(0x8A4);	// tp
-	regs[5] = read_csr(0x8A5);	// t0
-	regs[6] = read_csr(0x8A6);	// t1
-	regs[7] = read_csr(0x8A7);	// t2
-	regs[8] = read_csr(0x8A8);	// s0
-	regs[9] = read_csr(0x8A9);	// s1
-	regs[10] = read_csr(0x8AA);	// a0
-	regs[11] = read_csr(0x8AB);	// a1
-	regs[12] = read_csr(0x8AC);	// a2
-	regs[13] = read_csr(0x8AD);	// a3
-	regs[14] = read_csr(0x8AE);	// a4
-	regs[15] = read_csr(0x8AF);	// a5
-	regs[16] = read_csr(0x8B0);	// a6
-	regs[17] = read_csr(0x8B1);	// a7
-	regs[18] = read_csr(0x8B2);	// s2
-	regs[19] = read_csr(0x8B3);	// s3
-	regs[20] = read_csr(0x8B4);	// s4
-	regs[21] = read_csr(0x8B5);	// s5
-	regs[22] = read_csr(0x8B6);	// s6
-	regs[23] = read_csr(0x8B7);	// s7
-	regs[24] = read_csr(0x8B8);	// s8
-	regs[25] = read_csr(0x8B9);	// s9
-	regs[26] = read_csr(0x8BA);	// s10
-	regs[27] = read_csr(0x8BB);	// s11
-	regs[28] = read_csr(0x8BC);	// t3
-	regs[29] = read_csr(0x8BD);	// t4
-	regs[30] = read_csr(0x8BE);	// t5
-	regs[31] = read_csr(0x8BF);	// t6
-
-	_ctx->currentTask = _taskID;
-
-	regs = _ctx->tasks[_taskID].regs;
+	uint32_t *regs = _ctx->tasks[_abortTo].regs;
 
 	// Load next tasks's registers into CSR file
 	write_csr(0x8A0, regs[0]);	// PC of next task
@@ -165,7 +125,7 @@ uint32_t _task_switch_to_task(struct STaskContext *_ctx, const uint32_t _taskID)
 	write_csr(0x8BE, regs[30]);	// t5
 	write_csr(0x8BF, regs[31]);	// t6
 
-	return _ctx->tasks[_taskID].runLength;
+	return _ctx->tasks[_abortTo].runLength;
 }
 
 uint32_t _task_switch_to_next(struct STaskContext *_ctx)
@@ -230,7 +190,7 @@ uint32_t _task_switch_to_next(struct STaskContext *_ctx)
 			// Wind back to OS Idle task
 			currentTask = 0;
 		}
-		else if (_ctx->tasks[currentTask].state == TS_RUNNING) // Found a task to run
+		else if (_ctx->tasks[currentTask].state == TS_RUNNING || currentTask == 0) // Found a task to run or dropped to IDLE task
 			break;
 	} while (1);
 
@@ -807,7 +767,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 	// CSR[0x011] now contains A7 (SYSCALL number)
 	uint32_t value = read_csr(0x8B1);	// Instruction word or hardware bit - A7
 	uint32_t cause = read_csr(mcause);	// Exception cause on bits [18:16] (https://riscv.org/wp-content/uploads/2017/05/riscv-privileged-v1.10.pdf)
-	uint32_t PC = read_csr(mepc);		// Return address == crash PC
+	uint32_t PC = read_csr(mepc);		// Return address == IRQ PC
 	uint32_t code = cause & 0x7FFFFFFF;
 
 	// Grab the task context that belongs to this HART
@@ -833,7 +793,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 
 				// Task scheduler will re-visit after we've filled run length of this task
 				uint64_t now = E32ReadTime();
-				// TODO: Use time slice request returned from _task_switch_to_next()
+				// Use the run length of next task to set the next timer interrupt
 				uint64_t future = now + runLength;
 				E32SetTimeCompare(future);
 			}
@@ -891,7 +851,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 
 					// Terminate task on first chance and remove from list of running tasks
 					_task_exit_current_task(taskctx);
-					// Force switch to next task
+					// Force switch to next available task
 					_task_switch_to_next(taskctx);
 				}
 				/*else
@@ -911,7 +871,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					taskctx->kernelErrorData[2] = PC;					// Program counter
 					// Exit task in non-debug mode
 					_task_exit_current_task(taskctx);
-					// Force switch to next task
+					// Force switch to next available task
 					_task_switch_to_next(taskctx);
 				}
 				/*else
@@ -1182,6 +1142,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					// Task return value is store in AO
 					uint32_t retval = read_csr(0x8AA); // A0
 					write_csr(0x8AA, retval);
+					_task_abort_to(taskctx, 0);
 				}
 				else if (value==95) // wait()
 				{
@@ -1198,6 +1159,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					_task_exit_task_with_id(taskctx, pid, sig);
 					kprintf("\nSIG:0x%x PID:0x%x\n", sig, pid);
 					write_csr(0x8AA, sig);
+					_task_abort_to(taskctx, 0);
 				}
 				else if (value==214) // brk()
 				{
@@ -1341,7 +1303,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				}
 				else if (value==16384) // task_add
 				{
-					struct STaskContext * context = (struct STaskContext *)read_csr(0x8AA); // A0
+					struct STaskContext *context = (struct STaskContext *)read_csr(0x8AA); // A0
 					const char * name = (const char *)read_csr(0x8AB); // A1
 					taskfunc task = (taskfunc)read_csr(0x8AC); // A2
 					enum ETaskState initialState = read_csr(0x8AD); // A3
@@ -1355,26 +1317,30 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				}
 				else if (value==16385) // task_switch_to_next
 				{
-					struct STaskContext * context = (struct STaskContext *)read_csr(0x8AA); // A0
+					// TaskSwitchToNext()
+					struct STaskContext *context = (struct STaskContext *)read_csr(0x8AA); // A0
 					int retVal = _task_switch_to_next(context);
 					write_csr(0x8AA, retVal);
 				}
 				else if (value==16386) // _task_exit_task_with_id
 				{
-					struct STaskContext * context = (struct STaskContext *)read_csr(0x8AA); // A0
+					struct STaskContext *context = (struct STaskContext *)read_csr(0x8AA); // A0
 					uint32_t taskid = read_csr(0x8AB); // A1
 					int signal = read_csr(0x8AC); // A2
 					_task_exit_task_with_id(context, taskid, signal);
 					write_csr(0x8AA, 0);
+					_task_abort_to(taskctx, 0);
 				}
 				else if (value==16387) // _task_exit_current_task
 				{
 					struct STaskContext *context = (struct STaskContext *)read_csr(0x8AA); // A0
 					_task_exit_current_task(context);
 					write_csr(0x8AA, 0);
+					_task_abort_to(taskctx, 0);
 				}
 				else if (value==16388) // _task_yield
 				{
+					//TaskYield()
 					// Ignore return value, only OS has access to it
 					_task_yield();
 					write_csr(0x8AA, 0);

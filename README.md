@@ -13,7 +13,8 @@ Of course, before you ask, it does run DOOM, and with sound and keyboard input! 
 - 2x RISC-V based CPUs (architecture: rv32im_zicsr_zifencei_zfinx)
 - First core runs the OS kernel and user processes
 - Second core is reserved for user processes
-- 166.66667MHz bus and CPU clock, semi-pipelined execution
+- 175MHz bus and CPU clock, semi-pipelined execution
+- Vectored or direct interrupt support
 - Supports instruction fence and data cache flush/invalidate operations
 - Single precision FPU per CPU (no float control CRSs)
 - Float and integer GPRs share the same register space (zfinx extension)
@@ -42,7 +43,7 @@ Of course, before you ask, it does run DOOM, and with sound and keyboard input! 
 
 ## CPU
 Based on 32 bit RISC-V ISA. Implements base integer instruction set, required cache operations (I$ and D$) and a large CSR file.
-The core currently has an average instruction retirement rate of ~6 CPI (clocks per instruction) and runs at 166.667MHZ, which
+The core currently has an average instruction retirement rate of ~6 CPI (clocks per instruction) and runs at 175MHz, which
 is also the speed of the AXI4 bus, where all peripherals and memory reside.
 
 ### Fetch/Decode/IRQ
@@ -60,7 +61,7 @@ Audio processing unit. Handles RAW audio outputs, and also manages 44/22/11KHz s
 # Overview of the bus
 
 ## AXI4 bus
-The AXI4 bus, running at 166.667MHz, connects all of the processing units to memory or devices. In the case of memory, access is cached per perhipheral as needed. Memory mapped device access is always uncached.
+The AXI4 bus, running at 175MHz, connects all of the processing units to memory or devices. In the case of memory, access is cached per perhipheral as needed. Memory mapped device access is always uncached.
 
 # Contributors
 

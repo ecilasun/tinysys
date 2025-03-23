@@ -209,6 +209,8 @@ typedef enum logic [3:0] {
 fetchstate fetchmode = INIT;
 fetchstate postInject = FETCH;	// Where to go after injection ends
 
+logic [4:0] exceptioncode;
+
 always @(posedge aclk) begin
 	if (~delayedresetn || cpuresetreq) begin
 		PC <= 32'd0;
@@ -218,6 +220,7 @@ always @(posedge aclk) begin
 		injectStop <= 7'd0;
 		entryState <= 5'd0;
 		wficount <= 4'd0;
+		exceptioncode <= 5'd0;
 		fetchmode <= INIT;
 		IR <= 32'd0;
 	end else begin
@@ -313,26 +316,32 @@ always @(posedge aclk) begin
 					irqReq[0]: begin			// Interrupt: Timer
 						injectAddr <= enterStartStop[0];
 						injectStop <= enterStartStop[1];
+						exceptioncode <= 5'h17;
 					end
-					irqReq[1]: begin			// Interrupt: Ext (UART)
+					irqReq[1]: begin			// Interrupt: Ext (UART and other hardware)
 						injectAddr <= enterStartStop[2];
 						injectStop <= enterStartStop[3];
+						exceptioncode <= 5'h1B;
 					end
 					isecall: begin				// Exception: Environment call
 						injectAddr <= enterStartStop[4];
 						injectStop <= enterStartStop[5];
+						exceptioncode <= 5'h0B;
 					end
 					isebreak: begin				// Exception: Debug breakpoint
 						injectAddr <= enterStartStop[6];
 						injectStop <= enterStartStop[7];
+						exceptioncode <= 5'h03;
 					end
 					isillegalinstruction: begin	// Exception: Illegal instruction
 						injectAddr <= enterStartStop[8];
 						injectStop <= enterStartStop[9];
+						exceptioncode <= 5'h02;
 					end
-					default: begin
+					default: begin // Reserved
 						injectAddr <= enterStartStop[10];
 						injectStop <= enterStartStop[11];
+						exceptioncode <= 5'h00;
 					end
 				endcase
 
@@ -407,15 +416,14 @@ always @(posedge aclk) begin
 				// TODO: Support for vectored jump using address encoding:
 				// BASE[31:2] MODE[1:0] (modes-> 00:direct, 01:vectored, 10/11:reserved)
 				// where exceptions jump to BASE, interrupts jump to BASE+exceptioncode*4
-				// NOTE: OS has to hold a vectored interrupt table at the BASE address
+				// NOTE: OS has to hold a vectored interrupt table at the BASE address (set by mtvec)
 
-				// Set up a jump to ISR
-				// NOTE: control unit possibly hasn't set mtvec yet
-				//if (mtvec[1:0] == 2'b00) begin
-					PC <= {mtvec[31:2],2'b00};
-				//end else begin
-				//	PC <= {mtvec[31:2],2'b00} + exceptioncode*4;
-				//end
+				// Set up a jump to ISR (NOTE: MTVEC has to have been set in last execute pass) 
+				if (mtvec[1:0] == 2'b00) begin	// Direct call
+					PC <= {mtvec[31:2], 2'b00};
+				end else begin					// Vectored call (assuming 01 used, treating 10 and 11 the same for now)
+					PC <= {mtvec[31:2], 2'b00} + {exceptioncode, 2'b00}; // +exceptioncode*4
+				end
 
 				// Wait until control unit has executed everything in the FIFO
 				// This ensures that the entry routine turns off global interrupts
