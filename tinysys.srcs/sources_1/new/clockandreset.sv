@@ -3,6 +3,7 @@
 
 module clockandreset(
 	input wire sys_clock_i,
+	input wire fpga_rstn,
 	input wire init_calib_complete,
 	output wire clk10,
 	output wire clkaudio,
@@ -26,6 +27,7 @@ module clockandreset(
 wire centralclocklocked, peripheralclocklocked;
 
 centralclock centralclockinst(
+	.resetn(fpga_rstn),
 	.clk_in1(sys_clock_i),
 	.clk100(clk100),
 	.clk10(clk10),
@@ -35,6 +37,7 @@ centralclock centralclockinst(
 	.locked(centralclocklocked) );
 
 peripheralclocks peripheralclkinst(
+	.resetn(fpga_rstn),
 	.clk_in1(sys_clock_i),
 	.clkaudio(clkaudio),
 	.clkbus(clkbus),

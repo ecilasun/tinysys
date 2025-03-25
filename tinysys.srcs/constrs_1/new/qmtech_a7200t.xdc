@@ -190,8 +190,8 @@ set_property -dict {PACKAGE_PIN Y19 IOSTANDARD LVCMOS33} [get_ports esp_txd1_out
 ## set_property -dict {PACKAGE_PIN ??? IOSTANDARD LVCMOS33} [get_ports esp_switch]
 
 ## IO18: REBOOT from esp32
-set_property -dict {PACKAGE_PIN V19 IOSTANDARD LVCMOS33} [get_ports cpu_reboot]
-set_property PULLTYPE PULLDOWN [get_ports cpu_reboot]
+set_property -dict {PACKAGE_PIN V19 IOSTANDARD LVCMOS33} [get_ports fpga_reboot]
+set_property PULLTYPE PULLDOWN [get_ports fpga_reboot]
 
 ## Enable pin of ESP32
 set_property -dict {PACKAGE_PIN AA18 IOSTANDARD LVCMOS33} [get_ports esp_ena]
@@ -273,8 +273,8 @@ set_false_path -from [get_clocks audiosampleclk] -to [get_clocks -of_objects [ge
 ## set_output_delay -clock [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1]] 5.000 [get_ports {{leds[0]} {leds[1]} {leds[2]} {leds[3]} {leds[4]} {leds[5]}}]
 
 ## Relative to bus clock
-## set_input_delay -clock [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1] -min -add_delay 1.000 [get_ports cpu_reboot]
-## set_input_delay -clock [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1] -max -add_delay 2.000 [get_ports cpu_reboot]
+## set_input_delay -clock [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1] -min -add_delay 1.000 [get_ports fpga_reboot]
+## set_input_delay -clock [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1] -max -add_delay 2.000 [get_ports fpga_reboot]
 
 ## ------------------------------------------------------------------------------------------------------
 ## Programming
@@ -313,15 +313,10 @@ set_clock_groups -name grpP -asynchronous -group [get_clocks -of_objects [get_pi
 ## PBLOCKs
 ## ------------------------------------------------------------------------------------------------------
 
+## create_pblock pblock_hart0
+## add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list socinstance/hart0]]
+## resize_pblock [get_pblocks pblock_hart0] -add {CLOCKREGION_X0Y0:CLOCKREGION_X0Y1}
+## create_pblock pblock_hart1
+## add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list socinstance/hart1]]
+## resize_pblock [get_pblocks pblock_hart1] -add {CLOCKREGION_X1Y0:CLOCKREGION_X1Y1}
 
-
-
-create_pblock pblock_VPU
-add_cells_to_pblock [get_pblocks pblock_VPU] [get_cells -quiet [list socinstance/VPU]]
-resize_pblock [get_pblocks pblock_VPU] -add {CLOCKREGION_X1Y2:CLOCKREGION_X1Y2}
-create_pblock pblock_hart0
-add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list socinstance/hart0]]
-resize_pblock [get_pblocks pblock_hart0] -add {CLOCKREGION_X0Y0:CLOCKREGION_X0Y1}
-create_pblock pblock_hart1
-add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list socinstance/hart1]]
-resize_pblock [get_pblocks pblock_hart1] -add {CLOCKREGION_X1Y3:CLOCKREGION_X1Y4}

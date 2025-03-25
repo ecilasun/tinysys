@@ -17,7 +17,7 @@
 #include <stdlib.h>
 
 // Names of registers for crash dump
-static const char *s_regnames[]={"pc", "ra", "sp", "gp", "tp", "t0", "t1", "t2", "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"};
+static const char *s_regnames[]={" pc", " ra", " sp", " gp", " tp", " t0", " t1", " t2", " s0", " s1", " a0", " a1", " a2", " a3", " a4", " a5", " a6", " a7", " s2", " s3", " s4", " s5", " s6", " s7", " s8", " s9", "s10", "s11", " t3", " t4", " t5", " t6"};
 
 void ClearStatics()
 {
@@ -213,7 +213,7 @@ void HandleCPUError(struct STaskContext *ctx, const uint32_t cpu)
 		case 2: kprintf("Unknown interrupt type"); break;
 		case 3: kprintf("Guru meditation"); break;
 		case 4: kprintf("Illegal instruction"); break;
-		case 5: kprintf("Breakpoint with no debugger attached"); break;
+		case 5: kprintf("Breakpoint encountered"); break;
 		default: kprintf("Unknown kernel error"); break;
 	}
 
@@ -229,13 +229,13 @@ void HandleCPUError(struct STaskContext *ctx, const uint32_t cpu)
 		uint32_t taskid = ctx->kernelErrorData[0];
 		struct STask *task = &ctx->tasks[taskid];
 		// Skip zero register and emit '0' since we save PC there
-		kprintf("Task: %s", task->name);
+		kprintf("Task: %s (%d)", task->name, taskid);
 		kfillline(' ');
-		kprintf("IR=0x%08X", ctx->kernelErrorData[1]);
+		kprintf("IR:%08X", ctx->kernelErrorData[1]);
 		kfillline(' ');
 		for (uint32_t i=0; i<32; ++i)
 		{
-			kprintf("%s=0x%08X ", s_regnames[i], task->regs[i]);
+			kprintf("%s:%08X ", s_regnames[i], task->regs[i]);
 			if ((i+1)%4==0)
 				kfillline(' ');
 		}

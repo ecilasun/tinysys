@@ -134,14 +134,14 @@
         "SUMMARY_STRINGS": [ { "value": "empty", "resolve_type": "user", "usage": "all" } ],
         "USE_LOCKED": [ { "value": "true", "resolve_type": "user", "format": "bool", "usage": "all" } ],
         "CALC_DONE": [ { "value": "empty", "resolve_type": "user", "usage": "all" } ],
-        "USE_RESET": [ { "value": "false", "value_src": "user", "resolve_type": "user", "format": "bool", "usage": "all" } ],
+        "USE_RESET": [ { "value": "true", "value_src": "user", "resolve_type": "user", "format": "bool", "usage": "all" } ],
         "USE_POWER_DOWN": [ { "value": "false", "resolve_type": "user", "format": "bool", "usage": "all" } ],
         "USE_STATUS": [ { "value": "false", "resolve_type": "user", "format": "bool", "usage": "all" } ],
         "USE_FREEZE": [ { "value": "false", "resolve_type": "user", "format": "bool", "usage": "all" } ],
         "USE_CLK_VALID": [ { "value": "false", "resolve_type": "user", "format": "bool", "usage": "all" } ],
         "USE_INCLK_STOPPED": [ { "value": "false", "resolve_type": "user", "format": "bool", "usage": "all" } ],
         "USE_CLKFB_STOPPED": [ { "value": "false", "resolve_type": "user", "format": "bool", "usage": "all" } ],
-        "RESET_PORT": [ { "value": "reset", "resolve_type": "user", "usage": "all" } ],
+        "RESET_PORT": [ { "value": "resetn", "value_src": "user", "resolve_type": "user", "usage": "all" } ],
         "LOCKED_PORT": [ { "value": "locked", "resolve_type": "user", "usage": "all" } ],
         "POWER_DOWN_PORT": [ { "value": "power_down", "resolve_type": "user", "usage": "all" } ],
         "CLK_VALID_PORT": [ { "value": "CLK_VALID", "resolve_type": "user", "usage": "all" } ],
@@ -223,7 +223,7 @@
         "PLL_CLKOUT5_DIVIDE": [ { "value": "1", "resolve_type": "user", "format": "long", "usage": "all" } ],
         "PLL_CLKOUT5_DUTY_CYCLE": [ { "value": "0.500", "resolve_type": "user", "format": "float", "usage": "all" } ],
         "PLL_CLKOUT5_PHASE": [ { "value": "0.000", "resolve_type": "user", "format": "float", "usage": "all" } ],
-        "RESET_TYPE": [ { "value": "ACTIVE_HIGH", "resolve_type": "user", "usage": "all" } ],
+        "RESET_TYPE": [ { "value": "ACTIVE_LOW", "value_src": "user", "resolve_type": "user", "usage": "all" } ],
         "USE_SAFE_CLOCK_STARTUP": [ { "value": "false", "resolve_type": "user", "format": "bool", "usage": "all" } ],
         "USE_CLOCK_SEQUENCING": [ { "value": "false", "resolve_type": "user", "format": "bool", "usage": "all" } ],
         "CLKOUT1_SEQUENCE_NUMBER": [ { "value": "1", "resolve_type": "user", "format": "long", "usage": "all" } ],
@@ -317,8 +317,8 @@
         "C_PHASESHIFT_MODE": [ { "value": "WAVEFORM", "resolve_type": "generated", "usage": "all" } ],
         "C_SECONDARY_SOURCE": [ { "value": "Single_ended_clock_capable_pin", "resolve_type": "generated", "usage": "all" } ],
         "C_CLKFB_IN_SIGNALING": [ { "value": "SINGLE", "resolve_type": "generated", "usage": "all" } ],
-        "C_USE_RESET": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
-        "C_RESET_LOW": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
+        "C_USE_RESET": [ { "value": "1", "resolve_type": "generated", "format": "long", "usage": "all" } ],
+        "C_RESET_LOW": [ { "value": "1", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "C_USE_LOCKED": [ { "value": "1", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "C_USE_INCLK_STOPPED": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "C_USE_CLKFB_STOPPED": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
@@ -477,7 +477,7 @@
         "C_CLK_OUT5_PORT": [ { "value": "clk25", "resolve_type": "generated", "usage": "all" } ],
         "C_CLK_OUT6_PORT": [ { "value": "clk50", "resolve_type": "generated", "usage": "all" } ],
         "C_CLK_OUT7_PORT": [ { "value": "clk_out7", "resolve_type": "generated", "usage": "all" } ],
-        "C_RESET_PORT": [ { "value": "reset", "resolve_type": "generated", "usage": "all" } ],
+        "C_RESET_PORT": [ { "value": "resetn", "resolve_type": "generated", "usage": "all" } ],
         "C_LOCKED_PORT": [ { "value": "locked", "resolve_type": "generated", "usage": "all" } ],
         "C_CLKFB_IN_PORT": [ { "value": "clkfb_in", "resolve_type": "generated", "usage": "all" } ],
         "C_CLKFB_IN_P_PORT": [ { "value": "clkfb_in_p", "resolve_type": "generated", "usage": "all" } ],
@@ -609,6 +609,7 @@
     },
     "boundary": {
       "ports": {
+        "resetn": [ { "direction": "in", "driver_value": "0" } ],
         "clk_in1": [ { "direction": "in" } ],
         "clk100": [ { "direction": "out" } ],
         "clk10": [ { "direction": "out" } ],
@@ -618,6 +619,19 @@
         "locked": [ { "direction": "out" } ]
       },
       "interfaces": {
+        "resetn": {
+          "vlnv": "xilinx.com:signal:reset:1.0",
+          "abstraction_type": "xilinx.com:signal:reset_rtl:1.0",
+          "mode": "slave",
+          "parameters": {
+            "POLARITY": [ { "value": "ACTIVE_LOW", "value_src": "constant", "usage": "all" } ],
+            "BOARD.ASSOCIATED_PARAM": [ { "value": "RESET_BOARD_INTERFACE", "value_src": "constant", "usage": "all" } ],
+            "INSERT_VIP": [ { "value": "0", "resolve_type": "user", "format": "long", "usage": "simulation.rtl", "is_ips_inferred": true, "is_static_object": false } ]
+          },
+          "port_maps": {
+            "RST": [ { "physical_name": "resetn" } ]
+          }
+        },
         "clock_CLK_IN1": {
           "vlnv": "xilinx.com:signal:clock:1.0",
           "abstraction_type": "xilinx.com:signal:clock_rtl:1.0",

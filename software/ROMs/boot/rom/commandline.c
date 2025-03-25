@@ -17,7 +17,9 @@ extern struct SCommandLineContext* s_cliCtx;
 static const char *s_taskstates[]={ "NONE", "HALT", "EXEC", "TERM", "DEAD"};
 
 // Device version
-#define VERSIONSTRING "0014D"
+#define ROMVERSIONSTRING "0014E"
+#define GATEWAREVERSIONSTRING "00201"
+#define CORECLOCKSTRING "175MHz"
 
 // File transfer timeout
 #define FILE_TRANSFER_TIMEOUT 1000
@@ -77,11 +79,15 @@ void ShowVersion(struct EVideoContext *kernelgfx)
 	VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
 	kprintf("\n");
 	kfillline(' ');
-	kprintf(" OS version          : " VERSIONSTRING " Loaded from %s", waterMark == 0 ? "ROM   " : "SDCARD");
+	kprintf(" OS               : " ROMVERSIONSTRING " Loaded from %s", waterMark == 0 ? "ROM" : "SDCARD");
 	kfillline(' ');
-	kprintf(" Board               : issue 2H:DEC24(%s)", isEmulator ? "EMULATED" : "HARDWARE");
+	kprintf(" Board            : issue 2H:DEC24");
 	kfillline(' ');
-	kprintf(" ARCH                : rv32im_zicsr_zifencei_zfinx");
+	kprintf(" Gateware         : (%s)", isEmulator ? "EMULATED" : GATEWAREVERSIONSTRING);
+	kfillline(' ');
+	kprintf(" CPU architecture : rv32im_zicsr_zifencei_zfinx");
+	kfillline(' ');
+	kprintf(" Core clock       : " CORECLOCKSTRING);
 	kfillline(' ');
 	kfillline(' ');
 	kprintf("\n");

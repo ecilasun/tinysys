@@ -39,7 +39,7 @@ module tophat(
 	// Coprocessor via ESP32-C6-WROOM-1-N8 (only on rev. 2E boards)
 	,output wire esp_txd1_out
 	,input wire esp_rxd1_in
-	,input wire cpu_reboot
+	,input wire fpga_reboot
 	,output wire esp_ena );
 
 // --------------------------------------------------
@@ -50,9 +50,13 @@ wire aresetn, rst10n, rst25n, rst100n, rstaudion, preresetn;
 wire init_calib_complete;
 wire clk10, clkaudio, clk25, clk100, clk125, clkbus, clk166, clk200;
 
+wire rebootn;
+BUF (.O(rebootn), .I(~fpga_reboot));
+
 // Clock and reset generator
 clockandreset clockandresetinst(
 	.sys_clock_i(sys_clk),
+	.fpga_rstn(rebootn),
 	.init_calib_complete(init_calib_complete),
 	.clk10(clk10),
 	.clkaudio(clkaudio),
@@ -124,7 +128,7 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.leds(leds),
 	.esp_rxd1_in(esp_rxd1_in),
 	.esp_txd1_out(esp_txd1_out),
-	.cpu_reboot(cpu_reboot),
+	.fpga_reboot(fpga_reboot),
 	.esp_ena(esp_ena),
 	.HDMI_CLK_p(HDMI_CLK_p),
 	.HDMI_CLK_n(HDMI_CLK_n),

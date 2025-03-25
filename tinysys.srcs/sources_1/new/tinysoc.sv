@@ -27,7 +27,7 @@ module tinysoc #(
 	//input wire esp_rxd0_in,
 	output wire esp_txd1_out,
 	input wire esp_rxd1_in,
-	input wire cpu_reboot,
+	input wire fpga_reboot,
 	output wire esp_ena,
 	// Video output
 	output wire HDMI_CLK_p,
@@ -379,7 +379,6 @@ axi4CSRFile #( .HARTID(4'd0)) csrfile0 (
 	// External hardware interrupt wires
 	.keyirq(keyirq),
 	.uartirq(uartirq),
-	.rebootreq(cpu_reboot),
 	// CPU reset
 	.cpuresetreq(cpuresetreq0),
 	// Shadow registers
@@ -401,7 +400,6 @@ axi4CSRFile #( .HARTID(4'd1)) csrfile1 (
 	// External hardware interrupt wires
 	.keyirq(keyirq),
 	.uartirq(uartirq),
-	.rebootreq(cpu_reboot),
 	// CPU reset
 	.cpuresetreq(cpuresetreq1),
 	// Shadow registers
