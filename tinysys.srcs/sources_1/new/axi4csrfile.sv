@@ -122,7 +122,7 @@ assign irqReq = {hwInterrupt, timerInterrupt};
 
 logic [1:0] waddrstate;
 logic [1:0] raddrstate;
-logic [1:0] writestate;
+logic [2:0] writestate;
 
 always @(posedge aclk) begin
 	if (~delayedresetn) begin
@@ -153,7 +153,7 @@ logic [10:0] cpuresetclearcounter;
 always @(posedge aclk) begin
 	if (~delayedresetn) begin
 		csrdin <= 32'd0;
-		writestate <= 2'b00;
+		writestate <= 3'b000;
 		mtvecshadow <= 32'd0;
 		mepcshadow <= 32'd0;
 		dummyshadow <= 1'b0;
@@ -161,6 +161,7 @@ always @(posedge aclk) begin
 		timecmpshadow <= 64'hFFFFFFFFFFFFFFFF;
 		cpuresetreq_r <= 1'b0;
 		mieshadow <= 3'b000;
+		cswraddr <= 0;
 		csrwe <= 1'b0;
 		cpuresetclearcounter <= 11'd0;
 	end else begin
@@ -174,28 +175,35 @@ always @(posedge aclk) begin
 		cpuresetclearcounter <= {cpuresetclearcounter[9:0], 1'b1};
 
 		unique case(writestate)
-			2'b00: begin
+			3'b000: begin
+				// Reset watermark register
+				csrdin <= 32'd0;
+				cswraddr <= `CSR_WATERMARK;
+				csrwe <= 1'b1;
+				writestate <= 3'b001;
+			end
+			3'b001: begin
 				s_axi.bresp <= 2'b00; // okay
 				s_axi.bvalid <= 1'b0;
 				s_axi.wready <= 1'b0;
-				writestate <= 2'b01;
+				writestate <= 3'b010;
 			end
-			2'b01: begin
+			3'b010: begin
 				if (s_axi.wvalid) begin
 					csrdin <= s_axi.wdata[31:0];
 					cswraddr <= s_axi.awaddr[13:2]; // 4 byte aligned
 					csrwe <= 1'b1;
-					writestate <= 2'b10;
+					writestate <= 3'b011;
 					s_axi.wready <= 1'b1;
 				end
 			end
-			2'b10: begin
+			3'b011: begin
 				if (s_axi.bready) begin
 					s_axi.bvalid <= 1'b1;
-					writestate <= 2'b11;
+					writestate <= 3'b100;
 				end
 			end
-			2'b11: begin // Generate a shadow copy of some registers as well as their true version in the CSR file
+			3'b100: begin // Generate a shadow copy of some registers as well as their true version in the CSR file
 				unique case (cswraddr)
 					`CSR_TIMECMPLO:		timecmpshadow[31:0] <= csrdin;
 					`CSR_TIMECMPHI:		timecmpshadow[63:32] <= csrdin;
@@ -209,7 +217,7 @@ always @(posedge aclk) begin
 					end
 					default:			dummyshadow <= csrdin[0];							// Unused - sink
 				endcase
-				writestate <= 2'b01;
+				writestate <= 3'b001;
 			end
 		endcase
 	end

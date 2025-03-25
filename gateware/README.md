@@ -1,4 +1,4 @@
-# Latest Gateware Build is: 00201
+# Latest Gateware Build is: 00202
 # Latest OS ROM version is: 0014D
 # Latest ESP32 ROM is: r1.1H
 # Latest Board version is: 2H
@@ -33,6 +33,7 @@ r1.9A: ROM updates with OS side input handling, software updates to match<br>
 r1.9B: Minor changes to ROM and SDK routines, updates samples<br>
 r2.0A: Added vectored interrupt support and bumped clock to 175MHz<br>
 00201: Changed gateware versioning scheme, changed reset logic to full FPGA reset (clock and all clocked devices)<br>
+00202: Task stack sizes bumped to 16K from 1K, watermark register now does not survive hard reset (only soft reset)<br>
 
 # Device gateware
 

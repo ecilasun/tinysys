@@ -1172,8 +1172,9 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					uint32_t ptr = read_csr(0x8AA); // A0
 					struct timeval *tv = (struct timeval *)ptr;
 					uint64_t now = E32ReadTime();
-					tv->tv_sec = now / 1000000;
-					tv->tv_usec = now % 1000000;
+					uint64_t usec = now % ONE_MILLISECOND_IN_TICKS;
+					tv->tv_sec = ClockToMs(now) / 1000;
+					tv->tv_usec = usec;
 					write_csr(0x8AA, 0x0);
 				}
 				else if (value==1024) // open()
