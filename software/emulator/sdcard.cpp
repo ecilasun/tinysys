@@ -51,12 +51,14 @@ void CSDCard::PopulateFileSystem()
 	path sourcePath = absolute("sdcard");
 	std::string targetRoot = "sd:";
 
+#if defined(CAT_WINDOWS)
 	// Listen changes in root folder and the entire subtree
 	char sdcardpath[512];
 	strcpy(sdcardpath, sourcePath.string().c_str());
 	dwChangeHandle = FindFirstChangeNotification(sdcardpath, TRUE, FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_LAST_WRITE);
 	if (dwChangeHandle == INVALID_HANDLE_VALUE)
 		printf("Failed to create change notification handle\n");
+#endif
 
 	recursive_directory_iterator it(sourcePath);
 	for (const auto& entry : it)
@@ -331,6 +333,7 @@ void CSDCard::Tick(CBus* bus)
 
 void CSDCard::UpdateSDCardSwitch()
 {
+#if defined(CAT_WINDOWS)
 	DWORD waitStatus = WaitForSingleObject(dwChangeHandle, 0);
 	if (waitStatus == WAIT_OBJECT_0)
 	{
@@ -343,6 +346,7 @@ void CSDCard::UpdateSDCardSwitch()
 		m_keyfifo.push(0x01);
 	}
 	// Otherwise its either WAIT_TIMEOUT or an error
+#endif
 }
 
 void CSDCard::Read(uint32_t address, uint32_t& data)

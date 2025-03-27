@@ -3,7 +3,9 @@
 #include <stdint.h>
 #include <queue>
 #include <ff.h>
+#if defined(CAT_WINDOWS)
 #include <windows.h>
+#endif
 #include "memmappeddevice.h"
 
 class CSDCard : public MemMappedDevice
@@ -36,7 +38,9 @@ private:
 	uint32_t m_writeblock{ 0 };
 	uint8_t m_datablock[512] = {};
 	bool m_app_mode{ false };
+#if defined(CAT_WINDOWS)
 	HANDLE dwChangeHandle;
+#endif
 
 	FATFS* m_fs{ nullptr };
 	uint8_t* m_workbuf{ nullptr };
