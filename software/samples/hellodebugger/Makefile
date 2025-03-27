@@ -8,7 +8,7 @@ else
 	UNAME := $(shell uname)
 endif
 
-TARGET = starthere.elf
+TARGET = hellodebugger.elf
 
 .DEFAULT: $(TARGET)
 

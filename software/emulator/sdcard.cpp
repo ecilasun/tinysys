@@ -2,6 +2,7 @@
 #include <random>
 #include <filesystem>
 #include <algorithm>
+#include <iostream>
 #include "config.h"
 #include "sdcard.h"
 
@@ -49,12 +50,20 @@ void CSDCard::PopulateFileSystem()
 	using namespace std::filesystem;
 	path sourcePath = absolute("sdcard");
 	std::string targetRoot = "sd:";
+
+	// Listen changes in root folder and the entire subtree
+	char sdcardpath[512];
+	strcpy(sdcardpath, sourcePath.string().c_str());
+	dwChangeHandle = FindFirstChangeNotification(sdcardpath, TRUE, FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_LAST_WRITE);
+	if (dwChangeHandle == INVALID_HANDLE_VALUE)
+		printf("Failed to create change notification handle\n");
+
 	recursive_directory_iterator it(sourcePath);
 	for (const auto& entry : it)
 	{
 		if (entry.is_directory())
 		{
-			std::string filePath = entry.path().string();
+			std::string filePath = entry.path().string();		
 			removeTextBeforeAndIncludingToken(filePath, "sdcard");
 			f_mkdir((targetRoot+filePath).c_str());
 		}
@@ -320,15 +329,46 @@ void CSDCard::Tick(CBus* bus)
 	}
 }
 
+void CSDCard::UpdateSDCardSwitch()
+{
+	DWORD waitStatus = WaitForSingleObject(dwChangeHandle, 0);
+	if (waitStatus == WAIT_OBJECT_0)
+	{
+		FindCloseChangeNotification(dwChangeHandle);
+
+		fprintf(stderr, "Re-scanning sdcard\n");
+		Reset();
+
+		// card 'inserted' (disregards previous state as hardware would)
+		m_keyfifo.push(0x01);
+	}
+	// Otherwise its either WAIT_TIMEOUT or an error
+}
+
 void CSDCard::Read(uint32_t address, uint32_t& data)
 {
-	if (!m_spioutfifo.empty())
+	if ((address&0x4) == 0)
 	{
-		data = m_spioutfifo.front();
-		m_spioutfifo.pop();
+		if (!m_spioutfifo.empty())
+		{
+			uint8_t dat8 = m_spioutfifo.front();
+			data = (dat8<<24) | (dat8<<16) | (dat8<<8) | (dat8);
+			m_spioutfifo.pop();
+		}
+		else
+			data = 0xFF;
 	}
-	else
-		data = 0xFF;
+	else if ((address&0x4) == 0x4)
+	{
+		if (m_keyfifo.empty())
+			data = 0x00;
+		else
+		{
+			uint8_t dat8 = m_keyfifo.front();
+			data = (dat8<<24) | (dat8<<16) | (dat8<<8) | (dat8);
+			m_keyfifo.pop();
+		}
+	}
 	//printf("SDR:%.8X -> %.8X\n", address, data);
 }
 

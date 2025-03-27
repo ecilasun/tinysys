@@ -50,7 +50,7 @@ void CCSRMem::Tick(CBus* bus)
 	}
 
 	uint32_t uartirq = uart ? uart->m_uartirq : 0;
-	uint32_t keyirq = 0; // Ignoring sdcard insert/remove signal for now
+	uint32_t keyirq = bus->GetSDCard()->HasSwitchEvents() ? 1 : 0; // Pending SDCard switch events in queue
 	uint32_t usbirq = 0; // Ignoring USB for now
 
 	// Software interrupt

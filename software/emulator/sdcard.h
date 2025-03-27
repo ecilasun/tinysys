@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <queue>
 #include <ff.h>
+#include <windows.h>
 #include "memmappeddevice.h"
 
 class CSDCard : public MemMappedDevice
@@ -16,11 +17,16 @@ public:
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
 	void Tick(CBus* bus);
 
+	// Hardware state emulation
+	void UpdateSDCardSwitch();
+	bool HasSwitchEvents() { return !m_keyfifo.empty(); }
+
 private:
 	void PopulateFileSystem();
 	uint32_t SPIRead(uint8_t* buffer, uint32_t len);
 	std::queue<uint8_t> m_spiinfifo;
 	std::queue<uint8_t> m_spioutfifo;
+	std::queue<uint8_t> m_keyfifo;
 	uint32_t m_spimode{ 0 };
 	uint32_t m_havestarttoken{ 0 };
 	uint32_t m_numdatabytes{ 0 };
@@ -30,6 +36,7 @@ private:
 	uint32_t m_writeblock{ 0 };
 	uint8_t m_datablock[512] = {};
 	bool m_app_mode{ false };
+	HANDLE dwChangeHandle;
 
 	FATFS* m_fs{ nullptr };
 	uint8_t* m_workbuf{ nullptr };

@@ -8,7 +8,7 @@
 		  "name": "C/C++(RISCV) - Windows",
 		  "type": "cppdbg",
 		  "request": "launch",
-		  "program": "${workspaceFolder}/starthere/starthere.elf",
+		  "program": "${workspaceFolder}/hellodebugger/hellodebugger.elf",
 		  "args": [],
 		  "stopAtEntry": false,
 		  "cwd": "${fileDirname}",

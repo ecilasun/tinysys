@@ -81,9 +81,9 @@ sd:/sys/bin/rom.bin <- ROM overlay is always located here
 
 # Creating your own project
 
-To make your own project, the recommended way is to copy the 'starthere' sample directory to a new one and make your changes as needed. In that directory you will find a Makefile, and upload shell script/batch file to help get you started.
+To make your own project, the recommended way is to copy the 'hellodebugger' sample directory to a new one and make your changes as needed. In that directory you will find a Makefile, and upload shell script/batch file to help get you started.
 
-Please refer to the [README.md](./samples/starthere/README.md) file in `starthere` folder for more assistance.
+Please refer to the [README.md](./samples/hellodebugger/README.md) file in `hellodebugger` folder for more assistance.
 
 # Uploading your files to tinysys
 

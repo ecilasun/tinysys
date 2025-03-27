@@ -2,7 +2,7 @@
 
 First step is to create a copy of this folder under the samples directory, and rename it to match your project title.
 
-After this, you'll want to rename the output file names from `starthere` to your project name in the Makefile.
+After this, you'll want to rename the output file names from `hellodebugger` to your project name in the Makefile.
 
 Once that is out of the way, we can begin!
 
@@ -43,12 +43,12 @@ If your system appears to be unresponsive, use the tilde key (~) to break the ex
 
 # Debugging this sample
 
-'starthere' sample is deliberately unoptimized to act as our debugging sample. To start debugging, first start the executable from the samples directory on the emulator. Then, from the tinysys\software directory, run the following to load the debug symbols and start a GDB session:
+'hellodebugger' sample is deliberately unoptimized to act as our debugging sample. To start debugging, first start the executable from the samples directory on the emulator. Then, from the tinysys\software directory, run the following to load the debug symbols and start a GDB session:
 
 ```
-riscv32-unknown-elf-gdb.exe -x gdbcmd samples/starthere/starthere.elf
+riscv32-unknown-elf-gdb.exe -x gdbcmd samples/hellodebugger/hellodebugger.elf
 ```
 
 This will start GDB but assume the remote executable has stopped when it's connected. At this point you can add a new breakpoint using the 'b' command and then use 'c' to continue exectuion. This will update the breakpoints on the device and stop execution on the closest line possible (depending on optimizations and line number information available to GDB)
 
-Alternatively, start the sample on the device and open the software folder in VSCode, then hit 'Run' which by default loads the 'starthere' sample debug data. You can now debug on the device as usual. Please modify the launch.json file and change the "program" entry to your own executable as needed.
+Alternatively, start the sample on the device and open the software folder in VSCode, then hit 'Run' which by default loads the 'hellodebugger' sample debug data. You can now debug on the device as usual. Please modify the launch.json file and change the "program" entry to your own executable as needed.

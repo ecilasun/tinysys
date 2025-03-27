@@ -89,6 +89,9 @@ int emulatorthread(void* data)
 			emulator->Step(s_wallclock, 0);
 			emulator->Step(s_wallclock, 1);
 		}
+
+		// Handle hardware switch etc changes
+		emulator->m_bus->GetSDCard()->UpdateSDCardSwitch();
 	} while(s_alive);
 
 	return 0;
