@@ -249,15 +249,7 @@ int _task_add(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum
 	task->regs[3] = _gp;					// Global pointer
 	task->regs[8] = _parentStackPointer;	// Frame pointer
 	task->runLength = _runLength;			// Time slice dedicated to this task
-
-	char *np = (char*)_name;
-	int idx = 0;
-	while(np!=0 && idx<15)
-	{
-		task->name[idx++] = *np;
-		++np;
-	}
-	task->name[idx] = 0;
+	task->name = (uint32_t)_name;			// Pointer to task name (in external memory)
 
 	// We assume running state as soon as we start
 	task->state = _initialState;

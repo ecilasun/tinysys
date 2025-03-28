@@ -21,22 +21,21 @@ enum ETaskState
 	TS_TERMINATED
 };
 
+// 148 bytes total for one task
 struct STask {
 	uint32_t HART;			// HART affinity mask (for migration)
 	uint32_t runLength;		// Time slice dedicated to this task
 	enum ETaskState state;	// State of this task
 	uint32_t exitCode;		// Task termination exit code
 	uint32_t regs[32];		// Integer registers - NOTE: register zero here is actually the PC, 128 bytes
-
-	// Debug support - this will probably move somewhere else
-	char name[16];			// Name of this task
+	uint32_t name;			// Pointer to task name (in external memory)
 };
 
-// 672 bytes total for one core (1344 for two cores)
+// 620 bytes total for one core (1240 for two cores)
 struct STaskContext {
-	// 160 x 4 bytes (640)
+	// 148 x 4 = 592 bytes total for all tasks
 	struct STask tasks[TASK_MAX];	// List of all the tasks
-	// 32 bytes total below
+	// 28 bytes total below
 	int32_t currentTask;			// Current task index
 	int32_t numTasks;				// Number of tasks
 	int32_t kernelError;			// Current kernel error
