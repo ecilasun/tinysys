@@ -85,8 +85,8 @@ class CSerialPort{
 		tty.c_cc[VTIME] = 50;
 		tty.c_cc[VMIN] = 10;
 
-		cfsetispeed(&tty, B460800);
-		cfsetospeed(&tty, B460800); // or only cfsetspeed(&tty, B460800);
+		cfsetispeed(&tty, 460800);
+		cfsetospeed(&tty, 460800); // or only cfsetspeed(&tty, B460800);
 
 		if (tcsetattr(serial_port, TCSANOW, &tty) != 0)
 			printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
@@ -701,7 +701,7 @@ void terminal()
 		uint32_t bytesReceived = serial.Receive(&received, 4096);
 		for (uint32_t i=0; i<bytesReceived; ++i)
 			printf("%c", received[i]);
-#ifdef CAT_LINUX
+#if defined(CAT_LINUX) || defined(CAT_MACOS)
     	int byteswaiting;
     	ioctl(0, FIONREAD, &byteswaiting);
 		if (byteswaiting)

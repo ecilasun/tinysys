@@ -243,6 +243,7 @@ int _task_add(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum
 
 	// Insert the task before we increment task count
 	struct STask *task = &(_ctx->tasks[prevcount]);
+	task->HART = _hartid;
 	task->regs[0] = (uint32_t)_task;		// Initial PC
 	task->regs[2] = _parentStackPointer;	// Stack pointer
 	task->regs[3] = _gp;					// Global pointer
@@ -296,24 +297,6 @@ uint64_t _task_yield()
 	uint64_t now = E32ReadTime();
 	E32SetTimeCompare(now);
 	return now;
-}
-
-uint32_t _task_replace_instruction(uint32_t _newInstruction, uint32_t _address)
-{
-	// Read the instruction at the address and store it for return
-	uint32_t oldInstruction = *((uint32_t *)_address);
-
-	// Replace the instruction
-	*((uint32_t *)_address) = _newInstruction;
-
-	// Make sure the D$ is flushed to memory
-	CFLUSH_D_L1;
-
-	// Make sure the I$ is invalidated to it can be re-fetched
-	asm volatile ("fence.i");
-
-	// Return the old instruction
-	return oldInstruction;
 }
 
 struct STaskContext *_task_get_context(uint32_t _hartid)

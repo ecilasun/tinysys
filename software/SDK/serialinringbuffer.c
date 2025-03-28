@@ -16,8 +16,8 @@ const static uint8_t c_cbBufferSizeLog2 = cbBufferSizeLog2 < 31 ? cbBufferSizeLo
 const static uint32_t c_cbBufferSize = ( 1 << c_cbBufferSizeLog2 );
 const static uint32_t c_sizeMask = c_cbBufferSize - 1;
 
-// Ring buffer at _task_get_shared_memory() + 1028 (1K away from keyringbuffer)
-#define SI_BUFFER_BASE (DEVICE_MAIL + sizeof(struct STaskContext)*MAX_HARTS + 1024 + 8)
+// Ring buffer at _task_get_shared_memory() + 1032 (~1K away from keyringbuffer)
+#define SI_BUFFER_BASE (DEVICE_MAIL + sizeof(struct STaskContext)*MAX_HARTS + 1032)
 volatile uint32_t *m_si_readOffset  = (volatile uint32_t *)(SI_BUFFER_BASE + 1024);
 volatile uint32_t *m_si_writeOffset = (volatile uint32_t *)(SI_BUFFER_BASE + 1028);
 
