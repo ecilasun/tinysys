@@ -46,6 +46,15 @@ _start:
 	li t5, 0
 	li t6, 0
 
+	// Set up default heap address range for dynamic memory allocation
+	// NOTE: Same defines in basesystem.h
+	li a3, 0x00001000	// HEAP_START
+	csrw 0x900, a3		// __heap_start
+	csrw 0x902, a3		// __breakpos
+	li a3, 0x0F000000	// HEAP_END
+	csrw 0x901, a3		// __heap_end
+	csrw 0x903, 0		// brk_lock
+
 	// Detect boot override address in mscratch register
 	csrr a3, mscratch				// Check if we have a boot addres override (defaults to zero on hard reset)
 	beqz a3, _defaultboot			// Skip if it's zero

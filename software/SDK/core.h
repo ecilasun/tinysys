@@ -9,6 +9,7 @@
 
 // syscall handlers for ROM
 uint32_t core_brk(uint32_t brkptr);
+uint32_t core_sbrk(uint32_t incr);
 uint32_t core_memavail();
 void set_elf_heap(uint32_t heaptop);
 

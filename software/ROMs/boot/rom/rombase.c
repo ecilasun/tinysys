@@ -1332,6 +1332,12 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					void* sharedmem = _task_get_shared_memory();
 					write_csr(0x8AA, (uint32_t)sharedmem);
 				}
+				else if (value==16391) // void *sbrk(uint32_t incr)
+				{
+					uint32_t incr = read_csr(0x8AA); // A0
+					uint32_t retval = core_sbrk(incr);
+					write_csr(0x8AA, retval);
+				}
 				else // Unimplemented syscalls drop here
 				{
 					kprintf("unimplemented ECALL: %d\b", value);

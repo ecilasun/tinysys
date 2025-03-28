@@ -16,12 +16,6 @@
 
 #if defined(BUILDING_ROM)
 
-// TODO: __heap_start should be set to __bss_end and __heap_end to __heap_start+__heap_size for loaded executables
-// This also means we have to get rid of any addresses between bss and heap as they might get overwritten
-static uint8_t* __heap_start = (uint8_t*)HEAP_START;
-static uint8_t* __heap_end = (uint8_t*)HEAP_END;
-static uint8_t* __breakpos = (uint8_t*)HEAP_START;
-
 /**
  * @brief Sets the ELF heap to the provided address.
  *
@@ -31,8 +25,9 @@ static uint8_t* __breakpos = (uint8_t*)HEAP_START;
  */
 void set_elf_heap(uint32_t heaptop)
 {
-	__breakpos = (uint8_t*)heaptop;
-	__heap_start = (uint8_t*)heaptop;
+	// Both CPUs will use CPU#0's CSR registers to store this information
+	E32WriteMemMappedCSR(0, CSR_BRKPOS, heaptop); // __breakpos
+	E32WriteMemMappedCSR(0, CSR_HEAPSTART, heaptop); // __heap_start
 }
 
 /**
@@ -44,7 +39,9 @@ void set_elf_heap(uint32_t heaptop)
  */
 uint32_t core_memavail()
 {
-	return (uint32_t)(__heap_end - __breakpos);
+	uint32_t breakpos = E32ReadMemMappedCSR(0, CSR_BRKPOS);
+	uint32_t heapend = E32ReadMemMappedCSR(0, CSR_HEAPEND);
+	return (uint32_t)(heapend - breakpos);
 }
 
 /**
@@ -53,6 +50,7 @@ uint32_t core_memavail()
  * This function sets the break position to the provided address, or returns the current break position if the provided address is zero.
  * The break position is aligned to the next multiple of 4 bytes.
  * If the provided address is out of bounds, the function sets errno to ENOMEM and returns -1.
+ * Please note that only one core has access to this at a given time
  *
  * @param brkptr The new memory break position.
  * 
@@ -62,21 +60,28 @@ uint32_t core_brk(uint32_t brkptr)
 {
 	// Address set to zero will query current break position
 	if (brkptr == 0)
-		return (uint32_t)__breakpos;
+		return E32ReadMemMappedCSR(0, CSR_BRKPOS); // __breakpos
 
 	// NOTE: The break address is aligned to the next multiple of 4 bytes
 	uint32_t alignedbrk = E32AlignUp(brkptr, 4);
 
 	// Out of bounds will return all ones (-1)
-	if (alignedbrk<(uint32_t)__heap_start || alignedbrk>(uint32_t)__heap_end)
+	if (alignedbrk<E32ReadMemMappedCSR(0, CSR_HEAPSTART) || alignedbrk>E32ReadMemMappedCSR(0, CSR_HEAPEND)) // __heap_end
 	{
 		errno = ENOMEM;
 		return 0xFFFFFFFF;
 	}
 
 	// Set new break position and return 0 (success) in all other cases
-	__breakpos = (uint8_t*)alignedbrk;
+	E32WriteMemMappedCSR(0, CSR_BRKPOS, alignedbrk);
 	return 0;
+}
+
+uint32_t core_sbrk(uint32_t incr)
+{
+	uint32_t old_heapstart = core_brk(0);
+	uint32_t res = core_brk(old_heapstart + incr);
+	return res != 0xFFFFFFFF ? old_heapstart : NULL;
 }
 
 #else
@@ -166,6 +171,10 @@ int _brk(void *addr)
  */
 int _brk(void *addr)
 {
+	// Wait for any other core to leave brk()
+	while (E32ReadMemMappedCSR(0, CSR_BRKLOCK) != 0) { }
+	E32WriteMemMappedCSR(0, CSR_BRKLOCK, 1); // Set the brk lock to indicate we're in brk()
+
 	uint32_t brkaddr = (uint32_t)addr;
 	int retval = 0;
 	asm (
@@ -180,6 +189,8 @@ int _brk(void *addr)
 		// Clobber list
 		"a0", "a7"
 	);
+
+	E32WriteMemMappedCSR(0, CSR_BRKLOCK, 0); // Clear the brk lock to indicate we're done with brk()
 	return retval;
 }
 #endif
@@ -192,9 +203,27 @@ int _brk(void *addr)
  */
 void *_sbrk(intptr_t incr)
 {
-	uint8_t *old_heapstart = (uint8_t *)_brk(0);
-	uint32_t res = _brk(old_heapstart + incr);
-	return res != 0xFFFFFFFF ? old_heapstart : NULL;
+	// Wait for any other core to leave brk()
+	while (E32ReadMemMappedCSR(0, CSR_BRKLOCK) != 0) { }
+	E32WriteMemMappedCSR(0, CSR_BRKLOCK, 1); // Set the brk lock to indicate we're in brk()
+
+	uint32_t brkinc = (uint32_t)incr;
+	int retval = 0;
+	asm (
+		"li a7, 16391;"
+		"mv a0, %1;"
+		"ecall;"
+		"mv %0, a0;" :
+		// Return values
+		"=r" (retval) :
+		// Input parameters
+		"r" (brkinc) :
+		// Clobber list
+		"a0", "a7"
+	);
+
+	E32WriteMemMappedCSR(0, CSR_BRKLOCK, 0); // Clear the brk lock to indicate we're done with brk()
+	return (void*)retval;
 }
 
 #ifdef __cplusplus

@@ -21,6 +21,12 @@
 #define CSR_WATERMARK					0xFF0
 #define CSR_PROGRAMCOUNTER				0xFFC
 
+// Registers for heap management
+#define CSR_HEAPSTART					0x900
+#define CSR_HEAPEND						0x901
+#define CSR_BRKPOS						0x902
+#define CSR_BRKLOCK						0x903
+
 // Physical address map for no-MMU raw mode at boot time
 #define APPMEM_START					0x00000000 // Top of RAM
 #define HEAP_START						0x00001000 // Application heap starts here
@@ -94,7 +100,7 @@ void ClockMsToHMS(uint32_t ms, uint32_t *hours, uint32_t *minutes, uint32_t *sec
 void E32Sleep(uint64_t ticks);
 
 void E32WriteMemMappedCSR(uint32_t _hart, uint32_t _csr, uint32_t _value);
-uint32_t E32ReadMemMappedCSR(uint32_t _hart, uint32_t _csr);
+volatile uint32_t E32ReadMemMappedCSR(uint32_t _hart, uint32_t _csr);
 
 // Reset given hardware thread and start executing the supplied task
 void E32SetupCPU(uint32_t hartid, void *workerThread);
