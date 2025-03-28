@@ -101,8 +101,8 @@ void CSDCard::PopulateFileSystem()
 					}
 				}
 				f_close(&m_file);
+				fclose(sourceFile);
 			}
-			fclose(sourceFile);
 		}
 	}
 

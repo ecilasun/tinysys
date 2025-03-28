@@ -796,7 +796,7 @@ void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 				blk->m_PC = mtvec;
 			else // Vectored
 				blk->m_PC = (mtvec&0xFFFFFFFC) + ((((m_exceptionmode&0x80000000) ? 0x10:0x00) | (m_exceptionmode&0xF))<<2);
-			m_decodedBlocks[m_exceptionmode] = blk;
+			m_decodedBlocks[blk->m_PC] = blk;
 			InjectISRHeader(&blk->m_code);
 			//fprintf(stderr, "new ISR header block (HWI/TMI) %08X\n", mtvec);
 		}
@@ -869,7 +869,7 @@ void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 					blk->m_PC = mtvec;
 				else // Vectored
 					blk->m_PC = (mtvec&0xFFFFFFFC) + ((((m_exceptionmode&0x80000000) ? 0x10:0x00) | (m_exceptionmode&0xF))<<2);
-				m_decodedBlocks[m_exceptionmode] = blk;
+				m_decodedBlocks[blk->m_PC] = blk;
 				InjectISRHeader(&blk->m_code);
 				//fprintf(stderr, "new ISR header block (ECALL/EBREAK/SWI) %08X\n", mtvec);
 			}
