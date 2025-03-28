@@ -53,6 +53,27 @@ int kprintf(const char *fmt, ...)
 	return l;
 }
 
+int kdebugprintf(const char *fmt, ...)
+{
+	va_list va;
+	int l;
+
+	// Stay away from other uses by devices etc
+	char *k_tmpstr = (char*)(KERNEL_TEMP_MEMORY + 1024);
+
+	va_start(va, fmt);
+	l = mini_vsnprintf(k_tmpstr, 1023, fmt, va);
+	va_end(va);
+	l = 1023 < l ? 1023 : l;
+
+	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
+	k_tmpstr[l] = 0;
+	VPUConsolePrint(kernelgfx, k_tmpstr, l);
+	UARTSendBlock((uint8_t*)k_tmpstr, l);
+
+	return l;
+}
+
 int kfillline(const char c)
 {
 	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
@@ -1132,7 +1153,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					uint32_t pid = read_csr(0x8AA); // A0
 					uint32_t sig = read_csr(0x8AB); // A1
 					_task_exit_task_with_id(taskctx, pid, sig);
-					kprintf("\nSIG:0x%x PID:0x%x\n", sig, pid);
+					kdebugprintf("\nSIG:0x%x PID:0x%x\n", sig, pid);
 					write_csr(0x8AA, sig);
 					_task_abort_to(taskctx, 0);
 				}
@@ -1141,6 +1162,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					uint32_t addrs = read_csr(0x8AA); // A0
 					uint32_t retval = core_brk(addrs);
 					write_csr(0x8AA, retval);
+					//UARTPrintf("%d:brk(%0X)->%08x\n", hartid, addrs, retval);
 				}
 				else if (value==403) // gettimeofday()
 				{
@@ -1337,10 +1359,11 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					uint32_t incr = read_csr(0x8AA); // A0
 					uint32_t retval = core_sbrk(incr);
 					write_csr(0x8AA, retval);
+					UARTPrintf("%d:sbrk(%d)->%08x\n", hartid, incr, retval);
 				}
 				else // Unimplemented syscalls drop here
 				{
-					kprintf("unimplemented ECALL: %d\b", value);
+					kdebugprintf("unimplemented ECALL: %d\b", value);
 					errno = EIO;
 					write_csr(0x8AA, 0xFFFFFFFF);
 				}
@@ -1351,7 +1374,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			case CAUSE_LOAD_ACCESS:
 			case CAUSE_STORE_ACCESS:
 			{
-				kprintf("Memory access fault: %d\b", value);
+				kdebugprintf("Memory access fault: %d\b", value);
 				errno = EACCES;
 				write_csr(0x8AA, 0xFFFFFFFF);
 			}
@@ -1361,7 +1384,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			case CAUSE_LOAD_PAGE_FAULT:
 			case CAUSE_STORE_PAGE_FAULT:
 			{
-				kprintf("Memory page fault: %d\b", value);
+				kdebugprintf("Memory page fault: %d\b", value);
 				errno = EFAULT;
 				write_csr(0x8AA, 0xFFFFFFFF);
 			}

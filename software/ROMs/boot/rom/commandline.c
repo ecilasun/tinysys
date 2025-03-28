@@ -17,7 +17,7 @@ extern struct SCommandLineContext* s_cliCtx;
 static const char *s_taskstates[]={ "NONE", "HALT", "EXEC", "TERM", "DEAD"};
 
 // Device version
-#define ROMVERSIONSTRING "0014F"
+#define ROMVERSIONSTRING "00150"
 #define GATEWAREVERSIONSTRING "00203"
 #define CORECLOCKSTRING "175MHz"
 

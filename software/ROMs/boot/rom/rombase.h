@@ -26,6 +26,7 @@ uint32_t LoadExecutable(const char *filename, int _relocOffset, const bool repor
 // Kernel print
 void ksetcolor(int8_t fg, int8_t bg);
 int kprintf(const char *fmt, ...);
+int kdebugprintf(const char *fmt, ...);
 void kgetcursor(int *_x, int *_y);
 void ksetcursor(const int _x, const int _y);
 void ksetcaret(const int _x, const int _y, const int _blink);

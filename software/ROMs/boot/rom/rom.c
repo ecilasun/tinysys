@@ -194,7 +194,7 @@ void HandleCPUError(struct STaskContext *ctx, const uint32_t cpu)
 	{
 		ksetcolor(CONSOLEGREEN, CONSOLEDEFAULTBG);
 		DeviceDefaultState(0);
-		kprintf("Task %d:%d completed (ret=%d)\n", cpu, ctx->kernelErrorData[0], ctx->kernelErrorData[1]);
+		kdebugprintf("Task %d:%d completed (ret=%d)\n", cpu, ctx->kernelErrorData[0], ctx->kernelErrorData[1]);
 	}
 
 	// Strip any termination flag
@@ -209,18 +209,18 @@ void HandleCPUError(struct STaskContext *ctx, const uint32_t cpu)
 
 	switch (ctx->kernelError)
 	{
-		case 1: ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG); return; // kprintf("Unknown hardware device"); break;
-		case 2: kprintf("Unknown interrupt type"); break;
-		case 3: kprintf("Guru meditation"); break;
-		case 4: kprintf("Illegal instruction"); break;
-		case 5: kprintf("Breakpoint encountered"); break;
-		default: kprintf("Unknown kernel error"); break;
+		case 1: ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG); return; // kdebugprintf("Unknown hardware device"); break;
+		case 2: kdebugprintf("Unknown interrupt type"); break;
+		case 3: kdebugprintf("Guru meditation"); break;
+		case 4: kdebugprintf("Illegal instruction"); break;
+		case 5: kdebugprintf("Breakpoint encountered"); break;
+		default: kdebugprintf("Unknown kernel error"); break;
 	}
 
 	if (ctx->kernelError == 1)
-		kprintf(" (0x%08X)", ctx->kernelErrorData[0]);
+	kdebugprintf(" (0x%08X)", ctx->kernelErrorData[0]);
 
-	kprintf(" on CPU #%d", cpu);
+	kdebugprintf(" on CPU #%d", cpu);
 	kfillline(' ');
 
 	// Dump task registers
@@ -228,17 +228,17 @@ void HandleCPUError(struct STaskContext *ctx, const uint32_t cpu)
 	{
 		uint32_t taskid = ctx->kernelErrorData[0];
 		struct STask *task = &ctx->tasks[taskid];
-		kprintf("Task: %d:%d:%d", ctx->hartID, task->HART, taskid);
+		kdebugprintf("Task: %d:%d:%d", ctx->hartID, task->HART, taskid);
 		kfillline(' ');
-		kprintf("IR:%08X", ctx->kernelErrorData[1]);
+		kdebugprintf("IR:%08X", ctx->kernelErrorData[1]);
 		kfillline(' ');
 		for (uint32_t i=0; i<32; ++i)
 		{
-			kprintf("%s:%08X ", s_regnames[i], task->regs[i]);
+			kdebugprintf("%s:%08X ", s_regnames[i], task->regs[i]);
 			if ((i+1)%4==0)
 				kfillline(' ');
 		}
-		kprintf("\n");
+		kdebugprintf("\n");
 	}
 
 	ksetcolor(CONSOLEDEFAULTFG, CONSOLEDEFAULTBG);
@@ -318,8 +318,8 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	LEDSetState(0x0);																// xxxx--
 
 	// NOTE: Sometimes CPU#1 will be stuck in 'reset' mode, use this to detect the case
-	//kprintf("0: main@%08x mtvec@0x%08x rst@0x%08x\n", (uint32_t)KernelMain, E32ReadMemMappedCSR(0, CSR_MTVEC), E32ReadMemMappedCSR(0, CSR_CPURESET));
-	//kprintf("1: main@%08x mtvec@0x%08x rst@0x%08x\n", (uint32_t)UserMain, E32ReadMemMappedCSR(1, CSR_MTVEC), E32ReadMemMappedCSR(1, CSR_CPURESET));
+	//kdebugprintf("0: main@%08x mtvec@0x%08x rst@0x%08x\n", (uint32_t)KernelMain, E32ReadMemMappedCSR(0, CSR_MTVEC), E32ReadMemMappedCSR(0, CSR_CPURESET));
+	//kdebugprintf("1: main@%08x mtvec@0x%08x rst@0x%08x\n", (uint32_t)UserMain, E32ReadMemMappedCSR(1, CSR_MTVEC), E32ReadMemMappedCSR(1, CSR_CPURESET));
 
 	// Main CLI loop
 	struct EVideoContext *kernelgfx = VPUGetKernelGfxContext();
