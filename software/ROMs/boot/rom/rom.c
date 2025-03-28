@@ -228,8 +228,7 @@ void HandleCPUError(struct STaskContext *ctx, const uint32_t cpu)
 	{
 		uint32_t taskid = ctx->kernelErrorData[0];
 		struct STask *task = &ctx->tasks[taskid];
-		// Skip zero register and emit '0' since we save PC there
-		kprintf("Task: %s (%d)", task->name, taskid);
+		kprintf("Task: %d:%d:%d", ctx->hartID, task->HART, taskid);
 		kfillline(' ');
 		kprintf("IR:%08X", ctx->kernelErrorData[1]);
 		kfillline(' ');
