@@ -168,12 +168,13 @@ void E32WriteMemMappedCSR(uint32_t _hart, uint32_t _csr, uint32_t _value)
  * @param _csr The CSR to read from.
  * @return The read value.
  */
-volatile uint32_t E32ReadMemMappedCSR(uint32_t _hart, uint32_t _csr)
+uint32_t E32ReadMemMappedCSR(uint32_t _hart, uint32_t _csr)
 {
 	if (_hart >= MAX_HARTS) return 0;
 	// Return the address of the CSR for the given hart
 	uint32_t csrbase[MAX_HARTS] = {DEVICE_CSR0, DEVICE_CSR1};
-	return *(uint32_t*)(csrbase[_hart] | (_csr<<2));
+	volatile uint32_t *csrAddress = (uint32_t*)(csrbase[_hart] | (_csr<<2));
+	return *csrAddress;
 }
 
 /**

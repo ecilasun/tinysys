@@ -100,7 +100,7 @@ void ClockMsToHMS(uint32_t ms, uint32_t *hours, uint32_t *minutes, uint32_t *sec
 void E32Sleep(uint64_t ticks);
 
 void E32WriteMemMappedCSR(uint32_t _hart, uint32_t _csr, uint32_t _value);
-volatile uint32_t E32ReadMemMappedCSR(uint32_t _hart, uint32_t _csr);
+uint32_t E32ReadMemMappedCSR(uint32_t _hart, uint32_t _csr);
 
 // Reset given hardware thread and start executing the supplied task
 void E32SetupCPU(uint32_t hartid, void *workerThread);
