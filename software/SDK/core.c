@@ -81,7 +81,7 @@ uint32_t core_sbrk(uint32_t incr)
 {
 	uint32_t old_heapstart = core_brk(0);
 	uint32_t res = core_brk(old_heapstart + incr);
-	return res != 0xFFFFFFFF ? old_heapstart : NULL;
+	return res != 0xFFFFFFFF ? old_heapstart : 0x00000000;
 }
 
 #else
