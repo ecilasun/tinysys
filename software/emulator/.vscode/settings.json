@@ -65,5 +65,5 @@
 		"xtr1common": "cpp",
 		"iostream": "cpp"
 	},
-	"idf.pythonInstallPath": "/usr/bin/python3"
+	"idf.pythonInstallPath": "C:\\Users\\ecila\\.espressif\\tools\\idf-python\\3.11.2\\python.exe"
 }
