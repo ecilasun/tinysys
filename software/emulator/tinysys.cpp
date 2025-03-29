@@ -657,6 +657,7 @@ int SDL_main(int argc, char** argv)
 		fprintf(stderr, "Could not create window surface\n");
 		return -1;
 	}
+
 	// Compositor surface
 	ectx.compositesurface = SDL_CreateRGBSurfaceWithFormat(0, WIDTH, HEIGHT+8, 32, SDL_PIXELFORMAT_ARGB8888);
 
@@ -688,7 +689,11 @@ int SDL_main(int argc, char** argv)
 	SDL_Thread* emulatorthreadID = SDL_CreateThread(emulatorthread, "cpu0&1", &ectx);
 #endif
 	SDL_Thread* audiothreadID = SDL_CreateThread(audiothread, "audio", ectx.emulator);
+#if defined(CAT_LINUX)
+	SDL_TimerID videoTimer = 0;
+#else
 	SDL_TimerID videoTimer = SDL_AddTimer(16, videoCallback, &ectx); // 60fps
+#endif
 #if defined(CPU_STATS)
 	SDL_TimerID statsTimer = SDL_AddTimer(1000, statsCallback, &ectx);
 #endif
@@ -855,6 +860,9 @@ int SDL_main(int argc, char** argv)
 			memcpy(old_keystates, keystates, SDL_NUM_SCANCODES);
 		}
 
+#if defined(CAT_LINUX)
+		videoCallback(16, &ectx);
+#endif
 		s_wallclock = SDL_GetTicks64() * ONE_MS_IN_TICKS - startTick;
 	} while(s_alive);
 

@@ -54,10 +54,10 @@ def build(bld):
         linker_flags = []
     elif platform.system().lower().startswith('linux'):
         libs = ['SDL2', 'SDL2_ttf']
-        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_LINUX', 'RELEASE'] # 'CPU_STATS'
+        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_LINUX', 'RELEASE', 'GALLIFREY'] # 'CPU_STATS'
         includes = ['source', 'includes', '/usr/include/SDL2', '../3rdparty/fat32']
         sdk_lib_path = ['/usr/lib/x86_64-linux-gnu/libSDL2']
-        compile_flags = ['-march=native', '-O3']
+        compile_flags = ['-march=native', '-O3', '-fno-omit-frame-pointer', '-fno-common', '-fno-exceptions', '-fno-rtti']
         platform_flags = ['-std=c++20']
         linker_flags = []
 
