@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <math.h>
+#include <algorithm>
 #include "rv32.h"
 #include "bus.h"
 

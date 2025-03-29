@@ -64,5 +64,6 @@
 		"xloctime": "cpp",
 		"xtr1common": "cpp",
 		"iostream": "cpp"
-	}
+	},
+	"idf.pythonInstallPath": "/usr/bin/python3"
 }

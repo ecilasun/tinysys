@@ -64,5 +64,6 @@
 			}
 		  }
 	},
-	"idf.portWin": "COM4"
+	"idf.portWin": "COM4",
+	"idf.pythonInstallPath": "/usr/bin/python3"
 }
