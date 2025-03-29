@@ -3,7 +3,6 @@
 .section .text
 	.global _start
 	.global _exit
-	.global _interrupt_vector_table
 
 _start:
 	.option norelax
@@ -47,6 +46,15 @@ _start:
 	li t5, 0
 	li t6, 0
 
+	// Set up default heap address range for dynamic memory allocation
+	// NOTE: Same defines in basesystem.h
+	li a3, 0x00001000	// HEAP_START
+	csrw 0x900, a3		// __heap_start
+	csrw 0x902, a3		// __breakpos
+	li a3, 0x0F000000	// HEAP_END
+	csrw 0x901, a3		// __heap_end
+	csrw 0x903, 0		// brk_lock
+
 	// Detect boot override address in mscratch register
 	csrr a3, mscratch				// Check if we have a boot addres override (defaults to zero on hard reset)
 	beqz a3, _defaultboot			// Skip if it's zero
@@ -72,14 +80,6 @@ _defaultboot:
 	la a0, __libc_fini_array
 	jal ra, atexit
 
-	// Install interrupt vector
-	la a0, _interrupt_vector_table
-	or a0, a0, 0x1		// Set the least significant bit to indicate it's a vector table
-	csrw mtvec, a0		// Set the mtvec register to point to the interrupt vector table
-	li a0, 0x888		// MIE(11) | SIE(3) | MTE(7)
-	csrw mie, a0		// Enable machine timer interrupts
-	csrw mstatus, 0x8	// Enable interrupts (MIE=1)
-
 _noatexitfound:
 	jal ra, __libc_init_array
 
@@ -96,166 +96,13 @@ _freezecore:						// Go to sleep (will be 'reset' by CPU#0 to jump to address in
 	wfi
 	j _freezecore
 
-.align 6							// Align to 64-byte boundary
+	.align 6						// Align to 64-byte boundary
 _exit:
 	csrw mie,0						// No external (hardware) interrupts
 	csrw mstatus,0					// Disable all interrupts (mstatus:mie=0)
 _romfreeze:							// Halt if we ever attempt to exit ROM
 	wfi
 	j _romfreeze
-
-/// Interrupt vectors
-.align 6
-_interrupt_vector_table:
-	jal zero, isr_unknown	// 0x00 - None
-	jal zero, isr_unknown	// 0x04
-	jal zero, isr_swi		// 0x08 - Machine software interrupt (2)
-	jal zero, isr_ebreak	// 0x0C - EBREAK (3)
-	jal zero, isr_unknown	// 0x10
-	jal zero, isr_unknown	// 0x14
-	jal zero, isr_unknown	// 0x18
-	jal zero, isr_unknown	// 0x1C
-	jal zero, isr_unknown	// 0x20
-	jal zero, isr_unknown	// 0x24
-	jal zero, isr_unknown	// 0x28
-	jal zero, isr_ecall		// 0x2C - ECALL (11)
-	jal zero, isr_unknown	// 0x30
-	jal zero, isr_unknown	// 0x34
-	jal zero, isr_unknown	// 0x38
-	jal zero, isr_unknown	// 0x3C
-	jal zero, isr_unknown	// 0x40
-	jal zero, isr_unknown	// 0x44
-	jal zero, isr_unknown	// 0x48
-	jal zero, isr_unknown	// 0x4C
-	jal zero, isr_unknown	// 0x50
-	jal zero, isr_unknown	// 0x54
-	jal zero, isr_unknown	// 0x58
-	jal zero, isr_tmi		// 0x5C - Machine timer interrupt (7)
-	jal zero, isr_unknown	// 0x60
-	jal zero, isr_unknown	// 0x64
-	jal zero, isr_unknown	// 0x68
-	jal zero, isr_hwi		// 0x6C - Machine external interrupt (11)
-	jal zero, isr_unknown	// 0x70
-	jal zero, isr_unknown	// 0x74
-	jal zero, isr_unknown	// 0x78
-	jal zero, isr_unknown	// 0x7C
-
-isr_unknown:
-	mret
-
-isr_swi:
-	// Illegal instruction handler
-	mret
-
-isr_ebreak:
-	// Breakpoint handler
-	mret
-
-isr_ecall:
-	// Syscall handler
-	mret
-
-isr_tmi:
-	// Task scheduler interrupt handler
-	mret
-
-isr_hwi:
-	// Hardware interrupt handler
-	csrw 0x8A1, ra;
-	csrw 0x8A2, sp;
-	csrw 0x8A3, gp;
-	csrw 0x8A4, tp;
-	csrw 0x8A5, t0;
-	csrw 0x8A6, t1;
-	csrw 0x8A7, t2;
-	csrw 0x8A8, s0;
-	csrw 0x8A9, s1;
-	csrw 0x8AA, a0;
-	csrw 0x8AB, a1;
-	csrw 0x8AC, a2;
-	csrw 0x8AD, a3;
-	csrw 0x8AE, a4;
-	csrw 0x8AF, a5;
-	csrw 0x8B0, a6;
-	csrw 0x8B1, a7;
-	csrw 0x8B2, s2;
-	csrw 0x8B3, s3;
-	csrw 0x8B4, s4;
-	csrw 0x8B5, s5;
-	csrw 0x8B6, s6;
-	csrw 0x8B7, s7;
-	csrw 0x8B8, s8;
-	csrw 0x8B9, s9;
-	csrw 0x8BA, s10;
-	csrw 0x8BB, s11;
-	csrw 0x8BC, t3;
-	csrw 0x8BD, t4;
-	csrw 0x8BE, t5;
-	csrw 0x8BF, t6;
-	csrr a5, mepc;
-	csrw 0x8A0, a5;
-
-	// Grab hardware ID
-	csrr a5, 0xFFF
-	and a5,a5,4
-	beqz a5, _hwidone
-	// Read from UART until there's nothing left
-	j _handleuart
-
-_hwidone:
-
-	csrr a5, 0x8A0;
-	csrw mepc, a5;
-	csrr ra,  0x8A1;
-	csrr sp,  0x8A2;
-	csrr gp,  0x8A3;
-	csrr tp,  0x8A4;
-	csrr t0,  0x8A5;
-	csrr t1,  0x8A6;
-	csrr t2,  0x8A7;
-	csrr s0,  0x8A8;
-	csrr s1,  0x8A9;
-	csrr a0,  0x8AA;
-	csrr a1,  0x8AB;
-	csrr a2,  0x8AC;
-	csrr a3,  0x8AD;
-	csrr a4,  0x8AE;
-	csrr a5,  0x8AF;
-	csrr a6,  0x8B0;
-	csrr a7,  0x8B1;
-	csrr s2,  0x8B2;
-	csrr s3,  0x8B3;
-	csrr s4,  0x8B4;
-	csrr s5,  0x8B5;
-	csrr s6,  0x8B6;
-	csrr s7,  0x8B7;
-	csrr s8,  0x8B8;
-	csrr s9,  0x8B9;
-	csrr s10, 0x8BA;
-	csrr s11, 0x8BB;
-	csrr t3,  0x8BC;
-	csrr t4,  0x8BD;
-	csrr t5,  0x8BE;
-	csrr t6,  0x8BF;
-	mret
-
-_handleuart:
-	// Echo back everything we've received
-	// while (*(DEVICE_UART+0x08) & 0x00000001
-	// 		*(DEVICE_UART+0x04) = *(DEVICE_UART+0x00);
-	li a0, 0x80080000 // Base device address for UART
-	addi a1, a0, 0x08 // UART status address
-	addi a2, a0, 0x04 // UART transmit
-	addi a3, a0, 0x00 // UART receive
-	_echoloop:
-		lw a4, 0(a1) // Read status
-		and a4, a4, 0x00000001 // Check if there's data
-		beqz a4, _doneecho // No more data, we're done
-		lw a4, 0(a3) // Read data
-		sw a4, 0(a2) // Write data
-		j _echoloop
-	_doneecho:
-	ret
 
 /// Data section
 
