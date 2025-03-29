@@ -260,8 +260,13 @@ set_property IBUF_LOW_PWR FALSE [get_ports {ddr3_dq[15]}]
 ## ------------------------------------------------------------------------------------------------------
 
 set_false_path -to [get_ports {leds[*]}]
-## Audio clock false path for generated 44.1KHz clock
+set_false_path -to [get_ports esp_ena]
+set_false_path -from [get_ports fpga_reboot]
+set_false_path -from [get_ports sdcard_swtch]
+## Generated 44.1KHz clock has false path from pixel/serdes clocks and the CPU bus clock (it's only related to the 22.591 MHz clock)
 set_false_path -from [get_clocks audiosampleclk] -to [get_clocks -of_objects [get_pins clockandresetinst/centralclockinst/inst/mmcm_adv_inst/CLKOUT4]]
+set_false_path -from [get_clocks audiosampleclk] -to [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT1]]
+set_false_path -from [get_clocks audiosampleclk] -to [get_clocks -of_objects [get_pins clockandresetinst/peripheralclkinst/inst/mmcm_adv_inst/CLKOUT2]]
 
 ## ------------------------------------------------------------------------------------------------------
 ## Timing
@@ -313,10 +318,9 @@ set_clock_groups -name grpP -asynchronous -group [get_clocks -of_objects [get_pi
 ## PBLOCKs
 ## ------------------------------------------------------------------------------------------------------
 
-## create_pblock pblock_hart0
-## add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list socinstance/hart0]]
-## resize_pblock [get_pblocks pblock_hart0] -add {CLOCKREGION_X0Y0:CLOCKREGION_X0Y1}
-## create_pblock pblock_hart1
-## add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list socinstance/hart1]]
-## resize_pblock [get_pblocks pblock_hart1] -add {CLOCKREGION_X1Y0:CLOCKREGION_X1Y1}
-
+create_pblock pblock_hart0
+add_cells_to_pblock [get_pblocks pblock_hart0] [get_cells -quiet [list socinstance/hart0]]
+resize_pblock [get_pblocks pblock_hart0] -add {CLOCKREGION_X1Y3:CLOCKREGION_X1Y4}
+create_pblock pblock_hart1
+add_cells_to_pblock [get_pblocks pblock_hart1] [get_cells -quiet [list socinstance/hart1]]
+resize_pblock [get_pblocks pblock_hart1] -add {CLOCKREGION_X1Y0:CLOCKREGION_X1Y1}

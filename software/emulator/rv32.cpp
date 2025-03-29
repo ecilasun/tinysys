@@ -1555,10 +1555,10 @@ void CRV32::Tick(uint64_t wallclock, CBus* bus)
 	if (!m_breakLatch)
 	{
 		CCSRMem* csr = bus->GetCSR(m_hartid);
+		csr->UpdateTime(wallclock, m_cycles);
 
 		// Gather a block of code (or grab precompiled version)
 		bool fetchok = FetchDecode(bus);
-		csr->UpdateTime(wallclock, m_cycles);
 
 		// Execute the whole block up to a possible breakpoint
 		Execute(bus);

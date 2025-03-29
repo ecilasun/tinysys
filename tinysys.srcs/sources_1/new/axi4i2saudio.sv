@@ -69,10 +69,10 @@ typedef enum bit [3:0] {
 	FINALIZE } apucmdmodetype;
 apucmdmodetype cmdmode = INIT;
 
-bit [31:0] apucmd;			// Command code
-bit [31:0] apusourceaddr;		// Memory address to DMA the audio samples from
+bit [3:0] apucmd;			// Command code
+bit [7:0] apuburstcount;	// Number of 16byte DMA reads, minus one
 bit [9:0] apuwordcount;		// Number of words to playback, minus one
-bit [7:0] apuburstcount;		// Number of 16byte DMA reads, minus one
+bit [31:0] apusourceaddr;	// Memory address to DMA the audio samples from
 
 // Buffer address high bit to control DMA write page
 bit writeBufferSelect;
@@ -82,11 +82,11 @@ bit writeBufferSelect;
 // e.g. for 512x16bit stereo samples  we have 512 pairs to read, 128 bursts to make
 // Read and Write regions always alternate between offset 0 and offset 256
 bit samplewe;
+bit samplere;
+bit [1:0] readLowbits;
 bit [7:0] writeCursor;
 bit [9:0] readCursor;
-bit [1:0] readLowbits;
 bit [127:0] sampleIn;
-bit samplere;
 wire [31:0] sampleOut;
 
 wire [8:0] inaddr = {writeBufferSelect, writeCursor};
@@ -148,6 +148,7 @@ always_ff @(posedge aclk) begin
 		sampleoutputrateselector <= 4'b0000;
 		apuwordcount <= 10'd1023;
 		apuburstcount <= 8'd255;
+		apucmd <= 4'd0;
 		cmdmode <= INIT;
 	end else begin
 		re <= 1'b0;
@@ -168,7 +169,7 @@ always_ff @(posedge aclk) begin
 	
 			WCMD: begin
 				if (abvalid && ~abempty) begin
-					apucmd <= audiodin;
+					apucmd <= audiodin[3:0];
 					// Advance FIFO
 					re <= 1'b1;
 					// Dispatch cmd
@@ -177,7 +178,7 @@ always_ff @(posedge aclk) begin
 			end
 	
 			DISPATCH: begin
-				case (apucmd[3:0])
+				case (apucmd)
 					4'h0:		cmdmode <= APUBUFFERSIZE;	// Set up size of DMA copies and playback range, in words
 					4'h1:		cmdmode <= APUSTART;		// Start DMA into write page
 					//4'h2:		cmdmode <= APUSETVOL;		// Spare command, unused

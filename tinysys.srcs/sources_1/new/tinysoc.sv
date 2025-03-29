@@ -231,18 +231,18 @@ axi4i2saudio APU(
 	.aclk(aclk),				// Bus clock
 	.aresetn(aresetn),
 	.rstaudion(rstaudion),
-    .audioclock(clkaudio),
+	.audioclock(clkaudio),
 
 	.m_axi(audiobus),			// Memory access
 
 	.abempty(audiofifoempty),	// APU command FIFO
 	.abvalid(audiofifovalid),
 	.audiore(audiofifore),
-    .audiodin(audiofifodout),
-    .swapcount(audiobufferswapcount),
+	.audiodin(audiofifodout),
+	.swapcount(audiobufferswapcount),
 
 	.audiosampleclk(audiosampleclk),
-    .tx_sdout(tx_sdout));
+	.tx_sdout(tx_sdout));
 
 // --------------------------------------------------
 // Traffic between master units / memory / devices
@@ -286,7 +286,7 @@ axi4ddr3sdram axi4ddr3sdraminst(
 
 // 16bit (64K) address space for up to 255 devices
 // dev   start     end       addrs[19:16]  size  notes
-// SPAD: 80000000  8xx0FFFF  4'b0000  64KB	 Scratchpad (16Kbytes)
+// SPAD: 80000000  8xx0FFFF  4'b0000  64KB	 Scratchpad (64Kbytes)
 // LEDS: 8xx10000  8xx1FFFF  4'b0001  64KB	 Debug LEDs
 // VPUC: 8xx20000  8xx2FFFF  4'b0010  64KB	 Video Processing Unit
 // SDCC: 8xx30000  8xx3FFFF  4'b0011  64KB	 SDCard SPI Unit
@@ -315,7 +315,7 @@ devicerouter devicerouterinst(
 		4'b0001,		// LEDS Debug / Status LED interface
 		4'b0000}),		// SPAD Scratchpad for inter-core data transfer
 	.axi_s(devicebus),
-    .axi_m({csrif1, csrif0, uartif, mailif, audioif, spiif, vpucmdif, ledif, scratchif}));
+	.axi_m({csrif1, csrif0, uartif, mailif, audioif, spiif, vpucmdif, ledif, scratchif}));
 
 // --------------------------------------------------
 // Interrupt wires
@@ -365,7 +365,7 @@ commandqueue audiocmdinst(
 	.fifodout(audiofifodout),
 	.fifore(audiofifore),
 	.fifovalid(audiofifovalid),
-    .devicestate(audiobufferswapcount));
+	.devicestate(audiobufferswapcount));
 
 axi4CSRFile #( .HARTID(4'd0)) csrfile0 (
 	.aclk(aclk),

@@ -38,6 +38,7 @@ int emulatorthreadcpu0(void* data)
 	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_NORMAL);
 
 	EmulatorContext* ctx = (EmulatorContext*)data;
+	int spins = 0;
 	do
 	{
 		CEmulator *emulator = ctx->emulator;
@@ -51,6 +52,13 @@ int emulatorthreadcpu0(void* data)
 			emulator->m_debugAck = 0;
 			emulator->Step(s_wallclock, 0);
 		}
+
+		if (spins % 1048576 == 0)
+		{
+			// Handle hardware switch etc changes
+			emulator->m_bus->GetSDCard()->UpdateSDCardSwitch();
+		}
+		++spins;
 	} while(s_alive);
 
 	return 0;
@@ -75,6 +83,7 @@ int emulatorthread(void* data)
 	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_NORMAL);
 
 	EmulatorContext* ctx = (EmulatorContext*)data;
+	int spins = 0;
 	do
 	{
 		CEmulator *emulator = ctx->emulator;
@@ -90,8 +99,12 @@ int emulatorthread(void* data)
 			emulator->Step(s_wallclock, 1);
 		}
 
-		// Handle hardware switch etc changes
-		emulator->m_bus->GetSDCard()->UpdateSDCardSwitch();
+		if (spins % 1048576 == 0)
+		{
+			// Handle hardware switch etc changes
+			emulator->m_bus->GetSDCard()->UpdateSDCardSwitch();
+		}
+		++spins;
 	} while(s_alive);
 
 	return 0;

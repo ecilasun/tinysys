@@ -64,8 +64,13 @@ end
 (* async_reg = "true" *) logic clkRdyB = 1'b0;
 
 always @(posedge clkbus) begin
-	clkRdyA <= clocksready;
-	clkRdyB <= clkRdyA;
+	if (~fpga_rstn) begin
+		clkRdyA <= 1'b0;
+		clkRdyB <= 1'b0;
+	end else begin
+		clkRdyA <= clocksready;
+		clkRdyB <= clkRdyA;
+	end
 end
 
 // --------------------------------------------------
@@ -76,8 +81,13 @@ logic [31:0] resetcountdown = 32'd0;
 logic regaresetn;
 
 always @(posedge clkbus) begin
-	resetcountdown <= {resetcountdown[30:0], clkRdyB};
-	regaresetn <= resetcountdown[31] && ddr3ready[1];
+	if (~fpga_rstn) begin
+		resetcountdown <= 32'd0;
+		regaresetn <= 1'b0;
+	end else begin
+		resetcountdown <= {resetcountdown[30:0], clkRdyB};
+		regaresetn <= resetcountdown[31] && ddr3ready[1];
+	end
 end
 
 // --------------------------------------------------
@@ -89,37 +99,63 @@ logic regpreresetn = 1'b0;
 (* async_reg = "true" *) logic sysRdyA = 1'b0;
 (* async_reg = "true" *) logic sysRdyB = 1'b0;
 always @(posedge clk166) begin
-	sysRdyA <= clocksready;
-	sysRdyB <= sysRdyA;
-	regpreresetn <= sysRdyB;
+	if (~fpga_rstn) begin
+		sysRdyA <= 1'b0;
+		sysRdyB <= 1'b0;
+		regpreresetn <= 1'b0;
+	end else begin
+		sysRdyA <= clocksready;
+		sysRdyB <= sysRdyA;
+		regpreresetn <= sysRdyB;
+	end
 end
 
 (* async_reg = "true" *) logic rstn10A = 1'b1;
 (* async_reg = "true" *) logic rstn10B = 1'b1;
 always @(posedge clk25) begin
-	rstn10A <= regaresetn;
-	rstn10B <= rstn10A;
+	if (~fpga_rstn) begin
+		rstn10A <= 1'b1;
+		rstn10B <= 1'b1;
+	end else begin
+		rstn10A <= regaresetn;
+		rstn10B <= rstn10A;
+	end
 end
 
 (* async_reg = "true" *) logic rstn25A = 1'b1;
 (* async_reg = "true" *) logic rstn25B = 1'b1;
 always @(posedge clk25) begin
-	rstn25A <= regaresetn;
-	rstn25B <= rstn25A;
+	if (~fpga_rstn) begin
+		rstn25A <= 1'b1;
+		rstn25B <= 1'b1;
+	end else begin
+		rstn25A <= regaresetn;
+		rstn25B <= rstn25A;
+	end
 end
 
 (* async_reg = "true" *) logic rstn100A = 1'b1;
 (* async_reg = "true" *) logic rstn100B = 1'b1;
 always @(posedge clk100) begin
-	rstn100A <= regaresetn;
-	rstn100B <= rstn100A;
+	if (~fpga_rstn) begin
+		rstn100A <= 1'b1;
+		rstn100B <= 1'b1;
+	end else begin
+		rstn100A <= regaresetn;
+		rstn100B <= rstn100A;
+	end
 end
 
 (* async_reg = "true" *) logic rstaudionA = 1'b1;
 (* async_reg = "true" *) logic rstaudionB = 1'b1;
 always @(posedge clkaudio) begin
-	rstaudionA <= regaresetn;
-	rstaudionB <= rstaudionA;
+	if (~fpga_rstn) begin
+		rstaudionA <= 1'b1;
+		rstaudionB <= 1'b1;
+	end else begin
+		rstaudionA <= regaresetn;
+		rstaudionB <= rstaudionA;
+	end
 end
 
 assign rst10n = rstn10B;

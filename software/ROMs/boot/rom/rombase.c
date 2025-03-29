@@ -1359,7 +1359,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					uint32_t incr = read_csr(0x8AA); // A0
 					uint32_t retval = core_sbrk(incr);
 					write_csr(0x8AA, retval);
-					UARTPrintf("%d:sbrk(%d)->%08x\n", hartid, incr, retval);
+					//UARTPrintf("%d:sbrk(%d)->%08x\n", hartid, incr, retval);
 				}
 				else // Unimplemented syscalls drop here
 				{
