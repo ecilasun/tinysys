@@ -2,7 +2,7 @@
 
 #include <inttypes.h>
 
-#define TASK_MAX 4
+#define TASK_MAX 5
 
 typedef void(*taskfunc)();
 
@@ -18,24 +18,40 @@ enum ETaskState
 	TS_PAUSED,
 	TS_RUNNING,
 	TS_TERMINATING,
-	TS_TERMINATED
+	TS_TERMINATED,
+	TS_CREATED
 };
 
-// 148 bytes total for one task
-struct STask {
-	uint32_t HART;			// HART affinity mask (for migration)
-	uint32_t runLength;		// Time slice dedicated to this task
-	enum ETaskState state;	// State of this task
-	uint32_t exitCode;		// Task termination exit code
-	uint32_t regs[32];		// Integer registers - NOTE: register zero here is actually the PC, 128 bytes
-	uint32_t name;			// Pointer to task name (in external memory)
+enum ETaskHandlerState
+{
+	TASK_IDLE = 0,		// Idle state for task handler (no tasks to run)
+	TASK_SWITCHING = 1,	// Task switching in progress (for synchronization)
 };
 
-// 620 bytes total for one core (1240 for two cores)
+enum EBreakRequest
+{
+	BR_NONE = 0,				// No break request
+	BR_HALTFORTASKSWITCH = 1,	// Let the core know we want to add a new task
+};
+
+// 152 bytes total for one task
+struct STask {	
+	uint32_t HART;					// HART affinity mask (for migration)
+	uint32_t runLength;				// Time slice dedicated to this task
+	enum ETaskState state;
+	enum ETaskState targetstate;
+	uint32_t exitCode;				// Task termination exit code
+	uint32_t regs[32];				// Integer registers - NOTE: register zero here is actually the PC, 128 bytes
+	uint32_t name;					// Pointer to task name (in external memory)
+};
+
 struct STaskContext {
-	// 148 x 4 = 592 bytes total for all tasks
-	struct STask tasks[TASK_MAX];	// List of all the tasks
-	// 28 bytes total below
+	// 152 x 4 bytes total for all tasks
+	struct STask tasks[TASK_MAX];	// List of all the tasks plus one for adding new tasks
+	// 32 bytes total below
+	enum ETaskHandlerState state;	// State of the task handler
+	enum EBreakRequest brkreq;		// Break request
+	int32_t brkack;					// Break acknowledgement
 	int32_t currentTask;			// Current task index
 	int32_t numTasks;				// Number of tasks
 	int32_t kernelError;			// Current kernel error

@@ -10,6 +10,13 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+//#define KERNEL_DEBUG
+#if defined(KERNEL_DEBUG)
+	#define KERNELLOG(...) UARTPrintf(__VA_ARGS__)
+#else
+	#define KERNELLOG(...) {}
+#endif
+
 static FATFS Fs;
 static char s_workdir[PATH_MAX+4] = "sd:/";
 
@@ -151,8 +158,13 @@ uint32_t _task_abort_to(struct STaskContext *_ctx, const uint32_t _abortTo)
 
 uint32_t _task_switch_to_next(struct STaskContext *_ctx)
 {
+	// Let other HARTs know we're in the task switching state
+	_ctx->state = TASK_SWITCHING;
+
 	// Load current process ID from TP register
 	int32_t currentTask = _ctx->currentTask;
+
+	uint32_t runLength = _ctx->tasks[currentTask].runLength; // Time slice for the next task to run
 
 	// Get current task's register stash
 	uint32_t *regs = _ctx->tasks[currentTask].regs;
@@ -191,10 +203,13 @@ uint32_t _task_switch_to_next(struct STaskContext *_ctx)
 	regs[30] = read_csr(0x8BE);	// t5
 	regs[31] = read_csr(0x8BF);	// t6
 
-	// Spin until we find a task that is not paused or terminated
+	int32_t taskCount = _ctx->numTasks;
+	// Memory barrier
+	asm volatile ("" : : : "memory");
+
 	do {
 		// Next task in queue
-		currentTask = (_ctx->numTasks <= 1) ? 0 : ((currentTask+1) % _ctx->numTasks);
+		currentTask = (taskCount <= 1) ? 0 : ((currentTask+1) % taskCount);
 
 		// Check if task is terminated
 		if (_ctx->tasks[currentTask].state == TS_TERMINATING)
@@ -202,18 +217,27 @@ uint32_t _task_switch_to_next(struct STaskContext *_ctx)
 			_ctx->kernelError = _ctx->kernelError | 0x80000000; // Task terminated (not a real error, also take care to not overwrite any real errors)
 			_ctx->kernelErrorData[0] = currentTask;
 			_ctx->kernelErrorData[1] = _ctx->tasks[currentTask].exitCode;
-			if (currentTask != _ctx->numTasks-1)
-				__builtin_memcpy(&_ctx->tasks[currentTask], &_ctx->tasks[_ctx->numTasks-1], sizeof(struct STask));
+			if (currentTask != taskCount-1)
+				__builtin_memcpy(&_ctx->tasks[currentTask], &_ctx->tasks[taskCount-1], sizeof(struct STask));
 			else
 				_ctx->tasks[currentTask].state = TS_TERMINATED;
 			// One less task to run
-			--_ctx->numTasks;
+			--taskCount;
 			// Wind back to OS Idle task
 			currentTask = 0;
 		}
-		else if (_ctx->tasks[currentTask].state == TS_RUNNING || currentTask == 0) // Found a task to run or dropped to IDLE task
+		else if ((_ctx->tasks[currentTask].state == TS_RUNNING) || currentTask == 0) // Found a task to run or dropped to IDLE task
 			break;
+		else if (_ctx->tasks[currentTask].state == TS_CREATED)
+		{
+			_ctx->tasks[currentTask].state = _ctx->tasks[currentTask].targetstate;
+			KERNELLOG("%d: TaskSwitch: Transitioning task %d from TS_CREATED to %d\n", _ctx->hartID, currentTask, _ctx->tasks[currentTask].state);
+		}
 	} while (1);
+	
+	// Memory barrier
+	asm volatile ("" : : : "memory");
+	_ctx->numTasks = taskCount;
 
 	_ctx->currentTask = currentTask;
 
@@ -253,31 +277,100 @@ uint32_t _task_switch_to_next(struct STaskContext *_ctx)
 	write_csr(0x8BE, regs[30]);	// t5
 	write_csr(0x8BF, regs[31]);	// t6
 
-	return _ctx->tasks[currentTask].runLength;
+	// Allow other HARTs to add new tasks
+	_ctx->state = TASK_IDLE;
+
+	// Handle task add during OS task
+	while (_ctx->brkreq == BR_HALTFORTASKSWITCH && currentTask == 0)
+	{
+		_ctx->brkack = 1; // Acknowledge the break request to the other HARTs
+		// Halt this core until the break request is cleared
+		asm volatile ("wfi");
+	}
+	if (_ctx->brkack)
+	{
+		uint32_t prevCount = _ctx->numTasks;
+		if (prevCount < 4) // Limit is 0..3 (i.e. 4 tasks)
+		{
+			// Copy the task over
+			__builtin_memcpy(&_ctx->tasks[prevCount], &_ctx->tasks[4], sizeof(struct STask));
+			KERNELLOG("%d: TaskSwitch: Added new task %d (@0x%08X) to the pool from break ack, now %d tasks\n", _ctx->hartID, prevCount, _ctx->tasks[prevCount].regs[0], _ctx->numTasks);
+			++_ctx->numTasks;
+		}
+		_ctx->brkack = 0;
+	}
+
+	return runLength;
 }
 
-int _task_add(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength, const uint32_t _hartid, const uint32_t _gp, const uint32_t _parentStackPointer)
+void __attribute__((aligned(16))) __attribute__((naked)) retsink()
 {
-	int32_t prevcount = _ctx->numTasks;
-	if (prevcount >= TASK_MAX)
-		return 0;
+	asm volatile (
+		"infloop: \
+		wfi; \
+		j infloop;" // This function is a sink for returning from a task, it will just loop infinitely until the task is switched out
+	);
+}
 
-	// Insert the task before we increment task count
-	struct STask *task = &(_ctx->tasks[prevcount]);
-	task->HART = _hartid;
-	task->regs[0] = (uint32_t)_task;		// Initial PC
-	task->regs[2] = _parentStackPointer;	// Stack pointer
-	task->regs[3] = _gp;					// Global pointer
-	task->regs[8] = _parentStackPointer;	// Frame pointer
-	task->runLength = _runLength;			// Time slice dedicated to this task
-	task->name = (uint32_t)_name;			// Pointer to task name (in external memory)
+int _task_add(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum ETaskState _initialState, const uint32_t _runLength, const uint32_t _parenthartid, const uint32_t _targethartid, const uint32_t _gp, const uint32_t _parentStackPointer)
+{
+	// We need to wait for target HART to get out of task swithing before we can add a task to it
+	// This won't work if parent == target since we can't be running the ack bit while here
+	if (_parenthartid != _targethartid)
+	{
+		// Request halt
+		_ctx->brkreq = BR_HALTFORTASKSWITCH;
+		KERNELLOG("%d: TaskAdd: Waiting for break ack from HART %d\n", _parenthartid, _targethartid);
+		// Wait for other side to acknowledge the break request
+		while(_ctx->brkack != 1)
+		{
+			asm volatile ("wfi");
+		}
+		KERNELLOG("%d: TaskAdd: Got ack from target hart, has %d tasks\n", _parenthartid, _ctx->numTasks);
 
-	// We assume running state as soon as we start
-	task->state = _initialState;
+		uint32_t prevCount = _ctx->numTasks;
 
-	++_ctx->numTasks;
+		// Insert the task before we increment task count
+		_ctx->tasks[4].HART = _targethartid;			// HART affinity for this task (where it can run)
+		_ctx->tasks[4].regs[0] = (uint32_t)_task;		// Initial PC
+		_ctx->tasks[4].regs[1] = (uint32_t)retsink;		// Return to sink function
+		_ctx->tasks[4].regs[2] = _parentStackPointer;	// Stack pointer
+		_ctx->tasks[4].regs[3] = _gp;					// Global pointer
+		_ctx->tasks[4].regs[8] = _parentStackPointer;	// Frame pointer
+		_ctx->tasks[4].runLength = _runLength;			// Time slice dedicated to this task
+		_ctx->tasks[4].name = (uint32_t)_name;			// Pointer to task name (in external memory)
+		_ctx->tasks[4].state = TS_CREATED;
+		_ctx->tasks[4].targetstate = _initialState;		// Initial state of the task
 
-	return prevcount;
+		// Remove the halt request
+		KERNELLOG("%d: TaskAdd: Releasing break request for HART %d, now %d tasks, resuming from %d\n", _parenthartid, _targethartid, _ctx->numTasks, _ctx->currentTask);
+		_ctx->brkreq = BR_NONE;
+
+		return prevCount;
+	}
+	else
+	{
+		uint32_t prevCount = _ctx->numTasks;
+
+		// Insert the task before we increment task count
+		_ctx->tasks[prevCount].HART = _targethartid;			// HART affinity for this task (where it can run)
+		_ctx->tasks[prevCount].regs[0] = (uint32_t)_task;		// Initial PC
+		_ctx->tasks[prevCount].regs[1] = (uint32_t)retsink;		// Return to sink function
+		_ctx->tasks[prevCount].regs[2] = _parentStackPointer;	// Stack pointer
+		_ctx->tasks[prevCount].regs[3] = _gp;					// Global pointer
+		_ctx->tasks[prevCount].regs[4] = 0;						// tp
+		_ctx->tasks[prevCount].regs[5] = 0;						// t0
+		_ctx->tasks[prevCount].regs[6] = 0;						// t1
+		_ctx->tasks[prevCount].regs[7] = 0;						// t2
+		_ctx->tasks[prevCount].regs[8] = _parentStackPointer;	// Frame pointer
+		_ctx->tasks[prevCount].runLength = _runLength;			// Time slice dedicated to this task
+		_ctx->tasks[prevCount].name = (uint32_t)_name;			// Pointer to task name (in external memory)
+		_ctx->tasks[prevCount].state = TS_CREATED;
+		_ctx->tasks[prevCount].targetstate = _initialState;		// Initial state of the task
+
+		++_ctx->numTasks;
+		return prevCount;
+	}
 }
 
 void _task_exit_task_with_id(struct STaskContext *_ctx, uint32_t _taskid, uint32_t _signal)
@@ -792,6 +885,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				// Use the run length of next task to set the next timer interrupt
 				uint64_t future = now + runLength;
 				E32SetTimeCompare(future);
+
+				//KERNELLOG("%d: IRQ_M_EXT: TID\n", hartid);
 			}
 			break;
 
@@ -805,20 +900,24 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 				if (hwid&1)
 				{
 					/// Reserved for future use
+					KERNELLOG("%d: IRQ_M_EXT: RESERVED %d \n", hartid);
 				}
 				else if (hwid&2)
 				{
 					HandleSDCardDetect();
+					//KERNELLOG("%d: IRQ_M_EXT: SDSWITCH %d \n", hartid);
 				}
 				else if (hwid&4)
 				{
 					HandleUART();
+					//KERNELLOG("%d: IRQ_M_EXT: UART %d \n", hartid);
 				}
 				else
 				{
 					// No familiar bit set, unknown device
 					taskctx->kernelError = 1;
 					taskctx->kernelErrorData[0] = hwid;	// The unknown hardwareid received
+					KERNELLOG("%d: IRQ_M_EXT: UNKNOWN %d \n", hartid, hwid);
 				}
 			}
 			break;
@@ -847,6 +946,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 
 					// Terminate task on first chance and remove from list of running tasks
 					_task_exit_current_task(taskctx);
+					KERNELLOG("%d: Illegal instruction at PC: %08X, Task: %d, Instruction: %08X\n", hartid, PC, taskctx->currentTask, *((uint32_t*)PC));
 					// Force switch to next available task
 					_task_switch_to_next(taskctx);
 				}
@@ -867,6 +967,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					taskctx->kernelErrorData[2] = PC;					// Program counter
 					// Exit task in non-debug mode
 					_task_exit_current_task(taskctx);
+					KERNELLOG("%d: Breakpoint at PC: %08X, Task: %d, Instruction: %08X\n", hartid, PC, taskctx->currentTask, *((uint32_t*)PC));
 					// Force switch to next available task
 					_task_switch_to_next(taskctx);
 				}
@@ -904,6 +1005,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					//sys_io_setup(unsigned nr_reqs, aio_context_t __user *ctx);
 					errno = EINVAL;
 					write_csr(0x8AA, 0xFFFFFFFF);
+					KERNELLOG("%d: io_setup()\n", hartid);
 				}
 				else if (value==17) // getcwd()
 				{
@@ -916,12 +1018,14 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 						write_csr(0x8AA, targetbuffer);
 					else
 						write_csr(0x8AA, 0x0); // nullptr
+					KERNELLOG("%d: getcwd() -> %s\n", hartid, targetbuffer ? targetbuffer : "NULL");
 				}
 				else if (value==29) // ioctl
 				{
 					// TODO: device io control commands
 					errno = EINVAL;
 					write_csr(0x8AA, 0xFFFFFFFF);
+					KERNELLOG("%d: ioctl()\n", hartid);
 				}
 				else if (value==50) // chdir
 				{
@@ -937,6 +1041,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					}
 					else
 						write_csr(0x8AA, 0xFFFFFFFF);
+					KERNELLOG("%d: chdir(%s)\n", hartid, path ? path : "NULL");
 				}
 				else if (value==57) // close()
 				{
@@ -950,6 +1055,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 						f_close(&s_filehandles[file]);
 					}
 					write_csr(0x8AA, 0);
+					KERNELLOG("%d: close(%d)\n", hartid, file);
 				}
 				else if (value==62) // lseek()
 				{
@@ -985,6 +1091,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 						errno = EIO;
 						write_csr(0x8AA, 0xFFFFFFFF);
 					}
+					KERNELLOG("%d: lseek(%d,%d,%d)\n", hartid, file, offset, whence);
 				}
 				else if (value==63) // read()
 				{
@@ -1031,6 +1138,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 							write_csr(0x8AA, 0xFFFFFFFF);
 						}
 					}
+					KERNELLOG("%d: read(%d,0x%08X,%d)\n", hartid, file, ptr, len);
 				}
 				else if (value==64) // write()
 				{
@@ -1064,6 +1172,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 							write_csr(0x8AA, 0xFFFFFFFF);
 						}
 					}
+					KERNELLOG("%d: write(%d,0x%08X,%d)\n", hartid, file, ptr, count);
 				}
 				else if (value==80) // newfstat()
 				{
@@ -1130,6 +1239,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 							}
 						}
 					}
+					KERNELLOG("%d: newfstat(%d,0x%08X)\n", hartid, fd, ptr);
 				}
 				else if (value==93) // exit()
 				{
@@ -1139,6 +1249,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					uint32_t retval = read_csr(0x8AA); // A0
 					write_csr(0x8AA, retval);
 					_task_abort_to(taskctx, 0);
+					KERNELLOG("%d: exit()\n", hartid);
 				}
 				else if (value==95) // wait()
 				{
@@ -1146,6 +1257,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					// pid_t wait(int *wstatus);
 					errno = ECHILD;
 					write_csr(0x8AA, 0xFFFFFFFF);
+					KERNELLOG("%d: wait()\n", hartid);
 				}
 				else if (value==129) // kill(pid_t pid, int sig)
 				{
@@ -1153,16 +1265,16 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					uint32_t pid = read_csr(0x8AA); // A0
 					uint32_t sig = read_csr(0x8AB); // A1
 					_task_exit_task_with_id(taskctx, pid, sig);
-					kdebugprintf("\nSIG:0x%x PID:0x%x\n", sig, pid);
 					write_csr(0x8AA, sig);
 					_task_abort_to(taskctx, 0);
+					KERNELLOG("%d: kill(%d,%d)\n", hartid, pid, sig);
 				}
 				else if (value==214) // brk()
 				{
 					uint32_t addrs = read_csr(0x8AA); // A0
 					uint32_t retval = core_brk(addrs);
 					write_csr(0x8AA, retval);
-					//UARTPrintf("%d:brk(%0X)->%08x\n", hartid, addrs, retval);
+					KERNELLOG("%d: brk(0x%08X)->0x%08X\n", hartid, addrs, retval);
 				}
 				else if (value==403) // gettimeofday()
 				{
@@ -1173,6 +1285,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					tv->tv_sec = ClockToMs(now) / 1000;
 					tv->tv_usec = usec;
 					write_csr(0x8AA, 0x0);
+					KERNELLOG("%d: gettimeofday(0x%08X)\n", hartid, ptr);
 				}
 				else if (value==1024) // open()
 				{
@@ -1233,6 +1346,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 						// STDIN/STDOUT/STDERR
 						write_csr(0x8AA, 0x0);
 					}
+					KERNELLOG("%d: open(%s)->%d\n", hartid, (char*)nptr ? (char*)nptr : "NULL", currenthandle);
 				}
 				else if (value==1025) // rename()
 				{
@@ -1251,6 +1365,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					}
 					else
 						write_csr(0x8AA, 0xFFFFFFFF);
+					KERNELLOG("%d: rename(%s,%s)\n", hartid, oldname ? oldname : "NULL", newname ? newname : "NULL");
 				}
 				else if (value==1026) // remove() (unlink)
 				{
@@ -1263,6 +1378,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 						errno = ENOENT;
 						write_csr(0x8AA, 0xFFFFFFFF);
 					}
+					KERNELLOG("%d: remove(%s)\n", hartid, (char*)nptr ? (char*)nptr : "NULL");
 				}
 				else if (value==1038) // _stat()
 				{
@@ -1298,19 +1414,24 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 						buf->st_ctim.tv_nsec = 0;
 						write_csr(0x8AA, 0x0);
 					}
+					KERNELLOG("%d: _stat(%s,0x%08X)\n", hartid, (char*)nptr ? (char*)nptr : "NULL", ptr);
 				}
 				else if (value==16384) // task_add
 				{
 					struct STaskContext *context = (struct STaskContext *)read_csr(0x8AA); // A0
-					const char * name = (const char *)read_csr(0x8AB); // A1
-					taskfunc task = (taskfunc)read_csr(0x8AC); // A2
-					enum ETaskState initialState = read_csr(0x8AD); // A3
-					const uint32_t runLength = read_csr(0x8AE); // A4
-					const uint32_t stackPointer = read_csr(0x8AF); // A5
-					const uint32_t gp = read_csr(0x8A3); // GP
-					uint32_t parentSP = (stackPointer != 0x0) ? stackPointer : read_csr(0x8A2); // SP
+					// Figure out core id from the context pointer
+					struct STaskContext *contextpool = (struct STaskContext *)DEVICE_MAIL;
+					uint32_t targetHartid = (uint32_t)((uintptr_t)context - (uintptr_t)&contextpool[0]) / sizeof(struct STaskContext);
+					const char * name = (const char *)read_csr(0x8AB);							// A1
+					taskfunc task = (taskfunc)read_csr(0x8AC);									// A2
+					enum ETaskState state = read_csr(0x8AD);									// A3
+					const uint32_t runLength = read_csr(0x8AE);									// A4
+					const uint32_t stackPointer = read_csr(0x8AF);								// A5
+					const uint32_t gp = read_csr(0x8A3);										// GP
+					uint32_t parentSP = (stackPointer != 0x0) ? stackPointer : read_csr(0x8A2);	// SP
+					KERNELLOG("%d: task_add(%s) (PC:0x%08X SP:0x%08X ts:%d aimed at core %d)\n", hartid, name ? name : "NULL", task, parentSP, state, targetHartid);
 					// Using parent's stack pointer as the new task's stack pointer
-					int retVal = _task_add(context, name, task, initialState, runLength, hartid, gp, parentSP);
+					int retVal = _task_add(context, name, task, state, runLength, hartid, targetHartid, gp, parentSP);
 					write_csr(0x8AA, retVal);
 				}
 				else if (value==16385) // task_switch_to_next
@@ -1319,6 +1440,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					struct STaskContext *context = (struct STaskContext *)read_csr(0x8AA); // A0
 					int retVal = _task_switch_to_next(context);
 					write_csr(0x8AA, retVal);
+					KERNELLOG("%d: task_switch_to_next()\n", hartid);
 				}
 				else if (value==16386) // _task_exit_task_with_id
 				{
@@ -1328,6 +1450,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					_task_exit_task_with_id(context, taskid, signal);
 					write_csr(0x8AA, 0);
 					_task_abort_to(taskctx, 0);
+					KERNELLOG("%d: task_abort_to()\n", hartid);
 				}
 				else if (value==16387) // _task_exit_current_task
 				{
@@ -1335,6 +1458,7 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					_task_exit_current_task(context);
 					write_csr(0x8AA, 0);
 					_task_abort_to(taskctx, 0);
+					KERNELLOG("%d: task_exit_current_task()\n", hartid);
 				}
 				else if (value==16388) // _task_yield
 				{
@@ -1342,30 +1466,33 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					// Ignore return value, only OS has access to it
 					_task_yield();
 					write_csr(0x8AA, 0);
+					KERNELLOG("%d: task_yield()\n", hartid);
 				}
 				else if (value==16389) // _task_get_context
 				{
 					uint32_t taskhartid = read_csr(0x8AA); // A0
 					struct STaskContext *context = _task_get_context(taskhartid);
 					write_csr(0x8AA, (uint32_t)context);
+					KERNELLOG("%d: task_get_context()\n", hartid);
 				}
 				else if (value==16390) // _task_get_shared_memory
 				{
 					void* sharedmem = _task_get_shared_memory();
 					write_csr(0x8AA, (uint32_t)sharedmem);
+					KERNELLOG("%d: task_get_shared_memory()\n", hartid);
 				}
 				else if (value==16391) // void *sbrk(uint32_t incr)
 				{
 					uint32_t incr = read_csr(0x8AA); // A0
 					uint32_t retval = core_sbrk(incr);
 					write_csr(0x8AA, retval);
-					//UARTPrintf("%d:sbrk(%d)->%08x\n", hartid, incr, retval);
+					KERNELLOG("%d: sbrk(%d)->0x%08X\n", hartid, incr, retval);
 				}
 				else // Unimplemented syscalls drop here
 				{
-					kdebugprintf("unimplemented ECALL: %d\b", value);
 					errno = EIO;
 					write_csr(0x8AA, 0xFFFFFFFF);
+					kdebugprintf("%d: Unimplemented ECALL: %d\b", hartid, value);
 				}
 			}
 			break;
@@ -1374,9 +1501,9 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			case CAUSE_LOAD_ACCESS:
 			case CAUSE_STORE_ACCESS:
 			{
-				kdebugprintf("Memory access fault: %d\b", value);
 				errno = EACCES;
 				write_csr(0x8AA, 0xFFFFFFFF);
+				kdebugprintf("Memory access fault: %d\b", value);
 			}
 			break;
 
@@ -1384,9 +1511,9 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 			case CAUSE_LOAD_PAGE_FAULT:
 			case CAUSE_STORE_PAGE_FAULT:
 			{
-				kdebugprintf("Memory page fault: %d\b", value);
 				errno = EFAULT;
 				write_csr(0x8AA, 0xFFFFFFFF);
+				kdebugprintf("Memory page fault: %d\b", value);
 			}
 
 			/*case CAUSE_MISALIGNED_FETCH:

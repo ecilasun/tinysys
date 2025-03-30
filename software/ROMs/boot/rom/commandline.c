@@ -14,10 +14,10 @@
 extern struct SCommandLineContext* s_cliCtx;
 
 // Names of task states for process dump
-static const char *s_taskstates[]={ "NONE", "HALT", "EXEC", "TERM", "DEAD"};
+static const char *s_taskstates[]={ "NONE", "HALT", "EXEC", "TERM", "DEAD", "IDLE" };
 
 // Device version
-#define ROMVERSIONSTRING "00150"
+#define ROMVERSIONSTRING "00151"
 #define GATEWAREVERSIONSTRING "00203"
 #define CORECLOCKSTRING "175MHz"
 
