@@ -393,6 +393,8 @@ uint32_t statsCallback(Uint32 interval, void* param)
 	snprintf(stats, 512, "%sD$  read hits / misses: %d / %d\n", stats, cpu0->m_dcache.m_readhits, cpu0->m_dcache.m_readmisses);
 	snprintf(stats, 512, "%s   write hits / misses: %d / %d\n", stats, cpu0->m_dcache.m_writehits, cpu0->m_dcache.m_writemisses);
 
+	if (s_statSurface)
+		SDL_FreeSurface(s_statSurface);
 	s_statSurface = TTF_RenderText_Blended_Wrapped(s_debugfont, stats, {255,0,255}, WIDTH);
 
 	cpu0->m_icache.m_hits = 0;
