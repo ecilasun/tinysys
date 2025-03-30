@@ -24,7 +24,6 @@ struct EmulatorContext
 {
 	CEmulator* emulator{ nullptr };
 	SDL_Window* window{ nullptr };
-	SDL_Surface* surface{ nullptr };
 	SDL_Surface* compositesurface{ nullptr };
 	SDL_GameController* gamecontroller{ nullptr };
 };
@@ -372,7 +371,7 @@ uint32_t videoCallback(Uint32 interval, void* param)
 #endif
 
 	// Update window surface
-	SDL_BlitSurface(ctx->compositesurface, nullptr, ctx->surface, nullptr);
+	SDL_BlitScaled(ctx->compositesurface, nullptr, SDL_GetWindowSurface(ctx->window), nullptr);
 	SDL_UpdateWindowSurface(ctx->window);
 
 	return interval;
@@ -637,7 +636,7 @@ int SDL_main(int argc, char** argv)
 		fprintf(stderr, "Error initializing SDL2: %s\n", SDL_GetError());
 		return -1;
 	}
-	ectx.window = SDL_CreateWindow("tinysys", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT+8, SDL_WINDOW_SHOWN);
+	ectx.window = SDL_CreateWindow("tinysys", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT+8, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 
 	if (TTF_Init() != 0)
 	{
@@ -651,8 +650,7 @@ int SDL_main(int argc, char** argv)
 		return -1;
 	}
 
-	ectx.surface = SDL_GetWindowSurface(ectx.window);
-	if (!ectx.surface)
+	if (!SDL_GetWindowSurface(ectx.window))
 	{
 		fprintf(stderr, "Could not create window surface\n");
 		return -1;
@@ -884,7 +882,6 @@ int SDL_main(int argc, char** argv)
 	SDL_WaitThread(audiothreadID, nullptr);
 	SDL_ClearQueuedAudio(ectx.emulator->m_audioDevice);
 	SDL_FreeSurface(ectx.compositesurface);
-	SDL_FreeSurface(ectx.surface);
 	SDL_DestroyWindow(ectx.window);
 	SDL_CloseAudioDevice(ectx.emulator->m_audioDevice);
 	SDL_Quit();
