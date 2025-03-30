@@ -112,7 +112,15 @@ void CSDCard::PopulateFileSystem()
 void CSDCard::Reset()
 {
 	// Prepare block of memory to hold the FAT32 image
+	SDFreeBlockMem();
 	SDInitBlockMem();
+
+	// Unmount previous fs if it exists first, to clean up any references to the FATFS that we're about to free.
+	if (m_fs)
+		f_mount(NULL, "sd:", 0);
+
+	delete m_fs;
+	delete[] m_workbuf;
 
 	m_fs = new FATFS();
 	m_workbuf = new uint8_t[4096];
