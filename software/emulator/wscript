@@ -44,6 +44,7 @@ def build(bld):
         compile_flags =  ['/permissive-', '/arch:AVX2', '/GL', '/WX', '/O2', '/fp:fast', '/Qfast_transcendentals', '/Zi', '/EHsc', '/FS', '/DRELEASE', '/D_SECURE_SCL 0'] # '/DGDB_COMM_DEBUG' to enable GBB stub debug messages
         platform_flags = ['/std:c++20']
         linker_flags = ['/SUBSYSTEM:CONSOLE', '/LTCG', '/RELEASE']
+        APPNAME = 'tinysys'
     elif platform.system().lower().startswith('darwin'):
         libs = ['SDL2', 'SDL2_ttf']
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_DARWIN', 'RELEASE'] # 'CPU_STATS'
@@ -52,6 +53,7 @@ def build(bld):
         compile_flags = ['-march=native', '-O3', '-arch', 'arm64']
         platform_flags = ['-std=c++20']
         linker_flags = []
+        APPNAME = 'mactinysys'
     elif platform.system().lower().startswith('linux'):
         libs = ['SDL2', 'SDL2_ttf']
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_LINUX', 'RELEASE', 'GALLIFREY'] # 'CPU_STATS'
@@ -60,6 +62,7 @@ def build(bld):
         compile_flags = ['-march=native', '-O3', '-fno-omit-frame-pointer', '-fno-common', '-fno-exceptions', '-fno-rtti']
         platform_flags = ['-std=c++20']
         linker_flags = []
+        APPNAME = 'tinysys'
 
     # build 3rdparty fat32 code
     bld.stlib(
@@ -86,7 +89,7 @@ def build(bld):
         source=glob.glob('*.cpp'),
         cxxflags=compile_flags + platform_flags,
         ldflags=linker_flags,
-        target='tinysys',
+        target=APPNAME,
         defines=platform_defines,
         includes=includes,
         libpath=sdk_lib_path,

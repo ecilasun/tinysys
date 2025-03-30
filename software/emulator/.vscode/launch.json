@@ -16,10 +16,18 @@
             "externalConsole": false
         },
 	    {
-            "name": "C++ Launch (Linux / Darwin)",
+            "name": "C++ Launch (Linux)",
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/release/tinysys",
+            "args": ["ROMs/rom.bin"],
+            "cwd": "${workspaceFolder}/"
+        },
+	    {
+            "name": "C++ Launch (Darwin)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/release/mactinysys",
             "args": ["ROMs/rom.bin"],
             "cwd": "${workspaceFolder}/"
         }
