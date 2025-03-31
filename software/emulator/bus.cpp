@@ -40,6 +40,7 @@ CBus::~CBus()
 	if (m_sdcc) delete m_sdcc;
 	if (m_mail) delete m_mail;
 	if (m_uart) delete m_uart;
+	if (m_null) delete m_null;
 	if (m_leds) delete m_leds;
 	if (m_vpuc) delete m_vpuc;
 	if (m_apu) delete m_apu;

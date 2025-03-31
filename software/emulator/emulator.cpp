@@ -46,9 +46,12 @@ bool CEmulator::Reset(const char* romFile, uint32_t resetvector)
 		fclose(fp);
 	}
 
+	if (m_bus) delete m_bus;
 	m_bus = new CBus(resetvector);
 	m_bus->Reset(m_rombin, m_romsize);
 
+	if (m_cpu[0]) delete m_cpu[0];
+	if (m_cpu[1]) delete m_cpu[1];
 	m_cpu[0] = new CRV32(0, resetvector);
 	m_cpu[1] = new CRV32(1, resetvector);
 	m_cpu[0]->Reset();

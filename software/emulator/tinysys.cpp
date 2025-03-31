@@ -888,5 +888,7 @@ int SDL_main(int argc, char** argv)
 	SDL_CloseAudioDevice(ectx.emulator->m_audioDevice);
 	SDL_Quit();
 
+	delete ectx.emulator;
+
 	return 0;
 }
