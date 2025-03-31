@@ -732,10 +732,8 @@ int SDL_main(int argc, char** argv)
 				{
 					CCSRMem* csr0 = ectx.emulator->m_bus->GetCSR(0);
 					CCSRMem* csr1 = ectx.emulator->m_bus->GetCSR(1);
-					CCSRMem* csr2 = ectx.emulator->m_bus->GetCSR(2);
 					csr0->RequestReset();
 					csr1->RequestReset();
-					csr2->RequestReset();
 				}
 				else if ((ev.key.keysym.mod & KMOD_CTRL) && ev.key.keysym.sym == 'c')
 					ectx.emulator->QueueByte(3);
