@@ -19,7 +19,7 @@
             "name": "C++ Launch (Linux)",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/build/release/tinysys",
+            "program": "${workspaceFolder}/bin/tinysys",
             "args": ["ROMs/rom.bin"],
             "cwd": "${workspaceFolder}/"
         },
