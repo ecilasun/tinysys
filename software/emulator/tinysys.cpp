@@ -858,10 +858,16 @@ int SDL_main(int argc, char** argv)
 			memcpy(old_keystates, keystates, SDL_NUM_SCANCODES);
 		}
 
+		uint64_t currentTick = SDL_GetTicks64() * ONE_MS_IN_TICKS;
 #if defined(CAT_LINUX)
-		videoCallback(16, &ectx);
+		uint64_t deltaTick = currentTick - startTick;
+		if (deltaTick>16)
+		{
+			startTick = currentTick;
+			videoCallback(16, &ectx);
+		}
 #endif
-		s_wallclock = SDL_GetTicks64() * ONE_MS_IN_TICKS - startTick;
+		s_wallclock = currentTick;
 	} while(s_alive);
 
 #if defined(CPU_STATS)

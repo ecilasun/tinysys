@@ -27,6 +27,8 @@ void SDReportMemoryUsage()
 
 void SDFreeBlockMem()
 {
+	if (!s_alloctable)
+		return;
 	for (int i = 0; i < 512; ++i)
 	{
 		if (s_alloctable[i])
