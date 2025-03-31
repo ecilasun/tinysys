@@ -36,6 +36,7 @@ r2.0A: Added vectored interrupt support and bumped clock to 175MHz<br>
 00202: Task stack sizes bumped to 16K from 1K, watermark register now does not survive hard reset (only soft reset)<br>
 00203: Bumped scratchpad to 64K, reset is more robust, updated ROM image with some memory fixes<br>
 00151: OS updates for task errors<br>
+00204: OS changes<br>
 
 # Device gateware
 

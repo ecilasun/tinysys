@@ -1,10 +1,10 @@
-tinysys.cache/**
-tinysys.gen/**
-tinysys.runs/**
-tinysys.sim/**
-tinysys.ip_user_files/**
-tmp/simtop.*
-tinysys.srcs/sources_1/ip/.Xil/**.lock
+hardware/tinysys.cache/**
+hardware/tinysys.gen/**
+hardware/tinysys.runs/**
+hardware/tinysys.sim/**
+hardware/tinysys.ip_user_files/**
+hardware/tmp/simtop.*
+hardware/tinysys.srcs/sources_1/ip/.Xil/**.lock
 software/.waf3**
 software/waf3**
 software/build**
