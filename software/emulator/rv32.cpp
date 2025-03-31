@@ -307,7 +307,7 @@ void CRV32::SecondaryReset()
 		m_GPR[i] = 0x00000000;
 
 	m_instructions.clear();
-	m_decodedBlocks.clear();
+	ClearDecodedBlocks();
 	m_fetchstate = EFetchRead;
 }
 
@@ -920,6 +920,15 @@ void CRV32::GatherInstructions(CCSRMem* csr, CBus* bus)
 	} while (!doneFetching);
 }
 
+void CRV32::ClearDecodedBlocks()
+{
+	for (const auto& blockIter : m_decodedBlocks)
+	{
+		delete blockIter.second;
+	}
+	m_decodedBlocks.clear();
+}
+
 bool CRV32::FetchDecode(CBus* bus)
 {
 	if (m_fetchstate == EFetchInit)
@@ -1100,7 +1109,7 @@ bool CRV32::Execute(CBus* bus)
 			case OP_FENCE:
 				m_icache.Discard();
 				m_instructions.clear();
-				m_decodedBlocks.clear();
+				ClearDecodedBlocks();
 				m_branchresolved = 1;
 				m_branchtarget = instr.m_pc + 4;
 			break;

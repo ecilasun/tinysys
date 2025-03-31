@@ -228,6 +228,7 @@ private:
 	void InjectISRHeader(std::vector<SDecodedInstruction> *code);
 	void InjectISRFooter(std::vector<SDecodedInstruction>* code);
 	void GatherInstructions(CCSRMem* csr, CBus* bus);
+	void ClearDecodedBlocks();
 	uint32_t ALU(SDecodedInstruction &instr);
 	uint32_t BLU(SDecodedInstruction& instr);
 };
