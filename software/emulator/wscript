@@ -47,7 +47,7 @@ def build(bld):
         APPNAME = 'tinysys'
     elif platform.system().lower().startswith('darwin'):
         libs = ['SDL2', 'SDL2_ttf']
-        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_DARWIN', 'RELEASE'] # 'CPU_STATS'
+        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_DARWIN', 'RELEASE', 'GALLIFREY'] # 'CPU_STATS'
         includes = ['source', 'includes', '/opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2', '/opt/homebrew/Cellar/sdl2_ttf/2.22.0/include/SDL2', '../3rdparty/fat32']
         sdk_lib_path = ['/opt/homebrew/Cellar/sdl2/2.30.5/lib/', '/opt/homebrew/Cellar/sdl2_ttf/2.22.0/lib/']
         compile_flags = ['-march=native', '-O3', '-arch', 'arm64']
@@ -100,6 +100,10 @@ def build(bld):
         bld(features='subst', source=glob.glob('3rdparty/SDL2/lib/x64/SDL2.dll'), target=os.path.abspath('bin/SDL2.dll'), is_copy=True)
         bld(features='subst', source=glob.glob('3rdparty/SDL2_ttf/lib/x64/SDL2_ttf.dll'), target=os.path.abspath('bin/SDL2_ttf.dll'), is_copy=True)
         bld(features='subst', source='tinysys.exe', target=os.path.abspath('bin/tinysys.exe'), is_copy=True)
+    elif platform.system().lower().startswith('darwin'):
+        # bld(features='subst', source=glob.glob('/opt/homebrew/Cellar/sdl2/2.30.5/lib/libSDL2.dylib'), target=os.path.abspath('bin/libSDL2.dylib'), is_copy=True)
+        # bld(features='subst', source=glob.glob('/opt/homebrew/Cellar/sdl2_ttf/2.22.0/lib/libSDL2_ttf.dylib'), target=os.path.abspath('bin/libSDL2_ttf.dylib'), is_copy=True)
+        bld(features='subst', source='mactinysys', target=os.path.abspath('bin/mactinysys'), is_copy=True)
     else:
         # bld(features='subst', source=glob.glob('/opt/homebrew/Cellar/sdl2/2.30.5/lib/libSDL2.dylib'), target=os.path.abspath('bin/libSDL2.dylib'), is_copy=True)
         # bld(features='subst', source=glob.glob('/opt/homebrew/Cellar/sdl2_ttf/2.22.0/lib/libSDL2_ttf.dylib'), target=os.path.abspath('bin/libSDL2_ttf.dylib'), is_copy=True)
