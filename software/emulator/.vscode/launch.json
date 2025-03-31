@@ -27,7 +27,7 @@
             "name": "C++ Launch (Darwin)",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/build/release/mactinysys",
+            "program": "${workspaceFolder}/bin/mactinysys",
             "args": ["ROMs/rom.bin"],
             "cwd": "${workspaceFolder}/"
         }

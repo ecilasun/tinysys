@@ -104,7 +104,9 @@ def build(bld):
         # bld(features='subst', source=glob.glob('/opt/homebrew/Cellar/sdl2/2.30.5/lib/libSDL2.dylib'), target=os.path.abspath('bin/libSDL2.dylib'), is_copy=True)
         # bld(features='subst', source=glob.glob('/opt/homebrew/Cellar/sdl2_ttf/2.22.0/lib/libSDL2_ttf.dylib'), target=os.path.abspath('bin/libSDL2_ttf.dylib'), is_copy=True)
         bld(features='subst', source='mactinysys', target=os.path.abspath('bin/mactinysys'), is_copy=True)
+        bld(rule='chmod +x ' + os.path.abspath('bin/mactinysys'), always=True)
     else:
         # bld(features='subst', source=glob.glob('/opt/homebrew/Cellar/sdl2/2.30.5/lib/libSDL2.dylib'), target=os.path.abspath('bin/libSDL2.dylib'), is_copy=True)
         # bld(features='subst', source=glob.glob('/opt/homebrew/Cellar/sdl2_ttf/2.22.0/lib/libSDL2_ttf.dylib'), target=os.path.abspath('bin/libSDL2_ttf.dylib'), is_copy=True)
         bld(features='subst', source='tinysys', target=os.path.abspath('bin/tinysys'), is_copy=True)
+        bld(rule='chmod +x ' + os.path.abspath('bin/tinysys'), always=True)

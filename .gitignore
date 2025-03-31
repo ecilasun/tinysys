@@ -36,6 +36,7 @@ software/ESP32S3/defaultrom/build/**
 software/**/.DS_Store
 software/emulator/bin/**
 !software/emulator/bin/tinysys**
+!software/emulator/bin/mactinysys**
 !software/emulator/bin/**.dll
 !software/emulator/bin/_ensurefolderexists.txt
 software/emulator/emulator/.vs/**
