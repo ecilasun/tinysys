@@ -65,5 +65,5 @@
 		  }
 	},
 	"idf.portWin": "COM4",
-	"idf.pythonInstallPath": "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3"
+	"idf.pythonInstallPath": "C:\\Users\\ecila\\.espressif\\tools\\idf-python\\3.11.2\\python.exe"
 }

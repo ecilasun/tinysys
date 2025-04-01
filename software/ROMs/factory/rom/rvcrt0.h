@@ -7,7 +7,7 @@ extern "C"
 	{
 		asm volatile (
 
-		"li sp, 0x000003FC;"		// Assuming only 1kbytes of memory
+		"li sp, 0x00001FFC;"		// Assuming only 2kbytes of memory, minus 16 bytes from the end
 
 		// Single hardware thread simply needs to use the setup address
 		"mv s0, sp;"				// Set frame pointer to current stack pointer
