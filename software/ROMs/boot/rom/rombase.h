@@ -54,5 +54,6 @@ uint64_t _task_yield();
 // Debug helpers
 uint32_t _task_replace_instruction(uint32_t _newInstruction, uint32_t _address);
 
-#define TASK_STACK_SIZE 16384
-#define TASK_STACK_POINTER(_hartid, _taskIndex, _stacksize) (TASKMEM_END_STACK_END - ((_hartid*TASK_MAX+_taskIndex)*_stacksize))
+// Stack size for tasks: 1Mb
+#define TASK_STACK_SIZE (1024*1024)
+#define TASK_STACK_POINTER(_hartid, _taskIndex) (TASKMEM_END_STACK_END - ((_hartid*TASK_MAX+_taskIndex)*TASK_STACK_SIZE))

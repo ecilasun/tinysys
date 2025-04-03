@@ -17,7 +17,7 @@ extern struct SCommandLineContext* s_cliCtx;
 static const char *s_taskstates[]={ "NONE", "HALT", "EXEC", "TERM", "DEAD", "IDLE" };
 
 // Device version
-#define ROMVERSIONSTRING "00151"
+#define ROMVERSIONSTRING "00152"
 #define GATEWAREVERSIONSTRING "00203"
 #define CORECLOCKSTRING "175MHz"
 
@@ -76,9 +76,17 @@ void ShowVersion(struct EVideoContext *kernelgfx)
 	uint32_t waterMark = read_csr(0xFF0);
 	uint32_t isEmulator = read_csr(0xF12) & 0x80000000 ? 0 : 1; // CSR_MARCHID is 0x80000000 for read hardware, 0x00000000 for emulator
 
+#ifdef KERNEL_DEBUG
+	VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLERED);
+#else
 	VPUConsoleSetColors(kernelgfx, CONSOLEWHITE, CONSOLEGRAY);
+#endif
 	kprintf("\n");
 	kfillline(' ');
+#ifdef KERNEL_DEBUG
+	kprintf("DEBUG MODE ROM - NOT FOR DEVELOPMENT USE");
+	kfillline(' ');
+#endif
 	kprintf(" OS               : " ROMVERSIONSTRING " Loaded from %s", waterMark == 0 ? "ROM" : "SDCARD");
 	kfillline(' ');
 	kprintf(" Board            : issue 2H:DEC24");
@@ -293,7 +301,7 @@ uint32_t ExecuteCmd(char *_cmd, struct EVideoContext *kernelgfx)
 				}
 
 				// User tasks always boot on main CPU, and can then add their own tasks to the other CPUs
-				s_cliCtx->userTaskID = TaskAdd(tctx[0], command, (taskfunc)_runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS, TASK_STACK_POINTER(0, 2, TASK_STACK_SIZE));
+				s_cliCtx->userTaskID = TaskAdd(tctx[0], command, (taskfunc)_runExecTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS, TASK_STACK_POINTER(0, 2));
 
 				return 0;
 			}

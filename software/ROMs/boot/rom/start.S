@@ -88,8 +88,10 @@ _noatexitfound:
 
 	// All other cores have reached here before CPU#0 and are in a WFI loop
 _helpercore:						// Put hardware thread to sleep (NOTE: even with MIE disabled we can reset this core later)
-	slli a3, a3, 8					// hartid*256
-	sub sp, sp, a3					// Stack offset for this CPU
+	slli a3, a3, 2					// *TASK_MAX
+	slli a3, a3, 10					// *1024
+	slli a3, a3, 10					// *1024 (1Mbytes per task)
+	sub sp, sp, a3					// TASKMEM_END_STACK_END - (_hartid*TASK_MAX*TASK_STACK_SIZE)
 	mv s0, sp						// Set frame pointer to current stack pointer
 
 _freezecore:						// Go to sleep (will be 'reset' by CPU#0 to jump to address in mscratch)

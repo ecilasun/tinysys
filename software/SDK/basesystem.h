@@ -51,7 +51,7 @@
 #define KERNEL_DEVICECONTROL			0x0F162000 // Device control blocks (4096 bytes)
 #define KERNEL_NOMANSLAND				0x0F163000 // Kernel reserved space (~16 MBytes)
 // Task stack space
-#define TASKMEM_END_STACK_END			0x0FFD0000 // Tasks stack space above this (832 KBytes)
+#define TASKMEM_END_STACK_END			0x0FFD0000 // Tasks stack space above this (14772 KBytes)
 //  Kernel stacks for all cores, 256 bytes each
 #define STACK_BASE_HART1				0x0FFDFEF0 // Kernel stack above these (65264 bytes)
 #define STACK_BASE_HART0				0x0FFDFFF0

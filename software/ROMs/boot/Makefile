@@ -44,6 +44,7 @@ RISCV_PREFIX ?= riscv64-unknown-elf-
 endif
 # No filesystem when defined
 # FILESYSTEM ?= -DDISABLE_FILESYSTEM
+# use -DKERNEL_DEBUG to enable debug messages in the ROM
 FILESYSTEM ?= -DENABLE_FILESYSTEM -DLFS_NO_MALLOC -DLFS_NO_DEBUG
 # The MEM file will be using 16 byte (128bit) output width to match the ROM layout
 # (cache controller reads x4 16byte chunks for each line)

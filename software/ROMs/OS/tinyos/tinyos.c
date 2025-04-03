@@ -83,7 +83,7 @@ void __attribute__((aligned(64), noinline)) UserMain()
 	_task_init_context(self);
 
 	struct STaskContext *taskctx = _task_get_context(self);
-	_task_add(taskctx, "CPUIdle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS, self, 0 /*no gp*/, TASK_STACK_POINTER(self, 0, TASK_STACK_SIZE));
+	_task_add(taskctx, "CPUIdle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS, self, 0 /*no gp*/, TASK_STACK_POINTER(self, 0));
 
 	InstallISR(self, false, true);
 
@@ -205,8 +205,8 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 	struct STaskContext *taskctx[2];
 	taskctx[0] = _task_get_context(self);
 	taskctx[1] = _task_get_context(1);
-	_task_add(taskctx[0], "CPUIdle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS, self, 0 /*no gp*/, TASK_STACK_POINTER(self, 0, TASK_STACK_SIZE));
-	_task_add(taskctx[0], "CLI", _CLITask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS, self, 0 /*no gp*/, TASK_STACK_POINTER(self, 1, TASK_STACK_SIZE));
+	_task_add(taskctx[0], "CPUIdle", _stubTask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS, self, 0 /*no gp*/, TASK_STACK_POINTER(self, 0));
+	_task_add(taskctx[0], "CLI", _CLITask, TS_RUNNING, HUNDRED_MILLISECONDS_IN_TICKS, self, 0 /*no gp*/, TASK_STACK_POINTER(self, 1));
 
 	LEDSetState((0x7<<2)|0x1);														// xOOO--
 	InstallISR(self, true, true);

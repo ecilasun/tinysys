@@ -628,14 +628,12 @@ uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader
 		f_lseek(fp, fheader->m_PHOff + fheader->m_PHEntSize*i);
 		f_read(fp, &pheader, sizeof(struct SElfProgramHeader32), &bytesread);
 
-		KERNELLOG("ELF: header: @%04X : %d\n", fheader->m_PHOff, bytesread);
+		KERNELLOG("ELF: header: @%08X : %d\n", fheader->m_PHOff, bytesread);
 
 		// Something here
 		if (pheader.m_MemSz != 0)
 		{
 			uint8_t *memaddr = (uint8_t *)(pheader.m_PAddr + _relocOffset);
-
-			KERNELLOG("ELF: section: @%04X : %d\n", pheader.m_PAddr, pheader.m_MemSz);
 
 			// Check illegal range
 			if ((uint32_t)memaddr>=HEAP_END || ((uint32_t)memaddr)+pheader.m_MemSz>=HEAP_END)
@@ -654,15 +652,27 @@ uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader
 				{
 					f_lseek(fp, pheader.m_Offset);
 					f_read(fp, memaddr, pheader.m_FileSz, &bytesread);
+
+					KERNELLOG("ELF: section loaded: @%08X : %d\n", pheader.m_PAddr, pheader.m_MemSz);
+				}
+				else
+				{
+					KERNELLOG("ELF: section not loaded: @%08X : %d\n", pheader.m_PAddr, pheader.m_MemSz);
 				}
 
 				uint32_t blockEnd = (uint32_t)memaddr + pheader.m_MemSz;
 				heap_start = heap_start < blockEnd ? blockEnd : heap_start;
 			}
 		}
+		else
+		{
+			KERNELLOG("ELF: section not loaded(zerosize): @%08X : %d\n", pheader.m_PAddr, pheader.m_MemSz);
+		}
 	}
 
-	return E32AlignUp(heap_start, 1024);
+	heap_start = E32AlignUp(heap_start, 1024);
+	KERNELLOG("ELF: heap_start set to @%08X\n", heap_start);
+	return heap_start;
 }
 
 uint32_t LoadExecutable(const char *filename, int _relocOffset, const bool reportError)
