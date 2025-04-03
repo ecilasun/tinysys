@@ -10,13 +10,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-//#define KERNEL_DEBUG
-#if defined(KERNEL_DEBUG)
-	#define KERNELLOG(...) UARTPrintf(__VA_ARGS__)
-#else
-	#define KERNELLOG(...) {}
-#endif
-
 static FATFS Fs;
 static char s_workdir[PATH_MAX+4] = "sd:/";
 
@@ -631,13 +624,19 @@ uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader
 	for (uint32_t i=0; i<fheader->m_PHNum; ++i)
 	{
 		struct SElfProgramHeader32 pheader;
+
 		f_lseek(fp, fheader->m_PHOff + fheader->m_PHEntSize*i);
 		f_read(fp, &pheader, sizeof(struct SElfProgramHeader32), &bytesread);
+
+		KERNELLOG("ELF: header: @%04X : %d\n", fheader->m_PHOff, bytesread);
 
 		// Something here
 		if (pheader.m_MemSz != 0)
 		{
 			uint8_t *memaddr = (uint8_t *)(pheader.m_PAddr + _relocOffset);
+
+			KERNELLOG("ELF: section: @%04X : %d\n", pheader.m_PAddr, pheader.m_MemSz);
+
 			// Check illegal range
 			if ((uint32_t)memaddr>=HEAP_END || ((uint32_t)memaddr)+pheader.m_MemSz>=HEAP_END)
 			{

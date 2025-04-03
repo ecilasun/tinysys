@@ -12,6 +12,12 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
+#if defined(KERNEL_DEBUG)
+	#define KERNELLOG(...) UARTPrintf(__VA_ARGS__)
+#else
+	#define KERNELLOG(...) {}
+#endif
+
 // Task related
 void InstallISR(uint32_t _hartid, bool _allowMachineHwInt, bool _allowMachineSwInt);
 
