@@ -34,13 +34,15 @@ void CSysMem::Reset()
 uint32_t* CSysMem::GetHostAddress(uint32_t address)
 {
 	uint32_t *wordmem = (uint32_t*)m_devicemem;
-	return &wordmem[address>>2];
+	uint32_t waddr = address & 0xFFFFFFF;
+	return &wordmem[waddr>>2];
 }
 
 uint8_t* CSysMem::GetHostByteAddress(uint32_t address)
 {
 	uint8_t *wordmem = (uint8_t*)m_devicemem;
-	return wordmem + address;
+	uint32_t waddr = address & 0xFFFFFFF;
+	return wordmem + waddr;
 }
 
 void CSysMem::CopyROM(uint32_t resetvector, uint8_t *bin, uint32_t size)
@@ -57,7 +59,8 @@ void CSysMem::Read(uint32_t address, uint32_t& data)
 {
 	// TODO: Return from D$ instead for consistency of simulation
 	uint32_t *wordmem = (uint32_t*)m_devicemem;
-	data = wordmem[address>>2];
+	uint32_t waddr = address & 0xFFFFFFF;
+	data = wordmem[waddr>>2];
 }
 
 void CSysMem::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
@@ -65,26 +68,28 @@ void CSysMem::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 	// TODO: Use D$ instead for consistency of simulation
 	uint32_t olddata;
 	uint32_t *wordmem = (uint32_t*)m_devicemem;
-	olddata = wordmem[address>>2];
+	uint32_t waddr = address & 0xFFFFFFF;
+	olddata = wordmem[waddr>>2];
 
 	// Expand the wstrobe
 	uint32_t fullmask = quadexpand[wstrobe];
 	uint32_t invfullmask = ~fullmask;
 
 	// Mask and mix incoming and old data
-	wordmem[address>>2] = (olddata&invfullmask) | (word&fullmask);
+	wordmem[waddr>>2] = (olddata&invfullmask) | (word&fullmask);
 }
 
 void CSysMem::Read128bits(uint32_t address, uint32_t* data)
 {
+	uint32_t waddr = address & 0xFFFFFFF;
 #if defined(CAT_WINDOWS)
 	uint32_t *wordmem = (uint32_t*)m_devicemem;
-	__m128i *source = (__m128i *)&wordmem[address>>2];
+	__m128i *source = (__m128i *)&wordmem[waddr>>2];
 	__m128i *target = (__m128i *)data;
 	*target = *source;
 #else
 	uint32_t *wordmem = (uint32_t*)m_devicemem;
-	uint64_t *source = (uint64_t *)&wordmem[address>>2];
+	uint64_t *source = (uint64_t *)&wordmem[waddr>>2];
 	uint64_t *target = (uint64_t *)data;
 	target[0] = source[0];
 	target[1] = source[1];
@@ -93,14 +98,15 @@ void CSysMem::Read128bits(uint32_t address, uint32_t* data)
 
 void CSysMem::Write128bits(uint32_t address, uint32_t* data)
 {
+	uint32_t waddr = address & 0xFFFFFFF;
 #if defined(CAT_WINDOWS)
 	uint32_t *wordmem = (uint32_t*)m_devicemem;
-	__m128i *target = (__m128i *)&wordmem[address>>2];
+	__m128i *target = (__m128i *)&wordmem[waddr>>2];
 	__m128i *source = (__m128i *)data;
 	*target = *source;
 #else
 	uint32_t *wordmem = (uint32_t*)m_devicemem;
-	uint64_t *target = (uint64_t *)&wordmem[address>>2];
+	uint64_t *target = (uint64_t *)&wordmem[waddr>>2];
 	uint64_t *source = (uint64_t *)data;
 	target[0] = source[0];
 	target[1] = source[1];
@@ -109,15 +115,16 @@ void CSysMem::Write128bits(uint32_t address, uint32_t* data)
 
 void CSysMem::Read512bits(uint32_t address, uint32_t* data)
 {
+	uint32_t waddr = address & 0xFFFFFFF;
 #if defined(CAT_WINDOWS)
 	uint32_t *wordmem = (uint32_t*)m_devicemem;
-	__m128i *source = (__m128i *)&wordmem[address>>2];
+	__m128i *source = (__m128i *)&wordmem[waddr>>2];
 	__m128i *target = (__m128i *)data;
 	for (int i=0; i<4; ++i)
 		target[i] = source[i];
 #else
 	uint32_t *wordmem = (uint32_t*)m_devicemem;
-	uint64_t *source = (uint64_t *)&wordmem[address>>2];
+	uint64_t *source = (uint64_t *)&wordmem[waddr>>2];
 	uint64_t *target = (uint64_t *)data;
 	for (int i=0; i<8; ++i)
 		target[i] = source[i];
@@ -126,15 +133,16 @@ void CSysMem::Read512bits(uint32_t address, uint32_t* data)
 
 void CSysMem::Write512bits(uint32_t address, uint32_t* data)
 {
+	uint32_t waddr = address & 0xFFFFFFF;
 #if defined(CAT_WINDOWS)
 	uint32_t *wordmem = (uint32_t*)m_devicemem;
-	__m128i *target = (__m128i *)&wordmem[address>>2];
+	__m128i *target = (__m128i *)&wordmem[waddr>>2];
 	__m128i *source = (__m128i *)data;
 	for (int i=0; i<4; ++i)
 		target[i] = source[i];
 #else
 	uint32_t *wordmem = (uint32_t*)m_devicemem;
-	uint64_t *target = (uint64_t *)&wordmem[address>>2];
+	uint64_t *target = (uint64_t *)&wordmem[waddr>>2];
 	uint64_t *source = (uint64_t *)data;
 	for (int i=0; i<8; ++i)
 		target[i] = source[i];

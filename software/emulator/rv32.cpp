@@ -133,8 +133,7 @@ void InstructionCache::Fetch(CBus *bus, uint32_t pc, uint32_t& instr)
 	{
 		// Base cache address
 		uint32_t addr = (tag << 14) | (line << 6);
-		for (uint32_t i = 0; i < 16; i++)
-			bus->Read(addr+(i<<2), m_cache[(line << 4) + i]);
+		bus->m_mem->Read512bits(addr, &m_cache[line << 4]);
 		instr = m_cache[(line << 4) + offset];
 		// Mark valid
 		m_cachelinetags[line] = tag | 0x4000;
