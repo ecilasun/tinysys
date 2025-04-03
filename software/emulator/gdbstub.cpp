@@ -20,22 +20,23 @@ enum ETaskState
 	TS_TERMINATED
 };
 
-struct STask {
-	uint32_t HART;			// HART affinity mask (for migration)
-	uint32_t runLength;		// Time slice dedicated to this task
-	enum ETaskState state;	// State of this task
-	uint32_t exitCode;		// Task termination exit code
-	uint32_t regs[32];		// Integer registers - NOTE: register zero here is actually the PC, 128 bytes
-
-	// Debug support - this will probably move somewhere else
-	char name[16];			// Name of this task
+struct STask {	
+	uint32_t HART;					// HART affinity mask (for migration)
+	uint32_t runLength;				// Time slice dedicated to this task
+	enum ETaskState state;
+	enum ETaskState targetstate;
+	uint32_t exitCode;				// Task termination exit code
+	uint32_t regs[32];				// Integer registers - NOTE: register zero here is actually the PC, 128 bytes
+	uint32_t name;					// Pointer to task name (in external memory)
 };
 
-// 672 bytes total for one core (1344 for two cores)
 struct STaskContext {
-	// 160 x 4 bytes (640)
-	struct STask tasks[TASK_MAX];	// List of all the tasks
+	// 152 x 4 bytes total for all tasks
+	struct STask tasks[TASK_MAX];	// List of all the tasks plus one for adding new tasks
 	// 32 bytes total below
+	enum ETaskHandlerState state;	// State of the task handler
+	enum EBreakRequest brkreq;		// Break request
+	int32_t brkack;					// Break acknowledgement
 	int32_t currentTask;			// Current task index
 	int32_t numTasks;				// Number of tasks
 	int32_t kernelError;			// Current kernel error
@@ -138,11 +139,15 @@ void gdbreadthreads(socket_t gdbsocket, CEmulator* emulator, const char* buffer)
 		struct STaskContext* contextpool = (struct STaskContext *)emulator->m_bus->GetHostAddress(DEVICE_MAIL);
 		struct STaskContext& ctx = contextpool[cpu];
 
+#ifdef GDB_COMM_DEBUG
+		fprintf(stderr, "CPU%d: #tasks = %d",  cpu, ctx.numTasks);
+#endif
 		for (int j = 0; j < ctx.numTasks; ++j)
 		{
 			struct STask* task = &ctx.tasks[j];
 			// Apparently GDB expects thread IDs across CPUs to be unique
-			snprintf(response, 1024, "%s\t<thread id=\"%d\" core=\"%d\" name=\"%s:%d\" handle=\"%x\"> </thread>\n", response, (cpu*TASK_MAX+j)+1, cpu, task->name, cpu, cpu*TASK_MAX+j);
+			char *tname = (char*)emulator->m_bus->m_mem->GetHostAddress(task->name);
+			snprintf(response, 1024, "%s\t<thread id=\"%d\" core=\"%d\" name=\"%s:%d\" handle=\"%x\"> </thread>\n", response, (cpu*TASK_MAX+j)+1, cpu, tname, cpu, cpu*TASK_MAX+j);
 		}
 	}
 
@@ -294,6 +299,10 @@ void gdbkillprocess(socket_t gdbsocket, uint32_t hartid, int proc, CEmulator* em
 
 				if (t == proc || proc == -1)
 				{
+#if defined(GDB_COMM_DEBUG)
+					fprintf(stderr, "Attempting to stop process: %d:%d\n", cpu,t);
+#endif
+		
 					task->state = TS_TERMINATING;
 					task->exitCode = 0;
 					//ctx->kernelError = ?; // TODO: set kernel error to 'process terminated by debugger', need to handle it in ROM code
