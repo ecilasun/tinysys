@@ -58,7 +58,7 @@ def build(bld):
         APPNAME = 'mactinysys'
     elif platform.system().lower().startswith('linux'):
         libs = ['SDL2', 'SDL2_ttf']
-        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_LINUX', 'RELEASE']
+        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_LINUX', 'RELEASE', 'GALLIFREY']
         includes = ['source', 'includes', '/usr/include/SDL2', '../3rdparty/fat32']
         sdk_lib_path = ['/usr/lib/x86_64-linux-gnu/libSDL2']
         compile_flags = ['-march=native', '-O3', '-fno-omit-frame-pointer', '-fno-common', '-fno-exceptions', '-fno-rtti']
