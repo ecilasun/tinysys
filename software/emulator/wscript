@@ -49,7 +49,7 @@ def build(bld):
         APPNAME = 'tinysys'
     elif platform.system().lower().startswith('darwin'):
         libs = ['SDL2', 'SDL2_ttf']
-        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_DARWIN', 'RELEASE']
+        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_DARWIN', 'RELEASE', 'GALLIFREY']
         includes = ['source', 'includes', '/opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2', '/opt/homebrew/Cellar/sdl2_ttf/2.22.0/include/SDL2', '../3rdparty/fat32']
         sdk_lib_path = ['/opt/homebrew/Cellar/sdl2/2.30.5/lib/', '/opt/homebrew/Cellar/sdl2_ttf/2.22.0/lib/']
         compile_flags = ['-march=native', '-O3', '-arch', 'arm64']
