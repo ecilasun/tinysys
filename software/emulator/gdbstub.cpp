@@ -20,6 +20,12 @@ enum ETaskState
 	TS_TERMINATED
 };
 
+enum ETaskHandlerState
+{
+	TASK_IDLE = 0,		// Idle state for task handler (no tasks to run)
+	TASK_SWITCHING = 1,	// Task switching in progress (for synchronization)
+};
+
 struct STask {	
 	uint32_t HART;					// HART affinity mask (for migration)
 	uint32_t runLength;				// Time slice dedicated to this task
