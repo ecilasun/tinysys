@@ -75,13 +75,16 @@ void CBus::QueueByte(uint8_t byte)
 	m_uart->QueueByte(byte);
 }
 
-bool CBus::Tick()
+bool CBus::Tick(uint32_t _hartid)
 {
-	m_sdcc->Tick(this);
-	m_uart->Tick(this);
-	m_vpuc->Tick(this);
-	m_apu->Tick(this);
-
+	if(_hartid == 0)
+	{
+		m_sdcc->Tick(this);
+		m_uart->Tick(this);
+		m_vpuc->Tick(this);
+		m_apu->Tick(this);
+	}
+	m_csr[_hartid]->Tick(this);
 	return true;
 }
 

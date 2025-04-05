@@ -37,18 +37,10 @@ int emulatorthreadcpu0(void* data)
 	SDL_SetThreadPriority(SDL_THREAD_PRIORITY_NORMAL);
 
 	EmulatorContext* ctx = (EmulatorContext*)data;
-	uint32_t spins = 0;
+	int spins = 0;
 	do
 	{
 		CEmulator *emulator = ctx->emulator;
-
-		emulator->StepBus();
-		if ((spins++) % 1048576 == 0)
-		{
-			// Handle hardware switch etc changes
-			emulator->m_bus->GetSDCard()->UpdateSDCardSwitch();
-		}
-
 		if (emulator->m_debugStop)
 		{
 			// Stop for debugger
@@ -59,6 +51,13 @@ int emulatorthreadcpu0(void* data)
 			emulator->m_debugAck = 0;
 			emulator->Step(s_wallclock, 0);
 		}
+
+		if (spins % 1048576 == 0)
+		{
+			// Handle hardware switch etc changes
+			emulator->m_bus->GetSDCard()->UpdateSDCardSwitch();
+		}
+		++spins;
 	} while(s_alive);
 
 	return 0;

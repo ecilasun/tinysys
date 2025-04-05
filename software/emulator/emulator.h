@@ -10,7 +10,6 @@ public:
 	~CEmulator();
 
 	bool Reset(const char* romFile, uint32_t resetvector);
-	void StepBus();
 	void Step(uint64_t wallclock, uint32_t _hartid);
 	void UpdateVideoLink(uint32_t* pixels, int pitch);
 	void QueueBytes(uint8_t *bytes, uint32_t count);
