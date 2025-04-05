@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "rv32.h"
 #include <queue>
+#include <mutex>
 #include "memmappeddevice.h"
 
 #define APUCMD_BUFFERSIZE  0x00000000
@@ -40,4 +41,5 @@ private:
 	uint32_t *m_audioData[2]{ nullptr };
 
 	std::queue<uint32_t> m_fifo;
+	std::mutex m_mutex;
 };

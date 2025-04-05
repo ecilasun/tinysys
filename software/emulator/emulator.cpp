@@ -60,10 +60,15 @@ bool CEmulator::Reset(const char* romFile, uint32_t resetvector)
 	return true;
 }
 
+void CEmulator::StepBus()
+{
+	m_bus->Tick();
+}
+
 void CEmulator::Step(uint64_t wallclock, uint32_t _hartid)
 {
 	++m_steps;
-	m_bus->Tick(_hartid);	
+	m_bus->GetCSR(_hartid)->Tick(m_bus);
 	m_cpu[_hartid]->Tick(wallclock, m_bus);
 }
 

@@ -24,6 +24,7 @@ void CAPU::Reset()
 
 void CAPU::Tick(CBus* bus)
 {
+	std::unique_lock<std::mutex> lock(m_mutex);
 	// Pull cmd from fifo and process
 	switch (m_state)
 	{
@@ -126,5 +127,6 @@ void CAPU::Read(uint32_t address, uint32_t& data)
 void CAPU::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 {
 	// Command FIFO writes dirty the video output
+	std::lock_guard<std::mutex> lock(m_mutex);
 	m_fifo.push(word);
 }

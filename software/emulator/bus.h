@@ -42,7 +42,7 @@ public:
 	void Acquire();
 	void Release();
 	void Reset(uint8_t* rombin, uint32_t romsize);
-	bool Tick(uint32_t _hartid);
+	bool Tick();
 	void Read(uint32_t address, uint32_t& data);	// Write 32 bits
 	void Write(uint32_t address, uint32_t data, uint32_t wstrobe);	// Write 32 bits
 	uint32_t* GetHostAddress(uint32_t address);
