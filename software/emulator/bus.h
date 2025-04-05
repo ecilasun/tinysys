@@ -12,6 +12,7 @@
 #include "uart.h"
 #include "dummydevice.h"
 #include "memmappeddevice.h"
+#include <atomic>
 
 #define DEVICE_BASE 0x80000000
 
@@ -38,6 +39,8 @@ public:
 	explicit CBus(uint32_t resetvector);
 	~CBus();
 
+	void Acquire();
+	void Release();
 	void Reset(uint8_t* rombin, uint32_t romsize);
 	bool Tick(uint32_t _hartid);
 	void Read(uint32_t address, uint32_t& data);	// Write 32 bits

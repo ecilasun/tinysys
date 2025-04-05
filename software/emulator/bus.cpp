@@ -88,6 +88,24 @@ bool CBus::Tick(uint32_t _hartid)
 	return true;
 }
 
+void CBus::Acquire()
+{
+#if defined(GALLIFREY)
+	uint32_t expected = 0;
+	while (!std::atomic_compare_exchange_weak(&m_acquireKey, &expected, 1))
+	{
+		// wait until we acquire the bus
+	}
+#endif
+}
+
+void CBus::Release()
+{
+#if defined(GALLIFREY)
+	std::atomic_exchange(&m_acquireKey, 0);
+#endif
+}
+
 uint32_t* CBus::GetHostAddress(uint32_t address)
 {
 	// Convert to emulator host address from emulated device memory address
