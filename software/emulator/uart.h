@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <deque>
+#include <mutex>
 #include "memmappeddevice.h"
 
 class CUART : public MemMappedDevice
@@ -18,7 +19,10 @@ public:
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
 	void Tick(CBus* bus);
 
+	void QueueByte(uint8_t byte);
+
+private:
 	std::deque<uint8_t> m_byteinqueue;
 	std::deque<uint8_t> m_byteoutqueue;
-	void QueueByte(uint8_t byte);
+	std::mutex m_writeMutex;
 };

@@ -5,6 +5,7 @@
 #include "config.h"
 #include "rv32.h"
 #include <queue>
+#include <mutex>
 #include "memmappeddevice.h"
 
 class CBus;
@@ -40,4 +41,5 @@ private:
 	int32_t m_regB{ 65536 };
 	int32_t m_regC{ 0 };
 	std::queue<uint32_t> m_fifo;
+	std::mutex m_mutex;
 };

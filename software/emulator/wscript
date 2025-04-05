@@ -33,21 +33,23 @@ def build(bld):
 
     bld.post_mode = Build.POST_LAZY
 
-	# NOTE: Define 'GALLIFREY' to enable two HARTs
+	# NOTE: Define 'GALLIFREY' to enable two HARTs and bus acquire/release mechanism
+    # NOTE: Define 'CPU_STATS' to enable CPU statistics
+	# NOTE: Define 'GDB_COMM_DEBUG' to enable GDB stub debug / diagnosis messages
 
     # RELEASE
     if platform.system().lower().startswith('win'):
         libs = ['ws2_32', 'shell32', 'user32', 'Comdlg32', 'gdi32', 'ole32', 'kernel32', 'winmm', 'SDL2main', 'SDL2', 'SDL2_ttf']
-        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_WINDOWS', 'RELEASE'] # 'CPU_STATS'
+        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_WINDOWS', 'RELEASE']
         includes = ['source', 'includes', '3rdparty/SDL2/include', '3rdparty/SDL2_ttf/include', '../3rdparty/fat32']
         sdk_lib_path = [os.path.abspath('3rdparty/SDL2/lib/x64/'), os.path.abspath('3rdparty/SDL2_ttf/lib/x64/')]
-        compile_flags =  ['/permissive-', '/arch:AVX2', '/GL', '/WX', '/O2', '/fp:fast', '/Qfast_transcendentals', '/Zi', '/EHsc', '/FS', '/DRELEASE', '/D_SECURE_SCL 0'] # '/DGDB_COMM_DEBUG' to enable GBB stub debug messages
+        compile_flags =  ['/permissive-', '/arch:AVX2', '/GL', '/WX', '/O2', '/fp:fast', '/Qfast_transcendentals', '/Zi', '/EHsc', '/FS', '/DRELEASE', '/D_SECURE_SCL 0']
         platform_flags = ['/std:c++20']
         linker_flags = ['/SUBSYSTEM:CONSOLE', '/LTCG', '/RELEASE']
         APPNAME = 'tinysys'
     elif platform.system().lower().startswith('darwin'):
         libs = ['SDL2', 'SDL2_ttf']
-        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_DARWIN', 'RELEASE', 'GALLIFREY'] # 'CPU_STATS'
+        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_DARWIN', 'RELEASE']
         includes = ['source', 'includes', '/opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2', '/opt/homebrew/Cellar/sdl2_ttf/2.22.0/include/SDL2', '../3rdparty/fat32']
         sdk_lib_path = ['/opt/homebrew/Cellar/sdl2/2.30.5/lib/', '/opt/homebrew/Cellar/sdl2_ttf/2.22.0/lib/']
         compile_flags = ['-march=native', '-O3', '-arch', 'arm64']
@@ -56,7 +58,7 @@ def build(bld):
         APPNAME = 'mactinysys'
     elif platform.system().lower().startswith('linux'):
         libs = ['SDL2', 'SDL2_ttf']
-        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_LINUX', 'RELEASE', 'GALLIFREY'] # 'CPU_STATS'
+        platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_LINUX', 'RELEASE']
         includes = ['source', 'includes', '/usr/include/SDL2', '../3rdparty/fat32']
         sdk_lib_path = ['/usr/lib/x86_64-linux-gnu/libSDL2']
         compile_flags = ['-march=native', '-O3', '-fno-omit-frame-pointer', '-fno-common', '-fno-exceptions', '-fno-rtti']

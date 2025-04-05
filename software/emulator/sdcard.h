@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <queue>
+#include <mutex>
 #include <ff.h>
 #if defined(CAT_WINDOWS)
 #include <windows.h>
@@ -44,4 +45,5 @@ private:
 
 	FATFS* m_fs{ nullptr };
 	uint8_t* m_workbuf{ nullptr };
+	std::mutex m_mutex;
 };

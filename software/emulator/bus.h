@@ -60,6 +60,7 @@ public:
 	CSysMem* m_mem{ nullptr };
 
 private:
+	std::atomic<uint32_t> m_acquireKey{ 0 };
 	CCSRMem* m_csr[2]{ nullptr, nullptr};
 	CMailMem* m_mail{ nullptr };
 	CScratchpadMem* m_spad{ nullptr };

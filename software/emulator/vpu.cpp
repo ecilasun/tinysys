@@ -138,6 +138,7 @@ void CVPU::UpdateVideoLink(uint32_t* pixels, int pitch, CBus* bus)
 void CVPU::Tick(CBus* bus)
 {
 	// Pull cmd from fifo and process
+	std::unique_lock<std::mutex> lock(m_mutex);
 	switch (m_state)
 	{
 		case 0:
@@ -318,5 +319,6 @@ void CVPU::Read(uint32_t address, uint32_t& data)
 void CVPU::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 {
 	// Command FIFO writes dirty the video output
+	std::lock_guard<std::mutex> lock(m_mutex);
 	m_fifo.push(word);
 }

@@ -18,6 +18,7 @@ void CUART::Reset()
 
 void CUART::Tick(CBus* bus)
 {
+	std::unique_lock<std::mutex> lock(m_writeMutex);
 	m_uartirq = m_byteinqueue.size() && (m_controlword&16) ? 1 : 0; // depends on interrupt enable
 
 	int needflush = 0;
@@ -71,6 +72,7 @@ void CUART::Read(uint32_t address, uint32_t& data)
 
 void CUART::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 {
+	std::lock_guard<std::mutex> lock(m_writeMutex);
 	if (address == UARTCONTROL)
 	{
 		m_controlword = word;

@@ -163,11 +163,22 @@ void CBus::Read(uint32_t address, uint32_t& data)
 		data = 0;
 		return;
 	}
+
+	Acquire();
 	m_devices[dev]->Read(address, data);
+	Release();
 }
  
 void CBus::Write(uint32_t address, uint32_t data, uint32_t wstrobe)
 {
 	uint32_t dev = (address & 0x80000000) ? ((address & 0xF0000) >> 16) : 11;
+	if (dev>11)
+	{
+		//fprintf(stderr, "CBus::Write - invalid device %d\n", dev);
+		return;
+	}
+
+	Acquire();
 	m_devices[dev]->Write(address, data, wstrobe);
+	Release();
 }

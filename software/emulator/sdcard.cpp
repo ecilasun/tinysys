@@ -166,6 +166,8 @@ uint32_t CSDCard::SPIRead(uint8_t *buffer, uint32_t len)
 
 void CSDCard::Tick(CBus* bus)
 {
+	std::unique_lock<std::mutex> lock(m_mutex);
+
 	// Run the SPI bus
 	if (!m_spiinfifo.empty())
 	{
@@ -387,6 +389,7 @@ void CSDCard::Read(uint32_t address, uint32_t& data)
 void CSDCard::Write(uint32_t address, uint32_t word, uint32_t wstrobe)
 {
 	// SPI bus write
+	std::lock_guard<std::mutex> lock(m_mutex);
 	m_spiinfifo.push(word&0xFF);
 	//printf("SDW:%.8X <- %.8X\n", address, word);
 }

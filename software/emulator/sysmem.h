@@ -14,9 +14,6 @@ public:
 	void Read(uint32_t address, uint32_t& data) override final;
 	void Write(uint32_t address, uint32_t word, uint32_t wstrobe) override final;
 
-	void Read128bits(uint32_t address, uint32_t* data);
-	void Write128bits(uint32_t address, uint32_t* word);
-
 	void Read512bits(uint32_t address, uint32_t* data);
 	void Write512bits(uint32_t address, uint32_t* word);
 

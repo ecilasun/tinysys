@@ -63,7 +63,11 @@
 		"xlocnum": "cpp",
 		"xloctime": "cpp",
 		"xtr1common": "cpp",
-		"iostream": "cpp"
+		"iostream": "cpp",
+		"ostream": "cpp",
+		"mutex": "cpp",
+		"stop_token": "cpp",
+		"thread": "cpp"
 	},
 	"idf.pythonInstallPath": "C:\\Users\\ecila\\.espressif\\tools\\idf-python\\3.11.2\\python.exe"
 }
