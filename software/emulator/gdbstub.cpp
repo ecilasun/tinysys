@@ -36,6 +36,12 @@ struct STask {
 	uint32_t name;					// Pointer to task name (in external memory)
 };
 
+enum EBreakRequest
+{
+	BR_NONE = 0,				// No break request
+	BR_HALTFORTASKSWITCH = 1,	// Let the core know we want to add a new task
+};
+
 struct STaskContext {
 	// 152 x 4 bytes total for all tasks
 	struct STask tasks[TASK_MAX];	// List of all the tasks plus one for adding new tasks
