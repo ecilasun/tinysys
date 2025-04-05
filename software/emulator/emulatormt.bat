@@ -1,0 +1,1 @@
+bin\tinysysmt.exe ROMs\rom.bin
