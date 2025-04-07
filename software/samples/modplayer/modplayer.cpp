@@ -29,8 +29,8 @@
 #define BUFFER_WORD_COUNT 1024		// buffer size (max: 2048 bytes i.e. 1024 words)
 #define BUFFER_SIZE_IN_BYTES (BUFFER_WORD_COUNT*2*sizeof(short))
 
+static xmp_context ctx;
 static short *apubuffer;
-
 static EVideoContext vx;
 static EVideoSwapContext sc;
 
@@ -138,7 +138,7 @@ void draw_wave()
 			}
 		}
 
-		CFLUSH_D_L1;
+		CFLUSH_D_L1();
 
 		VPUWaitVSync();
 		VPUSwapPages(&vx, &sc);
@@ -147,7 +147,6 @@ void draw_wave()
 
 void PlayXMP(const char *fname)
 {
-	xmp_context ctx;
 	struct xmp_module_info mi;
 	struct xmp_frame_info fi;
 	int i;
@@ -175,7 +174,7 @@ void PlayXMP(const char *fname)
 			playing = xmp_play_buffer(ctx, apubuffer, BUFFER_SIZE_IN_BYTES, 0) == 0;
 
 			// Make sure the writes are visible by the DMA
-			CFLUSH_D_L1;
+			CFLUSH_D_L1();
 
 			// Fill current write buffer with new mix data
 			APUStartDMA((uint32_t)apubuffer);

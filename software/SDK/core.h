@@ -29,8 +29,11 @@ extern "C" {
 #define E32AlignUp(_x_, _align_) ((_x_ + (_align_ - 1)) & (~(_align_ - 1)))
 
 // Flush data cache to memory
-#define CFLUSH_D_L1 asm volatile( ".word 0xFC000073;" : : : "memory" )
+#define CFLUSH_D_L1() do{ asm volatile( ".word 0xFC000073;" : : : "memory" ); } while(0)
 // Discard data cache contents
-#define CDISCARD_D_L1 asm volatile( ".word 0xFC200073;" : : : "memory" )
+#define CDISCARD_D_L1() do{ asm volatile( ".word 0xFC200073;" : : : "memory" ); } while(0)
 // Invalidate instruction cache
-#define FENCE_I asm volatile( "fence.i;" )
+#define FENCE_I() do{ asm volatile( "fence.i;" ); } while(0)
+
+//#define MEM_BARRIER asm volatile( "fence rw, rw;" )
+#define MEM_BARRIER() do{ asm volatile ("" : : : "memory"); } while(0)

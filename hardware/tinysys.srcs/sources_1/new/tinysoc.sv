@@ -18,6 +18,7 @@ module tinysoc #(
 	input wire rst10n,
 	input wire rst25n,
 	input wire rst100n,
+	input wire rst200n,
 	input wire rstaudion,
 	input wire preresetn,
 	// LEDs

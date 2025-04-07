@@ -438,7 +438,7 @@ void render(Sphere* spheres, int nb_spheres, Light* lights, int nb_lights) {
       render_pixel(i,j  ,spheres,nb_spheres,lights,nb_lights);
     }
     // Flush scanline
-    CFLUSH_D_L1;
+    CFLUSH_D_L1();
   }
 #endif
    stats_end_frame();
@@ -476,33 +476,33 @@ void init_scene() {
 
 int main()
 {
-  // Enable video output
-  vx.m_vmode = EVM_320_Wide;
-  vx.m_cmode = ECM_16bit_RGB;
-  VPUSetVMode(&vx, EVS_Enable);
+	// Enable video output
+	vx.m_vmode = EVM_320_Wide;
+	vx.m_cmode = ECM_16bit_RGB;
+	VPUSetVMode(&vx, EVS_Enable);
 
-  framebuffer = (uint8_t*)VPUAllocateBuffer(graphics_width * graphics_height * 2);
-  VPUSetWriteAddress(&vx, (uint32_t)framebuffer);
-  VPUSetScanoutAddress(&vx, (uint32_t)framebuffer);
-  VPUClear(&vx, 0x03030303);
+	framebuffer = (uint8_t*)VPUAllocateBuffer(graphics_width * graphics_height * 2);
+	VPUSetWriteAddress(&vx, (uint32_t)framebuffer);
+	VPUSetScanoutAddress(&vx, (uint32_t)framebuffer);
+	VPUClear(&vx, 0x03030303);
 
-  init_scene();
+	init_scene();
 
-  bench_run = 1;
-  graphics_width  = 40;
-  graphics_height = 20;
-  printf("Running without graphic output (for accurate measurement)...\n");
-  render(spheres, nb_spheres, lights, nb_lights);
+	bench_run = 1;
+	graphics_width  = 40;
+	graphics_height = 20;
+	printf("Running without graphic output (for accurate measurement)...\n");
+	render(spheres, nb_spheres, lights, nb_lights);
 
-  bench_run = 0;
-  graphics_width = 320;
-  graphics_height = 240;
-  render(spheres, nb_spheres, lights, nb_lights);
+	bench_run = 0;
+	graphics_width = 320;
+	graphics_height = 240;
+	render(spheres, nb_spheres, lights, nb_lights);
 
-  // Finalize all writes.
-  // VPU does not see CPU cache contents, so it needs
-  // all data to be present in memory to show an intact image.
-  CFLUSH_D_L1;
+	// Finalize all writes.
+	// VPU does not see CPU cache contents, so it needs
+	// all data to be present in memory to show an intact image.
+	CFLUSH_D_L1();
 
 	while(1){}
 

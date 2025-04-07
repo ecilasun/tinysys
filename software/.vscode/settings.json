@@ -83,6 +83,10 @@
 		"complex": "cpp",
 		"deque": "cpp",
 		"map": "cpp",
-		"queue": "cpp"
+		"queue": "cpp",
+		"iostream": "cpp",
+		"list": "cpp",
+		"mutex": "cpp",
+		"unordered_set": "cpp"
 	}
 }

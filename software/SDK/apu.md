@@ -73,7 +73,7 @@ Now we can sit in a loop and push new audio data every time `prevframe` value mi
 ```
 do{
 	// TODO: fill apubuffer with some stereo 16 bit audio data
-	CFLUSH_D_L1; // Make sure the CPU writes can be seen by the DMA device by flushing them to memory
+	CFLUSH_D_L1(); // Make sure the CPU writes can be seen by the DMA device by flushing them to memory
 	APUStartDMA((uint32_t)apubuffer); // Kick new data to the APU
 
 	// Wait for the sample playback to finish.

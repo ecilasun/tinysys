@@ -49,12 +49,9 @@
 #define KERNEL_GFX_CONTEXT				0x0F160000 // Kernel terminal graphics context (4096 bytes with free space for future use)
 #define KERNEL_INPUTBUFFER				0x0F161000 // Input data buffer for keyboard and joystick (4096 bytes)
 #define KERNEL_DEVICECONTROL			0x0F162000 // Device control blocks (4096 bytes)
-#define KERNEL_NOMANSLAND				0x0F163000 // Kernel reserved space (~16 MBytes)
+#define TASKMEM_END_STACK_TOP			0x0F163000 // Top of task stack space
 // Task stack space
-#define TASKMEM_END_STACK_END			0x0FFD0000 // Tasks stack space above this (832 KBytes)
-//  Kernel stacks for all cores, 256 bytes each
-#define STACK_BASE_HART1				0x0FFDFEF0 // Kernel stack above these (65264 bytes)
-#define STACK_BASE_HART0				0x0FFDFFF0
+#define TASKMEM_END_STACK_END			0x0FFD0000 // Tasks stack space above this (~16 Mbytes)
 // 4 byte gap
 #define ROMSHADOW_START					0x0FFE0000 // Gap above this (4Bytes)
 // ROM SHADOW

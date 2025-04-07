@@ -81,8 +81,8 @@ tophat main(
 	.sdcard_swtch(1'b0),
 	// Coprocessor via ESP32-C6-WROOM-1-N8 (only on rev. 2E boards)
 	.esp_txd1_out(),
-	.esp_rxd1_in(),
-	.cpu_reboot(1'b0),
+	.esp_rxd1_in(1'b1),
+	.fpga_reboot(1'b0),
 	.esp_ena(esp_ena),
 	// HDMI
 	.HDMI_CLK_p(),

@@ -38,7 +38,7 @@ int main()
 		}
 
 		// Make sure the writes are visible by the audio DMA
-		CFLUSH_D_L1;
+		CFLUSH_D_L1();
 
 		// Fill current write buffer with new mix data
 		APUStartDMA((uint32_t)apubuffer);

@@ -48,7 +48,7 @@ void qembd_fillrect(uint8_t *src, uint16_t x, uint16_t y, uint16_t xsize, uint16
 void qembd_refresh()
 {
 	// We'll need this for VPU coherency
-	CFLUSH_D_L1;
+	CFLUSH_D_L1();
 
 	// Not sure what else this is supposed to be doing, swap buffers?
 }

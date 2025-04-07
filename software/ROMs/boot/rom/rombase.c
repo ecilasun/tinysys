@@ -197,8 +197,7 @@ uint32_t _task_switch_to_next(struct STaskContext *_ctx)
 	regs[31] = read_csr(0x8BF);	// t6
 
 	int32_t taskCount = _ctx->numTasks;
-	// Memory barrier
-	asm volatile ("" : : : "memory");
+	MEM_BARRIER();
 
 	do {
 		// Next task in queue
@@ -224,12 +223,15 @@ uint32_t _task_switch_to_next(struct STaskContext *_ctx)
 		else if (_ctx->tasks[currentTask].state == TS_CREATED)
 		{
 			_ctx->tasks[currentTask].state = _ctx->tasks[currentTask].targetstate;
+			// Now we need to make sure our I$ is fresh
+			CFLUSH_D_L1();
+			FENCE_I();
 			KERNELLOG("%d: TaskSwitch: Transitioning task %d from TS_CREATED to %d\n", _ctx->hartID, currentTask, _ctx->tasks[currentTask].state);
 		}
 	} while (1);
 	
-	// Memory barrier
-	asm volatile ("" : : : "memory");
+	MEM_BARRIER();
+
 	_ctx->numTasks = taskCount;
 
 	_ctx->currentTask = currentTask;
@@ -324,16 +326,44 @@ int _task_add(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum
 		uint32_t prevCount = _ctx->numTasks;
 
 		// Insert the task before we increment task count
-		_ctx->tasks[4].HART = _targethartid;			// HART affinity for this task (where it can run)
-		_ctx->tasks[4].regs[0] = (uint32_t)_task;		// Initial PC
-		_ctx->tasks[4].regs[1] = (uint32_t)retsink;		// Return to sink function
-		_ctx->tasks[4].regs[2] = _parentStackPointer;	// Stack pointer
-		_ctx->tasks[4].regs[3] = _gp;					// Global pointer
-		_ctx->tasks[4].regs[8] = _parentStackPointer;	// Frame pointer
-		_ctx->tasks[4].runLength = _runLength;			// Time slice dedicated to this task
-		_ctx->tasks[4].name = (uint32_t)_name;			// Pointer to task name (in external memory)
+		_ctx->tasks[4].HART = _targethartid;				// HART affinity for this task (where it can run)
+		_ctx->tasks[4].regs[0] = (uint32_t)_task;			// Initial PC
+		_ctx->tasks[4].regs[1] = (uint32_t)retsink;			// Return to sink function
+		_ctx->tasks[4].regs[2] = _parentStackPointer;		// Stack pointer
+		_ctx->tasks[4].regs[3] = _gp;						// Global pointer
+		_ctx->tasks[4].regs[4] = prevCount+4*_targethartid;	// tp
+		_ctx->tasks[4].regs[5] = 0x00000000;				// t0
+		_ctx->tasks[4].regs[6] = 0x00000000;				// t1
+		_ctx->tasks[4].regs[7] = 0x00000000;				// t2
+		_ctx->tasks[4].regs[8] = _parentStackPointer;		// Frame pointer
+		_ctx->tasks[4].regs[9] = 0x00000000;				// s1
+		_ctx->tasks[4].regs[10] = 0x00000000;				// a0 - function arguments (8 max)
+		_ctx->tasks[4].regs[11] = 0x00000000;				// a1
+		_ctx->tasks[4].regs[12] = 0x00000000;				// a2
+		_ctx->tasks[4].regs[13] = 0x00000000;				// a3
+		_ctx->tasks[4].regs[14] = 0x00000000;				// a4
+		_ctx->tasks[4].regs[15] = 0x00000000;				// a5
+		_ctx->tasks[4].regs[16] = 0x00000000;				// a6
+		_ctx->tasks[4].regs[17] = 0x00000000;				// a7
+		_ctx->tasks[4].regs[18] = 0x00000000;				// s2
+		_ctx->tasks[4].regs[19] = 0x00000000;				// s3
+		_ctx->tasks[4].regs[20] = 0x00000000;				// s4
+		_ctx->tasks[4].regs[21] = 0x00000000;				// s5
+		_ctx->tasks[4].regs[22] = 0x00000000;				// s6
+		_ctx->tasks[4].regs[23] = 0x00000000;				// s7
+		_ctx->tasks[4].regs[24] = 0x00000000;				// s8
+		_ctx->tasks[4].regs[25] = 0x00000000;				// s9
+		_ctx->tasks[4].regs[26] = 0x00000000;				// s10
+		_ctx->tasks[4].regs[27] = 0x00000000;				// s11
+		_ctx->tasks[4].regs[28] = 0x00000000;				// t3
+		_ctx->tasks[4].regs[29] = 0x00000000;				// t4
+		_ctx->tasks[4].regs[30] = 0x00000000;				// t5
+		_ctx->tasks[4].regs[31] = 0x00000000;				// t6
+		_ctx->tasks[4].runLength = _runLength;				// Time slice dedicated to this task
+		_ctx->tasks[4].name = (uint32_t)_name;				// Pointer to task name (in external memory)
+		_ctx->tasks[4].targetstate = _initialState;			// Initial state of the task
+		MEM_BARRIER();
 		_ctx->tasks[4].state = TS_CREATED;
-		_ctx->tasks[4].targetstate = _initialState;		// Initial state of the task
 
 		// Remove the halt request
 		KERNELLOG("%d: TaskAdd: Releasing break request for HART %d, now %d tasks, resuming from %d\n", _parenthartid, _targethartid, _ctx->numTasks, _ctx->currentTask);
@@ -346,20 +376,44 @@ int _task_add(struct STaskContext *_ctx, const char *_name, taskfunc _task, enum
 		uint32_t prevCount = _ctx->numTasks;
 
 		// Insert the task before we increment task count
-		_ctx->tasks[prevCount].HART = _targethartid;			// HART affinity for this task (where it can run)
-		_ctx->tasks[prevCount].regs[0] = (uint32_t)_task;		// Initial PC
-		_ctx->tasks[prevCount].regs[1] = (uint32_t)retsink;		// Return to sink function
-		_ctx->tasks[prevCount].regs[2] = _parentStackPointer;	// Stack pointer
-		_ctx->tasks[prevCount].regs[3] = _gp;					// Global pointer
-		_ctx->tasks[prevCount].regs[4] = 0;						// tp
-		_ctx->tasks[prevCount].regs[5] = 0;						// t0
-		_ctx->tasks[prevCount].regs[6] = 0;						// t1
-		_ctx->tasks[prevCount].regs[7] = 0;						// t2
-		_ctx->tasks[prevCount].regs[8] = _parentStackPointer;	// Frame pointer
-		_ctx->tasks[prevCount].runLength = _runLength;			// Time slice dedicated to this task
-		_ctx->tasks[prevCount].name = (uint32_t)_name;			// Pointer to task name (in external memory)
+		_ctx->tasks[prevCount].HART = _targethartid;				// HART affinity for this task (where it can run)
+		_ctx->tasks[prevCount].regs[0] = (uint32_t)_task;			// Initial PC
+		_ctx->tasks[prevCount].regs[1] = (uint32_t)retsink;			// Return to sink function
+		_ctx->tasks[prevCount].regs[2] = _parentStackPointer;		// Stack pointer
+		_ctx->tasks[prevCount].regs[3] = _gp;						// Global pointer
+		_ctx->tasks[prevCount].regs[4] = prevCount+4*_targethartid;	// tp
+		_ctx->tasks[prevCount].regs[5] = 0x00000000;				// t0
+		_ctx->tasks[prevCount].regs[6] = 0x00000000;				// t1
+		_ctx->tasks[prevCount].regs[7] = 0x00000000;				// t2
+		_ctx->tasks[prevCount].regs[8] = _parentStackPointer;		// Frame pointer
+		_ctx->tasks[prevCount].regs[9] = 0x00000000;				// s1
+		_ctx->tasks[prevCount].regs[10] = 0x00000000;				// a0
+		_ctx->tasks[prevCount].regs[11] = 0x00000000;				// a1
+		_ctx->tasks[prevCount].regs[12] = 0x00000000;				// a2
+		_ctx->tasks[prevCount].regs[13] = 0x00000000;				// a3
+		_ctx->tasks[prevCount].regs[14] = 0x00000000;				// a4
+		_ctx->tasks[prevCount].regs[15] = 0x00000000;				// a5
+		_ctx->tasks[prevCount].regs[16] = 0x00000000;				// a6
+		_ctx->tasks[prevCount].regs[17] = 0x00000000;				// a7
+		_ctx->tasks[prevCount].regs[18] = 0x00000000;				// s2
+		_ctx->tasks[prevCount].regs[19] = 0x00000000;				// s3
+		_ctx->tasks[prevCount].regs[20] = 0x00000000;				// s4
+		_ctx->tasks[prevCount].regs[21] = 0x00000000;				// s5
+		_ctx->tasks[prevCount].regs[22] = 0x00000000;				// s6
+		_ctx->tasks[prevCount].regs[23] = 0x00000000;				// s7
+		_ctx->tasks[prevCount].regs[24] = 0x00000000;				// s8
+		_ctx->tasks[prevCount].regs[25] = 0x00000000;				// s9
+		_ctx->tasks[prevCount].regs[26] = 0x00000000;				// s10
+		_ctx->tasks[prevCount].regs[27] = 0x00000000;				// s11
+		_ctx->tasks[prevCount].regs[28] = 0x00000000;				// t3
+		_ctx->tasks[prevCount].regs[29] = 0x00000000;				// t4
+		_ctx->tasks[prevCount].regs[30] = 0x00000000;				// t5
+		_ctx->tasks[prevCount].regs[31] = 0x00000000;				// t6
+		_ctx->tasks[prevCount].runLength = _runLength;				// Time slice dedicated to this task
+		_ctx->tasks[prevCount].name = (uint32_t)_name;				// Pointer to task name (in external memory)
+		_ctx->tasks[prevCount].targetstate = _initialState;			// Initial state of the task
+		MEM_BARRIER();
 		_ctx->tasks[prevCount].state = TS_CREATED;
-		_ctx->tasks[prevCount].targetstate = _initialState;		// Initial state of the task
 
 		++_ctx->numTasks;
 		return prevCount;
@@ -1425,7 +1479,8 @@ void __attribute__((aligned(16))) __attribute__((naked)) interrupt_service_routi
 					taskfunc task = (taskfunc)read_csr(0x8AC);									// A2
 					enum ETaskState state = read_csr(0x8AD);									// A3
 					const uint32_t runLength = read_csr(0x8AE);									// A4
-					const uint32_t stackPointer = read_csr(0x8AF);								// A5
+					// According to spec, SP has to be 16-byte aligned. Make sure it is.
+					const uint32_t stackPointer = (read_csr(0x8AF)+15) & ~0x0F;					// A5
 					const uint32_t gp = read_csr(0x8A3);										// GP
 					uint32_t parentSP = (stackPointer != 0x0) ? stackPointer : read_csr(0x8A2);	// SP
 					KERNELLOG("%d: task_add(%s) (PC:0x%08X SP:0x%08X ts:%d aimed at core %d)\n", hartid, name ? name : "NULL", task, parentSP, state, targetHartid);

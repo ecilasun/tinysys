@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 		E32Sleep(60*ONE_MILLISECOND_IN_TICKS);
 
 		// Make sure the video memory write is visible to the VPU
-		CFLUSH_D_L1;
+		CFLUSH_D_L1();
 
 		VPUWaitVSync();
 		VPUSwapPages(&s_vx, &s_sc);

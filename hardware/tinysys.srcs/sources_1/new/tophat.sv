@@ -46,12 +46,12 @@ module tophat(
 // Clock and reset generator
 // --------------------------------------------------
 
-wire aresetn, rst10n, rst25n, rst100n, rstaudion, preresetn;
+wire aresetn, rst10n, rst25n, rst100n, rst200n, rstaudion, preresetn;
 wire init_calib_complete;
 wire clk10, clkaudio, clk25, clk100, clk125, clkbus, clk166, clk200;
 
 wire rebootn;
-BUF (.O(rebootn), .I(~fpga_reboot));
+BUF rebootbuffer(.O(rebootn), .I(~fpga_reboot));
 
 // Clock and reset generator
 clockandreset clockandresetinst(
@@ -70,6 +70,7 @@ clockandreset clockandresetinst(
 	.rst10n(rst10n),
 	.rst25n(rst25n),
 	.rst100n(rst100n),
+	.rst200n(rst200n),
 	.rstaudion(rstaudion),
 	.preresetn(preresetn));
 
@@ -122,6 +123,7 @@ tinysoc #(.RESETVECTOR(32'h0FFE0000)) socinstance(
 	.rst10n(rst10n),
 	.rst25n(rst25n),
 	.rst100n(rst100n),
+	.rst200n(rst200n),
 	.rstaudion(rstaudion),
 	.preresetn(preresetn),
 	// Device wires

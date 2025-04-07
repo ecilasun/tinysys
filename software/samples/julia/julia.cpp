@@ -114,7 +114,7 @@ int main()
 		{
 			tiley = 0;
 
-			CFLUSH_D_L1;
+			CFLUSH_D_L1();
 			VPUWaitVSync();
 			VPUSwapPages(&vx, &sc);
 

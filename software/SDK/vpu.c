@@ -600,18 +600,21 @@ void VPUConsoleResolve(struct EVideoContext *_context)
 	{
 		int cx = _context->m_caretX;
 		int cy = _context->m_caretY;
-		uint32_t yoffset = (cy*8+7)*stride; // Last row of the character
+		uint32_t yoffset = (cy*8+6)*stride; // Last row of the character
 		uint32_t xoffset = cx*2; // 2 words per character
 		uint32_t *caret = &vramBase[xoffset + yoffset];
 		uint32_t FG = _context->m_consoleColor&0x0F;
 		FG = (FG<<24) | (FG<<16) | (FG<<8) | FG;
-		// Cursor is 8 pixels wide
+		// Cursor is 8 pixels wide, 2 pixels high
+		*caret = FG;
+		*(caret+1) = FG;
+		caret -= stride;
 		*caret = FG;
 		*(caret+1) = FG;
 	}
 
 	_context->m_consoleUpdated = 0;
-	CFLUSH_D_L1;
+	CFLUSH_D_L1();
 }
 
 /** @brief Clear console line
@@ -695,7 +698,7 @@ void VPUPrintString(struct EVideoContext *_context, const uint8_t _foregroundInd
 		cx+=2;
 	}
 
-	CFLUSH_D_L1;	
+	CFLUSH_D_L1();	
 }
 
 /** @brief Fill VRAM with color
@@ -712,7 +715,7 @@ void VPUClear(struct EVideoContext *_context, const uint32_t _colorWord)
 	uint32_t W = _context->m_graphicsHeight * _context->m_strideInWords;
 	for (uint32_t i=0; i<W; ++i)
 		vramBaseAsWord[i] = _colorWord;
-	CFLUSH_D_L1;
+	CFLUSH_D_L1();
 }
 
 /** @brief Read vblank counter

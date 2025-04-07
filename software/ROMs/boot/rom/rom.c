@@ -79,7 +79,7 @@ void __attribute__((aligned(64), noinline)) CopyPayloadAndChainOverlay(void *sou
 		"addi s1,s1,4;"
 		"addi s2,s2,-1;"
 		"bnez s2, copypayloadloop;"
-		".insn 0xFC000073;"		// Invalidate D$ and I$ (CFLUSH_D_L1)
+		".insn 0xFC000073;"		// Invalidate D$ and I$ - CFLUSH_D_L1()
 		"fence.i;"				// Discard anything previously in I$ which might point at the CopyOverlayToROM function's new location
 		"lui s0, 0x0;"			// Branch to 0x00000000 which will then copy the ROM from its temporary position onto ROM shadow area
 		"jalr s0;"
@@ -160,9 +160,11 @@ void __attribute__((aligned(64), noinline)) UserMain()
 		"csrw mstatus,0;"		// Disable all interrupts (mstatus:mie=0)
 		"li sp, 0x0FFDFFF0;"	// Stack base
 		"csrr a3, mhartid;"
-		"slli a3, a3, 8;"		// hartid*256
-		"sub sp, sp, a3;"		// Stack offset for this CPU
-		"mv s0, sp;"			// Set frame pointer to current stack pointer
+		"slli a3, a3, 2;"			// *TASK_MAX
+		"slli a3, a3, 10;"			// *1024
+		"slli a3, a3, 10;"			// *1024 (1Mbytes per task)
+		"sub sp, sp, a3;"			// TASKMEM_END_STACK_END - (_hartid*TASK_MAX*TASK_STACK_SIZE)
+		"mv s0, sp;"				// Set frame pointer to current stack pointer
 	);
 
 	// Worker cores do not handle hardware interrupts by default,
@@ -256,7 +258,11 @@ void __attribute__((aligned(64), noinline)) KernelMain()
 		"csrw 0xFEE, 0;"		// Stop reset
 		"csrw mstatus,0;"		// Disable all interrupts (mstatus:mie=0)
 		"li sp, 0x0FFDFFF0;"	// Stack poiner for CPU#0
-		"mv s0, sp;"			// Set frame pointer to current stack pointer
+		"slli a3, a3, 2;"			// *TASK_MAX
+		"slli a3, a3, 10;"			// *1024
+		"slli a3, a3, 10;"			// *1024 (1Mbytes per task)
+		"sub sp, sp, a3;"			// TASKMEM_END_STACK_END - (_hartid*TASK_MAX*TASK_STACK_SIZE)
+		"mv s0, sp;"				// Set frame pointer to current stack pointer
 	);
 
 	// NOTE: If there is a boot error, ROM will stop with a 4-LED pattern (EMBER LEDs) with the status LED showing RED

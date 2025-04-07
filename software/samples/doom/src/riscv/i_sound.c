@@ -692,7 +692,7 @@ I_SubmitSound(void)
     pbuf = cbuf;
 
     // Ensure writes are visible by audio DMA
-    CFLUSH_D_L1;
+    CFLUSH_D_L1();
 
     // Fill current write buffer with new mix data
     APUStartDMA((uint32_t)playbackbuffer);

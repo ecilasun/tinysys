@@ -17,6 +17,7 @@ module clockandreset(
 	output wire rst10n,
 	output wire rst25n,
 	output wire rst100n,
+	output wire rst200n,
 	output wire rstaudion,
 	output wire preresetn);
 
@@ -158,9 +159,22 @@ always @(posedge clkaudio) begin
 	end
 end
 
+(* async_reg = "true" *) logic rstn200A = 1'b1;
+(* async_reg = "true" *) logic rstn200B = 1'b1;
+always @(posedge clk100) begin
+	if (~fpga_rstn) begin
+		rstn200A <= 1'b1;
+		rstn200B <= 1'b1;
+	end else begin
+		rstn200A <= regaresetn;
+		rstn200B <= rstn200A;
+	end
+end
+
 assign rst10n = rstn10B;
 assign rst25n = rstn25B;
 assign rst100n = rstn100B;
+assign rst200n = rstn200B;
 assign rstaudion = rstaudionB;
 assign aresetn = regaresetn;
 assign preresetn = regpreresetn;

@@ -223,7 +223,7 @@ void render()
       ++pix;
     }
   }
-  ++ g_time;
+  g_time+=16;
 }
 /* -------------------------------------------------------- */
 int main(int argc, char **argv)
@@ -247,7 +247,7 @@ int main(int argc, char **argv)
   {
     render();
 
-    CFLUSH_D_L1;
+    CFLUSH_D_L1();
 
     VPUWaitVSync();
     VPUSwapPages(&vx, &sc);

@@ -62,7 +62,7 @@ The scan out address can be manipulated on the fly, generating interesting visua
 One thing to note here is that all memory writes to the scan out buffer should be completed for a coherent image to be visible on the display, therefore make sure to call the following function when all writes to the backbuffer are complete before calling `VPUSwapPages()`:
 
 ```
-CFLUSH_D_L1;
+CFLUSH_D_L1();
 ```
 
 `uint32_t VPUReadVBlankCounter();`

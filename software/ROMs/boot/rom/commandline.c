@@ -17,7 +17,7 @@ extern struct SCommandLineContext* s_cliCtx;
 static const char *s_taskstates[]={ "NONE", "HALT", "EXEC", "TERM", "DEAD", "IDLE" };
 
 // Device version
-#define ROMVERSIONSTRING "00151"
+#define ROMVERSIONSTRING "00152"
 #define GATEWAREVERSIONSTRING "00203"
 #define CORECLOCKSTRING "175MHz"
 
@@ -85,9 +85,9 @@ void ShowVersion(struct EVideoContext *kernelgfx)
 	kfillline(' ');
 	kprintf(" Gateware         : (%s)", isEmulator ? "EMULATED" : GATEWAREVERSIONSTRING);
 	kfillline(' ');
-	kprintf(" CPU architecture : rv32im_zicsr_zifencei_zfinx");
+	kprintf(" CPU architecture : rv32im_zicsr_zifencei_zfinx (dual core)");
 	kfillline(' ');
-	kprintf(" Core clock       : " CORECLOCKSTRING);
+	kprintf(" Bus clock        : " CORECLOCKSTRING);
 	kfillline(' ');
 	kfillline(' ');
 	kprintf("\n");
