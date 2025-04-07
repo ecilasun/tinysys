@@ -52,7 +52,7 @@ def build(bld):
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_DARWIN', 'RELEASE', 'GALLIFREY']
         includes = ['source', 'includes', '/opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2', '/opt/homebrew/Cellar/sdl2_ttf/2.22.0/include/SDL2', '../3rdparty/fat32']
         sdk_lib_path = ['/opt/homebrew/Cellar/sdl2/2.30.5/lib/', '/opt/homebrew/Cellar/sdl2_ttf/2.22.0/lib/']
-        compile_flags = ['-march=native', '-O3', '-arch', 'arm64']
+        compile_flags = ['-march=native', '-O3', '-arch', 'arm64', '-fno-exceptions', '-fno-rtti']
         platform_flags = ['-std=c++20']
         linker_flags = []
         APPNAME = 'mactinysys'
@@ -61,7 +61,7 @@ def build(bld):
         platform_defines = ['_CRT_SECURE_NO_WARNINGS', 'CAT_LINUX', 'RELEASE', 'GALLIFREY']
         includes = ['source', 'includes', '/usr/include/SDL2', '../3rdparty/fat32']
         sdk_lib_path = ['/usr/lib/x86_64-linux-gnu/libSDL2']
-        compile_flags = ['-march=native', '-O3', '-fno-omit-frame-pointer', '-fno-common', '-fno-exceptions', '-fno-rtti']
+        compile_flags = ['-march=native', '-O3', '-fno-exceptions', '-fno-rtti']
         platform_flags = ['-std=c++20']
         linker_flags = []
         APPNAME = 'tinysys'
