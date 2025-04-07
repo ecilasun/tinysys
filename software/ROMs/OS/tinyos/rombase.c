@@ -537,9 +537,11 @@ uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader
 	// Read program headers
 	for (uint32_t i=0; i<fheader->m_PHNum; ++i)
 	{
-		struct SElfProgramHeader32 pheader;
+		uint8_t tmp[512];
+		struct SElfProgramHeader32 *pheader = (struct SElfProgramHeader32 *)tmp;
+
 		f_lseek(fp, fheader->m_PHOff + fheader->m_PHEntSize*i);
-		f_read(fp, &pheader, sizeof(struct SElfProgramHeader32), &bytesread);
+		f_read(fp, pheader, sizeof(struct SElfProgramHeader32), &bytesread);
 
 		// Something here
 		if (pheader.m_MemSz != 0)
@@ -581,9 +583,10 @@ uint32_t LoadExecutable(const char *filename, int _relocOffset, const bool repor
 	if (fr == FR_OK)
 	{
 		// Something was there, load and parse it
-		struct SElfFileHeader32 fheader;
+		uint8_t tmp[512];
+		struct SElfFileHeader32 *fheader = (struct SElfFileHeader32 *)tmp;
 		UINT readsize;
-		f_read(&fp, &fheader, sizeof(fheader), &readsize);
+		f_read(&fp, fheader, sizeof(struct SElfFileHeader32), &readsize);
 		uint32_t branchaddress;
 		uint32_t heap_start = ParseELFHeaderAndLoadSections(&fp, &fheader, &branchaddress, _relocOffset);
 		f_close(&fp);

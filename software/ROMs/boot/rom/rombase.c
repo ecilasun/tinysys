@@ -677,22 +677,23 @@ uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader
 	// Read program headers
 	for (uint32_t i=0; i<fheader->m_PHNum; ++i)
 	{
-		struct SElfProgramHeader32 pheader;
+		uint8_t tmp[512];
+		struct SElfProgramHeader32 *pheader = (struct SElfProgramHeader32 *)tmp;
 
 		f_lseek(fp, fheader->m_PHOff + fheader->m_PHEntSize*i);
-		f_read(fp, &pheader, sizeof(struct SElfProgramHeader32), &bytesread);
+		f_read(fp, pheader, sizeof(struct SElfProgramHeader32), &bytesread);
 
 		KERNELLOG("ELF: header: @%04X : %d\n", fheader->m_PHOff, bytesread);
 
 		// Something here
-		if (pheader.m_MemSz != 0)
+		if (pheader->m_MemSz != 0)
 		{
-			uint8_t *memaddr = (uint8_t *)(pheader.m_PAddr + _relocOffset);
+			uint8_t *memaddr = (uint8_t *)(pheader->m_PAddr + _relocOffset);
 
-			KERNELLOG("ELF: section: @%04X : %d\n", pheader.m_PAddr, pheader.m_MemSz);
+			KERNELLOG("ELF: section: @%04X : %d\n", pheader->m_PAddr, pheader->m_MemSz);
 
 			// Check illegal range
-			if ((uint32_t)memaddr>=HEAP_END || ((uint32_t)memaddr)+pheader.m_MemSz>=HEAP_END)
+			if ((uint32_t)memaddr>=HEAP_END || ((uint32_t)memaddr)+pheader->m_MemSz>=HEAP_END)
 			{
 				kprintf("ELF section in illegal memory region\n");
 				return 0;
@@ -701,16 +702,16 @@ uint32_t ParseELFHeaderAndLoadSections(FIL *fp, struct SElfFileHeader32 *fheader
 			{
 				// Initialize the memory range at target physical address
 				// This can be larger than the loaded size
-				memset(memaddr, 0x0, pheader.m_MemSz);
+				memset(memaddr, 0x0, pheader->m_MemSz);
 
 				// Load the binary section depending on 'load' flag
-				if (pheader.m_Type == PT_LOAD)
+				if (pheader->m_Type == PT_LOAD)
 				{
-					f_lseek(fp, pheader.m_Offset);
-					f_read(fp, memaddr, pheader.m_FileSz, &bytesread);
+					f_lseek(fp, pheader->m_Offset);
+					f_read(fp, memaddr, pheader->m_FileSz, &bytesread);
 				}
 
-				uint32_t blockEnd = (uint32_t)memaddr + pheader.m_MemSz;
+				uint32_t blockEnd = (uint32_t)memaddr + pheader->m_MemSz;
 				heap_start = heap_start < blockEnd ? blockEnd : heap_start;
 			}
 		}
@@ -727,11 +728,12 @@ uint32_t LoadExecutable(const char *filename, int _relocOffset, const bool repor
 	if (fr == FR_OK)
 	{
 		// Something was there, load and parse it
-		struct SElfFileHeader32 fheader;
+		uint8_t tmp[512];
+		struct SElfFileHeader32 *fheader = (struct SElfFileHeader32 *)tmp;
 		UINT readsize;
-		f_read(&fp, &fheader, sizeof(fheader), &readsize);
+		f_read(&fp, fheader, sizeof(struct SElfFileHeader32), &readsize);
 		uint32_t branchaddress;
-		uint32_t heap_start = ParseELFHeaderAndLoadSections(&fp, &fheader, &branchaddress, _relocOffset);
+		uint32_t heap_start = ParseELFHeaderAndLoadSections(&fp, fheader, &branchaddress, _relocOffset);
 		f_close(&fp);
 
 		// Success?
