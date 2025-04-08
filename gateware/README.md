@@ -38,6 +38,7 @@ r2.0A: Added vectored interrupt support and bumped clock to 175MHz<br>
 00151: OS updates for task errors<br>
 00203: OS changes to same device version<br>
 00152: OS changes (mainly for ELF loaded memory stomp)<br>
+00203: Fixed float->uint conversion bug, keeping hardware version same<br>
 
 # Device gateware
 

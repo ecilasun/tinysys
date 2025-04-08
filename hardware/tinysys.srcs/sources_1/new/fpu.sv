@@ -23,7 +23,6 @@ module floatingpointunit(
 	input wire fi2fstrobe,
 	input wire fui2fstrobe,
 	input wire ff2istrobe,
-	input wire ff2uistrobe,
 	input wire ff2ui4satstrobe,
 	input wire fsqrtstrobe,
 	input wire feqstrobe,
@@ -45,7 +44,6 @@ wire fdivresultvalid;
 wire fi2fresultvalid;
 wire fui2fresultvalid;
 wire ff2iresultvalid;
-wire ff2uiresultvalid;
 wire ff2ui4satresultvalid;
 wire fsqrtresultvalid;
 wire feqresultvalid;
@@ -63,7 +61,6 @@ wire [31:0] fdivresult;
 wire [31:0] fi2fresult;
 wire [31:0] fui2fresult;
 wire [31:0] ff2iresult;
-wire [31:0] ff2uiresult;
 wire [31:0] ff2ui4satresult;
 wire [31:0] fsqrtresult;
 wire [7:0] feqresult;
@@ -83,7 +80,6 @@ always @(posedge clock) begin
 		fi2fresultvalid:		result <= fi2fresult;
 		fui2fresultvalid:		result <= fui2fresult;
 		ff2iresultvalid:		result <= ff2iresult;
-		ff2uiresultvalid:		result <= ff2uiresult;
 		ff2ui4satresultvalid:	result <= ff2ui4satresult;
 		fsqrtresultvalid:		result <= fsqrtresult;
 		feqresultvalid:			result <= {24'd0, feqresult};
@@ -92,7 +88,7 @@ always @(posedge clock) begin
 	endcase
 	resultvalid <= fmaddresultvalid | fmsubresultvalid |  fnmsubresultvalid | fnmaddresultvalid | faddresultvalid |
 					fsubresultvalid | fmulresultvalid | fdivresultvalid | fi2fresultvalid | fui2fresultvalid |
-					ff2iresultvalid | ff2uiresultvalid | ff2ui4satresultvalid | fsqrtresultvalid | feqresultvalid | fltresultvalid | fleresultvalid;
+					ff2iresultvalid | ff2ui4satresultvalid | fsqrtresultvalid | feqresultvalid | fltresultvalid | fleresultvalid;
 end
 
 fp_madd floatfmadd(
@@ -207,15 +203,6 @@ fp_f2i floatf2i(
 	.aresetn(aresetn),
 	.m_axis_result_tdata(ff2iresult),
 	.m_axis_result_tvalid(ff2iresultvalid) );
-
-// note: sharing same logic with f2i here, ignoring sign bit instead
-fp_f2i floatf2ui(
-	.s_axis_a_tdata({1'b0,frval1[30:0]}), // abs(a) (float register is source)
-	.s_axis_a_tvalid(ff2uistrobe),
-	.aclk(clock),
-	.aresetn(aresetn),
-	.m_axis_result_tdata(ff2uiresult),
-	.m_axis_result_tvalid(ff2uiresultvalid) );
 
 f2ui4sat floatf2ui4sat(
 	.clk(clock),

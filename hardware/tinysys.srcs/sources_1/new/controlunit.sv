@@ -187,7 +187,6 @@ bit fdivstrobe;
 bit fi2fstrobe;
 bit fui2fstrobe;
 bit ff2istrobe;
-bit ff2uistrobe;
 bit ff2ui4satstrobe;
 bit fsqrtstrobe;
 bit feqstrobe;
@@ -218,7 +217,6 @@ floatingpointunit FPU(
 	.fi2fstrobe(fi2fstrobe),
 	.fui2fstrobe(fui2fstrobe),
 	.ff2istrobe(ff2istrobe),
-	.ff2uistrobe(ff2uistrobe),
 	.ff2ui4satstrobe(ff2ui4satstrobe),
 	.fsqrtstrobe(fsqrtstrobe),
 	.feqstrobe(feqstrobe),
@@ -371,7 +369,6 @@ always @(posedge aclk) begin
 		fi2fstrobe <= 1'b0;
 		fui2fstrobe <= 1'b0;
 		ff2istrobe <= 1'b0;
-		ff2uistrobe <= 1'b0;
 		ff2ui4satstrobe <= 1'b0;
 		fsqrtstrobe <= 1'b0;
 		feqstrobe <= 1'b0;
@@ -403,7 +400,6 @@ always @(posedge aclk) begin
 		fi2fstrobe <= 1'b0;
 		fui2fstrobe <= 1'b0;
 		ff2istrobe <= 1'b0;
-		ff2uistrobe <= 1'b0;
 		ff2ui4satstrobe <= 1'b0;
 		fsqrtstrobe <= 1'b0;
 		feqstrobe <= 1'b0;
@@ -558,8 +554,7 @@ always @(posedge aclk) begin
 						ctlmode <= FLOATMATHSTALL;
 					end
 					`F7_FCVTWS: begin
-						ff2istrobe <= (rs2==5'b00000); // Signed
-						ff2uistrobe <= (rs2!=5'b00000); // Unsigned (5'b00001)
+						ff2istrobe <= 1'b1;
 						ctlmode <= FLOATMATHSTALL;
 					end
 					`F7_FADD: begin
