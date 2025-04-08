@@ -364,7 +364,7 @@ uint32_t videoCallback(Uint32 interval, void* param)
 	if (s_statSurface)
 	{
 		SDL_Rect statRect = s_statSurface->clip_rect;
-		statRect.y = H-statRect.h;
+		statRect.y = H - (statRect.h+4);
 
 		SDL_BlitSurface(s_statSurface, nullptr, ctx->compositesurface, &statRect);
 	}
@@ -382,20 +382,29 @@ uint32_t videoCallback(Uint32 interval, void* param)
 uint32_t statsCallback(Uint32 interval, void* param)
 {
 	EmulatorContext* ctx = (EmulatorContext*)param;
-	char stats[513];
+	char stats[768];
 
 	CRV32 *cpu0 = ctx->emulator->m_cpu[0];
-	snprintf(stats, 512, "CPU0 stats (over last second)\n");
-	snprintf(stats, 512, "%sI$  read hits / misses: %d / %d\n", stats, cpu0->m_icache.m_hits, cpu0->m_icache.m_misses);
-	snprintf(stats, 512, "%sEX retired instructions: %lld\n", stats, cpu0->m_retired);
-	snprintf(stats, 512, "%sEX conditional branches taken / not taken: %d / %d\n", stats, cpu0->m_btaken, cpu0->m_bntaken);
-	snprintf(stats, 512, "%sEX unconditional branches taken: %d\n", stats, cpu0->m_ucbtaken);
-	snprintf(stats, 512, "%sD$  read hits / misses: %d / %d\n", stats, cpu0->m_dcache.m_readhits, cpu0->m_dcache.m_readmisses);
-	snprintf(stats, 512, "%s   write hits / misses: %d / %d\n", stats, cpu0->m_dcache.m_writehits, cpu0->m_dcache.m_writemisses);
+	snprintf(stats, 768, "CPU0\n");
+	snprintf(stats, 768, "%sI$  read hits / misses: %d / %d\n", stats, cpu0->m_icache.m_hits, cpu0->m_icache.m_misses);
+	snprintf(stats, 768, "%sEX retired instructions: %lld\n", stats, cpu0->m_retired);
+	snprintf(stats, 768, "%sEX conditional branches taken / not taken: %d / %d\n", stats, cpu0->m_btaken, cpu0->m_bntaken);
+	snprintf(stats, 768, "%sEX unconditional branches taken: %d\n", stats, cpu0->m_ucbtaken);
+	snprintf(stats, 768, "%sD$  read hits / misses: %d / %d\n", stats, cpu0->m_dcache.m_readhits, cpu0->m_dcache.m_readmisses);
+	snprintf(stats, 768, "%s   write hits / misses: %d / %d\n", stats, cpu0->m_dcache.m_writehits, cpu0->m_dcache.m_writemisses);
+
+	CRV32 *cpu1 = ctx->emulator->m_cpu[1];
+	snprintf(stats, 768, "%s\nCPU1\n", stats);
+	snprintf(stats, 768, "%sI$  read hits / misses: %d / %d\n", stats, cpu1->m_icache.m_hits, cpu1->m_icache.m_misses);
+	snprintf(stats, 768, "%sEX retired instructions: %lld\n", stats, cpu1->m_retired);
+	snprintf(stats, 768, "%sEX conditional branches taken / not taken: %d / %d\n", stats, cpu1->m_btaken, cpu1->m_bntaken);
+	snprintf(stats, 768, "%sEX unconditional branches taken: %d\n", stats, cpu1->m_ucbtaken);
+	snprintf(stats, 768, "%sD$  read hits / misses: %d / %d\n", stats, cpu1->m_dcache.m_readhits, cpu1->m_dcache.m_readmisses);
+	snprintf(stats, 768, "%s   write hits / misses: %d / %d\n", stats, cpu1->m_dcache.m_writehits, cpu1->m_dcache.m_writemisses);
 
 	if (s_statSurface)
 		SDL_FreeSurface(s_statSurface);
-	s_statSurface = TTF_RenderText_Blended_Wrapped(s_debugfont, stats, {255,0,255}, WIDTH);
+	s_statSurface = TTF_RenderText_Blended_Wrapped(s_debugfont, stats, {255,0,0}, WIDTH);
 
 	cpu0->m_icache.m_hits = 0;
 	cpu0->m_icache.m_misses = 0;
@@ -406,6 +415,18 @@ uint32_t statsCallback(Uint32 interval, void* param)
 	cpu0->m_retired = 0;
 	cpu0->m_btaken = 0;
 	cpu0->m_bntaken = 0;
+	cpu0->m_ucbtaken = 0;
+
+	cpu1->m_icache.m_hits = 0;
+	cpu1->m_icache.m_misses = 0;
+	cpu1->m_dcache.m_readhits = 0;
+	cpu1->m_dcache.m_readmisses = 0;
+	cpu1->m_dcache.m_writehits = 0;
+	cpu1->m_dcache.m_writemisses = 0;
+	cpu1->m_retired = 0;
+	cpu1->m_btaken = 0;
+	cpu1->m_bntaken = 0;
+	cpu1->m_ucbtaken = 0;
 
 	return interval;
 }
